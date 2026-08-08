@@ -37,9 +37,22 @@
 	var overlay = (function () {
 		var current = null;
 		var previousFocus = null;
+		var pending = {}; /* id -> { timer, handler, el } -- in-flight close finalizations */
 
 		function find(id) {
 			return document.querySelector('[data-gloskin-overlay="' + id + '"]');
+		}
+
+		function reducedMotion() {
+			return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		}
+
+		function cancelPending(id) {
+			var p = pending[id];
+			if (!p) { return; }
+			if (p.timer) { clearTimeout(p.timer); }
+			if (p.handler && p.el) { p.el.removeEventListener('transitionend', p.handler); }
+			delete pending[id];
 		}
 
 		function open(id) {
@@ -47,10 +60,22 @@
 			if (current) { close(); }
 			var el = find(id);
 			if (!el) { return; }
+			/* A previous close() on this same overlay may still have a
+			 * pending finalize (transitionend/timeout) queued; cancel it so
+			 * a rapid close -> open doesn't get its hidden state clobbered
+			 * out from under the reopened overlay. */
+			cancelPending(id);
 			previousFocus = document.activeElement;
 			current = id;
 			el.hidden = false;
-			el.setAttribute('aria-hidden', 'false');
+			/* Force a layout so the browser commits the closed (opacity:0)
+			 * frame before flipping to the open state on the next frame --
+			 * otherwise both attribute changes collapse into a single frame
+			 * and the CSS transition never runs. */
+			void el.offsetWidth;
+			window.requestAnimationFrame(function () {
+				el.setAttribute('aria-hidden', 'false');
+			});
 			document.documentElement.classList.add('gloskin-ui1-overlay-open');
 			var trigger = document.querySelector('[data-gloskin-' + id + '-open]');
 			if (trigger) { trigger.setAttribute('aria-expanded', 'true'); }
@@ -60,15 +85,33 @@
 
 		function close() {
 			if (!current) { return; }
-			var el = find(current);
-			var trigger = document.querySelector('[data-gloskin-' + current + '-open]');
-			if (el) {
-				el.setAttribute('aria-hidden', 'true');
-				el.hidden = true;
-			}
+			var id = current;
+			var el = find(id);
+			var trigger = document.querySelector('[data-gloskin-' + id + '-open]');
 			if (trigger) { trigger.setAttribute('aria-expanded', 'false'); }
 			document.documentElement.classList.remove('gloskin-ui1-overlay-open');
 			current = null;
+
+			if (el) {
+				el.setAttribute('aria-hidden', 'true');
+				cancelPending(id);
+				var finalize = function () {
+					el.hidden = true;
+					cancelPending(id);
+				};
+				if (reducedMotion()) {
+					finalize();
+				} else {
+					var handler = function (event) {
+						if (event.target !== el) { return; }
+						finalize();
+					};
+					var timer = setTimeout(finalize, 320);
+					el.addEventListener('transitionend', handler);
+					pending[id] = { timer: timer, handler: handler, el: el };
+				}
+			}
+
 			if (previousFocus && typeof previousFocus.focus === 'function') {
 				previousFocus.focus();
 			}
@@ -415,6 +458,19 @@
 			});
 		});
 
+		/* Swap the accessible label between "add" and "remove" phrasing so
+		 * screen readers announce the action the button will take next,
+		 * not a static label frozen at page load. */
+		function applyState(btn, active) {
+			btn.classList.toggle('is-wished', active);
+			btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+			var addLabel = btn.getAttribute('data-label-add');
+			var removeLabel = btn.getAttribute('data-label-remove');
+			if (addLabel && removeLabel) {
+				btn.setAttribute('aria-label', active ? removeLabel : addLabel);
+			}
+		}
+
 		/* Wishlist toggle on product cards */
 		document.addEventListener('click', function (e) {
 			var btn = e.target.closest('[data-gloskin-wishlist-toggle]');
@@ -422,8 +478,7 @@
 			var productId = parseInt(btn.getAttribute('data-gloskin-wishlist-toggle'), 10);
 			if (!productId) { return; }
 			var active = toggle(productId);
-			btn.classList.toggle('is-wished', active);
-			btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+			applyState(btn, active);
 			updateBadges();
 		});
 
@@ -432,9 +487,7 @@
 			var btns = document.querySelectorAll('[data-gloskin-wishlist-toggle]');
 			Array.prototype.forEach.call(btns, function (btn) {
 				var id = parseInt(btn.getAttribute('data-gloskin-wishlist-toggle'), 10);
-				var active = isWished(id);
-				btn.classList.toggle('is-wished', active);
-				btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+				applyState(btn, isWished(id));
 			});
 			updateBadges();
 		}

@@ -244,6 +244,30 @@ if ( ! function_exists( 'gloskin_ui1_render_card' ) ) {
 	}
 }
 
+if ( ! function_exists( 'gloskin_ui1_render_wishlist_toggle' ) ) {
+	/**
+	 * Wishlist toggle for a product card. Only ever invoked with genuine Woo
+	 * product data (product cards only render when Woo supplied them), so no
+	 * separate Woo-availability check is needed here.
+	 *
+	 * @param int    $product_id Woo product ID.
+	 * @param string $name Product name.
+	 * @return void
+	 */
+	function gloskin_ui1_render_wishlist_toggle( $product_id, $name ) {
+		if ( ! $product_id ) {
+			return;
+		}
+		$add_label    = sprintf( __( 'Simpan %s ke favorit', 'gloskin-site-core' ), $name );
+		$remove_label = sprintf( __( 'Hapus %s dari favorit', 'gloskin-site-core' ), $name );
+		?>
+		<button type="button" class="gloskin-ui1-wishlist-toggle" data-gloskin-wishlist-toggle="<?php echo esc_attr( $product_id ); ?>" aria-pressed="false" data-label-add="<?php echo esc_attr( $add_label ); ?>" data-label-remove="<?php echo esc_attr( $remove_label ); ?>" aria-label="<?php echo esc_attr( $add_label ); ?>">
+			<svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M10 16.8C8.4 15.5 3 11.4 3 7.8 3 5.6 4.8 3.5 7.2 3.5c1.3 0 2.2.7 2.8 1.3.6-.6 1.5-1.3 2.8-1.3C15.2 3.5 17 5.6 17 7.8c0 3.6-5.4 7.7-7 9z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+		</button>
+		<?php
+	}
+}
+
 if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
 	/**
 	 * @param array<string,mixed> $product Product data.
@@ -253,15 +277,19 @@ if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
 		$name     = isset( $product['name'] ) ? (string) $product['name'] : '';
 		$url      = isset( $product['url'] ) ? (string) $product['url'] : '';
 		$image_id = isset( $product['image_id'] ) ? absint( $product['image_id'] ) : 0;
+		$id       = isset( $product['id'] ) ? absint( $product['id'] ) : 0;
 		?>
 		<article class="gloskin-ui1-card gloskin-ui1-card--product">
-			<a class="gloskin-ui1-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true">
-				<?php if ( $image_id ) : ?>
-					<?php echo wp_get_attachment_image( $image_id, 'woocommerce_thumbnail', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-card__image' ) ); ?>
-				<?php else : ?>
-					<?php gloskin_ui1_render_presentation_media( 'product', $name, 'gloskin-ui1-card__abstract' ); ?>
-				<?php endif; ?>
-			</a>
+			<div class="gloskin-ui1-card__media-wrap">
+				<a class="gloskin-ui1-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true">
+					<?php if ( $image_id ) : ?>
+						<?php echo wp_get_attachment_image( $image_id, 'woocommerce_thumbnail', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-card__image' ) ); ?>
+					<?php else : ?>
+						<?php gloskin_ui1_render_presentation_media( 'product', $name, 'gloskin-ui1-card__abstract' ); ?>
+					<?php endif; ?>
+				</a>
+				<?php gloskin_ui1_render_wishlist_toggle( $id, $name ); ?>
+			</div>
 			<div class="gloskin-ui1-card__body">
 				<h3 class="gloskin-ui1-card__title"><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $name ); ?></a></h3>
 				<?php if ( ! empty( $product['price_html'] ) ) : ?><div class="gloskin-ui1-product-price"><?php echo wp_kses_post( (string) $product['price_html'] ); ?></div><?php endif; ?>

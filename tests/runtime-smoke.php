@@ -68,21 +68,50 @@ $GLOBALS['gl_flushes'] = 0;
 $GLOBALS['gl_query_vars'] = array();
 $GLOBALS['gl_route'] = array( 'front' => false, 'page' => false, 'singular' => '', 'object' => null );
 $GLOBALS['gl_is_admin'] = getenv( 'GL_TEST_ADMIN' ) === '1';
-$GLOBALS['gl_woo'] = getenv( 'GL_TEST_WOO' ) === '1';
+$GLOBALS['gl_woo_late'] = getenv( 'GL_TEST_WOO_LATE' ) === '1';
+$GLOBALS['gl_woo'] = getenv( 'GL_TEST_WOO' ) === '1' || $GLOBALS['gl_woo_late'];
 $GLOBALS['gl_shortcodes'] = array();
-if ( $GLOBALS['gl_woo'] ) {
+
+/**
+ * Woo class/function stubs, extracted into a callable so the load-order
+ * regression test below can define them either before or after the plugin
+ * boots -- proving Gloskin_Site_Core_WooCommerce_Adapter::is_available()
+ * resolves correctly regardless of when WooCommerce actually finished
+ * loading relative to Gloskin's own plugin-load pass.
+ *
+ * @return void
+ */
+function gl_define_woo_stubs() {
 	class WooCommerce {}
 	class GL_Test_Cart {
 		public function get_cart_contents_count() { return 2; }
 		public function get_cart_subtotal() { return '<span>Rp 200.000</span>'; }
-		public function get_cart() { return array(); }
+		public function get_cart() {
+			$product_post = get_page_by_path( 'test-product', OBJECT, 'product' );
+			if ( ! $product_post ) {
+				return array();
+			}
+			return array(
+				'gl_test_cart_item_key' => array(
+					'product_id' => $product_post->ID,
+					'quantity'   => 2,
+					'variation'  => array( 'attribute_pa_ukuran' => '30ml' ),
+					'data'       => new GL_Test_Product( $product_post->ID ),
+				),
+			);
+		}
 		public function get_product_price( $p ) { return '<span>Rp 100.000</span>'; }
-		public function get_product_subtotal( $p, $q ) { return '<span>Rp 100.000</span>'; }
+		public function get_product_subtotal( $p, $q ) { return '<span>Rp 200.000</span>'; }
 	}
 	$GLOBALS['gl_woo_instance'] = new stdClass();
 	$GLOBALS['gl_woo_instance']->cart = new GL_Test_Cart();
 	function WC() { return $GLOBALS['gl_woo_instance']; }
-	function wc_get_page_id( $page ) { return 0; }
+	function wc_get_page_id( $page ) {
+		// Reuse the provisioned Shop page as a stand-in canonical destination
+		// so account_url() has a real, resolvable permalink to return.
+		$account_page = get_page_by_path( 'shop', OBJECT, 'page' );
+		return $account_page ? $account_page->ID : 0;
+	}
 	function wc_get_cart_url() { return 'https://example.test/cart/'; }
 	function wc_get_checkout_url() { return 'https://example.test/checkout/'; }
 	function wc_get_product( $id ) {
@@ -90,6 +119,11 @@ if ( $GLOBALS['gl_woo'] ) {
 		return ( $post && $post->post_type === 'product' ) ? new GL_Test_Product( $id ) : null;
 	}
 	function wc_get_cart_remove_url( $key ) { return '?remove_item=' . $key; }
+}
+
+if ( $GLOBALS['gl_woo'] && ! $GLOBALS['gl_woo_late'] ) {
+	// Ordinary case: WooCommerce (simulated) is already loaded before Gloskin boots.
+	gl_define_woo_stubs();
 }
 $GLOBALS['gl_activation'] = null;
 $GLOBALS['gl_deactivation'] = null;
@@ -371,6 +405,18 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 	}
 }
 
+if ( $GLOBALS['gl_woo_late'] ) {
+	// Load-order regression proof: Kernel::boot() already ran above (inside
+	// `require $plugin;`) while class_exists('WooCommerce') was still
+	// false, so the Kernel's own WooCommerce adapter instance was
+	// constructed before Woo existed. WooCommerce "loads" only now. A
+	// constructor-time cached availability snapshot would stay permanently
+	// false for the rest of this request; the fix resolves availability
+	// lazily at point-of-use, so the very same adapter instance must now
+	// correctly report Woo as available.
+	gl_define_woo_stubs();
+}
+
 if ( ! $GLOBALS['gl_is_admin'] ) {
 	$home = get_page_by_path( 'home', OBJECT, 'page' );
 	$GLOBALS['gl_route'] = array( 'front' => true, 'page' => true, 'singular' => '', 'object' => $home );
@@ -390,6 +436,10 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 	}
 	if ( ! $GLOBALS['gl_woo'] && ! empty( $context['commerce']['available'] ) ) {
 		fwrite( STDERR, "Commerce should be unavailable without Woo\n" );
+		exit( 1 );
+	}
+	if ( $GLOBALS['gl_woo_late'] && empty( $context['commerce']['available'] ) ) {
+		fwrite( STDERR, "Load-order bug: Woo adapter constructed before WooCommerce loaded stayed permanently unavailable\n" );
 		exit( 1 );
 	}
 }
@@ -493,6 +543,17 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 		if ( $shop_context['commerce']['cart_url'] !== 'https://example.test/cart/' ) {
 			fwrite( STDERR, "Cart URL should use Woo canonical URL\n" ); exit( 1 );
 		}
+
+		// Mini-cart body: thumbnail wrapper, name, variation, Woo-native remove markup.
+		$mini_cart = $shop_context['commerce']['mini_cart'];
+		if ( false === strpos( $mini_cart, 'gloskin-ui1-cart-sheet__item-media' )
+			|| false === strpos( $mini_cart, 'Test Product' )
+			|| false === strpos( $mini_cart, 'Ukuran: 30ml' )
+			|| false === strpos( $mini_cart, 'class="remove gloskin-ui1-cart-sheet__item-remove"' )
+			|| false === strpos( $mini_cart, 'data-cart_item_key="gl_test_cart_item_key"' ) ) {
+			fwrite( STDERR, "Mini-cart item rendering incomplete: {$mini_cart}\n" ); exit( 1 );
+		}
+
 		foreach ( array( 'woo', 'cart', 'checkout', 'account' ) as $commerce_flag ) {
 			$GLOBALS['gl_route'] = array( 'front' => false, 'page' => false, 'singular' => '', 'object' => null, $commerce_flag => true );
 			$native = apply_filters( 'template_include', '/theme/woocommerce.php' );
@@ -503,6 +564,53 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 			if ( ! in_array( 'gloskin-ui1', $classes, true ) ) {
 				fwrite( STDERR, 'Woo presentation body class missing for ' . $commerce_flag . "\n" ); exit( 1 );
 			}
+
+			// Native Woo routes never pass through shell.php; chrome must
+			// still appear via the get_header/get_footer hook strategy.
+			$leftover_context = get_query_var( 'gloskin_context', array() );
+			if ( ! empty( $leftover_context['view'] ) ) {
+				fwrite( STDERR, 'Stale gloskin_context leaked onto native Woo route ' . $commerce_flag . "\n" ); exit( 1 );
+			}
+			ob_start();
+			do_action( 'get_header' );
+			$header_chrome = ob_get_clean();
+			if ( false === strpos( $header_chrome, 'data-gloskin-cart-open' )
+				|| false === strpos( $header_chrome, 'data-gloskin-search-open' )
+				|| false === strpos( $header_chrome, 'gloskin-ui1-utility-btn--account' ) ) {
+				fwrite( STDERR, 'Commerce header chrome missing on native Woo route ' . $commerce_flag . "\n" ); exit( 1 );
+			}
+			ob_start();
+			do_action( 'get_footer' );
+			$footer_chrome = ob_get_clean();
+			if ( false === strpos( $footer_chrome, 'gloskin-ui1-footer' ) ) {
+				fwrite( STDERR, 'Commerce footer chrome missing on native Woo route ' . $commerce_flag . "\n" ); exit( 1 );
+			}
+		}
+
+		// Shop archive already renders through shell.php; get_header/get_footer
+		// must not duplicate that chrome.
+		$GLOBALS['gl_route'] = array( 'front' => false, 'page' => true, 'singular' => '', 'object' => $shop );
+		apply_filters( 'template_include', '/theme/index.php' );
+		ob_start();
+		do_action( 'get_header' );
+		$shop_header_chrome = ob_get_clean();
+		if ( '' !== $shop_header_chrome ) {
+			fwrite( STDERR, "get_header duplicated chrome on a Gloskin-owned route\n" ); exit( 1 );
+		}
+
+		// Wishlist toggle on the Woo single-product hook.
+		global $product;
+		$product = new GL_Test_Product( $product_id );
+		$woo_adapter = new Gloskin_Site_Core_WooCommerce_Adapter();
+		ob_start();
+		$woo_adapter->render_wishlist_toggle();
+		$toggle_html = ob_get_clean();
+		$product = null;
+		if ( false === strpos( $toggle_html, 'data-gloskin-wishlist-toggle="' . $product_id . '"' )
+			|| false === strpos( $toggle_html, 'aria-pressed="false"' )
+			|| false === strpos( $toggle_html, 'data-label-add=' )
+			|| false === strpos( $toggle_html, 'data-label-remove=' ) ) {
+			fwrite( STDERR, "Wishlist toggle markup incomplete: {$toggle_html}\n" ); exit( 1 );
 		}
 	}
 }

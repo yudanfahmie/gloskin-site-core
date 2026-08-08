@@ -15,27 +15,42 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_WooCommerce_Adapter {
-	/** @var bool */
-	private $available;
-
-	public function __construct() {
-		$this->available = class_exists( 'WooCommerce' ) && function_exists( 'wc_get_products' );
-	}
-
 	/**
 	 * Register Woo presentation hooks.
+	 *
+	 * The Kernel constructs this adapter during Gloskin's own plugin-load
+	 * pass, which can run before or after WooCommerce finishes loading
+	 * depending on plugin activation order (WordPress loads active plugins
+	 * in the order stored in the `active_plugins` option, not a guaranteed
+	 * dependency order). Hook registration therefore never gates on Woo
+	 * availability here -- every hook below is inert when WooCommerce never
+	 * fires it, so registering unconditionally is safe and avoids caching
+	 * a load-order-sensitive decision at construction time.
 	 *
 	 * @return void
 	 */
 	public function register() {
-		if ( ! $this->available ) {
-			return;
-		}
-
 		add_action( 'woocommerce_product_meta_end', array( $this, 'render_product_facts' ), 20 );
+		add_action( 'woocommerce_single_product_summary', array( $this, 'render_wishlist_toggle' ), 31 );
 		add_filter( 'body_class', array( $this, 'body_classes' ) );
 		add_filter( 'woocommerce_add_to_cart_fragments', array( $this, 'cart_fragments' ) );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
+	}
+
+	/**
+	 * Resolve Woo availability at point of use rather than caching it at
+	 * construction time. class_exists()/function_exists() are cheap hash
+	 * lookups, and by the time any adapter method actually runs (template
+	 * rendering, a REST callback, a Woo hook firing) every plugin has
+	 * finished loading regardless of the order Gloskin and WooCommerce were
+	 * activated in. This is the fix for the load-order bug: a
+	 * constructor-time snapshot would stay permanently false for the whole
+	 * request if Gloskin's plugin file happened to load before WooCommerce's.
+	 *
+	 * @return bool
+	 */
+	private function is_available() {
+		return class_exists( 'WooCommerce' ) && function_exists( 'wc_get_products' );
 	}
 
 
@@ -65,7 +80,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return bool
 	 */
 	public function is_commerce_request() {
-		if ( ! $this->available ) {
+		if ( ! $this->is_available() ) {
 			return false;
 		}
 
@@ -82,14 +97,14 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return bool
 	 */
 	public function is_shop_request() {
-		return $this->available && function_exists( 'is_shop' ) && is_shop();
+		return $this->is_available() && function_exists( 'is_shop' ) && is_shop();
 	}
 
 	/**
 	 * @return bool
 	 */
 	public function available() {
-		return $this->available;
+		return $this->is_available();
 	}
 
 	/* -----------------------------------------------------------------
@@ -102,7 +117,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return string
 	 */
 	public function account_url() {
-		if ( ! $this->available || ! function_exists( 'wc_get_page_id' ) ) {
+		if ( ! $this->is_available() || ! function_exists( 'wc_get_page_id' ) ) {
 			return '';
 		}
 		$page_id = wc_get_page_id( 'myaccount' );
@@ -117,7 +132,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return string
 	 */
 	public function cart_url() {
-		if ( ! $this->available || ! function_exists( 'wc_get_cart_url' ) ) {
+		if ( ! $this->is_available() || ! function_exists( 'wc_get_cart_url' ) ) {
 			return '';
 		}
 		return (string) wc_get_cart_url();
@@ -127,7 +142,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return string
 	 */
 	public function checkout_url() {
-		if ( ! $this->available || ! function_exists( 'wc_get_checkout_url' ) ) {
+		if ( ! $this->is_available() || ! function_exists( 'wc_get_checkout_url' ) ) {
 			return '';
 		}
 		return (string) wc_get_checkout_url();
@@ -137,7 +152,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return int
 	 */
 	public function cart_count() {
-		if ( ! $this->available || ! function_exists( 'WC' ) ) {
+		if ( ! $this->is_available() || ! function_exists( 'WC' ) ) {
 			return 0;
 		}
 		$wc = WC();
@@ -151,7 +166,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return string
 	 */
 	public function cart_subtotal() {
-		if ( ! $this->available || ! function_exists( 'WC' ) ) {
+		if ( ! $this->is_available() || ! function_exists( 'WC' ) ) {
 			return '';
 		}
 		$wc = WC();
@@ -167,7 +182,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return array<int,array<string,mixed>>
 	 */
 	public function mini_cart_items() {
-		if ( ! $this->available || ! function_exists( 'WC' ) ) {
+		if ( ! $this->is_available() || ! function_exists( 'WC' ) ) {
 			return array();
 		}
 		$wc = WC();
@@ -181,19 +196,44 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 				continue;
 			}
 			$remove_url = function_exists( 'wc_get_cart_remove_url' ) ? wc_get_cart_remove_url( $cart_item_key ) : '';
-			$items[] = array(
-				'key'          => (string) $cart_item_key,
-				'product_id'   => absint( $cart_item['product_id'] ),
-				'name'         => (string) $product->get_name(),
-				'quantity'     => absint( $cart_item['quantity'] ),
-				'price_html'   => (string) $wc->cart->get_product_price( $product ),
+			$items[]    = array(
+				'key'           => (string) $cart_item_key,
+				'product_id'    => absint( $cart_item['product_id'] ),
+				'name'          => (string) $product->get_name(),
+				'quantity'      => absint( $cart_item['quantity'] ),
+				'variation'     => $this->format_variation( isset( $cart_item['variation'] ) ? $cart_item['variation'] : array() ),
+				'price_html'    => (string) $wc->cart->get_product_price( $product ),
 				'subtotal_html' => (string) $wc->cart->get_product_subtotal( $product, $cart_item['quantity'] ),
-				'image_id'     => method_exists( $product, 'get_image_id' ) ? absint( $product->get_image_id() ) : 0,
-				'url'          => (string) get_permalink( $cart_item['product_id'] ),
-				'remove_url'   => (string) $remove_url,
+				'image_id'      => method_exists( $product, 'get_image_id' ) ? absint( $product->get_image_id() ) : 0,
+				'url'           => (string) get_permalink( $cart_item['product_id'] ),
+				'remove_url'    => (string) $remove_url,
 			);
 		}
 		return $items;
+	}
+
+	/**
+	 * Format a Woo cart-item variation array ("attribute_pa_size" => "30ml")
+	 * into a short human-readable summary for the mini-cart.
+	 *
+	 * @param array<string,mixed> $variation Woo variation attribute map.
+	 * @return string
+	 */
+	private function format_variation( $variation ) {
+		if ( ! is_array( $variation ) || ! $variation ) {
+			return '';
+		}
+		$parts = array();
+		foreach ( $variation as $attribute => $value ) {
+			$value = trim( (string) $value );
+			if ( '' === $value ) {
+				continue;
+			}
+			$label   = str_replace( array( 'attribute_', 'pa_', '-', '_' ), array( '', '', ' ', ' ' ), (string) $attribute );
+			$label   = trim( ucwords( $label ) );
+			$parts[] = '' !== $label ? $label . ': ' . $value : $value;
+		}
+		return implode( ', ', $parts );
 	}
 
 	/**
@@ -202,7 +242,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return string
 	 */
 	public function render_mini_cart_body() {
-		if ( ! $this->available ) {
+		if ( ! $this->is_available() ) {
 			return '';
 		}
 		$items    = $this->mini_cart_items();
@@ -214,15 +254,28 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 			echo '<ul class="gloskin-ui1-cart-sheet__list">';
 			foreach ( $items as $item ) {
 				echo '<li class="gloskin-ui1-cart-sheet__item">';
+				echo '<span class="gloskin-ui1-cart-sheet__item-media">';
+				if ( $item['image_id'] ) {
+					echo wp_get_attachment_image( $item['image_id'], 'thumbnail', false, array( 'class' => 'gloskin-ui1-cart-sheet__item-image', 'loading' => 'lazy', 'alt' => '' ) );
+				}
+				echo '</span>';
+				echo '<span class="gloskin-ui1-cart-sheet__item-details">';
 				echo '<a class="gloskin-ui1-cart-sheet__item-link" href="' . esc_url( $item['url'] ) . '">';
 				echo '<span class="gloskin-ui1-cart-sheet__item-name">' . esc_html( $item['name'] ) . '</span>';
 				echo '</a>';
+				if ( '' !== $item['variation'] ) {
+					echo '<span class="gloskin-ui1-cart-sheet__item-variation">' . esc_html( $item['variation'] ) . '</span>';
+				}
 				echo '<span class="gloskin-ui1-cart-sheet__item-meta">';
 				echo '<span class="gloskin-ui1-cart-sheet__item-qty">' . esc_html( $item['quantity'] ) . '&times;</span> ';
 				echo '<span class="gloskin-ui1-cart-sheet__item-price">' . wp_kses_post( $item['price_html'] ) . '</span>';
 				echo '</span>';
+				echo '</span>';
 				if ( $item['remove_url'] ) {
-					echo '<a class="gloskin-ui1-cart-sheet__item-remove" href="' . esc_url( $item['remove_url'] ) . '" aria-label="' . esc_attr( sprintf( __( 'Hapus %s', 'gloskin-site-core' ), $item['name'] ) ) . '">&times;</a>';
+					/* Woo-native remove markup: wc-cart-fragments.js already binds AJAX
+					 * remove + fragment refresh to `a.remove` links carrying these data
+					 * attributes, so no custom cart JS is needed here. */
+					echo '<a href="' . esc_url( $item['remove_url'] ) . '" class="remove gloskin-ui1-cart-sheet__item-remove" aria-label="' . esc_attr( sprintf( __( 'Hapus %s', 'gloskin-site-core' ), $item['name'] ) ) . '" data-product_id="' . esc_attr( $item['product_id'] ) . '" data-cart_item_key="' . esc_attr( $item['key'] ) . '" data-product_sku="">&times;</a>';
 				}
 				echo '</li>';
 			}
@@ -341,7 +394,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return array<int,array<string,mixed>>
 	 */
 	public function search_products( $query, $limit = 3 ) {
-		if ( ! $this->available ) {
+		if ( ! $this->is_available() ) {
 			return array();
 		}
 		$query = sanitize_text_field( $query );
@@ -377,7 +430,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public function products( $limit = 8 ) {
-		if ( ! $this->available ) {
+		if ( ! $this->is_available() ) {
 			return array();
 		}
 
@@ -400,7 +453,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 */
 	public function products_for_category( $category_slug, $limit = 20 ) {
 		$category_slug = sanitize_title( $category_slug );
-		if ( ! $this->available || '' === $category_slug || ! $this->category_exists( $category_slug ) ) {
+		if ( ! $this->is_available() || '' === $category_slug || ! $this->category_exists( $category_slug ) ) {
 			return array();
 		}
 
@@ -422,7 +475,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return bool
 	 */
 	public function category_exists( $category_slug ) {
-		if ( ! $this->available ) {
+		if ( ! $this->is_available() ) {
 			return false;
 		}
 
@@ -435,7 +488,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return string
 	 */
 	public function category_url( $category_slug ) {
-		if ( ! $this->available ) {
+		if ( ! $this->is_available() ) {
 			return '';
 		}
 
@@ -524,6 +577,41 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 			echo '</div>';
 		}
 		echo '</dl>';
+	}
+
+	/**
+	 * Render the wishlist toggle on the Woo single-product page. Wishlist
+	 * only applies to real Woo products, so this renders whenever Woo's own
+	 * hook fires with a valid product in scope -- no availability check is
+	 * needed since the hook itself only exists when Woo is active.
+	 *
+	 * @return void
+	 */
+	public function render_wishlist_toggle() {
+		global $product;
+
+		if ( ! is_object( $product ) || ! method_exists( $product, 'get_id' ) ) {
+			return;
+		}
+
+		$id   = absint( $product->get_id() );
+		$name = method_exists( $product, 'get_name' ) ? (string) $product->get_name() : '';
+		if ( ! $id ) {
+			return;
+		}
+
+		/* Self-contained markup (not shared with the product-card helper in
+		 * template-helpers.php) -- this keeps the adapter free of a
+		 * dependency on the stateless presentation-helper layer, matching
+		 * the one-canonical-owner-per-file convention already used across
+		 * the codebase. The few lines of SVG/button markup are small enough
+		 * that duplicating them is cheaper than adding cross-layer coupling. */
+		$add_label    = sprintf( __( 'Simpan %s ke favorit', 'gloskin-site-core' ), $name );
+		$remove_label = sprintf( __( 'Hapus %s dari favorit', 'gloskin-site-core' ), $name );
+
+		echo '<button type="button" class="gloskin-ui1-wishlist-toggle gloskin-ui1-wishlist-toggle--detail" data-gloskin-wishlist-toggle="' . esc_attr( $id ) . '" aria-pressed="false" data-label-add="' . esc_attr( $add_label ) . '" data-label-remove="' . esc_attr( $remove_label ) . '" aria-label="' . esc_attr( $add_label ) . '">';
+		echo '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M10 16.8C8.4 15.5 3 11.4 3 7.8 3 5.6 4.8 3.5 7.2 3.5c1.3 0 2.2.7 2.8 1.3.6-.6 1.5-1.3 2.8-1.3C15.2 3.5 17 5.6 17 7.8c0 3.6-5.4 7.7-7 9z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+		echo '</button>';
 	}
 
 	/**

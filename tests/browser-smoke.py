@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import json
 import os
 import subprocess
 from playwright.sync_api import sync_playwright, Error as PlaywrightError
@@ -208,18 +209,38 @@ with sync_playwright() as p:
 
             if viewport_name == 'desktop' and view == 'home':
                 header = page.locator('.gloskin-ui1-header')
+                # Two-layer header: row 1 (brand + utilities) is optically centered
+                # via a 1fr/auto/1fr grid; row 2 (nav) is a distinct layer below it
+                # so both rows can hide/reveal together as one sticky unit.
                 geometry = page.evaluate("""() => {
                     const header=document.querySelector('.gloskin-ui1-header');
-                    const inner=document.querySelector('.gloskin-ui1-header__inner');
+                    const bar=document.querySelector('.gloskin-ui1-header__inner');
+                    const navRow=document.querySelector('.gloskin-ui1-header__nav-row');
                     const brand=document.querySelector('.gloskin-ui1-brand');
-                    const nav=document.querySelector('.gloskin-ui1-nav--desktop');
                     const contact=document.querySelector('.gloskin-ui1-header__contact');
                     const center = el => { const r=el.getBoundingClientRect(); return r.top+r.height/2; };
+                    const hcenter = el => { const r=el.getBoundingClientRect(); return r.left+r.width/2; };
                     const style=getComputedStyle(header);
-                    return {height:inner.getBoundingClientRect().height,centers:[center(brand),center(nav),center(contact)],border:style.borderBottomWidth,backdrop:style.backdropFilter||style.webkitBackdropFilter,shadow:style.boxShadow};
+                    return {
+                        barHeight: bar.getBoundingClientRect().height,
+                        barBottom: bar.getBoundingClientRect().bottom,
+                        brandCenterY: center(brand),
+                        contactCenterY: contact ? center(contact) : null,
+                        navRowTop: navRow ? navRow.getBoundingClientRect().top : null,
+                        brandX: hcenter(brand),
+                        viewportCenterX: window.innerWidth / 2,
+                        border: style.borderBottomWidth,
+                        backdrop: style.backdropFilter || style.webkitBackdropFilter,
+                    };
                 }""")
-                if not (68 <= geometry['height'] <= 76) or max(geometry['centers']) - min(geometry['centers']) > 3:
-                    raise SystemExit(f'desktop/home: premium header alignment/density failed: {geometry}')
+                if not (68 <= geometry['barHeight'] <= 88):
+                    raise SystemExit(f'desktop/home: premium header bar density failed: {geometry}')
+                if geometry['contactCenterY'] is not None and abs(geometry['brandCenterY'] - geometry['contactCenterY']) > 3:
+                    raise SystemExit(f'desktop/home: brand/utility bar alignment failed: {geometry}')
+                if abs(geometry['brandX'] - geometry['viewportCenterX']) > 4:
+                    raise SystemExit(f'desktop/home: brand is not optically centered: {geometry}')
+                if geometry['navRowTop'] is None or geometry['navRowTop'] < geometry['barBottom'] - 1:
+                    raise SystemExit(f'desktop/home: nav row is not a distinct layer below the brand bar: {geometry}')
                 if geometry['border'] != '1px' or 'blur(' not in geometry['backdrop']:
                     raise SystemExit(f'desktop/home: premium header separation/translucency failed: {geometry}')
 
@@ -314,6 +335,164 @@ with sync_playwright() as p:
         if errors: raise SystemExit(f'admin-bar/{case_name}: console/page errors: {errors}')
         page.close()
     print('browser smoke passed (WordPress admin geometry + repeated directional sticky state)')
+
+    # ------------------------------------------------------------------
+    # Commerce header: Woo absent vs Woo active.
+    #
+    # The fixture harness has no live WooCommerce/REST backend, so the
+    # gloskin/v1/search and gloskin/v1/products/resolve endpoints are
+    # mocked via page.route() the same way editorial Unsplash images
+    # already are above. Everything else (header markup, cart badge/count,
+    # mini-cart body, wishlist toggle) is real server-rendered output from
+    # render-fixture.php with GL_TEST_WOO=1, exercising the actual PHP
+    # commerce context, not a hand-authored fixture.
+    # ------------------------------------------------------------------
+
+    def mock_search(route):
+        payload = {'groups': [{'type': 'produk', 'label': 'Produk', 'items': [{
+            'id': 1, 'title': 'Test Product', 'url': 'https://example.test/produk/test-product/',
+            'excerpt': 'Deskripsi singkat produk.', 'price_html': '<span class="amount">Rp 150.000</span>',
+        }]}]}
+        route.fulfill(status=200, content_type='application/json', body=json.dumps(payload))
+
+    def mock_resolve(route):
+        payload = {'products': [{
+            'id': 1, 'name': 'Test Product', 'url': 'https://example.test/produk/test-product/',
+            'price_html': '<span class="amount">Rp 150.000</span>', 'image_id': 0,
+        }]}
+        route.fulfill(status=200, content_type='application/json', body=json.dumps(payload))
+
+    # Woo absent: search stays, commerce controls disappear cleanly.
+    page = browser.new_page(viewport={'width': 1440, 'height': 900})
+    errors = []
+    page.on('console', lambda msg, e=errors: e.append(msg.text) if msg.type == 'error' else None)
+    page.on('pageerror', lambda err, e=errors: e.append(str(err)))
+    load(page, fixtures['shop'])
+    if page.locator('[data-gloskin-search-open]').count() != 1:
+        raise SystemExit('commerce/woo-absent: search trigger missing')
+    if (page.locator('[data-gloskin-cart-open]').count()
+            or page.locator('[data-gloskin-wishlist-open]').count()
+            or page.locator('.gloskin-ui1-utility-btn--account').count()):
+        raise SystemExit('commerce/woo-absent: commerce controls unexpectedly present')
+    if page.evaluate('document.documentElement.scrollWidth - window.innerWidth') > 1:
+        raise SystemExit('commerce/woo-absent: header overflow/imbalance')
+    if errors:
+        raise SystemExit(f'commerce/woo-absent: console/page errors: {errors}')
+    page.close()
+    print('browser smoke passed (commerce header: Woo absent)')
+
+    # Woo active: full commerce header, search, wishlist, mini-cart.
+    woo_shop_html = fixture('shop', GL_TEST_WOO='1')
+    page = browser.new_page(viewport={'width': 1440, 'height': 900})
+    errors = []
+    page.on('console', lambda msg, e=errors: e.append(msg.text) if msg.type == 'error' else None)
+    page.on('pageerror', lambda err, e=errors: e.append(str(err)))
+    page.route('**/wp-json/gloskin/v1/search**', mock_search)
+    page.route('**/wp-json/gloskin/v1/products/resolve**', mock_resolve)
+    load(page, woo_shop_html)
+
+    if page.locator('.gloskin-ui1-utility-btn--account').count() != 1:
+        raise SystemExit('commerce/woo-active: account icon missing')
+    if page.locator('[data-gloskin-wishlist-open]').count() != 1:
+        raise SystemExit('commerce/woo-active: wishlist icon missing')
+    if page.locator('[data-gloskin-cart-open]').count() != 1:
+        raise SystemExit('commerce/woo-active: cart icon missing')
+    if page.locator('.gloskin-ui1-header__nav-row').count() != 1:
+        raise SystemExit('commerce/woo-active: two-layer nav row missing')
+    badge_text = page.locator('[data-gloskin-cart-count]').inner_text().strip()
+    if badge_text != '2':
+        raise SystemExit(f'commerce/woo-active: cart badge incorrect: {badge_text!r}')
+
+    # Search: open, autofocus, mocked AJAX result with price, smooth close, focus return.
+    search_trigger = page.locator('[data-gloskin-search-open]')
+    search_trigger.click(); page.wait_for_timeout(80)
+    search_overlay = page.locator('[data-gloskin-overlay="search"]')
+    if search_overlay.get_attribute('aria-hidden') != 'false':
+        raise SystemExit('commerce/woo-active: search overlay did not open')
+    search_input = page.locator('[data-gloskin-search-input]')
+    if not search_input.evaluate('el => el === document.activeElement'):
+        raise SystemExit('commerce/woo-active: search input did not receive focus')
+    search_input.fill('produk'); page.wait_for_timeout(400)
+    if page.locator('.gloskin-ui1-search-results__price').count() == 0:
+        raise SystemExit('commerce/woo-active: product search result missing price')
+    page.keyboard.press('Escape'); page.wait_for_timeout(30)
+    if search_overlay.get_attribute('hidden') is not None:
+        raise SystemExit('commerce/woo-active: overlay hid before its exit transition completed')
+    page.wait_for_timeout(350)
+    if search_overlay.get_attribute('hidden') is None:
+        raise SystemExit('commerce/woo-active: overlay never finalized hidden state after close')
+    if not search_trigger.evaluate('el => el === document.activeElement'):
+        raise SystemExit('commerce/woo-active: focus did not return to the search trigger')
+
+    # Wishlist: toggle on a product card, sheet lists the resolved product.
+    wishlist_toggle = page.locator('[data-gloskin-wishlist-toggle]').first
+    if wishlist_toggle.count() == 0:
+        raise SystemExit('commerce/woo-active: no wishlist toggle on product card')
+    wishlist_toggle.click(); page.wait_for_timeout(50)
+    if wishlist_toggle.get_attribute('aria-pressed') != 'true':
+        raise SystemExit('commerce/woo-active: wishlist toggle did not report pressed state')
+    page.locator('[data-gloskin-wishlist-open]').click(); page.wait_for_timeout(250)
+    wishlist_sheet = page.locator('[data-gloskin-overlay="wishlist"]')
+    if wishlist_sheet.get_attribute('aria-hidden') != 'false':
+        raise SystemExit('commerce/woo-active: wishlist sheet did not open')
+    if page.locator('[data-gloskin-wishlist-body] .gloskin-ui1-wishlist-sheet__item').count() == 0:
+        raise SystemExit('commerce/woo-active: wishlist sheet did not list the resolved product')
+    page.keyboard.press('Escape'); page.wait_for_timeout(350)
+
+    # Mini-cart: open, real server-rendered content, backdrop close, focus return.
+    cart_trigger = page.locator('[data-gloskin-cart-open]')
+    cart_trigger.click(); page.wait_for_timeout(80)
+    cart_sheet = page.locator('[data-gloskin-overlay="cart"]')
+    if cart_sheet.get_attribute('aria-hidden') != 'false':
+        raise SystemExit('commerce/woo-active: cart sheet did not open')
+    if page.locator('.gloskin-ui1-cart-sheet__item-media').count() == 0:
+        raise SystemExit('commerce/woo-active: cart item media slot missing')
+    if page.locator('.gloskin-ui1-cart-sheet__item-name').count() == 0:
+        raise SystemExit('commerce/woo-active: cart item name missing')
+    if page.locator('.gloskin-ui1-cart-sheet__item-variation').count() == 0:
+        raise SystemExit('commerce/woo-active: cart item variation missing')
+    if page.locator('.gloskin-ui1-cart-sheet__summary').count() == 0:
+        raise SystemExit('commerce/woo-active: cart subtotal summary missing')
+    checkout_href = page.locator('.gloskin-ui1-cart-sheet__actions a').first.get_attribute('href') or ''
+    if not checkout_href.startswith('https://example.test/'):
+        raise SystemExit(f'commerce/woo-active: checkout/cart link not canonical: {checkout_href!r}')
+    page.locator('.gloskin-ui1-sheet__backdrop').click(force=True); page.wait_for_timeout(350)
+    if cart_sheet.get_attribute('hidden') is None:
+        raise SystemExit('commerce/woo-active: cart sheet did not close via backdrop')
+    if not cart_trigger.evaluate('el => el === document.activeElement'):
+        raise SystemExit('commerce/woo-active: focus did not return to the cart trigger')
+
+    if errors:
+        raise SystemExit(f'commerce/woo-active: console/page errors: {errors}')
+    page.close()
+    print('browser smoke passed (commerce header: Woo active)')
+
+    # Mobile: no crowding, cart stays reachable, account/wishlist live in the drawer.
+    page = browser.new_page(viewport={'width': 390, 'height': 844})
+    page.route('**/wp-json/gloskin/v1/search**', mock_search)
+    page.route('**/wp-json/gloskin/v1/products/resolve**', mock_resolve)
+    load(page, woo_shop_html)
+    if page.evaluate('document.documentElement.scrollWidth - window.innerWidth') > 1:
+        raise SystemExit('commerce/mobile: header overflow')
+    if page.locator('.gloskin-ui1-utility-btn--account:visible').count() or page.locator('.gloskin-ui1-utility-btn--wishlist:visible').count():
+        raise SystemExit('commerce/mobile: account/wishlist crowd the mobile header')
+    if page.locator('[data-gloskin-cart-open]').count() != 1:
+        raise SystemExit('commerce/mobile: cart trigger missing on mobile')
+    page.locator('[data-gloskin-drawer-open]').click(); page.wait_for_timeout(80)
+    if page.locator('.gloskin-ui1-drawer__utility-link').count() < 2:
+        raise SystemExit('commerce/mobile: account/wishlist not reachable from the drawer')
+    page.close()
+    print('browser smoke passed (commerce header: mobile)')
+
+    # Reduced motion: overlays still function, but close immediately (no animation wait).
+    page = browser.new_page(viewport={'width': 1440, 'height': 900}, reduced_motion='reduce')
+    load(page, woo_shop_html)
+    page.locator('[data-gloskin-cart-open]').click(); page.wait_for_timeout(50)
+    page.keyboard.press('Escape'); page.wait_for_timeout(30)
+    if page.locator('[data-gloskin-overlay="cart"]').get_attribute('hidden') is None:
+        raise SystemExit('commerce/reduced-motion: cart sheet did not close immediately')
+    page.close()
+    print('browser smoke passed (commerce header: reduced motion)')
 
     reduced=browser.new_page(viewport={'width':390,'height':844},reduced_motion='reduce'); load(reduced,fixtures['home'])
     if not reduced.evaluate("matchMedia('(prefers-reduced-motion: reduce)').matches"):
