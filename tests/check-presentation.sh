@@ -105,6 +105,71 @@ if ! grep -q '@media (max-width:600px).*--gloskin-ui1-admin-bar-height:0px.*--gl
   exit 1
 fi
 
+# Brand palette ownership stays centralized in the foundation token layer.
+python - "$core_base_css" "$core_css" "$production_css" <<'PYBRAND'
+import re
+import sys
+from pathlib import Path
+
+css = Path(sys.argv[1]).read_text()
+production_css = '\n'.join(Path(path).read_text() for path in sys.argv[1:])
+for token, value in {
+    '--gloskin-brand-red': '#B12E2F',
+    '--gloskin-brand-red-deep': '#961F24',
+    '--gloskin-brand-ivory': '#FBFBFA',
+    '--gloskin-brand-surface': '#F6F3F1',
+    '--gloskin-brand-surface-strong': '#ECEBE8',
+    '--gloskin-brand-border': '#DDD7D3',
+    '--gloskin-brand-charcoal': '#2A232C',
+    '--gloskin-brand-muted': '#6F6667',
+}.items():
+    if f'{token}:{value}' not in css:
+        raise SystemExit(f'brand token missing or changed: {token}')
+
+for legacy in ('#173f59', '#0d2f45', '#dbe9f1', '#183044', '#f5f8fa', '#eaf0f4', '#d7e0e6'):
+    if legacy.lower() in production_css.lower():
+        raise SystemExit(f'legacy blue production palette returned: {legacy}')
+
+for selector in (':root', '.gloskin-ui1--modern', '.gloskin-ui1--luxury'):
+    match = re.search(re.escape(selector) + r'\{([^}]*)\}', css)
+    if not match:
+        raise SystemExit(f'missing design token block: {selector}')
+    block = match.group(1)
+    if '--gloskin-accent:var(--gloskin-brand-red)' not in block:
+        raise SystemExit(f'{selector} no longer shares the Gloskin crimson anchor')
+    if '--gloskin-accent-strong:var(--gloskin-brand-red-deep)' not in block:
+        raise SystemExit(f'{selector} no longer shares the Gloskin deep-crimson state')
+
+if '--gloskin-accent-readable:' not in css or 'outline:3px solid var(--gloskin-accent-readable)' not in css:
+    raise SystemExit('readable accent/focus semantic token missing')
+
+def rgb(value):
+    value = value.lstrip('#')
+    return tuple(int(value[i:i+2], 16) for i in (0, 2, 4))
+
+def luminance(color):
+    values = []
+    for channel in color:
+        c = channel / 255
+        values.append(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4)
+    return 0.2126 * values[0] + 0.7152 * values[1] + 0.0722 * values[2]
+
+def contrast(a, b):
+    la, lb = luminance(rgb(a)), luminance(rgb(b))
+    return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+
+for label, fg, bg, minimum in (
+    ('body text', '#2A232C', '#FBFBFA', 7.0),
+    ('muted text', '#6F6667', '#FBFBFA', 4.5),
+    ('crimson CTA/link', '#B12E2F', '#FBFBFA', 4.5),
+    ('deep crimson inverse', '#FBFBFA', '#961F24', 4.5),
+    ('luxury body text', '#FBFBFA', '#2A232C', 7.0),
+):
+    ratio = contrast(fg, bg)
+    if ratio < minimum:
+        raise SystemExit(f'{label} contrast below {minimum}: {ratio:.2f}')
+PYBRAND
+
 # Contrast surfaces use one semantic foreground state instead of inheriting the
 # global accent/muted colors that can become dark-on-dark.
 for expected in \
