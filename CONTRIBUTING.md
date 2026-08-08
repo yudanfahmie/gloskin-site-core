@@ -5,75 +5,107 @@ These rules are mandatory for AI agents and human developers working in this rep
 ## Branch policy
 
 - Work directly on `main`.
-- Do not create feature branches, work branches, temporary branches or pull requests unless the repository owner explicitly changes this policy.
+- Do not create feature/work/temp branches or pull requests unless the repository owner explicitly changes this policy.
 - Never use a branch as a scratch area.
 
 ## Requirements authority
 
-For normal Gloskin development, the canonical source is this repository.
-
-Read in this order when relevant:
+For normal Gloskin development, this repository is authoritative. Read relevant material in this order:
 
 1. `docs/developer-source-of-truth.md`
-2. `docs/content-data-contracts.md`
-3. `docs/morgen-v6-reverse-engineering.md`
-4. `docs/implementation-plan.md`
-5. `docs/page-matrix.csv`
-6. `docs/prune-matrix.csv`
+2. `docs/architecture-efficiency-audit.md`
+3. `docs/runtime-service-map.csv`
+4. `docs/content-data-contracts.md`
+5. `docs/morgen-v6-reverse-engineering.md`
+6. `docs/implementation-plan.md`
+7. `docs/page-matrix.csv`
+8. `docs/prune-matrix.csv`
 
-`yudanfahmie/project-9901` is provenance/raw reference only. Do not modify it, copy its raw files here, or make routine implementation dependent on re-reading it. If a value is not captured in the canonical Gloskin docs, treat it as pending/new input rather than silently rediscovering raw project assumptions.
+`yudanfahmie/project-9901` is provenance/raw reference only. Do not modify it, copy its raw files here, or make routine implementation dependent on re-reading it. If a value is not captured in canonical Gloskin docs, treat it as pending/new input instead of silently rediscovering raw assumptions.
 
-The pinned Morgen repository may be inspected when implementing an explicitly documented reuse/adaptation decision.
+The pinned Morgen source may be inspected only when implementing a documented reuse/adaptation decision.
 
 ## Before editing
 
-1. Confirm the repository is `yudanfahmie/gloskin-site-core`.
+1. Confirm repository `yudanfahmie/gloskin-site-core`.
 2. Checkout `main`.
-3. Pull the latest `origin/main`.
-4. Record and report the current HEAD SHA.
-5. Inspect the current implementation before changing it.
-6. Read the relevant canonical docs above.
-7. Define the coherent outcome the commit is intended to deliver.
+3. Pull latest `origin/main`.
+4. Record/report current HEAD.
+5. Inspect current implementation and relevant canonical docs.
+6. Define one coherent outcome for the change.
+7. Identify the canonical service/owner for every runtime concern being changed.
+
+## Architecture efficiency contract
+
+The target is a modular monolith with one micro-kernel and small internal services. Do not introduce distributed-service infrastructure, a generic DI container, or framework complexity merely to imitate microservices.
+
+Mandatory rules:
+
+- exactly one composition root (`Kernel`);
+- at most eight first-party bootable services in v1 unless the owner approves an architecture change;
+- one canonical owner per concern;
+- one first-party asset registry/owner;
+- native WordPress routing/storage before custom infrastructure;
+- WooCommerce remains the sole commerce authority;
+- optional integrations are adapters and dependency availability is resolved inside the adapter, not repeatedly in templates;
+- do not create a Gloskin `System` mega-class;
+- do not create a second bootstrap/workflow composition layer;
+- do not add a class whose primary purpose is to repair/protect/restore another Gloskin class without first fixing the canonical owner;
+- do not prebuild compatibility wrappers, recovery frameworks, migration consoles, telemetry or cache layers;
+- no custom database tables in v1 without a demonstrated need and explicit architecture update;
+- at most one small global settings option; entity/page/commerce data must stay in their native owners;
+- do not dual-write relationships merely for convenience; keep one canonical relationship direction unless measured performance later justifies denormalization.
+
+See `docs/architecture-efficiency-audit.md` and `docs/runtime-service-map.csv`.
+
+## Validation and persistence discipline
+
+Simplification must not weaken security.
+
+For custom state-changing admin paths use capability checks, nonces, field-appropriate validation/sanitization, then one native WordPress persistence path. Escape again for the final output context.
+
+Do not add routine custom locks, revision choreography, read-after-write verification, rollback wrappers or manual option-cache invalidation around normal WordPress settings/meta writes. Those mechanisms require a concrete failure mode or multi-object atomicity requirement.
+
+Prefer `register_setting()`, registered post meta, native Posts/Pages/Media, and WooCommerce APIs. Avoid direct `$wpdb` writes.
+
+No public `wp_ajax_nopriv_*` endpoint belongs in v1 unless a later explicit feature requires it and its threat model is documented.
 
 ## Commit policy
 
-Commits must be intentional and economical.
-
-- Group files that implement one coherent outcome into one commit.
+- Group files implementing one coherent outcome into one commit.
 - Do not create one commit per file.
-- Do not create temporary, probe, checkpoint or avoidable cleanup-only commits.
-- Keep commit messages short, lowercase and action-oriented.
-- Prefer messages such as `initialize gloskin core`, `build ui1 asset core`, `adapt v6 shell`, `build clinic pages`, `integrate woocommerce views`, or `remove morgen legacy`.
-- Avoid sentence-length messages, title case and noisy ticket prose unless explicitly required.
-- If a task naturally contains independent production outcomes, use the smallest reasonable number of commits; do not force unrelated changes together merely to reduce commit count.
+- Do not create probe/checkpoint/temporary commits.
+- Keep messages short, lowercase and action-oriented.
+- If a task naturally contains independent production outcomes, use the smallest reasonable number of commits rather than forcing unrelated changes together.
 
 ## Change discipline
 
 - Make only changes required by the current task and canonical architecture.
-- Keep existing working Gloskin functionality unless the requirements explicitly change it.
-- Do not add dependencies/frameworks without demonstrated need and owner approval when material.
-- Do not add/change GitHub Actions merely as a workaround or probe.
-- Do not wholesale-copy the Morgen plugin.
-- Do not introduce Morgen historical migrations, repair state or compatibility aliases into a fresh Gloskin runtime.
+- Keep working Gloskin behavior unless requirements explicitly change it.
+- Do not add dependencies/frameworks without demonstrated need.
+- Do not add/change GitHub Actions merely as a probe/workaround.
+- Do not wholesale-copy Morgen.
+- Do not introduce Morgen historical migrations, repair state, compatibility aliases, virtual route engine, diagnosis bundle, telemetry, custom mail or product systems.
 - Do not duplicate WooCommerce product/cart/checkout/order/payment ownership.
-- Do not introduce developer work that belongs to the explicitly excluded SEO/marketing/infrastructure scope.
+- Do not introduce developer work from explicitly excluded SEO/marketing/infrastructure scope.
 
 ## Documentation discipline
 
-When implementation changes an architecture decision, content field, relationship, route or retained/pruned Morgen dependency, update the matching canonical documentation in the **same coherent commit**.
+When implementation changes architecture ownership, service boundaries, storage, content fields, relationships, routes, or retained/pruned Morgen dependencies, update the matching canonical documentation in the **same coherent commit**.
 
-Do not let implementation knowledge live only in chat, commit messages or a developer's memory.
+Do not let implementation knowledge live only in chat, commit messages, or developer memory.
 
 ## Verification before push
 
 1. Review the complete diff.
-2. Confirm production files—not only documentation or temporary files—changed when the task is an implementation task.
+2. Confirm production files changed when the task is an implementation task.
 3. Run existing checks available in the environment.
-4. Check for accidental secrets, raw client files, generated archives and debug artifacts.
-5. Static-check for accidental excluded Morgen dependencies when the task touches adaptation/removal.
-6. Commit the coherent change set.
-7. Push directly to `origin/main`.
-8. Verify remote `main` points to the pushed commit.
-9. Inspect the final commit with `git show --stat HEAD` or an equivalent repository view.
+4. Check for secrets, raw client files, generated archives and debug artifacts.
+5. Run static architecture/exclusion checks when relevant.
+6. Confirm no duplicate concern owner or corrective shim was introduced.
+7. Commit the coherent change set.
+8. Push directly to `origin/main`.
+9. Verify remote `main` points to the pushed commit.
+10. Inspect final commit stats/diff.
 
-Do not claim completion when changes exist only locally or when the push failed.
+Do not claim completion when changes exist only locally or push verification fails.

@@ -1,121 +1,89 @@
 # Gloskin Site Core
 
-WordPress presentation and page-builder plugin for the Gloskin website, using selected proven Morgen UI V6 patterns while keeping WordPress and WooCommerce as the authoritative platform layers.
+WordPress presentation and page-builder plugin for Gloskin, using selected proven Morgen UI V6 patterns while keeping WordPress and WooCommerce as the authoritative platform layers.
 
 ## Current status
 
-This repository is the canonical developer handoff for Gloskin Site Core. The developer-only requirements from the original project material have been normalized here; normal implementation work should **not** depend on reopening `project-9901`.
+This repository is the canonical developer handoff for Gloskin Site Core. Developer-only requirements from the original project material have already been normalized here; routine implementation must not depend on reopening `project-9901`.
 
-No Morgen production code has been cloned into the plugin yet. The next implementation engineer should build a fresh Gloskin composition root and selectively adapt approved V6 patterns according to the reverse-engineering record.
+No Morgen production code has been cloned into the plugin. The implementation must start from a fresh Gloskin micro-kernel and selectively adapt only approved V6 behavior.
 
 Pinned Morgen provenance:
 
-- `yudanfahmie/morgen-core`
-- commit `374432cee6380e0aa0f81390e26b990147e5e58d`
-- UI V6 is structural provenance only
-- production presentation name: **Gloskin UI v1**
+- repository: `yudanfahmie/morgen-core`;
+- commit: `374432cee6380e0aa0f81390e26b990147e5e58d`;
+- UI V6 is structural/interaction provenance only;
+- production presentation name: **Gloskin UI v1**.
 
 ## Canonical developer reading order
 
-1. `CONTRIBUTING.md` — mandatory main-only workflow and commit discipline.
-2. `docs/developer-source-of-truth.md` — authoritative developer scope and normalized requirements.
-3. `docs/content-data-contracts.md` — exact content/entity fields, relationships and pending inputs.
-4. `docs/morgen-v6-reverse-engineering.md` — source-level Morgen findings and dependency cuts.
-5. `docs/implementation-plan.md` — ordered execution plan for the future implementation.
-6. `docs/page-matrix.csv` — route/page-family inventory.
-7. `docs/prune-matrix.csv` — source/capability retain-adapt-remove decisions.
-8. `docs/source-notes.md` — provenance only; not a normal development dependency.
-9. `tests/README.md` — verification contract.
+1. `CONTRIBUTING.md` — mandatory main-only workflow and architecture discipline.
+2. `docs/developer-source-of-truth.md` — authoritative normalized product/developer requirements.
+3. `docs/architecture-efficiency-audit.md` — canonical runtime architecture, simplification and security contract.
+4. `docs/runtime-service-map.csv` — one-owner service/request/storage boundaries.
+5. `docs/content-data-contracts.md` — content/entity fields, relationships and pending inputs.
+6. `docs/morgen-v6-reverse-engineering.md` — source-level Morgen findings and dependency cuts.
+7. `docs/implementation-plan.md` — ordered implementation sequence.
+8. `docs/page-matrix.csv` — route/page-family inventory.
+9. `docs/prune-matrix.csv` — source/capability retain-adapt-remove decisions.
+10. `docs/source-notes.md` — provenance only; not a normal development dependency.
+11. `tests/README.md` — verification contract.
 
 ## Architecture at a glance
 
-Gloskin Site Core owns:
+The target is a **modular monolith with one micro-kernel and small internal services**, not distributed/network microservices.
 
-- public shell/header/footer;
-- responsive page templates and components;
-- treatments, clinics and doctors presentation/content structures;
-- fixed page presentation;
-- WordPress Insights presentation;
-- WooCommerce presentation integration;
-- external form presentation integration.
+The intended first-party owners are:
 
-WooCommerce remains authoritative for products, categories/attributes, price/stock, cart, checkout, orders, customers and payment gateways.
+- `ContentService` — Gloskin content types/meta/relationships;
+- `TemplateService` — page contexts and template ownership;
+- `AssetService` — the only first-party frontend asset owner;
+- `NavigationService` — one normalized desktop/mobile menu tree;
+- `WooCommerceAdapter` — optional Woo presentation bridge only;
+- `FormAdapter` — optional external form presentation bridge only;
+- `AdminService` — minimal native-first admin/settings enhancements;
+- `LifecycleService` — activation/deactivation and narrowly scoped future upgrades only.
 
-WordPress remains authoritative for native Pages, Posts and Media Library data.
+`Kernel` is composition only. It must not become a Gloskin equivalent of the Morgen `System` mega-class.
+
+### Complexity guardrails
+
+Gloskin UI v1 starts with:
+
+- one composition root;
+- at most eight first-party bootable services;
+- one asset registry/owner;
+- at most one small global plugin option;
+- zero custom database tables;
+- zero generic runtime migration framework;
+- zero custom form/mail backend;
+- zero duplicate WooCommerce commerce ownership;
+- zero UI version switcher;
+- zero routine custom write locks/read-after-write rollback/cache surgery;
+- zero compatibility/recovery layers without a real released Gloskin compatibility requirement.
+
+The principle is **strict boundaries, not repeated validation**: capability + nonce + sanitization at writes, contextual escaping at output, dependency checks once in adapters, and native WordPress/WooCommerce persistence.
 
 ## Required site families
 
-The normalized architecture covers:
-
-- Home;
-- About;
-- Treatments Hub + exactly 8 treatment category pages;
-- Skincare Hub + 7 category landing pages mapped to WooCommerce;
-- Clinics Hub + 9 clinic pages;
-- Contact;
-- Insights Hub;
-- Shop Hub;
-- Doctors Hub + 13 doctor pages;
-- up to 20 WooCommerce product pages;
-- WooCommerce cart/checkout presentation compatibility.
+The normalized architecture covers Home, About, Treatments Hub + exactly eight treatment category pages, Skincare Hub + seven Woo-mapped landing pages, Clinics Hub + nine clinic pages, Contact, Insights Hub, Shop Hub, Doctors Hub + thirteen doctor pages, up to twenty WooCommerce product pages, and Woo cart/checkout presentation compatibility.
 
 The explicit route inventory supersedes stale raw headline counts such as `21` or `33` pages.
 
-## Key reverse-engineering conclusion
+## Key Morgen pruning conclusion
 
 Do **not** copy `morgen-plugin/` wholesale.
 
-Morgen's current V6 bootstrap/shell is transitively tied to industrial products, Technical Library/Documents/PDF, Applications, Hammer, Quality Testing, inquiry/mail/form security, SEO proxy helpers, EN/DE routing, diagnosis and CASE-PROD/PROD history.
+The pinned Morgen runtime combines multiple UI generations, virtual routing, industrial domains, custom product/document/PDF systems, inquiry/mail handling, large custom admin persistence, compatibility guards, diagnostics, telemetry and historical migration/reconciliation machinery.
 
-The safe strategy is:
-
-1. create fresh Gloskin ownership;
-2. create a fresh Gloskin asset registry;
-3. create Gloskin content/routes;
-4. adapt only proven V6 layout/accessibility/interaction patterns that survive dependency review.
-
-See `docs/morgen-v6-reverse-engineering.md`.
+Gloskin keeps only proven V6 presentation behavior that can live cleanly under Gloskin ownership. If a proposed class mainly exists to repair/protect another Gloskin class, fix the original owner instead of adding another layer.
 
 ## Explicit exclusions
 
-Unless the owner later changes scope, this repository does not implement:
-
-- SEO/GEO strategy/content/scoring;
-- GSC/GA4/GTM/GBP operations;
-- backlinks/media/social/marketing reporting;
-- Rank Math proxy/schema administration;
-- DNS/domain consolidation/redirect execution/SSL orchestration;
-- medical approval workflow tooling;
-- custom Midtrans/Xendit business/payment logic;
-- WooCommerce backend replacement;
-- a second product manager/database;
-- Morgen Technical Library/Documents/PDF/download features;
-- Morgen Applications/Hammer/Quality Testing domains;
-- Morgen historical migrations/repair/reconciliation;
-- Morgen EN/DE routing;
-- custom Morgen inquiry/mail backend;
-- UI V1-V5 or presentation switching.
+Unless the owner later changes scope, this repository does not implement SEO/GEO operations, Rank Math proxy/schema administration, GSC/GA4/GTM/GBP, backlinks/media/social/reporting, DNS/domain/redirect/SSL orchestration, medical approval workflow tooling, custom Midtrans/Xendit business logic, WooCommerce backend replacement, a second product manager, Morgen Technical Library/Documents/PDF/download features, Applications/Hammer/Quality Testing, historical Morgen migrations/repairs, Morgen EN/DE routing, custom inquiry/mail handling, or UI V1-V5/presentation switching.
 
 ## Workflow rules
 
-This repository is intentionally **main-only**.
+This repository is main-only. Work directly on `main`, pull/record HEAD before editing, make one coherent change set, use short lowercase action-oriented commit messages, run available checks, verify remote `main`, and update canonical architecture/docs in the same commit when implementation decisions change.
 
-- Work directly on `main`.
-- Do not create feature/work/temp branches or pull requests unless the owner explicitly changes the rule.
-- Pull latest `origin/main` and record HEAD before editing.
-- One coherent outcome should produce one effective commit where practical; do not commit per file.
-- Commit messages must be short, lowercase and action-oriented.
-- Do not create probe/checkpoint commits.
-- Review the complete diff and run available checks before push.
-- Verify remote `main` after push.
-- Do not modify `project-9901` while working on Gloskin.
-
-## Recommended GitHub metadata
-
-**Description**
-
-`WordPress presentation and page-builder plugin for Gloskin, selectively adapted from Morgen UI V6 with WooCommerce-native commerce.`
-
-**Suggested topics**
-
-`wordpress`, `woocommerce`, `page-builder`, `gloskin`, `php`, `frontend`
+Do not modify `project-9901` while working on Gloskin.

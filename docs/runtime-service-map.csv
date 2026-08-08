@@ -1,0 +1,10 @@
+service,request_profile,owns,primary_storage,depends_on,must_not_own
+Kernel,all,"composition only; plugin constants/version; explicit service registration",none,WordPress,"business logic; page queries; persistence; Woo/form behavior"
+ContentService,shared+admin,"treatment clinic doctor registration; registered meta; relationship schema","WordPress posts/post meta",WordPress,"frontend templates; Woo products; global settings transaction engine"
+TemplateService,frontend,"template selection; small page contexts; presentation helpers",none,"WordPress; ContentService; optional adapters","virtual route engine; global site dataset; persistence"
+AssetService,frontend,"single asset registry; registration; conditional enqueue",none,WordPress,"compatibility aliases; queue repair; diagnostics; unrelated feature assets"
+NavigationService,frontend,"single normalized menu tree; desktop/mobile nav data","native WP menu or code fallback",WordPress,"UI-version registry; duplicate desktop/mobile persistence; EN/DE routing"
+WooCommerceAdapter,frontend-optional,"Woo availability gate; read-only presentation helpers; skincare term mapping","WooCommerce-owned data",WooCommerce,"product CRUD; cart checkout orders payments customers"
+FormAdapter,frontend-optional,"configured external form rendering; presentation fallback","small trusted global setting if required","external form plugin", "submission; mail; captcha; anti-spam; storage"
+AdminService,admin,"minimal global settings and editor enhancements","Settings API + registered meta",WordPress,"custom admin framework; generic AJAX transaction system; migrations; testing-request system"
+LifecycleService,activation-deactivation-upgrade-only,"activation/deactivation; one-time rewrite flush; narrowly scoped future idempotent upgrades","one schema/version option only when needed",WordPress,"runtime migration console; CASE/PROD payloads; historical reconciliation"
