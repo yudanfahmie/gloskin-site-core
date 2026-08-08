@@ -17,9 +17,14 @@ return array(
 			'media'    => 'all',
 			'external' => true,
 		),
+		'gloskin-ui1-core-base' => array(
+			'src'   => 'assets/css/gloskin-ui1-core-base.css',
+			'deps'  => array( 'gloskin-ui1-fonts' ),
+			'media' => 'all',
+		),
 		'gloskin-ui1-core' => array(
 			'src'   => 'assets/css/gloskin-ui1-core.css',
-			'deps'  => array( 'gloskin-ui1-fonts' ),
+			'deps'  => array( 'gloskin-ui1-core-base' ),
 			'media' => 'all',
 		),
 		'gloskin-ui1-production' => array(

@@ -19,6 +19,7 @@ $variant = isset( $gloskin_context['design_variant'] ) ? sanitize_key( $gloskin_
 $view_file = __DIR__ . '/pages/' . $view . '.php';
 
 require __DIR__ . '/parts/template-helpers.php';
+require __DIR__ . '/parts/composition-helpers.php';
 ?><!doctype html>
 <html lang="id">
 <head>

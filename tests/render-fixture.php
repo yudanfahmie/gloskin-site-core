@@ -103,6 +103,16 @@ if ( ! is_string( $html ) || false === strpos( $html, 'data-gloskin-drawer' ) ) 
 	exit( 1 );
 }
 
+// Browser fixtures do not execute WordPress' enqueue renderer. Embed the registered
+// foundation stylesheet so browser tests see the same base layer before refinements.
+$foundation_css = dirname( __DIR__ ) . '/plugin/gloskin-site-core/assets/css/gloskin-ui1-core-base.css';
+if ( is_readable( $foundation_css ) ) {
+	$foundation = file_get_contents( $foundation_css );
+	if ( is_string( $foundation ) && '' !== $foundation ) {
+		$html = str_replace( '</head>', '<style data-gloskin-test-foundation>' . $foundation . '</style></head>', $html );
+	}
+}
+
 // The runtime stub intentionally does not emulate WordPress image metadata. Give
 // attachment output stable geometry only inside browser fixtures.
 $html = str_replace(

@@ -4,13 +4,17 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 plugin_root="$repo_root/plugin/gloskin-site-core"
 templates="$plugin_root/templates"
 helpers="$templates/parts/template-helpers.php"
+composition_helpers="$templates/parts/composition-helpers.php"
+core_base_css="$plugin_root/assets/css/gloskin-ui1-core-base.css"
+core_css="$plugin_root/assets/css/gloskin-ui1-core.css"
 production_css="$plugin_root/assets/css/gloskin-ui1-production.css"
 public_runtime=(
   "$templates"
   "$plugin_root/includes/class-gloskin-site-core-navigation-service.php"
   "$plugin_root/includes/class-gloskin-site-core-template-service.php"
   "$plugin_root/includes/class-gloskin-site-core-woocommerce-adapter.php"
-  "$plugin_root/assets/css/gloskin-ui1-core.css"
+  "$core_base_css"
+  "$core_css"
   "$production_css"
   "$plugin_root/assets/js/gloskin-ui1-core.js"
 )
@@ -55,6 +59,11 @@ if ! grep -q 'function gloskin_ui1_render_presentation_media' "$helpers" \
   echo "canonical factual/editorial media helpers missing" >&2
   exit 1
 fi
+if ! grep -q 'function gloskin_ui1_render_pathway_grid' "$composition_helpers" \
+  || ! grep -q 'function gloskin_ui1_render_closing_cta' "$composition_helpers"; then
+  echo "reusable page-richness composition helpers missing" >&2
+  exit 1
+fi
 if ! grep -q "array( 'clinic', 'doctor' )" "$helpers" \
   || ! grep -q "gloskin_ui1_render_presentation_media( 'product'" "$helpers" \
   || ! grep -q "gloskin_ui1_render_presentation_media( 'doctor'" "$templates/pages/doctor.php" \
@@ -69,6 +78,24 @@ if ! grep -q 'https://images.unsplash.com/photo-' "$helpers" \
 fi
 if grep -RInE "url\([\"']?https?://" "$plugin_root/assets" --include='*.css' --include='*.js'; then
   echo "critical first-party presentation asset depends on a remote CSS/JS URL" >&2
+  exit 1
+fi
+
+# Sticky/admin-bar offsets have one owner: core refinement CSS. Foundation and
+# production layers must not own logged-in offset variables.
+if grep -Eq 'gloskin-ui1-admin-bar-(height|gap)|gloskin-ui1-header-offset' "$production_css" "$core_base_css"; then
+  echo "foundation/production CSS still competes for sticky admin-bar offset ownership" >&2
+  exit 1
+fi
+for expected in \
+  '--gloskin-ui1-admin-bar-height:32px' \
+  '--gloskin-ui1-admin-bar-gap:8px' \
+  '--gloskin-ui1-admin-bar-height:46px' \
+  '--gloskin-ui1-header-offset:calc('; do
+  grep -q -- "$expected" "$core_css" || { echo "canonical core admin-bar rule missing: $expected" >&2; exit 1; }
+done
+if ! grep -q '@media (max-width:600px).*--gloskin-ui1-admin-bar-height:0px.*--gloskin-ui1-admin-bar-gap:0px' "$core_css"; then
+  echo "core CSS does not clear fixed toolbar offset at <=600px" >&2
   exit 1
 fi
 
@@ -88,4 +115,9 @@ for view in "${required_views[@]}"; do
   [[ -f "$templates/pages/$view.php" ]] || { echo "missing public view: $view" >&2; exit 1; }
 done
 
-echo "presentation safety checks passed (${#required_views[@]} public views, editorial staging media + factual fallbacks)"
+closing_views=(about treatments treatment skincare-category clinics clinic doctors doctor)
+for view in "${closing_views[@]}"; do
+  grep -q 'data-gloskin-section=".*closing"' "$templates/pages/$view.php" || { echo "required closing composition missing: $view" >&2; exit 1; }
+done
+
+echo "presentation safety checks passed (${#required_views[@]} public views, canonical header CSS + rich compositions)"
