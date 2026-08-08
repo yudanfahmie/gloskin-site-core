@@ -86,19 +86,15 @@ final class Gloskin_Site_Core_Navigation_Service {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function fallback_tree() {
-		$items = array(
-			$this->fallback_item( 'Beranda', '/' ),
+		return array(
 			$this->fallback_item( 'Tentang Gloskin', '/about/' ),
 			$this->fallback_item( 'Perawatan', '/treatments/' ),
 			$this->fallback_item( 'Skincare', '/skincare/', $this->skincare_children() ),
 			$this->fallback_item( 'Klinik', '/clinics/', $this->clinic_children() ),
 			$this->fallback_item( 'Dokter', '/doctors/' ),
 			$this->fallback_item( 'Insight', '/insights/' ),
-			$this->fallback_item( 'Belanja', '/shop/' ),
 			$this->fallback_item( 'Kontak', '/contact/' ),
 		);
-
-		return $items;
 	}
 
 	/**

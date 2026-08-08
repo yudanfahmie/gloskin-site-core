@@ -1,6 +1,11 @@
 <?php
 /**
- * Read-only WooCommerce presentation adapter.
+ * WooCommerce presentation and commerce-header adapter.
+ *
+ * Owns Woo availability resolution, normalized presentation access for
+ * products/cart/account/checkout, cart-fragment updates, product search,
+ * and wishlist product resolution. Templates never depend on raw Woo
+ * globals; they consume the normalized data this adapter provides.
  *
  * @package GloskinSiteCore
  */
@@ -18,7 +23,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	}
 
 	/**
-	 * Register presentation-only Woo hooks.
+	 * Register Woo presentation hooks.
 	 *
 	 * @return void
 	 */
@@ -29,6 +34,8 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 
 		add_action( 'woocommerce_product_meta_end', array( $this, 'render_product_facts' ), 20 );
 		add_filter( 'body_class', array( $this, 'body_classes' ) );
+		add_filter( 'woocommerce_add_to_cart_fragments', array( $this, 'cart_fragments' ) );
+		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
 	}
 
 
@@ -84,6 +91,286 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	public function available() {
 		return $this->available;
 	}
+
+	/* -----------------------------------------------------------------
+	 * Commerce header context
+	 * ----------------------------------------------------------------- */
+
+	/**
+	 * Canonical Woo My Account URL, or empty when Woo is absent.
+	 *
+	 * @return string
+	 */
+	public function account_url() {
+		if ( ! $this->available || ! function_exists( 'wc_get_page_id' ) ) {
+			return '';
+		}
+		$page_id = wc_get_page_id( 'myaccount' );
+		if ( $page_id <= 0 ) {
+			return '';
+		}
+		$url = get_permalink( $page_id );
+		return $url ? (string) $url : '';
+	}
+
+	/**
+	 * @return string
+	 */
+	public function cart_url() {
+		if ( ! $this->available || ! function_exists( 'wc_get_cart_url' ) ) {
+			return '';
+		}
+		return (string) wc_get_cart_url();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function checkout_url() {
+		if ( ! $this->available || ! function_exists( 'wc_get_checkout_url' ) ) {
+			return '';
+		}
+		return (string) wc_get_checkout_url();
+	}
+
+	/**
+	 * @return int
+	 */
+	public function cart_count() {
+		if ( ! $this->available || ! function_exists( 'WC' ) ) {
+			return 0;
+		}
+		$wc = WC();
+		if ( ! $wc || ! isset( $wc->cart ) || ! is_object( $wc->cart ) ) {
+			return 0;
+		}
+		return absint( $wc->cart->get_cart_contents_count() );
+	}
+
+	/**
+	 * @return string
+	 */
+	public function cart_subtotal() {
+		if ( ! $this->available || ! function_exists( 'WC' ) ) {
+			return '';
+		}
+		$wc = WC();
+		if ( ! $wc || ! isset( $wc->cart ) || ! is_object( $wc->cart ) ) {
+			return '';
+		}
+		return (string) $wc->cart->get_cart_subtotal();
+	}
+
+	/**
+	 * Normalized cart items for the mini-cart sheet.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	public function mini_cart_items() {
+		if ( ! $this->available || ! function_exists( 'WC' ) ) {
+			return array();
+		}
+		$wc = WC();
+		if ( ! $wc || ! isset( $wc->cart ) || ! is_object( $wc->cart ) || ! method_exists( $wc->cart, 'get_cart' ) ) {
+			return array();
+		}
+		$items = array();
+		foreach ( $wc->cart->get_cart() as $cart_item_key => $cart_item ) {
+			$product = isset( $cart_item['data'] ) ? $cart_item['data'] : null;
+			if ( ! is_object( $product ) || ! method_exists( $product, 'get_name' ) ) {
+				continue;
+			}
+			$remove_url = function_exists( 'wc_get_cart_remove_url' ) ? wc_get_cart_remove_url( $cart_item_key ) : '';
+			$items[] = array(
+				'key'          => (string) $cart_item_key,
+				'product_id'   => absint( $cart_item['product_id'] ),
+				'name'         => (string) $product->get_name(),
+				'quantity'     => absint( $cart_item['quantity'] ),
+				'price_html'   => (string) $wc->cart->get_product_price( $product ),
+				'subtotal_html' => (string) $wc->cart->get_product_subtotal( $product, $cart_item['quantity'] ),
+				'image_id'     => method_exists( $product, 'get_image_id' ) ? absint( $product->get_image_id() ) : 0,
+				'url'          => (string) get_permalink( $cart_item['product_id'] ),
+				'remove_url'   => (string) $remove_url,
+			);
+		}
+		return $items;
+	}
+
+	/**
+	 * Return mini-cart body HTML for both initial render and AJAX fragments.
+	 *
+	 * @return string
+	 */
+	public function render_mini_cart_body() {
+		if ( ! $this->available ) {
+			return '';
+		}
+		$items    = $this->mini_cart_items();
+		$cart_url = $this->cart_url();
+		$checkout = $this->checkout_url();
+
+		ob_start();
+		if ( $items ) {
+			echo '<ul class="gloskin-ui1-cart-sheet__list">';
+			foreach ( $items as $item ) {
+				echo '<li class="gloskin-ui1-cart-sheet__item">';
+				echo '<a class="gloskin-ui1-cart-sheet__item-link" href="' . esc_url( $item['url'] ) . '">';
+				echo '<span class="gloskin-ui1-cart-sheet__item-name">' . esc_html( $item['name'] ) . '</span>';
+				echo '</a>';
+				echo '<span class="gloskin-ui1-cart-sheet__item-meta">';
+				echo '<span class="gloskin-ui1-cart-sheet__item-qty">' . esc_html( $item['quantity'] ) . '&times;</span> ';
+				echo '<span class="gloskin-ui1-cart-sheet__item-price">' . wp_kses_post( $item['price_html'] ) . '</span>';
+				echo '</span>';
+				if ( $item['remove_url'] ) {
+					echo '<a class="gloskin-ui1-cart-sheet__item-remove" href="' . esc_url( $item['remove_url'] ) . '" aria-label="' . esc_attr( sprintf( __( 'Hapus %s', 'gloskin-site-core' ), $item['name'] ) ) . '">&times;</a>';
+				}
+				echo '</li>';
+			}
+			echo '</ul>';
+			echo '<div class="gloskin-ui1-cart-sheet__summary">';
+			echo '<span>' . esc_html__( 'Subtotal', 'gloskin-site-core' ) . '</span>';
+			echo '<span>' . wp_kses_post( $this->cart_subtotal() ) . '</span>';
+			echo '</div>';
+			echo '<div class="gloskin-ui1-cart-sheet__actions">';
+			if ( $checkout ) {
+				echo '<a class="gloskin-ui1-button gloskin-ui1-button--primary" href="' . esc_url( $checkout ) . '">' . esc_html__( 'Lanjut ke Checkout', 'gloskin-site-core' ) . '</a>';
+			}
+			if ( $cart_url ) {
+				echo '<a class="gloskin-ui1-button gloskin-ui1-button--ghost" href="' . esc_url( $cart_url ) . '">' . esc_html__( 'Lihat Keranjang', 'gloskin-site-core' ) . '</a>';
+			}
+			echo '</div>';
+		} else {
+			echo '<div class="gloskin-ui1-cart-sheet__empty">';
+			echo '<p>' . esc_html__( 'Keranjang Anda masih kosong.', 'gloskin-site-core' ) . '</p>';
+			if ( $cart_url ) {
+				echo '<a class="gloskin-ui1-text-link" href="' . esc_url( home_url( '/skincare/' ) ) . '">' . esc_html__( 'Lihat Skincare', 'gloskin-site-core' ) . '</a>';
+			}
+			echo '</div>';
+		}
+		return ob_get_clean();
+	}
+
+	/**
+	 * Woo AJAX add-to-cart fragment updates for cart badge and mini-cart.
+	 *
+	 * @param array<string,string> $fragments Woo fragments.
+	 * @return array<string,string>
+	 */
+	public function cart_fragments( $fragments ) {
+		$count = $this->cart_count();
+		$fragments['.gloskin-ui1-badge[data-gloskin-cart-count]'] =
+			'<span class="gloskin-ui1-badge' . ( $count > 0 ? ' is-active' : '' ) . '" data-gloskin-cart-count aria-hidden="true">' . esc_html( $count ) . '</span>';
+		$fragments['[data-gloskin-cart-count-sr]'] =
+			'<span class="screen-reader-text" data-gloskin-cart-count-sr>' . esc_html( sprintf( __( '%d item di keranjang', 'gloskin-site-core' ), $count ) ) . '</span>';
+		$fragments['.gloskin-ui1-cart-sheet__body'] =
+			'<div class="gloskin-ui1-cart-sheet__body">' . $this->render_mini_cart_body() . '</div>';
+		return $fragments;
+	}
+
+	/* -----------------------------------------------------------------
+	 * REST API: product resolution for wishlist
+	 * ----------------------------------------------------------------- */
+
+	/**
+	 * @return void
+	 */
+	public function register_rest_routes() {
+		register_rest_route( 'gloskin/v1', '/products/resolve', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'rest_resolve_products' ),
+			'permission_callback' => '__return_true',
+			'args'                => array(
+				'ids' => array(
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+			),
+		) );
+	}
+
+	/**
+	 * Resolve product IDs to published product data. Used by the wishlist
+	 * to display current product information from IDs stored in localStorage.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function rest_resolve_products( $request ) {
+		$raw = (string) $request->get_param( 'ids' );
+		if ( ! preg_match( '/^[\d,]+$/', $raw ) ) {
+			return rest_ensure_response( array( 'products' => array() ) );
+		}
+		$ids = array_map( 'absint', explode( ',', $raw ) );
+		$ids = array_filter( array_unique( $ids ) );
+		$ids = array_slice( $ids, 0, 50 );
+
+		if ( ! function_exists( 'wc_get_product' ) ) {
+			return rest_ensure_response( array( 'products' => array() ) );
+		}
+
+		$products = array();
+		foreach ( $ids as $id ) {
+			$product = wc_get_product( $id );
+			if ( ! $product || ! is_object( $product ) || ! method_exists( $product, 'get_status' ) ) {
+				continue;
+			}
+			if ( 'publish' !== $product->get_status() ) {
+				continue;
+			}
+			$products[] = array(
+				'id'         => (int) $product->get_id(),
+				'name'       => (string) $product->get_name(),
+				'url'        => (string) get_permalink( $product->get_id() ),
+				'price_html' => (string) $product->get_price_html(),
+				'image_id'   => absint( $product->get_image_id() ),
+			);
+		}
+		return rest_ensure_response( array( 'products' => $products ) );
+	}
+
+	/* -----------------------------------------------------------------
+	 * Product search for live search overlay
+	 * ----------------------------------------------------------------- */
+
+	/**
+	 * Search published products by title/content.
+	 *
+	 * @param string $query Search query.
+	 * @param int    $limit Max results.
+	 * @return array<int,array<string,mixed>>
+	 */
+	public function search_products( $query, $limit = 3 ) {
+		if ( ! $this->available ) {
+			return array();
+		}
+		$query = sanitize_text_field( $query );
+		if ( mb_strlen( $query ) < 2 ) {
+			return array();
+		}
+		$posts = get_posts( array(
+			'post_type'      => 'product',
+			'post_status'    => 'publish',
+			'posts_per_page' => max( 1, min( absint( $limit ), 6 ) ),
+			's'              => $query,
+		) );
+		$results = array();
+		foreach ( $posts as $post ) {
+			$results[] = array(
+				'id'       => (int) $post->ID,
+				'title'    => get_the_title( $post ),
+				'url'      => (string) get_permalink( $post ),
+				'excerpt'  => wp_trim_words( has_excerpt( $post ) ? get_the_excerpt( $post ) : $post->post_content, 12 ),
+				'image_id' => absint( get_post_thumbnail_id( $post->ID ) ),
+				'type'     => 'produk',
+			);
+		}
+		return $results;
+	}
+
+	/* -----------------------------------------------------------------
+	 * Existing product catalog methods
+	 * ----------------------------------------------------------------- */
 
 	/**
 	 * @param int $limit Maximum records.

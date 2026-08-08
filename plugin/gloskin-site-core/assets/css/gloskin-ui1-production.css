@@ -47,6 +47,11 @@ body.gloskin-ui1{
 .gloskin-ui1 .woocommerce button.button,
 .gloskin-ui1 .woocommerce input.button{font-family:var(--gloskin-font-body);font-weight:700}
 .gloskin-ui1-eyebrow{font-family:var(--gloskin-font-body);font-weight:800;letter-spacing:.145em}
+.gloskin-ui1-search-overlay__input{font-family:var(--gloskin-font-body)}
+.gloskin-ui1-search-results__label{font-family:var(--gloskin-font-body)}
+.gloskin-ui1-search-results__title{font-family:var(--gloskin-font-body)}
+.gloskin-ui1-sheet__head{font-family:var(--gloskin-font-heading);font-weight:400;letter-spacing:-.008em}
+.gloskin-ui1-badge{font-family:var(--gloskin-font-body)}
 .gloskin-ui1-hero__title{max-width:13.5ch;line-height:1.04}
 .gloskin-ui1-hero__copy,.gloskin-ui1-lead{line-height:1.58}
 .gloskin-ui1-card__title{line-height:1.18}

@@ -70,7 +70,27 @@ $GLOBALS['gl_route'] = array( 'front' => false, 'page' => false, 'singular' => '
 $GLOBALS['gl_is_admin'] = getenv( 'GL_TEST_ADMIN' ) === '1';
 $GLOBALS['gl_woo'] = getenv( 'GL_TEST_WOO' ) === '1';
 $GLOBALS['gl_shortcodes'] = array();
-if ( $GLOBALS['gl_woo'] ) { class WooCommerce {} }
+if ( $GLOBALS['gl_woo'] ) {
+	class WooCommerce {}
+	class GL_Test_Cart {
+		public function get_cart_contents_count() { return 2; }
+		public function get_cart_subtotal() { return '<span>Rp 200.000</span>'; }
+		public function get_cart() { return array(); }
+		public function get_product_price( $p ) { return '<span>Rp 100.000</span>'; }
+		public function get_product_subtotal( $p, $q ) { return '<span>Rp 100.000</span>'; }
+	}
+	$GLOBALS['gl_woo_instance'] = new stdClass();
+	$GLOBALS['gl_woo_instance']->cart = new GL_Test_Cart();
+	function WC() { return $GLOBALS['gl_woo_instance']; }
+	function wc_get_page_id( $page ) { return 0; }
+	function wc_get_cart_url() { return 'https://example.test/cart/'; }
+	function wc_get_checkout_url() { return 'https://example.test/checkout/'; }
+	function wc_get_product( $id ) {
+		$post = get_post( $id );
+		return ( $post && $post->post_type === 'product' ) ? new GL_Test_Product( $id ) : null;
+	}
+	function wc_get_cart_remove_url( $key ) { return '?remove_item=' . $key; }
+}
 $GLOBALS['gl_activation'] = null;
 $GLOBALS['gl_deactivation'] = null;
 
@@ -275,6 +295,13 @@ function wp_is_post_revision() { return false; }
 function wp_verify_nonce() { return true; }
 function wp_nonce_field() {}
 function wp_date( $format ) { return '2026'; }
+function register_rest_route() {}
+function rest_url( $path = '' ) { return 'https://example.test/wp-json/' . ltrim( $path, '/' ); }
+function rest_ensure_response( $data ) { return $data; }
+function wp_json_encode( $data ) { return json_encode( $data ); }
+function wp_create_nonce( $action = '' ) { return 'test_nonce_' . $action; }
+function is_user_logged_in() { return false; }
+if ( ! function_exists( 'mb_strlen' ) ) { function mb_strlen( $str ) { return strlen( $str ); } }
 
 $plugin = dirname( __DIR__ ) . '/plugin/gloskin-site-core/gloskin-site-core.php';
 require $plugin;
@@ -355,6 +382,14 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 	$context = get_query_var( 'gloskin_context', array() );
 	if ( ( $context['view'] ?? '' ) !== 'home' || count( $context['clinics'] ?? array() ) !== 9 || count( $context['skincare'] ?? array() ) !== 7 ) {
 		fwrite( STDERR, "Home context failed\n" );
+		exit( 1 );
+	}
+	if ( ! isset( $context['commerce'] ) || ! is_array( $context['commerce'] ) ) {
+		fwrite( STDERR, "Commerce header context missing from template context\n" );
+		exit( 1 );
+	}
+	if ( ! $GLOBALS['gl_woo'] && ! empty( $context['commerce']['available'] ) ) {
+		fwrite( STDERR, "Commerce should be unavailable without Woo\n" );
 		exit( 1 );
 	}
 }
@@ -448,6 +483,15 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 		$shop_context = get_query_var( 'gloskin_context', array() );
 		if ( empty( $shop_context['woo_ready'] ) || count( $shop_context['products'] ?? array() ) !== 1 ) {
 			fwrite( STDERR, "Woo shop presentation failed\n" ); exit( 1 );
+		}
+		if ( empty( $shop_context['commerce']['available'] ) ) {
+			fwrite( STDERR, "Commerce should be available with Woo\n" ); exit( 1 );
+		}
+		if ( $shop_context['commerce']['cart_count'] !== 2 ) {
+			fwrite( STDERR, "Cart count should reflect Woo state\n" ); exit( 1 );
+		}
+		if ( $shop_context['commerce']['cart_url'] !== 'https://example.test/cart/' ) {
+			fwrite( STDERR, "Cart URL should use Woo canonical URL\n" ); exit( 1 );
 		}
 		foreach ( array( 'woo', 'cart', 'checkout', 'account' ) as $commerce_flag ) {
 			$GLOBALS['gl_route'] = array( 'front' => false, 'page' => false, 'singular' => '', 'object' => null, $commerce_flag => true );

@@ -39,6 +39,7 @@ final class Gloskin_Site_Core_Template_Service {
 	public function register() {
 		add_filter( 'template_include', array( $this, 'resolve_template' ), 99 );
 		add_filter( 'document_title_parts', array( $this, 'localize_document_title' ), 20 );
+		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
 	}
 
 	/**
@@ -80,6 +81,7 @@ final class Gloskin_Site_Core_Template_Service {
 		$context['design_variant'] = $this->design_variant();
 		$context['clinic_links']   = $this->static_clinic_links();
 		$context['site_name']      = 'Gloskin';
+		$context['commerce']       = $this->commerce_header_context();
 		set_query_var( 'gloskin_context', $context );
 
 		$shell = $this->plugin_root . '/templates/shell.php';
@@ -377,6 +379,109 @@ final class Gloskin_Site_Core_Template_Service {
 			'products' => $this->woocommerce->products( 20 ),
 			'woo_ready' => $this->woocommerce->available(),
 		);
+	}
+
+	/* -----------------------------------------------------------------
+	 * Commerce header context
+	 * ----------------------------------------------------------------- */
+
+	/** @return array<string,mixed> */
+	private function commerce_header_context() {
+		return array(
+			'available'    => $this->woocommerce->available(),
+			'account_url'  => $this->woocommerce->account_url(),
+			'cart_url'     => $this->woocommerce->cart_url(),
+			'checkout_url' => $this->woocommerce->checkout_url(),
+			'cart_count'   => $this->woocommerce->cart_count(),
+			'mini_cart'    => $this->woocommerce->render_mini_cart_body(),
+		);
+	}
+
+	/* -----------------------------------------------------------------
+	 * REST API: live search
+	 * ----------------------------------------------------------------- */
+
+	/** @return void */
+	public function register_rest_routes() {
+		register_rest_route( 'gloskin/v1', '/search', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'rest_search' ),
+			'permission_callback' => '__return_true',
+			'args'                => array(
+				'q' => array(
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+			),
+		) );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function rest_search( $request ) {
+		$query = (string) $request->get_param( 'q' );
+		if ( mb_strlen( $query ) < 2 || mb_strlen( $query ) > 100 ) {
+			return rest_ensure_response( array( 'groups' => array() ) );
+		}
+
+		$groups = array();
+
+		$treatments = $this->search_posts( $query, Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 3 );
+		if ( $treatments ) {
+			$groups[] = array( 'type' => 'perawatan', 'label' => 'Perawatan', 'items' => $treatments );
+		}
+
+		$clinics = $this->search_posts( $query, Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE, 3 );
+		if ( $clinics ) {
+			$groups[] = array( 'type' => 'klinik', 'label' => 'Klinik', 'items' => $clinics );
+		}
+
+		$doctors = $this->search_posts( $query, Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE, 3 );
+		if ( $doctors ) {
+			$groups[] = array( 'type' => 'dokter', 'label' => 'Dokter', 'items' => $doctors );
+		}
+
+		$products = $this->woocommerce->search_products( $query, 3 );
+		if ( $products ) {
+			$groups[] = array( 'type' => 'produk', 'label' => 'Produk', 'items' => $products );
+		}
+
+		$insights = $this->search_posts( $query, 'post', 2 );
+		if ( $insights ) {
+			$groups[] = array( 'type' => 'insight', 'label' => 'Insight', 'items' => $insights );
+		}
+
+		return rest_ensure_response( array( 'groups' => $groups ) );
+	}
+
+	/**
+	 * @param string $query Search term.
+	 * @param string $post_type Post type.
+	 * @param int    $limit Max results.
+	 * @return array<int,array<string,mixed>>
+	 */
+	private function search_posts( $query, $post_type, $limit ) {
+		$posts = get_posts( array(
+			'post_type'      => $post_type,
+			'post_status'    => 'publish',
+			'posts_per_page' => max( 1, min( absint( $limit ), 6 ) ),
+			's'              => $query,
+		) );
+		$results = array();
+		foreach ( $posts as $post ) {
+			$results[] = array(
+				'id'       => (int) $post->ID,
+				'title'    => get_the_title( $post ),
+				'url'      => (string) get_permalink( $post ),
+				'excerpt'  => wp_trim_words( has_excerpt( $post ) ? get_the_excerpt( $post ) : $post->post_content, 12 ),
+				'image_id' => absint( get_post_thumbnail_id( $post->ID ) ),
+				'type'     => $post_type,
+			);
+		}
+		return $results;
 	}
 
 	/** @param string $slug Page slug. @return WP_Post|null */
