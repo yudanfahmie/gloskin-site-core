@@ -11,9 +11,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! function_exists( 'gloskin_ui1_render_presentation_media' ) ) {
 	/**
-	 * Render deterministic abstract Gloskin media when factual photography is
-	 * unavailable. The composition is decorative and never implies a person,
-	 * clinic interior, treatment result or product identity.
+	 * Render deterministic abstract Gloskin media for genuine factual empty states.
+	 *
+	 * This neutral composition must remain the fallback when a specific doctor,
+	 * clinic or WooCommerce product has no factual WordPress-owned image.
 	 *
 	 * @param string $kind Visual family.
 	 * @param string $seed Stable variation seed.
@@ -34,6 +35,97 @@ if ( ! function_exists( 'gloskin_ui1_render_presentation_media' ) ) {
 			<span class="gloskin-ui1-media__line"></span>
 			<span class="gloskin-ui1-media__point"></span>
 		</div>
+		<?php
+	}
+}
+
+if ( ! function_exists( 'gloskin_ui1_editorial_media_catalog' ) ) {
+	/**
+	 * Curated staging/editorial photography.
+	 *
+	 * These are fixed Unsplash image URLs, never random/query endpoints. They are
+	 * decorative only and must never represent a factual Gloskin doctor, clinic,
+	 * WooCommerce product or medical result. WordPress/Woo factual media always wins.
+	 *
+	 * @return array<string,array<string,mixed>>
+	 */
+	function gloskin_ui1_editorial_media_catalog() {
+		return array(
+			'wellness-room' => array(
+				'src'    => 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&w=1600&h=1200&q=82',
+				'width'  => 1600,
+				'height' => 1200,
+			),
+			'skincare-still-life' => array(
+				'src'    => 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=1400&h=1100&q=82',
+				'width'  => 1400,
+				'height' => 1100,
+			),
+			'skincare-interior' => array(
+				'src'    => 'https://images.unsplash.com/photo-1778330804164-2f6d5d3b16ad?auto=format&fit=crop&w=1400&h=1100&q=82',
+				'width'  => 1400,
+				'height' => 1100,
+			),
+			'wellness-editorial' => array(
+				'src'    => 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1400&h=1100&q=82',
+				'width'  => 1400,
+				'height' => 1100,
+			),
+		);
+	}
+}
+
+if ( ! function_exists( 'gloskin_ui1_resolve_editorial_media' ) ) {
+	/**
+	 * Pick a deterministic generic editorial image without creating factual identity.
+	 *
+	 * @param string $kind Generic visual family.
+	 * @param string $seed Stable variation seed.
+	 * @return array<string,mixed>
+	 */
+	function gloskin_ui1_resolve_editorial_media( $kind = 'editorial', $seed = 'gloskin' ) {
+		$catalog = gloskin_ui1_editorial_media_catalog();
+		$pools   = array(
+			'hero'      => array( 'wellness-room', 'skincare-interior' ),
+			'skincare'  => array( 'skincare-still-life', 'skincare-interior' ),
+			'treatment' => array( 'wellness-editorial', 'wellness-room' ),
+			'editorial' => array( 'wellness-room', 'skincare-interior', 'skincare-still-life' ),
+			'insight'   => array( 'skincare-interior', 'wellness-room' ),
+		);
+		$pool = isset( $pools[ $kind ] ) ? $pools[ $kind ] : $pools['editorial'];
+		$hash = (int) sprintf( '%u', crc32( $kind . '|' . $seed ) );
+		$key  = $pool[ $hash % count( $pool ) ];
+
+		return $catalog[ $key ];
+	}
+}
+
+if ( ! function_exists( 'gloskin_ui1_render_editorial_media' ) ) {
+	/**
+	 * Render curated decorative staging photography with stable intrinsic geometry.
+	 *
+	 * @param string $kind Generic visual family.
+	 * @param string $seed Stable variation seed.
+	 * @param string $class Additional class.
+	 * @param bool   $eager Whether the image is above the fold.
+	 * @return void
+	 */
+	function gloskin_ui1_render_editorial_media( $kind = 'editorial', $seed = 'gloskin', $class = '', $eager = false ) {
+		$media   = gloskin_ui1_resolve_editorial_media( $kind, $seed );
+		$classes = trim( 'gloskin-ui1-editorial-image gloskin-ui1-editorial-image--' . sanitize_html_class( $kind ) . ' ' . $class );
+		?>
+		<img
+			class="<?php echo esc_attr( $classes ); ?>"
+			src="<?php echo esc_url( $media['src'] ); ?>"
+			width="<?php echo esc_attr( (string) $media['width'] ); ?>"
+			height="<?php echo esc_attr( (string) $media['height'] ); ?>"
+			alt=""
+			aria-hidden="true"
+			decoding="async"
+			loading="<?php echo $eager ? 'eager' : 'lazy'; ?>"
+			<?php if ( $eager ) : ?>fetchpriority="high"<?php endif; ?>
+			data-gloskin-editorial="unsplash"
+		>
 		<?php
 	}
 }
@@ -81,7 +173,7 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 						);
 						?>
 					<?php else : ?>
-						<?php gloskin_ui1_render_presentation_media( 'hero', $heading, 'gloskin-ui1-media--hero-frame' ); ?>
+						<?php gloskin_ui1_render_editorial_media( 'hero', $heading, 'gloskin-ui1-hero__image gloskin-ui1-hero__image--editorial', true ); ?>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -131,14 +223,15 @@ if ( ! function_exists( 'gloskin_ui1_render_card' ) ) {
 		} else {
 			$copy = isset( $card['excerpt'] ) ? (string) $card['excerpt'] : '';
 		}
-		$media_kind = in_array( $kind, array( 'clinic', 'doctor', 'treatment' ), true ) ? $kind : 'editorial';
 		?>
 		<article class="gloskin-ui1-card gloskin-ui1-card--<?php echo esc_attr( $kind ); ?>">
 			<?php if ( '' !== $url ) : ?><a class="gloskin-ui1-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true"><?php endif; ?>
 				<?php if ( $image_id ) : ?>
 					<?php echo wp_get_attachment_image( $image_id, 'medium_large', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-card__image' ) ); ?>
+				<?php elseif ( in_array( $kind, array( 'clinic', 'doctor' ), true ) ) : ?>
+					<?php gloskin_ui1_render_presentation_media( $kind, $title, 'gloskin-ui1-card__abstract' ); ?>
 				<?php else : ?>
-					<?php gloskin_ui1_render_presentation_media( $media_kind, $title, 'gloskin-ui1-card__abstract' ); ?>
+					<?php gloskin_ui1_render_editorial_media( 'treatment' === $kind ? 'treatment' : 'insight', $title, 'gloskin-ui1-card__image gloskin-ui1-card__image--editorial' ); ?>
 				<?php endif; ?>
 			<?php if ( '' !== $url ) : ?></a><?php endif; ?>
 			<div class="gloskin-ui1-card__body">
@@ -195,7 +288,7 @@ if ( ! function_exists( 'gloskin_ui1_render_category_link' ) ) {
 		$url   = isset( $mapping['url'] ) ? (string) $mapping['url'] : '';
 		?>
 		<a class="gloskin-ui1-category-card" href="<?php echo esc_url( $url ); ?>">
-			<?php gloskin_ui1_render_presentation_media( 'skincare', $label, 'gloskin-ui1-category-card__media' ); ?>
+			<?php gloskin_ui1_render_editorial_media( 'skincare', $label, 'gloskin-ui1-category-card__media' ); ?>
 			<span class="gloskin-ui1-category-card__label"><?php echo esc_html( $label ); ?></span>
 			<span class="gloskin-ui1-category-card__arrow" aria-hidden="true">→</span>
 		</a>
@@ -232,16 +325,20 @@ if ( ! function_exists( 'gloskin_ui1_render_editorial_split' ) ) {
 	/**
 	 * Safe editorial/navigation composition for sparse factual states.
 	 *
+	 * Stock imagery here remains generic/decorative even when the destination is
+	 * a doctor or clinic hub; it never presents a stock subject as that entity.
+	 *
 	 * @param string $eyebrow Eyebrow.
 	 * @param string $title Heading.
 	 * @param string $copy Copy.
 	 * @param string $label CTA label.
 	 * @param string $url CTA URL.
-	 * @param string $kind Abstract media family.
+	 * @param string $kind Generic editorial family hint.
 	 * @param bool   $reverse Reverse layout.
 	 * @return void
 	 */
 	function gloskin_ui1_render_editorial_split( $eyebrow, $title, $copy, $label, $url, $kind = 'editorial', $reverse = false ) {
+		$editorial_kind = in_array( $kind, array( 'treatment', 'skincare' ), true ) ? $kind : 'editorial';
 		?>
 		<div class="gloskin-ui1-editorial-split<?php echo $reverse ? ' gloskin-ui1-editorial-split--reverse' : ''; ?>">
 			<div class="gloskin-ui1-editorial-split__copy">
@@ -250,7 +347,7 @@ if ( ! function_exists( 'gloskin_ui1_render_editorial_split' ) ) {
 				<p><?php echo esc_html( $copy ); ?></p>
 				<?php if ( '' !== $label && '' !== $url ) : ?><a class="gloskin-ui1-button gloskin-ui1-button--primary" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $label ); ?></a><?php endif; ?>
 			</div>
-			<?php gloskin_ui1_render_presentation_media( $kind, $title, 'gloskin-ui1-editorial-split__media' ); ?>
+			<?php gloskin_ui1_render_editorial_media( $editorial_kind, $title, 'gloskin-ui1-editorial-split__media' ); ?>
 		</div>
 		<?php
 	}

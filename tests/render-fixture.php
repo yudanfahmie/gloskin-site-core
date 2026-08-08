@@ -40,6 +40,24 @@ if ( ! in_array( $view, array( 'treatment', 'doctor' ), true ) ) {
 	$GLOBALS['gl_options'][ Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION ] = array( 'design_variant' => 'medical', 'form_shortcode' => '' );
 }
 
+// Optional test-only factual hero media proves that native attachment ownership
+// remains higher priority than staging/editorial photography.
+if ( '1' === getenv( 'GLOSKIN_FIXTURE_REAL_MEDIA' ) ) {
+	$home = get_page_by_path( 'home', OBJECT, 'page' );
+	if ( $home instanceof WP_Post ) {
+		$attachment_id = wp_insert_post(
+			array(
+				'post_type'   => 'attachment',
+				'post_status' => 'inherit',
+				'post_title'  => 'Approved Fixture Media',
+				'post_name'   => 'approved-fixture-media',
+			),
+			true
+		);
+		$GLOBALS['gl_meta'][ $home->ID ]['gloskin_hero_media_id'] = $attachment_id;
+	}
+}
+
 $route = array( 'front' => false, 'page' => false, 'singular' => '', 'object' => null );
 
 switch ( $view ) {
@@ -84,5 +102,13 @@ if ( ! is_string( $html ) || false === strpos( $html, 'data-gloskin-drawer' ) ) 
 	fwrite( STDERR, "Fixture render failed for {$view}\n" );
 	exit( 1 );
 }
+
+// The runtime stub intentionally does not emulate WordPress image metadata. Give
+// attachment output stable geometry only inside browser fixtures.
+$html = str_replace(
+	'<img alt="">',
+	'<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" width="1200" height="800" alt="" data-test-wordpress-media="true">',
+	$html
+);
 
 echo $html;

@@ -11,9 +11,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 return array(
 	'styles' => array(
+		'gloskin-ui1-fonts' => array(
+			'src'      => 'https://fonts.googleapis.com/css2?family=Marcellus&family=Mulish:wght@400;600;700;800&display=swap',
+			'deps'     => array(),
+			'media'    => 'all',
+			'external' => true,
+		),
 		'gloskin-ui1-core' => array(
 			'src'   => 'assets/css/gloskin-ui1-core.css',
-			'deps'  => array(),
+			'deps'  => array( 'gloskin-ui1-fonts' ),
+			'media' => 'all',
+		),
+		'gloskin-ui1-production' => array(
+			'src'   => 'assets/css/gloskin-ui1-production.css',
+			'deps'  => array( 'gloskin-ui1-core' ),
 			'media' => 'all',
 		),
 	),

@@ -5,12 +5,18 @@ define( 'ABSPATH', __DIR__ . '/' );
 $GLOBALS['gl_asset_context'] = array();
 $GLOBALS['gl_styles'] = array();
 $GLOBALS['gl_scripts'] = array();
+$GLOBALS['gl_registered_styles'] = array();
+$GLOBALS['gl_registered_scripts'] = array();
 
 function add_action() {}
 function get_query_var( $key, $default = '' ) { return 'gloskin_context' === $key ? $GLOBALS['gl_asset_context'] : $default; }
 function plugins_url( $src, $file ) { return '/plugins/gloskin/' . ltrim( (string) $src, '/' ); }
-function wp_register_style() {}
-function wp_register_script() {}
+function wp_register_style( $handle, $src, $deps = array(), $version = false, $media = 'all' ) {
+	$GLOBALS['gl_registered_styles'][ $handle ] = compact( 'src', 'deps', 'version', 'media' );
+}
+function wp_register_script( $handle, $src, $deps = array(), $version = false, $in_footer = false ) {
+	$GLOBALS['gl_registered_scripts'][ $handle ] = compact( 'src', 'deps', 'version', 'in_footer' );
+}
 function wp_enqueue_style( $handle ) { $GLOBALS['gl_styles'][] = (string) $handle; }
 function wp_enqueue_script( $handle ) { $GLOBALS['gl_scripts'][] = (string) $handle; }
 
@@ -30,8 +36,23 @@ if ( $GLOBALS['gl_styles'] || $GLOBALS['gl_scripts'] ) {
 
 $GLOBALS['gl_asset_context'] = array( 'view' => 'home' );
 $service->enqueue_frontend();
-if ( ! in_array( 'gloskin-ui1-core', $GLOBALS['gl_styles'], true ) || ! in_array( 'gloskin-ui1-core', $GLOBALS['gl_scripts'], true ) ) {
-	fwrite( STDERR, "assets missing on Gloskin shell request\n" ); exit( 1 );
+foreach ( array( 'gloskin-ui1-fonts', 'gloskin-ui1-core', 'gloskin-ui1-production' ) as $style_handle ) {
+	if ( ! in_array( $style_handle, $GLOBALS['gl_styles'], true ) ) {
+		fwrite( STDERR, "frontend style missing on Gloskin shell request: {$style_handle}\n" ); exit( 1 );
+	}
+}
+if ( ! in_array( 'gloskin-ui1-core', $GLOBALS['gl_scripts'], true ) ) {
+	fwrite( STDERR, "frontend script missing on Gloskin shell request\n" ); exit( 1 );
+}
+$font = $GLOBALS['gl_registered_styles']['gloskin-ui1-fonts'] ?? array();
+if ( empty( $font['src'] ) || 0 !== strpos( $font['src'], 'https://fonts.googleapis.com/css2?family=Marcellus&family=Mulish:wght@400;600;700;800' ) ) {
+	fwrite( STDERR, "authoritative Marcellus/Mulish font stylesheet registration failed\n" ); exit( 1 );
+}
+$core = $GLOBALS['gl_registered_styles']['gloskin-ui1-core'] ?? array();
+$production = $GLOBALS['gl_registered_styles']['gloskin-ui1-production'] ?? array();
+if ( ( $core['deps'] ?? array() ) !== array( 'gloskin-ui1-fonts' )
+	|| ( $production['deps'] ?? array() ) !== array( 'gloskin-ui1-core' ) ) {
+	fwrite( STDERR, "frontend stylesheet dependency order failed\n" ); exit( 1 );
 }
 
 $GLOBALS['gl_asset_context'] = array();
@@ -39,7 +60,7 @@ $GLOBALS['gl_styles'] = array();
 $GLOBALS['gl_scripts'] = array();
 $commerce = true;
 $service->enqueue_frontend();
-if ( ! in_array( 'gloskin-ui1-core', $GLOBALS['gl_styles'], true ) || ! in_array( 'gloskin-ui1-core', $GLOBALS['gl_scripts'], true ) ) {
+if ( ! in_array( 'gloskin-ui1-production', $GLOBALS['gl_styles'], true ) || ! in_array( 'gloskin-ui1-core', $GLOBALS['gl_scripts'], true ) ) {
 	fwrite( STDERR, "assets missing on Woo presentation request\n" ); exit( 1 );
 }
 

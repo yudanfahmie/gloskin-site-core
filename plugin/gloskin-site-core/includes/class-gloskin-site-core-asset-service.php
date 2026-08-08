@@ -51,11 +51,17 @@ final class Gloskin_Site_Core_Asset_Service {
 
 		$registry = $this->registry();
 		foreach ( $registry['styles'] as $handle => $asset ) {
-			wp_register_style( $handle, plugins_url( $asset['src'], $this->plugin_file ), $asset['deps'], $this->version, $asset['media'] );
+			$src = ! empty( $asset['external'] )
+				? (string) $asset['src']
+				: plugins_url( $asset['src'], $this->plugin_file );
+			wp_register_style( $handle, $src, $asset['deps'], $this->version, $asset['media'] );
 			wp_enqueue_style( $handle );
 		}
 		foreach ( $registry['scripts'] as $handle => $asset ) {
-			wp_register_script( $handle, plugins_url( $asset['src'], $this->plugin_file ), $asset['deps'], $this->version, $asset['in_footer'] );
+			$src = ! empty( $asset['external'] )
+				? (string) $asset['src']
+				: plugins_url( $asset['src'], $this->plugin_file );
+			wp_register_script( $handle, $src, $asset['deps'], $this->version, $asset['in_footer'] );
 			wp_enqueue_script( $handle );
 		}
 	}

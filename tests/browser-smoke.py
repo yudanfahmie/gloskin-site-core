@@ -6,6 +6,7 @@ from playwright.sync_api import sync_playwright, Error as PlaywrightError
 
 ROOT = Path(__file__).resolve().parents[1]
 CSS = ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css'
+PRODUCTION_CSS = ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-production.css'
 JS = ROOT / 'plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js'
 
 views = [
@@ -33,19 +34,28 @@ english_owned = [
     'medical team', 'browse skincare', 'contact form', 'practice branches',
 ]
 
-def fixture(view: str) -> str:
+def fixture(view: str, **extra_env) -> str:
     env = dict(os.environ)
     env['GLOSKIN_FIXTURE_VIEW'] = view
+    env.update({key: str(value) for key, value in extra_env.items()})
     return subprocess.check_output(['php', str(ROOT / 'tests/render-fixture.php')], text=True, env=env)
 
 fixtures = {view: fixture(view) for view in views}
+home_real_media = fixture('home', GLOSKIN_FIXTURE_REAL_MEDIA=1)
+
+EDITORIAL_STUB = '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200"><rect width="1600" height="1200" fill="#eaf0f4"/></svg>'
 
 def load(page, html):
+    page.route(
+        'https://images.unsplash.com/**',
+        lambda route: route.fulfill(status=200, content_type='image/svg+xml', body=EDITORIAL_STUB),
+    )
     page.set_content(html, wait_until='domcontentloaded')
     page.add_style_tag(path=str(CSS))
+    page.add_style_tag(path=str(PRODUCTION_CSS))
     page.add_script_tag(path=str(JS))
-    # CSS is injected by the fixture harness after HTML; allow UI transitions to settle
-    # before measuring presentation/contrast. Production styles load normally in wp_head.
+    # CSS is injected by the fixture harness after HTML; allow UI transitions and
+    # deterministic editorial image responses to settle before measuring.
     page.wait_for_timeout(220)
 
 def assert_contrast(page, selector, minimum=4.5):
@@ -110,6 +120,8 @@ with sync_playwright() as p:
                     raise SystemExit(f'{viewport_name}/{view}: image without src')
                 if not image.get_attribute('width') or not image.get_attribute('height'):
                     raise SystemExit(f'{viewport_name}/{view}: image missing intrinsic dimensions')
+                if not image.evaluate('el => el.complete && el.naturalWidth > 0 && el.naturalHeight > 0'):
+                    raise SystemExit(f'{viewport_name}/{view}: broken image source')
 
             if view == 'home':
                 toggles = page.locator('[data-gloskin-submenu-toggle]')
@@ -124,8 +136,37 @@ with sync_playwright() as p:
                     if icon.get_attribute('aria-hidden') != 'true' or icon.get_attribute('focusable') != 'false':
                         raise SystemExit(f'{viewport_name}/home: chevron accessibility state failed')
 
-            if view == 'home' and page.locator('.gloskin-ui1-media').count() < 10:
-                raise SystemExit(f'{viewport_name}/home: sparse-state presentation media not fully composed')
+                editorial = page.locator('main img[data-gloskin-editorial="unsplash"]')
+                if editorial.count() < 8:
+                    raise SystemExit(f'{viewport_name}/home: sparse staging editorial photography missing')
+                for editorial_index in range(editorial.count()):
+                    src = editorial.nth(editorial_index).get_attribute('src') or ''
+                    if not src.startswith('https://images.unsplash.com/photo-'):
+                        raise SystemExit(f'{viewport_name}/home: editorial media is not a fixed Unsplash photo URL')
+
+                clinic_placeholders = page.locator('.gloskin-ui1-card--clinic .gloskin-ui1-media--clinic')
+                if clinic_placeholders.count() == 0 or page.locator('.gloskin-ui1-card--clinic [data-gloskin-editorial]').count():
+                    raise SystemExit(f'{viewport_name}/home: factual clinic empty-state boundary failed')
+
+                body_font = page.locator('body').evaluate('el => getComputedStyle(el).fontFamily')
+                heading_font = page.locator('.gloskin-ui1-hero__title').evaluate('el => getComputedStyle(el).fontFamily')
+                nav_font = page.locator('.gloskin-ui1-nav__link').first.evaluate('el => getComputedStyle(el).fontFamily')
+                if 'Mulish' not in body_font or 'Mulish' not in nav_font or 'Inter' in body_font or 'Inter' in nav_font:
+                    raise SystemExit(f'{viewport_name}/home: body/navigation typography did not resolve to Mulish: {body_font}/{nav_font}')
+                if 'Marcellus' not in heading_font or 'Georgia' in heading_font:
+                    raise SystemExit(f'{viewport_name}/home: display typography did not resolve to Marcellus: {heading_font}')
+
+            if view == 'clinic':
+                if page.locator('.gloskin-ui1-detail-hero .gloskin-ui1-media--clinic').count() != 1:
+                    raise SystemExit(f'{viewport_name}/clinic: missing factual clinic placeholder')
+                if page.locator('.gloskin-ui1-detail-hero [data-gloskin-editorial]').count():
+                    raise SystemExit(f'{viewport_name}/clinic: stock photography used as clinic identity')
+
+            if view == 'doctor':
+                if page.locator('.gloskin-ui1-detail-hero .gloskin-ui1-media--doctor').count() != 1:
+                    raise SystemExit(f'{viewport_name}/doctor: missing factual doctor placeholder')
+                if page.locator('.gloskin-ui1-detail-hero [data-gloskin-editorial]').count():
+                    raise SystemExit(f'{viewport_name}/doctor: stock photography used as doctor identity')
 
             page.keyboard.press('Tab')
             focus_outline = page.evaluate("() => { const s=getComputedStyle(document.activeElement); return [s.outlineStyle,s.outlineWidth].join(':'); }")
@@ -214,6 +255,17 @@ with sync_playwright() as p:
                 raise SystemExit(f'{viewport_name}/{view}: console/page errors: {errors}')
             page.close()
         print(f'browser smoke passed ({viewport_name} {width}x{height}, {len(views)} views)')
+
+    # Native WordPress hero media must override the staging editorial fallback.
+    page = browser.new_page(viewport={'width': 1440, 'height': 900})
+    load(page, home_real_media)
+    hero = page.locator('.gloskin-ui1-hero__media')
+    if hero.locator('[data-test-wordpress-media="true"]').count() != 1:
+        raise SystemExit('desktop/home: native attachment hero media did not render')
+    if hero.locator('[data-gloskin-editorial]').count():
+        raise SystemExit('desktop/home: editorial fallback overrode native attachment media')
+    page.close()
+    print('browser smoke passed (native media priority)')
 
     admin_bar_cases = [
         ('desktop', 1440, 900, '32px'),

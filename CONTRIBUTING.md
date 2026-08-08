@@ -89,6 +89,15 @@ No public `wp_ajax_nopriv_*` endpoint belongs in v1 unless a later explicit feat
 - Do not duplicate WooCommerce product/cart/checkout/order/payment ownership.
 - Do not introduce developer work from explicitly excluded SEO/marketing/infrastructure scope.
 
+### Staging editorial media policy
+
+- WordPress Media Library attachments and WooCommerce-owned product images are always the factual production authority and must override any editorial fallback.
+- During staging, a small curated deterministic set of Unsplash photography may be used for generic/decorative hero, skincare, treatment-discovery and editorial compositions when approved WordPress media is not yet available.
+- Staging Unsplash usage must use fixed photo URLs or first-party downloaded derivatives. Do not use the Unsplash API, random/query endpoints or runtime search.
+- Stock photography must never be presented as a specific Gloskin doctor, a specific clinic branch, a real WooCommerce product, or a medical before/after result.
+- Missing factual doctor/clinic/product media must keep the neutral Gloskin empty-state placeholder until real WordPress/Woo media is supplied.
+- Production migration should replace staging editorial stock with approved WordPress media where the surface has a factual media owner; do not create a parallel media database or service to manage that transition.
+
 ## Documentation discipline
 
 When implementation changes architecture ownership, service boundaries, storage, content fields, relationships, routes, or retained/pruned Morgen dependencies, update the matching canonical documentation in the **same coherent commit**.

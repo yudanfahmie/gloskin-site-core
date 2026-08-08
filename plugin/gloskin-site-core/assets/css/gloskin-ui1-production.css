@@ -1,0 +1,94 @@
+/*
+ * Gloskin UI v1 production visual layer.
+ * Structural component CSS remains in gloskin-ui1-core.css; this file owns the
+ * selected production typography and editorial-photo presentation.
+ */
+:root{
+	--gloskin-font-body:"Mulish","Segoe UI",Arial,sans-serif;
+	--gloskin-font-heading:"Marcellus","Times New Roman",serif;
+}
+.gloskin-ui1--modern{--gloskin-font-heading:"Marcellus","Times New Roman",serif}
+body.gloskin-ui1{
+	font-family:var(--gloskin-font-body);
+	font-weight:400;
+	line-height:1.62;
+}
+.gloskin-ui1 h1,
+.gloskin-ui1 h2,
+.gloskin-ui1 h3,
+.gloskin-ui1 h4{
+	font-family:var(--gloskin-font-heading);
+	font-weight:400;
+	letter-spacing:-0.012em;
+	line-height:1.12;
+}
+.gloskin-ui1 h1{font-size:clamp(2.5rem,6.4vw,5.25rem)}
+.gloskin-ui1 h2{font-size:clamp(1.95rem,3.7vw,3.2rem)}
+.gloskin-ui1 h3{font-size:clamp(1.18rem,1.8vw,1.5rem)}
+.gloskin-ui1-brand{
+	font-family:var(--gloskin-font-heading);
+	font-size:1.62rem;
+	font-weight:400;
+	letter-spacing:.005em;
+}
+.gloskin-ui1-nav__link{
+	padding-inline:8px;
+	font-family:var(--gloskin-font-body);
+	font-size:.91rem;
+	font-weight:600;
+	letter-spacing:.004em;
+}
+.gloskin-ui1-nav--mobile .gloskin-ui1-nav__link{font-size:.98rem}
+.gloskin-ui1-button,
+.gloskin-ui1-text-link,
+.gloskin-ui1-form button,
+.gloskin-ui1-form input[type="submit"],
+.gloskin-ui1 .woocommerce a.button,
+.gloskin-ui1 .woocommerce button.button,
+.gloskin-ui1 .woocommerce input.button{font-family:var(--gloskin-font-body);font-weight:700}
+.gloskin-ui1-eyebrow{font-family:var(--gloskin-font-body);font-weight:800;letter-spacing:.145em}
+.gloskin-ui1-hero__title{max-width:13.5ch;line-height:1.04}
+.gloskin-ui1-hero__copy,.gloskin-ui1-lead{line-height:1.58}
+.gloskin-ui1-card__title{line-height:1.18}
+.gloskin-ui1-category-card__label,
+.gloskin-ui1-discovery-tile strong{font-family:var(--gloskin-font-heading);font-weight:400;letter-spacing:-.008em}
+.gloskin-ui1-footer__cta h2{line-height:1.08}
+
+/* Curated editorial staging photography. Factual entity media remains WP/Woo-owned. */
+.gloskin-ui1-editorial-image{
+	display:block;
+	width:100%;
+	max-width:100%;
+	height:auto;
+	object-fit:cover;
+	background:var(--gloskin-surface-strong);
+}
+.gloskin-ui1-hero__image--editorial{aspect-ratio:16/10}
+.gloskin-ui1-card__image--editorial{aspect-ratio:4/3}
+.gloskin-ui1-category-card__media{
+	width:100%;
+	aspect-ratio:4/3;
+	object-fit:cover;
+	border:0;
+	border-radius:0;
+}
+.gloskin-ui1-editorial-split__media{
+	width:100%;
+	aspect-ratio:4/3;
+	object-fit:cover;
+	border-radius:var(--gloskin-radius-lg);
+	box-shadow:var(--gloskin-shadow);
+}
+@media (min-width:1800px){
+	.gloskin-ui1-hero__title{max-width:14ch;font-size:clamp(4.55rem,4.7vw,6rem)}
+}
+@media (max-width:760px){
+	.gloskin-ui1 h1{font-size:clamp(2.35rem,11vw,3.9rem)}
+	.gloskin-ui1 h2{font-size:clamp(1.85rem,8vw,2.8rem)}
+	.gloskin-ui1-hero__title{max-width:14ch}
+	.gloskin-ui1-brand{font-size:1.5rem}
+}
+@media (max-width:480px){
+	.gloskin-ui1 h1{font-size:clamp(2.2rem,10.5vw,3.25rem)}
+	.gloskin-ui1-nav--mobile .gloskin-ui1-nav__link{font-size:.96rem}
+}

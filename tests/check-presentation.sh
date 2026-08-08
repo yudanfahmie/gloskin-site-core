@@ -3,12 +3,15 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 plugin_root="$repo_root/plugin/gloskin-site-core"
 templates="$plugin_root/templates"
+helpers="$templates/parts/template-helpers.php"
+production_css="$plugin_root/assets/css/gloskin-ui1-production.css"
 public_runtime=(
   "$templates"
   "$plugin_root/includes/class-gloskin-site-core-navigation-service.php"
   "$plugin_root/includes/class-gloskin-site-core-template-service.php"
   "$plugin_root/includes/class-gloskin-site-core-woocommerce-adapter.php"
   "$plugin_root/assets/css/gloskin-ui1-core.css"
+  "$production_css"
   "$plugin_root/assets/js/gloskin-ui1-core.js"
 )
 
@@ -41,19 +44,42 @@ if grep -RInE 'href="#"|href="javascript:' "$templates" --include='*.php' \
   exit 1
 fi
 
-# Factual images must come from WordPress attachment rendering; presentation
-# media is CSS-driven decorative markup and carries aria-hidden="true".
-if grep -RInE '<img[[:space:]]' "$templates" --include='*.php'; then
-  echo "manual img markup found in public templates; use wp_get_attachment_image" >&2
+# Factual entity images stay WordPress/Woo-owned. Manual img markup is allowed only
+# inside the canonical helper for curated generic staging/editorial photography.
+if grep -RInE '<img[[:space:]]' "$templates" --include='*.php' --exclude='template-helpers.php'; then
+  echo "manual img markup found outside canonical presentation helper" >&2
   exit 1
 fi
-if ! grep -q 'function gloskin_ui1_render_presentation_media' "$templates/parts/template-helpers.php" \
-  || ! grep -q 'gloskin-ui1-media--hero' "$plugin_root/assets/css/gloskin-ui1-core.css"; then
-  echo "production presentation media system missing" >&2
+if ! grep -q 'function gloskin_ui1_render_presentation_media' "$helpers" \
+  || ! grep -q 'function gloskin_ui1_render_editorial_media' "$helpers"; then
+  echo "canonical factual/editorial media helpers missing" >&2
+  exit 1
+fi
+if ! grep -q "array( 'clinic', 'doctor' )" "$helpers" \
+  || ! grep -q "gloskin_ui1_render_presentation_media( 'product'" "$helpers" \
+  || ! grep -q "gloskin_ui1_render_presentation_media( 'doctor'" "$templates/pages/doctor.php" \
+  || ! grep -q "gloskin_ui1_render_presentation_media( 'clinic'" "$templates/pages/clinic.php"; then
+  echo "safe factual doctor/clinic/product empty-state boundary missing" >&2
+  exit 1
+fi
+if ! grep -q 'https://images.unsplash.com/photo-' "$helpers" \
+  || grep -Eq 'source\.unsplash\.com|images\.unsplash\.com/[^p]' "$helpers"; then
+  echo "editorial staging media must use fixed curated Unsplash photo URLs" >&2
   exit 1
 fi
 if grep -RInE "url\([\"']?https?://" "$plugin_root/assets" --include='*.css' --include='*.js'; then
-  echo "critical first-party presentation asset depends on a remote URL" >&2
+  echo "critical first-party presentation asset depends on a remote CSS/JS URL" >&2
+  exit 1
+fi
+
+if [[ ! -f "$production_css" ]] \
+  || ! grep -q -- '--gloskin-font-body:"Mulish"' "$production_css" \
+  || ! grep -q -- '--gloskin-font-heading:"Marcellus"' "$production_css"; then
+  echo "Marcellus/Mulish production typography layer missing" >&2
+  exit 1
+fi
+if ! grep -q 'family=Marcellus&family=Mulish:wght@400;600;700;800' "$plugin_root/config/assets.php"; then
+  echo "required Google Fonts family/weight registration missing" >&2
   exit 1
 fi
 
@@ -62,4 +88,4 @@ for view in "${required_views[@]}"; do
   [[ -f "$templates/pages/$view.php" ]] || { echo "missing public view: $view" >&2; exit 1; }
 done
 
-echo "presentation safety checks passed (${#required_views[@]} public views, abstract media enabled)"
+echo "presentation safety checks passed (${#required_views[@]} public views, editorial staging media + factual fallbacks)"
