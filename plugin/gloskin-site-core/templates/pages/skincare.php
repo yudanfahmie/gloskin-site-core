@@ -1,6 +1,8 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
-gloskin_ui1_render_hero( $gloskin_context['hero'] );
+$hero = $gloskin_context['hero'];
+if ( empty( $hero['copy'] ) ) { $hero['copy'] = __( 'Browse Gloskin skincare categories.', 'gloskin-site-core' ); }
+gloskin_ui1_render_hero( $hero );
 ?>
 <section class="gloskin-ui1-section">
 	<div class="gloskin-ui1-container">
@@ -15,15 +17,11 @@ gloskin_ui1_render_hero( $gloskin_context['hero'] );
 		</div>
 	</div>
 </section>
+<?php if ( $gloskin_context['products'] ) : ?>
 <section class="gloskin-ui1-section gloskin-ui1-section--soft">
 	<div class="gloskin-ui1-container">
 		<?php gloskin_ui1_render_section_heading( __( 'Products', 'gloskin-site-core' ) ); ?>
-		<?php if ( ! $gloskin_context['woo_ready'] ) : ?>
-			<?php gloskin_ui1_empty( __( 'WooCommerce product data is currently unavailable.', 'gloskin-site-core' ) ); ?>
-		<?php elseif ( $gloskin_context['products'] ) : ?>
-			<div class="gloskin-ui1-grid gloskin-ui1-grid--cards"><?php foreach ( $gloskin_context['products'] as $product ) { gloskin_ui1_render_product_card( $product ); } ?></div>
-		<?php else : ?>
-			<?php gloskin_ui1_empty( __( 'No published WooCommerce products are available yet.', 'gloskin-site-core' ) ); ?>
-		<?php endif; ?>
+		<div class="gloskin-ui1-grid gloskin-ui1-grid--cards"><?php foreach ( $gloskin_context['products'] as $product ) { gloskin_ui1_render_product_card( $product ); } ?></div>
 	</div>
 </section>
+<?php endif; ?>

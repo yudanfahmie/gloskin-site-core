@@ -12,21 +12,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 $clinic_links = isset( $gloskin_context['clinic_links'] ) && is_array( $gloskin_context['clinic_links'] )
 	? $gloskin_context['clinic_links']
 	: array();
+
+$show_footer_cta = ! in_array( isset( $gloskin_context['view'] ) ? $gloskin_context['view'] : '', array( 'home', 'contact' ), true );
 ?>
 <footer class="gloskin-ui1-footer">
-	<div class="gloskin-ui1-footer__cta">
+	<?php if ( $show_footer_cta ) : ?><div class="gloskin-ui1-footer__cta">
 		<div class="gloskin-ui1-container gloskin-ui1-footer__cta-inner">
 			<div>
 				<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Gloskin', 'gloskin-site-core' ); ?></p>
-				<h2><?php echo esc_html__( 'Find the clinic information you need.', 'gloskin-site-core' ); ?></h2>
+				<h2><?php echo esc_html__( 'Find a Gloskin clinic.', 'gloskin-site-core' ); ?></h2>
 			</div>
 			<a class="gloskin-ui1-button gloskin-ui1-button--light" href="<?php echo esc_url( home_url( '/contact/' ) ); ?>"><?php echo esc_html__( 'Contact', 'gloskin-site-core' ); ?></a>
 		</div>
-	</div>
+	</div><?php endif; ?>
 	<div class="gloskin-ui1-container gloskin-ui1-footer__grid">
 		<div class="gloskin-ui1-footer__brand">
 			<a class="gloskin-ui1-brand gloskin-ui1-brand--footer" href="<?php echo esc_url( home_url( '/' ) ); ?>">Gloskin</a>
-			<p><?php echo esc_html__( 'Clinic, treatment, doctor, skincare and insights information in one website.', 'gloskin-site-core' ); ?></p>
+			<p><?php echo esc_html__( 'Explore Gloskin clinics, treatments, doctors, skincare and insights.', 'gloskin-site-core' ); ?></p>
 		</div>
 		<div>
 			<h3><?php echo esc_html__( 'Discover', 'gloskin-site-core' ); ?></h3>

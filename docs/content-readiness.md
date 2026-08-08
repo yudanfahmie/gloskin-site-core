@@ -32,3 +32,16 @@ The canonical source still marks these as unresolved, so the runtime intentional
 ## Population behavior
 
 Activation or the narrow `0.2.0` admin upgrade provisions only facts already normalized in canonical docs: the main Pages, seven skincare child Pages/mapping defaults, and nine clinic identity records. Existing editor content is not overwritten. Treatment and doctor placeholder records are deliberately not created.
+
+
+## Client-presentation re-audit
+
+Canonical Gloskin documentation was re-audited for this presentation-polish phase. No additional approved treatment taxonomy, doctor identities, clinic NAP/contact/hours/maps, About/Vision/Mission/Values copy, real WooCommerce catalog data, approved media references, or form-provider configuration was found beyond the facts already listed above.
+
+Public rendering therefore follows three client-safe states:
+
+- approved data renders normally;
+- unresolved optional sections collapse or redirect discovery toward approved areas such as Clinics or Skincare;
+- not-applicable components are omitted.
+
+Normal visitors are not shown implementation diagnostics, configuration warnings, record-count targets, or pending-data notices. Those readiness details remain developer/admin concerns only.

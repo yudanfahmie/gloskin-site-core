@@ -1,16 +1,23 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
-gloskin_ui1_render_hero( $gloskin_context['hero'] );
+$hero = $gloskin_context['hero'];
+if ( empty( $hero['copy'] ) ) { $hero['copy'] = __( 'Browse Gloskin skincare products.', 'gloskin-site-core' ); }
+gloskin_ui1_render_hero( $hero );
 ?>
+<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) || $gloskin_context['products'] ) : ?>
 <section class="gloskin-ui1-section">
 	<div class="gloskin-ui1-container">
 		<?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?>
-		<?php if ( ! $gloskin_context['woo_ready'] ) : ?>
-			<?php gloskin_ui1_empty( __( 'WooCommerce is not currently available. Non-commerce Gloskin pages remain operational.', 'gloskin-site-core' ) ); ?>
-		<?php elseif ( $gloskin_context['products'] ) : ?>
+		<?php if ( $gloskin_context['products'] ) : ?>
 			<div class="gloskin-ui1-grid gloskin-ui1-grid--cards"><?php foreach ( $gloskin_context['products'] as $product ) { gloskin_ui1_render_product_card( $product ); } ?></div>
-		<?php else : ?>
-			<?php gloskin_ui1_empty( __( 'No published WooCommerce products are available yet.', 'gloskin-site-core' ) ); ?>
 		<?php endif; ?>
 	</div>
 </section>
+<?php endif; ?>
+<?php if ( ! $gloskin_context['products'] ) : ?>
+<section class="gloskin-ui1-section gloskin-ui1-section--soft">
+	<div class="gloskin-ui1-container gloskin-ui1-container--narrow">
+		<?php gloskin_ui1_render_discovery_panel( __( 'Explore skincare', 'gloskin-site-core' ), __( 'Browse Gloskin skincare categories.', 'gloskin-site-core' ), __( 'View skincare', 'gloskin-site-core' ), home_url( '/skincare/' ) ); ?>
+	</div>
+</section>
+<?php endif; ?>

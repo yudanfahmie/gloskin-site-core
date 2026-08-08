@@ -41,7 +41,7 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 						<?php
 						echo wp_get_attachment_image(
 							$media,
-							'full',
+							'large',
 							false,
 							array(
 								'class'         => 'gloskin-ui1-hero__image',
@@ -59,144 +59,53 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 }
 
 if ( ! function_exists( 'gloskin_ui1_render_section_heading' ) ) {
-	/**
-	 * @param string $title Title.
-	 * @param string $copy Optional copy.
-	 * @return void
-	 */
 	function gloskin_ui1_render_section_heading( $title, $copy = '' ) {
-		?>
-		<div class="gloskin-ui1-section-heading">
-			<h2><?php echo esc_html( $title ); ?></h2>
-			<?php if ( '' !== $copy ) : ?>
-				<p><?php echo esc_html( $copy ); ?></p>
-			<?php endif; ?>
-		</div>
-		<?php
+		?><div class="gloskin-ui1-section-heading"><h2><?php echo esc_html( $title ); ?></h2><?php if ( '' !== $copy ) : ?><p><?php echo esc_html( $copy ); ?></p><?php endif; ?></div><?php
 	}
 }
 
 if ( ! function_exists( 'gloskin_ui1_render_card' ) ) {
-	/**
-	 * @param array<string,mixed> $card Card data.
-	 * @param string              $kind Card kind.
-	 * @return void
-	 */
 	function gloskin_ui1_render_card( $card, $kind ) {
-		$title    = isset( $card['title'] ) ? (string) $card['title'] : '';
-		$url      = isset( $card['url'] ) ? (string) $card['url'] : '';
+		$title = isset( $card['title'] ) ? (string) $card['title'] : '';
+		$url = isset( $card['url'] ) ? (string) $card['url'] : '';
 		$image_id = isset( $card['image_id'] ) ? absint( $card['image_id'] ) : 0;
-		$copy     = '';
-
-		if ( 'clinic' === $kind ) {
-			$copy = isset( $card['short_location'] ) && '' !== trim( (string) $card['short_location'] )
-				? (string) $card['short_location']
-				: ( isset( $card['hours'] ) ? (string) $card['hours'] : '' );
-		} elseif ( 'doctor' === $kind ) {
-			$degree = isset( $card['degree_title'] ) ? trim( (string) $card['degree_title'] ) : '';
-			$spec   = isset( $card['specialization'] ) ? trim( (string) $card['specialization'] ) : '';
-			$copy   = trim( $degree . ( $degree && $spec ? ' · ' : '' ) . $spec );
-		} elseif ( 'treatment' === $kind ) {
-			$copy = isset( $card['summary'] ) ? (string) $card['summary'] : '';
-		} else {
-			$copy = isset( $card['excerpt'] ) ? (string) $card['excerpt'] : '';
-		}
-		?>
-		<article class="gloskin-ui1-card gloskin-ui1-card--<?php echo esc_attr( $kind ); ?>">
-			<?php if ( $image_id ) : ?>
-				<a class="gloskin-ui1-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true">
-					<?php echo wp_get_attachment_image( $image_id, 'medium_large', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-card__image' ) ); ?>
-				</a>
-			<?php endif; ?>
-			<div class="gloskin-ui1-card__body">
-				<h3 class="gloskin-ui1-card__title"><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $title ); ?></a></h3>
-				<?php if ( '' !== trim( $copy ) ) : ?>
-					<p class="gloskin-ui1-card__copy"><?php echo esc_html( wp_trim_words( wp_strip_all_tags( $copy ), 28 ) ); ?></p>
-				<?php endif; ?>
-				<a class="gloskin-ui1-text-link" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'View details', 'gloskin-site-core' ); ?><span aria-hidden="true"> →</span></a>
-			</div>
-		</article>
-		<?php
+		$copy = '';
+		if ( 'clinic' === $kind ) { $copy = isset( $card['short_location'] ) && '' !== trim( (string) $card['short_location'] ) ? (string) $card['short_location'] : ( isset( $card['hours'] ) ? (string) $card['hours'] : '' ); }
+		elseif ( 'doctor' === $kind ) { $degree = isset( $card['degree_title'] ) ? trim( (string) $card['degree_title'] ) : ''; $spec = isset( $card['specialization'] ) ? trim( (string) $card['specialization'] ) : ''; $copy = trim( $degree . ( $degree && $spec ? ' · ' : '' ) . $spec ); }
+		elseif ( 'treatment' === $kind ) { $copy = isset( $card['summary'] ) ? (string) $card['summary'] : ''; }
+		else { $copy = isset( $card['excerpt'] ) ? (string) $card['excerpt'] : ''; }
+		?><article class="gloskin-ui1-card gloskin-ui1-card--<?php echo esc_attr( $kind ); ?>"><?php if ( $image_id ) : ?><a class="gloskin-ui1-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true"><?php echo wp_get_attachment_image( $image_id, 'medium_large', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-card__image' ) ); ?></a><?php endif; ?><div class="gloskin-ui1-card__body"><h3 class="gloskin-ui1-card__title"><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $title ); ?></a></h3><?php if ( '' !== trim( $copy ) ) : ?><p class="gloskin-ui1-card__copy"><?php echo esc_html( wp_trim_words( wp_strip_all_tags( $copy ), 28 ) ); ?></p><?php endif; ?><a class="gloskin-ui1-text-link" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'View details', 'gloskin-site-core' ); ?><span aria-hidden="true"> →</span></a></div></article><?php
 	}
 }
 
 if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
-	/**
-	 * @param array<string,mixed> $product Product data.
-	 * @return void
-	 */
 	function gloskin_ui1_render_product_card( $product ) {
-		$name     = isset( $product['name'] ) ? (string) $product['name'] : '';
-		$url      = isset( $product['url'] ) ? (string) $product['url'] : '';
-		$image_id = isset( $product['image_id'] ) ? absint( $product['image_id'] ) : 0;
-		?>
-		<article class="gloskin-ui1-card gloskin-ui1-card--product">
-			<?php if ( $image_id ) : ?>
-				<a class="gloskin-ui1-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true">
-					<?php echo wp_get_attachment_image( $image_id, 'woocommerce_thumbnail', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-card__image' ) ); ?>
-				</a>
-			<?php else : ?>
-				<div class="gloskin-ui1-card__placeholder" aria-hidden="true"></div>
-			<?php endif; ?>
-			<div class="gloskin-ui1-card__body">
-				<h3 class="gloskin-ui1-card__title"><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $name ); ?></a></h3>
-				<?php if ( ! empty( $product['price_html'] ) ) : ?>
-					<div class="gloskin-ui1-product-price"><?php echo wp_kses_post( (string) $product['price_html'] ); ?></div>
-				<?php endif; ?>
-				<?php if ( ! empty( $product['short_description'] ) ) : ?>
-					<p class="gloskin-ui1-card__copy"><?php echo esc_html( wp_trim_words( (string) $product['short_description'], 24 ) ); ?></p>
-				<?php endif; ?>
-				<div class="gloskin-ui1-card__actions">
-					<a class="gloskin-ui1-text-link" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'View product', 'gloskin-site-core' ); ?></a>
-					<?php if ( ! empty( $product['purchasable'] ) && ! empty( $product['in_stock'] ) && ! empty( $product['add_to_cart_url'] ) ) : ?>
-						<a class="gloskin-ui1-button gloskin-ui1-button--small" href="<?php echo esc_url( (string) $product['add_to_cart_url'] ); ?>"><?php echo esc_html( (string) $product['add_to_cart_text'] ); ?></a>
-					<?php endif; ?>
-				</div>
-			</div>
-		</article>
-		<?php
+		$name = isset( $product['name'] ) ? (string) $product['name'] : ''; $url = isset( $product['url'] ) ? (string) $product['url'] : ''; $image_id = isset( $product['image_id'] ) ? absint( $product['image_id'] ) : 0;
+		?><article class="gloskin-ui1-card gloskin-ui1-card--product"><?php if ( $image_id ) : ?><a class="gloskin-ui1-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true"><?php echo wp_get_attachment_image( $image_id, 'woocommerce_thumbnail', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-card__image' ) ); ?></a><?php endif; ?><div class="gloskin-ui1-card__body"><h3 class="gloskin-ui1-card__title"><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $name ); ?></a></h3><?php if ( ! empty( $product['price_html'] ) ) : ?><div class="gloskin-ui1-product-price"><?php echo wp_kses_post( (string) $product['price_html'] ); ?></div><?php endif; ?><?php if ( ! empty( $product['short_description'] ) ) : ?><p class="gloskin-ui1-card__copy"><?php echo esc_html( wp_trim_words( (string) $product['short_description'], 24 ) ); ?></p><?php endif; ?><div class="gloskin-ui1-card__actions"><a class="gloskin-ui1-text-link" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'View product', 'gloskin-site-core' ); ?></a><?php if ( ! empty( $product['purchasable'] ) && ! empty( $product['in_stock'] ) && ! empty( $product['add_to_cart_url'] ) ) : ?><a class="gloskin-ui1-button gloskin-ui1-button--small" href="<?php echo esc_url( (string) $product['add_to_cart_url'] ); ?>"><?php echo esc_html( (string) $product['add_to_cart_text'] ); ?></a><?php endif; ?></div></div></article><?php
+	}
+}
+
+if ( ! function_exists( 'gloskin_ui1_has_content' ) ) {
+	function gloskin_ui1_has_content( $post ) { return $post instanceof WP_Post && '' !== trim( (string) $post->post_content ); }
+}
+
+if ( ! function_exists( 'gloskin_ui1_render_discovery_panel' ) ) {
+	function gloskin_ui1_render_discovery_panel( $title, $copy, $label, $url ) {
+		?><div class="gloskin-ui1-contact-panel gloskin-ui1-discovery-panel"><div><h2><?php echo esc_html( $title ); ?></h2><?php if ( '' !== trim( $copy ) ) : ?><p><?php echo esc_html( $copy ); ?></p><?php endif; ?></div><?php if ( '' !== $label && '' !== $url ) : ?><a class="gloskin-ui1-button gloskin-ui1-button--primary" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $label ); ?></a><?php endif; ?></div><?php
 	}
 }
 
 if ( ! function_exists( 'gloskin_ui1_render_page_content' ) ) {
-	/**
-	 * @param WP_Post|null $post Page/post.
-	 * @return void
-	 */
 	function gloskin_ui1_render_page_content( $post ) {
-		if ( ! $post instanceof WP_Post || '' === trim( (string) $post->post_content ) ) {
-			return;
-		}
-		echo '<div class="gloskin-ui1-prose">';
-		echo apply_filters( 'the_content', $post->post_content ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted WordPress editor content.
-		echo '</div>';
+		if ( ! $post instanceof WP_Post || '' === trim( (string) $post->post_content ) ) { return; }
+		echo '<div class="gloskin-ui1-prose">'; echo apply_filters( 'the_content', $post->post_content ); echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }
 
 if ( ! function_exists( 'gloskin_ui1_empty' ) ) {
-	/**
-	 * @param string $message Message.
-	 * @return void
-	 */
-	function gloskin_ui1_empty( $message ) {
-		echo '<div class="gloskin-ui1-empty">' . esc_html( $message ) . '</div>';
-	}
+	function gloskin_ui1_empty( $message ) { echo '<div class="gloskin-ui1-empty">' . esc_html( $message ) . '</div>'; }
 }
 
 if ( ! function_exists( 'gloskin_ui1_render_card_grid' ) ) {
-	/**
-	 * @param array<int,array<string,mixed>> $cards Cards.
-	 * @param string                         $kind Card kind.
-	 * @return void
-	 */
-	function gloskin_ui1_render_card_grid( $cards, $kind ) {
-		if ( ! $cards ) {
-			return;
-		}
-		echo '<div class="gloskin-ui1-grid gloskin-ui1-grid--cards">';
-		foreach ( $cards as $card ) {
-			gloskin_ui1_render_card( $card, $kind );
-		}
-		echo '</div>';
-	}
+	function gloskin_ui1_render_card_grid( $cards, $kind ) { if ( ! $cards ) { return; } echo '<div class="gloskin-ui1-grid gloskin-ui1-grid--cards">'; foreach ( $cards as $card ) { gloskin_ui1_render_card( $card, $kind ); } echo '</div>'; }
 }

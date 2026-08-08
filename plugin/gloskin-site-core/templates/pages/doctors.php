@@ -1,14 +1,14 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
-gloskin_ui1_render_hero( $gloskin_context['hero'] );
+$hero = $gloskin_context['hero'];
+if ( empty( $hero['copy'] ) ) { $hero['copy'] = __( 'Meet the Gloskin medical team.', 'gloskin-site-core' ); }
+gloskin_ui1_render_hero( $hero );
 ?>
+<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) || $gloskin_context['doctors'] ) : ?>
 <section class="gloskin-ui1-section">
 	<div class="gloskin-ui1-container">
 		<?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?>
-		<?php if ( $gloskin_context['doctors'] ) : ?>
-			<?php gloskin_ui1_render_card_grid( $gloskin_context['doctors'], 'doctor' ); ?>
-		<?php else : ?>
-			<?php gloskin_ui1_empty( __( 'The architecture supports thirteen doctor profiles, but approved doctor identity and professional data is still required before publishing them.', 'gloskin-site-core' ) ); ?>
-		<?php endif; ?>
+		<?php gloskin_ui1_render_card_grid( $gloskin_context['doctors'], 'doctor' ); ?>
 	</div>
 </section>
+<?php endif; ?>
