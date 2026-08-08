@@ -31,7 +31,7 @@ The canonical source still marks these as unresolved, so the runtime intentional
 
 ## Population behavior
 
-Activation or the narrow `0.2.0` admin upgrade provisions only facts already normalized in canonical docs: the main Pages, seven skincare child Pages/mapping defaults, and nine clinic identity records. Existing editor content is not overwritten. Treatment and doctor placeholder records are deliberately not created.
+Activation or the narrow schema `0.2.0` admin upgrade provisions only facts already normalized in canonical docs: the main Pages, seven skincare child Pages/mapping defaults, and nine clinic identity records. Existing editor content is not overwritten. Treatment and doctor placeholder records are deliberately not created.
 
 
 ## Client-presentation re-audit
@@ -45,3 +45,5 @@ Public rendering therefore follows three client-safe states:
 - not-applicable components are omitted.
 
 Normal visitors are not shown implementation diagnostics, configuration warnings, record-count targets, or pending-data notices. Those readiness details remain developer/admin concerns only.
+
+Task-by-task staging/presentation verification is recorded in `docs/client-presentation-readiness.md`.

@@ -4,6 +4,7 @@ $post = $gloskin_context['post'];
 $has_contact = $gloskin_context['address'] || $gloskin_context['phone_display'] || $gloskin_context['operating_hours'] || $gloskin_context['whatsapp_url'];
 $has_location = $gloskin_context['map_embed'] || $gloskin_context['map_url'];
 $has_details = gloskin_ui1_has_content( $post ) || $has_contact || $has_location;
+$has_related = ! empty( $gloskin_context['doctors'] ) || ! empty( $gloskin_context['treatments'] );
 ?>
 <section class="gloskin-ui1-detail-hero">
 	<div class="gloskin-ui1-container">
@@ -44,3 +45,7 @@ $has_details = gloskin_ui1_has_content( $post ) || $has_contact || $has_location
 <?php endif; ?>
 <?php if ( $gloskin_context['doctors'] ) : ?><section class="gloskin-ui1-section gloskin-ui1-section--soft"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_section_heading( __( 'Doctors at this clinic', 'gloskin-site-core' ) ); gloskin_ui1_render_card_grid( $gloskin_context['doctors'], 'doctor' ); ?></div></section><?php endif; ?>
 <?php if ( $gloskin_context['treatments'] ) : ?><section class="gloskin-ui1-section"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_section_heading( __( 'Related treatments', 'gloskin-site-core' ) ); gloskin_ui1_render_card_grid( $gloskin_context['treatments'], 'treatment' ); ?></div></section><?php endif; ?>
+
+<?php if ( ! $gloskin_context['gallery_ids'] && ! $has_details && ! $has_related ) : ?>
+<section class="gloskin-ui1-section gloskin-ui1-section--tight"><div class="gloskin-ui1-container gloskin-ui1-container--narrow"><?php gloskin_ui1_render_discovery_panel( __( 'Explore our clinic network', 'gloskin-site-core' ), __( 'View all Gloskin clinic locations.', 'gloskin-site-core' ), __( 'View all clinics', 'gloskin-site-core' ), home_url( '/clinics/' ) ); ?></div></section>
+<?php endif; ?>

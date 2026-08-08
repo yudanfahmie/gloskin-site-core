@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.2.1';
+	const VERSION = '0.2.2';
 
 	/** @var string */
 	private $plugin_file;
@@ -37,11 +37,11 @@ final class Gloskin_Site_Core_Kernel {
 		$content->register();
 		$this->services[] = $content;
 
-		$assets = new Gloskin_Site_Core_Asset_Service( $this->plugin_file, self::VERSION );
-		$assets->register();
-		$this->services[] = $assets;
-
 		if ( is_admin() ) {
+			$assets = new Gloskin_Site_Core_Asset_Service( $this->plugin_file, self::VERSION );
+			$assets->register();
+			$this->services[] = $assets;
+
 			require_once __DIR__ . '/class-gloskin-site-core-admin-service.php';
 			require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
 
@@ -77,7 +77,15 @@ final class Gloskin_Site_Core_Kernel {
 		);
 		$templates->register();
 
+		$assets = new Gloskin_Site_Core_Asset_Service(
+			$this->plugin_file,
+			self::VERSION,
+			array( $woocommerce, 'is_commerce_request' )
+		);
+		$assets->register();
+
 		$this->services[] = $navigation;
+		$this->services[] = $assets;
 		$this->services[] = $woocommerce;
 		$this->services[] = $form;
 		$this->services[] = $templates;
