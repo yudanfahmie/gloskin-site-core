@@ -1,0 +1,6 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/markascl/public_html/gloskin-id.markas.cloud/wp-content/plugins/gloskin-site-core/
+    - /bin/mkdir -p $DEPLOYPATH
+    - /bin/cp -R plugin/gloskin-site-core/. $DEPLOYPATH
