@@ -111,6 +111,19 @@ with sync_playwright() as p:
                 if not image.get_attribute('width') or not image.get_attribute('height'):
                     raise SystemExit(f'{viewport_name}/{view}: image missing intrinsic dimensions')
 
+            if view == 'home':
+                toggles = page.locator('[data-gloskin-submenu-toggle]')
+                chevrons = page.locator('[data-gloskin-submenu-toggle] svg.gloskin-ui1-nav__chevron')
+                if toggles.count() == 0 or chevrons.count() != toggles.count():
+                    raise SystemExit(f'{viewport_name}/home: parent menu SVG chevron coverage failed')
+                for toggle_index in range(toggles.count()):
+                    toggle = toggles.nth(toggle_index)
+                    if '⌄' in toggle.inner_text():
+                        raise SystemExit(f'{viewport_name}/home: legacy Unicode disclosure glyph remains')
+                    icon = toggle.locator('svg.gloskin-ui1-nav__chevron')
+                    if icon.get_attribute('aria-hidden') != 'true' or icon.get_attribute('focusable') != 'false':
+                        raise SystemExit(f'{viewport_name}/home: chevron accessibility state failed')
+
             if view == 'home' and page.locator('.gloskin-ui1-media').count() < 10:
                 raise SystemExit(f'{viewport_name}/home: sparse-state presentation media not fully composed')
 
@@ -137,6 +150,42 @@ with sync_playwright() as p:
                 if metrics['titleW'] > metrics['containerW'] * 0.62:
                     raise SystemExit(f'{viewport_name}/home: hero line length too wide: {metrics}')
 
+            if viewport_name == 'desktop' and view == 'home':
+                header = page.locator('.gloskin-ui1-header')
+                desktop_toggle = page.locator('.gloskin-ui1-nav--desktop [data-gloskin-submenu-toggle]').first
+                desktop_toggle.click()
+                page.wait_for_timeout(200)
+                transform = desktop_toggle.locator('.gloskin-ui1-nav__chevron').evaluate('el => getComputedStyle(el).transform')
+                if desktop_toggle.get_attribute('aria-expanded') != 'true' or transform in ('none', 'matrix(1, 0, 0, 1, 0, 0)'):
+                    raise SystemExit('desktop/home: expanded chevron visual state failed')
+
+                page.evaluate("document.documentElement.style.scrollBehavior='auto'; document.body.style.minHeight='3200px'; window.scrollTo(0, 500)")
+                page.wait_for_timeout(80)
+                if header.evaluate("el => el.classList.contains('is-hidden')"):
+                    raise SystemExit('desktop/home: header hid while submenu was open')
+
+                desktop_toggle.click()
+                page.locator('.gloskin-ui1-brand').focus()
+                page.evaluate('window.scrollTo(0, 650)')
+                page.wait_for_timeout(80)
+                if header.evaluate("el => el.classList.contains('is-hidden')"):
+                    raise SystemExit('desktop/home: header hid while keyboard focus was inside header')
+
+                page.evaluate("document.activeElement && document.activeElement.blur(); window.scrollTo(0, 800)")
+                page.wait_for_timeout(80)
+                if not header.evaluate("el => el.classList.contains('is-hidden')"):
+                    raise SystemExit('desktop/home: scroll-down header hide state failed')
+
+                page.evaluate('window.scrollTo(0, 740)')
+                page.wait_for_timeout(80)
+                if header.evaluate("el => el.classList.contains('is-hidden')"):
+                    raise SystemExit('desktop/home: scroll-up header reveal state failed')
+
+                page.evaluate('window.scrollTo(0, 0)')
+                page.wait_for_timeout(80)
+                if header.evaluate("el => el.classList.contains('is-hidden')"):
+                    raise SystemExit('desktop/home: header did not return to default state at top')
+
             if viewport_name == 'mobile' and view == 'home':
                 opener = page.locator('[data-gloskin-drawer-open]')
                 opener.click(); drawer = page.locator('[data-gloskin-drawer]')
@@ -146,8 +195,12 @@ with sync_playwright() as p:
                     raise SystemExit('mobile/home: focus did not move into drawer')
                 toggle = drawer.locator('[data-gloskin-submenu-toggle]').first
                 toggle.click(); target_id = toggle.get_attribute('aria-controls')
+                page.wait_for_timeout(200)
+                chevron_transform = toggle.locator('.gloskin-ui1-nav__chevron').evaluate('el => getComputedStyle(el).transform')
                 if toggle.get_attribute('aria-expanded') != 'true' or page.locator('#' + target_id).get_attribute('hidden') is not None:
                     raise SystemExit('mobile/home: submenu disclosure state failed')
+                if chevron_transform in ('none', 'matrix(1, 0, 0, 1, 0, 0)'):
+                    raise SystemExit('mobile/home: submenu chevron did not rotate')
                 page.keyboard.press('Escape')
                 if drawer.get_attribute('aria-hidden') != 'true' or opener.get_attribute('aria-expanded') != 'false':
                     raise SystemExit('mobile/home: Escape close failed')
@@ -162,6 +215,36 @@ with sync_playwright() as p:
             page.close()
         print(f'browser smoke passed ({viewport_name} {width}x{height}, {len(views)} views)')
 
+    admin_bar_cases = [
+        ('desktop', 1440, 900, '32px'),
+        ('toolbar-narrow', 782, 1000, '46px'),
+        ('mobile-absolute', 600, 900, '0px'),
+    ]
+    for case_name, width, height, expected_top in admin_bar_cases:
+        page = browser.new_page(viewport={'width': width, 'height': height})
+        load(page, fixtures['home'])
+        page.evaluate("""() => {
+            document.body.classList.add('admin-bar');
+            document.documentElement.style.scrollBehavior='auto';
+            document.body.style.minHeight='2600px';
+            const bar=document.createElement('div');
+            bar.id='wpadminbar';
+            bar.style.transform='none';
+            document.body.prepend(bar);
+        }""")
+        header = page.locator('.gloskin-ui1-header')
+        if header.evaluate('el => getComputedStyle(el).top') != expected_top:
+            raise SystemExit(f'admin-bar/{case_name}: unexpected sticky top offset')
+        if width > 600:
+            page.evaluate('window.scrollTo(0, 500)')
+            page.wait_for_timeout(80)
+            if not header.evaluate("el => el.classList.contains('is-hidden')"):
+                raise SystemExit(f'admin-bar/{case_name}: smart hide state failed')
+            if page.locator('#wpadminbar').evaluate('el => getComputedStyle(el).transform') != 'none':
+                raise SystemExit(f'admin-bar/{case_name}: admin toolbar was transformed')
+        page.close()
+    print('browser smoke passed (WordPress admin bar offsets)')
+
     reduced = browser.new_page(viewport={'width': 390, 'height': 844}, reduced_motion='reduce')
     load(reduced, fixtures['home'])
     if not reduced.evaluate("matchMedia('(prefers-reduced-motion: reduce)').matches"):
@@ -169,6 +252,10 @@ with sync_playwright() as p:
     duration = reduced.locator('.gloskin-ui1-button').first.evaluate("el => getComputedStyle(el).transitionDuration")
     if duration not in ('0s', '0.00001s', '1e-05s'):
         raise SystemExit(f'reduced-motion transition not minimized: {duration}')
+    header_duration = reduced.locator('.gloskin-ui1-header').evaluate("el => getComputedStyle(el).transitionDuration")
+    chevron_duration = reduced.locator('.gloskin-ui1-nav__chevron').first.evaluate("el => getComputedStyle(el).transitionDuration")
+    if header_duration != '0s' or chevron_duration != '0s':
+        raise SystemExit(f'reduced-motion header/chevron transition not disabled: {header_duration}/{chevron_duration}')
     reduced.close(); print('browser smoke passed (reduced motion)')
     browser.close()
 

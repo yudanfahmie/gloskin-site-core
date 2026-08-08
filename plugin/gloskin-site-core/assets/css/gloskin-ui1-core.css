@@ -28,3 +28,13 @@
 @media (max-width:760px){.gloskin-ui1-media--hero{min-height:0}.gloskin-ui1-hero__media{max-width:none}.gloskin-ui1-editorial-split__media{max-width:580px}.gloskin-ui1-category-card__label{padding:18px 52px 20px 20px}}
 @media (max-width:480px){.gloskin-ui1-footer__clinics{grid-template-columns:repeat(2,minmax(0,1fr))}.gloskin-ui1-discovery-tile{min-height:150px}}
 .gloskin-ui1 .gloskin-ui1-button--primary{color:var(--gloskin-inverse)}.gloskin-ui1 .gloskin-ui1-button--light{color:var(--gloskin-accent-strong)}.gloskin-ui1 .gloskin-ui1-button--ghost{color:var(--gloskin-text)}
+/* Header and navigation interaction refinements. */
+body.gloskin-ui1{--gloskin-ui1-header-offset:0px}
+body.admin-bar.gloskin-ui1{--gloskin-ui1-header-offset:32px}
+.gloskin-ui1-header{top:var(--gloskin-ui1-header-offset);transition:transform 220ms cubic-bezier(.22,1,.36,1);will-change:transform}
+.gloskin-ui1-header.is-hidden{transform:translateY(calc(-100% - var(--gloskin-ui1-header-offset)))}
+.gloskin-ui1-nav__chevron{display:block;width:13px;height:13px;transform:rotate(0deg);transform-origin:50% 50%;transition:transform 190ms cubic-bezier(.22,1,.36,1)}
+.gloskin-ui1-nav__toggle[aria-expanded="true"] .gloskin-ui1-nav__chevron{transform:rotate(180deg)}
+@media (max-width:782px){body.admin-bar.gloskin-ui1{--gloskin-ui1-header-offset:46px}}
+@media (max-width:600px){body.admin-bar.gloskin-ui1{--gloskin-ui1-header-offset:0px}}
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-header,.gloskin-ui1-nav__chevron{transition:none !important}}

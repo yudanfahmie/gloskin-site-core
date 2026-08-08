@@ -90,9 +90,100 @@
 		});
 	}
 
+	function initSmartHeader() {
+		var header = document.querySelector('.gloskin-ui1-header');
+		if (!header) {
+			return;
+		}
+
+		var topGuard = Math.max(header.offsetHeight, 72);
+		var previousY = Math.max(window.scrollY || 0, 0);
+		var direction = 0;
+		var directionDistance = 0;
+		var scheduled = false;
+		var hideThreshold = 10;
+		var showThreshold = 4;
+
+		function interactionActive() {
+			if (header.contains(document.activeElement)) {
+				return true;
+			}
+			if (header.querySelector('[data-gloskin-submenu-toggle][aria-expanded="true"]')) {
+				return true;
+			}
+			if (document.documentElement.classList.contains('gloskin-ui1-drawer-open')) {
+				return true;
+			}
+			var drawerOpener = header.querySelector('[data-gloskin-drawer-open]');
+			return !!drawerOpener && drawerOpener.getAttribute('aria-expanded') === 'true';
+		}
+
+		function showHeader() {
+			header.classList.remove('is-hidden');
+		}
+
+		function updateHeader() {
+			var currentY = Math.max(window.scrollY || 0, 0);
+			var delta = currentY - previousY;
+			previousY = currentY;
+
+			if (currentY <= topGuard) {
+				showHeader();
+				direction = 0;
+				directionDistance = 0;
+				scheduled = false;
+				return;
+			}
+
+			if (0 === delta) {
+				scheduled = false;
+				return;
+			}
+
+			var nextDirection = delta > 0 ? 1 : -1;
+			if (nextDirection !== direction) {
+				direction = nextDirection;
+				directionDistance = 0;
+			}
+			directionDistance += Math.abs(delta);
+
+			if (interactionActive()) {
+				showHeader();
+				directionDistance = 0;
+				scheduled = false;
+				return;
+			}
+
+			if (direction > 0 && directionDistance >= hideThreshold) {
+				header.classList.add('is-hidden');
+				directionDistance = 0;
+			} else if (direction < 0 && directionDistance >= showThreshold) {
+				showHeader();
+				directionDistance = 0;
+			}
+			scheduled = false;
+		}
+
+		function onScroll() {
+			if (scheduled) {
+				return;
+			}
+			scheduled = true;
+			window.requestAnimationFrame(updateHeader);
+		}
+
+		window.addEventListener('scroll', onScroll, { passive: true });
+		header.addEventListener('focusin', function () {
+			showHeader();
+			direction = 0;
+			directionDistance = 0;
+		});
+	}
+
 	function init() {
 		initDrawer();
 		initDisclosures();
+		initSmartHeader();
 	}
 
 	if (document.readyState === 'loading') {

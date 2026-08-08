@@ -15,7 +15,8 @@ if ( ! function_exists( 'gloskin_ui1_render_nav_tree' ) ) {
 			echo '<a class="gloskin-ui1-nav__link" href="' . esc_url( $url ) . '"' . ( $active ? ' aria-current="page"' : '' ) . '>' . esc_html( $label ) . '</a>';
 			if ( $children ) {
 				echo '<button class="gloskin-ui1-nav__toggle" type="button" data-gloskin-submenu-toggle aria-expanded="false" aria-controls="' . esc_attr( $submenu ) . '">';
-				echo '<span class="screen-reader-text">' . esc_html( sprintf( __( 'Buka submenu %s', 'gloskin-site-core' ), $label ) ) . '</span><span aria-hidden="true">⌄</span></button>';
+				echo '<span class="screen-reader-text">' . esc_html( sprintf( __( 'Buka submenu %s', 'gloskin-site-core' ), $label ) ) . '</span>';
+				echo '<svg class="gloskin-ui1-nav__chevron" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 6.25 8 10l4-3.75" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>';
 			}
 			echo '</div>';
 			if ( $children ) {
