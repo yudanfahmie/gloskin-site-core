@@ -20,21 +20,27 @@ if grep -RInE "$prohibited" "$plugin_root" --include='*.php' --include='*.js' --
 fi
 
 kernel_count="$(grep -RIl 'final class Gloskin_Site_Core_Kernel' "$plugin_root" --include='*.php' | wc -l | tr -d ' ')"
-if [[ "$kernel_count" != "1" ]]; then
-	echo "expected exactly one Kernel composition root, found $kernel_count" >&2
-	exit 1
-fi
+[[ "$kernel_count" == "1" ]] || { echo "expected exactly one Kernel composition root, found $kernel_count" >&2; exit 1; }
 
 asset_owner_count="$(grep -RIl "add_action( 'wp_enqueue_scripts'" "$plugin_root" --include='*.php' | wc -l | tr -d ' ')"
-if [[ "$asset_owner_count" != "1" ]]; then
-	echo "expected exactly one first-party frontend asset enqueue owner, found $asset_owner_count" >&2
-	exit 1
-fi
+[[ "$asset_owner_count" == "1" ]] || { echo "expected exactly one first-party frontend asset enqueue owner, found $asset_owner_count" >&2; exit 1; }
 
 service_count="$(find "$plugin_root/includes" -maxdepth 1 -type f \( -name 'class-gloskin-site-core-*-service.php' -o -name 'class-gloskin-site-core-*-adapter.php' \) | wc -l | tr -d ' ')"
 if (( service_count > 8 )); then
 	echo "first-party bootable service budget exceeded: $service_count" >&2
 	exit 1
 fi
+
+woo_gate_count="$(grep -RIl "class_exists( 'WooCommerce'" "$plugin_root/includes" --include='*.php' | wc -l | tr -d ' ')"
+[[ "$woo_gate_count" == "1" ]] || { echo "Woo availability must be resolved in exactly one adapter, found $woo_gate_count gates" >&2; exit 1; }
+
+required_templates=(home about treatments treatment skincare skincare-category clinics clinic doctors doctor contact insights shop)
+for template in "${required_templates[@]}"; do
+	[[ -f "$plugin_root/templates/pages/$template.php" ]] || { echo "missing template: $template" >&2; exit 1; }
+done
+
+for script in "$plugin_root"/assets/js/*.js; do
+	node --check "$script" >/dev/null
+done
 
 echo "architecture checks passed ($service_count bootable service classes)"
