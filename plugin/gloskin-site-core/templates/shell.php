@@ -14,9 +14,11 @@ if ( ! is_array( $gloskin_context ) ) {
 	$gloskin_context = array();
 }
 
-$view    = isset( $gloskin_context['view'] ) ? sanitize_key( $gloskin_context['view'] ) : '';
-$variant = isset( $gloskin_context['design_variant'] ) ? sanitize_key( $gloskin_context['design_variant'] ) : 'medical';
-$view_file = __DIR__ . '/pages/' . $view . '.php';
+$view             = isset( $gloskin_context['view'] ) ? sanitize_key( $gloskin_context['view'] ) : '';
+$variant          = isset( $gloskin_context['design_variant'] ) ? sanitize_key( $gloskin_context['design_variant'] ) : 'medical';
+$view_file        = __DIR__ . '/pages/' . $view . '.php';
+$commerce_native  = ! empty( $gloskin_context['commerce_native'] );
+$commerce_render  = isset( $gloskin_context['commerce_render_mode'] ) ? sanitize_key( $gloskin_context['commerce_render_mode'] ) : '';
 
 require __DIR__ . '/parts/template-helpers.php';
 require __DIR__ . '/parts/composition-helpers.php';
@@ -32,7 +34,18 @@ require __DIR__ . '/parts/composition-helpers.php';
 <?php require __DIR__ . '/parts/header.php'; ?>
 <main id="gloskin-main" class="gloskin-ui1-main">
 	<?php
-	if ( is_readable( $view_file ) ) {
+	if ( $commerce_native ) {
+		echo '<div class="woocommerce gloskin-ui1-commerce-native">';
+		if ( 'woocommerce' === $commerce_render && function_exists( 'woocommerce_content' ) ) {
+			woocommerce_content();
+		} elseif ( function_exists( 'have_posts' ) ) {
+			while ( have_posts() ) {
+				the_post();
+				the_content();
+			}
+		}
+		echo '</div>';
+	} elseif ( is_readable( $view_file ) ) {
 		require $view_file;
 	} else {
 		gloskin_ui1_empty( __( 'Halaman Gloskin ini tidak tersedia.', 'gloskin-site-core' ) );

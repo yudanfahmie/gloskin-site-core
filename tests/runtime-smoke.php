@@ -71,6 +71,7 @@ $GLOBALS['gl_is_admin'] = getenv( 'GL_TEST_ADMIN' ) === '1';
 $GLOBALS['gl_woo_late'] = getenv( 'GL_TEST_WOO_LATE' ) === '1';
 $GLOBALS['gl_woo'] = getenv( 'GL_TEST_WOO' ) === '1' || $GLOBALS['gl_woo_late'];
 $GLOBALS['gl_shortcodes'] = array();
+$GLOBALS['gl_loop_consumed'] = false;
 
 /**
  * Woo class/function stubs, extracted into a callable so the load-order
@@ -107,8 +108,6 @@ function gl_define_woo_stubs() {
 	$GLOBALS['gl_woo_instance']->cart = new GL_Test_Cart();
 	function WC() { return $GLOBALS['gl_woo_instance']; }
 	function wc_get_page_id( $page ) {
-		// Reuse the provisioned Shop page as a stand-in canonical destination
-		// so account_url() has a real, resolvable permalink to return.
 		$account_page = get_page_by_path( 'shop', OBJECT, 'page' );
 		return $account_page ? $account_page->ID : 0;
 	}
@@ -122,7 +121,6 @@ function gl_define_woo_stubs() {
 }
 
 if ( $GLOBALS['gl_woo'] && ! $GLOBALS['gl_woo_late'] ) {
-	// Ordinary case: WooCommerce (simulated) is already loaded before Gloskin boots.
 	gl_define_woo_stubs();
 }
 $GLOBALS['gl_activation'] = null;
@@ -325,6 +323,13 @@ function get_term_by( $field, $value, $taxonomy ) { return ( $GLOBALS['gl_woo'] 
 function get_term_link( $term ) { return $term instanceof WP_Term ? home_url( '/product-category/' . $term->slug . '/' ) : new WP_Error(); }
 function shortcode_exists( $tag ) { return in_array( $tag, $GLOBALS['gl_shortcodes'], true ); }
 function do_shortcode( $value ) { return '<form data-test-form>' . esc_html( $value ) . '</form>'; }
+function have_posts() { return ! $GLOBALS['gl_loop_consumed'] && $GLOBALS['gl_route']['object'] instanceof WP_Post; }
+function the_post() { $GLOBALS['gl_loop_consumed'] = true; }
+function the_content() {
+	$kind = is_cart() ? 'cart' : ( is_checkout() ? 'checkout' : ( is_account_page() ? 'account' : 'page' ) );
+	echo '<div data-test-native-commerce-content="' . esc_attr( $kind ) . '"></div>';
+}
+function woocommerce_content() { echo '<div data-test-native-commerce-content="product"></div>'; }
 function wp_is_post_revision() { return false; }
 function wp_verify_nonce() { return true; }
 function wp_nonce_field() {}
@@ -406,14 +411,6 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 }
 
 if ( $GLOBALS['gl_woo_late'] ) {
-	// Load-order regression proof: Kernel::boot() already ran above (inside
-	// `require $plugin;`) while class_exists('WooCommerce') was still
-	// false, so the Kernel's own WooCommerce adapter instance was
-	// constructed before Woo existed. WooCommerce "loads" only now. A
-	// constructor-time cached availability snapshot would stay permanently
-	// false for the rest of this request; the fix resolves availability
-	// lazily at point-of-use, so the very same adapter instance must now
-	// correctly report Woo as available.
 	gl_define_woo_stubs();
 }
 
@@ -444,8 +441,6 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 	}
 }
 
-
-// Sanitization boundaries: map host/path, attachment IDs and canonical relationship IDs.
 $clinic = get_page_by_path( 'kebayoran-baru', OBJECT, Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE );
 $attachment_id = wp_insert_post( array( 'post_type' => 'attachment', 'post_status' => 'inherit', 'post_title' => 'Test Image', 'post_name' => 'test-image' ), true );
 update_post_meta( $clinic->ID, 'gloskin_map_embed', 'https://evil.example/maps/embed?pb=1' );
@@ -461,7 +456,6 @@ if ( get_post_meta( $clinic->ID, 'gloskin_gallery_image_ids', true ) !== array( 
 	fwrite( STDERR, "Gallery attachment validation failed\n" ); exit( 1 );
 }
 
-// Test-only fixtures prove native detail routes without polluting production seeding.
 $treatment_id = wp_insert_post( array( 'post_type' => Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 'post_status' => 'publish', 'post_title' => 'Fixture Treatment', 'post_name' => 'fixture-treatment' ), true );
 $doctor_id = wp_insert_post( array( 'post_type' => Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE, 'post_status' => 'publish', 'post_title' => 'Fixture Doctor', 'post_name' => 'fixture-doctor' ), true );
 if ( get_permalink( $clinic ) !== 'https://example.test/clinics/kebayoran-baru/'
@@ -514,7 +508,6 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 		fwrite( STDERR, "Clinic missing-data fallback failed\n" ); exit( 1 );
 	}
 
-	// Missing form provider must remain an intentional fallback; configured provider must render.
 	$form_adapter = new Gloskin_Site_Core_Form_Adapter();
 	if ( false === strpos( $form_adapter->render(), 'not configured yet' ) ) {
 		fwrite( STDERR, "Missing-form fallback failed\n" ); exit( 1 );
@@ -544,7 +537,6 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 			fwrite( STDERR, "Cart URL should use Woo canonical URL\n" ); exit( 1 );
 		}
 
-		// Mini-cart body: thumbnail wrapper, name, variation, Woo-native remove markup.
 		$mini_cart = $shop_context['commerce']['mini_cart'];
 		if ( false === strpos( $mini_cart, 'gloskin-ui1-cart-sheet__item-media' )
 			|| false === strpos( $mini_cart, 'Test Product' )
@@ -554,51 +546,48 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 			fwrite( STDERR, "Mini-cart item rendering incomplete: {$mini_cart}\n" ); exit( 1 );
 		}
 
-		foreach ( array( 'woo', 'cart', 'checkout', 'account' ) as $commerce_flag ) {
-			$GLOBALS['gl_route'] = array( 'front' => false, 'page' => false, 'singular' => '', 'object' => null, $commerce_flag => true );
+		if ( ! empty( $GLOBALS['gl_hooks']['get_header'] ) || ! empty( $GLOBALS['gl_hooks']['get_footer'] ) ) {
+			fwrite( STDERR, "Native Woo chrome must not be injected through get_header/get_footer\n" ); exit( 1 );
+		}
+
+		$native_routes = array(
+			array( 'product', array( 'woo' => true, 'object' => get_post( $product_id ) ), 'woocommerce' ),
+			array( 'cart', array( 'cart' => true, 'page' => true, 'object' => $shop ), 'page' ),
+			array( 'checkout', array( 'checkout' => true, 'page' => true, 'object' => $shop ), 'page' ),
+			array( 'account', array( 'account' => true, 'page' => true, 'object' => $shop ), 'page' ),
+		);
+		foreach ( $native_routes as $native_case ) {
+			$GLOBALS['gl_route'] = array_merge(
+				array( 'front' => false, 'page' => false, 'singular' => '', 'object' => null ),
+				$native_case[1]
+			);
 			$native = apply_filters( 'template_include', '/theme/woocommerce.php' );
-			if ( '/theme/woocommerce.php' !== $native ) {
-				fwrite( STDERR, 'Native Woo template was replaced for ' . $commerce_flag . "\n" ); exit( 1 );
+			if ( substr( $native, -20 ) !== '/templates/shell.php' ) {
+				fwrite( STDERR, 'Native Woo shell ownership failed for ' . $native_case[0] . "\n" ); exit( 1 );
+			}
+			$native_context = get_query_var( 'gloskin_context', array() );
+			if ( ( $native_context['view'] ?? '' ) !== 'commerce-native'
+				|| empty( $native_context['commerce_native'] )
+				|| ( $native_context['commerce_render_mode'] ?? '' ) !== $native_case[2] ) {
+				fwrite( STDERR, 'Native Woo context failed for ' . $native_case[0] . "\n" ); exit( 1 );
 			}
 			$classes = apply_filters( 'body_class', array() );
 			if ( ! in_array( 'gloskin-ui1', $classes, true ) ) {
-				fwrite( STDERR, 'Woo presentation body class missing for ' . $commerce_flag . "\n" ); exit( 1 );
+				fwrite( STDERR, 'Woo presentation body class missing for ' . $native_case[0] . "\n" ); exit( 1 );
 			}
-
-			// Native Woo routes never pass through shell.php; chrome must
-			// still appear via the get_header/get_footer hook strategy.
-			$leftover_context = get_query_var( 'gloskin_context', array() );
-			if ( ! empty( $leftover_context['view'] ) ) {
-				fwrite( STDERR, 'Stale gloskin_context leaked onto native Woo route ' . $commerce_flag . "\n" ); exit( 1 );
-			}
+			$GLOBALS['gl_loop_consumed'] = false;
 			ob_start();
-			do_action( 'get_header' );
-			$header_chrome = ob_get_clean();
-			if ( false === strpos( $header_chrome, 'data-gloskin-cart-open' )
-				|| false === strpos( $header_chrome, 'data-gloskin-search-open' )
-				|| false === strpos( $header_chrome, 'gloskin-ui1-utility-btn--account' ) ) {
-				fwrite( STDERR, 'Commerce header chrome missing on native Woo route ' . $commerce_flag . "\n" ); exit( 1 );
+			require $native;
+			$native_html = ob_get_clean();
+			if ( 1 !== substr_count( $native_html, '<header class="gloskin-ui1-header">' )
+				|| 1 !== substr_count( $native_html, '<footer class="gloskin-ui1-footer">' ) ) {
+				fwrite( STDERR, 'Native Woo duplicate/missing site chrome for ' . $native_case[0] . "\n" ); exit( 1 );
 			}
-			ob_start();
-			do_action( 'get_footer' );
-			$footer_chrome = ob_get_clean();
-			if ( false === strpos( $footer_chrome, 'gloskin-ui1-footer' ) ) {
-				fwrite( STDERR, 'Commerce footer chrome missing on native Woo route ' . $commerce_flag . "\n" ); exit( 1 );
+			if ( false === strpos( $native_html, 'data-test-native-commerce-content="' . $native_case[0] . '"' ) ) {
+				fwrite( STDERR, 'Woo-owned native content missing for ' . $native_case[0] . "\n" ); exit( 1 );
 			}
 		}
 
-		// Shop archive already renders through shell.php; get_header/get_footer
-		// must not duplicate that chrome.
-		$GLOBALS['gl_route'] = array( 'front' => false, 'page' => true, 'singular' => '', 'object' => $shop );
-		apply_filters( 'template_include', '/theme/index.php' );
-		ob_start();
-		do_action( 'get_header' );
-		$shop_header_chrome = ob_get_clean();
-		if ( '' !== $shop_header_chrome ) {
-			fwrite( STDERR, "get_header duplicated chrome on a Gloskin-owned route\n" ); exit( 1 );
-		}
-
-		// Wishlist toggle on the Woo single-product hook.
 		global $product;
 		$product = new GL_Test_Product( $product_id );
 		$woo_adapter = new Gloskin_Site_Core_WooCommerce_Adapter();

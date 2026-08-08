@@ -47,12 +47,12 @@ if ( ! function_exists( 'gloskin_ui1_render_nav_tree' ) ) {
 			<button class="gloskin-ui1-drawer-toggle" type="button" data-gloskin-drawer-open aria-expanded="false" aria-controls="gloskin-mobile-drawer"><span class="screen-reader-text"><?php echo esc_html__( 'Buka navigasi', 'gloskin-site-core' ); ?></span><svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true" focusable="false"><path d="M4 6h14M4 11h14M4 16h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
 		</div>
 	</div>
-	<div class="gloskin-ui1-header__nav-row">
-		<div class="gloskin-ui1-container">
-			<nav class="gloskin-ui1-nav gloskin-ui1-nav--desktop" aria-label="<?php echo esc_attr__( 'Navigasi utama', 'gloskin-site-core' ); ?>"><?php gloskin_ui1_render_nav_tree( $navigation, 'desktop' ); ?></nav>
-		</div>
-	</div>
 </header>
+<div class="gloskin-ui1-header__nav-row">
+	<div class="gloskin-ui1-container">
+		<nav class="gloskin-ui1-nav gloskin-ui1-nav--desktop" aria-label="<?php echo esc_attr__( 'Navigasi utama', 'gloskin-site-core' ); ?>"><?php gloskin_ui1_render_nav_tree( $navigation, 'desktop' ); ?></nav>
+	</div>
+</div>
 <div class="gloskin-ui1-search-overlay" id="gloskin-search-overlay" data-gloskin-overlay="search" aria-hidden="true" hidden>
 	<div class="gloskin-ui1-search-overlay__backdrop" data-gloskin-overlay-close></div>
 	<div class="gloskin-ui1-search-overlay__canvas" role="dialog" aria-modal="true" aria-label="<?php echo esc_attr__( 'Pencarian Gloskin', 'gloskin-site-core' ); ?>">

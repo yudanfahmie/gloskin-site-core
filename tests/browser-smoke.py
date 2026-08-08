@@ -23,6 +23,7 @@ viewports = [
     ('exhibition', 1920, 1080),
     ('large-exhibition', 2560, 1440),
 ]
+header_widths = [390, 600, 601, 782, 1024, 1440, 1920]
 public_leaks = [
     'not configured', 'content pending', 'missing data', 'architecture supports',
     'approved doctor profiles', 'approved treatment categories',
@@ -63,6 +64,19 @@ def load(page, html):
     page.add_style_tag(path=str(PRODUCTION_CSS))
     page.add_script_tag(path=str(JS))
     page.wait_for_timeout(220)
+
+
+def scroll_beyond_header(page, extra=280):
+    metrics = page.evaluate("""extra => {
+        const header=document.querySelector('.gloskin-ui1-header');
+        const nav=document.querySelector('.gloskin-ui1-header__nav-row');
+        const guard=(header?header.offsetHeight:0)+(nav?nav.offsetHeight:0);
+        const max=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
+        return {guard,max,target:Math.min(max,guard+extra)};
+    }""", extra)
+    if metrics['target'] <= metrics['guard'] + 20:
+        raise SystemExit(f'page does not provide enough real content to exercise sticky state: {metrics}')
+    return metrics
 
 
 def assert_contrast(page, selector, minimum=4.5):
@@ -209,28 +223,33 @@ with sync_playwright() as p:
 
             if viewport_name == 'desktop' and view == 'home':
                 header = page.locator('.gloskin-ui1-header')
-                # Two-layer header: row 1 (brand + utilities) is optically centered
-                # via a 1fr/auto/1fr grid; row 2 (nav) is a distinct layer below it
-                # so both rows can hide/reveal together as one sticky unit.
+                nav_row = page.locator('.gloskin-ui1-header__nav-row')
                 geometry = page.evaluate("""() => {
                     const header=document.querySelector('.gloskin-ui1-header');
                     const bar=document.querySelector('.gloskin-ui1-header__inner');
                     const navRow=document.querySelector('.gloskin-ui1-header__nav-row');
                     const brand=document.querySelector('.gloskin-ui1-brand');
                     const contact=document.querySelector('.gloskin-ui1-header__contact');
+                    const main=document.querySelector('.gloskin-ui1-main');
                     const center = el => { const r=el.getBoundingClientRect(); return r.top+r.height/2; };
                     const hcenter = el => { const r=el.getBoundingClientRect(); return r.left+r.width/2; };
-                    const style=getComputedStyle(header);
+                    const hs=getComputedStyle(header), ns=getComputedStyle(navRow);
                     return {
-                        barHeight: bar.getBoundingClientRect().height,
-                        barBottom: bar.getBoundingClientRect().bottom,
-                        brandCenterY: center(brand),
-                        contactCenterY: contact ? center(contact) : null,
-                        navRowTop: navRow ? navRow.getBoundingClientRect().top : null,
-                        brandX: hcenter(brand),
-                        viewportCenterX: window.innerWidth / 2,
-                        border: style.borderBottomWidth,
-                        backdrop: style.backdropFilter || style.webkitBackdropFilter,
+                        barHeight:bar.getBoundingClientRect().height,
+                        headerBottom:header.getBoundingClientRect().bottom,
+                        navTop:navRow.getBoundingClientRect().top,
+                        navBottom:navRow.getBoundingClientRect().bottom,
+                        mainTop:main.getBoundingClientRect().top,
+                        mainDocTop:main.getBoundingClientRect().top+window.scrollY,
+                        brandCenterY:center(brand),
+                        contactCenterY:contact?center(contact):null,
+                        brandX:hcenter(brand),
+                        viewportCenterX:window.innerWidth/2,
+                        headerPosition:hs.position,
+                        navPosition:ns.position,
+                        navStickyTop:ns.top,
+                        border:ns.borderBottomWidth,
+                        backdrop:ns.backdropFilter||ns.webkitBackdropFilter,
                     };
                 }""")
                 if not (68 <= geometry['barHeight'] <= 88):
@@ -239,36 +258,68 @@ with sync_playwright() as p:
                     raise SystemExit(f'desktop/home: brand/utility bar alignment failed: {geometry}')
                 if abs(geometry['brandX'] - geometry['viewportCenterX']) > 4:
                     raise SystemExit(f'desktop/home: brand is not optically centered: {geometry}')
-                if geometry['navRowTop'] is None or geometry['navRowTop'] < geometry['barBottom'] - 1:
-                    raise SystemExit(f'desktop/home: nav row is not a distinct layer below the brand bar: {geometry}')
+                if abs(geometry['headerBottom'] - geometry['navTop']) > 1 or abs(geometry['navBottom'] - geometry['mainTop']) > 1:
+                    raise SystemExit(f'desktop/home: ghost vertical header gap detected: {geometry}')
+                if geometry['headerPosition'] in ('sticky', 'fixed') or geometry['navPosition'] != 'sticky' or geometry['navStickyTop'] != '0px':
+                    raise SystemExit(f'desktop/home: sticky ownership failed: {geometry}')
                 if geometry['border'] != '1px' or 'blur(' not in geometry['backdrop']:
-                    raise SystemExit(f'desktop/home: premium header separation/translucency failed: {geometry}')
+                    raise SystemExit(f'desktop/home: nav separation/translucency failed: {geometry}')
 
+                real_scroll = scroll_beyond_header(page)
                 desktop_toggle = page.locator('.gloskin-ui1-nav--desktop [data-gloskin-submenu-toggle]').first
                 desktop_toggle.click(); page.wait_for_timeout(160)
                 transform = desktop_toggle.locator('.gloskin-ui1-nav__chevron').evaluate('el => getComputedStyle(el).transform')
                 if desktop_toggle.get_attribute('aria-expanded') != 'true' or transform in ('none', 'matrix(1, 0, 0, 1, 0, 0)'):
                     raise SystemExit('desktop/home: expanded chevron visual state failed')
-                page.evaluate("document.documentElement.style.scrollBehavior='auto'; document.body.style.minHeight='3200px'; window.scrollTo(0,500)")
+                page.evaluate('(y) => window.scrollTo(0,y)', real_scroll['target']); page.wait_for_timeout(100)
+                if nav_row.evaluate("el => el.classList.contains('is-hidden')"):
+                    raise SystemExit('desktop/home: nav hid while submenu was open')
+                scrolled = page.evaluate("""() => {
+                    const h=document.querySelector('.gloskin-ui1-header').getBoundingClientRect();
+                    const n=document.querySelector('.gloskin-ui1-header__nav-row').getBoundingClientRect();
+                    const m=document.querySelector('.gloskin-ui1-main').getBoundingClientRect();
+                    return {brandBottom:h.bottom,navTop:n.top,mainDocTop:m.top+window.scrollY};
+                }""")
+                if scrolled['brandBottom'] >= 0 or abs(scrolled['navTop']) > 1:
+                    raise SystemExit(f'desktop/home: brand row did not scroll away while nav stayed sticky: {scrolled}')
+                if abs(scrolled['mainDocTop'] - geometry['mainDocTop']) > 1:
+                    raise SystemExit(f'desktop/home: main layout shifted during sticky state: {scrolled}')
+
+                desktop_toggle.click()
+                nav_link = page.locator('.gloskin-ui1-nav--desktop .gloskin-ui1-nav__link').first
+                nav_link.focus()
+                focus_y = min(real_scroll['max'], real_scroll['target'] + 90)
+                page.evaluate('(y) => window.scrollTo(0,y)', focus_y); page.wait_for_timeout(90)
+                if nav_row.evaluate("el => el.classList.contains('is-hidden')"):
+                    raise SystemExit('desktop/home: nav hid while keyboard focus was inside')
+                page.evaluate('document.activeElement && document.activeElement.blur()')
+                hide_y = min(real_scroll['max'], focus_y + 120)
+                page.evaluate('(y) => window.scrollTo(0,y)', hide_y); page.wait_for_timeout(100)
+                if not nav_row.evaluate("el => el.classList.contains('is-hidden')"):
+                    raise SystemExit('desktop/home: scroll-down nav hide failed')
+                page.evaluate('(y) => window.scrollTo(0,y)', max(real_scroll['guard'] + 30, hide_y - 50)); page.wait_for_timeout(90)
+                if nav_row.evaluate("el => el.classList.contains('is-hidden')"):
+                    raise SystemExit('desktop/home: immediate scroll-up nav reveal failed')
+
+                down_again = min(real_scroll['max'], hide_y + 40)
+                page.evaluate('(y) => window.scrollTo(0,y)', down_again); page.wait_for_timeout(90)
+                if not nav_row.evaluate("el => el.classList.contains('is-hidden')"):
+                    raise SystemExit('desktop/home: second scroll-down nav hide failed')
+                page.evaluate("document.querySelector('[data-gloskin-search-open]').click()")
                 page.wait_for_timeout(80)
-                if header.evaluate("el => el.classList.contains('is-hidden')"):
-                    raise SystemExit('desktop/home: header hid while submenu was open')
-                desktop_toggle.click(); page.locator('.gloskin-ui1-brand').focus(); page.evaluate('window.scrollTo(0,650)'); page.wait_for_timeout(80)
-                if header.evaluate("el => el.classList.contains('is-hidden')"):
-                    raise SystemExit('desktop/home: header hid while focus was inside')
-                page.evaluate("document.activeElement && document.activeElement.blur(); window.scrollTo(0,800)"); page.wait_for_timeout(80)
-                if not header.evaluate("el => el.classList.contains('is-hidden')"):
-                    raise SystemExit('desktop/home: scroll-down hide failed')
-                page.evaluate('window.scrollTo(0,740)'); page.wait_for_timeout(80)
-                if header.evaluate("el => el.classList.contains('is-hidden')"):
-                    raise SystemExit('desktop/home: scroll-up reveal failed')
+                if nav_row.evaluate("el => el.classList.contains('is-hidden')"):
+                    raise SystemExit('desktop/home: nav stayed hidden while Search overlay opened')
+                page.keyboard.press('Escape'); page.wait_for_timeout(350)
                 page.evaluate('window.scrollTo(0,0)'); page.wait_for_timeout(80)
 
             if viewport_name == 'mobile' and view == 'home':
                 opener = page.locator('[data-gloskin-drawer-open]'); opener.click()
                 drawer = page.locator('[data-gloskin-drawer]')
+                nav_row = page.locator('.gloskin-ui1-header__nav-row')
                 if drawer.get_attribute('aria-hidden') != 'false' or opener.get_attribute('aria-expanded') != 'true' or not page.evaluate("document.querySelector('[data-gloskin-drawer]').contains(document.activeElement)"):
                     raise SystemExit('mobile/home: drawer open/focus state failed')
+                if nav_row.evaluate("el => el.classList.contains('is-hidden')"):
+                    raise SystemExit('mobile/home: drawer open left nav controller hidden')
                 toggle = drawer.locator('[data-gloskin-submenu-toggle]').first; toggle.click(); target_id = toggle.get_attribute('aria-controls'); page.wait_for_timeout(160)
                 if toggle.get_attribute('aria-expanded') != 'true' or page.locator('#' + target_id).get_attribute('hidden') is not None:
                     raise SystemExit('mobile/home: submenu disclosure state failed')
@@ -284,6 +335,30 @@ with sync_playwright() as p:
             page.close()
         print(f'browser smoke passed ({viewport_name} {width}x{height}, {len(views)} views)')
 
+    for width in header_widths:
+        height = 1000 if width < 1200 else 900
+        page = browser.new_page(viewport={'width': width, 'height': height})
+        load(page, fixtures['home'])
+        geometry = page.evaluate("""() => {
+            const h=document.querySelector('.gloskin-ui1-header').getBoundingClientRect();
+            const n=document.querySelector('.gloskin-ui1-header__nav-row');
+            const nr=n.getBoundingClientRect();
+            const m=document.querySelector('.gloskin-ui1-main').getBoundingClientRect();
+            const b=document.querySelector('.gloskin-ui1-brand').getBoundingClientRect();
+            const ns=getComputedStyle(n), hs=getComputedStyle(document.querySelector('.gloskin-ui1-header'));
+            return {headerBottom:h.bottom,navTop:nr.top,navBottom:nr.bottom,mainTop:m.top,navDisplay:ns.display,headerPosition:hs.position,brandCenter:b.left+b.width/2,overflow:document.documentElement.scrollWidth-window.innerWidth};
+        }""")
+        if geometry['overflow'] > 1 or abs(geometry['brandCenter'] - width / 2) > 4 or geometry['headerPosition'] in ('sticky', 'fixed'):
+            raise SystemExit(f'header-width/{width}: overflow/centering/sticky-owner regression: {geometry}')
+        if geometry['navDisplay'] == 'none':
+            if abs(geometry['headerBottom'] - geometry['mainTop']) > 1:
+                raise SystemExit(f'header-width/{width}: compact header ghost gap: {geometry}')
+        else:
+            if abs(geometry['headerBottom'] - geometry['navTop']) > 1 or abs(geometry['navBottom'] - geometry['mainTop']) > 1:
+                raise SystemExit(f'header-width/{width}: layered header ghost gap: {geometry}')
+        page.close()
+    print('browser smoke passed (header computed geometry: 390/600/601/782/1024/1440/1920)')
+
     page = browser.new_page(viewport={'width': 1440, 'height': 900})
     load(page, home_real_media)
     hero = page.locator('.gloskin-ui1-hero__media')
@@ -291,7 +366,6 @@ with sync_playwright() as p:
         raise SystemExit('desktop/home: native attachment hero media priority failed')
     page.close(); print('browser smoke passed (native media priority)')
 
-    # Explicit contrast-state regression including the luxury dark section token override.
     page = browser.new_page(viewport={'width': 1440, 'height': 900})
     load(page, fixtures['about'])
     page.evaluate("""() => {
@@ -312,41 +386,36 @@ with sync_playwright() as p:
         page.on('console', lambda msg, e=errors: e.append(msg.text) if msg.type == 'error' else None)
         page.on('pageerror', lambda err, e=errors: e.append(str(err))); load(page, fixtures['home'])
         page.evaluate("""({toolbarHeight,fixedToolbar}) => {
-            document.body.classList.add('admin-bar'); document.documentElement.style.scrollBehavior='auto'; document.body.style.minHeight='3600px';
+            document.body.classList.add('admin-bar'); document.documentElement.style.scrollBehavior='auto';
             const bar=document.createElement('div'); bar.id='wpadminbar'; bar.style.height=toolbarHeight+'px'; bar.style.left='0'; bar.style.right='0'; bar.style.top='0'; bar.style.zIndex='99999'; bar.style.transform='none'; bar.style.position=fixedToolbar?'fixed':'static'; document.body.prepend(bar);
         }""", {'toolbarHeight': toolbar_height, 'fixedToolbar': width > 600})
-        header=page.locator('.gloskin-ui1-header'); admin_bar=page.locator('#wpadminbar')
-        if header.evaluate('el => getComputedStyle(el).top') != expected_top:
-            raise SystemExit(f'admin-bar/{case_name}: unexpected sticky top offset')
-        geometry=page.evaluate("""() => { const b=document.querySelector('#wpadminbar').getBoundingClientRect(),h=document.querySelector('.gloskin-ui1-header').getBoundingClientRect(); return {barTop:b.top,barBottom:b.bottom,headerTop:h.top,gap:h.top-b.bottom}; }""")
-        if abs(geometry['gap']-expected_gap)>1:
-            raise SystemExit(f'admin-bar/{case_name}: geometry gap failed: {geometry}')
-        for y, hidden in ((800,True),(1200,True),(1100,False),(1500,True),(1350,False)):
-            page.evaluate(f'window.scrollTo(0,{y})'); page.wait_for_timeout(100)
-            actual=header.evaluate("el => el.classList.contains('is-hidden')")
-            if actual != hidden:
-                raise SystemExit(f'admin-bar/{case_name}: directional state failed at {y}: {actual}')
-        if not header.evaluate("el => el.classList.contains('is-hidden')"):
-            visible_top=header.evaluate('el => Math.round(el.getBoundingClientRect().top)')
-            if visible_top != int(float(expected_top[:-2])):
-                raise SystemExit(f'admin-bar/{case_name}: revealed geometry incorrect')
+        nav_row=page.locator('.gloskin-ui1-header__nav-row'); admin_bar=page.locator('#wpadminbar')
+        if nav_row.evaluate('el => getComputedStyle(el).top') != expected_top:
+            raise SystemExit(f'admin-bar/{case_name}: unexpected canonical nav sticky top offset')
+        if width > 1040:
+            real_scroll = scroll_beyond_header(page, 360)
+            page.evaluate('(y) => window.scrollTo(0,y)', real_scroll['target']); page.wait_for_timeout(100)
+            if not nav_row.evaluate("el => el.classList.contains('is-hidden')"):
+                raise SystemExit(f'admin-bar/{case_name}: scroll-down hide failed')
+            reveal_y = max(real_scroll['guard'] + 30, real_scroll['target'] - 70)
+            page.evaluate('(y) => window.scrollTo(0,y)', reveal_y); page.wait_for_timeout(260)
+            if nav_row.evaluate("el => el.classList.contains('is-hidden')"):
+                raise SystemExit(f'admin-bar/{case_name}: scroll-up reveal failed')
+            geometry=page.evaluate("""() => { const b=document.querySelector('#wpadminbar').getBoundingClientRect(),n=document.querySelector('.gloskin-ui1-header__nav-row').getBoundingClientRect(); return {barTop:b.top,barBottom:b.bottom,navTop:n.top,gap:n.top-b.bottom}; }""")
+            if abs(geometry['gap']-expected_gap)>1:
+                raise SystemExit(f'admin-bar/{case_name}: sticky nav geometry gap failed: {geometry}')
+            down_y = min(real_scroll['max'], reveal_y + 110)
+            page.evaluate('(y) => window.scrollTo(0,y)', down_y); page.wait_for_timeout(100)
+            if not nav_row.evaluate("el => el.classList.contains('is-hidden')"):
+                raise SystemExit(f'admin-bar/{case_name}: repeated scroll-down hide failed')
+            page.evaluate('(y) => window.scrollTo(0,y)', max(real_scroll['guard'] + 30, down_y - 45)); page.wait_for_timeout(90)
+            if nav_row.evaluate("el => el.classList.contains('is-hidden')"):
+                raise SystemExit(f'admin-bar/{case_name}: repeated scroll-up reveal failed')
         if admin_bar.evaluate('el => getComputedStyle(el).transform') != 'none' or (width > 600 and abs(admin_bar.evaluate('el => el.getBoundingClientRect().top')) > 1):
             raise SystemExit(f'admin-bar/{case_name}: toolbar moved/transformed')
         if errors: raise SystemExit(f'admin-bar/{case_name}: console/page errors: {errors}')
         page.close()
-    print('browser smoke passed (WordPress admin geometry + repeated directional sticky state)')
-
-    # ------------------------------------------------------------------
-    # Commerce header: Woo absent vs Woo active.
-    #
-    # The fixture harness has no live WooCommerce/REST backend, so the
-    # gloskin/v1/search and gloskin/v1/products/resolve endpoints are
-    # mocked via page.route() the same way editorial Unsplash images
-    # already are above. Everything else (header markup, cart badge/count,
-    # mini-cart body, wishlist toggle) is real server-rendered output from
-    # render-fixture.php with GL_TEST_WOO=1, exercising the actual PHP
-    # commerce context, not a hand-authored fixture.
-    # ------------------------------------------------------------------
+    print('browser smoke passed (WordPress admin geometry + canonical nav offset)')
 
     def mock_search(route):
         payload = {'groups': [{'type': 'produk', 'label': 'Produk', 'items': [{
@@ -362,7 +431,6 @@ with sync_playwright() as p:
         }]}
         route.fulfill(status=200, content_type='application/json', body=json.dumps(payload))
 
-    # Woo absent: search stays, commerce controls disappear cleanly.
     page = browser.new_page(viewport={'width': 1440, 'height': 900})
     errors = []
     page.on('console', lambda msg, e=errors: e.append(msg.text) if msg.type == 'error' else None)
@@ -381,7 +449,6 @@ with sync_playwright() as p:
     page.close()
     print('browser smoke passed (commerce header: Woo absent)')
 
-    # Woo active: full commerce header, search, wishlist, mini-cart.
     woo_shop_html = fixture('shop', GL_TEST_WOO='1')
     page = browser.new_page(viewport={'width': 1440, 'height': 900})
     errors = []
@@ -403,7 +470,18 @@ with sync_playwright() as p:
     if badge_text != '2':
         raise SystemExit(f'commerce/woo-active: cart badge incorrect: {badge_text!r}')
 
-    # Search: open, autofocus, mocked AJAX result with price, smooth close, focus return.
+    nav_row = page.locator('.gloskin-ui1-header__nav-row')
+    real_scroll = scroll_beyond_header(page, 320)
+    page.evaluate('(y) => window.scrollTo(0,y)', real_scroll['target']); page.wait_for_timeout(100)
+    if not nav_row.evaluate("el => el.classList.contains('is-hidden')"):
+        raise SystemExit('commerce/woo-active: nav did not hide before overlay safeguard test')
+    page.evaluate("document.querySelector('[data-gloskin-cart-open]').click()")
+    page.wait_for_timeout(80)
+    if nav_row.evaluate("el => el.classList.contains('is-hidden')"):
+        raise SystemExit('commerce/woo-active: nav stayed hidden while cart sheet opened')
+    page.keyboard.press('Escape'); page.wait_for_timeout(350)
+    page.evaluate('window.scrollTo(0,0)'); page.wait_for_timeout(80)
+
     search_trigger = page.locator('[data-gloskin-search-open]')
     search_trigger.click(); page.wait_for_timeout(80)
     search_overlay = page.locator('[data-gloskin-overlay="search"]')
@@ -424,7 +502,6 @@ with sync_playwright() as p:
     if not search_trigger.evaluate('el => el === document.activeElement'):
         raise SystemExit('commerce/woo-active: focus did not return to the search trigger')
 
-    # Wishlist: toggle on a product card, sheet lists the resolved product.
     wishlist_toggle = page.locator('[data-gloskin-wishlist-toggle]').first
     if wishlist_toggle.count() == 0:
         raise SystemExit('commerce/woo-active: no wishlist toggle on product card')
@@ -439,7 +516,6 @@ with sync_playwright() as p:
         raise SystemExit('commerce/woo-active: wishlist sheet did not list the resolved product')
     page.keyboard.press('Escape'); page.wait_for_timeout(350)
 
-    # Mini-cart: open, real server-rendered content, backdrop close, focus return.
     cart_trigger = page.locator('[data-gloskin-cart-open]')
     cart_trigger.click(); page.wait_for_timeout(80)
     cart_sheet = page.locator('[data-gloskin-overlay="cart"]')
@@ -467,7 +543,6 @@ with sync_playwright() as p:
     page.close()
     print('browser smoke passed (commerce header: Woo active)')
 
-    # Mobile: no crowding, cart stays reachable, account/wishlist live in the drawer.
     page = browser.new_page(viewport={'width': 390, 'height': 844})
     page.route('**/wp-json/gloskin/v1/search**', mock_search)
     page.route('**/wp-json/gloskin/v1/products/resolve**', mock_resolve)
@@ -484,7 +559,6 @@ with sync_playwright() as p:
     page.close()
     print('browser smoke passed (commerce header: mobile)')
 
-    # Reduced motion: overlays still function, but close immediately (no animation wait).
     page = browser.new_page(viewport={'width': 1440, 'height': 900}, reduced_motion='reduce')
     load(page, woo_shop_html)
     page.locator('[data-gloskin-cart-open]').click(); page.wait_for_timeout(50)
@@ -497,8 +571,8 @@ with sync_playwright() as p:
     reduced=browser.new_page(viewport={'width':390,'height':844},reduced_motion='reduce'); load(reduced,fixtures['home'])
     if not reduced.evaluate("matchMedia('(prefers-reduced-motion: reduce)').matches"):
         raise SystemExit('reduced-motion media query did not activate')
-    if reduced.locator('.gloskin-ui1-header').evaluate('el => getComputedStyle(el).transitionDuration') != '0s' or reduced.locator('.gloskin-ui1-nav__chevron').first.evaluate('el => getComputedStyle(el).transitionDuration') != '0s':
-        raise SystemExit('reduced-motion header/chevron transition not disabled')
+    if reduced.locator('.gloskin-ui1-header__nav-row').evaluate('el => getComputedStyle(el).transitionDuration') != '0s' or reduced.locator('.gloskin-ui1-nav__chevron').first.evaluate('el => getComputedStyle(el).transitionDuration') != '0s':
+        raise SystemExit('reduced-motion nav/chevron transition not disabled')
     reduced.close(); print('browser smoke passed (reduced motion)'); browser.close()
 
     for engine_name in ('firefox','webkit'):
