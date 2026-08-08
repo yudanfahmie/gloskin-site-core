@@ -1,586 +1,420 @@
 # Gloskin Site Core Implementation Plan
 
-## 1. Objective
+## 1. Read this first
 
-Create `gloskin-site-core` as a WordPress presentation and page-builder plugin for the Gloskin website by adapting the proven UI V6 foundation from `morgen-core`.
+The requirements authority is `docs/developer-source-of-truth.md`.
 
-The plugin should behave like a theme-level presentation system while remaining installable and manageable as a plugin. WooCommerce remains the authoritative commerce platform. Gloskin Site Core must not create a parallel product database or replace WooCommerce product, cart, checkout, order, payment, or customer logic.
+A normal implementation task must **not** reopen or re-analyze `yudanfahmie/project-9901`. The relevant developer requirements have already been transformed into this repository. Historical source identifiers remain in `docs/source-notes.md` only for provenance.
 
-This repository currently contains setup and implementation guidance only. The actual Morgen cloning/adaptation is a later implementation task.
+The pinned Morgen implementation reference is:
 
-## 2. Immutable source references
+- repository: `yudanfahmie/morgen-core`
+- commit: `374432cee6380e0aa0f81390e26b990147e5e58d`
+- presentation provenance: UI V6 only
 
-### Morgen source baseline
+Read before coding:
 
-- Repository: `yudanfahmie/morgen-core`
-- Commit: `374432cee6380e0aa0f81390e26b990147e5e58d`
-- Presentation baseline: UI V6 only
+1. `CONTRIBUTING.md`
+2. `docs/developer-source-of-truth.md`
+3. `docs/content-data-contracts.md`
+4. `docs/morgen-v6-reverse-engineering.md`
+5. `docs/page-matrix.csv`
+6. `docs/prune-matrix.csv`
 
-Do not use a moving `main` branch as the implementation baseline unless the owner explicitly asks for a new review of Morgen changes.
-
-### Gloskin raw requirements
-
-Repository: `yudanfahmie/project-9901`
-
-Treat that repository as read-only reference material. Do not store Gloskin implementation work there.
-
-Pinned raw files:
-
-- `gloskin/Handover_Tim_IT_Gloskin.docx`
-  - blob `8f9546d13662046927bc8e547931f68841a78c83`
-- `gloskin/Gloskin_Project_Framework_Final (1).xlsx`
-  - blob `a3b09371bff4b6ca3a5672d9213e1179172a1887`
-- `gloskin/Gloskin_Client_Project_Tracker.xlsx`
-  - blob `e004d3efa937c296d6d5689d123b666f11e93464`
-- `gloskin/Data Digital Marketing Onboarding.xlsx`
-  - blob `073cacc37672fbc1e4f6a58c426eb5bb18e971e2`
-
-Only developer-relevant website requirements should be translated into this repository. SEO/GEO delivery, backlinks, media placement, social campaigns, marketing reporting, and retainer work are out of scope.
-
-## 3. Requirement reconciliation
-
-The raw Gloskin documents contain inconsistent headline page counts such as `21 core pages` and `33 pages`. Engineering must follow the explicit route/task inventory rather than those stale counters.
-
-The raw implementation tasks explicitly require:
-
-- Homepage
-- About
-- Treatments Hub
-- 8 treatment-category pages
-- Skincare Hub
-- 7 skincare-category pages
-- Clinics Hub
-- 9 clinic-location pages
-- Contact
-- Insights Hub
-- Shop Hub
-- Doctors Hub
-- 13 doctor pages
-- up to 20 WooCommerce product pages
-
-If all explicit visitor-facing URLs are present simultaneously, the site inventory can reach roughly 66 URLs. This is a route inventory, not a request for duplicate content storage. WooCommerce single-product pages remain WooCommerce-owned.
-
-The onboarding material currently contains more treatment/service names than the framework's required eight treatment categories. Therefore the implementation must support exactly eight approved treatment-category records without hard-coding a speculative grouping. Final names and slugs are content data.
-
-The onboarding material identifies seven provisional skincare group labels:
-
-- Facial Wash
-- Day Cream/Sunscreen
-- Toner
-- Serum
-- Acne Care
-- Anti-Aging
-- Brightening & Pigmentation Care
-
-Treat those as configurable mappings to WooCommerce categories, not as a custom product catalog.
-
-## 4. Repository and plugin identity
-
-Repository: `yudanfahmie/gloskin-site-core`
-
-Recommended production plugin identity:
-
-- Plugin Name: `Gloskin Site Core`
-- directory: `gloskin-site-core/`
-- text domain: `gloskin-site-core`
-- PHP class prefix: `Gloskin_Site_Core_`
-- function prefix: `gloskin_site_core_`
-- initial implementation version: `0.1.0`
-
-No public Morgen naming should remain in classes, functions, handles, options, routes, CSS selectors, asset names, admin labels, or generated markup except historical comments explaining provenance.
-
-## 5. Repository workflow
+## 2. Repository workflow
 
 This repository is main-only.
 
-- Work directly on `main`.
-- Do not create feature branches or pull requests unless the owner explicitly changes this rule.
-- Pull latest `origin/main` and record HEAD before editing.
-- Group related files into effective commits.
-- Do not create one commit per file.
-- Do not use temporary/probe commits.
-- Commit messages must be short, lowercase, and action-oriented.
-- Verify remote `main` after every push.
+Before every implementation change:
 
-See `CONTRIBUTING.md` for the complete workflow contract.
+1. confirm repository `yudanfahmie/gloskin-site-core`;
+2. checkout `main`;
+3. pull latest `origin/main`;
+4. record current HEAD;
+5. inspect current production implementation and docs;
+6. define one coherent outcome for the commit.
 
-## 6. Ownership boundaries
+Do not create feature branches, temporary branches, PRs, probe commits or one-commit-per-file history.
 
-### Gloskin Site Core owns
+Commit messages must remain short, lowercase and action-oriented.
 
-- public header, navigation, footer, and global shell;
-- responsive layout system and design tokens;
-- page-family templates;
-- reusable presentation components;
-- Gloskin-specific treatment, clinic, and doctor presentation/content structures;
-- styling and layout integration with WordPress posts and WooCommerce output;
-- lightweight settings required by the presentation layer.
+## 3. Implementation strategy
 
-### WooCommerce owns
+Do **not** begin by copying the entire Morgen plugin.
 
-- products and variations;
-- product categories and attributes;
-- product images;
-- price and stock;
-- add-to-cart behavior;
-- cart;
-- checkout;
-- orders;
-- customer/account flows;
-- payment gateways;
-- product CRUD and product administration.
+Reverse engineering shows that the current Morgen V6 composition root transitively loads excluded domains and historical compatibility code. The Gloskin implementation must start with a fresh plugin composition root and import only approved patterns/files after dependency review.
 
-Gloskin Site Core may read and render WooCommerce data or style WooCommerce-supported output. It must not recreate Morgen's product-management layer.
+The guiding rule is:
 
-## 7. Recommended WordPress content model
+> Build Gloskin ownership first; then selectively adapt V6 behavior into it.
 
-Use native WordPress concepts wherever practical.
+## 4. Target plugin identity
 
-Recommended model:
+Recommended identity:
 
-- Native Pages for Home, About, Skincare Hub, Clinics Hub, Doctors Hub, Contact, Insights Hub, and Shop Hub.
-- Lightweight CPT `gloskin_treatment` for eight treatment-category records.
-- Lightweight CPT `gloskin_clinic` for nine clinic records.
-- Lightweight CPT `gloskin_doctor` for thirteen doctor records.
-- Seven skincare landing pages map to WooCommerce product categories.
-- Native WordPress posts power Insights content.
-- WooCommerce owns product URLs.
+- Plugin Name: `Gloskin Site Core`
+- directory: `plugin/gloskin-site-core/`
+- text domain: `gloskin-site-core`
+- class prefix: `Gloskin_Site_Core_`
+- function prefix: `gloskin_site_core_`
+- public UI namespace: `gloskin-ui1-*` or a consistently documented equivalent
+- initial implementation version: `0.1.0`
 
-A developer may choose native Pages instead of a CPT where that produces a simpler maintainable result, but the route contract and editing capability must remain equivalent.
+No production public class, function, handle, option, selector, route, admin label or generated markup should remain Morgen-branded except comments/docs explaining provenance.
 
-## 8. Required route contract
+## 5. Batch 0 — establish clean Gloskin core
 
-The minimum route families are:
+Goal: an activatable empty/minimal plugin with Gloskin ownership and no Morgen runtime dependency.
 
-- `/`
-- `/about/`
-- `/treatments/`
-- `/treatments/{approved-category-slug}/`
-- `/skincare/`
-- `/skincare/{approved-category-slug}/`
-- `/clinics/`
-- `/clinics/kebayoran-baru/`
-- `/clinics/tebet/`
-- `/clinics/bekasi/`
-- `/clinics/cibubur/`
-- `/clinics/serpong/`
-- `/clinics/surabaya/`
-- `/clinics/banjarmasin/`
-- `/clinics/balikpapan/`
-- `/clinics/denpasar/`
-- `/contact/`
-- `/insights/`
-- `/shop/`
-- `/doctors/`
-- `/doctors/{doctor-slug}/`
-- WooCommerce-managed product, cart, and checkout URLs
+Tasks:
 
-Do not add Morgen Technical Library, PDF download, custom product catalog, Applications, Hammer, or Quality Testing routes.
+- create `plugin/gloskin-site-core/gloskin-site-core.php`;
+- create a small plugin composition root;
+- register activation/deactivation only if truly needed;
+- establish constants/path/version helpers;
+- establish WordPress text domain/i18n readiness;
+- do not introduce migration payloads;
+- do not introduce UI version switching;
+- do not require any Morgen PHP file at runtime.
 
-See `docs/page-matrix.csv` for the detailed page inventory.
+Exit criteria:
 
-## 9. Page-family directions
+- plugin activates/deactivates without fatal errors;
+- no `Morgen_Core_*` class is required to boot Gloskin;
+- no CASE-PROD/PROD state exists;
+- no frontend assets are loaded yet unless part of the minimal shell task.
+
+Suggested commit message: `initialize gloskin core`
+
+## 6. Batch 1 — asset foundation
+
+Goal: build a fresh Gloskin asset owner inspired by the good parts of Morgen's registry design.
+
+Tasks:
+
+- create a minimal registry for Gloskin UI v1;
+- use Gloskin-owned handles;
+- support explicit style/script dependencies;
+- use deterministic versioning, preferably content/file based;
+- include only actual Gloskin assets;
+- evaluate Splide only when a required carousel/gallery uses it;
+- avoid compatibility aliases/legacy paths;
+- avoid diagnosis hooks and retired owner compatibility;
+- avoid globally enqueueing Application/Technical Library/other excluded feature assets.
+
+Candidate V6 behavior to adapt after source review:
+
+- core responsive primitives;
+- carousel/gallery behavior;
+- hero navigation behavior;
+- reduced-motion/focus behavior;
+- image loading/dimension behavior.
+
+Explicitly do not import Application or Technical Library assets.
+
+Exit criteria:
+
+- asset handles are Gloskin-owned;
+- registry contains no excluded feature assets;
+- no `morgen-ui6-*`, `morgen-*` or `mg6-*` public runtime dependency remains in the new asset owner.
+
+Suggested commit message: `build ui1 asset core`
+
+## 7. Batch 2 — content models and data contracts
+
+Goal: establish the Gloskin-owned data model before page rendering.
+
+Implement:
+
+- `gloskin_treatment` or equivalent for eight treatment categories;
+- `gloskin_clinic` or equivalent for nine branches;
+- `gloskin_doctor` or equivalent for thirteen doctors;
+- registered meta/relationships defined in `docs/content-data-contracts.md`;
+- skincare landing-to-WooCommerce category mapping;
+- branch phone/WhatsApp/hours/map/media fields;
+- doctor branch relationships;
+- treatment related clinic/doctor relationships as required.
+
+Use native WordPress storage. No custom DB table or ACF/framework dependency without explicit approval.
+
+Do not seed unapproved treatment names, doctor identities or fabricated branch data.
+
+Exit criteria:
+
+- required records can be created/edited safely;
+- relationships use a documented canonical storage direction;
+- missing optional fields are accepted;
+- all writes use capability/nonce/sanitization controls.
+
+Suggested commit message: `model gloskin content`
+
+## 8. Batch 3 — routing and templates
+
+Goal: implement Gloskin routes without Morgen's virtual industrial route system.
+
+Tasks:
+
+- use native WordPress page/CPT routing wherever possible;
+- create a small template-resolution layer only where the plugin must own presentation;
+- support every family in `docs/page-matrix.csv`;
+- preserve native WooCommerce routes;
+- preserve native WordPress post permalinks for Insights;
+- implement deliberate 404/not-found behavior through WordPress conventions.
+
+Do not port Morgen's product/category/Application/Technical Library route catalog.
+
+Exit criteria:
+
+- all Gloskin route families resolve to an implementation path;
+- Woo routes remain Woo-owned;
+- excluded Morgen route strings are not runtime routes.
+
+Suggested commit message: `define gloskin routes`
+
+## 9. Batch 4 — shell, header, navigation and footer
+
+Goal: adapt proven V6 interaction quality into a clean Gloskin UI v1 shell.
+
+Tasks:
+
+- build global shell from scratch;
+- adapt V6 spacing/grid/accessibility patterns;
+- rebuild desktop nav using Gloskin IA;
+- rebuild mobile drawer with accessible dialog/disclosure/focus/close behavior;
+- use Gloskin logo/identity placeholders only until approved assets are supplied;
+- support booking/contact/WhatsApp CTA behavior;
+- build Gloskin footer around actual Gloskin destinations/contact data.
+
+Do not port:
+
+- Morgen navigation registry;
+- EN/DE switch;
+- Quick Inquiry trigger infrastructure;
+- Technical Library link;
+- product/application/quality/Hammer footer sections;
+- industrial notices;
+- Morgen frontend version marker.
+
+Exit criteria:
+
+- shell is responsive and keyboard-usable;
+- mobile drawer is focus-safe;
+- no Morgen public namespace/content remains.
+
+Suggested commit message: `adapt v6 shell`
+
+## 10. Batch 5 — design tokens and UI variants
+
+Goal: establish one component system capable of the three requested initial design directions.
+
+Required design directions:
+
+- Medical Professional;
+- Modern Aesthetic;
+- Premium Luxury.
+
+Tasks:
+
+- define typography, spacing, radius, surface, border, color and motion tokens;
+- keep one component/template tree;
+- implement design directions as token/variant sets;
+- avoid three copied layouts;
+- after a final direction is selected, make unused production variant complexity removable.
+
+The production interface is always called Gloskin UI v1. Do not reintroduce V1-V6 presentation selection.
+
+Suggested commit message: `define ui1 design tokens`
+
+## 11. Batch 6 — core fixed pages
+
+Build in a coherent sequence:
 
 ### Homepage
 
-Use Morgen V6 only as the structural starting point. The final page is Gloskin UI v1, not a Morgen-branded variant.
-
-Recommended structure:
-
-1. global header/navigation;
-2. responsive hero;
-3. treatment discovery linking to eight categories;
-4. clinic discovery linking to nine branches;
-5. doctor preview;
-6. skincare/shop preview using WooCommerce data;
-7. insights preview using native WordPress posts;
-8. booking/contact CTA;
-9. global footer.
-
-Remove industrial product language, document/download cards, specification-table motifs, and other Morgen-specific visual semantics.
+- hero;
+- treatment discovery;
+- nine-clinic discovery;
+- doctor preview;
+- WooCommerce skincare/shop preview;
+- Insights preview;
+- booking/contact CTA.
 
 ### About
 
-Support official Gloskin overview, Vision, Mission, Values, clinic-network summary, doctor/team teaser, and a contact/booking CTA.
-
-The raw documents mention Indonesian and English company descriptions. Do not build a Morgen-style multilingual routing system unless a later requirement explicitly asks for one.
-
-### Treatments Hub
-
-Display exactly eight approved treatment categories with a consistent card system and cross-links to relevant clinics/doctors where data exists.
-
-### Treatment category
-
-Each record should support:
-
-- title;
-- summary/description;
-- benefits;
-- contraindications;
-- hero/featured media;
-- related clinics;
-- related doctors;
-- booking/contact CTA.
-
-Templates must remain neutral containers and must not hard-code unapproved medical claims.
-
-### Skincare Hub
-
-Provide seven category landing links, a product discovery section driven by WooCommerce, and a Shop link.
-
-### Skincare category landing
-
-Each landing page should:
-
-- render an approved title and intro;
-- map to a WooCommerce product-category slug;
-- render WooCommerce products through supported WooCommerce output/hooks/shortcodes;
-- show a useful empty state;
-- avoid duplicate product records or custom product CRUD.
-
-### Clinics Hub
-
-Display all nine required branches consistently with image, area/city, opening-hours summary, and detail link.
-
-Required branches:
-
-- Kebayoran Baru
-- Tebet
-- Bekasi
-- Cibubur
-- Serpong
-- Surabaya
-- Banjarmasin
-- Balikpapan
-- Denpasar
-
-### Clinic detail
-
-The raw requirements explicitly call for NAP consistency, Google Maps, operating hours, photos, doctors per branch, and branch-specific WhatsApp.
-
-Recommended order:
-
-1. branch hero/gallery;
-2. branch title and location introduction;
-3. NAP block: name, address, phone;
-4. operating hours;
-5. Google Maps embed;
-6. branch WhatsApp booking CTA;
-7. doctors practicing at the branch;
-8. related treatments;
-9. contact/booking CTA.
-
-Support at least three branch images when approved assets are available.
-
-### Doctors Hub
-
-Display all thirteen doctor records with photo, full name/title, specialization, branch information, and detail-page link.
-
-### Doctor detail
-
-Support:
-
-- professional photo;
-- full name;
-- title/degree;
-- specialization;
-- practice branches;
-- SIP number when available;
-- credentials/profile content;
-- related treatments;
-- booking CTA.
-
-Keep data semantically clean. SEO/schema management is outside this repository scope.
+- overview;
+- Vision;
+- Mission;
+- Values;
+- clinic-network summary;
+- doctor/team teaser;
+- CTA.
 
 ### Contact
 
-Do not port Morgen's custom inquiry/mail backend by default.
-
-Provide:
-
-- contact intro;
 - branch contact cards/selector;
-- branch WhatsApp links;
-- configurable form-shortcode/block area for the site's chosen form plugin;
-- graceful fallback if that form integration is unavailable.
+- branch-specific WhatsApp;
+- external form shortcode/block integration;
+- missing-form fallback.
 
-Submission and auto-email behavior belong to the form plugin/configuration unless a later task explicitly adds custom backend behavior.
+### Insights
 
-### Insights Hub
+- native Posts query;
+- post grid/list;
+- pagination/load-more using standard WordPress-compatible behavior;
+- empty state.
 
-Use native WordPress posts. Provide a hero, post grid/list, normal WordPress pagination or load-more behavior, and an accessible empty state.
+Exit criteria: no industrial/Morgen presentation semantics remain.
 
-### Shop Hub
+Suggested commit message: `build core pages`
 
-Treat Shop as a page-builder wrapper around WooCommerce-supported output. Preserve WooCommerce product/cart/checkout links and avoid a custom Morgen-style product manager.
+## 12. Batch 7 — treatments, clinics and doctors
 
-### WooCommerce product/cart/checkout presentation
+### Treatments
 
-Gloskin Site Core may style and structure WooCommerce-owned pages using safe hooks/templates.
+- hub plus exactly eight configurable detail records;
+- description, benefits, contraindications, media and relationships;
+- no speculative grouping of the fifteen draft service labels.
 
-Single-product presentation should remain compatible with WooCommerce gallery, title, price, description, attributes, add-to-cart controls, and related products. BPOM, composition, and usage information should be read from WooCommerce-managed attributes/meta when present.
+### Clinics
 
-Cart and checkout logic remain native WooCommerce.
+- hub plus all nine required route identities;
+- gallery, NAP, hours, map, branch WhatsApp, doctors, treatments;
+- graceful missing-data behavior.
 
-## 10. Design-system direction
+### Doctors
 
-The raw framework requires three design directions before final development:
+- hub plus thirteen configurable records;
+- portrait, identity/title, specialization, branches, SIP when available, credentials, related treatments and booking CTA.
 
-1. `Medical Professional` — clean navy/white, authority-oriented serif typography.
-2. `Modern Aesthetic` — pastel, sans-serif, visual-led.
-3. `Premium Luxury` — dark tones, gold accent, editorial typography.
+Exit criteria:
 
-Implementation guidance:
+- all record counts/route families are supported;
+- content remains editable, not hard-coded;
+- relationships render correctly in both hub/detail contexts.
 
-- use one shared component system;
-- implement design directions primarily through design tokens/variants, not three copied template trees;
-- use Morgen V6 as code/layout provenance only;
-- expose the result as Gloskin UI v1;
-- do not carry Morgen UI V1-V5 into the production plugin;
-- after a direction is selected, remove unused production-facing variant complexity where practical.
+Suggested commit messages should follow actual coherent scope, e.g. `build clinic pages` or `build people and treatments`; do not force unrelated work into one giant commit if implementation naturally separates.
 
-## 11. Morgen reuse and pruning
+## 13. Batch 8 — skincare and WooCommerce presentation
 
-### Retain or adapt only when useful
+Goal: integrate WooCommerce without duplicating it.
 
-- V6 shell patterns;
-- V6 header/footer structure;
-- responsive grid/spacing behavior;
-- keyboard focus and reduced-motion behavior;
-- mobile navigation/drawer patterns;
-- generic gallery/carousel behavior when Gloskin uses it;
-- generic image-loading helpers;
-- generic admin save/security patterns only for retained Gloskin settings;
-- generic release-validation ideas.
+Tasks:
 
-### Remove or replace
+- Skincare Hub with seven configurable category links;
+- seven category landings mapped to Woo terms;
+- Shop wrapper around supported Woo output;
+- single-product visual compatibility;
+- cart and checkout visual compatibility;
+- read BPOM/composition/usage from Woo-managed attributes/meta when present;
+- preserve Woo hooks/extensions as much as possible;
+- safe empty/dependency behavior when Woo content is unavailable.
 
-- UI V1-V5 templates/assets and presentation switching;
-- Morgen custom product management and product data layer;
-- Morgen product templates/routes;
-- PROD product image/copy migrations and repair code;
-- Technical Library public UI and admin;
-- Documents subsystem;
-- PDF preview/poster generation;
-- signed PDF/download-token flows;
-- packaged PDF resources and related migration payloads;
-- Applications pages/assets and application seed migrations;
-- Hammer pages/assets;
-- Quality Testing pages/assets;
-- industrial categories/brand content;
-- CASE-PROD/PROD historical production repair payloads;
-- German routing/content and Morgen-specific multilingual UI;
-- Rank Math proxy-page management and SEO scoring controls;
-- Morgen-specific telemetry/diagnosis code without a Gloskin use case;
-- custom Morgen inquiry/mail transport when Contact delegates to a form plugin.
+Do not enforce catalog mode. Do not disable checkout. Do not implement Midtrans/Xendit logic.
 
-See `docs/prune-matrix.csv` for the removal checklist.
+Exit criteria:
 
-## 12. Safe cloning sequence
+- Woo product CRUD is the only product admin;
+- add-to-cart/cart/checkout remain Woo behavior;
+- payment gateway hooks remain intact;
+- no Morgen product manager is present.
 
-### Batch 0 — verify source and workspace
+Suggested commit message: `integrate woocommerce views`
 
-1. Confirm repository is `yudanfahmie/gloskin-site-core`.
-2. Checkout and pull `main`; do not create a branch.
-3. Record HEAD.
-4. Confirm this planning workspace is present.
-5. Fetch Morgen commit `374432cee6380e0aa0f81390e26b990147e5e58d` read-only.
-6. Confirm the raw Gloskin blob SHAs listed above.
-7. Do not modify `project-9901`.
+## 14. Batch 9 — media/admin refinements only if required
 
-### Batch 1 — import the V6-capable foundation
+Do this only after real page/content needs are known.
 
-1. Inspect Morgen V6 bootstrap, shell, templates, assets, and required shared classes.
-2. Build a dependency map before deleting modules.
-3. Import only the dependency set needed to make V6 functional.
-4. Rename plugin identity and public namespaces to Gloskin.
-5. Make V6 the only presentation baseline.
-6. Remove UI switching for V1-V5.
-7. Confirm plugin activation before page-specific development.
+Potential need: hero/gallery media configuration.
 
-### Batch 2 — remove Morgen-only domains
+If required:
 
-1. Replace Morgen route/data registry with Gloskin routes.
-2. Remove Technical Library/Documents/PDF dependencies.
-3. Remove Morgen product-management dependencies.
-4. Remove Applications/Hammer/Quality Testing dependencies.
-5. Remove historical CASE-PROD/PROD payloads.
-6. Remove Morgen-specific SEO proxy controls.
-7. Search for retired identifiers and dead asset handles.
-8. Re-test plugin activation after removals.
+- use WordPress Media Library;
+- validate attachment types/IDs;
+- cap payload/item counts where appropriate;
+- use nonce/capability checks;
+- keep storage small and Gloskin-specific.
 
-### Batch 3 — create Gloskin content model
+Do not copy Morgen Homepage Media Admin wholesale. Do not inherit EN/DE field structure, historical snapshots/audits or build-profile coupling unless a real requirement justifies equivalent behavior.
 
-1. Register treatments, clinics, and doctors using the chosen lightweight approach.
-2. Create fixed page requirements without duplicating existing content.
-3. Define seven skincare-to-WooCommerce-category mappings.
-4. Support all nine clinic branches.
-5. Support doctor-to-clinic relationships.
-6. Support treatment-to-doctor/clinic relationships when needed.
-7. Keep content editable through normal WordPress administration.
+Suggested commit message: `add media controls`
 
-### Batch 4 — create Gloskin UI v1
+## 15. Batch 10 — cleanup and dependency proof
 
-1. Rename CSS/JS handles and selectors.
-2. Define Gloskin design tokens.
-3. Adapt V6 header, mobile navigation, footer, buttons, cards, grids, hero, and required galleries.
-4. Implement three design directions as shared-system variants.
-5. Verify desktop/mobile behavior before individual page families.
+Perform a static/runtime cleanup pass.
 
-### Batch 5 — build core page families
+Search production code for accidental dependencies/identifiers including:
 
-Implement in this order:
+- `Morgen_Core_`;
+- `morgen_core_`;
+- `morgen-ui6-`;
+- `mg6-`;
+- `technical-library`;
+- `applications` in Morgen-domain context;
+- `hammer` in Morgen-domain context;
+- `quality-testing`;
+- `CASE-PROD`;
+- `PROD-` historical migration IDs;
+- Morgen mail/inquiry classes;
+- Rank Math proxy management;
+- V1-V5 presentation selectors.
 
-1. Homepage
-2. About
-3. Treatments Hub + treatment template
-4. Skincare Hub + skincare category template
-5. Clinics Hub + clinic detail template
-6. Contact
-7. Insights Hub
-8. Shop Hub
+Provenance comments/tests may mention Morgen; public/runtime identifiers should not.
 
-### Batch 6 — doctors and WooCommerce presentation
+Also confirm no raw Gloskin DOCX/XLSX file was copied into this repo.
 
-1. Doctors Hub
-2. doctor detail template
-3. WooCommerce single-product presentation
-4. WooCommerce cart/checkout presentation compatibility
-5. verify WooCommerce remains the only product authority
+Suggested commit message: `remove morgen legacy`
 
-### Batch 7 — cleanup and hardening
+## 16. Verification contract
 
-1. Search for remaining `Morgen`, `morgen_`, `mg6`, Technical Library, PDF, Hammer, Applications, Quality Testing, and product-manager identifiers.
-2. Rename legitimate reusable internals or delete dead code.
-3. Remove unused assets/dependencies.
-4. Verify no V1-V5 presentation assets are loaded.
-5. Verify no historical migration payload runs on activation.
-6. Verify deactivation does not damage WooCommerce-owned data.
-7. Verify uninstall cannot delete WooCommerce products/orders.
-
-### Batch 8 — verification
-
-Test at minimum:
+At minimum test/document:
 
 - plugin activation/deactivation;
-- page/route resolution and 404 behavior;
-- mobile navigation;
+- no PHP fatal on representative routes;
+- required route matrix;
 - eight treatment records/templates;
-- seven skincare landing mappings;
-- all nine clinic URLs;
+- seven skincare mappings;
+- nine clinic route identities;
 - thirteen doctor records/templates;
-- Shop with products and empty state;
-- WooCommerce single product;
-- add-to-cart handoff;
-- cart/checkout presentation compatibility;
-- contact form integration and missing-integration fallback;
-- Google Maps embeds;
-- branch WhatsApp links;
-- responsive layout;
-- keyboard focus and reduced motion;
-- representative Chrome/Safari/Firefox rendering;
-- no PHP fatal errors;
-- no red JavaScript console errors on representative pages.
+- Contact form integration/fallback;
+- branch WhatsApp behavior;
+- map behavior;
+- native Insights posts;
+- Woo Shop/product/cart/checkout presentation;
+- Woo ownership of commerce logic;
+- responsive desktop/mobile behavior;
+- keyboard navigation/focus;
+- reduced motion;
+- missing optional content;
+- representative current Chrome/Safari/Firefox behavior;
+- no red console errors on representative pages;
+- no active excluded Morgen dependency.
 
-SEO scores, GSC, GBP, analytics, backlinks, GEO, and marketing KPIs are not acceptance criteria for this repository.
+SEO scores, GSC/GBP/analytics/backlinks/GEO/marketing KPIs are not acceptance criteria for this repository.
 
-## 13. Minimum data contracts
+## 17. Handling missing client data
 
-### Clinic
+Do not block architecture work merely because content is pending, but do not fabricate content.
 
-- branch name
-- slug
-- address
-- phone
-- WhatsApp
-- operating hours
-- map embed/location URL
-- branch images
-- associated doctors
-- associated treatments when used
+Known pending/configurable inputs are listed in `docs/developer-source-of-truth.md` and `docs/content-data-contracts.md`.
 
-### Doctor
+When a required value is missing:
 
-- full name
-- title/degree
-- specialization
-- practice branches
-- SIP number when available
-- portrait
-- credentials/profile
+- implement the field/data path;
+- provide graceful template behavior;
+- document the pending input;
+- ask the owner/content team for the value when it becomes necessary for final population.
 
-### Treatment
+Do not reopen `project-9901` as a discovery shortcut.
 
-- name
-- slug
-- description
-- benefits
-- contraindications
-- featured media
-- related clinics
-- related doctors
+## 18. Definition of done
 
-### Skincare landing mapping
+An implementation phase is not complete until:
 
-- page title
-- page slug
-- WooCommerce product-category slug
-- optional intro
-- optional featured media
+- the real production files are on remote `main`;
+- remote `main` HEAD is verified;
+- the final commit includes all files required for its coherent outcome;
+- available checks pass;
+- the runtime does not depend on excluded Morgen modules;
+- documentation is updated in the same change when architecture/data contracts change.
 
-No product CRUD fields belong in this plugin-owned data contract.
-
-## 14. Dependency-removal rule
-
-Never delete a Morgen file merely because its filename looks irrelevant.
-
-For every removal:
-
-1. locate `require/include` references;
-2. locate actions/filters;
-3. locate template-routing references;
-4. locate enqueued handles;
-5. locate admin-menu references;
-6. locate test references;
-7. replace/remove callers first;
-8. delete the module only after runtime references are gone;
-9. run activation and representative route tests.
-
-This is important because the Morgen V6 shell references several industrial/product domains directly.
-
-## 15. Explicitly out of scope
-
-Do not implement the following unless a future task adds them:
-
-- SEO/GEO strategy or content production;
-- Rank Math scoring workflows;
-- GSC/GA4/GBP setup or monitoring;
-- backlinks/citation campaigns;
-- media placement;
-- social/TikTok work;
-- marketing reporting;
-- payment-gateway business configuration beyond preserving WooCommerce compatibility;
-- WooCommerce product/order backend replacement;
-- domain/DNS migration;
-- redirect-map execution;
-- medical approval workflow tooling.
-
-## 16. Definition of done for the future cloning task
-
-The future cloning/adaptation task is complete only when:
-
-1. production `gloskin-site-core` plugin files exist on remote `main`;
-2. Morgen V6 is the sole Morgen-derived presentation baseline and is exposed as Gloskin UI v1;
-3. no V1-V5 UI switching remains;
-4. every route family in `docs/page-matrix.csv` has an implementation path;
-5. no Morgen product manager remains;
-6. no Technical Library/Documents/PDF-download subsystem remains;
-7. WooCommerce remains the product/commerce authority;
-8. all nine clinic branches are supported;
-9. all thirteen doctor records/templates are supported;
-10. all eight treatment records/templates are supported;
-11. seven skincare landing mappings are supported;
-12. Contact delegates submission handling to the configured form layer unless explicitly changed;
-13. retired Morgen routes/assets/classes are absent or unreachable;
-14. representative activation/page/WooCommerce tests pass;
-15. documentation describes the final Gloskin implementation rather than Morgen.
+The complete product-level acceptance definition remains in `docs/developer-source-of-truth.md`.
