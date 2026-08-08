@@ -19,7 +19,7 @@ require dirname( __DIR__ ) . '/plugin/gloskin-site-core/includes/class-gloskin-s
 $commerce = false;
 $service = new Gloskin_Site_Core_Asset_Service(
 	dirname( __DIR__ ) . '/plugin/gloskin-site-core/gloskin-site-core.php',
-	'0.2.2',
+	'0.3.0',
 	static function () use ( &$commerce ) { return $commerce; }
 );
 

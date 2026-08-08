@@ -1,6 +1,6 @@
 # Gloskin Content Readiness
 
-This checklist records what the staging runtime can safely populate from canonical repository facts and what remains client-owned input. It does not authorize placeholder medical, doctor, branch-contact, or marketing claims.
+This checklist records what the runtime can safely populate from canonical repository facts and what remains client-owned input. It does not authorize placeholder medical, doctor, branch-contact, or marketing claims.
 
 ## Populated from approved/normalized facts
 
@@ -46,4 +46,4 @@ Public rendering therefore follows three client-safe states:
 
 Normal visitors are not shown implementation diagnostics, configuration warnings, record-count targets, or pending-data notices. Those readiness details remain developer/admin concerns only.
 
-Task-by-task staging/presentation verification is recorded in `docs/client-presentation-readiness.md`.
+Task-by-task staging/presentation verification is recorded in `docs/client-presentation-readiness.md`. Final Indonesian launch and exhibition verification is recorded in `docs/global-launch-readiness.md`.
