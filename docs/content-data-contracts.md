@@ -32,6 +32,13 @@ Required/editable fields:
 | doctor_ids | list of doctor post IDs | optional relationship | related doctors |
 | booking_target | URL/branch-aware action | optional override | CTA target |
 
+Foundation storage mapping in `0.1.0`:
+
+- `description` uses core `post_content`;
+- `featured_media_id` uses the core featured-image attachment (`_thumbnail_id`), not duplicate Gloskin media meta;
+- `summary`, `benefits`, `contraindications`, `clinic_ids`, `doctor_ids` and `booking_target` use registered Gloskin-prefixed post meta;
+- treatment `clinic_ids` and `doctor_ids` are the canonical storage direction for treatment-to-clinic and treatment-to-doctor relationships.
+
 Do not generate medical claim text in code.
 
 ### Taxonomy ambiguity already resolved for engineering
@@ -77,6 +84,8 @@ Recommended fields:
 | treatment_ids | treatment post ID list | optional relationship | treatments associated with branch |
 | short_location | text | optional | card/intro area label |
 
+Foundation storage mapping in `0.1.0` stores clinic-owned scalar/media fields as registered Gloskin-prefixed post meta. `doctor_ids` is reverse-derived from doctor `branch_ids`, and `treatment_ids` is reverse-derived from treatment `clinic_ids`; the clinic record does not duplicate either relationship list.
+
 NAP means the public branch Name/Address/Phone representation must stay internally consistent wherever displayed.
 
 ### Clinic fallbacks
@@ -108,6 +117,8 @@ Recommended fields:
 | profile | rich text | content input | biography/profile if separate |
 | schedule | structured text | optional | only if approved schedule data is available |
 | booking_target | URL/action | optional override | otherwise derive from branch/contact system |
+
+Foundation storage mapping in `0.1.0` uses the core featured-image attachment (`_thumbnail_id`) for `portrait_id`. Doctor `branch_ids` is the canonical doctor-to-clinic relationship. Doctor `treatment_ids` is reverse-derived from treatment `doctor_ids` and is not duplicated on the doctor record.
 
 Do not infer credentials, SIP numbers, practice schedules or specialties.
 
@@ -230,15 +241,15 @@ Do not create a duplicate `gloskin_insight` CPT unless a later functional requir
 
 ## Relationship editing
 
-The minimum relationship editing problem is small enough for native WordPress UI:
+The v0.1.0 foundation fixes one canonical persistence direction per many-to-many relationship:
 
-- clinic selects doctors and optionally treatments;
-- doctor selects clinics and optionally treatments;
-- treatment can select clinics/doctors if bidirectional editing is helpful.
+- clinic ↔ doctor: doctor `branch_ids` stores clinic post IDs;
+- clinic ↔ treatment: treatment `clinic_ids` stores clinic post IDs;
+- doctor ↔ treatment: treatment `doctor_ids` stores doctor post IDs.
 
-Choose one canonical storage owner per relationship or implement synchronized relationship writes carefully. Avoid storing independent contradictory lists on both sides without reconciliation.
+Reverse relationships are derived by querying the canonical meta key. Do not independently persist clinic `doctor_ids`, clinic `treatment_ids`, or doctor `treatment_ids`; that would introduce contradictory dual-write state and reconciliation work.
 
-A simple approach is to choose the domain object that naturally owns the relation and derive reverse queries. For example, doctor `branch_ids` can be canonical for doctor-to-clinic membership; templates can query doctors by clinic ID. The exact choice may be adjusted for query performance/editing simplicity, but document it once implemented.
+Future admin UI may expose relationship choices from either side, but any write must update the same canonical owner above unless profiling later justifies a documented denormalization change.
 
 ## Content readiness states
 

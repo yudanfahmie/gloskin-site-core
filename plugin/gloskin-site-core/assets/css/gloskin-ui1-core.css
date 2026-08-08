@@ -1,0 +1,27 @@
+.gloskin-ui1,
+.gloskin-ui1 *,
+.gloskin-ui1 *::before,
+.gloskin-ui1 *::after {
+	box-sizing: border-box;
+}
+
+.gloskin-ui1 img {
+	max-width: 100%;
+	height: auto;
+}
+
+.gloskin-ui1 :focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.gloskin-ui1 *,
+	.gloskin-ui1 *::before,
+	.gloskin-ui1 *::after {
+		scroll-behavior: auto !important;
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
