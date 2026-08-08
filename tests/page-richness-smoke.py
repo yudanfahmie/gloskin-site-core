@@ -5,6 +5,7 @@ import subprocess
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
+BASE_CSS = ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-core-base.css'
 CSS = ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css'
 PRODUCTION_CSS = ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-production.css'
 
@@ -49,6 +50,7 @@ with sync_playwright() as p:
             page.on('pageerror', lambda err, e=errors: e.append(str(err)))
             page.route('https://images.unsplash.com/**', lambda route: route.fulfill(status=200, content_type='image/svg+xml', body=EDITORIAL_STUB))
             page.set_content(fixtures[view], wait_until='domcontentloaded')
+            page.add_style_tag(path=str(BASE_CSS))
             page.add_style_tag(path=str(CSS))
             page.add_style_tag(path=str(PRODUCTION_CSS))
             page.wait_for_timeout(100)

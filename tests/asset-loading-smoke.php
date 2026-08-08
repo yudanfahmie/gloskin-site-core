@@ -19,7 +19,7 @@ function wp_enqueue_script( $handle ) { $GLOBALS['gl_scripts'][] = (string) $han
 require dirname( __DIR__ ) . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-asset-service.php';
 
 $commerce = false;
-$asset_version = '0.3.2';
+$asset_version = '0.3.3';
 $service = new Gloskin_Site_Core_Asset_Service(
 	dirname( __DIR__ ) . '/plugin/gloskin-site-core/gloskin-site-core.php',
 	$asset_version,

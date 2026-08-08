@@ -25,6 +25,12 @@ if grep -RInEi "$visitor_leaks" "${public_runtime[@]}" --include='*.php' --inclu
   exit 1
 fi
 
+backend_copy_leaks='woocommerce|wordpress|pemetaan|sumber data|kepemilikan produk|kepemilikan katalog|katalog kedua|template ownership|catalog ownership|second catalog|source data'
+if grep -RInEi "(__|esc_html__|esc_attr__)\([^)]*($backend_copy_leaks)" "$templates/pages" --include='*.php'; then
+  echo "backend implementation terminology found in visitor-facing translated copy" >&2
+  exit 1
+fi
+
 if ! grep -q "gloskin-ui1-empty--form" "$templates/pages/contact.php"; then
   echo "Contact does not suppress the internal missing-form adapter state" >&2
   exit 1
@@ -99,6 +105,24 @@ if ! grep -q '@media (max-width:600px).*--gloskin-ui1-admin-bar-height:0px.*--gl
   exit 1
 fi
 
+# Contrast surfaces use one semantic foreground state instead of inheriting the
+# global accent/muted colors that can become dark-on-dark.
+for expected in \
+  '--gloskin-ui1-contrast-foreground' \
+  '.gloskin-ui1-footer__cta .gloskin-ui1-eyebrow' \
+  '.gloskin-ui1-closing-cta .gloskin-ui1-eyebrow' \
+  '.gloskin-ui1-section--contrast>.gloskin-ui1-container>.gloskin-ui1-section-heading p'; do
+  grep -Fq -- "$expected" "$core_css" || { echo "contrast foreground ownership missing: $expected" >&2; exit 1; }
+done
+
+# Header visual polish remains CSS-only and must not change accepted behavior.
+for expected in \
+  'backdrop-filter:saturate(120%) blur(14px)' \
+  '.gloskin-ui1-header__inner{min-height:72px' \
+  '.gloskin-ui1-nav__chevron{display:block;width:11px;height:11px'; do
+  grep -Fq -- "$expected" "$core_css" || { echo "premium header refinement missing: $expected" >&2; exit 1; }
+done
+
 if [[ ! -f "$production_css" ]] \
   || ! grep -q -- '--gloskin-font-body:"Mulish"' "$production_css" \
   || ! grep -q -- '--gloskin-font-heading:"Marcellus"' "$production_css"; then
@@ -120,4 +144,4 @@ for view in "${closing_views[@]}"; do
   grep -q 'data-gloskin-section=".*closing"' "$templates/pages/$view.php" || { echo "required closing composition missing: $view" >&2; exit 1; }
 done
 
-echo "presentation safety checks passed (${#required_views[@]} public views, canonical header CSS + rich compositions)"
+echo "presentation safety checks passed (${#required_views[@]} public views, contrast/header/copy polish guarded)"
