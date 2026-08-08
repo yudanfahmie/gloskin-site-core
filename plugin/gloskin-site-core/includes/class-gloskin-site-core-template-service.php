@@ -159,7 +159,7 @@ final class Gloskin_Site_Core_Template_Service {
 		$page = $this->content_page( 'home' );
 		return array(
 			'page' => $page,
-			'hero' => $this->hero_context( $page, __( 'Gloskin untuk perawatan kulit dan estetika.', 'gloskin-site-core' ), __( 'Jelajahi jaringan klinik Gloskin, informasi perawatan, skincare, dan insight untuk menemukan langkah yang ingin Anda pelajari lebih lanjut.', 'gloskin-site-core' ), __( 'Temukan Klinik', 'gloskin-site-core' ), home_url( '/clinics/' ) ),
+			'hero' => $this->hero_context( $page, __( 'Perawatan kulit, anti-aging, dan rambut yang dimulai dari konsultasi.', 'gloskin-site-core' ), __( 'Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengutamakan pemeriksaan bersama dokter sebelum menentukan langkah perawatan untuk kulit Anda.', 'gloskin-site-core' ), __( 'Cari Klinik Terdekat', 'gloskin-site-core' ), home_url( '/clinics/' ) ),
 			'treatments' => $this->post_cards( Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 8 ),
 			'clinics' => $this->clinic_cards(),
 			'doctors' => $this->post_cards( Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE, 4 ),

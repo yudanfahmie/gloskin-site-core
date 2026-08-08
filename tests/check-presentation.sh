@@ -48,6 +48,14 @@ if grep -RInE "$fixture_leaks" "$plugin_root" --include='*.php' --include='*.js'
   exit 1
 fi
 
+# Homepage and footer are the production-content refinement scope for this pass;
+# guard the specific staging/meta phrasing removed from them against regression.
+home_footer_staging='yang telah dipublikasikan|yang dipublikasikan Gloskin|langkah berikutnya|Jelajahi klinik, informasi perawatan'
+if grep -RInEi "$home_footer_staging" "$templates/pages/home.php" "$templates/parts/footer.php"; then
+  echo "staging/meta copy phrasing found in homepage or footer" >&2
+  exit 1
+fi
+
 if grep -RInE 'href="#"|href="javascript:' "$templates" --include='*.php' \
   || grep -RInE "href='#'|href='javascript:" "$templates" --include='*.php'; then
   echo "dummy or javascript CTA found in public templates" >&2
@@ -204,7 +212,7 @@ for view in "${required_views[@]}"; do
   [[ -f "$templates/pages/$view.php" ]] || { echo "missing public view: $view" >&2; exit 1; }
 done
 
-closing_views=(about treatments treatment skincare-category clinics clinic doctors doctor)
+closing_views=(home about treatments treatment skincare-category clinics clinic doctors doctor)
 for view in "${closing_views[@]}"; do
   grep -q 'data-gloskin-section=".*closing"' "$templates/pages/$view.php" || { echo "required closing composition missing: $view" >&2; exit 1; }
 done

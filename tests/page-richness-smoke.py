@@ -10,11 +10,12 @@ CSS = ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css'
 PRODUCTION_CSS = ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-production.css'
 
 views = [
-    'about', 'treatments', 'treatment', 'skincare', 'skincare-category',
+    'home', 'about', 'treatments', 'treatment', 'skincare', 'skincare-category',
     'clinics', 'clinic', 'doctors', 'doctor', 'insights', 'shop', 'contact',
 ]
 viewports = [390, 760, 782, 1024, 1440, 1920, 2560]
 required_sections = {
+    'home': ['home-orientation', 'home-clinics', 'home-skincare', 'home-closing'],
     'about': ['about-story', 'about-clinics', 'about-closing'],
     'treatments': ['treatments-orientation', 'treatments-discovery', 'treatments-pathways', 'treatments-closing'],
     'treatment': ['treatment-orientation', 'treatment-closing'],
@@ -28,7 +29,7 @@ required_sections = {
     'shop': ['shop-intro', 'shop-products'],
     'contact': ['contact-clinics'],
 }
-closing_views = {'about', 'treatments', 'treatment', 'skincare-category', 'clinics', 'clinic', 'doctors', 'doctor'}
+closing_views = {'home', 'about', 'treatments', 'treatment', 'skincare-category', 'clinics', 'clinic', 'doctors', 'doctor'}
 
 
 def fixture(view: str) -> str:
