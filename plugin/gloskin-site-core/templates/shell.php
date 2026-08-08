@@ -20,7 +20,7 @@ $view_file = __DIR__ . '/pages/' . $view . '.php';
 
 require __DIR__ . '/parts/template-helpers.php';
 ?><!doctype html>
-<html <?php language_attributes(); ?>>
+<html lang="id">
 <head>
 	<meta charset="<?php bloginfo( 'charset' ); ?>">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -34,7 +34,7 @@ require __DIR__ . '/parts/template-helpers.php';
 	if ( is_readable( $view_file ) ) {
 		require $view_file;
 	} else {
-		gloskin_ui1_empty( __( 'This Gloskin page is not available.', 'gloskin-site-core' ) );
+		gloskin_ui1_empty( __( 'Halaman Gloskin ini tidak tersedia.', 'gloskin-site-core' ) );
 	}
 	?>
 </main>

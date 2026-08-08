@@ -67,6 +67,9 @@ final class Gloskin_Site_Core_Form_Adapter {
 	}
 
 	/**
+	 * Internal adapter fallback. Public Contact rendering suppresses this state;
+	 * it remains for adapter/runtime compatibility and is never visitor-facing.
+	 *
 	 * @return string
 	 */
 	private function fallback() {

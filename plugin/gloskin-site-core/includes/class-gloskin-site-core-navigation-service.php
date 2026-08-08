@@ -25,7 +25,7 @@ final class Gloskin_Site_Core_Navigation_Service {
 	public function register_menu_location() {
 		register_nav_menus(
 			array(
-				self::LOCATION => __( 'Gloskin Primary Navigation', 'gloskin-site-core' ),
+				self::LOCATION => __( 'Navigasi Utama Gloskin', 'gloskin-site-core' ),
 			)
 		);
 	}
@@ -61,7 +61,7 @@ final class Gloskin_Site_Core_Navigation_Service {
 			$nodes[ (int) $item->ID ] = array(
 				'id'       => (int) $item->ID,
 				'parent'   => absint( $item->menu_item_parent ),
-				'label'    => (string) $item->title,
+				'label'    => $this->public_label_for_url( (string) $item->title, (string) $item->url ),
 				'url'      => (string) $item->url,
 				'active'   => in_array( 'current-menu-item', (array) $item->classes, true )
 					|| in_array( 'current-menu-ancestor', (array) $item->classes, true ),
@@ -87,14 +87,15 @@ final class Gloskin_Site_Core_Navigation_Service {
 	 */
 	private function fallback_tree() {
 		$items = array(
-			$this->fallback_item( 'About', '/about/' ),
-			$this->fallback_item( 'Treatments', '/treatments/' ),
+			$this->fallback_item( 'Beranda', '/' ),
+			$this->fallback_item( 'Tentang Gloskin', '/about/' ),
+			$this->fallback_item( 'Perawatan', '/treatments/' ),
 			$this->fallback_item( 'Skincare', '/skincare/', $this->skincare_children() ),
-			$this->fallback_item( 'Clinics', '/clinics/', $this->clinic_children() ),
-			$this->fallback_item( 'Doctors', '/doctors/' ),
-			$this->fallback_item( 'Shop', '/shop/' ),
-			$this->fallback_item( 'Insights', '/insights/' ),
-			$this->fallback_item( 'Contact', '/contact/' ),
+			$this->fallback_item( 'Klinik', '/clinics/', $this->clinic_children() ),
+			$this->fallback_item( 'Dokter', '/doctors/' ),
+			$this->fallback_item( 'Insight', '/insights/' ),
+			$this->fallback_item( 'Belanja', '/shop/' ),
+			$this->fallback_item( 'Kontak', '/contact/' ),
 		);
 
 		return $items;
@@ -137,6 +138,34 @@ final class Gloskin_Site_Core_Navigation_Service {
 			$children[] = $this->fallback_item( $label, '/clinics/' . $slug . '/' );
 		}
 		return $children;
+	}
+
+
+	/**
+	 * Keep canonical IA labels Indonesian even when an older native menu still
+	 * carries the initial English labels. Custom/non-Gloskin menu items remain
+	 * editor-owned and are not rewritten.
+	 *
+	 * @param string $label Existing menu label.
+	 * @param string $url Menu URL.
+	 * @return string
+	 */
+	private function public_label_for_url( $label, $url ) {
+		$path = wp_parse_url( $url, PHP_URL_PATH );
+		$path = is_string( $path ) ? trailingslashit( '/' . ltrim( $path, '/' ) ) : '';
+		$labels = array(
+			'/'             => 'Beranda',
+			'/about/'       => 'Tentang Gloskin',
+			'/treatments/'  => 'Perawatan',
+			'/skincare/'    => 'Skincare',
+			'/clinics/'     => 'Klinik',
+			'/doctors/'     => 'Dokter',
+			'/insights/'    => 'Insight',
+			'/shop/'        => 'Belanja',
+			'/contact/'     => 'Kontak',
+		);
+
+		return isset( $labels[ $path ] ) ? $labels[ $path ] : $label;
 	}
 
 	/**

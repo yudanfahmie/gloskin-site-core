@@ -40,6 +40,33 @@ final class Gloskin_Site_Core_Template_Service {
 	 */
 	public function register() {
 		add_filter( 'template_include', array( $this, 'resolve_template' ), 99 );
+		add_filter( 'document_title_parts', array( $this, 'localize_document_title' ), 20 );
+	}
+
+	/**
+	 * Localize canonical hub document titles without mutating editor-owned Page
+	 * titles in the database. Detail/product titles remain factual source data.
+	 *
+	 * @param array<string,string> $parts WordPress title parts.
+	 * @return array<string,string>
+	 */
+	public function localize_document_title( $parts ) {
+		$view = $this->identify_view();
+		$titles = array(
+			'home'       => 'Gloskin',
+			'about'      => 'Tentang Gloskin',
+			'treatments' => 'Perawatan',
+			'skincare'   => 'Skincare',
+			'clinics'    => 'Klinik',
+			'doctors'    => 'Dokter',
+			'contact'    => 'Kontak',
+			'insights'   => 'Insight',
+			'shop'       => 'Belanja',
+		);
+		if ( isset( $titles[ $view ] ) ) {
+			$parts['title'] = $titles[ $view ];
+		}
+		return $parts;
 	}
 
 	/**
@@ -179,8 +206,10 @@ final class Gloskin_Site_Core_Template_Service {
 			'page'       => $page,
 			'hero'       => $this->hero_context(
 				$page,
-				'Gloskin',
-				__( 'Explore clinic locations, treatment information, doctor profiles, skincare categories, and insights.', 'gloskin-site-core' )
+				__( 'Gloskin untuk perawatan kulit dan estetika.', 'gloskin-site-core' ),
+				__( 'Jelajahi jaringan klinik Gloskin, informasi perawatan, skincare, dan insight untuk menemukan langkah yang ingin Anda pelajari lebih lanjut.', 'gloskin-site-core' ),
+				__( 'Temukan Klinik', 'gloskin-site-core' ),
+				home_url( '/clinics/' )
 			),
 			'treatments' => $this->post_cards( Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 8 ),
 			'clinics'    => $this->clinic_cards(),
@@ -202,8 +231,8 @@ final class Gloskin_Site_Core_Template_Service {
 			'page'    => $page,
 			'hero'    => $this->hero_context(
 				$page,
-				__( 'About Gloskin', 'gloskin-site-core' ),
-				__( 'Learn about the Gloskin clinic network and team information that has been approved for publication.', 'gloskin-site-core' )
+				__( 'Tentang Gloskin', 'gloskin-site-core' ),
+				__( 'Kenali Gloskin melalui jaringan klinik, informasi perawatan, skincare, dan kanal kontak yang tersedia.', 'gloskin-site-core' )
 			),
 			'vision'  => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_vision', true ) : '',
 			'mission' => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_mission', true ) : '',
@@ -220,7 +249,7 @@ final class Gloskin_Site_Core_Template_Service {
 		$page = $this->content_page( 'treatments' );
 		return array(
 			'page'       => $page,
-			'hero'       => $this->hero_context( $page, __( 'Treatments', 'gloskin-site-core' ), '' ),
+			'hero'       => $this->hero_context( $page, __( 'Perawatan', 'gloskin-site-core' ), __( 'Pelajari informasi perawatan Gloskin sebelum menentukan langkah konsultasi.', 'gloskin-site-core' ) ),
 			'treatments' => $this->post_cards( Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 8 ),
 			'target'     => Gloskin_Site_Core_Content_Service::TREATMENT_TARGET_COUNT,
 		);
@@ -257,7 +286,7 @@ final class Gloskin_Site_Core_Template_Service {
 		$page = $this->content_page( 'skincare' );
 		return array(
 			'page'      => $page,
-			'hero'      => $this->hero_context( $page, __( 'Skincare', 'gloskin-site-core' ), '' ),
+			'hero'      => $this->hero_context( $page, __( 'Skincare', 'gloskin-site-core' ), __( 'Jelajahi kategori skincare Gloskin untuk perawatan harian.', 'gloskin-site-core' ) ),
 			'mappings'  => $this->skincare_mappings(),
 			'products'  => $this->woocommerce->products( 8 ),
 			'woo_ready' => $this->woocommerce->available(),
@@ -295,7 +324,7 @@ final class Gloskin_Site_Core_Template_Service {
 		$page = $this->content_page( 'clinics' );
 		return array(
 			'page'    => $page,
-			'hero'    => $this->hero_context( $page, __( 'Clinics', 'gloskin-site-core' ), '' ),
+			'hero'    => $this->hero_context( $page, __( 'Klinik Gloskin', 'gloskin-site-core' ), __( 'Temukan lokasi Gloskin yang ingin Anda kunjungi dan lihat informasi yang tersedia untuk setiap klinik.', 'gloskin-site-core' ) ),
 			'clinics' => $this->clinic_cards(),
 		);
 	}
@@ -316,32 +345,32 @@ final class Gloskin_Site_Core_Template_Service {
 		}
 
 		return array(
-			'post'             => $post,
-			'address'          => (string) get_post_meta( $post->ID, 'gloskin_address', true ),
-			'phone_display'    => (string) get_post_meta( $post->ID, 'gloskin_phone_display', true ),
-			'phone_uri'        => (string) get_post_meta( $post->ID, 'gloskin_phone_uri', true ),
-			'whatsapp_number'  => (string) get_post_meta( $post->ID, 'gloskin_whatsapp_number', true ),
-			'whatsapp_message' => (string) get_post_meta( $post->ID, 'gloskin_whatsapp_message', true ),
-			'operating_hours'  => (string) get_post_meta( $post->ID, 'gloskin_operating_hours', true ),
-			'map_url'          => (string) get_post_meta( $post->ID, 'gloskin_map_url', true ),
-			'map_embed'        => (string) get_post_meta( $post->ID, 'gloskin_map_embed', true ),
-			'short_location'   => (string) get_post_meta( $post->ID, 'gloskin_short_location', true ),
-			'gallery_ids'      => $gallery,
-			'doctors'          => $this->reverse_cards(
+			'post'            => $post,
+			'address'         => (string) get_post_meta( $post->ID, 'gloskin_address', true ),
+			'phone_display'   => (string) get_post_meta( $post->ID, 'gloskin_phone_display', true ),
+			'phone_uri'       => (string) get_post_meta( $post->ID, 'gloskin_phone_uri', true ),
+			'whatsapp_number' => (string) get_post_meta( $post->ID, 'gloskin_whatsapp_number', true ),
+			'whatsapp_message'=> (string) get_post_meta( $post->ID, 'gloskin_whatsapp_message', true ),
+			'operating_hours' => (string) get_post_meta( $post->ID, 'gloskin_operating_hours', true ),
+			'map_url'         => (string) get_post_meta( $post->ID, 'gloskin_map_url', true ),
+			'map_embed'       => (string) get_post_meta( $post->ID, 'gloskin_map_embed', true ),
+			'short_location'  => (string) get_post_meta( $post->ID, 'gloskin_short_location', true ),
+			'gallery_ids'     => $gallery,
+			'doctors'         => $this->reverse_cards(
 				Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE,
 				'gloskin_branch_ids',
 				$post->ID
 			),
-			'treatments'       => $this->reverse_cards(
+			'treatments'      => $this->reverse_cards(
 				Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE,
 				'gloskin_clinic_ids',
 				$post->ID
 			),
-			'whatsapp_url'     => $this->form->whatsapp_url(
+			'whatsapp_url'    => $this->form->whatsapp_url(
 				(string) get_post_meta( $post->ID, 'gloskin_whatsapp_number', true ),
 				(string) get_post_meta( $post->ID, 'gloskin_whatsapp_message', true )
 			),
-			'phone_url'        => $this->form->phone_url( (string) get_post_meta( $post->ID, 'gloskin_phone_uri', true ) ),
+			'phone_url'       => $this->form->phone_url( (string) get_post_meta( $post->ID, 'gloskin_phone_uri', true ) ),
 		);
 	}
 
@@ -352,7 +381,7 @@ final class Gloskin_Site_Core_Template_Service {
 		$page = $this->content_page( 'doctors' );
 		return array(
 			'page'    => $page,
-			'hero'    => $this->hero_context( $page, __( 'Doctors', 'gloskin-site-core' ), '' ),
+			'hero'    => $this->hero_context( $page, __( 'Dokter Gloskin', 'gloskin-site-core' ), __( 'Gunakan halaman ini untuk mengenali profil dokter dan lokasi praktik yang dipublikasikan Gloskin.', 'gloskin-site-core' ) ),
 			'doctors' => $this->post_cards( Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE, 13 ),
 			'target'  => Gloskin_Site_Core_Content_Service::DOCTOR_TARGET_COUNT,
 		);
@@ -397,8 +426,8 @@ final class Gloskin_Site_Core_Template_Service {
 			'page'      => $page,
 			'hero'      => $this->hero_context(
 				$page,
-				__( 'Contact', 'gloskin-site-core' ),
-				__( 'Choose a Gloskin clinic to view the contact information currently available for that branch.', 'gloskin-site-core' )
+				__( 'Kontak Gloskin', 'gloskin-site-core' ),
+				__( 'Pilih klinik Gloskin untuk melihat detail lokasi dan kanal kontak yang tersedia.', 'gloskin-site-core' )
 			),
 			'clinics'   => $this->clinic_cards(),
 			'form_html' => $this->form->render(),
@@ -427,11 +456,11 @@ final class Gloskin_Site_Core_Template_Service {
 		}
 
 		return array(
-			'page'         => $page,
-			'hero'         => $this->hero_context( $page, __( 'Insights', 'gloskin-site-core' ), '' ),
-			'insights'     => $posts,
-			'current_page' => $paged,
-			'total_pages'  => max( 1, absint( $query->max_num_pages ) ),
+			'page'        => $page,
+			'hero'        => $this->hero_context( $page, __( 'Insight', 'gloskin-site-core' ), __( 'Jelajahi informasi dan pembaruan yang dipublikasikan Gloskin.', 'gloskin-site-core' ) ),
+			'insights'    => $posts,
+			'current_page'=> $paged,
+			'total_pages' => max( 1, absint( $query->max_num_pages ) ),
 		);
 	}
 
@@ -442,7 +471,7 @@ final class Gloskin_Site_Core_Template_Service {
 		$page = $this->content_page( 'shop' );
 		return array(
 			'page'      => $page,
-			'hero'      => $this->hero_context( $page, __( 'Shop', 'gloskin-site-core' ), '' ),
+			'hero'      => $this->hero_context( $page, __( 'Belanja', 'gloskin-site-core' ), __( 'Jelajahi skincare Gloskin melalui kategori dan produk yang ditampilkan di situs.', 'gloskin-site-core' ) ),
 			'products'  => $this->woocommerce->products( 20 ),
 			'woo_ready' => $this->woocommerce->available(),
 		);
@@ -468,15 +497,15 @@ final class Gloskin_Site_Core_Template_Service {
 	 * @param string       $default_copy Safe structural copy.
 	 * @return array<string, mixed>
 	 */
-	private function hero_context( $page, $default_heading, $default_copy ) {
+	private function hero_context( $page, $default_heading, $default_copy, $default_cta_label = '', $default_cta_url = '' ) {
 		$heading = $page ? trim( (string) get_post_meta( $page->ID, 'gloskin_hero_heading', true ) ) : '';
 		$copy    = $page ? trim( (string) get_post_meta( $page->ID, 'gloskin_hero_copy', true ) ) : '';
 
 		return array(
 			'heading'   => '' !== $heading ? $heading : $default_heading,
 			'copy'      => '' !== $copy ? $copy : $default_copy,
-			'cta_label' => $page ? (string) get_post_meta( $page->ID, 'gloskin_hero_cta_label', true ) : '',
-			'cta_url'   => $page ? (string) get_post_meta( $page->ID, 'gloskin_hero_cta_url', true ) : '',
+			'cta_label' => $page && '' !== trim( (string) get_post_meta( $page->ID, 'gloskin_hero_cta_label', true ) ) ? (string) get_post_meta( $page->ID, 'gloskin_hero_cta_label', true ) : $default_cta_label,
+			'cta_url'   => $page && '' !== trim( (string) get_post_meta( $page->ID, 'gloskin_hero_cta_url', true ) ) ? (string) get_post_meta( $page->ID, 'gloskin_hero_cta_url', true ) : $default_cta_url,
 			'media_id'  => $page ? absint( get_post_meta( $page->ID, 'gloskin_hero_media_id', true ) ) : 0,
 		);
 	}
@@ -508,27 +537,40 @@ final class Gloskin_Site_Core_Template_Service {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function clinic_cards() {
+		$published = get_posts(
+			array(
+				'post_type'      => Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE,
+				'post_status'    => 'publish',
+				'posts_per_page' => Gloskin_Site_Core_Content_Service::CLINIC_TARGET_COUNT,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+		$by_slug = array();
+		foreach ( $published as $post ) {
+			$by_slug[ $post->post_name ] = $post;
+		}
+
 		$cards = array();
 		foreach ( Gloskin_Site_Core_Content_Service::clinic_definitions() as $slug => $title ) {
-			$post = get_page_by_path( $slug, OBJECT, Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE );
-			if ( $post instanceof WP_Post && 'publish' === $post->post_status ) {
-				$cards[] = $this->post_card( $post, Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE );
-			} else {
-				$cards[] = array(
-					'id'             => 0,
-					'title'          => $title,
-					'url'            => home_url( '/clinics/' . $slug . '/' ),
-					'excerpt'        => '',
-					'image_id'       => 0,
-					'short_location' => '',
-					'hours'          => '',
-					'degree_title'   => '',
-					'specialization' => '',
-					'summary'        => '',
-					'phone_display'  => '',
-					'whatsapp_url'   => '',
-				);
+			if ( isset( $by_slug[ $slug ] ) ) {
+				$cards[] = $this->post_card( $by_slug[ $slug ], Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE );
+				continue;
 			}
+			$cards[] = array(
+				'id'             => 0,
+				'title'          => $title,
+				'url'            => home_url( '/clinics/' . $slug . '/' ),
+				'excerpt'        => '',
+				'image_id'       => 0,
+				'short_location' => '',
+				'hours'          => '',
+				'degree_title'   => '',
+				'specialization' => '',
+				'summary'        => '',
+				'phone_display'  => '',
+				'whatsapp_url'   => '',
+			);
 		}
 		return $cards;
 	}

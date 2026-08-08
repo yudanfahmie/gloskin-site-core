@@ -1,14 +1,6 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
-$hero = $gloskin_context['hero'];
-if ( empty( $hero['copy'] ) ) { $hero['copy'] = __( 'Explore Gloskin treatment information.', 'gloskin-site-core' ); }
-gloskin_ui1_render_hero( $hero );
+gloskin_ui1_render_hero( $gloskin_context['hero'] );
 ?>
-<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) || $gloskin_context['treatments'] ) : ?>
-<section class="gloskin-ui1-section">
-	<div class="gloskin-ui1-container">
-		<?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?>
-		<?php gloskin_ui1_render_card_grid( $gloskin_context['treatments'], 'treatment' ); ?>
-	</div>
-</section>
-<?php endif; ?>
+<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?><section class="gloskin-ui1-section"><div class="gloskin-ui1-container gloskin-ui1-container--narrow"><?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?></div></section><?php endif; ?>
+<?php if ( $gloskin_context['treatments'] ) : ?><section class="gloskin-ui1-section"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_section_heading( __( 'Pilihan Perawatan', 'gloskin-site-core' ), __( 'Baca informasi yang tersedia sebelum menentukan langkah konsultasi.', 'gloskin-site-core' ) ); gloskin_ui1_render_card_grid( $gloskin_context['treatments'], 'treatment' ); ?></div></section><?php else : ?><section class="gloskin-ui1-section"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_editorial_split( __( 'Sebelum memilih perawatan', 'gloskin-site-core' ), __( 'Mulai dari informasi dan konsultasi.', 'gloskin-site-core' ), __( 'Kebutuhan setiap orang dapat berbeda. Gunakan halaman klinik untuk menemukan lokasi Gloskin dan kanal kontak yang tersedia sebelum menentukan langkah berikutnya.', 'gloskin-site-core' ), __( 'Temukan Klinik', 'gloskin-site-core' ), home_url( '/clinics/' ), 'treatment' ); ?></div></section><?php endif; ?>

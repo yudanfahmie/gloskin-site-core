@@ -66,15 +66,15 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 	 */
 	private function provision_approved_structure() {
 		$pages = array(
-			'home'       => 'Home',
-			'about'      => 'About',
-			'treatments' => 'Treatments',
+			'home'       => 'Beranda',
+			'about'      => 'Tentang Gloskin',
+			'treatments' => 'Perawatan',
 			'skincare'   => 'Skincare',
-			'clinics'    => 'Clinics',
-			'contact'    => 'Contact',
-			'insights'   => 'Insights',
-			'shop'       => 'Shop',
-			'doctors'    => 'Doctors',
+			'clinics'    => 'Klinik',
+			'contact'    => 'Kontak',
+			'insights'   => 'Insight',
+			'shop'       => 'Belanja',
+			'doctors'    => 'Dokter',
 		);
 
 		$page_ids = array();

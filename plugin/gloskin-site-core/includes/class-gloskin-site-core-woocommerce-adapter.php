@@ -31,6 +31,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		add_filter( 'body_class', array( $this, 'body_classes' ) );
 	}
 
+
 	/**
 	 * Keep native Woo templates while applying the shared Gloskin presentation tokens.
 	 *
@@ -188,7 +189,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 				'short_description' => wp_strip_all_tags( (string) $product->get_short_description() ),
 				'sku'               => (string) $product->get_sku(),
 				'add_to_cart_url'   => (string) $product->add_to_cart_url(),
-				'add_to_cart_text'  => (string) $product->add_to_cart_text(),
+				'add_to_cart_text'  => __( 'Tambah ke keranjang', 'gloskin-site-core' ),
 				'purchasable'       => (bool) $product->is_purchasable(),
 				'in_stock'          => (bool) $product->is_in_stock(),
 			);
@@ -199,7 +200,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 
 	/**
 	 * Presentation-only support for approved BPOM/composition/usage data when
-	 * already stored as WooCommerce product attributes or product meta.
+	 * already stored as WooCommerce product attributes.
 	 *
 	 * @return void
 	 */
@@ -212,8 +213,8 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 
 		$facts = array(
 			'BPOM'        => $this->first_product_value( $product, array( 'bpom', 'pa_bpom' ), array( 'bpom' ) ),
-			'Composition' => $this->first_product_value( $product, array( 'composition', 'pa_composition' ), array( 'composition' ) ),
-			'Usage'       => $this->first_product_value( $product, array( 'usage', 'usage-instructions', 'pa_usage' ), array( 'usage', 'usage_instructions' ) ),
+			'Komposisi'   => $this->first_product_value( $product, array( 'composition', 'pa_composition' ), array( 'composition' ) ),
+			'Cara Penggunaan' => $this->first_product_value( $product, array( 'usage', 'usage-instructions', 'pa_usage' ), array( 'usage', 'usage_instructions' ) ),
 		);
 
 		$facts = apply_filters( 'gloskin_site_core_product_facts', $facts, $product );
