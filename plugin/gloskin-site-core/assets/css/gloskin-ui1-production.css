@@ -12,6 +12,13 @@ body.gloskin-ui1{
 	font-family:var(--gloskin-font-body);
 	font-weight:400;
 	line-height:1.62;
+	--gloskin-ui1-admin-bar-height:0px;
+	--gloskin-ui1-admin-bar-gap:0px;
+	--gloskin-ui1-header-offset:calc(var(--gloskin-ui1-admin-bar-height) + var(--gloskin-ui1-admin-bar-gap));
+}
+body.admin-bar.gloskin-ui1{
+	--gloskin-ui1-admin-bar-height:32px;
+	--gloskin-ui1-admin-bar-gap:8px;
 }
 .gloskin-ui1 h1,
 .gloskin-ui1 h2,
@@ -78,6 +85,15 @@ body.gloskin-ui1{
 	object-fit:cover;
 	border-radius:var(--gloskin-radius-lg);
 	box-shadow:var(--gloskin-shadow);
+}
+@media (max-width:782px){
+	body.admin-bar.gloskin-ui1{--gloskin-ui1-admin-bar-height:46px}
+}
+@media (max-width:600px){
+	body.admin-bar.gloskin-ui1{
+		--gloskin-ui1-admin-bar-height:0px;
+		--gloskin-ui1-admin-bar-gap:0px;
+	}
 }
 @media (min-width:1800px){
 	.gloskin-ui1-hero__title{max-width:14ch;font-size:clamp(4.55rem,4.7vw,6rem)}

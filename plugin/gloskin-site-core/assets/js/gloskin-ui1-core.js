@@ -122,6 +122,15 @@
 			header.classList.remove('is-hidden');
 		}
 
+		function hideHeader() {
+			header.classList.add('is-hidden');
+		}
+
+		function resetDirection(nextDirection) {
+			direction = nextDirection || 0;
+			directionDistance = 0;
+		}
+
 		function updateHeader() {
 			var currentY = Math.max(window.scrollY || 0, 0);
 			var delta = currentY - previousY;
@@ -129,8 +138,14 @@
 
 			if (currentY <= topGuard) {
 				showHeader();
-				direction = 0;
-				directionDistance = 0;
+				resetDirection(0);
+				scheduled = false;
+				return;
+			}
+
+			if (interactionActive()) {
+				showHeader();
+				resetDirection(0);
 				scheduled = false;
 				return;
 			}
@@ -143,22 +158,16 @@
 			var nextDirection = delta > 0 ? 1 : -1;
 			if (nextDirection !== direction) {
 				direction = nextDirection;
-				directionDistance = 0;
-			}
-			directionDistance += Math.abs(delta);
-
-			if (interactionActive()) {
-				showHeader();
-				directionDistance = 0;
-				scheduled = false;
-				return;
+				directionDistance = Math.abs(delta);
+			} else {
+				directionDistance += Math.abs(delta);
 			}
 
-			if (direction > 0 && directionDistance >= hideThreshold) {
-				header.classList.add('is-hidden');
-				directionDistance = 0;
-			} else if (direction < 0 && directionDistance >= showThreshold) {
+			if (direction < 0 && directionDistance >= showThreshold) {
 				showHeader();
+				directionDistance = 0;
+			} else if (direction > 0 && directionDistance >= hideThreshold) {
+				hideHeader();
 				directionDistance = 0;
 			}
 			scheduled = false;
@@ -175,8 +184,7 @@
 		window.addEventListener('scroll', onScroll, { passive: true });
 		header.addEventListener('focusin', function () {
 			showHeader();
-			direction = 0;
-			directionDistance = 0;
+			resetDirection(0);
 		});
 	}
 

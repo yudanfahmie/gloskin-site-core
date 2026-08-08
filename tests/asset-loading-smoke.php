@@ -23,9 +23,10 @@ function wp_enqueue_script( $handle ) { $GLOBALS['gl_scripts'][] = (string) $han
 require dirname( __DIR__ ) . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-asset-service.php';
 
 $commerce = false;
+$asset_version = '0.3.1';
 $service = new Gloskin_Site_Core_Asset_Service(
 	dirname( __DIR__ ) . '/plugin/gloskin-site-core/gloskin-site-core.php',
-	'0.3.0',
+	$asset_version,
 	static function () use ( &$commerce ) { return $commerce; }
 );
 
@@ -50,9 +51,15 @@ if ( empty( $font['src'] ) || 0 !== strpos( $font['src'], 'https://fonts.googlea
 }
 $core = $GLOBALS['gl_registered_styles']['gloskin-ui1-core'] ?? array();
 $production = $GLOBALS['gl_registered_styles']['gloskin-ui1-production'] ?? array();
+$core_script = $GLOBALS['gl_registered_scripts']['gloskin-ui1-core'] ?? array();
 if ( ( $core['deps'] ?? array() ) !== array( 'gloskin-ui1-fonts' )
 	|| ( $production['deps'] ?? array() ) !== array( 'gloskin-ui1-core' ) ) {
 	fwrite( STDERR, "frontend stylesheet dependency order failed\n" ); exit( 1 );
+}
+foreach ( array( 'font' => $font, 'core' => $core, 'production' => $production, 'core-script' => $core_script ) as $label => $asset ) {
+	if ( ( $asset['version'] ?? null ) !== $asset_version ) {
+		fwrite( STDERR, "stale frontend asset version for {$label}\n" ); exit( 1 );
+	}
 }
 
 $GLOBALS['gl_asset_context'] = array();

@@ -268,34 +268,77 @@ with sync_playwright() as p:
     print('browser smoke passed (native media priority)')
 
     admin_bar_cases = [
-        ('desktop', 1440, 900, '32px'),
-        ('toolbar-narrow', 782, 1000, '46px'),
-        ('mobile-absolute', 600, 900, '0px'),
+        ('desktop', 1440, 900, 32, 8, '40px'),
+        ('toolbar-782', 782, 1000, 46, 8, '54px'),
+        ('toolbar-601', 601, 1000, 46, 8, '54px'),
+        ('mobile-absolute', 600, 900, 46, 0, '0px'),
     ]
-    for case_name, width, height, expected_top in admin_bar_cases:
+    for case_name, width, height, toolbar_height, expected_gap, expected_top in admin_bar_cases:
         page = browser.new_page(viewport={'width': width, 'height': height})
+        errors = []
+        page.on('console', lambda msg, e=errors: e.append(msg.text) if msg.type == 'error' else None)
+        page.on('pageerror', lambda err, e=errors: e.append(str(err)))
         load(page, fixtures['home'])
-        page.evaluate("""() => {
+        page.evaluate("""({toolbarHeight, fixedToolbar}) => {
             document.body.classList.add('admin-bar');
             document.documentElement.style.scrollBehavior='auto';
-            document.body.style.minHeight='2600px';
+            document.body.style.minHeight='3600px';
             const bar=document.createElement('div');
             bar.id='wpadminbar';
+            bar.style.height=toolbarHeight+'px';
+            bar.style.left='0';
+            bar.style.right='0';
+            bar.style.top='0';
+            bar.style.zIndex='99999';
             bar.style.transform='none';
+            bar.style.position=fixedToolbar ? 'fixed' : 'static';
             document.body.prepend(bar);
-        }""")
+        }""", {'toolbarHeight': toolbar_height, 'fixedToolbar': width > 600})
         header = page.locator('.gloskin-ui1-header')
+        admin_bar = page.locator('#wpadminbar')
         if header.evaluate('el => getComputedStyle(el).top') != expected_top:
             raise SystemExit(f'admin-bar/{case_name}: unexpected sticky top offset')
-        if width > 600:
-            page.evaluate('window.scrollTo(0, 500)')
-            page.wait_for_timeout(80)
-            if not header.evaluate("el => el.classList.contains('is-hidden')"):
-                raise SystemExit(f'admin-bar/{case_name}: smart hide state failed')
-            if page.locator('#wpadminbar').evaluate('el => getComputedStyle(el).transform') != 'none':
-                raise SystemExit(f'admin-bar/{case_name}: admin toolbar was transformed')
+
+        geometry = page.evaluate("""() => {
+            const bar=document.querySelector('#wpadminbar').getBoundingClientRect();
+            const header=document.querySelector('.gloskin-ui1-header').getBoundingClientRect();
+            return {barTop:bar.top,barBottom:bar.bottom,headerTop:header.top,gap:header.top-bar.bottom};
+        }""")
+        if abs(geometry['gap'] - expected_gap) > 1:
+            raise SystemExit(f'admin-bar/{case_name}: actual header/admin geometry gap failed: {geometry}')
+
+        page.evaluate('window.scrollTo(0, 800)')
+        page.wait_for_timeout(100)
+        if not header.evaluate("el => el.classList.contains('is-hidden')"):
+            raise SystemExit(f'admin-bar/{case_name}: 800 down did not hide header')
+        page.evaluate('window.scrollTo(0, 1200)')
+        page.wait_for_timeout(100)
+        if not header.evaluate("el => el.classList.contains('is-hidden')"):
+            raise SystemExit(f'admin-bar/{case_name}: 1200 continued-down did not stay hidden')
+        page.evaluate('window.scrollTo(0, 1100)')
+        page.wait_for_timeout(100)
+        if header.evaluate("el => el.classList.contains('is-hidden')"):
+            raise SystemExit(f'admin-bar/{case_name}: 1100 reversal-up did not reveal header')
+        visible_top = header.evaluate('el => Math.round(el.getBoundingClientRect().top)')
+        if visible_top != int(float(expected_top[:-2])):
+            raise SystemExit(f'admin-bar/{case_name}: revealed header geometry incorrect: {visible_top}px')
+        page.evaluate('window.scrollTo(0, 1500)')
+        page.wait_for_timeout(100)
+        if not header.evaluate("el => el.classList.contains('is-hidden')"):
+            raise SystemExit(f'admin-bar/{case_name}: 1500 reversal-down did not hide header')
+        page.evaluate('window.scrollTo(0, 1350)')
+        page.wait_for_timeout(100)
+        if header.evaluate("el => el.classList.contains('is-hidden')"):
+            raise SystemExit(f'admin-bar/{case_name}: 1350 second reversal-up did not reveal header')
+
+        if admin_bar.evaluate('el => getComputedStyle(el).transform') != 'none':
+            raise SystemExit(f'admin-bar/{case_name}: admin toolbar was transformed')
+        if width > 600 and abs(admin_bar.evaluate('el => el.getBoundingClientRect().top')) > 1:
+            raise SystemExit(f'admin-bar/{case_name}: fixed admin toolbar moved during header scrolling')
+        if errors:
+            raise SystemExit(f'admin-bar/{case_name}: console/page errors: {errors}')
         page.close()
-    print('browser smoke passed (WordPress admin bar offsets)')
+    print('browser smoke passed (WordPress admin geometry + repeated directional sticky state)')
 
     reduced = browser.new_page(viewport={'width': 390, 'height': 844}, reduced_motion='reduce')
     load(reduced, fixtures['home'])
