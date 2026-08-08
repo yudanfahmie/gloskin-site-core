@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.1.0';
+	const VERSION = '0.2.0';
 
 	/** @var string */
 	private $plugin_file;
@@ -26,24 +26,69 @@ final class Gloskin_Site_Core_Kernel {
 	}
 
 	/**
-	 * Register the services required by the current request profile.
+	 * Register only the services needed by the current request profile.
 	 *
 	 * @return void
 	 */
 	public function boot() {
-		require_once __DIR__ . '/class-gloskin-site-core-content-service.php';
+		$this->load_shared_classes();
 
 		$content = new Gloskin_Site_Core_Content_Service();
 		$content->register();
 		$this->services[] = $content;
 
-		if ( ! is_admin() ) {
-			require_once __DIR__ . '/class-gloskin-site-core-asset-service.php';
+		$assets = new Gloskin_Site_Core_Asset_Service( $this->plugin_file, self::VERSION );
+		$assets->register();
+		$this->services[] = $assets;
 
-			$assets = new Gloskin_Site_Core_Asset_Service( $this->plugin_file, self::VERSION );
-			$assets->register();
-			$this->services[] = $assets;
+		if ( is_admin() ) {
+			require_once __DIR__ . '/class-gloskin-site-core-admin-service.php';
+			require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
+
+			$admin = new Gloskin_Site_Core_Admin_Service( $content );
+			$admin->register();
+
+			$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();
+			$lifecycle->register_upgrade();
+
+			$this->services[] = $admin;
+			$this->services[] = $lifecycle;
+			return;
 		}
+
+		require_once __DIR__ . '/class-gloskin-site-core-navigation-service.php';
+		require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php';
+		require_once __DIR__ . '/class-gloskin-site-core-form-adapter.php';
+		require_once __DIR__ . '/class-gloskin-site-core-template-service.php';
+
+		$navigation = new Gloskin_Site_Core_Navigation_Service();
+		$navigation->register();
+
+		$woocommerce = new Gloskin_Site_Core_WooCommerce_Adapter();
+		$woocommerce->register();
+
+		$form = new Gloskin_Site_Core_Form_Adapter();
+
+		$templates = new Gloskin_Site_Core_Template_Service(
+			dirname( __DIR__ ),
+			$navigation,
+			$woocommerce,
+			$form
+		);
+		$templates->register();
+
+		$this->services[] = $navigation;
+		$this->services[] = $woocommerce;
+		$this->services[] = $form;
+		$this->services[] = $templates;
+	}
+
+	/**
+	 * @return void
+	 */
+	private function load_shared_classes() {
+		require_once __DIR__ . '/class-gloskin-site-core-content-service.php';
+		require_once __DIR__ . '/class-gloskin-site-core-asset-service.php';
 	}
 
 	/**

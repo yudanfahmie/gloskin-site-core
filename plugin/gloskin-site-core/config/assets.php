@@ -10,12 +10,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 return array(
-	'styles'  => array(
+	'styles' => array(
 		'gloskin-ui1-core' => array(
 			'src'   => 'assets/css/gloskin-ui1-core.css',
 			'deps'  => array(),
 			'media' => 'all',
 		),
 	),
-	'scripts' => array(),
+	'scripts' => array(
+		'gloskin-ui1-core' => array(
+			'src'       => 'assets/js/gloskin-ui1-core.js',
+			'deps'      => array(),
+			'in_footer' => true,
+		),
+	),
+	'admin_scripts' => array(
+		'gloskin-ui1-admin' => array(
+			'src'  => 'assets/js/gloskin-ui1-admin.js',
+			'deps' => array(),
+		),
+	),
 );

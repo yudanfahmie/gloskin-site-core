@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Gloskin Site Core
- * Description: Gloskin website presentation and content foundation.
- * Version: 0.1.0
+ * Description: Gloskin website presentation, content and integration runtime.
+ * Version: 0.2.0
  * Requires PHP: 7.4
  * Text Domain: gloskin-site-core
  */

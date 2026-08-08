@@ -19,8 +19,6 @@ final class Gloskin_Site_Core_Content_Service {
 	const DOCTOR_TARGET_COUNT    = 13;
 
 	/**
-	 * Register WordPress hooks owned by this service.
-	 *
 	 * @return void
 	 */
 	public function register() {
@@ -28,8 +26,6 @@ final class Gloskin_Site_Core_Content_Service {
 	}
 
 	/**
-	 * Register content types and metadata.
-	 *
 	 * @return void
 	 */
 	public function register_content() {
@@ -38,9 +34,6 @@ final class Gloskin_Site_Core_Content_Service {
 	}
 
 	/**
-	 * Register Gloskin CPTs. Kept public/static so LifecycleService can
-	 * establish rewrite rules before its one-time activation flush.
-	 *
 	 * @return void
 	 */
 	public static function register_content_types() {
@@ -73,9 +66,6 @@ final class Gloskin_Site_Core_Content_Service {
 	}
 
 	/**
-	 * Canonical record counts required by the normalized architecture.
-	 * Counts are targets, not content seeding or hard publish locks.
-	 *
 	 * @return array<string, int>
 	 */
 	public static function record_targets() {
@@ -87,21 +77,38 @@ final class Gloskin_Site_Core_Content_Service {
 	}
 
 	/**
-	 * Required clinic route identities from the canonical route contract.
+	 * Canonical branch identities approved in repository documentation.
 	 *
-	 * @return array<int, string>
+	 * @return array<string, string>
 	 */
-	public static function required_clinic_slugs() {
+	public static function clinic_definitions() {
 		return array(
-			'kebayoran-baru',
-			'tebet',
-			'bekasi',
-			'cibubur',
-			'serpong',
-			'surabaya',
-			'banjarmasin',
-			'balikpapan',
-			'denpasar',
+			'kebayoran-baru' => 'Kebayoran Baru',
+			'tebet'          => 'Tebet',
+			'bekasi'         => 'Bekasi',
+			'cibubur'        => 'Cibubur',
+			'serpong'        => 'Serpong',
+			'surabaya'       => 'Surabaya',
+			'banjarmasin'    => 'Banjarmasin',
+			'balikpapan'     => 'Balikpapan',
+			'denpasar'       => 'Denpasar',
+		);
+	}
+
+	/**
+	 * Seven documented provisional skincare landing mappings.
+	 *
+	 * @return array<string, string>
+	 */
+	public static function skincare_definitions() {
+		return array(
+			'facial-wash'                    => 'Facial Wash',
+			'day-cream-sunscreen'            => 'Day Cream / Sunscreen',
+			'toner'                          => 'Toner',
+			'serum'                          => 'Serum',
+			'acne-care'                      => 'Acne Care',
+			'anti-aging'                     => 'Anti-Aging',
+			'brightening-pigmentation-care'  => 'Brightening & Pigmentation Care',
 		);
 	}
 
@@ -129,7 +136,8 @@ final class Gloskin_Site_Core_Content_Service {
 				'slug'       => $rewrite_slug,
 				'with_front' => false,
 			),
-			'supports'           => array( 'title', 'editor', 'thumbnail', 'custom-fields' ),
+			'supports'           => array( 'title', 'editor', 'excerpt', 'thumbnail', 'custom-fields' ),
+			'menu_position'      => 21,
 			'map_meta_cap'       => true,
 			'delete_with_user'   => false,
 			'publicly_queryable' => true,
@@ -137,10 +145,6 @@ final class Gloskin_Site_Core_Content_Service {
 	}
 
 	/**
-	 * Register exact Gloskin entity fields using WordPress post meta.
-	 * Core post content and featured images own description/media fields.
-	 * Relationships are stored in one canonical direction only.
-	 *
 	 * @return void
 	 */
 	private function register_meta() {
@@ -170,6 +174,16 @@ final class Gloskin_Site_Core_Content_Service {
 		$this->register_string_meta( self::DOCTOR_POST_TYPE, 'gloskin_profile', 'rich' );
 		$this->register_string_meta( self::DOCTOR_POST_TYPE, 'gloskin_schedule', 'textarea' );
 		$this->register_string_meta( self::DOCTOR_POST_TYPE, 'gloskin_booking_target', 'action_url' );
+
+		$this->register_string_meta( 'page', 'gloskin_woo_category_slug', 'slug' );
+		$this->register_string_meta( 'page', 'gloskin_about_vision', 'rich' );
+		$this->register_string_meta( 'page', 'gloskin_about_mission', 'rich' );
+		$this->register_string_meta( 'page', 'gloskin_about_values', 'rich' );
+		$this->register_string_meta( 'page', 'gloskin_hero_heading', 'text' );
+		$this->register_string_meta( 'page', 'gloskin_hero_copy', 'textarea' );
+		$this->register_string_meta( 'page', 'gloskin_hero_cta_label', 'text' );
+		$this->register_string_meta( 'page', 'gloskin_hero_cta_url', 'action_url' );
+		$this->register_attachment_id_meta( 'page', 'gloskin_hero_media_id' );
 	}
 
 	/**
@@ -251,6 +265,26 @@ final class Gloskin_Site_Core_Content_Service {
 	}
 
 	/**
+	 * @param string $post_type Post type.
+	 * @param string $meta_key Meta key.
+	 * @return void
+	 */
+	private function register_attachment_id_meta( $post_type, $meta_key ) {
+		register_post_meta(
+			$post_type,
+			$meta_key,
+			array(
+				'type'              => 'integer',
+				'single'            => true,
+				'default'           => 0,
+				'show_in_rest'      => true,
+				'sanitize_callback' => array( $this, 'sanitize_attachment_id' ),
+				'auth_callback'     => array( $this, 'authorize_meta' ),
+			)
+		);
+	}
+
+	/**
 	 * @param bool   $allowed Existing authorization result.
 	 * @param string $meta_key Meta key.
 	 * @param int    $post_id Post ID.
@@ -282,6 +316,8 @@ final class Gloskin_Site_Core_Content_Service {
 				return $this->sanitize_phone( $value );
 			case 'map_embed_url':
 				return $this->sanitize_map_embed_url( $value );
+			case 'slug':
+				return sanitize_title( $value );
 			case 'text':
 			default:
 				return sanitize_text_field( $value );
@@ -303,8 +339,6 @@ final class Gloskin_Site_Core_Content_Service {
 	}
 
 	/**
-	 * Store only controlled Google Maps embed URLs, never arbitrary iframe HTML.
-	 *
 	 * @param string $value Raw map embed URL.
 	 * @return string
 	 */
@@ -314,8 +348,8 @@ final class Gloskin_Site_Core_Content_Service {
 			return '';
 		}
 
-		$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
-		$path = (string) wp_parse_url( $url, PHP_URL_PATH );
+		$host          = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		$path          = (string) wp_parse_url( $url, PHP_URL_PATH );
 		$allowed_hosts = array( 'google.com', 'www.google.com', 'google.co.id', 'www.google.co.id', 'maps.google.com' );
 
 		if ( ! in_array( $host, $allowed_hosts, true ) || 0 !== strpos( $path, '/maps/embed' ) ) {
@@ -336,7 +370,7 @@ final class Gloskin_Site_Core_Content_Service {
 		}
 
 		$ids = array();
-		foreach ( $value as $candidate ) {
+		foreach ( array_slice( $value, 0, 50 ) as $candidate ) {
 			$id = absint( $candidate );
 			if ( $id && $target_post_type === get_post_type( $id ) ) {
 				$ids[] = $id;
@@ -344,6 +378,18 @@ final class Gloskin_Site_Core_Content_Service {
 		}
 
 		return array_values( array_unique( $ids ) );
+	}
+
+	/**
+	 * @param mixed $value Raw attachment ID.
+	 * @return int
+	 */
+	public function sanitize_attachment_id( $value ) {
+		$id = absint( $value );
+		if ( ! $id || 'attachment' !== get_post_type( $id ) || ! wp_attachment_is_image( $id ) ) {
+			return 0;
+		}
+		return $id;
 	}
 
 	/**
@@ -356,9 +402,9 @@ final class Gloskin_Site_Core_Content_Service {
 		}
 
 		$ids = array();
-		foreach ( $value as $candidate ) {
-			$id = absint( $candidate );
-			if ( $id && 'attachment' === get_post_type( $id ) && wp_attachment_is_image( $id ) ) {
+		foreach ( array_slice( $value, 0, 12 ) as $candidate ) {
+			$id = $this->sanitize_attachment_id( $candidate );
+			if ( $id ) {
 				$ids[] = $id;
 			}
 		}
