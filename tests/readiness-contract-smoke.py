@@ -117,6 +117,9 @@ require(".gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__l
 require("gloskin-ui1-nav__toggle:hover" in production and "background:transparent" in production, "desktop parent-menu chevron hover must stay visually naked")
 require("initNavBubble" in js and "is-visible" in js and "is-bubbled" in js, "desktop nav bubble must be positioned/toggled by the shared JS controller")
 require(".gloskin-ui1-footer__brand::after" in production and ".gloskin-ui1-footer__grid>div:not(.gloskin-ui1-footer__brand)" in production, "footer hierarchy polish missing")
+require("--gloskin-ui1-brand-primary-height:clamp(44px,6vw,80px)" in production and ".gloskin-ui1-header__inner img.gloskin-ui1-brand__image" in production and ".gloskin-ui1-footer img.gloskin-ui1-brand__image--footer" in production, "header primary and footer logos must share one responsive display-size token")
+require(".gloskin-ui1-footer .gloskin-ui1-brand--footer{grid-column:auto;justify-self:start;align-self:start;margin:0}" in production and ".gloskin-ui1-footer__brand{justify-items:start;text-align:left}" in production, "footer brand must cancel the global centered grid-column and remain left-aligned")
+require(".gloskin-ui1-footer__clinics{grid-template-columns:repeat(2,max-content)" in production and ".gloskin-ui1-footer__clinics li,.gloskin-ui1-footer__clinics a{white-space:nowrap}" in production and "@media (max-width:420px){.gloskin-ui1-footer__clinics{grid-template-columns:1fr}}" in production, "footer clinic labels must stay one-line with a narrow-phone safe column")
 for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "readiness-browser-smoke.py", "rendered-shell-auth-smoke.php"):
     require(required in runner, f"{required} must run through tests/check-runtime.sh")
 
@@ -124,6 +127,6 @@ for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "read
 require("gloskin_ui1_render_commerce_page_heading" in shell, "cart/checkout/account H1 owner missing")
 header_version = re.search(r"\* Version:\s*([0-9.]+)", main_plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == "0.7.13", "plugin/kernel version mismatch")
+require(header_version == kernel_version == "0.7.14", "plugin/kernel version mismatch")
 
 print("readiness-contract-smoke: OK")

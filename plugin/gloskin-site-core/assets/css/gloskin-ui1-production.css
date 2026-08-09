@@ -349,3 +349,19 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 	.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login>.u-column1.col-1,
 	.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login>.u-column2.col-2{padding:18px 16px}
 }
+
+/* Footer brand parity: the primary header and footer share one display-size
+   token. The footer explicitly cancels the global brand grid-column so its
+   logo stays flush-left in the brand column on every breakpoint. */
+:root{--gloskin-ui1-brand-primary-height:clamp(44px,6vw,80px)}
+.gloskin-ui1-header__inner img.gloskin-ui1-brand__image,
+.gloskin-ui1-footer img.gloskin-ui1-brand__image--footer{height:var(--gloskin-ui1-brand-primary-height)}
+.gloskin-ui1-footer__brand{justify-items:start;text-align:left}
+.gloskin-ui1-footer .gloskin-ui1-brand--footer{grid-column:auto;justify-self:start;align-self:start;margin:0}
+
+/* Clinic names are atomic labels. Use content-sized tracks while there is
+   room, then a single safe column on narrow phones rather than wrapping a
+   clinic name across two lines. */
+.gloskin-ui1-footer__clinics{grid-template-columns:repeat(2,max-content);column-gap:clamp(22px,3vw,40px)}
+.gloskin-ui1-footer__clinics li,.gloskin-ui1-footer__clinics a{white-space:nowrap}
+@media (max-width:420px){.gloskin-ui1-footer__clinics{grid-template-columns:1fr}}
