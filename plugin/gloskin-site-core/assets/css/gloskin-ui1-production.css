@@ -122,9 +122,10 @@ body.gloskin-ui1{
 	background:transparent;
 	color:var(--gloskin-accent-readable);
 }
-body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled{
-	color:#fff;
-	transition-duration:0s;
+body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled, body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled:hover {
+    color: #fff;
+    transition-duration: 0s;
+    opacity: 1;
 }
 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__toggle:hover{
 	background:transparent;
