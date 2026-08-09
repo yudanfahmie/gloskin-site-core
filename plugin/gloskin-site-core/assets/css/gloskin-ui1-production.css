@@ -123,7 +123,7 @@ body.gloskin-ui1{
 	color:var(--gloskin-accent-readable);
 }
 body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled{
-	color:var(--gloskin-inverse);
+	color:#fff;
 }
 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__toggle:hover{
 	background:transparent;
@@ -156,6 +156,8 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 }
 .gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__list{
 	width:100%;
+	margin:0;
+	padding:0;
 	gap:2px;
 	justify-content:stretch;
 	justify-items:stretch;
@@ -163,6 +165,10 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 }
 .gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__item{width:100%}
 .gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__link{width:100%;padding:8px 10px;border-radius:8px}
+.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__link:hover{
+	background:var(--gloskin-accent);
+	color:#fff;
+}
 
 /* Premium footer polish without changing its information architecture. */
 .gloskin-ui1-footer__grid{

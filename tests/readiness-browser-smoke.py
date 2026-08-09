@@ -98,15 +98,16 @@ with sync_playwright() as p:
     page.keyboard.press("Escape")
     page.wait_for_timeout(340)
 
-    # Desktop top-level nav: the liquid bubble owns white foreground, parent
-    # chevrons stay naked, and nested submenu tracks stretch to the wrapper.
+    # Desktop top-level nav: the liquid bubble owns pure-white foreground,
+    # parent chevrons stay naked, and nested submenu spacing/hover has its own owner.
     top_links = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list > .gloskin-ui1-nav__item > .gloskin-ui1-nav__row > .gloskin-ui1-nav__link")
     check(top_links.count() >= 2, "desktop top-level navigation missing")
-    inverse = page.evaluate("""() => {
+    white = "rgb(255, 255, 255)"
+    accent = page.evaluate("""() => {
         const probe = document.createElement('span');
-        probe.style.color = 'var(--gloskin-inverse)';
+        probe.style.backgroundColor = 'var(--gloskin-accent)';
         document.body.appendChild(probe);
-        const value = getComputedStyle(probe).color;
+        const value = getComputedStyle(probe).backgroundColor;
         probe.remove();
         return value;
     }""")
@@ -115,11 +116,11 @@ with sync_playwright() as p:
     bubble = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__bubble")
     check(active.count() == 1 and bubble.count() == 1, "active nav/bubble fixture missing")
     check(active.evaluate("e => e.classList.contains('is-bubbled')"), "active desktop nav did not receive bubble state")
-    check(active.evaluate("e => getComputedStyle(e).color") == inverse, "active bubbled nav text is not white")
+    check(active.evaluate("e => getComputedStyle(e).color") == white, "active bubbled nav text is not pure white")
     hover.hover()
     page.wait_for_timeout(220)
     check(hover.evaluate("e => e.classList.contains('is-bubbled')"), "hover desktop nav did not receive bubble state")
-    check(hover.evaluate("e => getComputedStyle(e).color") == inverse, "hover bubbled nav text is not white")
+    check(hover.evaluate("e => getComputedStyle(e).color") == white, "hover bubbled nav text is not pure white")
     check(bubble.evaluate("e => getComputedStyle(e).opacity") == "1", "desktop nav bubble did not become visible")
     hover.focus()
     focus_style = hover.evaluate("e => ({style:getComputedStyle(e).outlineStyle,width:getComputedStyle(e).outlineWidth})")
@@ -136,14 +137,19 @@ with sync_playwright() as p:
     check(submenu.count() == 1 and submenu.is_visible(), "desktop submenu did not open")
     sublist = submenu.locator(":scope > .gloskin-ui1-nav__list")
     submenu_link = sublist.locator(":scope > .gloskin-ui1-nav__item > .gloskin-ui1-nav__row > .gloskin-ui1-nav__link, :scope > .gloskin-ui1-nav__item > .gloskin-ui1-nav__link").first
-    sublist_style = sublist.evaluate("e => ({justify:getComputedStyle(e).justifyContent,align:getComputedStyle(e).alignItems})")
+    sublist_style = sublist.evaluate("e => ({justify:getComputedStyle(e).justifyContent,align:getComputedStyle(e).alignItems,paddingLeft:getComputedStyle(e).paddingLeft,paddingRight:getComputedStyle(e).paddingRight,marginLeft:getComputedStyle(e).marginLeft,marginRight:getComputedStyle(e).marginRight})")
     check(sublist_style["justify"] == "stretch" and sublist_style["align"] == "stretch", f"submenu inherited centered wrapper alignment: {sublist_style}")
+    check(sublist_style["paddingLeft"] == "0px" and sublist_style["paddingRight"] == "0px", f"submenu inherited global content-list padding: {sublist_style}")
+    check(sublist_style["marginLeft"] == "0px" and sublist_style["marginRight"] == "0px", f"submenu list margin is not neutral: {sublist_style}")
     sublist_box = sublist.bounding_box()
     submenu_link_box = submenu_link.bounding_box()
     check(sublist_box and submenu_link_box, "submenu geometry missing")
     check(abs(submenu_link_box["x"] - sublist_box["x"]) <= 1 and abs(submenu_link_box["width"] - sublist_box["width"]) <= 1, f"submenu link did not stretch to wrapper: {sublist_box} vs {submenu_link_box}")
     submenu_link.hover()
+    page.wait_for_timeout(160)
     check(not submenu_link.evaluate("e => e.classList.contains('is-bubbled')"), "submenu link incorrectly received top-level bubble state")
+    check(submenu_link.evaluate("e => getComputedStyle(e).backgroundColor") == accent, "submenu hover did not use the accent background")
+    check(submenu_link.evaluate("e => getComputedStyle(e).color") == white, "submenu accent hover text is not pure white")
 
     # Header remains truly centered and comfortably spaced without overflow.
     for width in (1100, 1440, 1920, 2560):
