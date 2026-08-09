@@ -73,7 +73,6 @@ img.gloskin-ui1-brand__image--compact{height:clamp(32px,3vw,45px)}
 .gloskin-ui1-badge{position:absolute;top:2px;right:2px;display:grid;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--gloskin-muted);color:var(--gloskin-inverse);font-size:.65rem;font-weight:800;line-height:1;place-items:center;pointer-events:none;opacity:.6;transition:background-color 160ms ease,opacity 160ms ease}
 .gloskin-ui1-badge.is-active{background:var(--gloskin-accent);opacity:1}
 .gloskin-ui1-header__contact{min-height:38px;padding:8px 14px;border-color:color-mix(in srgb,var(--gloskin-border) 76%,transparent);font-size:.88rem}
-.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu{top:calc(100% + 10px);padding:8px;border-color:color-mix(in srgb,var(--gloskin-border) 72%,transparent);box-shadow:0 18px 42px color-mix(in srgb,var(--gloskin-text) 10%,transparent)}
 .gloskin-ui1-nav__chevron{display:block;width:11px;height:11px;transform:rotate(0deg);transform-origin:50% 50%;transition:transform 190ms cubic-bezier(.22,1,.36,1)}
 .gloskin-ui1-nav__toggle[aria-expanded="true"] .gloskin-ui1-nav__chevron{transform:rotate(180deg)}
 @media (max-width:1040px){.gloskin-ui1-header{border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 86%,transparent)}}

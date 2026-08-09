@@ -102,10 +102,14 @@ body.gloskin-ui1{
 .gloskin-ui1-sheet{top:var(--gloskin-ui1-admin-bar-height)}
 
 /* Top-level desktop navigation: a single liquid bubble tracks whichever
-   item is hovered/focused/active and glides between them (gloskin-ui1-core.js
-   initNavBubble positions/sizes it via inline transform+width+height); the
-   link itself only ever owns its own text color so the indicator degrades
-   to a plain color change if JS never runs. */
+   item is hovered/focused/active and glides between them. gloskin-ui1-core.js
+   initNavBubble bridges across the old+new item first (fast transition,
+   default state below) then settles onto just the target (.is-settling,
+   slower spring-out easing) so the shape visibly stretches like a real
+   liquid blob instead of sliding as a fixed rectangle; leaving with nothing
+   to rest on collapses through a centered circle before shrinking to
+   nothing. The link itself only ever owns its own text color so the
+   indicator degrades to a plain color change if JS never runs. */
 .gloskin-ui1-nav--desktop{position:relative;z-index:0}
 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{
 	position:relative;
@@ -132,9 +136,23 @@ body.gloskin-ui1{
 	background:var(--gloskin-accent);
 	opacity:0;
 	pointer-events:none;
-	transition:transform 360ms cubic-bezier(.22,1,.36,1),width 360ms cubic-bezier(.22,1,.36,1),height 360ms cubic-bezier(.22,1,.36,1),opacity 200ms ease;
+	transition:transform 170ms cubic-bezier(.4,0,.2,1),width 170ms cubic-bezier(.4,0,.2,1),height 170ms cubic-bezier(.4,0,.2,1),opacity 200ms ease;
 }
 .gloskin-ui1-nav__bubble.is-visible{opacity:1}
+.gloskin-ui1-nav__bubble.is-settling{transition:transform 380ms cubic-bezier(.22,1,.36,1),width 380ms cubic-bezier(.22,1,.36,1),height 380ms cubic-bezier(.22,1,.36,1),opacity 200ms ease}
+
+/* Desktop dropdown submenu: single consistent presentational owner (skeleton
+   position/sizing stays in gloskin-ui1-core-base.css). */
+.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu{
+	top:calc(100% + 10px);
+	padding:10px;
+	border:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);
+	border-radius:var(--gloskin-radius-md);
+	background:var(--gloskin-bg);
+	box-shadow:0 18px 42px color-mix(in srgb,var(--gloskin-text) 10%,transparent);
+}
+.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__list{gap:4px}
+.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__link{padding:9px 12px;border-radius:8px}
 
 /* Premium footer polish without changing its information architecture. */
 .gloskin-ui1-footer__grid{

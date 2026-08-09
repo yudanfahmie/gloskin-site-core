@@ -253,6 +253,13 @@
 	 * per-link ::before top rail. CSS owns the link's own text color as a
 	 * no-JS-safe baseline; this only positions/sizes/shows the one shared
 	 * bubble element and flags whichever link it currently sits under.
+	 *
+	 * Movement is two-phase so the shape genuinely deforms while travelling
+	 * instead of sliding as a fixed rectangle: it first bridges (stretches
+	 * across) both the old and new item on a fast transition, then settles
+	 * onto just the target on a slower spring-out one. Leaving with nothing
+	 * to rest on collapses through a centered circle before shrinking to
+	 * 0x0 rather than fading out at its last size.
 	 * ----------------------------------------------------------------- */
 
 	function initNavBubble() {
@@ -268,7 +275,11 @@
 			return row ? row.querySelector(':scope > .gloskin-ui1-nav__link') : null;
 		}).filter(Boolean);
 
+		var BRIDGE_MS = 170; /* matches .gloskin-ui1-nav__bubble's default (fast) transition duration */
+		var DOT = 14; /* circle diameter for the collapse-to-nothing exit */
 		var bubbled = null;
+		var current = null; /* last painted rect, relative to nav */
+		var settleTimer = null;
 
 		function setBubbled(link) {
 			if (bubbled && bubbled !== link) { bubbled.classList.remove('is-bubbled'); }
@@ -276,19 +287,61 @@
 			if (link) { link.classList.add('is-bubbled'); }
 		}
 
-		function moveTo(link) {
-			if (!link) {
-				bubble.classList.remove('is-visible');
-				setBubbled(null);
-				return;
-			}
+		function rectFor(link) {
 			var navRect = nav.getBoundingClientRect();
 			var linkRect = link.getBoundingClientRect();
-			bubble.style.width = linkRect.width + 'px';
-			bubble.style.height = linkRect.height + 'px';
-			bubble.style.transform = 'translate(' + (linkRect.left - navRect.left) + 'px,' + (linkRect.top - navRect.top) + 'px)';
+			return { left: linkRect.left - navRect.left, top: linkRect.top - navRect.top, width: linkRect.width, height: linkRect.height };
+		}
+
+		function paint(rect) {
+			bubble.style.width = rect.width + 'px';
+			bubble.style.height = rect.height + 'px';
+			bubble.style.transform = 'translate(' + rect.left + 'px,' + rect.top + 'px)';
+		}
+
+		function clearSettle() {
+			if (settleTimer) { clearTimeout(settleTimer); settleTimer = null; }
+		}
+
+		function moveTo(link) {
+			clearSettle();
+			if (!link) { hide(); return; }
+			var target = rectFor(link);
 			bubble.classList.add('is-visible');
+			bubble.classList.remove('is-settling');
+			if (current) {
+				paint({
+					left: Math.min(current.left, target.left),
+					top: Math.min(current.top, target.top),
+					width: Math.max(current.left + current.width, target.left + target.width) - Math.min(current.left, target.left),
+					height: Math.max(current.height, target.height)
+				});
+				settleTimer = setTimeout(function () {
+					bubble.classList.add('is-settling');
+					paint(target);
+					settleTimer = null;
+				}, BRIDGE_MS);
+			} else {
+				paint(target);
+			}
+			current = target;
 			setBubbled(link);
+		}
+
+		function hide() {
+			clearSettle();
+			setBubbled(null);
+			if (!current) { bubble.classList.remove('is-visible'); return; }
+			var cx = current.left + current.width / 2;
+			var cy = current.top + current.height / 2;
+			bubble.classList.remove('is-settling');
+			paint({ left: cx - DOT / 2, top: cy - DOT / 2, width: DOT, height: DOT });
+			settleTimer = setTimeout(function () {
+				paint({ left: cx, top: cy, width: 0, height: 0 });
+				bubble.classList.remove('is-visible');
+				current = null;
+				settleTimer = null;
+			}, BRIDGE_MS);
 		}
 
 		function activeLink() {
@@ -307,7 +360,12 @@
 		list.addEventListener('focusout', function (event) {
 			if (!list.contains(event.relatedTarget)) { restToActive(); }
 		});
-		window.addEventListener('resize', restToActive);
+		window.addEventListener('resize', function () {
+			/* Layout may have reflowed; snap to the fresh rect directly
+			 * instead of bridging from a now-stale cached one. */
+			current = null;
+			restToActive();
+		});
 
 		restToActive();
 	}
