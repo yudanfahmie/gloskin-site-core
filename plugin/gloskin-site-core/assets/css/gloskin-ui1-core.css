@@ -33,11 +33,11 @@ body.admin-bar.gloskin-ui1{--gloskin-ui1-admin-bar-height:32px}
    explicit intrinsic width/height (see gloskin_ui1_render_brand_logo()) so the
    browser reserves layout space before it loads; CSS only controls the final
    displayed height, width follows automatically to preserve the aspect ratio. */
-img.gloskin-ui1-brand__image{display:block;height:34px;width:auto;max-width:none}
+img.gloskin-ui1-brand__image{display:block;height:clamp(44px,6vw,80px);width:auto;max-width:none}
 img.gloskin-ui1-brand__image--footer{height:40px}
 img.gloskin-ui1-brand__image--drawer{height:26px}
 .gloskin-ui1-drawer__brand{display:inline-flex;align-items:center}
-img.gloskin-ui1-brand__image--compact{height:22px}
+img.gloskin-ui1-brand__image--compact{height:clamp(32px,3vw,45px)}
 
 .gloskin-ui1-header__nav-row{position:sticky;z-index:1000;top:var(--gloskin-ui1-nav-sticky-top);padding-block:10px;border-top:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 62%,transparent);background:color-mix(in srgb,var(--gloskin-bg) 84%,transparent);-webkit-backdrop-filter:saturate(120%) blur(14px);backdrop-filter:saturate(120%) blur(14px);box-shadow:0 1px 0 color-mix(in srgb,var(--gloskin-bg) 34%,transparent),0 8px 24px color-mix(in srgb,var(--gloskin-text) 3%,transparent);transition:transform 220ms cubic-bezier(.22,1,.36,1);will-change:transform}
 .gloskin-ui1-header__nav-row.is-hidden{transform:translateY(calc(-100% - var(--gloskin-ui1-nav-sticky-top)))}
@@ -97,6 +97,13 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1-search-overlay__field:focus-within{border-color:var(--gloskin-accent)}
 .gloskin-ui1-search-overlay__icon{flex:0 0 22px;color:var(--gloskin-muted)}
 .gloskin-ui1-search-overlay__input{flex:1;min-height:48px;border:0;background:transparent;color:var(--gloskin-text);font:inherit;font-size:1.05rem;outline:none}
+/* The field wrapper already shows a clear focus state via its own
+   border-color change on :focus-within (above); the generic :focus-visible
+   outline (gloskin-ui1-core-base.css) would draw a second, offset red
+   rectangle around the input itself, reading as a ghost double border. This
+   selector matches that rule's specificity and comes later in the cascade,
+   so it wins without needing !important. */
+.gloskin-ui1-search-overlay__input:focus-visible{outline:none}
 .gloskin-ui1-search-overlay__input::placeholder{color:var(--gloskin-muted)}
 .gloskin-ui1-search-overlay__clear{width:28px;height:28px;border:0;border-radius:999px;background:var(--gloskin-surface-strong);color:var(--gloskin-muted);font-size:1.1rem;cursor:pointer}
 .gloskin-ui1-search-overlay__clear:hover{color:var(--gloskin-text)}
