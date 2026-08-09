@@ -125,6 +125,10 @@ body.gloskin-ui1{
 body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled{
 	color:#fff;
 }
+body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row:hover>.gloskin-ui1-nav__link,
+body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row:focus-within>.gloskin-ui1-nav__link{
+	color:#fff;
+}
 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__toggle:hover{
 	background:transparent;
 }

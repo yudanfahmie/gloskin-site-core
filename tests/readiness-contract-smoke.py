@@ -92,6 +92,7 @@ require(".gloskin-ui1-sheet{top:var(--gloskin-ui1-admin-bar-height)}" in product
 require('class="gloskin-ui1-nav__bubble"' in header, "desktop nav must render the single shared bubble indicator element")
 require(".gloskin-ui1-nav__bubble" in production and ".is-bubbled" in production, "desktop top-level nav bubble indicator styling missing")
 require("body.gloskin-ui1 .gloskin-ui1-nav--desktop" in production and "gloskin-ui1-nav__link.is-bubbled" in production and "color:#fff" in production, "bubbled desktop nav foreground must be pure white under an explicit Gloskin-shell cascade owner")
+require(".gloskin-ui1-nav__row:hover>.gloskin-ui1-nav__link" in production and ".gloskin-ui1-nav__row:focus-within>.gloskin-ui1-nav__link" in production, "desktop nav row hover/focus must own the same white foreground across link and chevron hit areas")
 require("justify-content:stretch" in production and "justify-items:stretch" in production and "align-items:stretch" in production, "desktop submenu list must stretch inside its wrapper instead of inheriting centered nav-row alignment")
 require(".gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__list" in production and "margin:0;" in production and "padding:0;" in production, "desktop submenu list must own zero list spacing over the global content-list rule")
 require(".gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__link:hover" in production and "background:var(--gloskin-accent)" in production, "desktop submenu hover must use the accent background instead of the generic gray nav hover")
@@ -105,6 +106,6 @@ for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "read
 require("gloskin_ui1_render_commerce_page_heading" in shell, "cart/checkout/account H1 owner missing")
 header_version = re.search(r"\* Version:\s*([0-9.]+)", main_plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == "0.7.7", "plugin/kernel version mismatch")
+require(header_version == kernel_version == "0.7.8", "plugin/kernel version mismatch")
 
 print("readiness-contract-smoke: OK")
