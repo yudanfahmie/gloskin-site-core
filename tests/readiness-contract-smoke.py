@@ -74,6 +74,11 @@ for rel in (
 
 # Native Woo My Account/auth ownership and real shell lifecycle.
 require("woocommerce-MyAccount-navigation" in css and "woocommerce-MyAccount-content" in css, "native My Account workspace styling missing")
+require(".woocommerce-account.logged-in .gloskin-ui1-commerce-native,.woocommerce-account.logged-in .gloskin-ui1-commerce-native>.woocommerce{display:block;width:100%}" in css, "logged-in My Account must have one block layout owner instead of nested grids")
+require(".gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation{float:none;width:100%;position:static;overflow-x:auto" in css, "My Account navigation must neutralize Woo float/width and own the horizontal tab strip")
+require("display:flex;align-items:flex-end;min-width:max-content" in css, "My Account endpoints must remain responsive horizontal tabs")
+require(".gloskin-ui1-commerce-native .woocommerce-MyAccount-content{float:none;clear:both;width:100%" in css, "My Account content must neutralize Woo float/width and stay full-width below tabs")
+require(".woocommerce-account .gloskin-ui1-commerce-heading h1{font-size:clamp(2.25rem,3.4vw,3.2rem)}" in css, "My Account H1 must stay compact against the later generic heading scale")
 require("wc_get_template( 'myaccount/form-login.php' )" in adapter, "quick auth must render Woo native form template")
 require("woocommerce_enable_myaccount_registration" in adapter, "Woo registration setting must control switch")
 require("should_render_quick_auth" in adapter and "is_account_page()" in adapter, "native account page must suppress duplicate overlay form")
@@ -110,6 +115,6 @@ for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "read
 require("gloskin_ui1_render_commerce_page_heading" in shell, "cart/checkout/account H1 owner missing")
 header_version = re.search(r"\* Version:\s*([0-9.]+)", main_plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == "0.7.10", "plugin/kernel version mismatch")
+require(header_version == kernel_version == "0.7.11", "plugin/kernel version mismatch")
 
 print("readiness-contract-smoke: OK")
