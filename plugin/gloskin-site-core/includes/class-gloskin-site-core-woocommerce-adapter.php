@@ -35,7 +35,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		add_filter( 'body_class', array( $this, 'body_classes' ) );
 		add_filter( 'woocommerce_add_to_cart_fragments', array( $this, 'cart_fragments' ) );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
-		add_action( 'wp_footer', array( $this, 'render_quick_auth_overlay' ), 5 );
+		add_action( 'gloskin_site_core_shell_footer', array( $this, 'render_quick_auth_overlay' ), 10 );
 	}
 
 	/**

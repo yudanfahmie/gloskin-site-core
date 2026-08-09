@@ -1,110 +1,207 @@
 #!/usr/bin/env python3
+import os
+import shutil
+import subprocess
 from pathlib import Path
+
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-CSS = ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css'
-READINESS_CSS = ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-readiness.css'
-JS = ROOT / 'plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js'
-
-HTML = r'''<!doctype html><html><body class="gloskin-ui1">
-<header class="gloskin-ui1-header"><button id="search-open" data-gloskin-search-open aria-expanded="false">Search</button><a id="account-open" class="gloskin-ui1-utility-btn--account" href="/my-account/">Account</a></header>
-<div class="gloskin-ui1-header__nav-row"></div>
-<div data-gloskin-overlay="search" id="gloskin-search-overlay" class="gloskin-ui1-search-overlay" aria-hidden="true" hidden>
- <button data-gloskin-overlay-close>close</button><div class="gloskin-ui1-search-overlay__canvas" role="dialog">
- <div class="gloskin-ui1-search-overlay__field"><input data-gloskin-search-input><button data-gloskin-search-clear hidden>clear</button></div>
- <div class="gloskin-ui1-search-overlay__body" data-gloskin-search-results></div></div></div>
-<div data-gloskin-overlay="auth" id="gloskin-auth-overlay" class="gloskin-ui1-auth-overlay" aria-hidden="true" hidden>
- <button data-gloskin-overlay-close>close</button><section class="gloskin-ui1-auth-overlay__panel" role="dialog">
- <div data-gloskin-auth-forms><div id="customer_login"><div class="u-column1"><form class="woocommerce-form-login" action="/my-account/"><input id="username"><input type="hidden" name="woocommerce-login-nonce" value="n1"><button name="login">Login</button></form></div><div class="u-column2"><form class="woocommerce-form-register" action="/my-account/"><input id="reg_email"><input type="hidden" name="woocommerce-register-nonce" value="n2"><button name="register">Register</button></form></div></div></div>
- <div class="gloskin-ui1-auth-switch"><button data-gloskin-auth-tab="login">Masuk</button><button data-gloskin-auth-tab="register">Buat Akun</button></div>
- </section></div>
-<div data-gloskin-overlay="cart" class="gloskin-ui1-sheet" aria-hidden="true" hidden><button data-gloskin-overlay-close>close</button><div role="dialog"></div></div>
-<button data-gloskin-cart-open>Cart</button>
-<div data-gloskin-drawer hidden aria-hidden="true"><div role="dialog"><a data-gloskin-auth-open-from-drawer href="/my-account/">Masuk</a><button data-gloskin-drawer-close>close</button></div></div><button data-gloskin-drawer-open>menu</button>
-</body></html>'''
+BASE_CSS = ROOT / "plugin/gloskin-site-core/assets/css/gloskin-ui1-core-base.css"
+CORE_CSS = ROOT / "plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css"
+READINESS_CSS = ROOT / "plugin/gloskin-site-core/assets/css/gloskin-ui1-readiness.css"
+PRODUCTION_CSS = ROOT / "plugin/gloskin-site-core/assets/css/gloskin-ui1-production.css"
+JS = ROOT / "plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js"
+SHELL_FIXTURE = ROOT / "tests/rendered-shell-auth-smoke.php"
 
 def check(cond, message):
     if not cond:
         raise AssertionError(message)
 
-with sync_playwright() as p:
-    browser = p.chromium.launch(executable_path='/usr/bin/chromium', headless=True, args=['--no-sandbox'])
-    page = browser.new_page(viewport={"width": 1440, "height": 900})
-    page.set_content(HTML)
-    page.add_style_tag(path=str(CSS))
-    page.add_style_tag(path=str(READINESS_CSS))
+def render_shell(logged_in=False):
+    env = os.environ.copy()
+    env["GL_TEST_EMIT_HTML"] = "1"
+    if logged_in:
+        env["GL_TEST_LOGGED_IN"] = "1"
+    else:
+        env.pop("GL_TEST_LOGGED_IN", None)
+    return subprocess.check_output(
+        ["php", str(SHELL_FIXTURE)],
+        cwd=str(ROOT),
+        env=env,
+        text=True,
+    )
+
+def install_page(page, html):
+    page.set_content(html, wait_until="domcontentloaded")
+    for stylesheet in (BASE_CSS, CORE_CSS, READINESS_CSS, PRODUCTION_CSS):
+        page.add_style_tag(path=str(stylesheet))
     page.evaluate("""() => {
-      window.gloskinData={restUrl:'/wp-json/gloskin/v1/',restNonce:'x',searchFallback:'/search?s=',woo:true,cartUrl:'/cart/'};
-      window.__fetchCount=0;
-      window.fetch=()=>{window.__fetchCount++; return Promise.resolve({ok:true,json:()=>Promise.resolve({groups:[]})});};
+        window.__fetchCount = 0;
+        window.fetch = () => {
+            window.__fetchCount++;
+            return Promise.resolve({ok: true, json: () => Promise.resolve({groups: []})});
+        };
     }""")
     page.add_script_tag(path=str(JS))
+    page.wait_for_timeout(40)
 
-    # Fresh overlay geometry: no reserved result-space footprint.
-    page.click('#search-open')
-    page.wait_for_timeout(100)
-    style = page.eval_on_selector('[data-gloskin-search-results]', "e=>({margin:getComputedStyle(e).marginTop,min:getComputedStyle(e).minHeight,h:e.getBoundingClientRect().height})")
-    check(style['margin'] == '0px' and style['min'] == '0px' and style['h'] == 0, f"search ghost geometry: {style}")
-    check(page.locator('[data-gloskin-search-input]').evaluate('e=>document.activeElement===e'), 'search autofocus failed')
+def no_horizontal_overflow(page, width):
+    scroll_width = page.evaluate("document.documentElement.scrollWidth")
+    check(scroll_width <= width + 1, f"horizontal overflow at {width}: {scroll_width}")
 
-    # Loading -> meaningful zero state -> meaningful error fallback.
-    page.fill('[data-gloskin-search-input]', 'zz')
-    page.wait_for_timeout(320)
-    page.wait_for_selector('.gloskin-ui1-empty-state--search')
-    check('Tidak menemukan hasil yang sesuai' in page.locator('[data-gloskin-search-results]').inner_text(), 'search zero state missing')
-    check(page.eval_on_selector('[data-gloskin-search-results]', 'e=>getComputedStyle(e).marginTop') == '20px', 'search state spacing missing')
-    page.evaluate("window.fetch=()=>{window.__fetchCount++; return Promise.resolve({ok:false,json:()=>Promise.resolve({})});}")
-    page.fill('[data-gloskin-search-input]', 'error')
-    page.wait_for_timeout(320)
-    page.wait_for_selector('.gloskin-ui1-empty-state--search')
-    txt = page.locator('[data-gloskin-search-results]').inner_text()
-    check('Pencarian belum dapat dimuat' in txt and 'Buka pencarian biasa' in txt, 'search error fallback missing')
+executable = (
+    os.environ.get("CHROMIUM_PATH")
+    or shutil.which("chromium")
+    or shutil.which("chromium-browser")
+    or shutil.which("google-chrome")
+)
+check(executable, "Chromium executable not found")
 
-    # Focus return after Search close.
-    page.click('[data-gloskin-overlay="search"] [data-gloskin-overlay-close]')
+with sync_playwright() as p:
+    browser = p.chromium.launch(executable_path=executable, headless=True, args=["--no-sandbox"])
+    page = browser.new_page(viewport={"width": 1440, "height": 900})
+    errors = []
+    page.on("pageerror", lambda error: errors.append(f"pageerror: {error}"))
+    page.on("console", lambda msg: errors.append(f"console: {msg.text}") if msg.type == "error" else None)
+
+    # Actual shell render: Woo active + logged out + normal Gloskin page.
+    install_page(page, render_shell(False))
+    check(page.locator("#gloskin-auth-overlay").count() == 1, "actual shell must render exactly one auth overlay")
+    check(page.locator('input[name="woocommerce-login-nonce"]').count() == 1, "login nonce duplicated/missing")
+    check(page.locator('input[name="woocommerce-register-nonce"]').count() == 1, "register nonce duplicated/missing")
+
+    account = page.locator(".gloskin-ui1-header__zone--end .gloskin-ui1-utility-btn--account")
+    before_url = page.url
+    account.click()
+    page.wait_for_timeout(80)
+    check(page.url == before_url, f"Account navigated before modal open: {before_url} -> {page.url}")
+    check(page.get_attribute("#gloskin-auth-overlay", "aria-hidden") == "false", "actual Account click did not open auth modal")
+    check(page.locator("#username").evaluate("e => document.activeElement === e"), "auth username focus failed")
+    page.keyboard.press("Escape")
     page.wait_for_timeout(340)
-    check(page.locator('#search-open').evaluate('e=>document.activeElement===e'), 'search focus return failed')
+    check(account.evaluate("e => document.activeElement === e"), "auth Escape did not return focus to Account")
 
-    # Auth uses same overlay owner, native forms/nonces/actions, no credential fetch.
-    before = page.evaluate('window.__fetchCount')
-    page.click('#account-open')
-    page.wait_for_timeout(100)
-    check(page.get_attribute('[data-gloskin-overlay="auth"]', 'aria-hidden') == 'false', 'auth did not open')
-    check(page.get_attribute('[data-gloskin-overlay="search"]', 'aria-hidden') == 'true', 'overlay mutual exclusion failed')
-    check(page.locator('input[name="woocommerce-login-nonce"]').count() == 1 and page.locator('input[name="woocommerce-register-nonce"]').count() == 1, 'native Woo nonces missing')
-    check(page.get_attribute('.woocommerce-form-login', 'action') == '/my-account/' and page.get_attribute('.woocommerce-form-register', 'action') == '/my-account/', 'native auth action changed')
-    check(page.locator('#username').evaluate('e=>document.activeElement===e'), 'auth username focus failed')
-    page.click('[data-gloskin-auth-tab="register"]')
-    check(page.is_hidden('#customer_login .u-column1') and page.is_visible('#customer_login .u-column2'), 'auth register switch failed')
-    check(page.evaluate('window.__fetchCount') == before, 'auth introduced a fetch credential path')
-    page.eval_on_selector('[data-gloskin-cart-open]', 'e=>e.click()')
-    page.wait_for_timeout(30)
-    check(page.get_attribute('[data-gloskin-overlay="auth"]', 'aria-hidden') == 'true' and page.get_attribute('[data-gloskin-overlay="cart"]', 'aria-hidden') == 'false', 'cart/auth mutual exclusion failed')
+    # Fresh Search still owns zero geometry and no state space until a query exists.
+    search_open = page.locator(".gloskin-ui1-header__zone--start [data-gloskin-search-open]")
+    search_open.click()
+    page.wait_for_timeout(80)
+    search_style = page.eval_on_selector(
+        "[data-gloskin-search-results]",
+        "e => ({margin:getComputedStyle(e).marginTop,min:getComputedStyle(e).minHeight,h:e.getBoundingClientRect().height})",
+    )
+    check(search_style["margin"] == "0px" and search_style["min"] == "0px" and search_style["h"] == 0, f"search ghost geometry: {search_style}")
+    page.fill("[data-gloskin-search-input]", "zz")
+    page.wait_for_timeout(320)
+    page.wait_for_selector(".gloskin-ui1-empty-state--search")
+    check("Tidak menemukan hasil yang sesuai" in page.locator("[data-gloskin-search-results]").inner_text(), "search zero state missing")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(340)
 
-    # Responsive auth/search usability at required widths.
-    for width in (390, 600, 782, 1024, 1440, 1920):
+    # Desktop top-level nav: accent text + top rail; submenu is unaffected.
+    top_links = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list > .gloskin-ui1-nav__item > .gloskin-ui1-nav__row > .gloskin-ui1-nav__link")
+    check(top_links.count() >= 2, "desktop top-level navigation missing")
+    accent = page.evaluate("""() => {
+        const probe = document.createElement('span');
+        probe.style.color = 'var(--gloskin-accent-readable)';
+        document.body.appendChild(probe);
+        const value = getComputedStyle(probe).color;
+        probe.remove();
+        return value;
+    }""")
+    active = top_links.nth(0)
+    hover = top_links.nth(1)
+    check(active.evaluate("e => getComputedStyle(e).color") == accent, "active desktop nav text is not accent")
+    active_rail = active.evaluate("e => ({opacity:getComputedStyle(e,'::before').opacity,height:getComputedStyle(e,'::before').height})")
+    check(active_rail["opacity"] == "1" and active_rail["height"] == "2px", f"active nav rail incorrect: {active_rail}")
+    hover.hover()
+    page.wait_for_timeout(220)
+    check(hover.evaluate("e => getComputedStyle(e).color") == accent, "hover desktop nav text is not accent")
+    check(hover.evaluate("e => getComputedStyle(e,'::before').opacity") == "1", "hover desktop nav rail missing")
+    hover.focus()
+    focus_style = hover.evaluate("e => ({style:getComputedStyle(e).outlineStyle,width:getComputedStyle(e).outlineWidth})")
+    check(focus_style["style"] != "none" and float(focus_style["width"].replace("px", "")) >= 3, f"desktop nav focus-visible weakened: {focus_style}")
+    submenu_link = page.locator(".gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__link").first
+    check(submenu_link.evaluate("e => getComputedStyle(e,'::before').content") == "none", "submenu received top-level nav rail")
+
+    # Header remains truly centered and comfortably spaced without overflow.
+    for width in (1100, 1440, 1920, 2560):
         page.set_viewport_size({"width": width, "height": 900})
-        if page.get_attribute('[data-gloskin-overlay="cart"]', 'aria-hidden') == 'false':
-            page.click('[data-gloskin-overlay="cart"] [data-gloskin-overlay-close]')
-            page.wait_for_timeout(340)
-        if width <= 1040:
-            page.click('[data-gloskin-drawer-open]')
-            page.click('[data-gloskin-auth-open-from-drawer]')
-            page.wait_for_timeout(100)
-        else:
-            page.click('#account-open')
-            page.wait_for_timeout(30)
-        box = page.locator('.gloskin-ui1-auth-overlay__panel').bounding_box()
-        check(box and box['width'] <= width + 0.5, f'auth overflow at {width}: {box}')
-        page.click('[data-gloskin-overlay="auth"] [data-gloskin-overlay-close]')
+        page.wait_for_timeout(30)
+        inner = page.locator(".gloskin-ui1-header__nav-row-inner").bounding_box()
+        nav = page.locator(".gloskin-ui1-nav--desktop").bounding_box()
+        check(inner and nav, f"desktop nav geometry missing at {width}")
+        inner_center = inner["x"] + inner["width"] / 2
+        nav_center = nav["x"] + nav["width"] / 2
+        check(abs(inner_center - nav_center) <= 1.5, f"desktop nav lost true centering at {width}: {inner_center} vs {nav_center}")
+        no_horizontal_overflow(page, width)
+    page.set_viewport_size({"width": 1100, "height": 900})
+    check(page.eval_on_selector(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list", "e => getComputedStyle(e).gap") == "0px", "1041-1279 nav spacing is not compact")
+    page.set_viewport_size({"width": 1440, "height": 900})
+    check(page.eval_on_selector(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list", "e => getComputedStyle(e).gap") == "5px", "comfortable desktop nav spacing missing")
+    page.set_viewport_size({"width": 1024, "height": 900})
+    check(page.eval_on_selector(".gloskin-ui1-header__nav-row", "e => getComputedStyle(e).display") == "none", "1024 mobile navigation switch regressed")
+    mobile_link = page.locator(".gloskin-ui1-nav--mobile .gloskin-ui1-nav__link").first
+    check(mobile_link.evaluate("e => getComputedStyle(e,'::before').content") == "none", "mobile nav received desktop top rail")
+
+    # Footer stays responsive and grouped at required widths.
+    for width in (390, 600, 601, 782, 1024, 1440, 1920):
+        page.set_viewport_size({"width": width, "height": 900})
+        page.wait_for_timeout(20)
+        footer = page.locator(".gloskin-ui1-footer").bounding_box()
+        check(footer and footer["width"] <= width + 1, f"footer overflow at {width}: {footer}")
+        no_horizontal_overflow(page, width)
+    page.set_viewport_size({"width": 1440, "height": 900})
+    separator = page.locator(".gloskin-ui1-footer__grid > div:not(.gloskin-ui1-footer__brand)").first
+    check(separator.evaluate("e => getComputedStyle(e).borderLeftWidth") == "1px", "desktop footer grouping separator missing")
+    brand_line = page.locator(".gloskin-ui1-footer__brand")
+    check(brand_line.evaluate("e => getComputedStyle(e,'::after').width") == "72px", "footer brand line treatment missing")
+
+    # Logged-in fixed Cart/Wishlist sheets follow the existing toolbar variable.
+    install_page(page, render_shell(True))
+    check(page.locator("#gloskin-auth-overlay").count() == 0, "logged-in shell must not render auth overlay")
+    logged_account = page.locator(".gloskin-ui1-header__zone--end .gloskin-ui1-utility-btn--account")
+    check(logged_account.get_attribute("href") == "https://example.test/my-account/", "logged-in Account canonical href changed")
+    check(logged_account.get_attribute("data-gloskin-auth-open") is None, "logged-in Account was enhanced as quick auth")
+
+    for width in (390, 600, 601, 782, 1024, 1440, 1920):
+        page.set_viewport_size({"width": width, "height": 900})
+        page.wait_for_timeout(25)
+        expected = 0 if width <= 600 else (46 if width <= 782 else 32)
+
+        page.locator(".gloskin-ui1-header__zone--end [data-gloskin-cart-open]").click(force=True)
+        page.wait_for_timeout(35)
+        cart_box = page.locator("#gloskin-cart-sheet").bounding_box()
+        check(cart_box and abs(cart_box["y"] - expected) <= 0.6, f"cart admin-bar top at {width}: {cart_box} expected {expected}")
+        check(abs((cart_box["y"] + cart_box["height"]) - 900) <= 1, f"cart bottom gap at {width}: {cart_box}")
+        page.keyboard.press("Escape")
         page.wait_for_timeout(340)
 
-    page.emulate_media(reduced_motion='reduce')
-    page.click('#account-open')
+        if width <= 1040:
+            page.locator("[data-gloskin-drawer-open]").click()
+            page.locator("[data-gloskin-wishlist-open-from-drawer]").click()
+            page.wait_for_timeout(120)
+        else:
+            page.locator(".gloskin-ui1-header__zone--end [data-gloskin-wishlist-open]").click()
+            page.wait_for_timeout(35)
+        wishlist_box = page.locator("#gloskin-wishlist-sheet").bounding_box()
+        check(wishlist_box and abs(wishlist_box["y"] - expected) <= 0.6, f"wishlist admin-bar top at {width}: {wishlist_box} expected {expected}")
+        check(abs((wishlist_box["y"] + wishlist_box["height"]) - 900) <= 1, f"wishlist bottom gap at {width}: {wishlist_box}")
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(340)
+        no_horizontal_overflow(page, width)
+
+    # Reduced motion remains honored by the unified overlay controller.
+    install_page(page, render_shell(False))
+    page.emulate_media(reduced_motion="reduce")
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.locator(".gloskin-ui1-header__zone--end .gloskin-ui1-utility-btn--account").click()
     page.wait_for_timeout(20)
-    duration = page.eval_on_selector('[data-gloskin-overlay="auth"]', 'e=>getComputedStyle(e).transitionDuration')
-    check(duration == '0s', f'reduced-motion auth transition still active: {duration}')
+    duration = page.eval_on_selector("#gloskin-auth-overlay", "e => getComputedStyle(e).transitionDuration")
+    check(duration == "0s", f"reduced-motion auth transition still active: {duration}")
+    page.keyboard.press("Escape")
+
+    check(not errors, "browser console/page errors: " + " | ".join(errors))
     browser.close()
 
-print('readiness-browser-smoke: OK')
+print("readiness-browser-smoke: OK")

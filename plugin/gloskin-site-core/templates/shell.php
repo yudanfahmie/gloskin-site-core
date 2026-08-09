@@ -76,6 +76,7 @@ require __DIR__ . '/parts/composition-helpers.php';
 	?>
 </main>
 <?php require __DIR__ . '/parts/footer.php'; ?>
+<?php do_action( 'gloskin_site_core_shell_footer' ); ?>
 <?php wp_footer(); ?>
 </body>
 </html>

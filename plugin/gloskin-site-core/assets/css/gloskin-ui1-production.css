@@ -97,3 +97,92 @@ body.gloskin-ui1{
 	.gloskin-ui1 h1{font-size:clamp(2.2rem,10.5vw,3.25rem)}
 	.gloskin-ui1-nav--mobile .gloskin-ui1-nav__link{font-size:.96rem}
 }
+
+/* Fixed commerce sheets use the single existing WordPress-toolbar offset owner. */
+.gloskin-ui1-sheet{top:var(--gloskin-ui1-admin-bar-height)}
+
+/* Top-level desktop navigation: quiet accent text with a precise top rail. */
+.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{
+	position:relative;
+	background:transparent;
+	transition:color 160ms ease;
+}
+.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link::before{
+	position:absolute;
+	top:-11px;
+	right:9px;
+	left:9px;
+	height:2px;
+	border-radius:0 0 999px 999px;
+	background:var(--gloskin-accent);
+	content:"";
+	opacity:0;
+	transform:scaleX(.45);
+	transform-origin:50% 50%;
+	transition:transform 180ms cubic-bezier(.22,1,.36,1),opacity 140ms ease;
+}
+.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link:hover,
+.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item.is-active>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{
+	background:transparent;
+	color:var(--gloskin-accent-readable);
+}
+.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link:hover::before,
+.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item.is-active>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link::before{
+	opacity:1;
+	transform:scaleX(1);
+}
+
+/* Premium footer polish without changing its information architecture. */
+.gloskin-ui1-footer__grid{
+	align-items:start;
+	gap:clamp(34px,5.5vw,76px);
+	padding-block:clamp(60px,7vw,92px);
+}
+.gloskin-ui1-footer__brand{display:grid;align-content:start;gap:14px}
+.gloskin-ui1-footer__brand .gloskin-ui1-brand--footer{padding-bottom:0;border-bottom:0}
+.gloskin-ui1-footer__brand::after{
+	width:72px;
+	height:1px;
+	background:var(--gloskin-accent);
+	content:"";
+	opacity:.65;
+}
+.gloskin-ui1-footer__brand p{max-width:38ch;margin:0}
+.gloskin-ui1-footer__grid>div:not(.gloskin-ui1-footer__brand){
+	padding-left:clamp(16px,1.6vw,24px);
+	border-left:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);
+}
+.gloskin-ui1-footer h3{margin-bottom:18px}
+.gloskin-ui1-footer ul{gap:12px}
+.gloskin-ui1-footer__grid a{transition:color 140ms ease}
+.gloskin-ui1-footer__grid a:hover{color:var(--gloskin-accent-readable);text-decoration:none}
+.gloskin-ui1-footer__bottom{padding-block:22px 30px}
+
+@media (min-width:1041px) and (max-width:1279px){
+	.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list{gap:0}
+	.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{padding-inline:5px}
+}
+@media (min-width:1280px){
+	.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list{gap:5px}
+	.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{padding-inline:10px}
+}
+@media (min-width:1800px){
+	.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list{gap:7px}
+	.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{padding-inline:12px}
+}
+@media (max-width:1040px){
+	.gloskin-ui1-footer__grid>div:last-child{
+		padding-top:28px;
+		padding-left:0;
+		border-top:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);
+		border-left:0;
+	}
+}
+@media (max-width:480px){
+	.gloskin-ui1-footer__grid>div:not(.gloskin-ui1-footer__brand){
+		padding-top:24px;
+		padding-left:0;
+		border-top:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);
+		border-left:0;
+	}
+}
