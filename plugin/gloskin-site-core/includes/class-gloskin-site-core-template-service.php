@@ -44,18 +44,24 @@ final class Gloskin_Site_Core_Template_Service {
 	}
 
 	/**
-	 * Fallback favicon set derived from the canonical logo's G glyph. A
-	 * configured WordPress Site Icon always wins -- WordPress core already
-	 * hooks its own icon tags onto wp_head via wp_site_icon() whenever one is
-	 * set, so this only renders when no Site Icon exists, avoiding duplicate
-	 * or competing favicon declarations.
+	 * Gloskin's branded favicon set, derived from the canonical logo's G
+	 * glyph, is the single canonical favicon owner -- it always renders,
+	 * regardless of any WordPress Site Icon. A Site Icon can be a stale
+	 * pre-rebrand Customizer setting nobody revisited, so deferring to its
+	 * mere presence previously let an old icon silently outrank the current
+	 * brand one. WordPress core's own wp_site_icon() output is unhooked from
+	 * wp_head here (its documented, stable core registration point --
+	 * `add_action( 'wp_head', 'wp_site_icon', 99 )` in
+	 * wp-includes/default-filters.php, unchanged since Site Icon shipped in
+	 * WP 4.3) before rendering ours, so the two never both emit competing
+	 * <link rel="icon"> tags. This runs at wp_head's default priority (10),
+	 * i.e. before wp_site_icon's priority 99, so the removal always lands
+	 * before WordPress would otherwise have dispatched it.
 	 *
 	 * @return void
 	 */
 	public function render_favicon_fallback() {
-		if ( function_exists( 'has_site_icon' ) && has_site_icon() ) {
-			return;
-		}
+		remove_action( 'wp_head', 'wp_site_icon', 99 );
 		$png_sizes = array(
 			array( 'favicon-16x16.png', '16x16' ),
 			array( 'favicon-32x32.png', '32x32' ),

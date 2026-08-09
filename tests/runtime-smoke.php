@@ -132,6 +132,20 @@ function add_action( $hook, $callback, $priority = 10, $accepted_args = 1 ) {
 function add_filter( $hook, $callback, $priority = 10, $accepted_args = 1 ) {
 	$GLOBALS['gl_filters'][ $hook ][] = array( $priority, $callback, $accepted_args );
 }
+function remove_action( $hook, $callback, $priority = 10 ) {
+	if ( empty( $GLOBALS['gl_hooks'][ $hook ] ) ) {
+		return false;
+	}
+	$GLOBALS['gl_hooks'][ $hook ] = array_values(
+		array_filter(
+			$GLOBALS['gl_hooks'][ $hook ],
+			static function ( $item ) use ( $callback, $priority ) {
+				return ! ( $item[0] === $priority && $item[1] === $callback );
+			}
+		)
+	);
+	return true;
+}
 function do_action( $hook, ...$args ) {
 	$items = $GLOBALS['gl_hooks'][ $hook ] ?? array();
 	usort( $items, static fn( $a, $b ) => $a[0] <=> $b[0] );
@@ -148,6 +162,8 @@ function apply_filters( $hook, $value, ...$args ) {
 	}
 	return $value;
 }
+/* WordPress core registers this unconditionally, independent of any plugin. */
+add_action( 'wp_head', 'wp_site_icon', 99 );
 function register_activation_hook( $file, $callback ) { $GLOBALS['gl_activation'] = $callback; }
 function register_deactivation_hook( $file, $callback ) { $GLOBALS['gl_deactivation'] = $callback; }
 function is_admin() { return (bool) $GLOBALS['gl_is_admin']; }
@@ -165,6 +181,14 @@ function language_attributes() { echo 'lang="en"'; }
 function bloginfo( $show ) { if ( 'charset' === $show ) { echo 'UTF-8'; } else { echo 'Gloskin'; } }
 function wp_head() { do_action( 'wp_head' ); echo '<meta name="gloskin-test" content="1">'; }
 function has_site_icon() { return (bool) ( $GLOBALS['gl_site_icon'] ?? false ); }
+/* Mirrors real WordPress core: always registered on wp_head at priority 99
+ * (see wp-includes/default-filters.php), only echoes when a Site Icon is
+ * actually configured. Used to prove Gloskin's favicon owner unhooks it. */
+function wp_site_icon() {
+	if ( has_site_icon() ) {
+		echo '<link rel="icon" href="stale-wp-site-icon.png" sizes="32x32" />';
+	}
+}
 function body_class( $classes = array() ) { echo 'class="' . esc_attr( implode( ' ', (array) $classes ) ) . '"'; }
 function wp_body_open() {}
 function wp_footer() {}
@@ -445,25 +469,26 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 		exit( 1 );
 	}
 
-	// Favicon fallback: renders only when no WordPress Site Icon is configured.
-	$GLOBALS['gl_site_icon'] = false;
-	ob_start();
-	do_action( 'wp_head' );
-	$head_no_icon = ob_get_clean();
-	if ( false === strpos( $head_no_icon, 'favicon.ico' )
-		|| false === strpos( $head_no_icon, 'favicon-16x16.png' )
-		|| false === strpos( $head_no_icon, 'favicon-32x32.png' )
-		|| false === strpos( $head_no_icon, 'icon-192.png' )
-		|| false === strpos( $head_no_icon, 'icon-512.png' )
-		|| false === strpos( $head_no_icon, 'apple-touch-icon.png' ) ) {
-		fwrite( STDERR, "Favicon fallback did not render without a Site Icon: {$head_no_icon}\n" ); exit( 1 );
-	}
-	$GLOBALS['gl_site_icon'] = true;
-	ob_start();
-	do_action( 'wp_head' );
-	$head_with_icon = ob_get_clean();
-	if ( false !== strpos( $head_with_icon, 'favicon.ico' ) ) {
-		fwrite( STDERR, "Favicon fallback rendered despite a configured Site Icon\n" ); exit( 1 );
+	// Favicon: Gloskin's branded set is the sole canonical owner regardless
+	// of any WordPress Site Icon, and WordPress's own wp_site_icon() output
+	// must always be unhooked so the two never both render (no duplicate/
+	// stale <link rel="icon"> tags), whether or not a Site Icon is set.
+	foreach ( array( false, true ) as $site_icon_configured ) {
+		$GLOBALS['gl_site_icon'] = $site_icon_configured;
+		ob_start();
+		do_action( 'wp_head' );
+		$head = ob_get_clean();
+		if ( false === strpos( $head, 'favicon.ico' )
+			|| false === strpos( $head, 'favicon-16x16.png' )
+			|| false === strpos( $head, 'favicon-32x32.png' )
+			|| false === strpos( $head, 'icon-192.png' )
+			|| false === strpos( $head, 'icon-512.png' )
+			|| false === strpos( $head, 'apple-touch-icon.png' ) ) {
+			fwrite( STDERR, "Gloskin favicon did not render (Site Icon configured: " . ( $site_icon_configured ? 'yes' : 'no' ) . "): {$head}\n" ); exit( 1 );
+		}
+		if ( false !== strpos( $head, 'stale-wp-site-icon.png' ) ) {
+			fwrite( STDERR, "WordPress's native wp_site_icon() was not unhooked -- duplicate/stale icon tag rendered alongside Gloskin's own\n" ); exit( 1 );
+		}
 	}
 	$GLOBALS['gl_site_icon'] = false;
 }

@@ -392,15 +392,19 @@ with sync_playwright() as p:
     page.close()
     print('browser smoke passed (canonical logo: header + footer, no CLS, text wordmark removed)')
 
-    # Favicon fallback: appears with no Site Icon, absent when one is configured.
+    # Favicon: Gloskin's branded set is the sole canonical owner regardless of
+    # any WordPress Site Icon, and the native wp_site_icon() output must stay
+    # unhooked either way so the two never both render.
     no_icon_html = fixture('home')
     with_icon_html = fixture('home', GLOSKIN_FIXTURE_SITE_ICON='1')
     expected_favicons = ['favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']
     if not all(name in no_icon_html for name in expected_favicons):
-        raise SystemExit('favicon: fallback tags missing when no Site Icon is configured')
-    if any(name in with_icon_html for name in expected_favicons):
-        raise SystemExit('favicon: fallback tags rendered despite a configured Site Icon')
-    print('browser smoke passed (favicon fallback: Site Icon takes priority)')
+        raise SystemExit('favicon: Gloskin favicon missing when no Site Icon is configured')
+    if not all(name in with_icon_html for name in expected_favicons):
+        raise SystemExit('favicon: Gloskin favicon missing despite a configured Site Icon (must always win)')
+    if 'stale-wp-site-icon.png' in with_icon_html:
+        raise SystemExit('favicon: native wp_site_icon() was not unhooked -- duplicate/stale icon rendered')
+    print('browser smoke passed (favicon: Gloskin favicon always wins, native Site Icon unhooked)')
 
     # All 7 derived favicon files exist and are reachable.
     images_base = ROOT / 'plugin/gloskin-site-core/assets/images'

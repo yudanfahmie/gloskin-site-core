@@ -7,8 +7,9 @@ ob_end_clean();
 
 $view = getenv( 'GLOSKIN_FIXTURE_VIEW' ) ?: 'home';
 
-// Simulate a configured WordPress Site Icon so browser fixtures can prove the
-// plugin favicon fallback only renders when no Site Icon exists.
+// Simulate a configured WordPress Site Icon so browser fixtures can prove
+// Gloskin's favicon renders (and WordPress's native one stays unhooked)
+// regardless of whether a Site Icon is set.
 $GLOBALS['gl_site_icon'] = '1' === getenv( 'GLOSKIN_FIXTURE_SITE_ICON' );
 
 // Asset-loading tests create an unrelated editorial post. It must never appear
