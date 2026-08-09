@@ -250,9 +250,9 @@
 	/* -----------------------------------------------------------------
 	 * Top-level desktop nav: single liquid bubble that glides between the
 	 * hovered/focused item and rests on the active one, replacing the old
-	 * per-link ::before top rail. CSS owns the link's own text color as a
-	 * no-JS-safe baseline; this only positions/sizes/shows the one shared
-	 * bubble element and flags whichever link it currently sits under.
+	 * per-link ::before top rail. The whole top-level row (link + optional
+	 * chevron) owns the interaction hit area, while the link remains the
+	 * bubble geometry/foreground target. CSS owns the link's no-JS fallback.
 	 *
 	 * Movement is two-phase so the shape genuinely deforms while travelling
 	 * instead of sliding as a fixed rectangle: it first bridges (stretches
@@ -268,12 +268,14 @@
 		var list = nav ? nav.querySelector('.gloskin-ui1-nav__list') : null;
 		if (!nav || !bubble || !list) { return; }
 
-		var links = Array.prototype.filter.call(list.children, function (item) {
+		var targets = Array.prototype.filter.call(list.children, function (item) {
 			return item.classList.contains('gloskin-ui1-nav__item');
 		}).map(function (item) {
 			var row = item.querySelector(':scope > .gloskin-ui1-nav__row');
-			return row ? row.querySelector(':scope > .gloskin-ui1-nav__link') : null;
+			var link = row ? row.querySelector(':scope > .gloskin-ui1-nav__link') : null;
+			return row && link ? { row: row, link: link } : null;
 		}).filter(Boolean);
+		var links = targets.map(function (target) { return target.link; });
 
 		var BRIDGE_MS = 170; /* matches .gloskin-ui1-nav__bubble's default (fast) transition duration */
 		var DOT = 14; /* circle diameter for the collapse-to-nothing exit */
@@ -352,9 +354,9 @@
 
 		function restToActive() { moveTo(activeLink()); }
 
-		links.forEach(function (link) {
-			link.addEventListener('mouseenter', function () { moveTo(link); });
-			link.addEventListener('focus', function () { moveTo(link); });
+		targets.forEach(function (target) {
+			target.row.addEventListener('mouseenter', function () { moveTo(target.link); });
+			target.row.addEventListener('focusin', function () { moveTo(target.link); });
 		});
 		nav.addEventListener('mouseleave', restToActive);
 		list.addEventListener('focusout', function (event) {

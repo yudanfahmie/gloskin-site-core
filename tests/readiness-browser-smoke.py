@@ -98,8 +98,10 @@ with sync_playwright() as p:
     page.keyboard.press("Escape")
     page.wait_for_timeout(340)
 
-    # Desktop top-level nav: the liquid bubble owns pure-white foreground,
-    # parent chevrons stay naked, and nested submenu spacing/hover has its own owner.
+    # Desktop top-level nav: the whole row owns the interaction hit area, while
+    # the link remains the shared bubble geometry/foreground target. The white
+    # foreground must be correct in the first observable frame, not only after
+    # the old 160 ms link-color transition has elapsed.
     top_links = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list > .gloskin-ui1-nav__item > .gloskin-ui1-nav__row > .gloskin-ui1-nav__link")
     check(top_links.count() >= 2, "desktop top-level navigation missing")
     white = "rgb(255, 255, 255)"
@@ -112,25 +114,71 @@ with sync_playwright() as p:
         return value;
     }""")
     active = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list > .gloskin-ui1-nav__item.is-active > .gloskin-ui1-nav__row > .gloskin-ui1-nav__link").first
-    hover = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list > .gloskin-ui1-nav__item:not(.is-active) > .gloskin-ui1-nav__row > .gloskin-ui1-nav__link").first
     bubble = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__bubble")
     check(active.count() == 1 and bubble.count() == 1, "active nav/bubble fixture missing")
     check(active.evaluate("e => e.classList.contains('is-bubbled')"), "active desktop nav did not receive bubble state")
     check(active.evaluate("e => getComputedStyle(e).color") == white, "active bubbled nav text is not pure white")
-    hover.hover()
-    page.wait_for_timeout(220)
-    check(hover.evaluate("e => e.classList.contains('is-bubbled')"), "hover desktop nav did not receive bubble state")
-    check(hover.evaluate("e => getComputedStyle(e).color") == white, "hover bubbled nav text is not pure white")
-    check(bubble.evaluate("e => getComputedStyle(e).opacity") == "1", "desktop nav bubble did not become visible")
-    hover.focus()
-    focus_style = hover.evaluate("e => ({style:getComputedStyle(e).outlineStyle,width:getComputedStyle(e).outlineWidth})")
-    check(focus_style["style"] != "none" and float(focus_style["width"].replace("px", "")) >= 3, f"desktop nav focus-visible weakened: {focus_style}")
 
-    parent_toggle = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list > .gloskin-ui1-nav__item > .gloskin-ui1-nav__row > .gloskin-ui1-nav__toggle").first
-    check(parent_toggle.count() == 1, "desktop parent-menu chevron missing")
+    parent_toggle = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list > .gloskin-ui1-nav__item:not(.is-active) > .gloskin-ui1-nav__row > .gloskin-ui1-nav__toggle").first
+    check(parent_toggle.count() == 1, "non-active desktop parent-menu chevron missing")
+    parent_row = parent_toggle.locator("xpath=..")
+    parent_link = parent_row.locator(":scope > .gloskin-ui1-nav__link")
+    check(parent_link.count() == 1, "desktop parent-menu link missing")
+
+    # Direct link entry from outside the row must synchronize bubble state and
+    # white foreground immediately; no 220 ms masking wait is allowed here.
+    parent_link.hover()
+    check(parent_link.evaluate("e => e.classList.contains('is-bubbled')"), "direct parent-link hover did not receive bubble state immediately")
+    check(parent_link.evaluate("e => getComputedStyle(e).color") == white, "direct parent-link hover is not pure white immediately")
+    check(parent_link.evaluate("e => getComputedStyle(e).transitionDuration") == "0s", "bubbled parent-link still delays foreground transition")
+    check(not active.evaluate("e => e.classList.contains('is-bubbled')"), "old active link kept bubble state after direct link hover")
+
+    # A row without a chevron uses the same state path.
+    plain_link = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list > .gloskin-ui1-nav__item:not(.is-active):not(:has(> .gloskin-ui1-nav__row > .gloskin-ui1-nav__toggle)) > .gloskin-ui1-nav__row > .gloskin-ui1-nav__link").first
+    check(plain_link.count() == 1, "plain desktop nav link fixture missing")
+    plain_link.hover()
+    check(plain_link.evaluate("e => e.classList.contains('is-bubbled')"), "plain top-level link did not receive bubble state")
+    check(plain_link.evaluate("e => getComputedStyle(e).color") == white, "plain top-level link is not pure white immediately")
+
+    # Entering the sibling chevron from another row must target the parent link
+    # through the row-owned JS hit area, not through a CSS-only white repair.
     parent_toggle.hover()
+    check(parent_link.evaluate("e => e.classList.contains('is-bubbled')"), "chevron hover did not target its parent link")
+    check(parent_link.evaluate("e => getComputedStyle(e).color") == white, "chevron hover parent text is not pure white immediately")
+    check(not plain_link.evaluate("e => e.classList.contains('is-bubbled')"), "previous nav link kept bubble state after chevron hover")
     toggle_bg = parent_toggle.evaluate("e => getComputedStyle(e).backgroundColor")
     check(toggle_bg in ("rgba(0, 0, 0, 0)", "transparent"), f"desktop chevron hover still has a background: {toggle_bg}")
+
+    # Moving between chevron and text stays inside one row and must not flicker
+    # or hand foreground ownership back to the generic link:hover rule.
+    parent_link.hover()
+    check(parent_link.evaluate("e => e.classList.contains('is-bubbled')"), "moving chevron-to-link lost bubble state")
+    check(parent_link.evaluate("e => getComputedStyle(e).color") == white, "moving chevron-to-link lost white foreground")
+    page.wait_for_timeout(600)
+    check(bubble.evaluate("e => getComputedStyle(e).opacity") == "1", "desktop nav bubble did not become visible")
+    parent_link_box = parent_link.bounding_box()
+    bubble_box = bubble.bounding_box()
+    check(parent_link_box and bubble_box, "desktop bubble geometry missing")
+    check(abs(parent_link_box["x"] - bubble_box["x"]) <= 1 and abs(parent_link_box["width"] - bubble_box["width"]) <= 1, f"chevron-capable row changed bubble geometry from link target: {parent_link_box} vs {bubble_box}")
+
+    # Leaving the nav restores the active item, while keyboard entry through
+    # either the toggle or link retargets the same parent link immediately.
+    page.locator("#gloskin-main").hover(position={"x": 5, "y": 5})
+    check(active.evaluate("e => e.classList.contains('is-bubbled')"), "nav mouseleave did not restore active bubble state")
+    check(active.evaluate("e => getComputedStyle(e).color") == white, "restored active nav text is not white")
+
+    parent_toggle.focus()
+    check(parent_link.evaluate("e => e.classList.contains('is-bubbled')"), "toggle focus did not target parent link")
+    check(parent_link.evaluate("e => getComputedStyle(e).color") == white, "toggle focus parent text is not pure white immediately")
+    toggle_focus = parent_toggle.evaluate("e => ({style:getComputedStyle(e).outlineStyle,width:getComputedStyle(e).outlineWidth})")
+    check(toggle_focus["style"] != "none" and float(toggle_focus["width"].replace("px", "")) >= 3, f"desktop toggle focus-visible weakened: {toggle_focus}")
+
+    parent_link.focus()
+    check(parent_link.evaluate("e => e.classList.contains('is-bubbled')"), "parent link focus lost bubble state")
+    check(parent_link.evaluate("e => getComputedStyle(e).color") == white, "parent link focus is not pure white")
+    focus_style = parent_link.evaluate("e => ({style:getComputedStyle(e).outlineStyle,width:getComputedStyle(e).outlineWidth})")
+    check(focus_style["style"] != "none" and float(focus_style["width"].replace("px", "")) >= 3, f"desktop nav focus-visible weakened: {focus_style}")
+
     parent_toggle.click()
     submenu_id = parent_toggle.get_attribute("aria-controls")
     submenu = page.locator(f"#{submenu_id}")

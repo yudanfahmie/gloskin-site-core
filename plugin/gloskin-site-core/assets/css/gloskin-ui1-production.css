@@ -108,8 +108,8 @@ body.gloskin-ui1{
    slower spring-out easing) so the shape visibly stretches like a real
    liquid blob instead of sliding as a fixed rectangle; leaving with nothing
    to rest on collapses through a centered circle before shrinking to
-   nothing. The link itself only ever owns its own text color so the
-   indicator degrades to a plain color change if JS never runs. */
+   nothing. The link keeps an accent no-JS fallback, while .is-bubbled is the
+   sole white-foreground state and snaps immediately with the bubble target. */
 .gloskin-ui1-nav--desktop{position:relative;z-index:0}
 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{
 	position:relative;
@@ -124,10 +124,7 @@ body.gloskin-ui1{
 }
 body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled{
 	color:#fff;
-}
-body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row:hover>.gloskin-ui1-nav__link,
-body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row:focus-within>.gloskin-ui1-nav__link{
-	color:#fff;
+	transition-duration:0s;
 }
 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__toggle:hover{
 	background:transparent;
