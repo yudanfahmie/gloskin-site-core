@@ -89,6 +89,8 @@ require(js.count("fetch(") == 2, "unexpected frontend fetch path added")
 
 # Final shell/header/drawer/footer polish stays scoped to existing presentation owners.
 require(".gloskin-ui1-sheet{top:var(--gloskin-ui1-admin-bar-height)}" in production, "commerce sheets must reuse the canonical admin-bar offset")
+require(".gloskin-ui1-badge{background:var(--gloskin-accent);color:#fff;opacity:1}" in production, "header utility count bubble must stay accent-branded even at zero")
+require(".gloskin-ui1-section__action{" in production and "justify-content:flex-end;" in production and "padding-top:16px;" in production and "border-top:1px solid" in production, "section see-more action must close the card group with deliberate spacing/alignment")
 require('class="gloskin-ui1-nav__bubble"' in header, "desktop nav must render the single shared bubble indicator element")
 require(".gloskin-ui1-nav__bubble" in production and ".is-bubbled" in production, "desktop top-level nav bubble indicator styling missing")
 require("body.gloskin-ui1 .gloskin-ui1-nav--desktop" in production and "gloskin-ui1-nav__link.is-bubbled" in production and "color:#fff" in production and "transition-duration:0s" in production, "bubbled desktop nav foreground must snap to pure white under the explicit bubble state")
@@ -108,6 +110,6 @@ for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "read
 require("gloskin_ui1_render_commerce_page_heading" in shell, "cart/checkout/account H1 owner missing")
 header_version = re.search(r"\* Version:\s*([0-9.]+)", main_plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == "0.7.9", "plugin/kernel version mismatch")
+require(header_version == kernel_version == "0.7.10", "plugin/kernel version mismatch")
 
 print("readiness-contract-smoke: OK")

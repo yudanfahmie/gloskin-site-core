@@ -101,6 +101,33 @@ body.gloskin-ui1{
 /* Fixed commerce sheets use the single existing WordPress-toolbar offset owner. */
 .gloskin-ui1-sheet{top:var(--gloskin-ui1-admin-bar-height)}
 
+/* Utility counters remain visibly branded even when the count is zero. */
+.gloskin-ui1-badge{background:var(--gloskin-accent);color:#fff;opacity:1}
+
+/* Section-level "see more" links close the card group instead of floating
+   directly under the final card row. */
+.gloskin-ui1-section__action{
+	display:flex;
+	align-items:center;
+	justify-content:flex-end;
+	margin:clamp(24px,3vw,34px) 0 0;
+	padding-top:16px;
+	border-top:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);
+}
+.gloskin-ui1-section__action .gloskin-ui1-text-link{
+	padding-block:5px;
+	color:var(--gloskin-accent-readable);
+	text-decoration:none;
+}
+.gloskin-ui1-section__action .gloskin-ui1-text-link:hover{
+	color:var(--gloskin-accent-strong);
+	text-decoration:none;
+}
+.gloskin-ui1-section--contrast .gloskin-ui1-section__action{
+	border-top-color:color-mix(in srgb,currentColor 22%,transparent);
+}
+.gloskin-ui1-section--contrast .gloskin-ui1-section__action .gloskin-ui1-text-link{color:var(--gloskin-inverse)}
+
 /* Top-level desktop navigation: a single liquid bubble tracks whichever
    item is hovered/focused/active and glides between them. gloskin-ui1-core.js
    initNavBubble bridges across the old+new item first (fast transition,
@@ -122,10 +149,11 @@ body.gloskin-ui1{
 	background:transparent;
 	color:var(--gloskin-accent-readable);
 }
-body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled, body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled:hover {
-    color: #fff;
-    transition-duration: 0s;
-    opacity: 1 !important;
+body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled,
+body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled:hover{
+	color:#fff;
+	transition-duration:0s;
+	opacity:1 !important;
 }
 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__toggle:hover{
 	background:transparent;
@@ -217,6 +245,9 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 		border-top:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);
 		border-left:0;
 	}
+}
+@media (max-width:600px){
+	.gloskin-ui1-section__action{justify-content:flex-start}
 }
 @media (max-width:480px){
 	.gloskin-ui1-footer__grid>div:not(.gloskin-ui1-footer__brand){
