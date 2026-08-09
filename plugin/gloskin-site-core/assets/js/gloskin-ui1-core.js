@@ -47,6 +47,16 @@
 			return document.querySelector('[data-gloskin-overlay="' + id + '"]');
 		}
 
+		/* A trigger can exist twice (full-size header row + compact sticky
+		 * toolbar); keep aria-expanded in sync on every copy, not just the
+		 * first one found, regardless of which is currently visible. */
+		function setTriggersExpanded(id, expanded) {
+			var triggers = document.querySelectorAll('[data-gloskin-' + id + '-open]');
+			Array.prototype.forEach.call(triggers, function (trigger) {
+				trigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+			});
+		}
+
 		function reducedMotion() {
 			return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		}
@@ -82,8 +92,7 @@
 			});
 			document.documentElement.classList.add('gloskin-ui1-overlay-open');
 			holdStickyNav();
-			var trigger = document.querySelector('[data-gloskin-' + id + '-open]');
-			if (trigger) { trigger.setAttribute('aria-expanded', 'true'); }
+			setTriggersExpanded(id, true);
 			var nodes = focusable(el);
 			if (nodes.length) { nodes[0].focus(); }
 		}
@@ -92,8 +101,7 @@
 			if (!current) { return; }
 			var id = current;
 			var el = find(id);
-			var trigger = document.querySelector('[data-gloskin-' + id + '-open]');
-			if (trigger) { trigger.setAttribute('aria-expanded', 'false'); }
+			setTriggersExpanded(id, false);
 			document.documentElement.classList.remove('gloskin-ui1-overlay-open');
 			current = null;
 
@@ -260,6 +268,37 @@
 		}, { passive: true });
 		navRow.addEventListener('focusin', showNav);
 		document.addEventListener('gloskin:sticky-nav-hold', showNav);
+	}
+
+	/* -----------------------------------------------------------------
+	 * Compact branded sticky-nav state -- once the full brand/utilities
+	 * row has fully scrolled out of view, the nav row grows a small
+	 * logo + compact utility cluster alongside the still-centered nav.
+	 * Reuses the exact same search/account/wishlist/cart triggers and
+	 * overlay system (no duplicated Woo state or overlay handlers).
+	 * ----------------------------------------------------------------- */
+
+	function initCompactSticky() {
+		var header = document.querySelector('.gloskin-ui1-header');
+		var navRow = document.querySelector('.gloskin-ui1-header__nav-row');
+		var compactBrand = document.querySelector('.gloskin-ui1-compact-brand');
+		var compactZone = document.querySelector('.gloskin-ui1-header__zone--compact');
+		if (!header || !navRow || typeof IntersectionObserver === 'undefined') { return; }
+
+		function setCompact(active) {
+			navRow.classList.toggle('is-compact-sticky', active);
+			/* inert keeps the collapsed (opacity:0, zero max-width) copy out of
+			 * tab order and away from screen readers until it is actually the
+			 * visible one -- mirrors the CSS visibility state exactly. */
+			if (compactBrand) { compactBrand.inert = !active; }
+			if (compactZone) { compactZone.inert = !active; }
+		}
+
+		var observer = new IntersectionObserver(function (entries) {
+			var entry = entries[entries.length - 1];
+			setCompact(!entry.isIntersecting);
+		}, { threshold: 0 });
+		observer.observe(header);
 	}
 
 	/* -----------------------------------------------------------------
@@ -581,6 +620,7 @@
 		initDrawer();
 		initDisclosures();
 		initSmartHeader();
+		initCompactSticky();
 		initSearch();
 		initCart();
 		initWishlist();

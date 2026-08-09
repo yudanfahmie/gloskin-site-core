@@ -17,16 +17,49 @@
 @media (max-width:900px){.gloskin-ui1-featured-entry,.gloskin-ui1-closing-cta{grid-template-columns:1fr}.gloskin-ui1-pathway-card,.gloskin-ui1-pathway-grid>.gloskin-ui1-pathway-card:first-child:nth-last-child(3),.gloskin-ui1-pathway-grid>.gloskin-ui1-pathway-card:nth-child(2):nth-last-child(2),.gloskin-ui1-pathway-grid>.gloskin-ui1-pathway-card:nth-child(3):last-child{grid-column:span 6}.gloskin-ui1-closing-cta__actions{justify-content:flex-start}}
 @media (max-width:760px){.gloskin-ui1-pathway-grid{grid-template-columns:1fr}.gloskin-ui1-pathway-card,.gloskin-ui1-pathway-grid>.gloskin-ui1-pathway-card:first-child:nth-last-child(3),.gloskin-ui1-pathway-grid>.gloskin-ui1-pathway-card:nth-child(2):nth-last-child(2),.gloskin-ui1-pathway-grid>.gloskin-ui1-pathway-card:nth-child(3):last-child{grid-column:1;min-height:180px}.gloskin-ui1-closing-cta__actions{align-items:stretch;flex-direction:column}.gloskin-ui1-closing-cta__actions .gloskin-ui1-button{width:100%}}
 
-/* Header and navigation interaction refinements: nav row is the sole sticky/admin-bar owner. */
-body.gloskin-ui1{--gloskin-ui1-admin-bar-height:0px;--gloskin-ui1-admin-bar-gap:0px;--gloskin-ui1-nav-sticky-top:calc(var(--gloskin-ui1-admin-bar-height) + var(--gloskin-ui1-admin-bar-gap))}
-body.admin-bar.gloskin-ui1{--gloskin-ui1-admin-bar-height:32px;--gloskin-ui1-admin-bar-gap:8px}
+/* Header and navigation interaction refinements: nav row is the sole sticky/admin-bar owner.
+   The sticky top offset tracks the admin bar height exactly -- no extra gap. Visual
+   separation from the admin bar comes from the nav row's own border/shadow below, not
+   from a positional offset (a gap there left a visible blank strip under the toolbar). */
+body.gloskin-ui1{--gloskin-ui1-admin-bar-height:0px;--gloskin-ui1-nav-sticky-top:var(--gloskin-ui1-admin-bar-height)}
+body.admin-bar.gloskin-ui1{--gloskin-ui1-admin-bar-height:32px}
 .gloskin-ui1-header{position:relative;z-index:auto;top:auto;border-bottom:0;background:var(--gloskin-bg);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;transform:none;transition:none;will-change:auto}
 .gloskin-ui1-header__inner{min-height:72px;gap:clamp(14px,2vw,24px);display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
-.gloskin-ui1-brand{line-height:1;grid-column:2}
+.gloskin-ui1-brand{display:inline-flex;align-items:center;line-height:1;grid-column:2}
 .gloskin-ui1-header__zone--start{grid-column:1;justify-self:start}
 .gloskin-ui1-header__zone--end{grid-column:3;justify-self:end}
+
+/* Brand logo -- canonical SVG wordmark, sized per placement. The <img> carries
+   explicit intrinsic width/height (see gloskin_ui1_render_brand_logo()) so the
+   browser reserves layout space before it loads; CSS only controls the final
+   displayed height, width follows automatically to preserve the aspect ratio. */
+img.gloskin-ui1-brand__image{display:block;height:34px;width:auto;max-width:none}
+img.gloskin-ui1-brand__image--footer{height:40px}
+img.gloskin-ui1-brand__image--drawer{height:26px}
+.gloskin-ui1-drawer__brand{display:inline-flex;align-items:center}
+img.gloskin-ui1-brand__image--compact{height:22px}
+
 .gloskin-ui1-header__nav-row{position:sticky;z-index:1000;top:var(--gloskin-ui1-nav-sticky-top);padding-block:10px;border-top:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 62%,transparent);background:color-mix(in srgb,var(--gloskin-bg) 84%,transparent);-webkit-backdrop-filter:saturate(120%) blur(14px);backdrop-filter:saturate(120%) blur(14px);box-shadow:0 1px 0 color-mix(in srgb,var(--gloskin-bg) 34%,transparent),0 8px 24px color-mix(in srgb,var(--gloskin-text) 3%,transparent);transition:transform 220ms cubic-bezier(.22,1,.36,1);will-change:transform}
 .gloskin-ui1-header__nav-row.is-hidden{transform:translateY(calc(-100% - var(--gloskin-ui1-nav-sticky-top)))}
+
+/* Compact branded sticky-nav state -- small logo | centered nav | compact
+   utilities. The nav row always uses the same 1fr/auto/1fr grid as the brand
+   bar above (guaranteed optical centering regardless of side content width);
+   the compact brand/utility zones collapse to zero footprint via max-width
+   when inactive so the plain nav stays centered in the full row at the top
+   of the page, then expand smoothly once .is-compact-sticky is applied. */
+.gloskin-ui1-header__nav-row-inner{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
+.gloskin-ui1-nav--desktop{grid-column:2}
+.gloskin-ui1-compact-brand,.gloskin-ui1-header__zone--compact{grid-row:1;display:inline-flex;align-items:center;max-width:0;overflow:hidden;opacity:0;transform:translateY(-4px);pointer-events:none;transition:max-width 200ms ease,opacity 200ms ease,transform 200ms ease}
+.gloskin-ui1-compact-brand{grid-column:1;justify-self:start}
+.gloskin-ui1-header__zone--compact{grid-column:3;justify-self:end;gap:4px}
+.gloskin-ui1-header__zone--compact .gloskin-ui1-utility-btn{width:34px;height:34px}
+.gloskin-ui1-header__nav-row.is-compact-sticky .gloskin-ui1-compact-brand{max-width:180px;opacity:1;transform:translateY(0);pointer-events:auto}
+.gloskin-ui1-header__nav-row.is-compact-sticky .gloskin-ui1-header__zone--compact{max-width:260px;opacity:1;transform:translateY(0);pointer-events:auto}
+
+/* 6-dot mobile trigger -- converges to one centered dot when open, no X, no bars. */
+.gloskin-ui1-drawer-toggle__dot{transform:translate(0,0);transition:transform 200ms cubic-bezier(.22,1,.36,1)}
+[data-gloskin-drawer-open][aria-expanded="true"] .gloskin-ui1-drawer-toggle__dot{transform:translate(var(--gloskin-dot-x,0),var(--gloskin-dot-y,0))}
 .gloskin-ui1-nav__list{gap:2px}
 .gloskin-ui1-nav__link{padding:8px 9px;border-radius:7px;transition:color 140ms ease,background-color 140ms ease}
 .gloskin-ui1-nav__item.is-active>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{background:color-mix(in srgb,var(--gloskin-accent) 9%,transparent)}
@@ -46,8 +79,8 @@ body.admin-bar.gloskin-ui1{--gloskin-ui1-admin-bar-height:32px;--gloskin-ui1-adm
 @media (max-width:1040px){.gloskin-ui1-header{border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 86%,transparent)}}
 @media (max-width:782px){body.admin-bar.gloskin-ui1{--gloskin-ui1-admin-bar-height:46px}}
 @media (max-width:760px){.gloskin-ui1-header__inner{min-height:64px}}
-@media (max-width:600px){body.admin-bar.gloskin-ui1{--gloskin-ui1-admin-bar-height:0px;--gloskin-ui1-admin-bar-gap:0px}}
-@media (prefers-reduced-motion:reduce){.gloskin-ui1-header__nav-row,.gloskin-ui1-nav__chevron,.gloskin-ui1-nav__link,.gloskin-ui1-nav__toggle{transition:none !important}}
+@media (max-width:600px){body.admin-bar.gloskin-ui1{--gloskin-ui1-admin-bar-height:0px}}
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-header__nav-row,.gloskin-ui1-nav__chevron,.gloskin-ui1-nav__link,.gloskin-ui1-nav__toggle,.gloskin-ui1-compact-brand,.gloskin-ui1-header__zone--compact,.gloskin-ui1-drawer-toggle__dot{transition:none !important}}
 
 /* Overlay scroll lock */
 html.gloskin-ui1-overlay-open{overflow:hidden}

@@ -97,19 +97,23 @@ fi
 
 # Sticky/admin-bar offsets have one owner: core refinement CSS. Foundation and
 # production layers must not own logged-in offset variables.
-if grep -Eq 'gloskin-ui1-admin-bar-(height|gap)|gloskin-ui1-header-offset' "$production_css" "$core_base_css"; then
+if grep -Eq 'gloskin-ui1-admin-bar-height|gloskin-ui1-nav-sticky-top' "$production_css" "$core_base_css"; then
   echo "foundation/production CSS still competes for sticky admin-bar offset ownership" >&2
   exit 1
 fi
 for expected in \
   '--gloskin-ui1-admin-bar-height:32px' \
-  '--gloskin-ui1-admin-bar-gap:8px' \
   '--gloskin-ui1-admin-bar-height:46px' \
-  '--gloskin-ui1-header-offset:calc('; do
+  '--gloskin-ui1-nav-sticky-top:var(--gloskin-ui1-admin-bar-height)'; do
   grep -q -- "$expected" "$core_css" || { echo "canonical core admin-bar rule missing: $expected" >&2; exit 1; }
 done
-if ! grep -q '@media (max-width:600px).*--gloskin-ui1-admin-bar-height:0px.*--gloskin-ui1-admin-bar-gap:0px' "$core_css"; then
+if ! grep -q '@media (max-width:600px).*--gloskin-ui1-admin-bar-height:0px' "$core_css"; then
   echo "core CSS does not clear fixed toolbar offset at <=600px" >&2
+  exit 1
+fi
+# The positional gap regression: no rule may add extra px on top of the admin-bar height itself.
+if grep -Eq -- '--gloskin-ui1-admin-bar-gap|nav-sticky-top:calc\(' "$core_css"; then
+  echo "sticky nav top offset must equal the admin-bar height exactly, no added gap" >&2
   exit 1
 fi
 
@@ -206,6 +210,39 @@ if ! grep -q 'family=Marcellus&family=Mulish:wght@400;600;700;800' "$plugin_root
   echo "required Google Fonts family/weight registration missing" >&2
   exit 1
 fi
+
+# Favicon derivatives: all sizes must exist and derive from the same master,
+# at the exact pixel dimensions each context expects.
+images_dir="$plugin_root/assets/images"
+if [[ ! -f "$images_dir/gloskin-logotext.svg" ]]; then
+  echo "canonical logo SVG missing" >&2
+  exit 1
+fi
+php -r '
+$images = $argv[1];
+$expected = [
+  "favicon-16x16.png" => [16, 16],
+  "favicon-32x32.png" => [32, 32],
+  "apple-touch-icon.png" => [180, 180],
+  "icon-192.png" => [192, 192],
+  "icon-512.png" => [512, 512],
+];
+foreach ( $expected as $file => [$w, $h] ) {
+  $path = $images . "/" . $file;
+  if ( ! is_readable( $path ) ) { fwrite( STDERR, "missing favicon derivative: $file\n" ); exit(1); }
+  $size = getimagesize( $path );
+  if ( ! $size || $size[0] !== $w || $size[1] !== $h ) {
+    fwrite( STDERR, "favicon derivative wrong dimensions: $file (" . ($size[0] ?? "?") . "x" . ($size[1] ?? "?") . ", expected {$w}x{$h})\n" );
+    exit(1);
+  }
+}
+if ( ! is_readable( $images . "/favicon.ico" ) || filesize( $images . "/favicon.ico" ) < 500 ) {
+  fwrite( STDERR, "favicon.ico missing or implausibly small\n" ); exit(1);
+}
+if ( ! is_readable( $images . "/favicon-master-g.png" ) ) {
+  fwrite( STDERR, "favicon master derivative missing\n" ); exit(1);
+}
+' "$images_dir" || exit 1
 
 required_views=(home about treatments treatment skincare skincare-category clinics clinic doctors doctor contact insights shop)
 for view in "${required_views[@]}"; do

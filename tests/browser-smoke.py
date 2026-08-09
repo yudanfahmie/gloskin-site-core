@@ -359,6 +359,145 @@ with sync_playwright() as p:
         page.close()
     print('browser smoke passed (header computed geometry: 390/600/601/782/1024/1440/1920)')
 
+    # ------------------------------------------------------------------
+    # Owner-presentation polish: canonical logo, favicon fallback, compact
+    # branded sticky-nav state, 6-dot mobile trigger.
+    # ------------------------------------------------------------------
+
+    page = browser.new_page(viewport={'width': 1440, 'height': 900})
+    load(page, fixtures['home'])
+    logo_check = page.evaluate("""() => {
+        const imgs = Array.from(document.querySelectorAll('.gloskin-ui1-brand__image'));
+        const brandTexts = Array.from(document.querySelectorAll('.gloskin-ui1-brand, .gloskin-ui1-brand--footer'))
+            .map(el => Array.from(el.childNodes).filter(n => n.nodeType === 3 && n.textContent.trim()).map(n => n.textContent.trim()))
+            .flat();
+        return {
+            count: imgs.length,
+            allHaveDims: imgs.every(img => img.getAttribute('width') && img.getAttribute('height')),
+            allLoaded: imgs.every(img => img.complete && img.naturalWidth > 0 && img.naturalHeight > 0),
+            aspectRatiosMatch: imgs.every(img => Math.abs((img.naturalWidth / img.naturalHeight) - (1600/520)) < 0.01),
+            residualTextWordmarks: brandTexts,
+        };
+    }""")
+    if logo_check['count'] < 2:
+        raise SystemExit(f'logo: expected header + footer logo images, found: {logo_check}')
+    if not logo_check['allHaveDims']:
+        raise SystemExit(f'logo: missing explicit intrinsic width/height (CLS risk): {logo_check}')
+    if not logo_check['allLoaded']:
+        raise SystemExit(f'logo: canonical SVG failed to load: {logo_check}')
+    if not logo_check['aspectRatiosMatch']:
+        raise SystemExit(f'logo: aspect ratio distorted: {logo_check}')
+    if logo_check['residualTextWordmarks']:
+        raise SystemExit(f'logo: text-only wordmark duplicate still present: {logo_check}')
+    page.close()
+    print('browser smoke passed (canonical logo: header + footer, no CLS, text wordmark removed)')
+
+    # Favicon fallback: appears with no Site Icon, absent when one is configured.
+    no_icon_html = fixture('home')
+    with_icon_html = fixture('home', GLOSKIN_FIXTURE_SITE_ICON='1')
+    expected_favicons = ['favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']
+    if not all(name in no_icon_html for name in expected_favicons):
+        raise SystemExit('favicon: fallback tags missing when no Site Icon is configured')
+    if any(name in with_icon_html for name in expected_favicons):
+        raise SystemExit('favicon: fallback tags rendered despite a configured Site Icon')
+    print('browser smoke passed (favicon fallback: Site Icon takes priority)')
+
+    # All 7 derived favicon files exist and are reachable.
+    images_base = ROOT / 'plugin/gloskin-site-core/assets/images'
+    for name in ['favicon-master-g.png'] + expected_favicons:
+        if not (images_base / name).is_file():
+            raise SystemExit(f'favicon: derivative file missing on disk: {name}')
+    print('browser smoke passed (favicon derivatives present on disk)')
+
+    # Compact branded sticky-nav state: small logo + centered nav + compact
+    # utilities appear only after the brand row has fully scrolled away.
+    page = browser.new_page(viewport={'width': 1440, 'height': 900})
+    load(page, fixtures['home'])
+    nav_row = page.locator('.gloskin-ui1-header__nav-row')
+    if nav_row.evaluate("el => el.classList.contains('is-compact-sticky')"):
+        raise SystemExit('compact-sticky: activated at page top before the brand row scrolled away')
+    compact_pre = page.evaluate("""() => {
+        const b = document.querySelector('.gloskin-ui1-compact-brand');
+        const z = document.querySelector('.gloskin-ui1-header__zone--compact');
+        return { brandInert: b.inert, zoneInert: z.inert };
+    }""")
+    if not compact_pre['brandInert'] or not compact_pre['zoneInert']:
+        raise SystemExit('compact-sticky: collapsed compact controls must stay inert at page top')
+
+    real_scroll = scroll_beyond_header(page, 260)
+    page.evaluate('(y) => window.scrollTo(0,y)', real_scroll['target'])
+    page.wait_for_timeout(250)
+    if not nav_row.evaluate("el => el.classList.contains('is-compact-sticky')"):
+        raise SystemExit('compact-sticky: did not activate after the brand row fully left the viewport')
+    compact_geometry = page.evaluate("""() => {
+        const navList = document.querySelector('.gloskin-ui1-nav--desktop .gloskin-ui1-nav__list').getBoundingClientRect();
+        const brand = document.querySelector('.gloskin-ui1-compact-brand');
+        const zone = document.querySelector('.gloskin-ui1-header__zone--compact');
+        const brandImg = brand.querySelector('img');
+        return {
+            navCenterX: navList.left + navList.width / 2,
+            viewportCenterX: window.innerWidth / 2,
+            brandInert: brand.inert,
+            zoneInert: zone.inert,
+            brandImgVisible: brandImg.getBoundingClientRect().width > 0,
+            searchReachable: !!zone.querySelector('[data-gloskin-search-open]'),
+        };
+    }""")
+    if abs(compact_geometry['navCenterX'] - compact_geometry['viewportCenterX']) > 6:
+        raise SystemExit(f'compact-sticky: nav not centered in compact state: {compact_geometry}')
+    if compact_geometry['brandInert'] or compact_geometry['zoneInert']:
+        raise SystemExit(f'compact-sticky: controls still inert once active: {compact_geometry}')
+    if not compact_geometry['brandImgVisible']:
+        raise SystemExit(f'compact-sticky: small logo did not become visible: {compact_geometry}')
+    if not compact_geometry['searchReachable']:
+        raise SystemExit('compact-sticky: search trigger missing from compact utilities')
+    page.evaluate('window.scrollTo(0,0)'); page.wait_for_timeout(200)
+    if nav_row.evaluate("el => el.classList.contains('is-compact-sticky')"):
+        raise SystemExit('compact-sticky: did not deactivate when scrolled back to the top')
+    page.close()
+    print('browser smoke passed (compact branded sticky-nav state)')
+
+    # 6-dot mobile trigger: no legacy 3-line hamburger, dots converge to one point.
+    page = browser.new_page(viewport={'width': 390, 'height': 844})
+    load(page, fixtures['home'])
+    toggle = page.locator('[data-gloskin-drawer-open]')
+    dot_check = page.evaluate("""() => {
+        const dots = document.querySelectorAll('.gloskin-ui1-drawer-toggle__dot');
+        const legacyPath = document.querySelector('.gloskin-ui1-drawer-toggle svg path');
+        return { dotCount: dots.length, hasLegacyPath: !!legacyPath };
+    }""")
+    if dot_check['dotCount'] != 6:
+        raise SystemExit(f'6-dot trigger: expected 6 dots, found {dot_check["dotCount"]}')
+    if dot_check['hasLegacyPath']:
+        raise SystemExit('6-dot trigger: legacy 3-line hamburger path still present')
+    toggle.click(); page.wait_for_timeout(220)
+    converge = page.evaluate("""() => {
+        const dots = Array.from(document.querySelectorAll('.gloskin-ui1-drawer-toggle__dot'));
+        const points = dots.map(d => { const r = d.getBoundingClientRect(); return [r.left + r.width/2, r.top + r.height/2]; });
+        const xs = points.map(p => p[0]), ys = points.map(p => p[1]);
+        return { spreadX: Math.max(...xs) - Math.min(...xs), spreadY: Math.max(...ys) - Math.min(...ys) };
+    }""")
+    if converge['spreadX'] > 1 or converge['spreadY'] > 1:
+        raise SystemExit(f'6-dot trigger: dots did not converge to one point when open: {converge}')
+    if toggle.get_attribute('aria-expanded') != 'true':
+        raise SystemExit('6-dot trigger: aria-expanded not set on open')
+    page.close()
+    print('browser smoke passed (6-dot mobile trigger: converges to one point, no legacy hamburger)')
+
+    # Reduced motion: compact-sticky and the 6-dot trigger apply their target
+    # state immediately, without a transition, matching the rest of the header.
+    page = browser.new_page(viewport={'width': 1440, 'height': 900}, reduced_motion='reduce')
+    load(page, fixtures['home'])
+    reduced_transitions = page.evaluate("""() => {
+        const brand = document.querySelector('.gloskin-ui1-compact-brand');
+        const dot = document.querySelector('.gloskin-ui1-drawer-toggle__dot');
+        return { brand: getComputedStyle(brand).transitionDuration, dot: getComputedStyle(dot).transitionDuration };
+    }""")
+    if reduced_transitions['brand'] != '0s' or reduced_transitions['dot'] != '0s':
+        raise SystemExit(f'reduced-motion: compact-sticky/6-dot transitions not disabled: {reduced_transitions}')
+    page.close()
+    print('browser smoke passed (reduced motion: compact-sticky + 6-dot trigger)')
+
     page = browser.new_page(viewport={'width': 1440, 'height': 900})
     load(page, home_real_media)
     hero = page.locator('.gloskin-ui1-hero__media')
@@ -377,9 +516,12 @@ with sync_playwright() as p:
     assert_dark_surface_contrast(page)
     page.close(); print('browser smoke passed (contrast surface tokens)')
 
+    # expected_gap is the distance between the admin bar's bottom edge and the
+    # sticky nav row's top edge once revealed -- must be 0 (no ghost strip),
+    # regardless of admin-bar height at each breakpoint.
     admin_bar_cases = [
-        ('desktop', 1440, 900, 32, 8, '40px'), ('toolbar-782', 782, 1000, 46, 8, '54px'),
-        ('toolbar-601', 601, 1000, 46, 8, '54px'), ('mobile-absolute', 600, 900, 46, 0, '0px'),
+        ('desktop', 1440, 900, 32, 0, '32px'), ('toolbar-782', 782, 1000, 46, 0, '46px'),
+        ('toolbar-601', 601, 1000, 46, 0, '46px'), ('mobile-absolute', 600, 900, 46, 0, '0px'),
     ]
     for case_name, width, height, toolbar_height, expected_gap, expected_top in admin_bar_cases:
         page = browser.new_page(viewport={'width': width, 'height': height}); errors = []

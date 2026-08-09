@@ -9,6 +9,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ! function_exists( 'gloskin_ui1_render_brand_logo' ) ) {
+	/**
+	 * Render the canonical Gloskin logo SVG (assets/images/gloskin-logotext.svg,
+	 * untouched) as an <img> with explicit intrinsic dimensions matching its
+	 * source aspect ratio (1600x520, scaled to 200x65) so the browser reserves
+	 * layout space before the asset loads -- no CLS. CSS controls the actual
+	 * displayed size per placement via the modifier class.
+	 *
+	 * @param string $url Logo asset URL.
+	 * @param string $class Placement modifier class, e.g. 'gloskin-ui1-brand__image--footer'.
+	 * @return void
+	 */
+	function gloskin_ui1_render_brand_logo( $url, $class = '' ) {
+		if ( '' === trim( (string) $url ) ) {
+			return;
+		}
+		$classes = trim( 'gloskin-ui1-brand__image ' . $class );
+		echo '<img class="' . esc_attr( $classes ) . '" src="' . esc_url( $url ) . '" width="200" height="65" alt="Gloskin" decoding="async">';
+	}
+}
+
 if ( ! function_exists( 'gloskin_ui1_render_presentation_media' ) ) {
 	/**
 	 * Render deterministic abstract Gloskin media for genuine factual empty states.

@@ -163,7 +163,8 @@ function add_meta_box() {}
 function wp_enqueue_media() {}
 function language_attributes() { echo 'lang="en"'; }
 function bloginfo( $show ) { if ( 'charset' === $show ) { echo 'UTF-8'; } else { echo 'Gloskin'; } }
-function wp_head() { echo '<meta name="gloskin-test" content="1">'; }
+function wp_head() { do_action( 'wp_head' ); echo '<meta name="gloskin-test" content="1">'; }
+function has_site_icon() { return (bool) ( $GLOBALS['gl_site_icon'] ?? false ); }
 function body_class( $classes = array() ) { echo 'class="' . esc_attr( implode( ' ', (array) $classes ) ) . '"'; }
 function wp_body_open() {}
 function wp_footer() {}
@@ -439,6 +440,32 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 		fwrite( STDERR, "Load-order bug: Woo adapter constructed before WooCommerce loaded stayed permanently unavailable\n" );
 		exit( 1 );
 	}
+	if ( empty( $context['logo_url'] ) || false === strpos( $context['logo_url'], 'gloskin-logotext.svg' ) ) {
+		fwrite( STDERR, "Canonical logo URL missing from template context\n" );
+		exit( 1 );
+	}
+
+	// Favicon fallback: renders only when no WordPress Site Icon is configured.
+	$GLOBALS['gl_site_icon'] = false;
+	ob_start();
+	do_action( 'wp_head' );
+	$head_no_icon = ob_get_clean();
+	if ( false === strpos( $head_no_icon, 'favicon.ico' )
+		|| false === strpos( $head_no_icon, 'favicon-16x16.png' )
+		|| false === strpos( $head_no_icon, 'favicon-32x32.png' )
+		|| false === strpos( $head_no_icon, 'icon-192.png' )
+		|| false === strpos( $head_no_icon, 'icon-512.png' )
+		|| false === strpos( $head_no_icon, 'apple-touch-icon.png' ) ) {
+		fwrite( STDERR, "Favicon fallback did not render without a Site Icon: {$head_no_icon}\n" ); exit( 1 );
+	}
+	$GLOBALS['gl_site_icon'] = true;
+	ob_start();
+	do_action( 'wp_head' );
+	$head_with_icon = ob_get_clean();
+	if ( false !== strpos( $head_with_icon, 'favicon.ico' ) ) {
+		fwrite( STDERR, "Favicon fallback rendered despite a configured Site Icon\n" ); exit( 1 );
+	}
+	$GLOBALS['gl_site_icon'] = false;
 }
 
 $clinic = get_page_by_path( 'kebayoran-baru', OBJECT, Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE );

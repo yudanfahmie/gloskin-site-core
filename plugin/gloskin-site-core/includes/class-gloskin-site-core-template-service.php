@@ -40,6 +40,45 @@ final class Gloskin_Site_Core_Template_Service {
 		add_filter( 'template_include', array( $this, 'resolve_template' ), 99 );
 		add_filter( 'document_title_parts', array( $this, 'localize_document_title' ), 20 );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
+		add_action( 'wp_head', array( $this, 'render_favicon_fallback' ) );
+	}
+
+	/**
+	 * Fallback favicon set derived from the canonical logo's G glyph. A
+	 * configured WordPress Site Icon always wins -- WordPress core already
+	 * hooks its own icon tags onto wp_head via wp_site_icon() whenever one is
+	 * set, so this only renders when no Site Icon exists, avoiding duplicate
+	 * or competing favicon declarations.
+	 *
+	 * @return void
+	 */
+	public function render_favicon_fallback() {
+		if ( function_exists( 'has_site_icon' ) && has_site_icon() ) {
+			return;
+		}
+		$png_sizes = array(
+			array( 'favicon-16x16.png', '16x16' ),
+			array( 'favicon-32x32.png', '32x32' ),
+			array( 'icon-192.png', '192x192' ),
+			array( 'icon-512.png', '512x512' ),
+		);
+		echo '<link rel="icon" href="' . esc_url( $this->image_url( 'favicon.ico' ) ) . '" sizes="any">' . "\n";
+		foreach ( $png_sizes as $size ) {
+			echo '<link rel="icon" type="image/png" sizes="' . esc_attr( $size[1] ) . '" href="' . esc_url( $this->image_url( $size[0] ) ) . '">' . "\n";
+		}
+		echo '<link rel="apple-touch-icon" sizes="180x180" href="' . esc_url( $this->image_url( 'apple-touch-icon.png' ) ) . '">' . "\n";
+	}
+
+	/**
+	 * Build a URL for a file inside the canonical images asset directory.
+	 * Templates receive a ready-made URL rather than composing plugins_url()
+	 * themselves, keeping asset-path composition in one place.
+	 *
+	 * @param string $relative Filename within assets/images.
+	 * @return string
+	 */
+	private function image_url( $relative ) {
+		return plugins_url( 'assets/images/' . ltrim( $relative, '/' ), $this->plugin_root . '/gloskin-site-core.php' );
 	}
 
 	/**
@@ -94,6 +133,7 @@ final class Gloskin_Site_Core_Template_Service {
 		$context['clinic_links']   = $this->static_clinic_links();
 		$context['site_name']      = 'Gloskin';
 		$context['commerce']       = $this->commerce_header_context();
+		$context['logo_url']       = $this->image_url( 'gloskin-logotext.svg' );
 		set_query_var( 'gloskin_context', $context );
 
 		$shell = $this->plugin_root . '/templates/shell.php';
