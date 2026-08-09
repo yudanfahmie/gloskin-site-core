@@ -40,8 +40,6 @@ final class Gloskin_Site_Core_Template_Service {
 		add_filter( 'template_include', array( $this, 'resolve_template' ), 99 );
 		add_filter( 'document_title_parts', array( $this, 'localize_document_title' ), 20 );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
-		add_action( 'get_header', array( $this, 'render_commerce_header' ) );
-		add_action( 'get_footer', array( $this, 'render_commerce_footer' ) );
 	}
 
 	/**
@@ -72,16 +70,24 @@ final class Gloskin_Site_Core_Template_Service {
 	 * @return string
 	 */
 	public function resolve_template( $template ) {
-		$view = $this->identify_view();
-		if ( '' === $view ) {
-			/* Clear any previously-set context so a stale value from an
-			 * earlier request phase never leaks into get_header/get_footer's
-			 * "is this route already Gloskin-owned" check below. */
+		$native_commerce = $this->woocommerce->is_commerce_request() && ! $this->woocommerce->is_shop_request();
+		$view            = $native_commerce ? '' : $this->identify_view();
+
+		if ( '' === $view && ! $native_commerce ) {
 			set_query_var( 'gloskin_context', array() );
 			return $template;
 		}
 
-		$context                   = $this->build_context( $view );
+		if ( $native_commerce ) {
+			$view    = 'commerce-native';
+			$context = array(
+				'commerce_native'      => true,
+				'commerce_render_mode' => $this->native_commerce_render_mode(),
+			);
+		} else {
+			$context = $this->build_context( $view );
+		}
+
 		$context['view']           = $view;
 		$context['navigation']     = $this->navigation->tree();
 		$context['design_variant'] = $this->design_variant();
@@ -94,64 +100,20 @@ final class Gloskin_Site_Core_Template_Service {
 		return is_readable( $shell ) ? $shell : $template;
 	}
 
-	/* -----------------------------------------------------------------
-	 * Commerce chrome on native WooCommerce routes
-	 *
-	 * WooCommerce remains the sole owner of the product/cart/checkout/My
-	 * Account templates -- resolve_template() above never intercepts those
-	 * routes, so they keep rendering through Woo's own template hierarchy
-	 * and content. But that leaves Gloskin's header/footer chrome (search,
-	 * account, wishlist, cart) missing on exactly those routes, since they
-	 * never pass through shell.php. The smallest correct fix is the
-	 * standard WordPress `get_header`/`get_footer` action hooks: the active
-	 * theme calls these at the top/bottom of its own page templates
-	 * (including WooCommerce's classic templates), so hooking them lets
-	 * Gloskin inject the same header/footer partials used everywhere else
-	 * without touching template_include or Woo's own template/content
-	 * ownership. Routes Gloskin already owns (e.g. the Shop archive, which
-	 * resolves through shell.php) are skipped here to avoid a duplicate
-	 * header, detected via the gloskin_context query var set above.
-	 * ----------------------------------------------------------------- */
-
-	/** @return void */
-	public function render_commerce_header() {
-		if ( ! $this->is_uncovered_commerce_request() ) {
-			return;
-		}
-		$this->render_commerce_chrome( 'header' );
-	}
-
-	/** @return void */
-	public function render_commerce_footer() {
-		if ( ! $this->is_uncovered_commerce_request() ) {
-			return;
-		}
-		$this->render_commerce_chrome( 'footer' );
-	}
-
-	/** @return bool */
-	private function is_uncovered_commerce_request() {
-		$context = get_query_var( 'gloskin_context', array() );
-		if ( is_array( $context ) && ! empty( $context['view'] ) ) {
-			return false;
-		}
-		return $this->woocommerce->is_commerce_request() || $this->woocommerce->is_shop_request();
-	}
-
 	/**
-	 * @param string $part 'header' or 'footer'.
-	 * @return void
+	 * Keep WooCommerce authoritative for native commerce content while the
+	 * Gloskin shell owns the one site header/footer. Product routes render
+	 * through Woo's standard woocommerce_content() entrypoint; cart,
+	 * checkout and My Account retain their normal page/block/shortcode
+	 * content through the WordPress loop.
+	 *
+	 * @return string
 	 */
-	private function render_commerce_chrome( $part ) {
-		$gloskin_context = array(
-			'navigation'   => $this->navigation->tree(),
-			'clinic_links' => $this->static_clinic_links(),
-			'commerce'     => $this->commerce_header_context(),
-		);
-		$file = $this->plugin_root . '/templates/parts/' . $part . '.php';
-		if ( is_readable( $file ) ) {
-			require $file;
+	private function native_commerce_render_mode() {
+		if ( function_exists( 'is_woocommerce' ) && is_woocommerce() ) {
+			return 'woocommerce';
 		}
+		return 'page';
 	}
 
 	/** @return string */

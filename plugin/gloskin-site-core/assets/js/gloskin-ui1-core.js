@@ -30,6 +30,10 @@
 		}
 	}
 
+	function holdStickyNav() {
+		document.dispatchEvent(new CustomEvent('gloskin:sticky-nav-hold'));
+	}
+
 	/* -----------------------------------------------------------------
 	 * Unified overlay system — one overlay may own focus at a time
 	 * ----------------------------------------------------------------- */
@@ -77,6 +81,7 @@
 				el.setAttribute('aria-hidden', 'false');
 			});
 			document.documentElement.classList.add('gloskin-ui1-overlay-open');
+			holdStickyNav();
 			var trigger = document.querySelector('[data-gloskin-' + id + '-open]');
 			if (trigger) { trigger.setAttribute('aria-expanded', 'true'); }
 			var nodes = focusable(el);
@@ -144,6 +149,7 @@
 			drawer.setAttribute('aria-hidden', 'false');
 			opener.setAttribute('aria-expanded', 'true');
 			document.documentElement.classList.add('gloskin-ui1-drawer-open');
+			holdStickyNav();
 			var nodes = focusable(dialog || drawer);
 			if (nodes.length) { nodes[0].focus(); }
 		}
@@ -196,60 +202,64 @@
 				var expanded = toggle.getAttribute('aria-expanded') === 'true';
 				toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
 				target.hidden = expanded;
+				if (!expanded) { holdStickyNav(); }
 			});
 		});
 	}
 
 	/* -----------------------------------------------------------------
-	 * Smart sticky header
+	 * Smart sticky navigation row
 	 * ----------------------------------------------------------------- */
 
 	function initSmartHeader() {
 		var header = document.querySelector('.gloskin-ui1-header');
-		if (!header) { return; }
+		var navRow = document.querySelector('.gloskin-ui1-header__nav-row');
+		if (!header || !navRow) { return; }
 
-		var topGuard = Math.max(header.offsetHeight, 72);
 		var previousY = Math.max(window.scrollY || 0, 0);
-		var direction = 0;
-		var directionDistance = 0;
+		var downDistance = 0;
 		var scheduled = false;
 		var hideThreshold = 10;
-		var showThreshold = 4;
 
-		function interactionActive() {
-			if (header.contains(document.activeElement)) { return true; }
-			if (header.querySelector('[data-gloskin-submenu-toggle][aria-expanded="true"]')) { return true; }
-			if (document.documentElement.classList.contains('gloskin-ui1-drawer-open')) { return true; }
-			if (document.documentElement.classList.contains('gloskin-ui1-overlay-open')) { return true; }
-			var drawerOpener = header.querySelector('[data-gloskin-drawer-open]');
-			return !!drawerOpener && drawerOpener.getAttribute('aria-expanded') === 'true';
+		function topGuard() {
+			return Math.max(header.offsetHeight + navRow.offsetHeight, 0);
 		}
 
-		function showHeader() { header.classList.remove('is-hidden'); }
-		function hideHeader() { header.classList.add('is-hidden'); }
-		function resetDirection(nextDirection) { direction = nextDirection || 0; directionDistance = 0; }
+		function interactionActive() {
+			if (navRow.contains(document.activeElement)) { return true; }
+			if (navRow.querySelector('[data-gloskin-submenu-toggle][aria-expanded="true"]')) { return true; }
+			if (document.documentElement.classList.contains('gloskin-ui1-drawer-open')) { return true; }
+			if (document.documentElement.classList.contains('gloskin-ui1-overlay-open')) { return true; }
+			return false;
+		}
 
-		function updateHeader() {
+		function showNav() {
+			navRow.classList.remove('is-hidden');
+			downDistance = 0;
+		}
+		function hideNav() { navRow.classList.add('is-hidden'); }
+
+		function updateNav() {
 			var currentY = Math.max(window.scrollY || 0, 0);
 			var delta = currentY - previousY;
 			previousY = currentY;
-			if (currentY <= topGuard) { showHeader(); resetDirection(0); scheduled = false; return; }
-			if (interactionActive()) { showHeader(); resetDirection(0); scheduled = false; return; }
-			if (0 === delta) { scheduled = false; return; }
-			var nextDirection = delta > 0 ? 1 : -1;
-			if (nextDirection !== direction) { direction = nextDirection; directionDistance = Math.abs(delta); }
-			else { directionDistance += Math.abs(delta); }
-			if (direction < 0 && directionDistance >= showThreshold) { showHeader(); directionDistance = 0; }
-			else if (direction > 0 && directionDistance >= hideThreshold) { hideHeader(); directionDistance = 0; }
+			if (currentY <= topGuard()) { showNav(); scheduled = false; return; }
+			if (interactionActive()) { showNav(); scheduled = false; return; }
+			if (delta < 0) { showNav(); scheduled = false; return; }
+			if (delta > 0) {
+				downDistance += delta;
+				if (downDistance >= hideThreshold) { hideNav(); downDistance = 0; }
+			}
 			scheduled = false;
 		}
 
 		window.addEventListener('scroll', function () {
 			if (scheduled) { return; }
 			scheduled = true;
-			window.requestAnimationFrame(updateHeader);
+			window.requestAnimationFrame(updateNav);
 		}, { passive: true });
-		header.addEventListener('focusin', function () { showHeader(); resetDirection(0); });
+		navRow.addEventListener('focusin', showNav);
+		document.addEventListener('gloskin:sticky-nav-hold', showNav);
 	}
 
 	/* -----------------------------------------------------------------
