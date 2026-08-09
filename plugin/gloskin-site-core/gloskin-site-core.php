@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Gloskin Site Core
  * Description: Gloskin website presentation, content and integration runtime. Test auto pull
- * Version: 0.7.14
+ * Version: 0.7.15
  * Requires PHP: 7.4
  * Text Domain: gloskin-site-core
  */
