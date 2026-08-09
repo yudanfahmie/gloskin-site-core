@@ -462,6 +462,7 @@ final class Gloskin_Site_Core_Template_Service {
 			'checkout_url' => $this->woocommerce->checkout_url(),
 			'cart_count'   => $this->woocommerce->cart_count(),
 			'mini_cart'    => $this->woocommerce->render_mini_cart_body(),
+			'quick_auth'   => $this->woocommerce->should_render_quick_auth(),
 		);
 	}
 

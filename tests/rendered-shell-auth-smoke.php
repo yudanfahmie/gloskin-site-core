@@ -202,6 +202,7 @@ $commerce = array(
 	'checkout_url' => home_url( '/checkout/' ),
 	'cart_count'   => 0,
 	'mini_cart'    => '<p>Keranjang kosong.</p>',
+	'quick_auth'   => $adapter->should_render_quick_auth(),
 );
 $context = array(
 	'view'           => is_account_page() ? 'commerce-native' : 'fixture-page',
@@ -241,6 +242,7 @@ fixture_assert( 1 === $GLOBALS['gl_fixture_footer_runs'], 'wp_footer must run ex
 
 if ( is_account_page() ) {
 	fixture_assert( 0 === substr_count( $html, 'id="gloskin-auth-overlay"' ), 'My Account must not render quick auth overlay' );
+	fixture_assert( 0 === substr_count( $html, 'data-gloskin-auth-open aria-controls="gloskin-auth-overlay"' ), 'My Account Account anchor must not carry quick-auth intent' );
 	if ( ! is_user_logged_in() ) {
 		fixture_assert( 1 === substr_count( $html, 'class="woocommerce-form woocommerce-form-login login"' ), 'My Account must contain one native login form' );
 		fixture_assert( 1 === substr_count( $html, 'class="woocommerce-form woocommerce-form-register register"' ), 'My Account must contain one native register form' );
@@ -253,6 +255,7 @@ if ( is_account_page() ) {
 
 if ( is_user_logged_in() ) {
 	fixture_assert( 0 === substr_count( $html, 'id="gloskin-auth-overlay"' ), 'logged-in pages must not render quick auth overlay' );
+	fixture_assert( 0 === substr_count( $html, 'data-gloskin-auth-open aria-controls="gloskin-auth-overlay"' ), 'logged-in Account anchor must not carry quick-auth intent' );
 	fixture_assert( false !== strpos( $html, 'href="https://example.test/my-account/"' ), 'logged-in Account must keep canonical My Account href' );
 	fixture_assert( false !== strpos( $html, 'aria-label="Akun saya"' ), 'logged-in Account label missing' );
 	echo "rendered-shell-auth-smoke: OK (logged-in)\n";
@@ -260,6 +263,7 @@ if ( is_user_logged_in() ) {
 }
 
 fixture_assert( 1 === substr_count( $html, 'id="gloskin-auth-overlay"' ), 'logged-out shell must render exactly one quick auth overlay' );
+fixture_assert( 2 === substr_count( $html, 'data-gloskin-auth-open aria-controls="gloskin-auth-overlay" aria-expanded="false"' ), 'logged-out Account anchors (full + compact) must carry quick-auth intent server-side' );
 fixture_assert( 1 === substr_count( $html, 'class="woocommerce-form woocommerce-form-login login"' ), 'quick auth must contain one native login form' );
 fixture_assert( 1 === substr_count( $html, 'class="woocommerce-form woocommerce-form-register register"' ), 'quick auth must contain one native register form' );
 fixture_assert( 1 === substr_count( $html, 'name="woocommerce-login-nonce"' ), 'quick auth login nonce duplicated/missing' );

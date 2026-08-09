@@ -492,14 +492,16 @@
 	function initAuth() {
 		var auth = document.querySelector('[data-gloskin-overlay="auth"]');
 		if (!auth) { return; }
-		var triggers = document.querySelectorAll('.gloskin-ui1-utility-btn--account');
+		/* Server rendering already marks the Account trigger(s) with
+		 * data-gloskin-auth-open (see Gloskin_Site_Core_WooCommerce_Adapter::
+		 * should_render_quick_auth() and header.php) whenever this overlay
+		 * exists, so binding reads that canonical intent instead of
+		 * re-discovering and mutating every Account anchor on the page. */
+		var triggers = document.querySelectorAll('[data-gloskin-auth-open]');
 		var forms = auth.querySelector('[data-gloskin-auth-forms]');
 		var tabs = auth.querySelectorAll('[data-gloskin-auth-tab]');
 
 		Array.prototype.forEach.call(triggers, function (trigger) {
-			trigger.setAttribute('data-gloskin-auth-open', '');
-			trigger.setAttribute('aria-controls', 'gloskin-auth-overlay');
-			trigger.setAttribute('aria-expanded', 'false');
 			trigger.addEventListener('click', function (event) {
 				event.preventDefault();
 				overlay.open('auth');

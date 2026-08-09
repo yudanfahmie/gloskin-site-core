@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 $commerce = isset( $gloskin_context['commerce'] ) && is_array( $gloskin_context['commerce'] ) ? $gloskin_context['commerce'] : array( 'available' => false );
 $woo      = ! empty( $commerce['available'] );
 $logo_url = isset( $gloskin_context['logo_url'] ) ? (string) $gloskin_context['logo_url'] : '';
-$quick_auth_from_drawer = $woo && ! is_user_logged_in() && ! ( function_exists( 'is_account_page' ) && is_account_page() );
+$quick_auth_from_drawer = ! empty( $commerce['quick_auth'] );
 ?>
 <div class="gloskin-ui1-drawer" id="gloskin-mobile-drawer" data-gloskin-drawer aria-hidden="true" hidden>
 	<button class="gloskin-ui1-drawer__backdrop" type="button" data-gloskin-drawer-close aria-label="<?php echo esc_attr__( 'Tutup navigasi', 'gloskin-site-core' ); ?>"></button>
