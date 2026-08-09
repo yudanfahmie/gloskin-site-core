@@ -41,7 +41,7 @@ $base = $GLOBALS['gl_registered_styles']['gloskin-ui1-core-base'] ?? array();
 $core = $GLOBALS['gl_registered_styles']['gloskin-ui1-core'] ?? array();
 $production = $GLOBALS['gl_registered_styles']['gloskin-ui1-production'] ?? array();
 $core_script = $GLOBALS['gl_registered_scripts']['gloskin-ui1-core'] ?? array();
-if ( ( $base['deps'] ?? array() ) !== array( 'gloskin-ui1-fonts' ) || ( $core['deps'] ?? array() ) !== array( 'gloskin-ui1-core-base' ) || ( $production['deps'] ?? array() ) !== array( 'gloskin-ui1-core' ) ) { fwrite( STDERR, "frontend stylesheet dependency order failed\n" ); exit( 1 ); }
+if ( ( $base['deps'] ?? array() ) !== array( 'gloskin-ui1-fonts' ) || ( $core['deps'] ?? array() ) !== array( 'gloskin-ui1-core-base' ) || ( $production['deps'] ?? array() ) !== array( 'gloskin-ui1-readiness' ) ) { fwrite( STDERR, "frontend stylesheet dependency order failed\n" ); exit( 1 ); }
 foreach ( array( 'font' => $font, 'core-base' => $base, 'core' => $core, 'production' => $production, 'core-script' => $core_script ) as $label => $asset ) {
 	if ( ( $asset['version'] ?? null ) !== $asset_version ) { fwrite( STDERR, "stale frontend asset version for {$label}\n" ); exit( 1 ); }
 }

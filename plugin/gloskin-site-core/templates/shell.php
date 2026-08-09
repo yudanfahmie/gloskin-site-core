@@ -48,7 +48,7 @@ require __DIR__ . '/parts/composition-helpers.php';
 		}
 		/* Replace only Woo's classic empty-cart message inside this Gloskin
 		 * shell request; Woo still owns cart state, routing and form handling. */
-		if ( function_exists( 'is_cart' ) && is_cart() ) {
+		if ( function_exists( 'is_cart' ) && is_cart() && function_exists( 'remove_action' ) ) {
 			remove_action( 'woocommerce_cart_is_empty', 'wc_empty_cart_message', 10 );
 			add_action( 'woocommerce_cart_is_empty', 'gloskin_ui1_render_native_cart_empty_state', 10 );
 		}

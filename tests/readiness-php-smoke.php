@@ -57,9 +57,21 @@ assert_true( false !== strpos( $empty, 'Coba lagi' ) && false !== strpos( $empty
 ob_start(); gloskin_ui1_render_native_cart_empty_state(); $cart_empty = ob_get_clean();
 assert_true( false !== strpos( $cart_empty, 'Keranjang Anda masih kosong' ) && false !== strpos( $cart_empty, 'https://gloskin.test/shop/' ), 'native cart empty state missing shared copy/action' );
 
-/* Define provider only after fallback assertions; provider must then be sole owner. */
-eval( 'function rank_math_the_breadcrumbs(){ echo "<nav class=\"rank-math-breadcrumb\" aria-label=\"Breadcrumb\"><p>Provider</p></nav>"; }' );
+/* Define provider only after fallback assertions. Output is driven by a
+ * global so both real-world Rank Math states are exercised without
+ * redeclaring the function: present-but-silent (Breadcrumbs module off,
+ * the actual production bug -- see gloskin_ui1_render_breadcrumbs()) and
+ * present-and-rendering. */
+eval( 'function rank_math_the_breadcrumbs(){ echo $GLOBALS["rank_math_output"]; }' );
 $GLOBALS['woo_case'] = '';
+
+$GLOBALS['rank_math_output'] = '';
+$silent_provider = render_crumb( 'about' );
+assert_true( 1 === substr_count( $silent_provider, 'data-gloskin-breadcrumb-owner=' ), 'silent provider must still have exactly one owner' );
+assert_true( false !== strpos( $silent_provider, 'data-gloskin-breadcrumb-owner="gloskin"' ), 'Rank Math function existing but echoing nothing must fall back to the Gloskin breadcrumb, not an empty slot' );
+assert_true( false === strpos( $silent_provider, 'data-gloskin-breadcrumb-owner="rank-math"' ), 'a silent provider must not be claimed as the owner' );
+
+$GLOBALS['rank_math_output'] = '<nav class="rank-math-breadcrumb" aria-label="Breadcrumb"><p>Provider</p></nav>';
 $provider = render_crumb( 'about' );
 assert_true( 1 === substr_count( $provider, 'data-gloskin-breadcrumb-owner=' ), 'provider fixture must have one owner' );
 assert_true( false !== strpos( $provider, 'data-gloskin-breadcrumb-owner="rank-math"' ), 'Rank Math must own provider fixture' );

@@ -21,6 +21,7 @@ helper = read("plugin/gloskin-site-core/templates/parts/readiness-helpers.php")
 shell = read("plugin/gloskin-site-core/templates/shell.php")
 adapter = read("plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php")
 mobile = read("plugin/gloskin-site-core/templates/parts/mobile-drawer.php")
+header = read("plugin/gloskin-site-core/templates/parts/header.php")
 main_plugin = read("plugin/gloskin-site-core/gloskin-site-core.php")
 kernel = read("plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php")
 assets = read("plugin/gloskin-site-core/config/assets.php")
@@ -42,6 +43,7 @@ require("price_html" in adapter and "get_price_html()" in adapter[adapter.index(
 # Breadcrumb ownership and SEO/GEO non-ownership.
 require("function_exists( 'rank_math_the_breadcrumbs' )" in helper, "Rank Math must be provider-first")
 require("rank_math_the_breadcrumbs();" in helper, "Rank Math frontend breadcrumb function missing")
+require("$provider_html" in helper and "'' !== $provider_html" in helper, "breadcrumb provider must be proven non-empty (function existing is not enough) before the slot claims it as owner")
 require('aria-label="Breadcrumb"' in helper and 'aria-current="page"' in helper, "fallback breadcrumb accessibility missing")
 require("'home' === $view" in helper, "homepage breadcrumb suppression missing")
 require("remove_action( 'woocommerce_before_main_content', 'woocommerce_breadcrumb', 20 )" in shell, "Woo duplicate breadcrumb suppression missing")
@@ -87,7 +89,9 @@ require(js.count("fetch(") == 2, "unexpected frontend fetch path added")
 
 # Final shell/header/drawer/footer polish stays scoped to existing presentation owners.
 require(".gloskin-ui1-sheet{top:var(--gloskin-ui1-admin-bar-height)}" in production, "commerce sheets must reuse the canonical admin-bar offset")
-require(".gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>" in production and "::before" in production, "desktop top-level nav indicator missing")
+require('class="gloskin-ui1-nav__bubble"' in header, "desktop nav must render the single shared bubble indicator element")
+require(".gloskin-ui1-nav__bubble" in production and ".is-bubbled" in production, "desktop top-level nav bubble indicator styling missing")
+require("initNavBubble" in js and "is-visible" in js and "is-bubbled" in js, "desktop nav bubble must be positioned/toggled by the shared JS controller")
 require(".gloskin-ui1-footer__brand::after" in production and ".gloskin-ui1-footer__grid>div:not(.gloskin-ui1-footer__brand)" in production, "footer hierarchy polish missing")
 for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "readiness-browser-smoke.py", "rendered-shell-auth-smoke.php"):
     require(required in runner, f"{required} must run through tests/check-runtime.sh")
@@ -96,6 +100,6 @@ for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "read
 require("gloskin_ui1_render_commerce_page_heading" in shell, "cart/checkout/account H1 owner missing")
 header_version = re.search(r"\* Version:\s*([0-9.]+)", main_plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == "0.7.2", "plugin/kernel version mismatch")
+require(header_version == kernel_version == "0.7.3", "plugin/kernel version mismatch")
 
 print("readiness-contract-smoke: OK")

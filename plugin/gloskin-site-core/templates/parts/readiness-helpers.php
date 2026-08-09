@@ -170,8 +170,10 @@ if ( ! function_exists( 'gloskin_ui1_fallback_breadcrumb_items' ) ) {
 if ( ! function_exists( 'gloskin_ui1_render_breadcrumbs' ) ) {
 	/**
 	 * Render exactly one breadcrumb owner on non-home Gloskin shell pages.
-	 * Rank Math owns visible breadcrumbs when its documented function exists;
-	 * otherwise a visible semantic Gloskin fallback is used without schema.
+	 * Rank Math owns visible breadcrumbs when its documented function
+	 * actually renders output; otherwise (function missing, or present but
+	 * silent because its Breadcrumbs module is off) a visible semantic
+	 * Gloskin fallback is used without schema.
 	 *
 	 * @param array<string,mixed> $context Gloskin shell context.
 	 * @return void
@@ -181,10 +183,23 @@ if ( ! function_exists( 'gloskin_ui1_render_breadcrumbs' ) ) {
 		if ( 'home' === $view || ( function_exists( 'is_front_page' ) && is_front_page() ) ) {
 			return;
 		}
-		echo '<div class="gloskin-ui1-breadcrumb-slot"><div class="gloskin-ui1-container">';
+		/* rank_math_the_breadcrumbs() can be defined by an active Rank Math
+		 * install while its own Breadcrumbs module is toggled off in
+		 * settings, in which case it runs and echoes nothing. Existence of
+		 * the function is therefore not proof it will actually render
+		 * anything -- capture its output first and only trust it as the
+		 * owner when that output is non-empty, otherwise fall through to
+		 * the Gloskin breadcrumb so the slot is never left blank. */
+		$provider_html = '';
 		if ( function_exists( 'rank_math_the_breadcrumbs' ) ) {
-			echo '<div class="gloskin-ui1-breadcrumb gloskin-ui1-breadcrumb--provider" data-gloskin-breadcrumb-owner="rank-math">';
+			ob_start();
 			rank_math_the_breadcrumbs();
+			$provider_html = trim( (string) ob_get_clean() );
+		}
+		echo '<div class="gloskin-ui1-breadcrumb-slot"><div class="gloskin-ui1-container">';
+		if ( '' !== $provider_html ) {
+			echo '<div class="gloskin-ui1-breadcrumb gloskin-ui1-breadcrumb--provider" data-gloskin-breadcrumb-owner="rank-math">';
+			echo $provider_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted provider markup, mirrors render_quick_auth_overlay()'s wc_get_template() capture.
 			echo '</div>';
 		} else {
 			$items = gloskin_ui1_fallback_breadcrumb_items( $context );

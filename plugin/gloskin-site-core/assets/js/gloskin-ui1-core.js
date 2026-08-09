@@ -248,6 +248,71 @@
 	}
 
 	/* -----------------------------------------------------------------
+	 * Top-level desktop nav: single liquid bubble that glides between the
+	 * hovered/focused item and rests on the active one, replacing the old
+	 * per-link ::before top rail. CSS owns the link's own text color as a
+	 * no-JS-safe baseline; this only positions/sizes/shows the one shared
+	 * bubble element and flags whichever link it currently sits under.
+	 * ----------------------------------------------------------------- */
+
+	function initNavBubble() {
+		var nav = document.querySelector('.gloskin-ui1-nav--desktop');
+		var bubble = nav ? nav.querySelector('.gloskin-ui1-nav__bubble') : null;
+		var list = nav ? nav.querySelector('.gloskin-ui1-nav__list') : null;
+		if (!nav || !bubble || !list) { return; }
+
+		var links = Array.prototype.filter.call(list.children, function (item) {
+			return item.classList.contains('gloskin-ui1-nav__item');
+		}).map(function (item) {
+			var row = item.querySelector(':scope > .gloskin-ui1-nav__row');
+			return row ? row.querySelector(':scope > .gloskin-ui1-nav__link') : null;
+		}).filter(Boolean);
+
+		var bubbled = null;
+
+		function setBubbled(link) {
+			if (bubbled && bubbled !== link) { bubbled.classList.remove('is-bubbled'); }
+			bubbled = link;
+			if (link) { link.classList.add('is-bubbled'); }
+		}
+
+		function moveTo(link) {
+			if (!link) {
+				bubble.classList.remove('is-visible');
+				setBubbled(null);
+				return;
+			}
+			var navRect = nav.getBoundingClientRect();
+			var linkRect = link.getBoundingClientRect();
+			bubble.style.width = linkRect.width + 'px';
+			bubble.style.height = linkRect.height + 'px';
+			bubble.style.transform = 'translate(' + (linkRect.left - navRect.left) + 'px,' + (linkRect.top - navRect.top) + 'px)';
+			bubble.classList.add('is-visible');
+			setBubbled(link);
+		}
+
+		function activeLink() {
+			return links.filter(function (link) {
+				return link.closest('.gloskin-ui1-nav__item').classList.contains('is-active');
+			})[0] || null;
+		}
+
+		function restToActive() { moveTo(activeLink()); }
+
+		links.forEach(function (link) {
+			link.addEventListener('mouseenter', function () { moveTo(link); });
+			link.addEventListener('focus', function () { moveTo(link); });
+		});
+		nav.addEventListener('mouseleave', restToActive);
+		list.addEventListener('focusout', function (event) {
+			if (!list.contains(event.relatedTarget)) { restToActive(); }
+		});
+		window.addEventListener('resize', restToActive);
+
+		restToActive();
+	}
+
+	/* -----------------------------------------------------------------
 	 * Smart sticky navigation row
 	 * ----------------------------------------------------------------- */
 
@@ -738,6 +803,7 @@
 		initOverlayCloseButtons();
 		initDrawer();
 		initDisclosures();
+		initNavBubble();
 		initSmartHeader();
 		initCompactSticky();
 		initSearch();

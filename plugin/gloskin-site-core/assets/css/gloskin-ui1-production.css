@@ -101,36 +101,40 @@ body.gloskin-ui1{
 /* Fixed commerce sheets use the single existing WordPress-toolbar offset owner. */
 .gloskin-ui1-sheet{top:var(--gloskin-ui1-admin-bar-height)}
 
-/* Top-level desktop navigation: quiet accent text with a precise top rail. */
+/* Top-level desktop navigation: a single liquid bubble tracks whichever
+   item is hovered/focused/active and glides between them (gloskin-ui1-core.js
+   initNavBubble positions/sizes it via inline transform+width+height); the
+   link itself only ever owns its own text color so the indicator degrades
+   to a plain color change if JS never runs. */
+.gloskin-ui1-nav--desktop{position:relative;z-index:0}
 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{
 	position:relative;
+	z-index:1;
 	background:transparent;
 	transition:color 160ms ease;
-}
-.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link::before{
-	position:absolute;
-	top:-11px;
-	right:9px;
-	left:9px;
-	height:2px;
-	border-radius:0 0 999px 999px;
-	background:var(--gloskin-accent);
-	content:"";
-	opacity:0;
-	transform:scaleX(.45);
-	transform-origin:50% 50%;
-	transition:transform 180ms cubic-bezier(.22,1,.36,1),opacity 140ms ease;
 }
 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link:hover,
 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item.is-active>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{
 	background:transparent;
 	color:var(--gloskin-accent-readable);
 }
-.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link:hover::before,
-.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item.is-active>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link::before{
-	opacity:1;
-	transform:scaleX(1);
+.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled{
+	color:var(--gloskin-inverse);
 }
+.gloskin-ui1-nav__bubble{
+	position:absolute;
+	z-index:0;
+	top:0;
+	left:0;
+	width:0;
+	height:0;
+	border-radius:999px;
+	background:var(--gloskin-accent);
+	opacity:0;
+	pointer-events:none;
+	transition:transform 360ms cubic-bezier(.22,1,.36,1),width 360ms cubic-bezier(.22,1,.36,1),height 360ms cubic-bezier(.22,1,.36,1),opacity 200ms ease;
+}
+.gloskin-ui1-nav__bubble.is-visible{opacity:1}
 
 /* Premium footer polish without changing its information architecture. */
 .gloskin-ui1-footer__grid{
