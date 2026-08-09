@@ -74,11 +74,15 @@ for rel in (
 
 # Native Woo My Account/auth ownership and real shell lifecycle.
 require("woocommerce-MyAccount-navigation" in css and "woocommerce-MyAccount-content" in css, "native My Account workspace styling missing")
-require(".woocommerce-account.logged-in .gloskin-ui1-commerce-native,.woocommerce-account.logged-in .gloskin-ui1-commerce-native>.woocommerce{display:block;width:100%}" in css, "logged-in My Account must have one block layout owner instead of nested grids")
+require(".woocommerce-account.logged-in .gloskin-ui1-commerce-native{display:block}" in css, "logged-in My Account outer wrapper must stay on its compact width owner")
+require(".woocommerce-account.logged-in .gloskin-ui1-commerce-native>.woocommerce{display:block;width:100%;max-width:none;margin:0}" in css, "only the inner Woo wrapper may expand to the compact workspace width")
+require(".woocommerce-account .gloskin-ui1-commerce-heading>.gloskin-ui1-container,.woocommerce-account .gloskin-ui1-commerce-native{width:calc(100% - 40px);max-width:980px" in css, "My Account heading and workspace must share the compact 980px measure")
 require(".gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation{float:none;width:100%;position:static;overflow-x:auto" in css, "My Account navigation must neutralize Woo float/width and own the horizontal tab strip")
 require("display:flex;align-items:flex-end;min-width:max-content" in css, "My Account endpoints must remain responsive horizontal tabs")
 require(".gloskin-ui1-commerce-native .woocommerce-MyAccount-content{float:none;clear:both;width:100%" in css, "My Account content must neutralize Woo float/width and stay full-width below tabs")
-require(".woocommerce-account .gloskin-ui1-commerce-heading h1{font-size:clamp(2.25rem,3.4vw,3.2rem)}" in css, "My Account H1 must stay compact against the later generic heading scale")
+require(".woocommerce-account .gloskin-ui1-commerce-heading h1{font-size:clamp(2.2rem,3.1vw,2.9rem)}" in css, "My Account H1 must stay compact against the later generic heading scale")
+require(".woocommerce-MyAccount-content a:not(.button){color:var(--gloskin-accent-readable)}" in css, "My Account inline-link color must not override Woo action buttons")
+require(".woocommerce-info .button" in css and "float:none" in css and "color:#fff" in css and "margin:0 0 0 auto" in css, "My Account notice action must neutralize Woo float and keep readable button foreground")
 require("wc_get_template( 'myaccount/form-login.php' )" in adapter, "quick auth must render Woo native form template")
 require("woocommerce_enable_myaccount_registration" in adapter, "Woo registration setting must control switch")
 require("should_render_quick_auth" in adapter and "is_account_page()" in adapter, "native account page must suppress duplicate overlay form")
@@ -115,6 +119,6 @@ for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "read
 require("gloskin_ui1_render_commerce_page_heading" in shell, "cart/checkout/account H1 owner missing")
 header_version = re.search(r"\* Version:\s*([0-9.]+)", main_plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == "0.7.11", "plugin/kernel version mismatch")
+require(header_version == kernel_version == "0.7.12", "plugin/kernel version mismatch")
 
 print("readiness-contract-smoke: OK")
