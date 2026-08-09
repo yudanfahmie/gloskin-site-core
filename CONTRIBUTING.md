@@ -16,10 +16,11 @@ For normal Gloskin development, this repository is authoritative. Read relevant 
 2. `docs/architecture-efficiency-audit.md`
 3. `docs/runtime-service-map.csv`
 4. `docs/content-data-contracts.md`
-5. `docs/morgen-v6-reverse-engineering.md`
-6. `docs/implementation-plan.md`
-7. `docs/page-matrix.csv`
-8. `docs/prune-matrix.csv`
+5. `docs/seo-geo-engineering-contract.md`
+6. `docs/morgen-v6-reverse-engineering.md`
+7. `docs/implementation-plan.md`
+8. `docs/page-matrix.csv`
+9. `docs/prune-matrix.csv`
 
 `yudanfahmie/project-9901` is provenance/raw reference only. Do not modify it, copy its raw files here, or make routine implementation dependent on re-reading it. If a value is not captured in canonical Gloskin docs, treat it as pending/new input instead of silently rediscovering raw assumptions.
 
@@ -34,6 +35,7 @@ The pinned Morgen source may be inspected only when implementing a documented re
 5. Inspect current implementation and relevant canonical docs.
 6. Define one coherent outcome for the change.
 7. Identify the canonical service/owner for every runtime concern being changed.
+8. For route/template/navigation changes, verify the SEO/GEO engineering contract remains satisfied.
 
 ## Architecture efficiency contract
 
@@ -57,6 +59,28 @@ Mandatory rules:
 - do not dual-write relationships merely for convenience; keep one canonical relationship direction unless measured performance later justifies denormalization.
 
 See `docs/architecture-efficiency-audit.md` and `docs/runtime-service-map.csv`.
+
+## SEO/GEO engineering contract
+
+Developer-side SEO/GEO friendliness is part of the Gloskin product baseline. It is not operational SEO work.
+
+Any route/template/component change must preserve:
+
+- server-rendered, crawlable primary content;
+- semantic landmarks and logical heading hierarchy;
+- one clear page topic/H1;
+- stable WordPress/Woo canonical route behavior;
+- crawlable anchor-based navigation/internal links;
+- useful hub/detail relationships and breadcrumb capability;
+- metadata/schema provider compatibility without duplicate output;
+- meaningful WordPress Media alt-data support;
+- Core Web Vitals-minded asset/media behavior;
+- graceful empty states rather than invented SEO copy;
+- no hidden keyword/GEO blocks, cloaking, duplicate SEO prose, or crawler-specific content hacks.
+
+Operational SEO remains excluded: keyword campaigns, backlink work, recurring GSC/GA4/GBP operations, ranking/reporting, media/social campaigns, and content-production operations.
+
+Do not interpret older documentation phrases such as “SEO/GEO/schema administration excluded” as excluding semantic HTML, crawlability, performance, stable IA, or provider-safe technical structure. Read `docs/seo-geo-engineering-contract.md`.
 
 ## Validation and persistence discipline
 
@@ -87,7 +111,7 @@ No public `wp_ajax_nopriv_*` endpoint belongs in v1 unless a later explicit feat
 - Do not wholesale-copy Morgen.
 - Do not introduce Morgen historical migrations, repair state, compatibility aliases, virtual route engine, diagnosis bundle, telemetry, custom mail or product systems.
 - Do not duplicate WooCommerce product/cart/checkout/order/payment ownership.
-- Do not introduce developer work from explicitly excluded SEO/marketing/infrastructure scope.
+- Do not introduce operational SEO/marketing/infrastructure tooling that is outside developer scope; developer-side semantic/crawlable/performance structure remains mandatory.
 
 ### Staging editorial media policy
 
@@ -100,7 +124,7 @@ No public `wp_ajax_nopriv_*` endpoint belongs in v1 unless a later explicit feat
 
 ## Documentation discipline
 
-When implementation changes architecture ownership, service boundaries, storage, content fields, relationships, routes, or retained/pruned Morgen dependencies, update the matching canonical documentation in the **same coherent commit**.
+When implementation changes architecture ownership, service boundaries, storage, content fields, relationships, routes, SEO/GEO engineering responsibilities, or retained/pruned Morgen dependencies, update the matching canonical documentation in the **same coherent commit**.
 
 Do not let implementation knowledge live only in chat, commit messages, or developer memory.
 
@@ -112,9 +136,10 @@ Do not let implementation knowledge live only in chat, commit messages, or devel
 4. Check for secrets, raw client files, generated archives and debug artifacts.
 5. Run static architecture/exclusion checks when relevant.
 6. Confirm no duplicate concern owner or corrective shim was introduced.
-7. Commit the coherent change set.
-8. Push directly to `origin/main`.
-9. Verify remote `main` points to the pushed commit.
-10. Inspect final commit stats/diff.
+7. For public presentation changes, confirm SEO/GEO structural invariants and no duplicate metadata/schema owner.
+8. Commit the coherent change set.
+9. Push directly to `origin/main`.
+10. Verify remote `main` points to the pushed commit.
+11. Inspect final commit stats/diff.
 
 Do not claim completion when changes exist only locally or push verification fails.
