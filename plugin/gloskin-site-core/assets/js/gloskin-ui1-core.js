@@ -34,6 +34,28 @@
 		document.dispatchEvent(new CustomEvent('gloskin:sticky-nav-hold'));
 	}
 
+
+	function emptyStateIcon(kind) {
+		var paths = {
+			search: '<circle cx="24" cy="24" r="10"/><path d="m31.5 31.5 8 8"/><path d="M18 24h12"/>',
+			wishlist: '<path d="M28 43S12 33 12 21.5C12 15.7 16.4 12 21 12c3.1 0 5.4 1.6 7 3.7 1.6-2.1 3.9-3.7 7-3.7 4.6 0 9 3.7 9 9.5C44 33 28 43 28 43Z"/>',
+			generic: '<circle cx="28" cy="28" r="16"/><path d="M22 28h12M28 22v12"/>'
+		};
+		var path = paths[kind] || paths.generic;
+		return '<svg viewBox="0 0 56 56" width="56" height="56" fill="none" aria-hidden="true" focusable="false"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + path + '</g><circle class="gloskin-ui1-empty-state__accent" cx="44" cy="13" r="3" fill="currentColor" stroke="none"/></svg>';
+	}
+
+	function emptyStateMarkup(kind, title, copy, actionLabel, actionUrl) {
+		var html = '<div class="gloskin-ui1-empty-state gloskin-ui1-empty-state--' + escapeHtml(kind || 'generic') + '">';
+		html += '<span class="gloskin-ui1-empty-state__visual">' + emptyStateIcon(kind) + '</span>';
+		html += '<strong class="gloskin-ui1-empty-state__title">' + escapeHtml(title) + '</strong>';
+		if (copy) { html += '<p class="gloskin-ui1-empty-state__copy">' + escapeHtml(copy) + '</p>'; }
+		if (actionLabel && actionUrl) {
+			html += '<a class="gloskin-ui1-text-link gloskin-ui1-empty-state__action" href="' + escapeHtml(actionUrl) + '">' + escapeHtml(actionLabel) + '</a>';
+		}
+		return html + '</div>';
+	}
+
 	/* -----------------------------------------------------------------
 	 * Unified overlay system — one overlay may own focus at a time
 	 * ----------------------------------------------------------------- */
@@ -185,6 +207,16 @@
 			}
 			if (dialog) { trapFocus(dialog, event); }
 		});
+
+		/* Logged-out Account reuses the same overlay state owner as Search/Cart/Wishlist. */
+		var authFromDrawer = drawer.querySelector('[data-gloskin-auth-open-from-drawer]');
+		if (authFromDrawer) {
+			authFromDrawer.addEventListener('click', function (event) {
+				event.preventDefault();
+				closeDrawer();
+				setTimeout(function () { overlay.open('auth'); }, 80);
+			});
+		}
 
 		/* Wishlist trigger from within drawer — close drawer, then open wishlist */
 		var wishlistFromDrawer = drawer.querySelector('[data-gloskin-wishlist-open-from-drawer]');
@@ -354,11 +386,18 @@
 			if (clearBtn) { clearBtn.hidden = !input.value; }
 		}
 
+
+		function clearResults() {
+			clearTimeout(debounceTimer);
+			if (abortController) { abortController.abort(); abortController = null; }
+			resultsContainer.innerHTML = '';
+		}
+
 		if (clearBtn) {
 			clearBtn.addEventListener('click', function () {
 				input.value = '';
 				updateClear();
-				resultsContainer.innerHTML = '';
+				clearResults();
 				input.focus();
 			});
 		}
@@ -367,7 +406,7 @@
 			updateClear();
 			var query = input.value.trim();
 			if (query.length < 2) {
-				resultsContainer.innerHTML = '';
+				clearResults();
 				return;
 			}
 			clearTimeout(debounceTimer);
@@ -388,26 +427,38 @@
 		function doSearch(query) {
 			if (abortController) { abortController.abort(); }
 			abortController = typeof AbortController !== 'undefined' ? new AbortController() : null;
-			resultsContainer.innerHTML = '<div class="gloskin-ui1-search-overlay__loading"><span></span></div>';
+			resultsContainer.innerHTML = '<div class="gloskin-ui1-search-overlay__loading" aria-label="Memuat hasil"><span aria-hidden="true"></span></div>';
 
 			var url = (config.restUrl || '/wp-json/gloskin/v1/') + 'search?q=' + encodeURIComponent(query);
 			var fetchOpts = { headers: { 'X-WP-Nonce': config.restNonce || '' } };
 			if (abortController) { fetchOpts.signal = abortController.signal; }
 
 			fetch(url, fetchOpts)
-				.then(function (res) { return res.json(); })
+				.then(function (res) {
+					if (!res.ok) { throw new Error('search'); }
+					return res.json();
+				})
 				.then(function (data) { renderResults(data.groups || []); })
 				.catch(function (err) {
 					if (err.name === 'AbortError') { return; }
-					resultsContainer.innerHTML = '<p class="gloskin-ui1-search-overlay__error">' +
-						'Pencarian tidak tersedia saat ini.' + '</p>';
+					var fallback = config.searchFallback ? config.searchFallback + encodeURIComponent(query) : '';
+					resultsContainer.innerHTML = emptyStateMarkup(
+						'search',
+						'Pencarian belum dapat dimuat',
+						'Silakan coba kembali atau lanjutkan melalui pencarian biasa.',
+						fallback ? 'Buka pencarian biasa' : '',
+						fallback
+					);
 				});
 		}
 
 		function renderResults(groups) {
 			if (!groups.length) {
-				resultsContainer.innerHTML = '<p class="gloskin-ui1-search-overlay__empty">' +
-					'Tidak ada hasil ditemukan.' + '</p>';
+				resultsContainer.innerHTML = emptyStateMarkup(
+					'search',
+					'Tidak menemukan hasil yang sesuai',
+					'Coba kata lain atau gunakan istilah yang lebih singkat.'
+				);
 				return;
 			}
 			var html = '';
@@ -432,6 +483,58 @@
 			}
 			resultsContainer.innerHTML = html;
 		}
+	}
+
+	/* -----------------------------------------------------------------
+	 * Quick Account auth overlay — native Woo forms, normal POST handling
+	 * ----------------------------------------------------------------- */
+
+	function initAuth() {
+		var auth = document.querySelector('[data-gloskin-overlay="auth"]');
+		if (!auth) { return; }
+		var triggers = document.querySelectorAll('.gloskin-ui1-utility-btn--account');
+		var forms = auth.querySelector('[data-gloskin-auth-forms]');
+		var tabs = auth.querySelectorAll('[data-gloskin-auth-tab]');
+
+		Array.prototype.forEach.call(triggers, function (trigger) {
+			trigger.setAttribute('data-gloskin-auth-open', '');
+			trigger.setAttribute('aria-controls', 'gloskin-auth-overlay');
+			trigger.setAttribute('aria-expanded', 'false');
+			trigger.addEventListener('click', function (event) {
+				event.preventDefault();
+				overlay.open('auth');
+				setTimeout(function () {
+					var username = auth.querySelector('#username');
+					if (username) { username.focus(); }
+				}, 60);
+			});
+		});
+
+		if (!forms || !tabs.length) { return; }
+		var loginColumn = forms.querySelector('#customer_login .u-column1');
+		var registerColumn = forms.querySelector('#customer_login .u-column2');
+		if (!loginColumn || !registerColumn) { return; }
+		forms.classList.add('is-enhanced');
+
+		function show(which, focusField) {
+			var login = which !== 'register';
+			loginColumn.hidden = !login;
+			registerColumn.hidden = login;
+			Array.prototype.forEach.call(tabs, function (tab) {
+				var active = tab.getAttribute('data-gloskin-auth-tab') === which;
+				tab.classList.toggle('is-active', active);
+				tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+			});
+			if (focusField) {
+				var field = login ? loginColumn.querySelector('#username') : registerColumn.querySelector('#reg_email');
+				if (field) { field.focus(); }
+			}
+		}
+
+		show('login', false);
+		Array.prototype.forEach.call(tabs, function (tab) {
+			tab.addEventListener('click', function () { show(tab.getAttribute('data-gloskin-auth-tab'), true); });
+		});
 	}
 
 	/* -----------------------------------------------------------------
@@ -555,10 +658,13 @@
 			if (!body) { return; }
 			var ids = getIds();
 			if (!ids.length) {
-				body.innerHTML = '<div class="gloskin-ui1-wishlist-sheet__empty">' +
-					'<p>Belum ada produk favorit.</p>' +
-					'<a class="gloskin-ui1-text-link" href="' + escapeHtml(config.cartUrl ? config.cartUrl.replace(/\/cart\/$/, '/skincare/') : '/skincare/') + '">Lihat Skincare</a>' +
-					'</div>';
+				body.innerHTML = emptyStateMarkup(
+					'wishlist',
+					'Belum ada produk favorit',
+					'Produk yang Anda simpan akan muncul di sini agar mudah ditemukan kembali.',
+					'Lihat Skincare',
+					config.cartUrl ? config.cartUrl.replace(/\/cart\/$/, '/skincare/') : '/skincare/'
+				);
 				return;
 			}
 			body.innerHTML = '<div class="gloskin-ui1-search-overlay__loading"><span></span></div>';
@@ -574,8 +680,13 @@
 					saveIds(currentIds);
 
 					if (!products.length) {
-						body.innerHTML = '<div class="gloskin-ui1-wishlist-sheet__empty">' +
-							'<p>Belum ada produk favorit.</p></div>';
+						body.innerHTML = emptyStateMarkup(
+							'wishlist',
+							'Belum ada produk favorit',
+							'Produk yang Anda simpan akan muncul di sini agar mudah ditemukan kembali.',
+							'Lihat Skincare',
+							config.cartUrl ? config.cartUrl.replace(/\/cart\/$/, '/skincare/') : '/skincare/'
+						);
 						return;
 					}
 					var html = '<ul class="gloskin-ui1-wishlist-sheet__list">';
@@ -594,7 +705,13 @@
 					updateBadges();
 				})
 				.catch(function () {
-					body.innerHTML = '<p class="gloskin-ui1-wishlist-sheet__error">Tidak dapat memuat produk favorit.</p>';
+					body.innerHTML = emptyStateMarkup(
+						'wishlist',
+						'Favorit belum dapat dimuat',
+						'Produk yang tersimpan tetap aman di perangkat ini. Silakan coba lagi.',
+						'Lihat Skincare',
+						config.cartUrl ? config.cartUrl.replace(/\/cart\/$/, '/skincare/') : '/skincare/'
+					);
 				});
 		}
 
@@ -622,6 +739,7 @@
 		initSmartHeader();
 		initCompactSticky();
 		initSearch();
+		initAuth();
 		initCart();
 		initWishlist();
 	}

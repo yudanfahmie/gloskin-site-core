@@ -35,6 +35,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		add_filter( 'body_class', array( $this, 'body_classes' ) );
 		add_filter( 'woocommerce_add_to_cart_fragments', array( $this, 'cart_fragments' ) );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
+		add_action( 'wp_footer', array( $this, 'render_quick_auth_overlay' ), 5 );
 	}
 
 	/**
@@ -176,6 +177,93 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		return (string) $wc->cart->get_cart_subtotal();
 	}
 
+
+	/**
+	 * Whether the quick auth overlay may exist on this request.
+	 * Native My Account remains the sole auth form owner on the account page.
+	 *
+	 * @return bool
+	 */
+	public function should_render_quick_auth() {
+		if ( ! $this->is_available() || is_user_logged_in() || '' === $this->account_url() ) {
+			return false;
+		}
+		return ! ( function_exists( 'is_account_page' ) && is_account_page() );
+	}
+
+	/**
+	 * Render Woo's native login/register template inside the existing Gloskin
+	 * overlay system. Credentials are never read or submitted by custom JS.
+	 *
+	 * @return void
+	 */
+	public function render_quick_auth_overlay() {
+		if ( ! $this->should_render_quick_auth() || ! function_exists( 'wc_get_template' ) ) {
+			return;
+		}
+
+		$account_url = $this->account_url();
+		ob_start();
+		wc_get_template( 'myaccount/form-login.php' );
+		$form_html = trim( (string) ob_get_clean() );
+		if ( '' === $form_html ) {
+			return;
+		}
+
+		$form_html            = $this->route_auth_forms_to_account( $form_html, $account_url );
+		$registration_enabled = 'yes' === get_option( 'woocommerce_enable_myaccount_registration' );
+		?>
+		<div class="gloskin-ui1-auth-overlay" id="gloskin-auth-overlay" data-gloskin-overlay="auth" aria-hidden="true" hidden>
+			<button class="gloskin-ui1-auth-overlay__backdrop" type="button" data-gloskin-overlay-close aria-label="<?php echo esc_attr__( 'Tutup akun', 'gloskin-site-core' ); ?>"></button>
+			<section class="gloskin-ui1-auth-overlay__panel" role="dialog" aria-modal="true" aria-labelledby="gloskin-auth-title">
+				<div class="gloskin-ui1-auth-overlay__head">
+					<div><p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Akun Gloskin', 'gloskin-site-core' ); ?></p><h2 id="gloskin-auth-title"><?php echo esc_html__( 'Masuk untuk melanjutkan', 'gloskin-site-core' ); ?></h2><p><?php echo esc_html__( 'Akses pesanan dan detail akun Anda dengan aman.', 'gloskin-site-core' ); ?></p></div>
+					<button class="gloskin-ui1-sheet__close" type="button" data-gloskin-overlay-close aria-label="<?php echo esc_attr__( 'Tutup akun', 'gloskin-site-core' ); ?>"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true" focusable="false"><path d="M4 4l10 10M14 4 4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+				</div>
+				<?php if ( $registration_enabled ) : ?>
+					<div class="gloskin-ui1-auth-switch" aria-label="<?php echo esc_attr__( 'Pilih autentikasi', 'gloskin-site-core' ); ?>">
+						<button type="button" class="is-active" data-gloskin-auth-tab="login" aria-pressed="true"><?php echo esc_html__( 'Masuk', 'gloskin-site-core' ); ?></button>
+						<button type="button" data-gloskin-auth-tab="register" aria-pressed="false"><?php echo esc_html__( 'Buat Akun', 'gloskin-site-core' ); ?></button>
+					</div>
+				<?php endif; ?>
+				<div class="gloskin-ui1-auth-forms" data-gloskin-auth-forms data-registration-enabled="<?php echo $registration_enabled ? 'yes' : 'no'; ?>">
+					<?php echo $form_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- native Woo template output. ?>
+				</div>
+			</section>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Point only the captured native login/register forms at canonical My Account.
+	 * This preserves normal Woo form handling while ensuring validation failures
+	 * render on the authoritative account surface.
+	 *
+	 * @param string $html Native Woo form HTML.
+	 * @param string $account_url Canonical account URL.
+	 * @return string
+	 */
+	private function route_auth_forms_to_account( $html, $account_url ) {
+		if ( '' === $account_url ) {
+			return $html;
+		}
+
+		$result = preg_replace_callback(
+			'/<form\b([^>]*)>/i',
+			static function ( $matches ) use ( $account_url ) {
+				$attributes = isset( $matches[1] ) ? (string) $matches[1] : '';
+				$is_auth    = false !== stripos( $attributes, 'woocommerce-form-login' ) || false !== stripos( $attributes, 'woocommerce-form-register' );
+				if ( ! $is_auth || preg_match( '/\saction\s*=/i', $attributes ) ) {
+					return $matches[0];
+				}
+				return '<form action="' . esc_url( $account_url ) . '"' . $attributes . '>';
+			},
+			$html
+		);
+
+		return is_string( $result ) ? $result : $html;
+	}
+
 	/**
 	 * Normalized cart items for the mini-cart sheet.
 	 *
@@ -293,12 +381,15 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 			}
 			echo '</div>';
 		} else {
-			echo '<div class="gloskin-ui1-cart-sheet__empty">';
-			echo '<p>' . esc_html__( 'Keranjang Anda masih kosong.', 'gloskin-site-core' ) . '</p>';
-			if ( $cart_url ) {
-				echo '<a class="gloskin-ui1-text-link" href="' . esc_url( home_url( '/skincare/' ) ) . '">' . esc_html__( 'Lihat Skincare', 'gloskin-site-core' ) . '</a>';
+			$helper_file = dirname( __DIR__ ) . '/templates/parts/readiness-helpers.php';
+			if ( is_readable( $helper_file ) ) {
+				require_once $helper_file;
 			}
-			echo '</div>';
+			if ( function_exists( 'gloskin_ui1_render_empty_state' ) ) {
+				gloskin_ui1_render_empty_state( 'cart', __( 'Keranjang Anda masih kosong', 'gloskin-site-core' ), __( 'Produk yang Anda tambahkan akan tampil di sini.', 'gloskin-site-core' ), __( 'Lihat Skincare', 'gloskin-site-core' ), home_url( '/skincare/' ) );
+			} else {
+				echo '<p>' . esc_html__( 'Keranjang Anda masih kosong.', 'gloskin-site-core' ) . '</p>';
+			}
 		}
 		return ob_get_clean();
 	}
@@ -409,13 +500,15 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		) );
 		$results = array();
 		foreach ( $posts as $post ) {
+			$product   = function_exists( 'wc_get_product' ) ? wc_get_product( $post->ID ) : null;
 			$results[] = array(
-				'id'       => (int) $post->ID,
-				'title'    => get_the_title( $post ),
-				'url'      => (string) get_permalink( $post ),
-				'excerpt'  => wp_trim_words( has_excerpt( $post ) ? get_the_excerpt( $post ) : $post->post_content, 12 ),
-				'image_id' => absint( get_post_thumbnail_id( $post->ID ) ),
-				'type'     => 'produk',
+				'id'         => (int) $post->ID,
+				'title'      => get_the_title( $post ),
+				'url'        => (string) get_permalink( $post ),
+				'excerpt'    => wp_trim_words( has_excerpt( $post ) ? get_the_excerpt( $post ) : $post->post_content, 12 ),
+				'image_id'   => absint( get_post_thumbnail_id( $post->ID ) ),
+				'price_html' => is_object( $product ) && method_exists( $product, 'get_price_html' ) ? (string) $product->get_price_html() : '',
+				'type'       => 'produk',
 			);
 		}
 		return $results;

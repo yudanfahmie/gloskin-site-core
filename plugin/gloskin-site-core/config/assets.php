@@ -27,9 +27,14 @@ return array(
 			'deps'  => array( 'gloskin-ui1-core-base' ),
 			'media' => 'all',
 		),
+		'gloskin-ui1-readiness' => array(
+			'src'   => 'assets/css/gloskin-ui1-readiness.css',
+			'deps'  => array( 'gloskin-ui1-core' ),
+			'media' => 'all',
+		),
 		'gloskin-ui1-production' => array(
 			'src'   => 'assets/css/gloskin-ui1-production.css',
-			'deps'  => array( 'gloskin-ui1-core' ),
+			'deps'  => array( 'gloskin-ui1-readiness' ),
 			'media' => 'all',
 		),
 	),
