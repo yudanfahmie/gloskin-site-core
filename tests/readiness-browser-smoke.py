@@ -98,31 +98,52 @@ with sync_playwright() as p:
     page.keyboard.press("Escape")
     page.wait_for_timeout(340)
 
-    # Desktop top-level nav: accent text + top rail; submenu is unaffected.
+    # Desktop top-level nav: the liquid bubble owns white foreground, parent
+    # chevrons stay naked, and nested submenu tracks stretch to the wrapper.
     top_links = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list > .gloskin-ui1-nav__item > .gloskin-ui1-nav__row > .gloskin-ui1-nav__link")
     check(top_links.count() >= 2, "desktop top-level navigation missing")
-    accent = page.evaluate("""() => {
+    inverse = page.evaluate("""() => {
         const probe = document.createElement('span');
-        probe.style.color = 'var(--gloskin-accent-readable)';
+        probe.style.color = 'var(--gloskin-inverse)';
         document.body.appendChild(probe);
         const value = getComputedStyle(probe).color;
         probe.remove();
         return value;
     }""")
-    active = top_links.nth(0)
-    hover = top_links.nth(1)
-    check(active.evaluate("e => getComputedStyle(e).color") == accent, "active desktop nav text is not accent")
-    active_rail = active.evaluate("e => ({opacity:getComputedStyle(e,'::before').opacity,height:getComputedStyle(e,'::before').height})")
-    check(active_rail["opacity"] == "1" and active_rail["height"] == "2px", f"active nav rail incorrect: {active_rail}")
+    active = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list > .gloskin-ui1-nav__item.is-active > .gloskin-ui1-nav__row > .gloskin-ui1-nav__link").first
+    hover = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list > .gloskin-ui1-nav__item:not(.is-active) > .gloskin-ui1-nav__row > .gloskin-ui1-nav__link").first
+    bubble = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__bubble")
+    check(active.count() == 1 and bubble.count() == 1, "active nav/bubble fixture missing")
+    check(active.evaluate("e => e.classList.contains('is-bubbled')"), "active desktop nav did not receive bubble state")
+    check(active.evaluate("e => getComputedStyle(e).color") == inverse, "active bubbled nav text is not white")
     hover.hover()
     page.wait_for_timeout(220)
-    check(hover.evaluate("e => getComputedStyle(e).color") == accent, "hover desktop nav text is not accent")
-    check(hover.evaluate("e => getComputedStyle(e,'::before').opacity") == "1", "hover desktop nav rail missing")
+    check(hover.evaluate("e => e.classList.contains('is-bubbled')"), "hover desktop nav did not receive bubble state")
+    check(hover.evaluate("e => getComputedStyle(e).color") == inverse, "hover bubbled nav text is not white")
+    check(bubble.evaluate("e => getComputedStyle(e).opacity") == "1", "desktop nav bubble did not become visible")
     hover.focus()
     focus_style = hover.evaluate("e => ({style:getComputedStyle(e).outlineStyle,width:getComputedStyle(e).outlineWidth})")
     check(focus_style["style"] != "none" and float(focus_style["width"].replace("px", "")) >= 3, f"desktop nav focus-visible weakened: {focus_style}")
-    submenu_link = page.locator(".gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__link").first
-    check(submenu_link.evaluate("e => getComputedStyle(e,'::before').content") == "none", "submenu received top-level nav rail")
+
+    parent_toggle = page.locator(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list > .gloskin-ui1-nav__item > .gloskin-ui1-nav__row > .gloskin-ui1-nav__toggle").first
+    check(parent_toggle.count() == 1, "desktop parent-menu chevron missing")
+    parent_toggle.hover()
+    toggle_bg = parent_toggle.evaluate("e => getComputedStyle(e).backgroundColor")
+    check(toggle_bg in ("rgba(0, 0, 0, 0)", "transparent"), f"desktop chevron hover still has a background: {toggle_bg}")
+    parent_toggle.click()
+    submenu_id = parent_toggle.get_attribute("aria-controls")
+    submenu = page.locator(f"#{submenu_id}")
+    check(submenu.count() == 1 and submenu.is_visible(), "desktop submenu did not open")
+    sublist = submenu.locator(":scope > .gloskin-ui1-nav__list")
+    submenu_link = sublist.locator(":scope > .gloskin-ui1-nav__item > .gloskin-ui1-nav__row > .gloskin-ui1-nav__link, :scope > .gloskin-ui1-nav__item > .gloskin-ui1-nav__link").first
+    sublist_style = sublist.evaluate("e => ({justify:getComputedStyle(e).justifyContent,align:getComputedStyle(e).alignItems})")
+    check(sublist_style["justify"] == "stretch" and sublist_style["align"] == "stretch", f"submenu inherited centered wrapper alignment: {sublist_style}")
+    sublist_box = sublist.bounding_box()
+    submenu_link_box = submenu_link.bounding_box()
+    check(sublist_box and submenu_link_box, "submenu geometry missing")
+    check(abs(submenu_link_box["x"] - sublist_box["x"]) <= 1 and abs(submenu_link_box["width"] - sublist_box["width"]) <= 1, f"submenu link did not stretch to wrapper: {sublist_box} vs {submenu_link_box}")
+    submenu_link.hover()
+    check(not submenu_link.evaluate("e => e.classList.contains('is-bubbled')"), "submenu link incorrectly received top-level bubble state")
 
     # Header remains truly centered and comfortably spaced without overflow.
     for width in (1100, 1440, 1920, 2560):
@@ -141,8 +162,6 @@ with sync_playwright() as p:
     check(page.eval_on_selector(".gloskin-ui1-nav--desktop > .gloskin-ui1-nav__list", "e => getComputedStyle(e).gap") == "5px", "comfortable desktop nav spacing missing")
     page.set_viewport_size({"width": 1024, "height": 900})
     check(page.eval_on_selector(".gloskin-ui1-header__nav-row", "e => getComputedStyle(e).display") == "none", "1024 mobile navigation switch regressed")
-    mobile_link = page.locator(".gloskin-ui1-nav--mobile .gloskin-ui1-nav__link").first
-    check(mobile_link.evaluate("e => getComputedStyle(e,'::before').content") == "none", "mobile nav received desktop top rail")
 
     # Footer stays responsive and grouped at required widths.
     for width in (390, 600, 601, 782, 1024, 1440, 1920):

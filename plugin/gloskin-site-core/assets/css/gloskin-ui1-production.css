@@ -122,8 +122,11 @@ body.gloskin-ui1{
 	background:transparent;
 	color:var(--gloskin-accent-readable);
 }
-.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled{
+body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled{
 	color:var(--gloskin-inverse);
+}
+.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__toggle:hover{
+	background:transparent;
 }
 .gloskin-ui1-nav__bubble{
 	position:absolute;
@@ -144,15 +147,22 @@ body.gloskin-ui1{
 /* Desktop dropdown submenu: single consistent presentational owner (skeleton
    position/sizing stays in gloskin-ui1-core-base.css). */
 .gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu{
-	top:calc(100% + 10px);
-	padding:10px;
+	top:calc(100% + 8px);
+	padding:8px;
 	border:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);
 	border-radius:var(--gloskin-radius-md);
 	background:var(--gloskin-bg);
 	box-shadow:0 18px 42px color-mix(in srgb,var(--gloskin-text) 10%,transparent);
 }
-.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__list{gap:4px}
-.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__link{padding:9px 12px;border-radius:8px}
+.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__list{
+	width:100%;
+	gap:2px;
+	justify-content:stretch;
+	justify-items:stretch;
+	align-items:stretch;
+}
+.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__item{width:100%}
+.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__link{width:100%;padding:8px 10px;border-radius:8px}
 
 /* Premium footer polish without changing its information architecture. */
 .gloskin-ui1-footer__grid{
