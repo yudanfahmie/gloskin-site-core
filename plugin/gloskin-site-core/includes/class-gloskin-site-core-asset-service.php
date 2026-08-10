@@ -39,6 +39,11 @@ final class Gloskin_Site_Core_Asset_Service {
 	public function register() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend' ), 20 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin' ), 20 );
+		/* Unconditional registration (matches the rest of this codebase's
+		 * hook convention): wp_head never fires in wp-admin at all, and
+		 * print_font_preload() re-checks the same eligible-frontend gate
+		 * enqueue_frontend() uses, so this is inert everywhere it should be. */
+		add_action( 'wp_head', array( $this, 'print_font_preload' ), 1 );
 	}
 
 	/**
@@ -90,6 +95,29 @@ final class Gloskin_Site_Core_Asset_Service {
 		}
 		if ( 'yes' === get_option( 'woocommerce_enable_ajax_add_to_cart' ) && wp_script_is( 'wc-add-to-cart', 'registered' ) ) {
 			wp_enqueue_script( 'wc-add-to-cart' );
+		}
+	}
+
+	/**
+	 * Preload only the critical self-hosted font files (one Marcellus static
+	 * weight, one Mulish variable-weight instance) declared in
+	 * config/assets.php, and only on the same eligible Gloskin frontend
+	 * requests enqueue_frontend() already restricts styles/scripts to.
+	 * Never prints in wp-admin (wp_head does not fire there).
+	 *
+	 * @return void
+	 */
+	public function print_font_preload() {
+		if ( ! $this->should_enqueue_frontend() ) {
+			return;
+		}
+		$registry = $this->registry();
+		if ( empty( $registry['font_preload'] ) || ! is_array( $registry['font_preload'] ) ) {
+			return;
+		}
+		foreach ( $registry['font_preload'] as $relative ) {
+			$url = plugins_url( (string) $relative, $this->plugin_file );
+			echo '<link rel="preload" href="' . esc_url( $url ) . '" as="font" type="font/woff2" crossorigin>' . "\n";
 		}
 	}
 
@@ -170,7 +198,7 @@ final class Gloskin_Site_Core_Asset_Service {
 			$registry       = require dirname( __DIR__ ) . '/config/assets.php';
 			$this->registry = is_array( $registry )
 				? $registry
-				: array( 'styles' => array(), 'scripts' => array(), 'admin_scripts' => array() );
+				: array( 'font_preload' => array(), 'styles' => array(), 'scripts' => array(), 'admin_scripts' => array() );
 		}
 		return $this->registry;
 	}

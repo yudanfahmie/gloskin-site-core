@@ -1,0 +1,26 @@
+/*
+ * Gloskin UI v1 self-hosted production fonts.
+ *
+ * Vendored once from the official Google Fonts distribution --
+ * Marcellus-Regular.woff2 and the single Mulish variable-weight instance
+ * (wght 400-800) covering every weight Gloskin actually uses. No runtime
+ * request to an external font CDN remains. SIL Open Font License notices
+ * are preserved alongside the font files (see Marcellus-OFL.txt /
+ * Mulish-OFL.txt in ../fonts/).
+ *
+ * This file declares only @font-face rules -- no other selectors.
+ */
+@font-face{
+	font-family:"Marcellus";
+	src:url("../fonts/Marcellus-Regular.woff2") format("woff2");
+	font-style:normal;
+	font-weight:400;
+	font-display:fallback;
+}
+@font-face{
+	font-family:"Mulish";
+	src:url("../fonts/Mulish-Variable.woff2") format("woff2");
+	font-style:normal;
+	font-weight:400 800;
+	font-display:fallback;
+}

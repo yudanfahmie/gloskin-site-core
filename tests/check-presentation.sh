@@ -204,13 +204,67 @@ done
 if [[ ! -f "$production_css" ]] \
   || ! grep -q -- '--gloskin-font-body:"Mulish"' "$production_css" \
   || ! grep -q -- '--gloskin-font-heading:"Marcellus"' "$production_css"; then
-  echo "Marcellus/Mulish production typography layer missing" >&2
+  echo "Marcellus/Mulish production typography layer missing (typography token regression)" >&2
   exit 1
 fi
-if ! grep -q 'family=Marcellus&family=Mulish:wght@400;600;700;800' "$plugin_root/config/assets.php"; then
-  echo "required Google Fonts family/weight registration missing" >&2
+
+# Gloskin self-hosted production fonts: no runtime Google Fonts CDN
+# dependency, local WOFF2 files present, explicit font-display policy.
+fonts_css="$plugin_root/assets/css/gloskin-ui1-fonts.css"
+fonts_dir="$plugin_root/assets/fonts"
+if grep -qE 'fonts\.googleapis\.com|fonts\.gstatic\.com' "$plugin_root/config/assets.php"; then
+  echo "config/assets.php still references the Google Fonts CDN" >&2
   exit 1
 fi
+if ! grep -qF "'assets/css/gloskin-ui1-fonts.css'" "$plugin_root/config/assets.php"; then
+  echo "gloskin-ui1-fonts registry entry no longer points at the local font stylesheet" >&2
+  exit 1
+fi
+if [[ ! -f "$fonts_css" ]]; then
+  echo "local Gloskin font stylesheet missing: $fonts_css" >&2
+  exit 1
+fi
+if grep -qE 'fonts\.googleapis\.com|fonts\.gstatic\.com' "$fonts_css"; then
+  echo "local font stylesheet still references the Google Fonts CDN" >&2
+  exit 1
+fi
+for expected_file in 'Marcellus-Regular.woff2' 'Mulish-Variable.woff2'; do
+  [[ -f "$fonts_dir/$expected_file" ]] || { echo "required self-hosted font file missing: $expected_file" >&2; exit 1; }
+done
+for expected_license in 'Marcellus-OFL.txt' 'Mulish-OFL.txt'; do
+  [[ -s "$fonts_dir/$expected_license" ]] || { echo "required upstream font license notice missing: $expected_license" >&2; exit 1; }
+done
+if ! grep -qF 'font-family:"Marcellus"' "$fonts_css" || ! grep -qF 'url("../fonts/Marcellus-Regular.woff2")' "$fonts_css"; then
+  echo "Marcellus @font-face missing or no longer local" >&2
+  exit 1
+fi
+if ! grep -qF 'font-family:"Mulish"' "$fonts_css" || ! grep -qF 'url("../fonts/Mulish-Variable.woff2")' "$fonts_css" || ! grep -qF 'font-weight:400 800' "$fonts_css"; then
+  echo "Mulish @font-face missing, no longer local, or no longer covers the 400-800 weight range" >&2
+  exit 1
+fi
+if [[ "$(grep -c 'font-display:fallback' "$fonts_css")" -ne 2 ]]; then
+  echo "font-display:fallback policy not explicitly set on both @font-face rules" >&2
+  exit 1
+fi
+if grep -qE 'font-display:\s*(block|swap|optional)' "$fonts_css"; then
+  echo "font-display policy regressed away from fallback (FOIT/late-swap/optional risk)" >&2
+  exit 1
+fi
+if grep -qE 'italic|Italic' "$fonts_css"; then
+  echo "an unused italic font-face was introduced" >&2
+  exit 1
+fi
+
+# Font assets never load in WP Admin: enqueue_admin() must not touch the
+# frontend/font style registry at all.
+asset_service="$plugin_root/includes/class-gloskin-site-core-asset-service.php"
+admin_enqueue_block="$(awk '/public function enqueue_admin\(/,/^\t\}$/' "$asset_service")"
+if echo "$admin_enqueue_block" | grep -qE "registry\(\)\['styles'\]|font_preload|print_font_preload"; then
+  echo "font assets are reachable from enqueue_admin(); must stay frontend-only" >&2
+  exit 1
+fi
+grep -qF "add_action( 'wp_head', array( \$this, 'print_font_preload' )" "$asset_service" \
+  || { echo "critical font preload is not wired through AssetService/wp_head" >&2; exit 1; }
 
 # Favicon derivatives: all sizes must exist and derive from the same master,
 # at the exact pixel dimensions each context expects.

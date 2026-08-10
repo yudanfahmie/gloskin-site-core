@@ -10,12 +10,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 return array(
+	'font_preload' => array(
+		'assets/fonts/Marcellus-Regular.woff2',
+		'assets/fonts/Mulish-Variable.woff2',
+	),
 	'styles' => array(
 		'gloskin-ui1-fonts' => array(
-			'src'      => 'https://fonts.googleapis.com/css2?family=Marcellus&family=Mulish:wght@400;600;700;800&display=swap',
-			'deps'     => array(),
-			'media'    => 'all',
-			'external' => true,
+			'src'   => 'assets/css/gloskin-ui1-fonts.css',
+			'deps'  => array(),
+			'media' => 'all',
 		),
 		'gloskin-ui1-core-base' => array(
 			'src'   => 'assets/css/gloskin-ui1-core-base.css',

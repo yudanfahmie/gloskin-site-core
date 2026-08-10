@@ -26,6 +26,7 @@ function wp_script_is( $handle, $status = 'enqueued' ) {
 	return in_array( $handle, $GLOBALS['gl_scripts'], true );
 }
 function get_option( $key, $default = false ) { return array_key_exists( $key, $GLOBALS['gl_options'] ) ? $GLOBALS['gl_options'][ $key ] : $default; }
+function esc_url( $url ) { return htmlspecialchars( (string) $url, ENT_QUOTES ); }
 
 require dirname( __DIR__ ) . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-asset-service.php';
 
@@ -47,7 +48,12 @@ foreach ( array( 'gloskin-ui1-fonts', 'gloskin-ui1-core-base', 'gloskin-ui1-core
 }
 if ( ! in_array( 'gloskin-ui1-core', $GLOBALS['gl_scripts'], true ) ) { fwrite( STDERR, "frontend script missing on Gloskin shell request\n" ); exit( 1 ); }
 $font = $GLOBALS['gl_registered_styles']['gloskin-ui1-fonts'] ?? array();
-if ( empty( $font['src'] ) || 0 !== strpos( $font['src'], 'https://fonts.googleapis.com/css2?family=Marcellus&family=Mulish:wght@400;600;700;800' ) ) { fwrite( STDERR, "authoritative Marcellus/Mulish font stylesheet registration failed\n" ); exit( 1 ); }
+if ( empty( $font['src'] ) || $font['src'] !== '/plugins/gloskin/assets/css/gloskin-ui1-fonts.css' ) { fwrite( STDERR, "self-hosted Marcellus/Mulish font stylesheet registration failed\n" ); exit( 1 ); }
+foreach ( $GLOBALS['gl_registered_styles'] as $handle => $asset ) {
+	if ( false !== strpos( (string) ( $asset['src'] ?? '' ), 'fonts.googleapis.com' ) || false !== strpos( (string) ( $asset['src'] ?? '' ), 'fonts.gstatic.com' ) ) {
+		fwrite( STDERR, "external Google Fonts dependency still registered: {$handle}\n" ); exit( 1 );
+	}
+}
 $base = $GLOBALS['gl_registered_styles']['gloskin-ui1-core-base'] ?? array();
 $core = $GLOBALS['gl_registered_styles']['gloskin-ui1-core'] ?? array();
 $production = $GLOBALS['gl_registered_styles']['gloskin-ui1-production'] ?? array();
@@ -98,5 +104,38 @@ $service->enqueue_frontend();
 if ( in_array( 'wc-add-to-cart', $GLOBALS['gl_scripts'], true ) || in_array( 'wc-cart-fragments', $GLOBALS['gl_scripts'], true ) ) {
 	fwrite( STDERR, "a Woo script handle was enqueued despite never being registered\n" ); exit( 1 );
 }
+
+// Critical font preload: only the two self-hosted critical files, only on
+// the same eligible-frontend gate styles/scripts already use, never on an
+// unrelated request.
+$commerce = false;
+$GLOBALS['gl_asset_context'] = array();
+ob_start();
+$service->print_font_preload();
+$preload = (string) ob_get_clean();
+if ( '' !== $preload ) { fwrite( STDERR, "font preload printed on an unrelated request\n" ); exit( 1 ); }
+
+$GLOBALS['gl_asset_context'] = array( 'view' => 'home' );
+ob_start();
+$service->print_font_preload();
+$preload = (string) ob_get_clean();
+if ( 2 !== substr_count( $preload, '<link rel="preload"' ) ) { fwrite( STDERR, "expected exactly two critical font preload links, got: {$preload}\n" ); exit( 1 ); }
+foreach ( array( 'Marcellus-Regular.woff2', 'Mulish-Variable.woff2' ) as $expected_file ) {
+	if ( false === strpos( $preload, $expected_file ) ) { fwrite( STDERR, "font preload missing critical file: {$expected_file}\n" ); exit( 1 ); }
+}
+if ( false === strpos( $preload, 'as="font"' ) || false === strpos( $preload, 'type="font/woff2"' ) || false === strpos( $preload, 'crossorigin' ) ) {
+	fwrite( STDERR, "font preload missing required as/type/crossorigin attributes: {$preload}\n" ); exit( 1 );
+}
+if ( false !== strpos( $preload, 'fonts.googleapis.com' ) || false !== strpos( $preload, 'fonts.gstatic.com' ) ) {
+	fwrite( STDERR, "font preload still points at Google Fonts\n" ); exit( 1 );
+}
+
+// Woo commerce pages (not a Gloskin shell view) are also eligible.
+$GLOBALS['gl_asset_context'] = array();
+$commerce = true;
+ob_start();
+$service->print_font_preload();
+$preload = (string) ob_get_clean();
+if ( 2 !== substr_count( $preload, '<link rel="preload"' ) ) { fwrite( STDERR, "font preload missing on Woo presentation request\n" ); exit( 1 ); }
 
 echo "asset loading smoke passed\n";
