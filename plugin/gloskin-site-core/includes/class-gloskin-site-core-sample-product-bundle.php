@@ -9,6 +9,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/*
+ * Every RuntimeException message thrown in this class is a transport-neutral
+ * domain error, not final HTML output. Two boundaries own presentation instead:
+ * - Gloskin_Site_Core_Admin_Service::ajax_sample_product_import() catches
+ *   Throwable and returns the message through wp_send_json_error(), which
+ *   JSON-encodes it; the admin JS assigns that string via textContent (never
+ *   innerHTML), so it is never parsed as markup.
+ * - Any server-rendered "last_error" (e.g. the Sample Product Import admin
+ *   screen) escapes it with esc_html() at render time.
+ * Escaping inside the exception itself would double-encode/garble the
+ * message at the point where it is actually safe and correct to escape it
+ * once, at the final output context -- see WPPC-007 in
+ * docs/audits/plugin-check-remediation-2026-08-11.csv and the boundary
+ * contract proven in tests/sample-product-importer-hardening.php.
+ */
+// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 final class Gloskin_Site_Core_Sample_Product_Bundle {
 	const RUNTIME_RELATIVE_PATH = 'migration-runtime/gloskin-sample-products-v1';
 	const MANIFEST_FILE         = 'manifest.json';
@@ -231,18 +247,32 @@ final class Gloskin_Site_Core_Sample_Product_Bundle {
 		foreach ( (array) $manifest['files'] as $relative ) {
 			try {
 				$path = $this->confined_file( (string) $relative );
-				if ( is_file( $path ) && ! @unlink( $path ) ) {
-					$errors[] = 'Gagal menghapus ' . basename( $path ) . '.';
+				if ( is_file( $path ) ) {
+					wp_delete_file( $path );
+					if ( is_file( $path ) ) {
+						$errors[] = 'Gagal menghapus ' . basename( $path ) . '.';
+					}
 				}
 			} catch ( Throwable $error ) {
 				$errors[] = $error->getMessage();
 			}
 		}
 		$manifest_path = $this->runtime_dir . '/' . self::MANIFEST_FILE;
-		if ( is_file( $manifest_path ) && ! @unlink( $manifest_path ) ) {
-			$errors[] = 'Gagal menghapus manifest runtime.';
+		if ( is_file( $manifest_path ) ) {
+			wp_delete_file( $manifest_path );
+			if ( is_file( $manifest_path ) ) {
+				$errors[] = 'Gagal menghapus manifest runtime.';
+			}
 		}
-		if ( is_dir( $this->runtime_dir ) && ! @rmdir( $this->runtime_dir ) ) {
+		/*
+		 * WP_Filesystem() would prompt for FTP/SSH credentials on hosts without
+		 * direct filesystem access, which would break this one-shot AJAX cleanup
+		 * of a fixed, confined runtime directory (all declared files above are
+		 * already individually removed via wp_delete_file() first). A bare
+		 * rmdir() on this single, non-configurable path is the smallest safe
+		 * option; failure here is non-destructive and only reported, never fatal.
+		 */
+		if ( is_dir( $this->runtime_dir ) && ! @rmdir( $this->runtime_dir ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- fixed confined one-shot runtime path; see comment above.
 			$errors[] = 'Folder runtime tidak dapat dihapus; mungkin ada file yang tidak dideklarasikan.';
 		}
 		return array(
@@ -417,8 +447,8 @@ final class Gloskin_Site_Core_Sample_Product_Bundle {
 			|| '' === $item['license_note']
 			|| basename( $item['filename'] ) !== $item['filename']
 			|| ! preg_match( '/\.(?:jpe?g|png|webp)$/i', $item['filename'] )
-			|| 'https' !== strtolower( (string) parse_url( $item['source_url'], PHP_URL_SCHEME ) )
-			|| ( '' !== $item['source_page_url'] && 'https' !== strtolower( (string) parse_url( $item['source_page_url'], PHP_URL_SCHEME ) ) ) ) {
+			|| 'https' !== strtolower( (string) wp_parse_url( $item['source_url'], PHP_URL_SCHEME ) )
+			|| ( '' !== $item['source_page_url'] && 'https' !== strtolower( (string) wp_parse_url( $item['source_page_url'], PHP_URL_SCHEME ) ) ) ) {
 			throw new RuntimeException( 'Record media bundle tidak memenuhi kontrak: ' . $item['source_id'] );
 		}
 		$product_slug = substr( $item['product_source_id'], strlen( 'gloskin-sample:v1:' ) );
@@ -510,3 +540,4 @@ final class Gloskin_Site_Core_Sample_Product_Bundle {
 		return $path;
 	}
 }
+// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped

@@ -176,7 +176,8 @@ final class Gloskin_Site_Core_Navigation_Service {
 	 * @return bool
 	 */
 	private function path_is_active( $path ) {
-		$current = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '/';
+		// Unslash then sanitize before any comparison; this value is never echoed, only compared.
+		$current = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '/';
 		$current = is_string( $current ) ? strtok( $current, '?' ) : '/';
 		$target  = wp_parse_url( home_url( $path ), PHP_URL_PATH );
 

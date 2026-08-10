@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Gloskin Site Core
- * Description: Gloskin website presentation, content and integration runtime. Test auto pull
- * Version: 0.7.24
+ * Description: Gloskin website presentation, content and integration runtime.
+ * Version: 0.7.25
  * Requires PHP: 7.4
  * Text Domain: gloskin-site-core
  */

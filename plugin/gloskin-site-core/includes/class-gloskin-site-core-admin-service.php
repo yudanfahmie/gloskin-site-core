@@ -80,7 +80,13 @@ final class Gloskin_Site_Core_Admin_Service {
 		);
 		?>
 		<div class="wrap"><h1><?php echo esc_html__( 'Gloskin Content', 'gloskin-site-core' ); ?></h1><p><?php echo esc_html__( 'Ringkasan konten Gloskin dan pintasan ke layar WordPress yang tetap menjadi pemilik datanya.', 'gloskin-site-core' ); ?></p><div class="gloskin-admin-overview">
-		<?php foreach ( Gloskin_Site_Core_Content_Service::record_targets() as $post_type => $target ) : $count = wp_count_posts( $post_type ); $live = $count && isset( $count->publish ) ? absint( $count->publish ) : 0; ?><div class="card"><h2><?php echo esc_html( $labels[ $post_type ] ); ?></h2><p><?php echo esc_html( sprintf( __( '%1$d dari target %2$d record telah dipublikasikan.', 'gloskin-site-core' ), $live, $target ) ); ?></p><p><a class="button button-secondary" href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . $post_type ) ); ?>"><?php echo esc_html__( 'Kelola Konten', 'gloskin-site-core' ); ?></a></p></div><?php endforeach; ?>
+		<?php
+		foreach ( Gloskin_Site_Core_Content_Service::record_targets() as $post_type => $target ) :
+			$count = wp_count_posts( $post_type );
+			$live  = $count && isset( $count->publish ) ? absint( $count->publish ) : 0;
+			/* translators: %1$d: number of published records; %2$d: target record count for this content type. */
+			$progress_label = sprintf( __( '%1$d dari target %2$d record telah dipublikasikan.', 'gloskin-site-core' ), $live, $target );
+			?><div class="card"><h2><?php echo esc_html( $labels[ $post_type ] ); ?></h2><p><?php echo esc_html( $progress_label ); ?></p><p><a class="button button-secondary" href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . $post_type ) ); ?>"><?php echo esc_html__( 'Kelola Konten', 'gloskin-site-core' ); ?></a></p></div><?php endforeach; ?>
 		</div><hr><h2><?php echo esc_html__( 'Konten WordPress yang Tetap Native', 'gloskin-site-core' ); ?></h2><p><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=page' ) ); ?>"><?php echo esc_html__( 'Pages Gloskin', 'gloskin-site-core' ); ?></a> · <a href="<?php echo esc_url( admin_url( 'edit.php' ) ); ?>"><?php echo esc_html__( 'Posts / Insights', 'gloskin-site-core' ); ?></a> · <a href="<?php echo esc_url( admin_url( 'upload.php' ) ); ?>"><?php echo esc_html__( 'Media Library', 'gloskin-site-core' ); ?></a></p><?php if ( current_user_can( 'manage_options' ) ) : ?><p><a class="button button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SETTINGS_SLUG ) ); ?>"><?php echo esc_html__( 'Buka Gloskin Settings', 'gloskin-site-core' ); ?></a></p><?php endif; ?>
 		<?php
 		if ( current_user_can( self::MIGRATION_CAPABILITY ) && '' !== $this->plugin_file ) :
@@ -180,9 +186,34 @@ final class Gloskin_Site_Core_Admin_Service {
 		if ( ! wp_verify_nonce( $nonce, self::META_NONCE_ACTION ) || ! current_user_can( 'edit_post', $post_id ) ) { return; }
 		$schemas = $this->save_schema();
 		if ( ! isset( $schemas[ $post->post_type ] ) ) { return; }
-		foreach ( $schemas[ $post->post_type ]['strings'] as $key ) { $value = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : ''; update_post_meta( $post_id, $key, $value ); }
-		foreach ( $schemas[ $post->post_type ]['arrays'] as $key ) { $value = isset( $_POST[ $key ] ) ? (array) wp_unslash( $_POST[ $key ] ) : array(); if ( 'gloskin_gallery_image_ids' === $key ) { $value = isset( $_POST[ $key ] ) ? explode( ',', (string) wp_unslash( $_POST[ $key ] ) ) : array(); } update_post_meta( $post_id, $key, $value ); }
-		foreach ( $schemas[ $post->post_type ]['integers'] as $key ) { $value = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : 0; update_post_meta( $post_id, $key, $value ); }
+		/*
+		 * Every key below is registered in Gloskin_Site_Core_Content_Service::register_meta()
+		 * with an explicit sanitize_callback. Posted values must still be run through
+		 * sanitize_meta() here -- update_post_meta() never auto-applies a meta type's
+		 * registered sanitizer on its own, that only happens for REST/meta-API writers.
+		 * This makes the sanitize-before-persist boundary explicit and visible instead
+		 * of implicit/invisible to review, even though the registered callbacks were
+		 * already a mitigating control.
+		 */
+		foreach ( $schemas[ $post->post_type ]['strings'] as $key ) {
+			$value = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : '';
+			$value = sanitize_meta( $key, $value, 'post', $post->post_type );
+			update_post_meta( $post_id, $key, $value );
+		}
+		foreach ( $schemas[ $post->post_type ]['arrays'] as $key ) {
+			if ( 'gloskin_gallery_image_ids' === $key ) {
+				$value = isset( $_POST[ $key ] ) ? explode( ',', (string) wp_unslash( $_POST[ $key ] ) ) : array();
+			} else {
+				$value = isset( $_POST[ $key ] ) ? (array) wp_unslash( $_POST[ $key ] ) : array();
+			}
+			$value = sanitize_meta( $key, $value, 'post', $post->post_type );
+			update_post_meta( $post_id, $key, $value );
+		}
+		foreach ( $schemas[ $post->post_type ]['integers'] as $key ) {
+			$value = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : 0;
+			$value = sanitize_meta( $key, $value, 'post', $post->post_type );
+			update_post_meta( $post_id, $key, $value );
+		}
 	}
 
 	private function save_schema() {
@@ -200,7 +231,14 @@ final class Gloskin_Site_Core_Admin_Service {
 		$allowed = array( 'dashboard', 'edit', 'post', 'toplevel_page_gloskin-content', 'gloskin-content_page_gloskin-site-core' );
 		if ( ! $screen || ! in_array( $screen->base, $allowed, true ) ) { return; }
 		$targets = Gloskin_Site_Core_Content_Service::record_targets(); $parts = array();
-		foreach ( $targets as $post_type => $target ) { $count = wp_count_posts( $post_type ); $live = $count && isset( $count->publish ) ? absint( $count->publish ) : 0; if ( $live < $target ) { $parts[] = sprintf( __( '%1$s: %2$d/%3$d approved records published', 'gloskin-site-core' ), $post_type, $live, $target ); } }
+		foreach ( $targets as $post_type => $target ) {
+			$count = wp_count_posts( $post_type );
+			$live  = $count && isset( $count->publish ) ? absint( $count->publish ) : 0;
+			if ( $live < $target ) {
+				/* translators: %1$s: post type key; %2$d: number of published records; %3$d: target record count. */
+				$parts[] = sprintf( __( '%1$s: %2$d/%3$d approved records published', 'gloskin-site-core' ), $post_type, $live, $target );
+			}
+		}
 		if ( ! $parts ) { return; }
 		echo '<div class="notice notice-info"><p><strong>' . esc_html__( 'Gloskin content readiness:', 'gloskin-site-core' ) . '</strong> ' . esc_html( implode( '; ', $parts ) ) . '. ' . esc_html__( 'Publish only client-approved facts; do not create placeholder medical or doctor data.', 'gloskin-site-core' ) . '</p></div>';
 	}

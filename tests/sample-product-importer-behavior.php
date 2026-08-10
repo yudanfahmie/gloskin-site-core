@@ -23,6 +23,7 @@ function trailingslashit($value) { return rtrim((string) $value, '/\\') . '/'; }
 function plugin_dir_path($file) { return trailingslashit(dirname((string) $file)); }
 function wp_strip_all_tags($value) { return strip_tags((string) $value); }
 function sanitize_title($value) { $value = strtolower(trim((string) $value)); $value = preg_replace('/[^a-z0-9]+/', '-', $value); return trim((string) $value, '-'); }
+function wp_delete_file($file) { @unlink((string) $file); }
 
 function reset_stub_state() {
     $GLOBALS['stub_options'] = array();

@@ -363,7 +363,9 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 					/* Woo-native remove markup: wc-cart-fragments.js already binds AJAX
 					 * remove + fragment refresh to `a.remove` links carrying these data
 					 * attributes, so no custom cart JS is needed here. */
-					echo '<a href="' . esc_url( $item['remove_url'] ) . '" class="remove gloskin-ui1-cart-sheet__item-remove" aria-label="' . esc_attr( sprintf( __( 'Hapus %s', 'gloskin-site-core' ), $item['name'] ) ) . '" data-product_id="' . esc_attr( $item['product_id'] ) . '" data-cart_item_key="' . esc_attr( $item['key'] ) . '" data-product_sku="">&times;</a>';
+					/* translators: %s: cart line item's product name, used in the remove link's accessible label. */
+					$item_remove_label = sprintf( __( 'Hapus %s', 'gloskin-site-core' ), $item['name'] );
+					echo '<a href="' . esc_url( $item['remove_url'] ) . '" class="remove gloskin-ui1-cart-sheet__item-remove" aria-label="' . esc_attr( $item_remove_label ) . '" data-product_id="' . esc_attr( $item['product_id'] ) . '" data-cart_item_key="' . esc_attr( $item['key'] ) . '" data-product_sku="">&times;</a>';
 				}
 				echo '</li>';
 			}
@@ -404,8 +406,10 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		$count = $this->cart_count();
 		$fragments['.gloskin-ui1-badge[data-gloskin-cart-count]'] =
 			'<span class="gloskin-ui1-badge' . ( $count > 0 ? ' is-active' : '' ) . '" data-gloskin-cart-count aria-hidden="true">' . esc_html( $count ) . '</span>';
+		/* translators: %d: number of items currently in the cart. */
+		$count_label = sprintf( __( '%d item di keranjang', 'gloskin-site-core' ), $count );
 		$fragments['[data-gloskin-cart-count-sr]'] =
-			'<span class="screen-reader-text" data-gloskin-cart-count-sr>' . esc_html( sprintf( __( '%d item di keranjang', 'gloskin-site-core' ), $count ) ) . '</span>';
+			'<span class="screen-reader-text" data-gloskin-cart-count-sr>' . esc_html( $count_label ) . '</span>';
 		$fragments['.gloskin-ui1-cart-sheet__body'] =
 			'<div class="gloskin-ui1-cart-sheet__body">' . $this->render_mini_cart_body() . '</div>';
 		return $fragments;
@@ -793,7 +797,9 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		 * the one-canonical-owner-per-file convention already used across
 		 * the codebase. The few lines of SVG/button markup are small enough
 		 * that duplicating them is cheaper than adding cross-layer coupling. */
+		/* translators: %s: product name, used in the wishlist "add" toggle's accessible label. */
 		$add_label    = sprintf( __( 'Simpan %s ke favorit', 'gloskin-site-core' ), $name );
+		/* translators: %s: product name, used in the wishlist "remove" toggle's accessible label. */
 		$remove_label = sprintf( __( 'Hapus %s dari favorit', 'gloskin-site-core' ), $name );
 
 		echo '<button type="button" class="gloskin-ui1-wishlist-toggle gloskin-ui1-wishlist-toggle--detail" data-gloskin-wishlist-toggle="' . esc_attr( $id ) . '" aria-pressed="false" data-label-add="' . esc_attr( $add_label ) . '" data-label-remove="' . esc_attr( $remove_label ) . '" aria-label="' . esc_attr( $add_label ) . '">';

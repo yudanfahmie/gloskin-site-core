@@ -74,9 +74,13 @@ final class Gloskin_Site_Core_Content_Service {
 			'labels' => array(
 				'name' => $plural,
 				'singular_name' => $singular,
+				/* translators: %s: the post type's singular label, used in the admin "Add New" menu item. */
 				'add_new_item' => sprintf( __( 'Add New %s', 'gloskin-site-core' ), $singular ),
+				/* translators: %s: the post type's singular label, used in the admin "Edit" menu item. */
 				'edit_item' => sprintf( __( 'Edit %s', 'gloskin-site-core' ), $singular ),
+				/* translators: %s: the post type's singular label, used in the admin "View" menu item. */
 				'view_item' => sprintf( __( 'View %s', 'gloskin-site-core' ), $singular ),
+				/* translators: %s: the post type's plural label, used in the admin "Search" menu item. */
 				'search_items' => sprintf( __( 'Search %s', 'gloskin-site-core' ), $plural ),
 			),
 			'public' => true,

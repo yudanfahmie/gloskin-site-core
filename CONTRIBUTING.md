@@ -122,6 +122,16 @@ No public `wp_ajax_nopriv_*` endpoint belongs in v1 unless a later explicit feat
 - Missing factual doctor/clinic/product media must keep the neutral Gloskin empty-state placeholder until real WordPress/Woo media is supplied.
 - Production migration should replace staging editorial stock with approved WordPress media where the surface has a factual media owner; do not create a parallel media database or service to manage that transition.
 
+## Plugin Check discipline
+
+Before release, triage every WordPress Plugin Check/PHPCS finding as one of:
+
+- **fix** -- the underlying defect is real; fix the canonical owner;
+- **context-safe suppression** -- a narrow, local `phpcs:ignore`/`phpcs:disable`...`phpcs:enable` with a comment naming the sniff and the reason it is safe in this exact context (e.g. output already escaped by a proven trusted renderer, a documented core-hook false positive, a bounded one-shot admin-only query); or
+- **owner-approved documented exception** -- for decisions outside engineering scope (licensing, packaging), record the exception instead of silently resolving it.
+
+Never chase zero warnings by violating canonical architecture (no CSS-hiding workarounds, no blanket `wp_kses_post()`/global filter removal, no new query/filesystem abstraction layer merely to silence a sniff). Every real finding becomes a targeted regression assertion, a documented local suppression, or an owner-approved exception -- see `docs/audits/plugin-check-remediation-2026-08-11.csv` and `tests/plugin-check-remediation-contract.sh` (run by `./tests/check-runtime.sh`) for the reusable pattern.
+
 ## Documentation discipline
 
 When implementation changes architecture ownership, service boundaries, storage, content fields, relationships, routes, SEO/GEO engineering responsibilities, or retained/pruned Morgen dependencies, update the matching canonical documentation in the **same coherent commit**.

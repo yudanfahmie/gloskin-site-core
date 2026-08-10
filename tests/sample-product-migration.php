@@ -8,6 +8,8 @@ function plugin_dir_path($f){return trailingslashit(dirname($f));}
 function wp_strip_all_tags($s){return strip_tags((string)$s);}
 function sanitize_title($s){$s=strtolower(trim((string)$s));$s=preg_replace('/[^a-z0-9]+/','-',$s);return trim((string)$s,'-');}
 function sanitize_key($s){return preg_replace('/[^a-z0-9_\-]/','',strtolower((string)$s));}
+function wp_parse_url($url,$component=-1){return parse_url((string)$url,$component);}
+function wp_delete_file($file){@unlink((string)$file);}
 function ok($x,$m){if(!$x){fwrite(STDERR,"FAIL: $m\n");exit(1);}}
 require dirname(__DIR__).'/plugin/gloskin-site-core/includes/class-gloskin-site-core-sample-product-bundle.php';
 $src=dirname(__DIR__).'/plugin/gloskin-site-core/migration-runtime/gloskin-sample-products-v1';

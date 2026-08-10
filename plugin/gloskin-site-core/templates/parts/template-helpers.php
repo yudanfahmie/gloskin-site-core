@@ -279,7 +279,9 @@ if ( ! function_exists( 'gloskin_ui1_render_wishlist_toggle' ) ) {
 		if ( ! $product_id ) {
 			return;
 		}
+		/* translators: %s: product name, used in the wishlist "add" toggle's accessible label. */
 		$add_label    = sprintf( __( 'Simpan %s ke favorit', 'gloskin-site-core' ), $name );
+		/* translators: %s: product name, used in the wishlist "remove" toggle's accessible label. */
 		$remove_label = sprintf( __( 'Hapus %s dari favorit', 'gloskin-site-core' ), $name );
 		?>
 		<button type="button" class="gloskin-ui1-wishlist-toggle" data-gloskin-wishlist-toggle="<?php echo esc_attr( $product_id ); ?>" aria-pressed="false" data-label-add="<?php echo esc_attr( $add_label ); ?>" data-label-remove="<?php echo esc_attr( $remove_label ); ?>" aria-label="<?php echo esc_attr( $add_label ); ?>">
@@ -449,6 +451,7 @@ if ( ! function_exists( 'gloskin_ui1_render_page_content' ) ) {
 	function gloskin_ui1_render_page_content( $post ) {
 		if ( ! $post instanceof WP_Post || '' === trim( (string) $post->post_content ) ) { return; }
 		echo '<div class="gloskin-ui1-prose">';
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- this is WordPress core's own `the_content` filter, invoked deliberately to render canonical page/post content through the normal content pipeline; it must not be renamed or duplicated.
 		echo apply_filters( 'the_content', $post->post_content ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted editor content.
 		echo '</div>';
 	}

@@ -11,6 +11,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/class-gloskin-site-core-sample-product-bundle.php';
 
+/*
+ * Every RuntimeException message thrown in this class is a transport-neutral
+ * domain error, not final HTML output. Two boundaries own presentation instead:
+ * - ajax_sample_product_import() (Gloskin_Site_Core_Admin_Service) catches
+ *   Throwable and returns the message through wp_send_json_error(), which
+ *   JSON-encodes it; the admin JS assigns that string via textContent (never
+ *   innerHTML), so it is never parsed as markup.
+ * - The server-rendered "last_error" on the Sample Product Import admin
+ *   screen escapes it with esc_html() at render time.
+ * Escaping inside the exception itself would double-encode/garble the
+ * message at the point where it is actually safe and correct to escape it
+ * once, at the final output context -- see WPPC-007 in
+ * docs/audits/plugin-check-remediation-2026-08-11.csv and the boundary
+ * contract proven in tests/sample-product-importer-hardening.php.
+ */
+// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 final class Gloskin_Site_Core_Sample_Product_Importer {
 	const STATE_OPTION       = 'gloskin_site_core_sample_products_v1_state';
 	const LOCK_OPTION        = 'gloskin_site_core_sample_products_v1_lock';
@@ -531,7 +547,7 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 		);
 		$attachment_id = media_handle_sideload( $file, $product_id, '' );
 		if ( is_wp_error( $attachment_id ) ) {
-			@unlink( $tmp );
+			wp_delete_file( $tmp );
 			throw new RuntimeException( 'Gagal menyimpan media ' . $record['source_id'] . ': ' . $attachment_id->get_error_message() );
 		}
 		$attachment_id = (int) $attachment_id;
@@ -667,15 +683,15 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 	 * @return array<int,int>
 	 */
 	private function find_source_ids( $source_id ) {
+		// Bounded one-shot admin migration (<=13 parents/10 variations), never a public/recurring hot path; see WPPC-011.
 		$ids = get_posts(
 			array(
 				'post_type'        => array( 'product', 'product_variation' ),
 				'post_status'      => 'any',
-				'meta_key'         => self::SOURCE_META,
-				'meta_value'       => $source_id,
+				'meta_key'         => self::SOURCE_META, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- bounded one-shot admin migration identity lookup, see WPPC-011.
+				'meta_value'       => $source_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- bounded one-shot admin migration identity lookup, see WPPC-011.
 				'fields'           => 'ids',
 				'numberposts'      => 2,
-				'suppress_filters' => true,
 			)
 		);
 		return is_array( $ids ) ? array_map( 'intval', $ids ) : array();
@@ -686,15 +702,15 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 	 * @return array<int,int>
 	 */
 	private function find_media_ids( $source_id ) {
+		// Bounded one-shot admin migration (<=58 attachments), never a public/recurring hot path; see WPPC-011.
 		$ids = get_posts(
 			array(
 				'post_type'        => 'attachment',
 				'post_status'      => 'any',
-				'meta_key'         => self::MEDIA_SOURCE_META,
-				'meta_value'       => $source_id,
+				'meta_key'         => self::MEDIA_SOURCE_META, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- bounded one-shot admin migration identity lookup, see WPPC-011.
+				'meta_value'       => $source_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- bounded one-shot admin migration identity lookup, see WPPC-011.
 				'fields'           => 'ids',
 				'numberposts'      => 2,
-				'suppress_filters' => true,
 			)
 		);
 		return is_array( $ids ) ? array_map( 'intval', $ids ) : array();
@@ -784,37 +800,35 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 		$manifest = $validated['manifest'];
 		$bundle_id = (string) $manifest['bundle_id'];
 
+		// Bounded one-shot admin migration verification (13 parents/10 variations/58 attachments), never a public/recurring hot path; see WPPC-011.
 		$parent_ids = get_posts(
 			array(
 				'post_type'        => 'product',
 				'post_status'      => 'any',
-				'meta_key'         => self::BUNDLE_META,
-				'meta_value'       => $bundle_id,
+				'meta_key'         => self::BUNDLE_META, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- bounded one-shot admin migration verification, see WPPC-011.
+				'meta_value'       => $bundle_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- bounded one-shot admin migration verification, see WPPC-011.
 				'fields'           => 'ids',
 				'numberposts'      => -1,
-				'suppress_filters' => true,
 			)
 		);
 		$variation_ids = get_posts(
 			array(
 				'post_type'        => 'product_variation',
 				'post_status'      => 'any',
-				'meta_key'         => self::BUNDLE_META,
-				'meta_value'       => $bundle_id,
+				'meta_key'         => self::BUNDLE_META, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- bounded one-shot admin migration verification, see WPPC-011.
+				'meta_value'       => $bundle_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- bounded one-shot admin migration verification, see WPPC-011.
 				'fields'           => 'ids',
 				'numberposts'      => -1,
-				'suppress_filters' => true,
 			)
 		);
 		$attachment_ids = get_posts(
 			array(
 				'post_type'        => 'attachment',
 				'post_status'      => 'any',
-				'meta_key'         => self::BUNDLE_META,
-				'meta_value'       => $bundle_id,
+				'meta_key'         => self::BUNDLE_META, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- bounded one-shot admin migration verification, see WPPC-011.
+				'meta_value'       => $bundle_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- bounded one-shot admin migration verification, see WPPC-011.
 				'fields'           => 'ids',
 				'numberposts'      => -1,
-				'suppress_filters' => true,
 			)
 		);
 		if ( (int) $manifest['expected_products'] !== count( (array) $parent_ids )
@@ -919,3 +933,4 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 		update_option( self::STATE_OPTION, $state, false );
 	}
 }
+// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped

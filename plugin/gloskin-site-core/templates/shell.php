@@ -14,11 +14,11 @@ if ( ! is_array( $gloskin_context ) ) {
 	$gloskin_context = array();
 }
 
-$view             = isset( $gloskin_context['view'] ) ? sanitize_key( $gloskin_context['view'] ) : '';
-$variant          = isset( $gloskin_context['design_variant'] ) ? sanitize_key( $gloskin_context['design_variant'] ) : 'medical';
-$view_file        = __DIR__ . '/pages/' . $view . '.php';
-$commerce_native  = ! empty( $gloskin_context['commerce_native'] );
-$commerce_render  = isset( $gloskin_context['commerce_render_mode'] ) ? sanitize_key( $gloskin_context['commerce_render_mode'] ) : '';
+$gloskin_view             = isset( $gloskin_context['view'] ) ? sanitize_key( $gloskin_context['view'] ) : '';
+$gloskin_variant          = isset( $gloskin_context['design_variant'] ) ? sanitize_key( $gloskin_context['design_variant'] ) : 'medical';
+$gloskin_view_file        = __DIR__ . '/pages/' . $gloskin_view . '.php';
+$gloskin_commerce_native  = ! empty( $gloskin_context['commerce_native'] );
+$gloskin_commerce_render  = isset( $gloskin_context['commerce_render_mode'] ) ? sanitize_key( $gloskin_context['commerce_render_mode'] ) : '';
 
 require __DIR__ . '/parts/template-helpers.php';
 require __DIR__ . '/parts/readiness-helpers.php';
@@ -30,20 +30,20 @@ require __DIR__ . '/parts/composition-helpers.php';
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<?php wp_head(); ?>
 </head>
-<body <?php body_class( array( 'gloskin-ui1', 'gloskin-ui1--' . $variant ) ); ?>>
+<body <?php body_class( array( 'gloskin-ui1', 'gloskin-ui1--' . $gloskin_variant ) ); ?>>
 <?php wp_body_open(); ?>
 <?php require __DIR__ . '/parts/header.php'; ?>
 <main id="gloskin-main" class="gloskin-ui1-main">
 	<?php gloskin_ui1_render_breadcrumbs( $gloskin_context ); ?>
 	<?php
-	if ( $commerce_native ) {
+	if ( $gloskin_commerce_native ) {
 		/* The shell/provider breadcrumb is the visible owner on Gloskin-owned
 		 * Woo requests. Suppress Woo's classic visible breadcrumb only for this
 		 * request; Woo remains untouched outside this shell. */
 		if ( function_exists( 'remove_action' ) ) {
 			remove_action( 'woocommerce_before_main_content', 'woocommerce_breadcrumb', 20 );
 		}
-		if ( 'page' === $commerce_render ) {
+		if ( 'page' === $gloskin_commerce_render ) {
 			gloskin_ui1_render_commerce_page_heading();
 		}
 		/* Replace only Woo's classic empty-cart message inside this Gloskin
@@ -53,7 +53,7 @@ require __DIR__ . '/parts/composition-helpers.php';
 			add_action( 'woocommerce_cart_is_empty', 'gloskin_ui1_render_native_cart_empty_state', 10 );
 		}
 		echo '<div class="woocommerce gloskin-ui1-commerce-native">';
-		if ( 'woocommerce' === $commerce_render && function_exists( 'woocommerce_content' ) ) {
+		if ( 'woocommerce' === $gloskin_commerce_render && function_exists( 'woocommerce_content' ) ) {
 			woocommerce_content();
 		} elseif ( function_exists( 'have_posts' ) ) {
 			while ( have_posts() ) {
@@ -62,8 +62,8 @@ require __DIR__ . '/parts/composition-helpers.php';
 			}
 		}
 		echo '</div>';
-	} elseif ( is_readable( $view_file ) ) {
-		require $view_file;
+	} elseif ( is_readable( $gloskin_view_file ) ) {
+		require $gloskin_view_file;
 	} else {
 		gloskin_ui1_render_empty_state(
 			'generic',
