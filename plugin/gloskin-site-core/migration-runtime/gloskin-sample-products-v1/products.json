@@ -41,7 +41,7 @@
           "size": "60 ml",
           "sku": "GLS-SMP-002-060",
           "regular_price": "119000",
-          "status": "draft",
+          "status": "publish",
           "stock_status": "instock"
         },
         {
@@ -49,7 +49,7 @@
           "size": "120 ml",
           "sku": "GLS-SMP-002-120",
           "regular_price": "189000",
-          "status": "draft",
+          "status": "publish",
           "stock_status": "instock"
         }
       ]
@@ -94,7 +94,7 @@
           "size": "30 g",
           "sku": "GLS-SMP-004-030",
           "regular_price": "229000",
-          "status": "draft",
+          "status": "publish",
           "stock_status": "instock"
         },
         {
@@ -102,7 +102,7 @@
           "size": "50 g",
           "sku": "GLS-SMP-004-050",
           "regular_price": "299000",
-          "status": "draft",
+          "status": "publish",
           "stock_status": "instock"
         }
       ]
@@ -147,7 +147,7 @@
           "size": "100 ml",
           "sku": "GLS-SMP-006-100",
           "regular_price": "179000",
-          "status": "draft",
+          "status": "publish",
           "stock_status": "instock"
         },
         {
@@ -155,7 +155,7 @@
           "size": "150 ml",
           "sku": "GLS-SMP-006-150",
           "regular_price": "219000",
-          "status": "draft",
+          "status": "publish",
           "stock_status": "instock"
         }
       ]
@@ -200,7 +200,7 @@
           "size": "15 ml",
           "sku": "GLS-SMP-008-015",
           "regular_price": "189000",
-          "status": "draft",
+          "status": "publish",
           "stock_status": "instock"
         },
         {
@@ -208,7 +208,7 @@
           "size": "30 ml",
           "sku": "GLS-SMP-008-030",
           "regular_price": "279000",
-          "status": "draft",
+          "status": "publish",
           "stock_status": "instock"
         }
       ]
@@ -289,7 +289,7 @@
           "size": "15 ml",
           "sku": "GLS-SMP-012-015",
           "regular_price": "239000",
-          "status": "draft",
+          "status": "publish",
           "stock_status": "instock"
         },
         {
@@ -297,7 +297,7 @@
           "size": "30 ml",
           "sku": "GLS-SMP-012-030",
           "regular_price": "329000",
-          "status": "draft",
+          "status": "publish",
           "stock_status": "instock"
         }
       ]

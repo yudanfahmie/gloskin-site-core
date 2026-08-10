@@ -514,10 +514,8 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 			if ( 'attachment' !== get_post_type( $attachment_id ) ) {
 				throw new RuntimeException( 'Media source identity tidak menunjuk attachment: ' . $record['source_id'] );
 			}
-			$attached_file = function_exists( 'get_attached_file' ) ? get_attached_file( $attachment_id ) : null;
-			if ( null !== $attached_file && ( ! is_string( $attached_file ) || '' === trim( $attached_file ) || ! is_file( $attached_file ) ) ) {
-				throw new RuntimeException( 'File attachment lokal hilang atau rusak untuk ' . $record['source_id'] . '. Pulihkan atau hapus attachment tersebut sebelum Resume Import.' );
-			}
+			$this->assert_media_identity_immutable( $attachment_id, $record, $bundle_id );
+			$this->assert_attachment_healthy( $attachment_id, $record );
 			$this->apply_media_meta( $attachment_id, $record, $bundle_id );
 			return array( 'id' => $attachment_id, 'reused' => true );
 		}
@@ -540,6 +538,51 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 		$this->apply_media_meta( $attachment_id, $record, $bundle_id );
 
 		return array( 'id' => $attachment_id, 'reused' => false );
+	}
+
+	/**
+	 * Guard the immutable provenance of a reused attachment before it is touched.
+	 *
+	 * @param int $attachment_id Existing attachment matched by media source identity.
+	 * @param array<string,mixed> $record Media record.
+	 * @param string $bundle_id Bundle.
+	 * @return void
+	 */
+	private function assert_media_identity_immutable( $attachment_id, array $record, $bundle_id ) {
+		$existing_sample = (string) get_post_meta( $attachment_id, self::SAMPLE_META, true );
+		if ( '1' !== $existing_sample ) {
+			throw new RuntimeException( 'Media source identity sudah dipakai oleh attachment yang bukan Gloskin sample data. Import dihentikan untuk mencegah pengambilalihan diam-diam: ' . $record['source_id'] );
+		}
+		$existing_bundle = (string) get_post_meta( $attachment_id, self::BUNDLE_META, true );
+		if ( '' !== $existing_bundle && $existing_bundle !== (string) $bundle_id ) {
+			throw new RuntimeException( 'Media source identity dipakai oleh bundle lain (' . $existing_bundle . '): ' . $record['source_id'] );
+		}
+		$existing_url = (string) get_post_meta( $attachment_id, self::MEDIA_URL_META, true );
+		if ( '' !== $existing_url && $existing_url !== (string) $record['source_url'] ) {
+			throw new RuntimeException( 'Media source identity memiliki source URL berbeda. Import dihentikan untuk mencegah provenance drift.' );
+		}
+	}
+
+	/**
+	 * @param int $attachment_id Attachment.
+	 * @param array<string,mixed> $record Media record.
+	 * @return void
+	 */
+	private function assert_attachment_healthy( $attachment_id, array $record ) {
+		$attached_file = function_exists( 'get_attached_file' ) ? get_attached_file( $attachment_id ) : null;
+		if ( null === $attached_file ) {
+			return;
+		}
+		$broken_message = 'File attachment lokal hilang atau rusak untuk ' . $record['source_id'] . '. Pulihkan atau hapus attachment tersebut sebelum Resume Import.';
+		if ( ! is_string( $attached_file ) || '' === trim( $attached_file ) || ! is_file( $attached_file ) ) {
+			throw new RuntimeException( $broken_message );
+		}
+		if ( function_exists( 'wp_attachment_is_image' ) && ! wp_attachment_is_image( $attachment_id ) ) {
+			throw new RuntimeException( $broken_message );
+		}
+		if ( filesize( $attached_file ) <= 0 ) {
+			throw new RuntimeException( $broken_message );
+		}
 	}
 
 	/**

@@ -60,5 +60,44 @@ expect_failure(
     'payload fingerprint mismatch'
 );
 
+reset_stub_state();
+list($importer, $bundle, $payload) = make_importer();
+$media_record = $payload['media_by_product'][$payload['products'][0]['source_id']][0];
+$reusable_id = $GLOBALS['stub_next_id']++;
+$GLOBALS['stub_post_types'][$reusable_id] = 'attachment';
+update_post_meta($reusable_id, Gloskin_Site_Core_Sample_Product_Importer::MEDIA_SOURCE_META, $media_record['source_id']);
+update_post_meta($reusable_id, Gloskin_Site_Core_Sample_Product_Importer::SAMPLE_META, 1);
+update_post_meta($reusable_id, Gloskin_Site_Core_Sample_Product_Importer::BUNDLE_META, $payload['manifest']['bundle_id']);
+update_post_meta($reusable_id, Gloskin_Site_Core_Sample_Product_Importer::MEDIA_URL_META, $media_record['source_url']);
+$importer->advance('start');
+$importer->advance('continue');
+ok($GLOBALS['stub_sideload_calls'] === (int) $payload['products'][0]['media_count'] - 1, 'same source ID + same source URL reuses without a sideload');
+$reused_ids = get_posts(array('post_type'=>'attachment','meta_key'=>Gloskin_Site_Core_Sample_Product_Importer::MEDIA_SOURCE_META,'meta_value'=>$media_record['source_id'],'numberposts'=>2));
+ok(count($reused_ids) === 1 && (int) $reused_ids[0] === $reusable_id, 'same source ID + same source URL reuses the existing attachment');
+
+reset_stub_state();
+list($importer, $bundle, $payload) = make_importer();
+$media_record = $payload['media_by_product'][$payload['products'][0]['source_id']][0];
+$drifted_id = $GLOBALS['stub_next_id']++;
+$GLOBALS['stub_post_types'][$drifted_id] = 'attachment';
+update_post_meta($drifted_id, Gloskin_Site_Core_Sample_Product_Importer::MEDIA_SOURCE_META, $media_record['source_id']);
+update_post_meta($drifted_id, Gloskin_Site_Core_Sample_Product_Importer::SAMPLE_META, 1);
+update_post_meta($drifted_id, Gloskin_Site_Core_Sample_Product_Importer::BUNDLE_META, $payload['manifest']['bundle_id']);
+update_post_meta($drifted_id, Gloskin_Site_Core_Sample_Product_Importer::MEDIA_URL_META, 'https://example.test/already-owned-elsewhere.jpg');
+$importer->advance('start');
+expect_failure(function() use ($importer) { $importer->advance('continue'); }, 'provenance drift', 'same source ID + different source URL hard fails');
+ok(get_post_meta($drifted_id, Gloskin_Site_Core_Sample_Product_Importer::MEDIA_URL_META, true) === 'https://example.test/already-owned-elsewhere.jpg', 'existing provenance URL is not overwritten by the failed reconcile');
+
+reset_stub_state();
+list($importer, $bundle, $payload) = make_importer();
+$media_record = $payload['media_by_product'][$payload['products'][0]['source_id']][0];
+$foreign_bundle_id = $GLOBALS['stub_next_id']++;
+$GLOBALS['stub_post_types'][$foreign_bundle_id] = 'attachment';
+update_post_meta($foreign_bundle_id, Gloskin_Site_Core_Sample_Product_Importer::MEDIA_SOURCE_META, $media_record['source_id']);
+update_post_meta($foreign_bundle_id, Gloskin_Site_Core_Sample_Product_Importer::SAMPLE_META, 1);
+update_post_meta($foreign_bundle_id, Gloskin_Site_Core_Sample_Product_Importer::BUNDLE_META, 'gloskin-sample-products-v0-other');
+$importer->advance('start');
+expect_failure(function() use ($importer) { $importer->advance('continue'); }, 'bundle lain', 'same source ID + different bundle ID hard fails');
+
 @unlink($GLOBALS['gl_hardening_attachment_file']);
 echo "sample-product importer hardening: OK\n";

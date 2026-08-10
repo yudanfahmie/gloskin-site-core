@@ -381,7 +381,7 @@ final class Gloskin_Site_Core_Sample_Product_Bundle {
 				if ( '' === $normalized['size']
 					|| ! preg_match( '/^GLS-SMP-\d{3}-\d{3}$/', $normalized['sku'] )
 					|| ! preg_match( '/^\d+$/', $normalized['regular_price'] )
-					|| 'draft' !== $normalized['status']
+					|| 'publish' !== $normalized['status']
 					|| 'instock' !== $normalized['stock_status']
 					|| $product['source_id'] . ':' . $expected_token !== $normalized['source_id'] ) {
 					throw new RuntimeException( 'Variasi produk tidak memenuhi kontrak: ' . $normalized['source_id'] );
