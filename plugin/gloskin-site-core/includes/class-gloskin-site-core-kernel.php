@@ -44,6 +44,10 @@ final class Gloskin_Site_Core_Kernel {
 
 			require_once __DIR__ . '/class-gloskin-site-core-admin-service.php';
 			require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
+			require_once __DIR__ . '/class-gloskin-site-core-sample-media-compatibility.php';
+
+			$media_compatibility = new Gloskin_Site_Core_Sample_Media_Compatibility();
+			$media_compatibility->register();
 
 			$admin = new Gloskin_Site_Core_Admin_Service( $content, $assets, $this->plugin_file );
 			$admin->register();
@@ -51,6 +55,7 @@ final class Gloskin_Site_Core_Kernel {
 			$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();
 			$lifecycle->register_upgrade();
 
+			$this->services[] = $media_compatibility;
 			$this->services[] = $admin;
 			$this->services[] = $lifecycle;
 			return;
