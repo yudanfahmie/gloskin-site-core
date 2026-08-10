@@ -254,4 +254,69 @@ for view in "${closing_views[@]}"; do
   grep -q 'data-gloskin-section=".*closing"' "$templates/pages/$view.php" || { echo "required closing composition missing: $view" >&2; exit 1; }
 done
 
+# Gloskin Form Kit v1 -- small reusable field/select/textarea/checkbox/radio/
+# quantity primitive over native WooCommerce markup. Presentation only; Woo
+# keeps every field's markup, validation, cart/checkout/order logic.
+readiness_css="$plugin_root/assets/css/gloskin-ui1-readiness.css"
+
+for expected in \
+  '--gloskin-field-height:52px' \
+  '--gloskin-field-radius:8px' \
+  '--gloskin-field-border:var(--gloskin-border)' \
+  '--gloskin-field-bg:var(--gloskin-surface)' \
+  '--gloskin-field-focus-ring:0 0 0 3px var(--gloskin-accent-soft)'; do
+  grep -qF -- "$expected" "$core_base_css" || { echo "Form Kit field token missing: $expected" >&2; exit 1; }
+done
+
+# The canonical primitive stays one shared declaration, not copy/pasted per
+# Woo selector (input/select/textarea + Woo input.input-text/select/textarea).
+grep -qF -- '.gloskin-ui1-form input:not([type="checkbox"]):not([type="radio"]),.gloskin-ui1-form select,.gloskin-ui1-form textarea,.gloskin-ui1 .woocommerce input.input-text,.gloskin-ui1 .woocommerce select,.gloskin-ui1 .woocommerce textarea{width:100%;min-height:var(--gloskin-field-height)' "$core_base_css" \
+  || { echo "Form Kit canonical field primitive missing or no longer shared" >&2; exit 1; }
+
+# Woo cart/checkout/account/product coverage: quantity, invalid state,
+# checkbox/radio, Select2 adapter, notices, autofill, WC Blocks bridge.
+for expected in \
+  '.gloskin-ui1 .woocommerce .quantity .qty{width:76px' \
+  '.gloskin-ui1 .woocommerce form .form-row.woocommerce-invalid input.input-text' \
+  '.gloskin-ui1 input[type="checkbox"],.gloskin-ui1 input[type="radio"]{width:18px;height:18px' \
+  '.gloskin-ui1 .select2-container .select2-selection--single{height:var(--gloskin-field-height)' \
+  '.gloskin-ui1 .select2-dropdown{' \
+  '.gloskin-ui1 .woocommerce-error,.gloskin-ui1 .woocommerce-message,.gloskin-ui1 .woocommerce-info{' \
+  '.gloskin-ui1 input:-webkit-autofill' \
+  '.gloskin-ui1 .wc-block-components-text-input input'; do
+  grep -qF -- "$expected" "$core_css" || { echo "Form Kit Woo coverage missing: $expected" >&2; exit 1; }
+done
+
+# My-account fields stay on the same field kit as cart/checkout instead of a
+# separate/older set of values.
+grep -qF -- '.woocommerce-account .woocommerce form .form-row input.input-text,.woocommerce-account .woocommerce form .form-row textarea,.woocommerce-account .woocommerce form select{min-height:var(--gloskin-field-height)' "$readiness_css" \
+  || { echo "account-page fields diverged from the Form Kit tokens" >&2; exit 1; }
+
+# Keyboard focus stays visible and obvious: the global focus-visible ring is
+# untouched, and fields add their own accent border + soft ring on top of it.
+grep -qF -- '.gloskin-ui1 :focus-visible{outline:3px solid var(--gloskin-accent-readable)' "$core_base_css" \
+  || { echo "global focus-visible ring regressed" >&2; exit 1; }
+grep -qF -- ':focus-visible{outline:none;border-color:var(--gloskin-accent);background:var(--gloskin-field-bg-focus);box-shadow:var(--gloskin-field-focus-ring)}' "$core_base_css" \
+  || { echo "Form Kit focus-visible field ring missing" >&2; exit 1; }
+
+# A real mobile rule exists for the kit.
+grep -qF -- '@media (max-width:760px){.gloskin-ui1 .woocommerce .quantity .qty{width:84px}' "$core_css" \
+  || { echo "Form Kit mobile rule missing" >&2; exit 1; }
+
+# Every new Form Kit selector stays scoped under .gloskin-ui1 -- no bare
+# select2/checkbox/radio/qty rule leaking outside Gloskin-owned markup.
+if grep -nE '^\.select2-|^input\[type="checkbox"\]|^input\[type="radio"\]|^\.quantity \.qty|^\.wc-block-components-' "$core_css" "$core_base_css"; then
+  echo "Form Kit selector leaks outside .gloskin-ui1 scope" >&2
+  exit 1
+fi
+
+# No WooCommerce template override was introduced to achieve this styling --
+# presentation must stay CSS-only and survive Woo updates.
+if find "$templates" \( -iname 'cart.php' -o -iname 'checkout.php' -o -iname 'form-billing.php' \
+  -o -iname 'form-shipping.php' -o -iname 'payment.php' -o -iname 'form-login.php' \
+  -o -iname 'form-edit-address.php' \) | grep -q .; then
+  echo "a WooCommerce template override was introduced; presentation must stay CSS-only" >&2
+  exit 1
+fi
+
 echo "presentation safety checks passed (${#required_views[@]} public views, contrast/header/copy polish guarded)"

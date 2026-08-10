@@ -51,7 +51,7 @@
 .woocommerce-account .woocommerce-MyAccount-content h2,.woocommerce-account .woocommerce-MyAccount-content h3{font-family:var(--gloskin-font-heading);font-weight:600}
 .woocommerce-account .woocommerce table.shop_table{border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);border-collapse:separate;overflow:hidden;background:var(--gloskin-bg)}
 .woocommerce-account .woocommerce table.shop_table th,.woocommerce-account .woocommerce table.shop_table td{padding:13px 14px;border-color:var(--gloskin-border);vertical-align:middle}
-.woocommerce-account .woocommerce form .form-row input.input-text,.woocommerce-account .woocommerce form .form-row textarea,.woocommerce-account .woocommerce form select{min-height:46px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);background:var(--gloskin-bg);color:var(--gloskin-text)}
+.woocommerce-account .woocommerce form .form-row input.input-text,.woocommerce-account .woocommerce form .form-row textarea,.woocommerce-account .woocommerce form select{min-height:var(--gloskin-field-height);border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-field-bg);color:var(--gloskin-text)}
 .woocommerce-account .woocommerce fieldset{margin:26px 0 0;padding:20px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md)}
 .woocommerce-account .woocommerce .button{border-radius:999px}
 .gloskin-ui1-commerce-native .gloskin-ui1-empty-state+.return-to-shop{display:none}

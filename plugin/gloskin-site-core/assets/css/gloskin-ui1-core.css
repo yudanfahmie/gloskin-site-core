@@ -185,3 +185,76 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 
 /* Reduced motion for overlays/sheets */
 @media (prefers-reduced-motion:reduce){.gloskin-ui1-search-overlay,.gloskin-ui1-sheet,.gloskin-ui1-search-overlay__canvas,.gloskin-ui1-sheet__panel,.gloskin-ui1-badge{transition:none !important}.gloskin-ui1-search-overlay__loading span{animation:none}}
+
+/* ==========================================================================
+   Gloskin Form Kit v1 -- refinements layered on the shared field primitive
+   (gloskin-ui1-core-base.css). Presentation only: WooCommerce keeps every
+   field's markup, validation, country/state logic, cart/checkout/order
+   business logic and submission. Nothing here initializes Select2, adds a
+   custom dropdown/validation library, or forks a Woo template.
+   ========================================================================== */
+
+/* Labels carry most of the premium identity; sizing/rhythm here, the exact
+   Mulish weight/letter-spacing finishing lives in gloskin-ui1-production.css.
+   Woo's own required-marker markup (abbr.required) is kept, only re-tinted. */
+.gloskin-ui1-form label,.gloskin-ui1 .woocommerce form label{display:block;margin-bottom:7px;font-size:.92rem;line-height:1.3}
+.gloskin-ui1 .woocommerce form .required{color:var(--gloskin-accent-strong);text-decoration:none}
+
+/* Field-group rhythm: calm rather than compressed. Woo's own two-column rows
+   (col2-set, form-row-first/-last) stay Woo-owned; only vertical gap/help
+   text spacing is tuned here. */
+.gloskin-ui1 .woocommerce form .form-row{margin:0 0 20px}
+.gloskin-ui1 .woocommerce form .form-row:last-child{margin-bottom:0}
+.gloskin-ui1 .woocommerce-input-wrapper .woocommerce-error,.gloskin-ui1 .woocommerce form .form-row .description{margin-top:7px;font-size:.86rem}
+
+/* Select: native keyboard behaviour, semantics and Woo country/state logic
+   are untouched -- only the default UA arrow is replaced with a quiet inline
+   chevron. The luxury (dark) variant swaps in a light-colored arrow. */
+.gloskin-ui1-form select,.gloskin-ui1 .woocommerce select{appearance:none;padding-right:40px;background-repeat:no-repeat;background-position:right 14px center;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7' fill='none'%3E%3Cpath d='M1 1L5.5 5.5L10 1' stroke='%236F6667' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+.gloskin-ui1--luxury .gloskin-ui1-form select,.gloskin-ui1--luxury .woocommerce select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7' fill='none'%3E%3Cpath d='M1 1L5.5 5.5L10 1' stroke='%23FBFBFA' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+
+/* Select2 -- WooCommerce's own enhanced country/state control. Presentation
+   only: Gloskin never initializes, configures or replaces Select2. The
+   dropdown is appended to <body>, which already carries .gloskin-ui1, so it
+   is reachable without a custom dropdownParent. */
+.gloskin-ui1 .select2-container .select2-selection--single{height:var(--gloskin-field-height);border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-field-bg);transition:border-color 140ms ease,background-color 140ms ease,box-shadow 140ms ease}
+.gloskin-ui1 .select2-container .select2-selection__rendered{padding-left:16px;line-height:calc(var(--gloskin-field-height) - 2px);color:var(--gloskin-text)}
+.gloskin-ui1 .select2-container .select2-selection__arrow{height:calc(var(--gloskin-field-height) - 2px);right:10px}
+.gloskin-ui1 .select2-container--open .select2-selection--single,.gloskin-ui1 .select2-container--focus .select2-selection--single{border-color:var(--gloskin-accent);background:var(--gloskin-field-bg-focus);box-shadow:var(--gloskin-field-focus-ring)}
+.gloskin-ui1 .select2-dropdown{border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-bg);box-shadow:0 18px 42px color-mix(in srgb,var(--gloskin-text) 10%,transparent)}
+.gloskin-ui1 .select2-search--dropdown .select2-search__field{min-height:40px;padding:8px 12px;border:1px solid var(--gloskin-field-border);border-radius:6px;font:inherit}
+.gloskin-ui1 .select2-results__option{padding:9px 14px}
+.gloskin-ui1 .select2-results__option--highlighted[aria-selected],.gloskin-ui1 .select2-results__option[aria-selected="true"]{background:var(--gloskin-accent);color:var(--gloskin-inverse)}
+/* Select2's own JS sets an inline width on the container; !important is the
+   only reliable override and is localized to this one declaration. */
+.gloskin-ui1 .select2-container{width:100% !important;font-family:inherit}
+
+/* Checkbox/radio: native semantics only, no fake markup. Covers terms,
+   remember-me, shipping method and payment method controls alike. */
+.gloskin-ui1 input[type="checkbox"],.gloskin-ui1 input[type="radio"]{width:18px;height:18px;margin:0;accent-color:var(--gloskin-accent);vertical-align:middle}
+.gloskin-ui1 .woocommerce-form__label-for-checkbox,.gloskin-ui1 .woocommerce ul#shipping_method li label,.gloskin-ui1 .woocommerce ul.wc_payment_methods li label{display:inline-flex;align-items:center;gap:9px;cursor:pointer}
+
+/* Quantity: a compact premium field, not a full-width text input. Woo's own
+   stepper markup/behaviour is untouched; no +/- buttons are added here. */
+.gloskin-ui1 .woocommerce .quantity .qty{width:76px;min-height:var(--gloskin-field-height);padding:10px 12px;text-align:center}
+
+/* Validation: Woo adds these classes to the .form-row wrapper (not the input
+   itself) once a submission attempt fails, so this never flags an untouched
+   required field on page load. Border + tinted surface, never color alone --
+   Woo's own error text remains the primary, always-present signal. */
+.gloskin-ui1 .woocommerce form .form-row.woocommerce-invalid input.input-text,.gloskin-ui1 .woocommerce form .form-row.woocommerce-invalid-required-field input.input-text,.gloskin-ui1 .woocommerce form .form-row.woocommerce-invalid select,.gloskin-ui1 .woocommerce form .form-row.woocommerce-invalid textarea{border-color:var(--gloskin-accent-strong);background:color-mix(in srgb,var(--gloskin-accent) 4%,var(--gloskin-field-bg))}
+.gloskin-ui1 .woocommerce-error,.gloskin-ui1 .woocommerce-message,.gloskin-ui1 .woocommerce-info{display:flex;align-items:center;gap:12px;margin:0 0 20px;padding:14px 16px;border:1px solid var(--gloskin-border);border-top:2px solid var(--gloskin-accent);border-radius:var(--gloskin-field-radius);background:var(--gloskin-bg);list-style:none}
+.gloskin-ui1 .woocommerce-error{border-top-color:var(--gloskin-accent-strong)}
+.gloskin-ui1 .woocommerce-error li{margin:0}
+
+/* Autofill: keep the ivory field surface and charcoal text instead of the
+   browser's own bright yellow/blue autofill treatment. */
+.gloskin-ui1 input:-webkit-autofill,.gloskin-ui1 input:-webkit-autofill:hover,.gloskin-ui1 input:-webkit-autofill:focus{box-shadow:0 0 0 1000px var(--gloskin-field-bg) inset;-webkit-text-fill-color:var(--gloskin-text);transition:background-color 9999s ease-in-out 0s}
+
+/* WooCommerce Blocks cart/checkout: small compatibility bridge for the
+   current high-value markup only, so Classic and Block checkout converge on
+   one primitive. Gloskin does not enqueue, configure or initialize Blocks. */
+.gloskin-ui1 .wc-block-components-text-input input,.gloskin-ui1 .wc-block-components-textarea textarea,.gloskin-ui1 .wc-block-components-combobox input{min-height:var(--gloskin-field-height);border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-field-bg)}
+.gloskin-ui1 .wc-block-components-checkbox svg{fill:var(--gloskin-accent)}
+
+@media (max-width:760px){.gloskin-ui1 .woocommerce .quantity .qty{width:84px}.gloskin-ui1 .select2-results__option{padding:11px 14px}}

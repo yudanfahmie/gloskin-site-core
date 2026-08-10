@@ -365,3 +365,8 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 .gloskin-ui1-footer__clinics{grid-template-columns:repeat(2,max-content);column-gap:clamp(22px,3vw,40px)}
 .gloskin-ui1-footer__clinics li,.gloskin-ui1-footer__clinics a{white-space:nowrap}
 @media (max-width:420px){.gloskin-ui1-footer__clinics{grid-template-columns:1fr}}
+
+/* Gloskin Form Kit -- premium label character. Structure/spacing lives in
+   gloskin-ui1-core.css; this only tunes weight/letter-spacing to match the
+   rest of the Mulish body-copy hierarchy (nav links, eyebrow) above. */
+.gloskin-ui1-form label,.gloskin-ui1 .woocommerce form label{font-weight:600;letter-spacing:.01em}
