@@ -281,7 +281,7 @@
       "composition": "",
       "stock_status": "instock",
       "status": "draft",
-      "media_count": 6,
+      "media_count": 5,
       "attribute_name": "Ukuran",
       "variations": [
         {
@@ -316,7 +316,7 @@
       "composition": "",
       "stock_status": "instock",
       "status": "draft",
-      "media_count": 4,
+      "media_count": 5,
       "size": "40 g",
       "regular_price": "259000"
     }
