@@ -26,6 +26,7 @@ req('synthetic' in manifest['notice'].lower() and 'not verified commercial produ
 admin=read(P/'includes/class-gloskin-site-core-admin-service.php'); asset=read(P/'includes/class-gloskin-site-core-asset-service.php'); kernel=read(P/'includes/class-gloskin-site-core-kernel.php'); importer=read(P/'includes/class-gloskin-site-core-sample-product-importer.php'); bundle=read(P/'includes/class-gloskin-site-core-sample-product-bundle.php'); js=read(P/'assets/js/gloskin-ui1-sample-product-import.js')
 req('manage_woocommerce' in admin and 'check_ajax_referer' in admin and 'wp_ajax_' in admin,'admin auth'); req('wp_ajax_nopriv' not in admin+importer+js and 'register_rest_route' not in admin+importer+js,'no public path'); req('enqueue_admin_migration' in asset and "const VERSION = '0.7.16'" in kernel,'asset/version')
 for s in ('pending','validating','running','failed','verifying','consumed'): req(s in importer,f'state {s}')
-for t in ('_gloskin_sample_source_id','_gloskin_sample_media_source_id','LOCK_TTL','cleanup_runtime'): req(t in importer+bundle,f'contract {t}')
+for t in ('_gloskin_sample_source_id','_gloskin_sample_media_source_id','LOCK_TTL'): req(t in importer+bundle,f'contract {t}')
+req('public function cleanup(' in bundle and '$this->bundle->cleanup( $manifest )' in importer,'cleanup contract')
 req('sideload' in importer.lower() and 'setInterval' not in js and 'Math.random' not in js,'media/orchestration')
 print('sample-product-migration-contract: OK')
