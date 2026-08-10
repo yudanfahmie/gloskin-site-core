@@ -4,6 +4,9 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 python tests/check-language.py
+python tests/sample-product-migration-contract.py
+php tests/sample-product-migration.php
+php tests/sample-product-woo-missing.php
 ./tests/check-presentation.sh
 python tests/readiness-contract-smoke.py
 php tests/readiness-php-smoke.php

@@ -12,14 +12,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Gloskin_Site_Core_Admin_Service {
 	const META_NONCE_ACTION = 'gloskin_site_core_save_meta';
 	const META_NONCE_NAME   = 'gloskin_site_core_meta_nonce';
-	const SETTINGS_OPTION   = 'gloskin_site_core_settings';
-	const SETTINGS_SLUG     = 'gloskin-site-core';
+	const SETTINGS_OPTION      = 'gloskin_site_core_settings';
+	const SETTINGS_SLUG        = 'gloskin-site-core';
+	const MIGRATION_CAPABILITY = 'manage_woocommerce';
+	const MIGRATION_SLUG       = 'gloskin-sample-product-import';
+	const MIGRATION_AJAX       = 'gloskin_site_core_sample_product_import';
+	const MIGRATION_NONCE      = 'gloskin_site_core_sample_product_import';
 
 	/** @var Gloskin_Site_Core_Content_Service */
 	private $content;
 
+	/** @var Gloskin_Site_Core_Asset_Service|null */
+	private $assets;
+
+	/** @var string */
+	private $plugin_file;
+
+	/** @var Gloskin_Site_Core_Sample_Product_Importer|null */
+	private $sample_importer = null;
+
+	/** @var string */
+	private $migration_hook = '';
+
 	/** @param Gloskin_Site_Core_Content_Service $content Content owner. */
-	public function __construct( $content ) { $this->content = $content; }
+	public function __construct( $content, $assets = null, $plugin_file = '' ) {
+		$this->content = $content; $this->assets = $assets; $this->plugin_file = (string) $plugin_file;
+	}
 
 	/** @return void */
 	public function register() {
@@ -28,6 +46,8 @@ final class Gloskin_Site_Core_Admin_Service {
 		add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) );
 		add_action( 'save_post', array( $this, 'save_meta' ), 20, 2 );
 		add_action( 'admin_notices', array( $this, 'content_readiness_notice' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_migration_assets' ), 30 );
+		add_action( 'wp_ajax_' . self::MIGRATION_AJAX, array( $this, 'ajax_sample_product_import' ) );
 	}
 
 	public function register_settings() {
@@ -42,6 +62,13 @@ final class Gloskin_Site_Core_Admin_Service {
 		add_menu_page( __( 'Gloskin Content Overview', 'gloskin-site-core' ), __( 'Gloskin Content', 'gloskin-site-core' ), 'edit_posts', $parent, array( $this, 'render_content_overview' ), 'dashicons-admin-site-alt3', 21 );
 		add_submenu_page( $parent, __( 'Gloskin Content Overview', 'gloskin-site-core' ), __( 'Overview', 'gloskin-site-core' ), 'edit_posts', $parent, array( $this, 'render_content_overview' ) );
 		add_submenu_page( $parent, __( 'Gloskin Settings', 'gloskin-site-core' ), __( 'Settings', 'gloskin-site-core' ), 'manage_options', self::SETTINGS_SLUG, array( $this, 'render_settings_page' ) );
+		if ( current_user_can( self::MIGRATION_CAPABILITY ) && '' !== $this->plugin_file ) {
+			$migration = $this->sample_importer();
+			if ( $migration->should_show_menu() ) {
+				$hook = add_submenu_page( $parent, __( 'Sample Product Import', 'gloskin-site-core' ), __( 'Sample Product Import', 'gloskin-site-core' ), self::MIGRATION_CAPABILITY, self::MIGRATION_SLUG, array( $this, 'render_sample_product_import' ) );
+				if ( is_string( $hook ) ) { $this->migration_hook = $hook; }
+			}
+		}
 	}
 
 	public function render_content_overview() {
@@ -54,7 +81,16 @@ final class Gloskin_Site_Core_Admin_Service {
 		?>
 		<div class="wrap"><h1><?php echo esc_html__( 'Gloskin Content', 'gloskin-site-core' ); ?></h1><p><?php echo esc_html__( 'Ringkasan konten Gloskin dan pintasan ke layar WordPress yang tetap menjadi pemilik datanya.', 'gloskin-site-core' ); ?></p><div class="gloskin-admin-overview">
 		<?php foreach ( Gloskin_Site_Core_Content_Service::record_targets() as $post_type => $target ) : $count = wp_count_posts( $post_type ); $live = $count && isset( $count->publish ) ? absint( $count->publish ) : 0; ?><div class="card"><h2><?php echo esc_html( $labels[ $post_type ] ); ?></h2><p><?php echo esc_html( sprintf( __( '%1$d dari target %2$d record telah dipublikasikan.', 'gloskin-site-core' ), $live, $target ) ); ?></p><p><a class="button button-secondary" href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . $post_type ) ); ?>"><?php echo esc_html__( 'Kelola Konten', 'gloskin-site-core' ); ?></a></p></div><?php endforeach; ?>
-		</div><hr><h2><?php echo esc_html__( 'Konten WordPress yang Tetap Native', 'gloskin-site-core' ); ?></h2><p><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=page' ) ); ?>"><?php echo esc_html__( 'Pages Gloskin', 'gloskin-site-core' ); ?></a> · <a href="<?php echo esc_url( admin_url( 'edit.php' ) ); ?>"><?php echo esc_html__( 'Posts / Insights', 'gloskin-site-core' ); ?></a> · <a href="<?php echo esc_url( admin_url( 'upload.php' ) ); ?>"><?php echo esc_html__( 'Media Library', 'gloskin-site-core' ); ?></a></p><?php if ( current_user_can( 'manage_options' ) ) : ?><p><a class="button button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SETTINGS_SLUG ) ); ?>"><?php echo esc_html__( 'Buka Gloskin Settings', 'gloskin-site-core' ); ?></a></p><?php endif; ?></div>
+		</div><hr><h2><?php echo esc_html__( 'Konten WordPress yang Tetap Native', 'gloskin-site-core' ); ?></h2><p><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=page' ) ); ?>"><?php echo esc_html__( 'Pages Gloskin', 'gloskin-site-core' ); ?></a> · <a href="<?php echo esc_url( admin_url( 'edit.php' ) ); ?>"><?php echo esc_html__( 'Posts / Insights', 'gloskin-site-core' ); ?></a> · <a href="<?php echo esc_url( admin_url( 'upload.php' ) ); ?>"><?php echo esc_html__( 'Media Library', 'gloskin-site-core' ); ?></a></p><?php if ( current_user_can( 'manage_options' ) ) : ?><p><a class="button button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SETTINGS_SLUG ) ); ?>"><?php echo esc_html__( 'Buka Gloskin Settings', 'gloskin-site-core' ); ?></a></p><?php endif; ?>
+		<?php
+		if ( current_user_can( self::MIGRATION_CAPABILITY ) && '' !== $this->plugin_file ) :
+			$sample_summary = $this->sample_importer()->get_summary();
+			if ( 'consumed' === $sample_summary['detection'] && 'failed' === $sample_summary['cleanup'] ) :
+				?><div class="notice notice-warning inline"><p><?php echo esc_html__( 'Sample product sudah terverifikasi dan dikonsumsi, tetapi cleanup runtime gagal. Import tetap terkunci permanen.', 'gloskin-site-core' ); ?> <?php echo esc_html( $sample_summary['cleanup_error'] ); ?></p></div><?php
+			endif;
+		endif;
+		?>
+		</div>
 		<?php
 	}
 
@@ -167,6 +203,56 @@ final class Gloskin_Site_Core_Admin_Service {
 		foreach ( $targets as $post_type => $target ) { $count = wp_count_posts( $post_type ); $live = $count && isset( $count->publish ) ? absint( $count->publish ) : 0; if ( $live < $target ) { $parts[] = sprintf( __( '%1$s: %2$d/%3$d approved records published', 'gloskin-site-core' ), $post_type, $live, $target ); } }
 		if ( ! $parts ) { return; }
 		echo '<div class="notice notice-info"><p><strong>' . esc_html__( 'Gloskin content readiness:', 'gloskin-site-core' ) . '</strong> ' . esc_html( implode( '; ', $parts ) ) . '. ' . esc_html__( 'Publish only client-approved facts; do not create placeholder medical or doctor data.', 'gloskin-site-core' ) . '</p></div>';
+	}
+
+
+	public function enqueue_migration_assets( $hook_suffix ) {
+		if ( '' === $this->migration_hook || $hook_suffix !== $this->migration_hook || ! current_user_can( self::MIGRATION_CAPABILITY ) ) { return; }
+		if ( is_object( $this->assets ) && method_exists( $this->assets, 'enqueue_admin_migration' ) ) {
+			$this->assets->enqueue_admin_migration( self::MIGRATION_AJAX, wp_create_nonce( self::MIGRATION_NONCE ) );
+		}
+	}
+
+	public function render_sample_product_import() {
+		if ( ! current_user_can( self::MIGRATION_CAPABILITY ) ) { wp_die( esc_html__( 'Anda tidak memiliki izin untuk menjalankan import sample product.', 'gloskin-site-core' ) ); }
+		$summary = $this->sample_importer()->get_summary();
+		if ( ! in_array( $summary['detection'], array( 'pending', 'failed', 'running', 'verifying' ), true ) ) { wp_die( esc_html__( 'Bundle sample product tidak tersedia atau sudah dikonsumsi.', 'gloskin-site-core' ) ); }
+		$processed = isset( $summary['processed_products'] ) ? (int) $summary['processed_products'] : 0;
+		$expected = isset( $summary['expected_products'] ) ? (int) $summary['expected_products'] : 13;
+		?>
+		<div class="wrap" data-gloskin-sample-import><h1><?php echo esc_html__( 'Sample Product Import', 'gloskin-site-core' ); ?></h1>
+		<p><?php echo esc_html__( 'Synthetic staging/demo catalog — not verified commercial product truth.', 'gloskin-site-core' ); ?></p>
+		<p><?php echo esc_html__( 'Validasi penuh dan import hanya dimulai setelah tindakan eksplisit di bawah. Produk dan variasi dibuat sebagai draft.', 'gloskin-site-core' ); ?></p>
+		<table class="widefat striped" style="max-width:760px"><tbody>
+		<tr><th><?php echo esc_html__( 'Bundle', 'gloskin-site-core' ); ?></th><td><?php echo esc_html( isset( $summary['bundle_id'] ) ? $summary['bundle_id'] : 'gloskin-sample-products-v1' ); ?></td></tr>
+		<tr><th><?php echo esc_html__( 'Produk', 'gloskin-site-core' ); ?></th><td>13</td></tr><tr><th><?php echo esc_html__( 'Tipe', 'gloskin-site-core' ); ?></th><td>8 simple / 5 variable</td></tr>
+		<tr><th><?php echo esc_html__( 'Variasi', 'gloskin-site-core' ); ?></th><td>10</td></tr><tr><th><?php echo esc_html__( 'Media', 'gloskin-site-core' ); ?></th><td>58</td></tr>
+		<tr><th><?php echo esc_html__( 'Status', 'gloskin-site-core' ); ?></th><td data-gloskin-sample-status><?php echo esc_html( $summary['detection'] ); ?></td></tr>
+		<tr><th><?php echo esc_html__( 'Progress', 'gloskin-site-core' ); ?></th><td><span data-gloskin-sample-progress><?php echo esc_html( sprintf( '%d/%d', $processed, $expected ) ); ?></span></td></tr>
+		</tbody></table>
+		<div class="notice notice-error inline" data-gloskin-sample-error <?php echo empty( $summary['last_error'] ) ? 'hidden' : ''; ?>><p><?php echo esc_html( isset( $summary['last_error'] ) ? $summary['last_error'] : '' ); ?></p></div>
+		<p><button type="button" class="button button-primary" data-gloskin-sample-run><?php echo esc_html( $processed > 0 ? __( 'Resume import', 'gloskin-site-core' ) : __( 'Validate & import samples', 'gloskin-site-core' ) ); ?></button></p>
+		<p class="description"><?php echo esc_html__( 'Satu klik memulai rangkaian checkpoint berurutan. Setiap request memproses maksimum satu parent beserta media dan variasinya.', 'gloskin-site-core' ); ?></p></div>
+		<?php
+	}
+
+	public function ajax_sample_product_import() {
+		if ( ! current_user_can( self::MIGRATION_CAPABILITY ) ) { wp_send_json_error( array( 'message' => __( 'Capability manage_woocommerce diperlukan.', 'gloskin-site-core' ) ), 403 ); }
+		check_ajax_referer( self::MIGRATION_NONCE, 'nonce' );
+		$mode = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : '';
+		try {
+			wp_send_json_success( $this->sample_importer()->advance( $mode ) );
+		} catch ( Throwable $error ) {
+			wp_send_json_error( array( 'message' => $error->getMessage(), 'state' => $this->sample_importer()->get_summary() ), 409 );
+		}
+	}
+
+	private function sample_importer() {
+		if ( null === $this->sample_importer ) {
+			require_once __DIR__ . '/class-gloskin-site-core-sample-product-importer.php';
+			$this->sample_importer = new Gloskin_Site_Core_Sample_Product_Importer( $this->plugin_file );
+		}
+		return $this->sample_importer;
 	}
 
 	private function nonce() { wp_nonce_field( self::META_NONCE_ACTION, self::META_NONCE_NAME ); }

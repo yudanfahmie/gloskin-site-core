@@ -50,5 +50,9 @@ return array(
 			'src'  => 'assets/js/gloskin-ui1-admin.js',
 			'deps' => array(),
 		),
+		'gloskin-ui1-sample-import' => array(
+			'src'  => 'assets/js/gloskin-ui1-sample-product-import.js',
+			'deps' => array(),
+		),
 	),
 );

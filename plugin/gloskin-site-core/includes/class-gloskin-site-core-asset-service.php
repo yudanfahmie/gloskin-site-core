@@ -115,6 +115,27 @@ final class Gloskin_Site_Core_Asset_Service {
 	}
 
 	/**
+	 * Enqueue the temporary importer controller only after AdminService has
+	 * proven the exact migration screen and capability.
+	 *
+	 * @param string $action Authenticated AJAX action.
+	 * @param string $nonce Nonce.
+	 * @return void
+	 */
+	public function enqueue_admin_migration( $action, $nonce ) {
+		$registry = $this->registry();
+		if ( empty( $registry['admin_scripts']['gloskin-ui1-sample-import'] ) ) { return; }
+		$asset = $registry['admin_scripts']['gloskin-ui1-sample-import'];
+		wp_register_script( 'gloskin-ui1-sample-import', plugins_url( $asset['src'], $this->plugin_file ), $asset['deps'], $this->version, true );
+		wp_localize_script( 'gloskin-ui1-sample-import', 'GloskinSampleImport', array(
+			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+			'action' => (string) $action,
+			'nonce' => (string) $nonce,
+		) );
+		wp_enqueue_script( 'gloskin-ui1-sample-import' );
+	}
+
+	/**
 	 * @return array<string, array<string, array<string, mixed>>>
 	 */
 	private function registry() {

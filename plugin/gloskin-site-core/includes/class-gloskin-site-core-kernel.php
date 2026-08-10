@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.7.15';
+	const VERSION = '0.7.16';
 
 	/** @var string */
 	private $plugin_file;
@@ -45,7 +45,7 @@ final class Gloskin_Site_Core_Kernel {
 			require_once __DIR__ . '/class-gloskin-site-core-admin-service.php';
 			require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
 
-			$admin = new Gloskin_Site_Core_Admin_Service( $content );
+			$admin = new Gloskin_Site_Core_Admin_Service( $content, $assets, $this->plugin_file );
 			$admin->register();
 
 			$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();

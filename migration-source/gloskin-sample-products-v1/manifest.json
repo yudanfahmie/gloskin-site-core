@@ -1,0 +1,20 @@
+{
+  "bundle_id": "gloskin-sample-products-v1",
+  "schema_version": 1,
+  "source_version": "v1",
+  "migration_type": "gloskin-sample-woo-products",
+  "notice": "Synthetic staging/demo catalog — not verified commercial product truth.",
+  "expected_products": 13,
+  "expected_simple": 8,
+  "expected_variable": 5,
+  "expected_variations": 10,
+  "expected_media": 58,
+  "files": [
+    "products.json",
+    "media.json"
+  ],
+  "checksums": {
+    "products.json": "256f6f7561291da3d508f7253adca6d962795439e2f804c331baf2914c3fed36",
+    "media.json": "9c13c348801bed0a53704aa1807c223b16bac0078492531819c9b731a227028d"
+  }
+}

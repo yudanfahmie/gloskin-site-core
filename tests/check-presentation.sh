@@ -96,8 +96,8 @@ if grep -RInE "url\([\"']?https?://" "$plugin_root/assets" --include='*.css' --i
 fi
 
 # Sticky/admin-bar offsets have one owner: core refinement CSS. Foundation and
-# production layers must not own logged-in offset variables.
-if grep -Eq 'gloskin-ui1-admin-bar-height|gloskin-ui1-nav-sticky-top' "$production_css" "$core_base_css"; then
+# production layers may reference the canonical variables, but must not define competing owners.
+if grep -Eq -- '--gloskin-ui1-admin-bar-height:|--gloskin-ui1-nav-sticky-top:' "$production_css" "$core_base_css"; then
   echo "foundation/production CSS still competes for sticky admin-bar offset ownership" >&2
   exit 1
 fi
