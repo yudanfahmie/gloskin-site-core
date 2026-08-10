@@ -529,10 +529,11 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 
 		$products = wc_get_products(
 			array(
-				'status'  => 'publish',
-				'limit'   => max( 1, min( 20, absint( $limit ) ) ),
-				'orderby' => 'date',
-				'order'   => 'DESC',
+				'status'    => 'publish',
+				'limit'     => max( 1, min( 20, absint( $limit ) ) ),
+				'orderby'   => 'date',
+				'order'     => 'DESC',
+				'tax_query' => $this->catalog_visibility_tax_query(), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Woo's own supported wc_get_products() extension point, not hand-rolled SQL.
 			)
 		);
 
@@ -552,15 +553,95 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 
 		$products = wc_get_products(
 			array(
-				'status'   => 'publish',
-				'limit'    => max( 1, min( 20, absint( $limit ) ) ),
-				'category' => array( $category_slug ),
-				'orderby'  => 'menu_order',
-				'order'    => 'ASC',
+				'status'    => 'publish',
+				'limit'     => max( 1, min( 20, absint( $limit ) ) ),
+				'category'  => array( $category_slug ),
+				'orderby'   => 'menu_order',
+				'order'     => 'ASC',
+				'tax_query' => $this->catalog_visibility_tax_query(), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Woo's own supported wc_get_products() extension point, not hand-rolled SQL.
 			)
 		);
 
 		return $this->normalize_products( $products );
+	}
+
+	/**
+	 * Small paginated public catalog projection for /shop/. WooCommerce
+	 * remains the sole query owner -- this only normalizes wc_get_products()'s
+	 * own limit/page/paginate=true contract so templates never depend on raw
+	 * WC_Product objects or Woo pagination internals. Optionally scoped to one
+	 * Woo category, reusing the exact same catalog-visibility guard.
+	 *
+	 * @param int    $page Current 1-based page.
+	 * @param int    $per_page Products per page.
+	 * @param string $category_slug Optional Woo product_cat slug filter.
+	 * @return array{products:array<int,array<string,mixed>>,total:int,page:int,max_pages:int}
+	 */
+	public function products_paginated( $page = 1, $per_page = 12, $category_slug = '' ) {
+		$empty = array( 'products' => array(), 'total' => 0, 'page' => 1, 'max_pages' => 1 );
+		if ( ! $this->is_available() ) {
+			return $empty;
+		}
+
+		$category_slug = sanitize_title( $category_slug );
+		if ( '' !== $category_slug && ! $this->category_exists( $category_slug ) ) {
+			return $empty;
+		}
+
+		$args = array(
+			'status'    => 'publish',
+			'limit'     => max( 1, min( 48, absint( $per_page ) ) ),
+			'page'      => max( 1, absint( $page ) ),
+			'paginate'  => true,
+			'orderby'   => 'date',
+			'order'     => 'DESC',
+			'tax_query' => $this->catalog_visibility_tax_query(), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Woo's own supported wc_get_products() extension point, not hand-rolled SQL.
+		);
+		if ( '' !== $category_slug ) {
+			$args['category'] = array( $category_slug );
+			$args['orderby']  = 'menu_order';
+			$args['order']    = 'ASC';
+		}
+
+		$result = wc_get_products( $args );
+		if ( ! is_object( $result ) || ! isset( $result->products ) ) {
+			return $empty;
+		}
+
+		return array(
+			'products'  => $this->normalize_products( $result->products ),
+			'total'     => absint( $result->total ),
+			'page'      => max( 1, absint( $page ) ),
+			'max_pages' => max( 1, absint( $result->max_num_pages ) ),
+		);
+	}
+
+	/**
+	 * Woo-native catalog-visibility filter for public catalog projections:
+	 * excludes products explicitly marked "Search results only" or "Hidden"
+	 * (catalog_visibility), using Woo's own documented product_visibility
+	 * term resolver -- never a hand-rolled taxonomy query. Mirrors exactly
+	 * what WC_Query applies on Woo's own native shop/category archives.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	private function catalog_visibility_tax_query() {
+		if ( ! function_exists( 'wc_get_product_visibility_term_ids' ) ) {
+			return array();
+		}
+		$terms = wc_get_product_visibility_term_ids();
+		$exclude_from_catalog = isset( $terms['exclude-from-catalog'] ) ? absint( $terms['exclude-from-catalog'] ) : 0;
+		if ( ! $exclude_from_catalog ) {
+			return array();
+		}
+		return array(
+			array(
+				'taxonomy' => 'product_visibility',
+				'field'    => 'term_taxonomy_id',
+				'terms'    => array( $exclude_from_catalog ),
+				'operator' => 'NOT IN',
+			),
+		);
 	}
 
 	/**

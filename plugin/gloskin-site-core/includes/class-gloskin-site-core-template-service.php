@@ -153,6 +153,22 @@ final class Gloskin_Site_Core_Template_Service {
 	 * checkout and My Account retain their normal page/block/shortcode
 	 * content through the WordPress loop.
 	 *
+	 * Route-ownership audit (Catalog Discovery v1, section 10): this also
+	 * covers Woo's own native product_cat term archive (is_product_category()
+	 * makes is_woocommerce() true, and is_shop() is false for it, so it
+	 * renders here as 'woocommerce' -- Woo's generic archive loop). For the
+	 * seven canonical mapped categories this coexists with the Gloskin-
+	 * branded /skincare/{slug}/ landing page for the same category; both
+	 * currently resolve correctly to real, working content, so nothing is
+	 * broken. A redirect from the native term archive to the branded page
+	 * was deliberately NOT added here: it would be a canonicalization/SEO
+	 * decision (this task's own scope explicitly reserves SEO to the
+	 * provider owner), it would need to stay Woo-owned for any *unmapped*
+	 * future category, and "do not blindly redirect every Woo product
+	 * category" is an explicit constraint. If the merchant wants the native
+	 * archive to forward to the branded page, that is a follow-up decision
+	 * for a human, not something to introduce silently here.
+	 *
 	 * @return string
 	 */
 	private function native_commerce_render_mode() {
@@ -446,11 +462,16 @@ final class Gloskin_Site_Core_Template_Service {
 	/** @return array<string,mixed> */
 	private function shop_context() {
 		$page = $this->content_page( 'shop' );
+		$paged = max( 1, absint( get_query_var( 'paged' ) ), absint( get_query_var( 'page' ) ) );
+		$catalog = $this->woocommerce->products_paginated( $paged, 12 );
 		return array(
 			'page' => $page,
-			'hero' => $this->hero_context( $page, __( 'Belanja', 'gloskin-site-core' ), __( 'Jelajahi skincare Gloskin melalui kategori dan produk yang ditampilkan di situs.', 'gloskin-site-core' ) ),
+			'hero' => $this->hero_context( $page, __( 'Belanja', 'gloskin-site-core' ), __( 'Jelajahi seluruh skincare Gloskin.', 'gloskin-site-core' ) ),
 			'mappings' => $this->skincare_mappings(),
-			'products' => $this->woocommerce->products( 20 ),
+			'products' => $catalog['products'],
+			'products_total' => $catalog['total'],
+			'current_page' => $catalog['page'],
+			'total_pages' => $catalog['max_pages'],
 			'woo_ready' => $this->woocommerce->available(),
 		);
 	}

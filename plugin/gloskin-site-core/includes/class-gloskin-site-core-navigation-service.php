@@ -86,14 +86,21 @@ final class Gloskin_Site_Core_Navigation_Service {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function fallback_tree() {
+		/* Kontak is intentionally absent here: the global header's persistent
+		 * "Hubungi Kami" CTA and the footer's "Kontak" link already own that
+		 * path, so the primary nav no longer needs a redundant third entry
+		 * point. Belanja sits right after Skincare -- /shop/ already exists
+		 * but was missing from the fallback tree, a real discovery gap. This
+		 * only edits the no-menu-assigned fallback; an editor-owned WordPress
+		 * menu at gloskin-primary (see tree()) is never touched. */
 		return array(
 			$this->fallback_item( 'Tentang Gloskin', '/about/' ),
 			$this->fallback_item( 'Perawatan', '/treatments/' ),
 			$this->fallback_item( 'Skincare', '/skincare/', $this->skincare_children() ),
+			$this->fallback_item( 'Belanja', '/shop/' ),
 			$this->fallback_item( 'Klinik', '/clinics/', $this->clinic_children() ),
 			$this->fallback_item( 'Dokter', '/doctors/' ),
 			$this->fallback_item( 'Insight', '/insights/' ),
-			$this->fallback_item( 'Kontak', '/contact/' ),
 		);
 	}
 

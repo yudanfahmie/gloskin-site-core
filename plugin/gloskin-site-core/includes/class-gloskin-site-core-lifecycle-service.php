@@ -82,6 +82,8 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 			$page_ids[ $slug ] = $this->ensure_page( $slug, $title, 0 );
 		}
 
+		$this->align_woo_shop_page( isset( $page_ids['shop'] ) ? absint( $page_ids['shop'] ) : 0 );
+
 		$skincare_parent = isset( $page_ids['skincare'] ) ? absint( $page_ids['skincare'] ) : 0;
 		foreach ( Gloskin_Site_Core_Content_Service::skincare_definitions() as $slug => $title ) {
 			$page_id = $this->ensure_page( $slug, $title, $skincare_parent );
@@ -93,6 +95,36 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 		foreach ( Gloskin_Site_Core_Content_Service::clinic_definitions() as $slug => $title ) {
 			$this->ensure_post( Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE, $slug, $title );
 		}
+	}
+
+	/**
+	 * WooCommerce, not Gloskin, decides which page is "the Shop page" via
+	 * the woocommerce_shop_page_id option. If that setting is genuinely
+	 * unconfigured (empty, the -1 "no page" sentinel, or points at a page
+	 * that no longer exists/is trashed), safely point it at Gloskin's own
+	 * provisioned /shop/ page so the two stay aligned. If a merchant has
+	 * already configured a valid Shop page -- Gloskin's own or a different
+	 * one -- that choice is preserved untouched; this never silently
+	 * overwrites an existing merchant configuration, and never creates a
+	 * duplicate page.
+	 *
+	 * @param int $shop_page_id Gloskin's own provisioned /shop/ page ID.
+	 * @return void
+	 */
+	private function align_woo_shop_page( $shop_page_id ) {
+		if ( ! $shop_page_id || ! class_exists( 'WooCommerce' ) ) {
+			return;
+		}
+
+		$configured_id = (int) get_option( 'woocommerce_shop_page_id', 0 );
+		if ( $configured_id > 0 ) {
+			$configured_page = get_post( $configured_id );
+			if ( $configured_page instanceof WP_Post && 'trash' !== $configured_page->post_status ) {
+				return;
+			}
+		}
+
+		update_option( 'woocommerce_shop_page_id', $shop_page_id );
 	}
 
 	/**

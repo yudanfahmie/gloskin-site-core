@@ -363,6 +363,30 @@ if ( ! function_exists( 'gloskin_ui1_render_category_link' ) ) {
 	}
 }
 
+if ( ! function_exists( 'gloskin_ui1_render_category_rail' ) ) {
+	/**
+	 * Compact category discovery rail/chip navigation for /shop/. Pure
+	 * navigation only -- each chip links to the existing branded
+	 * /skincare/{slug}/ landing page; nothing here filters products in-page,
+	 * issues AJAX, or invents category information architecture.
+	 *
+	 * @param array<int,array<string,mixed>> $mappings Canonical skincare category mappings.
+	 * @return void
+	 */
+	function gloskin_ui1_render_category_rail( $mappings ) {
+		?>
+		<nav class="gloskin-ui1-catalog-rail" aria-label="<?php echo esc_attr__( 'Kategori skincare', 'gloskin-site-core' ); ?>">
+			<ul class="gloskin-ui1-catalog-rail__list">
+				<li><a class="gloskin-ui1-catalog-rail__chip is-active" href="<?php echo esc_url( home_url( '/shop/' ) ); ?>" aria-current="page"><?php echo esc_html__( 'Semua Produk', 'gloskin-site-core' ); ?></a></li>
+				<?php foreach ( (array) $mappings as $mapping ) : ?>
+					<li><a class="gloskin-ui1-catalog-rail__chip" href="<?php echo esc_url( (string) ( $mapping['url'] ?? '' ) ); ?>"><?php echo esc_html( (string) ( $mapping['label'] ?? '' ) ); ?></a></li>
+				<?php endforeach; ?>
+			</ul>
+		</nav>
+		<?php
+	}
+}
+
 if ( ! function_exists( 'gloskin_ui1_has_content' ) ) {
 	/** @param mixed $post WordPress post. */
 	function gloskin_ui1_has_content( $post ) {

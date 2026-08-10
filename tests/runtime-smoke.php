@@ -340,9 +340,13 @@ function is_cart() { return ! empty( $GLOBALS['gl_route']['cart'] ); }
 function is_checkout() { return ! empty( $GLOBALS['gl_route']['checkout'] ); }
 function is_account_page() { return ! empty( $GLOBALS['gl_route']['account'] ); }
 function wc_get_products( $args = array() ) {
-	if ( ! $GLOBALS['gl_woo'] ) { return array(); }
+	if ( ! $GLOBALS['gl_woo'] ) { return ! empty( $args['paginate'] ) ? (object) array( 'products' => array(), 'total' => 0, 'max_num_pages' => 1 ) : array(); }
 	$product_post = get_page_by_path( 'test-product', OBJECT, 'product' );
-	return $product_post ? array( new GL_Test_Product( $product_post->ID ) ) : array();
+	$products = $product_post ? array( new GL_Test_Product( $product_post->ID ) ) : array();
+	if ( ! empty( $args['paginate'] ) ) {
+		return (object) array( 'products' => $products, 'total' => count( $products ), 'max_num_pages' => 1 );
+	}
+	return $products;
 }
 function get_term_by( $field, $value, $taxonomy ) { return ( $GLOBALS['gl_woo'] && 'product_cat' === $taxonomy ) ? new WP_Term( (string) $value ) : false; }
 function get_term_link( $term ) { return $term instanceof WP_Term ? home_url( '/product-category/' . $term->slug . '/' ) : new WP_Error(); }

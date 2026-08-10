@@ -266,3 +266,21 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
    Woo alone owns the request, fragments and cart mutation. */
 .gloskin-ui1-button.loading,.gloskin-ui1-button[aria-busy="true"]{opacity:.6;pointer-events:none}
 .gloskin-ui1-button.added::after{content:"\2713";margin-left:6px}
+
+/* Gloskin Catalog Discovery v1 -- compact category rail + catalog header.
+   Pure navigation/presentation reusing the Form Kit field tokens for a
+   quiet, restrained chip; WooCommerce remains the sole catalog data owner.
+   No carousel JS -- horizontal overflow-x:auto only, per the small rail
+   this catalog size actually needs. */
+.gloskin-ui1-catalog-rail{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-top:24px}
+.gloskin-ui1-catalog-rail::-webkit-scrollbar{display:none}
+.gloskin-ui1-catalog-rail__list{display:flex;gap:8px;margin:0;padding:2px 2px 4px;list-style:none;min-width:max-content}
+.gloskin-ui1-catalog-rail__chip{display:inline-flex;align-items:center;min-height:40px;padding:9px 16px;border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-field-bg);color:var(--gloskin-text);font-weight:600;font-size:.92rem;letter-spacing:.01em;text-decoration:none;white-space:nowrap;transition:border-color 140ms ease,background-color 140ms ease,color 140ms ease}
+.gloskin-ui1-catalog-rail__chip:hover{border-color:var(--gloskin-accent);color:var(--gloskin-accent-strong)}
+.gloskin-ui1-catalog-rail__chip.is-active{border-color:var(--gloskin-accent);background:var(--gloskin-accent);color:var(--gloskin-inverse)}
+
+.gloskin-ui1-catalog-header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:clamp(20px,3vw,32px)}
+.gloskin-ui1-catalog-header h2{margin:0;font-family:var(--gloskin-font-heading);font-size:clamp(1.4rem,2.4vw,1.9rem);font-weight:600}
+.gloskin-ui1-catalog-header__count{color:var(--gloskin-muted);font-size:.94rem}
+
+@media (max-width:760px){.gloskin-ui1-catalog-rail{margin-top:18px}.gloskin-ui1-catalog-rail__chip{padding:8px 14px;font-size:.88rem}}

@@ -440,4 +440,44 @@ for expected in 'wc-cart-fragments' 'wc-add-to-cart' "woocommerce_enable_ajax_ad
   grep -qF -- "$expected" "$asset_service" || { echo "native Woo script contract missing: $expected" >&2; exit 1; }
 done
 
+# Gloskin Catalog Discovery v1.
+template_service="$plugin_root/includes/class-gloskin-site-core-template-service.php"
+lifecycle="$plugin_root/includes/class-gloskin-site-core-lifecycle-service.php"
+
+# G. One canonical product-card primitive is reused everywhere -- no
+# competing shop/category/grid-specific card renderer exists.
+for view_template in shop.php skincare-category.php skincare.php; do
+  grep -qF 'gloskin_ui1_render_product_card' "$templates/pages/$view_template" \
+    || { echo "canonical product-card primitive not reused: $view_template" >&2; exit 1; }
+done
+if grep -qE 'function gloskin_ui1_render_(shop|category|grid)_product_card' "$helpers"; then
+  echo "a competing product-card renderer was introduced" >&2
+  exit 1
+fi
+if find "$plugin_root" -iname 'shop-product-card*' -o -iname 'category-product-card*' -o -iname 'product-grid-card*' | grep -q .; then
+  echo "a competing product-card file was introduced" >&2
+  exit 1
+fi
+
+# K. No new product database/query architecture: the catalog adapter and
+# template context owner never touch $wpdb directly.
+if grep -qF '$wpdb' "$adapter" "$template_service"; then
+  echo "raw \$wpdb product query found; WooCommerce must remain the sole catalog query owner" >&2
+  exit 1
+fi
+
+# The shop ceiling was genuinely replaced with Woo's own pagination
+# contract, not just relabeled.
+grep -qF 'products_paginated' "$adapter" || { echo "products_paginated() catalog projection missing" >&2; exit 1; }
+grep -qF "'paginate'  => true," "$adapter" || { echo "products_paginated() no longer uses Woo's paginate=true contract" >&2; exit 1; }
+if grep -qF "'products' => \$this->woocommerce->products( 20 )" "$template_service"; then
+  echo "shop_context() still uses the fixed 20-record products() ceiling" >&2
+  exit 1
+fi
+
+# Safe, non-destructive Woo Shop page alignment: only ever associates an
+# unconfigured/invalid shop_page_id, never overwrites a valid one.
+grep -qF 'align_woo_shop_page' "$lifecycle" || { echo "Woo Shop page alignment owner missing from LifecycleService" >&2; exit 1; }
+grep -qF "update_option( 'woocommerce_shop_page_id'" "$lifecycle" || { echo "Woo Shop page association missing" >&2; exit 1; }
+
 echo "presentation safety checks passed (${#required_views[@]} public views, contrast/header/copy polish guarded)"

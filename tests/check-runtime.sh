@@ -17,6 +17,9 @@ GL_TEST_ACCOUNT=1 php tests/rendered-shell-auth-smoke.php
 GL_TEST_LOGGED_IN=1 php tests/rendered-shell-auth-smoke.php
 php tests/asset-loading-smoke.php
 php tests/product-card-commerce-contract.php
+php tests/catalog-discovery-contract.php
+php tests/navigation-fallback-contract.php
+php tests/lifecycle-shop-page-alignment-contract.php
 php tests/admin-navigation-smoke.php
 php tests/runtime-smoke.php
 GL_TEST_ADMIN=1 php tests/runtime-smoke.php
