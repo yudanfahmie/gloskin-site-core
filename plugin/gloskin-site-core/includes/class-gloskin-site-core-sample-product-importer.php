@@ -72,11 +72,14 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 		return array_merge(
 			$state,
 			array(
-				'detection'         => $detection,
-				'bundle_id'         => (string) $manifest['bundle_id'],
-				'source_version'    => (string) $manifest['source_version'],
-				'expected_products' => (int) $manifest['expected_products'],
-				'expected_media'    => (int) $manifest['expected_media'],
+				'detection'           => $detection,
+				'bundle_id'           => (string) $manifest['bundle_id'],
+				'source_version'      => (string) $manifest['source_version'],
+				'expected_products'   => (int) $manifest['expected_products'],
+				'expected_simple'     => (int) $manifest['expected_simple'],
+				'expected_variable'   => (int) $manifest['expected_variable'],
+				'expected_variations' => (int) $manifest['expected_variations'],
+				'expected_media'      => (int) $manifest['expected_media'],
 			)
 		);
 	}
@@ -196,6 +199,7 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 			'status'             => 'pending',
 			'bundle_id'          => '',
 			'source_version'     => '',
+			'bundle_fingerprint' => '',
 			'next_product_index' => 0,
 			'expected_products'  => 13,
 			'processed_products' => 0,
@@ -220,18 +224,26 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 	private function initialize_or_resume_state( array $state, array $manifest ) {
 		$same_bundle = (string) $manifest['bundle_id'] === (string) $state['bundle_id']
 			&& (string) $manifest['source_version'] === (string) $state['source_version'];
+		$fingerprint = $this->bundle_fingerprint( $manifest );
 
-		if ( ! $same_bundle ) {
+		if ( $same_bundle ) {
+			$stored_fingerprint = isset( $state['bundle_fingerprint'] ) ? (string) $state['bundle_fingerprint'] : '';
+			if ( ( '' !== $stored_fingerprint && ! hash_equals( $stored_fingerprint, $fingerprint ) )
+				|| ( '' === $stored_fingerprint && ! empty( $state['processed_products'] ) ) ) {
+				throw new RuntimeException( 'Bundle sample product berubah setelah import dimulai. Selesaikan/reconcile bundle sebelum melanjutkan.' );
+			}
+		} else {
 			$state = array();
 		}
 		$state = array_merge(
 			$this->get_state_defaults(),
 			$state,
 			array(
-				'status'            => 'running',
-				'bundle_id'         => (string) $manifest['bundle_id'],
-				'source_version'    => (string) $manifest['source_version'],
-				'expected_products' => (int) $manifest['expected_products'],
+				'status'             => 'running',
+				'bundle_id'          => (string) $manifest['bundle_id'],
+				'source_version'     => (string) $manifest['source_version'],
+				'bundle_fingerprint' => $fingerprint,
+				'expected_products'  => (int) $manifest['expected_products'],
 				'expected_media'    => (int) $manifest['expected_media'],
 				'last_error'        => '',
 			)
@@ -259,6 +271,13 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 			|| (string) $state['source_version'] !== (string) $manifest['source_version'] ) {
 			throw new RuntimeException( 'Checkpoint tidak cocok dengan bundle runtime. Jalankan validasi awal kembali.' );
 		}
+		$fingerprint = $this->bundle_fingerprint( $manifest );
+		$stored_fingerprint = isset( $state['bundle_fingerprint'] ) ? (string) $state['bundle_fingerprint'] : '';
+		if ( ( '' !== $stored_fingerprint && ! hash_equals( $stored_fingerprint, $fingerprint ) )
+			|| ( '' === $stored_fingerprint && ! empty( $state['processed_products'] ) ) ) {
+			throw new RuntimeException( 'Bundle sample product berubah setelah import dimulai. Selesaikan/reconcile bundle sebelum melanjutkan.' );
+		}
+		$state['bundle_fingerprint'] = $fingerprint;
 		if ( ! in_array( $state['status'], array( 'running', 'failed', 'verifying', 'validating' ), true ) ) {
 			throw new RuntimeException( 'Workflow sample product belum dimulai secara eksplisit.' );
 		}
@@ -272,6 +291,7 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 			'status'             => 'pending',
 			'bundle_id'          => '',
 			'source_version'     => '',
+			'bundle_fingerprint' => '',
 			'next_product_index' => 0,
 			'expected_products'  => 13,
 			'processed_products' => 0,
@@ -284,6 +304,23 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 			'cleanup_error'      => '',
 			'last_error'         => '',
 		);
+	}
+
+	/**
+	 * Small deterministic fingerprint for the exact product/media payload.
+	 *
+	 * @param array<string,mixed> $manifest Manifest.
+	 * @return string
+	 */
+	private function bundle_fingerprint( array $manifest ) {
+		$checksums = isset( $manifest['checksums'] ) && is_array( $manifest['checksums'] ) ? $manifest['checksums'] : array();
+		$products = isset( $checksums['products.json'] ) ? strtolower( trim( (string) $checksums['products.json'] ) ) : '';
+		$media    = isset( $checksums['media.json'] ) ? strtolower( trim( (string) $checksums['media.json'] ) ) : '';
+		if ( ! preg_match( '/^[a-f0-9]{64}$/', $products ) || ! preg_match( '/^[a-f0-9]{64}$/', $media ) ) {
+			// Production Bundle::validate() guarantees both checksums. The fallback keeps isolated test doubles compatible.
+			return hash( 'sha256', (string) $manifest['bundle_id'] . ':' . (string) $manifest['source_version'] );
+		}
+		return hash( 'sha256', $products . ':' . $media );
 	}
 
 	/** @return void */
@@ -446,7 +483,7 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 			}
 
 			$variation->set_parent_id( $parent_id );
-			$variation->set_status( 'draft' );
+			$variation->set_status( 'publish' );
 			$variation->set_sku( $record['sku'] );
 			$variation->set_regular_price( $record['regular_price'] );
 			$variation->set_manage_stock( false );
@@ -476,6 +513,10 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 			$attachment_id = (int) $ids[0];
 			if ( 'attachment' !== get_post_type( $attachment_id ) ) {
 				throw new RuntimeException( 'Media source identity tidak menunjuk attachment: ' . $record['source_id'] );
+			}
+			$attached_file = function_exists( 'get_attached_file' ) ? get_attached_file( $attachment_id ) : null;
+			if ( null !== $attached_file && ( ! is_string( $attached_file ) || '' === trim( $attached_file ) || ! is_file( $attached_file ) ) ) {
+				throw new RuntimeException( 'File attachment lokal hilang atau rusak untuk ' . $record['source_id'] . '. Pulihkan atau hapus attachment tersebut sebelum Resume Import.' );
 			}
 			$this->apply_media_meta( $attachment_id, $record, $bundle_id );
 			return array( 'id' => $attachment_id, 'reused' => true );
@@ -661,7 +702,7 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 			if ( ! $variation
 				|| (int) $variation->get_parent_id() !== (int) $product->get_id()
 				|| (string) $variation->get_sku() !== $variation_record['sku']
-				|| 'draft' !== (string) $variation->get_status()
+				|| 'publish' !== (string) $variation->get_status()
 				|| (string) $variation->get_regular_price() !== (string) $variation_record['regular_price']
 				|| (string) $variation->get_attribute( 'ukuran' ) !== $variation_record['size']
 				|| (string) $variation->get_meta( self::BUNDLE_META, true ) !== $bundle_id

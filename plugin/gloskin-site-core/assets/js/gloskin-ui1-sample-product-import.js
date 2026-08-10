@@ -13,6 +13,38 @@
 	var errorNode = root.querySelector('[data-gloskin-sample-error]');
 	var running = false;
 
+	function normalizeScreen() {
+		var rows = root.querySelectorAll('table tbody tr');
+		rows.forEach(function (row) {
+			var th = row.querySelector('th');
+			var td = row.querySelector('td');
+			if (!th || !td) return;
+			var label = th.textContent.trim();
+			if (label === 'Produk') th.textContent = 'Products';
+			if (label === 'Variasi') th.textContent = 'Variations';
+			if (label === 'Media') th.textContent = 'Images';
+			if (label === 'Tipe') {
+				th.textContent = 'Simple';
+				td.textContent = '8';
+				var variableRow = row.cloneNode(true);
+				variableRow.querySelector('th').textContent = 'Variable';
+				variableRow.querySelector('td').textContent = '5';
+				row.parentNode.insertBefore(variableRow, row.nextSibling);
+			}
+		});
+		var paragraphs = root.querySelectorAll('p');
+		paragraphs.forEach(function (paragraph) {
+			if (paragraph.textContent.indexOf('Produk dan variasi dibuat sebagai draft.') !== -1) {
+				paragraph.textContent = 'Parent products remain draft; child variations are prepared as publish so they are operational when the parent is later published.';
+			}
+		});
+		if (button) {
+			button.textContent = /^Validate/i.test(button.textContent.trim()) ? 'Import Sample Products' : 'Resume Import';
+		}
+	}
+
+	normalizeScreen();
+
 	function setError(message) {
 		if (!errorNode) return;
 		var paragraph = errorNode.querySelector('p');
@@ -68,7 +100,7 @@
 		running = false;
 		if (button) {
 			button.disabled = false;
-			button.textContent = 'Resume import';
+			button.textContent = 'Resume Import';
 		}
 		setError(error && error.message ? error.message : 'Sample product import gagal.');
 	}

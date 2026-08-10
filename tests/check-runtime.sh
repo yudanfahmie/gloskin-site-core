@@ -7,6 +7,7 @@ python tests/check-language.py
 python tests/sample-product-migration-contract.py
 php tests/sample-product-migration.php
 php tests/sample-product-importer-behavior.php
+php tests/sample-product-importer-hardening.php
 php tests/sample-product-woo-missing.php
 ./tests/check-presentation.sh
 python tests/readiness-contract-smoke.py
