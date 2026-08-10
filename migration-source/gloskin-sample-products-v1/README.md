@@ -19,9 +19,9 @@ Names, SKUs (`GLS-SMP-*`), prices, descriptions and usage text in this bundle ar
 
 ## Media provenance
 
-`media.json` stores deterministic HTTPS source URLs, source-page URLs where available, filename, alt text, role, order and a provenance/license note for every record. The staging references use fixed Unsplash-hosted image URLs; the importer copies them into the WordPress Media Library and never hotlinks them on the storefront. No random/query API is used during import.
+`media.json` stores deterministic HTTPS source URLs, source-page URLs where available, creator attribution where identified, filename, neutral alt text, role, order and a cautious provenance/license note for every record. The staging references use fixed Pexels-hosted image URLs; the importer copies them into the WordPress Media Library and never hotlinks them on the storefront. No random/query API is used during import.
 
-Stock-photo provenance must be reviewed again before any non-staging reuse. The demo image selection is intentionally generic and must not be presented as verified Gloskin packaging or as a competitor product.
+Stock-photo provenance and visual suitability must be reviewed again before any non-staging reuse. The demo image selection is intentionally generic and must not be presented as verified Gloskin packaging or as a competitor product.
 
 ## Dual-copy rule
 
