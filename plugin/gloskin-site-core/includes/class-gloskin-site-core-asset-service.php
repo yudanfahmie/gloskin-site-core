@@ -64,6 +64,33 @@ final class Gloskin_Site_Core_Asset_Service {
 			wp_register_script( $handle, $src, $asset['deps'], $this->version, $asset['in_footer'] );
 			wp_enqueue_script( $handle );
 		}
+
+		$this->enqueue_native_commerce_scripts();
+	}
+
+	/**
+	 * Guarantee WooCommerce's own native add-to-cart/cart-fragment frontend
+	 * handles are available on every surface Gloskin renders. Gloskin's
+	 * product-card/cart-sheet markup does not live on Woo's native shop/
+	 * archive/cart templates, so Woo's own conditional script loader
+	 * (WC_Frontend_Scripts::load_scripts()) cannot always detect it should
+	 * enqueue them there. This only ever enqueues an already Woo-registered
+	 * handle -- wp_enqueue_script() is idempotent by handle, WooCommerce
+	 * keeps sole ownership of the script's src/deps/localized cart params,
+	 * and nothing here registers, forks or replaces a Woo asset.
+	 *
+	 * @return void
+	 */
+	private function enqueue_native_commerce_scripts() {
+		if ( ! class_exists( 'WooCommerce' ) || ! function_exists( 'wp_script_is' ) ) {
+			return;
+		}
+		if ( wp_script_is( 'wc-cart-fragments', 'registered' ) ) {
+			wp_enqueue_script( 'wc-cart-fragments' );
+		}
+		if ( 'yes' === get_option( 'woocommerce_enable_ajax_add_to_cart' ) && wp_script_is( 'wc-add-to-cart', 'registered' ) ) {
+			wp_enqueue_script( 'wc-add-to-cart' );
+		}
 	}
 
 	/**

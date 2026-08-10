@@ -7,6 +7,8 @@ $GLOBALS['gl_styles'] = array();
 $GLOBALS['gl_scripts'] = array();
 $GLOBALS['gl_registered_styles'] = array();
 $GLOBALS['gl_registered_scripts'] = array();
+$GLOBALS['gl_woo_registered_scripts'] = array();
+$GLOBALS['gl_options'] = array();
 
 function add_action() {}
 function get_query_var( $key, $default = '' ) { return 'gloskin_context' === $key ? $GLOBALS['gl_asset_context'] : $default; }
@@ -15,6 +17,15 @@ function wp_register_style( $handle, $src, $deps = array(), $version = false, $m
 function wp_register_script( $handle, $src, $deps = array(), $version = false, $in_footer = false ) { $GLOBALS['gl_registered_scripts'][ $handle ] = compact( 'src', 'deps', 'version', 'in_footer' ); }
 function wp_enqueue_style( $handle ) { $GLOBALS['gl_styles'][] = (string) $handle; }
 function wp_enqueue_script( $handle ) { $GLOBALS['gl_scripts'][] = (string) $handle; }
+/* Simulates WooCommerce's own unconditional register_scripts() pass: these
+ * handles exist ("registered") on every frontend request once WooCommerce is
+ * active, independent of whether Woo's own conditional load_scripts() also
+ * enqueues them on a given page -- see AssetService::enqueue_native_commerce_scripts(). */
+function wp_script_is( $handle, $status = 'enqueued' ) {
+	if ( 'registered' === $status ) { return in_array( $handle, $GLOBALS['gl_woo_registered_scripts'], true ); }
+	return in_array( $handle, $GLOBALS['gl_scripts'], true );
+}
+function get_option( $key, $default = false ) { return array_key_exists( $key, $GLOBALS['gl_options'] ) ? $GLOBALS['gl_options'][ $key ] : $default; }
 
 require dirname( __DIR__ ) . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-asset-service.php';
 
@@ -52,5 +63,40 @@ $GLOBALS['gl_scripts'] = array();
 $commerce = true;
 $service->enqueue_frontend();
 if ( ! in_array( 'gloskin-ui1-production', $GLOBALS['gl_styles'], true ) || ! in_array( 'gloskin-ui1-core', $GLOBALS['gl_scripts'], true ) ) { fwrite( STDERR, "assets missing on Woo presentation request\n" ); exit( 1 ); }
+if ( in_array( 'wc-add-to-cart', $GLOBALS['gl_scripts'], true ) || in_array( 'wc-cart-fragments', $GLOBALS['gl_scripts'], true ) ) {
+	fwrite( STDERR, "native Woo commerce scripts enqueued without WooCommerce present\n" ); exit( 1 );
+}
+
+// Gloskin's product-card/cart-sheet markup does not live on Woo's native
+// shop/archive templates, so AssetService must explicitly guarantee Woo's
+// own already-registered wc-cart-fragments/wc-add-to-cart handles are
+// enqueued by handle (never re-registered) once WooCommerce is present.
+class WooCommerce {}
+$GLOBALS['gl_woo_registered_scripts'] = array( 'wc-cart-fragments', 'wc-add-to-cart' );
+
+$GLOBALS['gl_asset_context'] = array( 'view' => 'home' );
+$GLOBALS['gl_styles'] = array();
+$GLOBALS['gl_scripts'] = array();
+$GLOBALS['gl_options'] = array();
+$service->enqueue_frontend();
+if ( ! in_array( 'wc-cart-fragments', $GLOBALS['gl_scripts'], true ) ) { fwrite( STDERR, "wc-cart-fragments not enqueued once WooCommerce is present\n" ); exit( 1 ); }
+if ( in_array( 'wc-add-to-cart', $GLOBALS['gl_scripts'], true ) ) { fwrite( STDERR, "wc-add-to-cart enqueued despite woocommerce_enable_ajax_add_to_cart being disabled\n" ); exit( 1 ); }
+
+$GLOBALS['gl_options']['woocommerce_enable_ajax_add_to_cart'] = 'yes';
+$GLOBALS['gl_styles'] = array();
+$GLOBALS['gl_scripts'] = array();
+$service->enqueue_frontend();
+if ( ! in_array( 'wc-cart-fragments', $GLOBALS['gl_scripts'], true ) || ! in_array( 'wc-add-to-cart', $GLOBALS['gl_scripts'], true ) ) {
+	fwrite( STDERR, "native Woo add-to-cart script not enqueued once ajax add-to-cart is enabled\n" ); exit( 1 );
+}
+
+// Never enqueue a handle Woo has not actually registered.
+$GLOBALS['gl_woo_registered_scripts'] = array();
+$GLOBALS['gl_styles'] = array();
+$GLOBALS['gl_scripts'] = array();
+$service->enqueue_frontend();
+if ( in_array( 'wc-add-to-cart', $GLOBALS['gl_scripts'], true ) || in_array( 'wc-cart-fragments', $GLOBALS['gl_scripts'], true ) ) {
+	fwrite( STDERR, "a Woo script handle was enqueued despite never being registered\n" ); exit( 1 );
+}
 
 echo "asset loading smoke passed\n";

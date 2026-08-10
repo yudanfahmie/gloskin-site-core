@@ -677,9 +677,32 @@
 			trigger.addEventListener('click', function () { overlay.open('cart'); });
 		});
 
-		/* Listen for WooCommerce AJAX add-to-cart (jQuery event) */
+		/* Busy presentation only -- WooCommerce's own wc-add-to-cart.js owns
+		 * the actual AJAX request/cart mutation. This just mirrors it as
+		 * aria-busy for screen readers; the safety-net timeout guarantees the
+		 * button never stays stuck busy if Woo's own request errors out
+		 * (Woo has no dedicated body-level "add to cart failed" event to
+		 * listen for, but its own `complete` handler always clears the
+		 * `loading` class it applies, success or failure). */
+		document.body.addEventListener('click', function (event) {
+			var button = event.target.closest && event.target.closest('.ajax_add_to_cart');
+			if (!button) { return; }
+			button.setAttribute('aria-busy', 'true');
+			window.setTimeout(function () {
+				if (button.getAttribute('aria-busy') === 'true') { button.setAttribute('aria-busy', 'false'); }
+			}, 12000);
+		}, true);
+
+		/* Listen for WooCommerce AJAX add-to-cart (jQuery event). Woo passes
+		 * the source button as the third argument -- used only to clear its
+		 * busy state, never to mutate cart state ourselves. The existing
+		 * [data-gloskin-cart-count-sr] fragment (see
+		 * Gloskin_Site_Core_WooCommerce_Adapter::cart_fragments()) carries
+		 * aria-live in header.php, so this update is announced without a
+		 * separate toast/notification system. */
 		if (window.jQuery) {
-			window.jQuery(document.body).on('added_to_cart', function () {
+			window.jQuery(document.body).on('added_to_cart', function (event, fragments, cartHash, $button) {
+				if ($button && $button.length) { $button.attr('aria-busy', 'false'); }
 				overlay.open('cart');
 			});
 		}

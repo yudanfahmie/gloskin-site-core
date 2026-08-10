@@ -8,6 +8,7 @@ composition_helpers="$templates/parts/composition-helpers.php"
 core_base_css="$plugin_root/assets/css/gloskin-ui1-core-base.css"
 core_css="$plugin_root/assets/css/gloskin-ui1-core.css"
 production_css="$plugin_root/assets/css/gloskin-ui1-production.css"
+core_js="$plugin_root/assets/js/gloskin-ui1-core.js"
 public_runtime=(
   "$templates"
   "$plugin_root/includes/class-gloskin-site-core-navigation-service.php"
@@ -318,5 +319,71 @@ if find "$templates" \( -iname 'cart.php' -o -iname 'checkout.php' -o -iname 'fo
   echo "a WooCommerce template override was introduced; presentation must stay CSS-only" >&2
   exit 1
 fi
+
+# Gloskin Commerce Interaction Bridge v1 -- native Woo add-to-cart/cart
+# fragments/wishlist behavior only, no second cart/checkout engine.
+adapter="$plugin_root/includes/class-gloskin-site-core-woocommerce-adapter.php"
+asset_service="$plugin_root/includes/class-gloskin-site-core-asset-service.php"
+
+# A/B/C (product-card native contract, ajax eligibility never hand-invented,
+# JS-disabled fallback) are covered behaviorally by
+# tests/product-card-commerce-contract.php, run via check-runtime.sh.
+
+# D. Native added_to_cart opens the existing Gloskin cart sheet, and the
+# busy-state bridge exists -- presentation only, no cart mutation.
+init_cart_block="$(awk '/function initCart\(\) \{/,/^\t\}$/' "$core_js")"
+[[ -n "$init_cart_block" ]] || { echo "initCart() bridge function not found" >&2; exit 1; }
+echo "$init_cart_block" | grep -q "added_to_cart" || { echo "added_to_cart bridge missing from initCart()" >&2; exit 1; }
+echo "$init_cart_block" | grep -qF "overlay.open('cart')" || { echo "cart sheet open call missing from initCart()" >&2; exit 1; }
+echo "$init_cart_block" | grep -q "aria-busy" || { echo "aria-busy busy-state bridge missing from initCart()" >&2; exit 1; }
+
+# E. Woo fragments still update cart count, screen-reader count, and the
+# cart-sheet body -- the one canonical mini-cart update contract.
+for expected in \
+  "\$fragments['.gloskin-ui1-badge[data-gloskin-cart-count]']" \
+  "\$fragments['[data-gloskin-cart-count-sr]']" \
+  "\$fragments['.gloskin-ui1-cart-sheet__body']"; do
+  grep -qF -- "$expected" "$adapter" || { echo "Woo cart fragment contract missing: $expected" >&2; exit 1; }
+done
+
+# F. Mini-cart remove stays native Woo-fragment-driven -- no custom remove
+# endpoint, just the a.remove markup wc-cart-fragments.js already binds to.
+grep -qF -- 'class="remove gloskin-ui1-cart-sheet__item-remove"' "$adapter" \
+  || { echo "native Woo remove-link markup missing from mini-cart" >&2; exit 1; }
+
+# G. Wishlist toggle stays localStorage-only -- no network mutation request.
+wishlist_toggle="$(awk '/function toggle\(productId\) \{/,/^\t\t\}$/' "$core_js")"
+[[ -n "$wishlist_toggle" ]] || { echo "wishlist toggle() function not found" >&2; exit 1; }
+if echo "$wishlist_toggle" | grep -qE 'fetch\(|XMLHttpRequest|\.ajax\(|\$\.post\(|\$\.get\('; then
+  echo "wishlist toggle performs a network mutation request; must stay localStorage-only" >&2
+  exit 1
+fi
+
+# H/I. No new Gloskin nopriv cart/checkout AJAX endpoint, custom REST cart/
+# checkout mutation route, or custom cart/checkout fetch()/XHR call exists.
+commerce_bridge_files=( "$adapter" "$asset_service" "$core_js" "$helpers" )
+if grep -RInE 'wp_ajax_(nopriv_)?gloskin_(add_to_cart|cart|checkout)' "${commerce_bridge_files[@]}"; then
+  echo "a custom Gloskin cart/checkout AJAX endpoint was introduced" >&2
+  exit 1
+fi
+if grep -RInE "register_rest_route\([^)]*['\"](cart|checkout)" "${commerce_bridge_files[@]}"; then
+  echo "a custom Gloskin cart/checkout REST endpoint was introduced" >&2
+  exit 1
+fi
+if grep -RInE 'fetch\([^)]*(cart|checkout|add-to-cart|add_to_cart)' "$core_js"; then
+  echo "a custom cart/checkout fetch()/XHR call was introduced; Woo must own cart/checkout mutation" >&2
+  exit 1
+fi
+
+# Ajax eligibility is read from WC_Product/Woo settings, never hand-invented,
+# and AssetService (the sole asset owner) only ever enqueues Woo's own
+# already-registered handles by handle.
+grep -qF -- "supports( 'ajax_add_to_cart' )" "$adapter" \
+  || { echo "ajax_add_to_cart eligibility no longer derived from WC_Product::supports()" >&2; exit 1; }
+grep -qF -- 'enqueue_native_commerce_scripts' "$asset_service" \
+  || { echo "native Woo commerce script enqueue owner missing from AssetService" >&2; exit 1; }
+for expected in 'wc-cart-fragments' 'wc-add-to-cart' "woocommerce_enable_ajax_add_to_cart"; do
+  grep -qF -- "$expected" "$asset_service" || { echo "native Woo script contract missing: $expected" >&2; exit 1; }
+done
 
 echo "presentation safety checks passed (${#required_views[@]} public views, contrast/header/copy polish guarded)"

@@ -258,3 +258,11 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1 .wc-block-components-checkbox svg{fill:var(--gloskin-accent)}
 
 @media (max-width:760px){.gloskin-ui1 .woocommerce .quantity .qty{width:84px}.gloskin-ui1 .select2-results__option{padding:11px 14px}}
+
+/* Gloskin Commerce Interaction Bridge v1 -- small presentation feedback for
+   native Woo add-to-cart requests. WooCommerce's own wc-add-to-cart.js
+   toggles .loading/.added; aria-busy is set/cleared by the small JS bridge
+   in gloskin-ui1-core.js. Neither this CSS nor that JS mutates cart state --
+   Woo alone owns the request, fragments and cart mutation. */
+.gloskin-ui1-button.loading,.gloskin-ui1-button[aria-busy="true"]{opacity:.6;pointer-events:none}
+.gloskin-ui1-button.added::after{content:"\2713";margin-left:6px}

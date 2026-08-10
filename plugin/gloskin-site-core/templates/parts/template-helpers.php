@@ -317,8 +317,26 @@ if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
 				<?php if ( ! empty( $product['short_description'] ) ) : ?><p class="gloskin-ui1-card__copy"><?php echo esc_html( wp_trim_words( (string) $product['short_description'], 24 ) ); ?></p><?php endif; ?>
 				<div class="gloskin-ui1-card__actions">
 					<a class="gloskin-ui1-text-link" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'Lihat Produk', 'gloskin-site-core' ); ?></a>
-					<?php if ( ! empty( $product['purchasable'] ) && ! empty( $product['in_stock'] ) && ! empty( $product['add_to_cart_url'] ) ) : ?>
-						<a class="gloskin-ui1-button gloskin-ui1-button--small" href="<?php echo esc_url( (string) $product['add_to_cart_url'] ); ?>"><?php echo esc_html( (string) $product['add_to_cart_text'] ); ?></a>
+					<?php if ( ! empty( $product['purchasable'] ) && ! empty( $product['in_stock'] ) && ! empty( $product['add_to_cart_url'] ) ) :
+						/* Mirror WooCommerce's own native loop add-to-cart contract
+						 * (class/data-attribute composition) so Woo's own frontend
+						 * scripts (wc-add-to-cart.js) can bind to this button exactly
+						 * as they would to Woo's native archive markup -- ajax only
+						 * where Woo itself says the product supports it; every other
+						 * type/state falls back to a plain working link (Select
+						 * options / product page) with no Gloskin-invented shortcut. */
+						$cart_classes = array( 'gloskin-ui1-button', 'gloskin-ui1-button--small', 'button', 'add_to_cart_button' );
+						if ( ! empty( $product['type'] ) ) {
+							$cart_classes[] = 'product_type_' . sanitize_html_class( (string) $product['type'] );
+						}
+						if ( ! empty( $product['ajax_add_to_cart'] ) ) {
+							$cart_classes[] = 'ajax_add_to_cart';
+						}
+						$cart_label = '' !== trim( (string) ( $product['add_to_cart_description'] ?? '' ) )
+							? (string) $product['add_to_cart_description']
+							: (string) $product['add_to_cart_text'];
+						?>
+						<a href="<?php echo esc_url( (string) $product['add_to_cart_url'] ); ?>" data-quantity="1" class="<?php echo esc_attr( implode( ' ', $cart_classes ) ); ?>" data-product_id="<?php echo esc_attr( (string) $id ); ?>" data-product_sku="<?php echo esc_attr( (string) ( $product['sku'] ?? '' ) ); ?>" aria-label="<?php echo esc_attr( $cart_label ); ?>" rel="nofollow"><?php echo esc_html( (string) $product['add_to_cart_text'] ); ?></a>
 					<?php endif; ?>
 				</div>
 			</div>

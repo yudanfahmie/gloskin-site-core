@@ -613,18 +613,31 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 				continue;
 			}
 
+			/* Mirror WooCommerce's own loop add-to-cart eligibility exactly
+			 * (woocommerce_template_loop_add_to_cart()/wc-template-functions.php):
+			 * ajax_add_to_cart only applies when the product type supports it
+			 * AND is purchasable AND in stock. This is never hand-invented --
+			 * it is read straight from WC_Product so archive/card AJAX only
+			 * ever fires where Woo's own native contract already allows it. */
+			$purchasable = (bool) $product->is_purchasable();
+			$in_stock    = (bool) $product->is_in_stock();
+			$supports_ajax = method_exists( $product, 'supports' ) && $product->supports( 'ajax_add_to_cart' );
+
 			$normalized[] = array(
-				'id'                => $id,
-				'name'              => (string) $product->get_name(),
-				'url'               => (string) get_permalink( $id ),
-				'image_id'          => absint( $product->get_image_id() ),
-				'price_html'        => (string) $product->get_price_html(),
-				'short_description' => wp_strip_all_tags( (string) $product->get_short_description() ),
-				'sku'               => (string) $product->get_sku(),
-				'add_to_cart_url'   => (string) $product->add_to_cart_url(),
-				'add_to_cart_text'  => __( 'Tambah ke keranjang', 'gloskin-site-core' ),
-				'purchasable'       => (bool) $product->is_purchasable(),
-				'in_stock'          => (bool) $product->is_in_stock(),
+				'id'                      => $id,
+				'name'                    => (string) $product->get_name(),
+				'url'                     => (string) get_permalink( $id ),
+				'image_id'                => absint( $product->get_image_id() ),
+				'price_html'              => (string) $product->get_price_html(),
+				'short_description'       => wp_strip_all_tags( (string) $product->get_short_description() ),
+				'sku'                     => (string) $product->get_sku(),
+				'type'                    => method_exists( $product, 'get_type' ) ? (string) $product->get_type() : 'simple',
+				'add_to_cart_url'         => (string) $product->add_to_cart_url(),
+				'add_to_cart_text'        => __( 'Tambah ke keranjang', 'gloskin-site-core' ),
+				'add_to_cart_description' => method_exists( $product, 'add_to_cart_description' ) ? wp_strip_all_tags( (string) $product->add_to_cart_description() ) : '',
+				'purchasable'             => $purchasable,
+				'in_stock'                => $in_stock,
+				'ajax_add_to_cart'        => $purchasable && $in_stock && $supports_ajax,
 			);
 		}
 
