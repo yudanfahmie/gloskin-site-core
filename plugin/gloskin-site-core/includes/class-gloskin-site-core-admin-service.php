@@ -222,16 +222,19 @@ final class Gloskin_Site_Core_Admin_Service {
 		?>
 		<div class="wrap" data-gloskin-sample-import><h1><?php echo esc_html__( 'Sample Product Import', 'gloskin-site-core' ); ?></h1>
 		<p><?php echo esc_html__( 'Synthetic staging/demo catalog — not verified commercial product truth.', 'gloskin-site-core' ); ?></p>
-		<p><?php echo esc_html__( 'Validasi penuh dan import hanya dimulai setelah tindakan eksplisit di bawah. Produk dan variasi dibuat sebagai draft.', 'gloskin-site-core' ); ?></p>
+		<p><?php echo esc_html__( 'Produk parent dibuat sebagai draft. Variasi produk variable disiapkan aktif agar langsung berfungsi ketika parent dipublikasikan.', 'gloskin-site-core' ); ?></p>
 		<table class="widefat striped" style="max-width:760px"><tbody>
 		<tr><th><?php echo esc_html__( 'Bundle', 'gloskin-site-core' ); ?></th><td><?php echo esc_html( isset( $summary['bundle_id'] ) ? $summary['bundle_id'] : 'gloskin-sample-products-v1' ); ?></td></tr>
-		<tr><th><?php echo esc_html__( 'Produk', 'gloskin-site-core' ); ?></th><td>13</td></tr><tr><th><?php echo esc_html__( 'Tipe', 'gloskin-site-core' ); ?></th><td>8 simple / 5 variable</td></tr>
-		<tr><th><?php echo esc_html__( 'Variasi', 'gloskin-site-core' ); ?></th><td>10</td></tr><tr><th><?php echo esc_html__( 'Media', 'gloskin-site-core' ); ?></th><td>58</td></tr>
+		<tr><th><?php echo esc_html__( 'Products', 'gloskin-site-core' ); ?></th><td>13</td></tr>
+		<tr><th><?php echo esc_html__( 'Simple', 'gloskin-site-core' ); ?></th><td>8</td></tr>
+		<tr><th><?php echo esc_html__( 'Variable', 'gloskin-site-core' ); ?></th><td>5</td></tr>
+		<tr><th><?php echo esc_html__( 'Variations', 'gloskin-site-core' ); ?></th><td>10</td></tr>
+		<tr><th><?php echo esc_html__( 'Images', 'gloskin-site-core' ); ?></th><td>58</td></tr>
 		<tr><th><?php echo esc_html__( 'Status', 'gloskin-site-core' ); ?></th><td data-gloskin-sample-status><?php echo esc_html( $summary['detection'] ); ?></td></tr>
 		<tr><th><?php echo esc_html__( 'Progress', 'gloskin-site-core' ); ?></th><td><span data-gloskin-sample-progress><?php echo esc_html( sprintf( '%d/%d', $processed, $expected ) ); ?></span></td></tr>
 		</tbody></table>
 		<div class="notice notice-error inline" data-gloskin-sample-error <?php echo empty( $summary['last_error'] ) ? 'hidden' : ''; ?>><p><?php echo esc_html( isset( $summary['last_error'] ) ? $summary['last_error'] : '' ); ?></p></div>
-		<p><button type="button" class="button button-primary" data-gloskin-sample-run><?php echo esc_html( $processed > 0 ? __( 'Resume import', 'gloskin-site-core' ) : __( 'Validate & import samples', 'gloskin-site-core' ) ); ?></button></p>
+		<p><button type="button" class="button button-primary" data-gloskin-sample-run><?php echo esc_html( $processed > 0 ? __( 'Resume Import', 'gloskin-site-core' ) : __( 'Import Sample Products', 'gloskin-site-core' ) ); ?></button></p>
 		<p class="description"><?php echo esc_html__( 'Satu klik memulai rangkaian checkpoint berurutan. Setiap request memproses maksimum satu parent beserta media dan variasinya.', 'gloskin-site-core' ); ?></p></div>
 		<?php
 	}

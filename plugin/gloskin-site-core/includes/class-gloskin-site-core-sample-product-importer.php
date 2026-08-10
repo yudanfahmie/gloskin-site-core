@@ -622,12 +622,31 @@ final class Gloskin_Site_Core_Sample_Product_Importer {
 		if ( $term instanceof WP_Term ) {
 			return (int) $term->term_id;
 		}
-		$label = ucwords( str_replace( array( '-', '&' ), array( ' ', '&' ), $slug ) );
-		$result = wp_insert_term( $label, 'product_cat', array( 'slug' => $slug ) );
+		$result = wp_insert_term( $this->category_label( $slug ), 'product_cat', array( 'slug' => $slug ) );
 		if ( is_wp_error( $result ) ) {
 			throw new RuntimeException( 'Gagal membuat kategori Woo ' . $slug . ': ' . $result->get_error_message() );
 		}
 		return isset( $result['term_id'] ) ? (int) $result['term_id'] : 0;
+	}
+
+	/**
+	 * Explicit display label for a newly-created category. Existing terms are reused
+	 * unchanged and never renamed; this only applies when the slug must be created.
+	 *
+	 * @param string $slug Category slug.
+	 * @return string
+	 */
+	private function category_label( $slug ) {
+		$labels = array(
+			'facial-wash'                   => 'Facial Wash',
+			'day-cream-sunscreen'           => 'Day Cream / Sunscreen',
+			'toner'                         => 'Toner',
+			'serum'                         => 'Serum',
+			'acne-care'                     => 'Acne Care',
+			'anti-aging'                    => 'Anti-Aging',
+			'brightening-pigmentation-care' => 'Brightening & Pigmentation Care',
+		);
+		return isset( $labels[ $slug ] ) ? $labels[ $slug ] : ucwords( str_replace( array( '-', '&' ), array( ' ', '&' ), $slug ) );
 	}
 
 	/**
