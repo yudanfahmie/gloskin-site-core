@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Lifecycle_Service {
-	const SCHEMA_VERSION = '0.2.0';
+	const SCHEMA_VERSION = '0.2.1';
 	const VERSION_OPTION = 'gloskin_site_core_schema_version';
 
 	/**

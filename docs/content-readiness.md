@@ -31,7 +31,7 @@ The canonical source still marks these as unresolved, so the runtime intentional
 
 ## Population behavior
 
-Activation or the narrow schema `0.2.0` admin upgrade provisions only facts already normalized in canonical docs: the main Pages, seven skincare child Pages/mapping defaults, and nine clinic identity records. Existing editor content is not overwritten. Treatment and doctor placeholder records are deliberately not created.
+Activation or the narrow schema `0.2.1` admin upgrade provisions only facts already normalized in canonical docs: the main Pages, seven skincare child Pages/mapping defaults, and nine clinic identity records. Existing editor content is not overwritten. Treatment and doctor placeholder records are deliberately not created.
 
 
 ## Client-presentation re-audit
