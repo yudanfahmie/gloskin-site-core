@@ -722,7 +722,9 @@
 	 *
 	 * AJAX is progressive enhancement only. It runs only while Woo's native
 	 * jQuery `added_to_cart` + cart-fragment bridge is available; otherwise
-	 * the real Woo form/link proceeds natively without interception.
+	 * the real Woo form/link proceeds natively without interception. Once a
+	 * mutation POST is dispatched, failures never replay that mutation: Woo's
+	 * fragment runtime may only reconcile visible cart state non-destructively.
 	 * ----------------------------------------------------------------- */
 
 	function runtimeWindow(runtime) {
@@ -752,6 +754,71 @@
 			root.jQuery.fn &&
 			typeof root.jQuery.fn.wc_variation_form === 'function'
 		);
+	}
+
+	/* Woo localizes wc_add_to_cart_params with its native add-to-cart
+	 * runtime. When it is present, added_to_cart already hands Woo the
+	 * response fragments, so Gloskin must not force a second refresh. */
+	function hasWooNativeAddToCartRuntime(runtime) {
+		var root = runtimeWindow(runtime);
+		return !!(
+			root &&
+			typeof root.jQuery === 'function' &&
+			typeof root.wc_add_to_cart_params !== 'undefined'
+		);
+	}
+
+	function clearWooSubmitBusy(submitter) {
+		if (submitter && typeof submitter.removeAttribute === 'function') {
+			submitter.removeAttribute('aria-busy');
+		}
+	}
+
+	function requestWooFragmentRefresh(runtime) {
+		var root = runtimeWindow(runtime);
+		if (
+			!root ||
+			typeof root.jQuery !== 'function' ||
+			typeof root.wc_cart_fragments_params === 'undefined' ||
+			!root.document ||
+			!root.document.body
+		) {
+			return false;
+		}
+		root.jQuery(root.document.body).trigger('wc_fragment_refresh');
+		return true;
+	}
+
+	function dispatchWooAddedToCart(response, submitter, runtime) {
+		var root = runtimeWindow(runtime);
+		if (!root || typeof root.jQuery !== 'function' || !root.document || !root.document.body) {
+			return false;
+		}
+		var body = root.jQuery(root.document.body);
+		body.trigger('added_to_cart', [
+			response.fragments,
+			response.cart_hash,
+			submitter ? root.jQuery(submitter) : root.jQuery()
+		]);
+		if (!hasWooNativeAddToCartRuntime(root)) {
+			body.trigger('wc_fragment_refresh');
+		}
+		return true;
+	}
+
+	function handleWooAddToCartResponse(response, submitter, runtime) {
+		var root = runtimeWindow(runtime);
+		clearWooSubmitBusy(submitter);
+		if (!response) { return false; }
+		if (response.error) {
+			if (response.product_url && root && root.location) {
+				root.location.href = response.product_url;
+				return false;
+			}
+			requestWooFragmentRefresh(root);
+			return false;
+		}
+		return dispatchWooAddedToCart(response, submitter, root);
 	}
 
 	/**
@@ -844,32 +911,34 @@
 	function ajaxAddToCart(form, submitter) {
 		if (!hasWooAjaxBridge()) { return false; }
 		var config = window.gloskinData || {};
-		var formData = buildAddToCartPayload(form, submitter);
+		var formData;
+		try {
+			formData = buildAddToCartPayload(form, submitter);
+		} catch (e) {
+			return false;
+		}
 		if (!formData.get('product_id')) { return false; }
 
 		if (submitter) { submitter.setAttribute('aria-busy', 'true'); }
 
-		fetch(config.addToCartAjaxUrl, { method: 'POST', credentials: 'same-origin', body: formData })
-			.then(function (res) {
-				if (!res.ok) { throw new Error('add_to_cart_http'); }
-				return res.json();
-			})
-			.then(function (response) {
-				if (!response || response.error) { throw new Error('add_to_cart_error'); }
-				if (submitter) { submitter.setAttribute('aria-busy', 'false'); }
-				window.jQuery(document.body).trigger('added_to_cart', [
-					response.fragments,
-					response.cart_hash,
-					submitter ? window.jQuery(submitter) : window.jQuery()
-				]);
-				// Let Woo's own cart-fragments runtime fetch/apply the current
-				// fragments. Gloskin never parses or replaces fragment HTML.
-				window.jQuery(document.body).trigger('wc_fragment_refresh');
-			})
-			.catch(function () {
-				if (submitter) { submitter.removeAttribute('aria-busy'); }
-				nativeFallbackSubmit(form, submitter);
-			});
+		try {
+			window.fetch(config.addToCartAjaxUrl, { method: 'POST', credentials: 'same-origin', body: formData })
+				.then(function (res) {
+					if (!res.ok) { throw new Error('add_to_cart_http'); }
+					return res.json();
+				})
+				.then(function (response) {
+					if (!response) { throw new Error('add_to_cart_response'); }
+					handleWooAddToCartResponse(response, submitter);
+				})
+				.catch(function () {
+					clearWooSubmitBusy(submitter);
+					requestWooFragmentRefresh();
+				});
+		} catch (e) {
+			clearWooSubmitBusy(submitter);
+			requestWooFragmentRefresh();
+		}
 
 		return true;
 	}
@@ -1193,7 +1262,10 @@
 			shouldInterceptWooSubmit: shouldInterceptWooSubmit,
 			normalizeAddToCartPayload: normalizeAddToCartPayload,
 			hasWooAjaxBridge: hasWooAjaxBridge,
-			hasWooVariationRuntime: hasWooVariationRuntime
+			hasWooVariationRuntime: hasWooVariationRuntime,
+			hasWooNativeAddToCartRuntime: hasWooNativeAddToCartRuntime,
+			dispatchWooAddedToCart: dispatchWooAddedToCart,
+			handleWooAddToCartResponse: handleWooAddToCartResponse
 		};
 	}
 }());

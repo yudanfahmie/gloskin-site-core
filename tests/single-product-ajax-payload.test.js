@@ -12,7 +12,10 @@ const {
   shouldInterceptWooSubmit,
   normalizeAddToCartPayload,
   hasWooAjaxBridge,
-  hasWooVariationRuntime
+  hasWooVariationRuntime,
+  hasWooNativeAddToCartRuntime,
+  dispatchWooAddedToCart,
+  handleWooAddToCartResponse
 } = require(corePath);
 
 function classList(names) {
@@ -126,10 +129,86 @@ assert.strictEqual(hasWooAjaxBridge(completeRuntime), true, 'complete Woo AJAX/e
 assert.strictEqual(hasWooVariationRuntime(completeRuntime), true, 'Woo variation runtime must be accepted');
 assert.strictEqual(hasWooAjaxBridge(Object.assign({}, completeRuntime, { jQuery: null })), false, 'AJAX must decline without jQuery event bridge');
 assert.strictEqual(hasWooAjaxBridge(Object.assign({}, completeRuntime, { wc_cart_fragments_params: undefined })), false, 'AJAX must decline without Woo cart-fragments runtime');
-assert(coreSource.includes("trigger('wc_fragment_refresh')"), 'AJAX success must hand fragment DOM application back to Woo cart fragments');
 const noVariationPlugin = Object.assign({}, completeRuntime, { jQuery: function () {} });
 noVariationPlugin.jQuery.fn = {};
 assert.strictEqual(hasWooVariationRuntime(noVariationPlugin), false, 'Quick Add must decline without wc_variation_form');
+
+
+// Network lifecycle: Woo's native add-to-cart runtime already owns the
+// fragments returned with added_to_cart, so a successful custom add must not
+// unconditionally issue a second fragment refresh. Only the compatibility
+// path where wc-add-to-cart itself is absent may ask wc-cart-fragments to
+// reconcile once.
+function eventRuntime(withNativeAddToCart) {
+  const events = [];
+  function eventJq(target) {
+    return {
+      length: target ? 1 : 0,
+      trigger(name) { events.push(name); return this; },
+      attr() { return this; }
+    };
+  }
+  eventJq.fn = { wc_variation_form() {} };
+  const runtime = {
+    gloskinData: { woo: true, addToCartAjaxUrl: '/?wc-ajax=add_to_cart' },
+    fetch() {},
+    FormData,
+    jQuery: eventJq,
+    document: { body: {} },
+    location: { href: '/before/' },
+    wc_cart_fragments_params: {}
+  };
+  if (withNativeAddToCart) { runtime.wc_add_to_cart_params = {}; }
+  return { runtime, events };
+}
+
+const nativeLifecycle = eventRuntime(true);
+assert.strictEqual(hasWooNativeAddToCartRuntime(nativeLifecycle.runtime), true, 'native wc-add-to-cart runtime must be detected');
+dispatchWooAddedToCart({ fragments: { '.mini': '<div></div>' }, cart_hash: 'abc' }, null, nativeLifecycle.runtime);
+assert.deepStrictEqual(nativeLifecycle.events, ['added_to_cart'], 'native wc-add-to-cart success must emit added_to_cart only, without redundant fragment refresh');
+
+const fragmentFallbackLifecycle = eventRuntime(false);
+assert.strictEqual(hasWooNativeAddToCartRuntime(fragmentFallbackLifecycle.runtime), false, 'missing wc-add-to-cart runtime must be distinguishable');
+dispatchWooAddedToCart({ fragments: { '.mini': '<div></div>' }, cart_hash: 'abc' }, null, fragmentFallbackLifecycle.runtime);
+assert.deepStrictEqual(fragmentFallbackLifecycle.events, ['added_to_cart', 'wc_fragment_refresh'], 'fragment refresh is allowed only as the compatibility fallback when wc-add-to-cart runtime is absent');
+
+const successLifecycle = eventRuntime(true);
+const successBusyOps = [];
+const successSubmitter = {
+  removeAttribute(name) { successBusyOps.push(['remove', name]); }
+};
+handleWooAddToCartResponse({ fragments: { '.mini': '<div></div>' }, cart_hash: 'ok' }, successSubmitter, successLifecycle.runtime);
+assert.deepStrictEqual(successBusyOps, [['remove', 'aria-busy']], 'successful AJAX response must clear aria-busy before Woo lifecycle dispatch');
+assert.deepStrictEqual(successLifecycle.events, ['added_to_cart'], 'successful native-runtime path must not request fragments twice');
+
+// Woo's own error redirect convention stays authoritative and busy state is
+// cleared before navigation. No second add-to-cart mutation is synthesized.
+const redirectLifecycle = eventRuntime(true);
+const busyOps = [];
+const busySubmitter = {
+  removeAttribute(name) { busyOps.push(['remove', name]); },
+  setAttribute(name, value) { busyOps.push(['set', name, value]); }
+};
+handleWooAddToCartResponse({ error: true, product_url: '/product/needs-options/' }, busySubmitter, redirectLifecycle.runtime);
+assert.strictEqual(redirectLifecycle.runtime.location.href, '/product/needs-options/', 'response.error + product_url must follow Woo product URL');
+assert.deepStrictEqual(busyOps, [['remove', 'aria-busy']], 'Woo error redirect must clear aria-busy');
+assert.deepStrictEqual(redirectLifecycle.events, [], 'Woo error redirect must not dispatch success/refresh events');
+
+// Once ajaxAddToCart has reached fetch(), no catch path may replay the same
+// mutation through requestSubmit/native fallback. Pre-dispatch callers still
+// retain nativeFallbackSubmit when ajaxAddToCart returns false.
+const ajaxStart = coreSource.indexOf('function ajaxAddToCart(form, submitter)');
+const ajaxEnd = coreSource.indexOf('/* -----------------------------------------------------------------\n\t * SP-003', ajaxStart);
+assert(ajaxStart >= 0 && ajaxEnd > ajaxStart, 'ajaxAddToCart source block must be locatable');
+const ajaxSource = coreSource.slice(ajaxStart, ajaxEnd);
+assert(!ajaxSource.includes('nativeFallbackSubmit(form, submitter)'), 'post-dispatch AJAX failure must never replay add-to-cart through native submission');
+assert(ajaxSource.includes('clearWooSubmitBusy(submitter)'), 'post-dispatch failures must clear aria-busy');
+assert(ajaxSource.includes('requestWooFragmentRefresh()'), 'post-dispatch ambiguity may reconcile visible cart state non-mutatively');
+assert(coreSource.includes('if (!ajaxAddToCart(form, submitter)) {\n\t\t\t\tnativeFallbackSubmit(form, submitter);'), 'pre-dispatch payload/runtime failure must retain native fallback');
+const singleStart = coreSource.indexOf('function initSingleProductAjax()');
+const singleEnd = coreSource.indexOf('/* -----------------------------------------------------------------\n\t * SP-004', singleStart);
+const singleSource = coreSource.slice(singleStart, singleEnd);
+assert(singleSource.indexOf('!hasWooAjaxBridge()') < singleSource.indexOf('event.preventDefault();'), 'unavailable Woo bridge must return before preventDefault so native submission remains authoritative');
 
 // Both Quick Add entry paths call the same progressive runtime gate before
 // preventDefault; their real href remains server-rendered by the card/related link.
