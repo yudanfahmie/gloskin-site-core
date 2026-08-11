@@ -118,6 +118,7 @@ if ( ! function_exists( 'gloskin_ui1_render_nav_tree' ) ) {
 		<div class="gloskin-ui1-wishlist-sheet__body" data-gloskin-wishlist-body></div>
 	</div>
 </div>
+<?php require __DIR__ . '/quick-add.php'; ?>
 <?php endif; ?>
 <script>var gloskinData=<?php echo wp_json_encode( array(
 	'restUrl'        => esc_url_raw( rest_url( 'gloskin/v1/' ) ),
@@ -126,5 +127,6 @@ if ( ! function_exists( 'gloskin_ui1_render_nav_tree' ) ) {
 	'woo'            => $gloskin_woo,
 	'cartUrl'        => $gloskin_woo ? esc_url( $gloskin_commerce['cart_url'] ) : '',
 	'checkoutUrl'    => $gloskin_woo ? esc_url( $gloskin_commerce['checkout_url'] ) : '',
+	'addToCartAjaxUrl' => $gloskin_woo && ! empty( $gloskin_commerce['add_to_cart_ajax_url'] ) ? esc_url_raw( $gloskin_commerce['add_to_cart_ajax_url'] ) : '',
 ) ); ?>;</script>
 <?php require __DIR__ . '/mobile-drawer.php'; ?>

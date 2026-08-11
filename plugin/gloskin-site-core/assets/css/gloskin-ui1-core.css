@@ -284,3 +284,113 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1-catalog-header__count{color:var(--gloskin-muted);font-size:.94rem}
 
 @media (max-width:760px){.gloskin-ui1-catalog-rail{margin-top:18px}.gloskin-ui1-catalog-rail__chip{padding:8px 14px;font-size:.88rem}}
+
+/* -----------------------------------------------------------------
+ * SP-002/SP-005/SP-006 -- Gloskin single-product presentation kit.
+ * Native Woo single-product markup/hooks stay exactly as WooCommerce
+ * renders them; this is presentation only (layout, spacing, typography,
+ * gallery frame) over that same markup. No second form-kit, no Woo
+ * template fork.
+ * ----------------------------------------------------------------- */
+body.single-product.gloskin-ui1 div.product{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(340px,0.98fr);gap:clamp(32px,5vw,64px);align-items:start;padding-block:clamp(28px,4vw,48px)}
+body.single-product.gloskin-ui1 div.product>.woocommerce-product-gallery{grid-column:1;min-width:0}
+body.single-product.gloskin-ui1 div.product>.summary{grid-column:2;min-width:0;display:flex;flex-direction:column;gap:16px}
+body.single-product.gloskin-ui1 div.product .product_title{margin-bottom:4px;font-size:clamp(1.7rem,3vw,2.4rem)}
+body.single-product.gloskin-ui1 div.product .woocommerce-product-rating{margin:0}
+body.single-product.gloskin-ui1 div.product .price{display:block;font-size:1.3rem}
+body.single-product.gloskin-ui1 div.product .woocommerce-product-details__short-description{max-width:60ch;color:var(--gloskin-muted)}
+body.single-product.gloskin-ui1 div.product form.cart{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-block:6px}
+body.single-product.gloskin-ui1 div.product form.cart .quantity{margin:0}
+body.single-product.gloskin-ui1 div.product form.cart .single_add_to_cart_button{min-width:220px}
+body.single-product.gloskin-ui1 div.product form.cart .single_add_to_cart_button[aria-busy="true"]{opacity:.72;pointer-events:none}
+body.single-product.gloskin-ui1 div.product .woocommerce-variation{padding:14px 16px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);background:var(--gloskin-surface)}
+body.single-product.gloskin-ui1 div.product .woocommerce-variation-availability .stock{margin:0}
+body.single-product.gloskin-ui1 div.product table.variations{width:100%;margin:0;border:0}
+body.single-product.gloskin-ui1 div.product table.variations td,body.single-product.gloskin-ui1 div.product table.variations th{padding:0 0 10px;border:0}
+body.single-product.gloskin-ui1 div.product .woocommerce-notices-wrapper:not(:empty){grid-column:1 / -1}
+body.single-product.gloskin-ui1 div.product .product_meta{margin-top:6px;padding-top:16px;border-top:1px solid var(--gloskin-border);color:var(--gloskin-muted);font-size:.92rem}
+
+/* Optional soft-sticky summary: desktop and tall viewports only, never
+ * fighting the admin bar/sticky header stack, and always independently
+ * scrollable so long variation/notice content can never be clipped. */
+@media (min-width:1040px) and (min-height:760px){
+	body.single-product.gloskin-ui1 div.product>.summary{position:sticky;top:calc(var(--gloskin-ui1-nav-sticky-top) + 140px);max-height:calc(100vh - var(--gloskin-ui1-nav-sticky-top) - 172px);overflow-y:auto}
+}
+
+/* Gallery kit: consistent frame, contain strategy for packshots (never
+ * destructive cover-cropping), restrained radius, active thumbnail state.
+ * SP-005 HD policy lives server-side (WooCommerce_Adapter::
+ * single_product_gallery_image_size()); this only frames whatever size
+ * Woo hands the gallery -- it never forces sizing itself. */
+body.single-product.gloskin-ui1 .woocommerce-product-gallery__wrapper{margin:0;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-lg);background:var(--gloskin-bg);overflow:hidden}
+body.single-product.gloskin-ui1 .woocommerce-product-gallery__image{background:var(--gloskin-surface-strong)}
+body.single-product.gloskin-ui1 .woocommerce-product-gallery__image img{width:100%;height:auto;aspect-ratio:1/1;object-fit:contain;background:var(--gloskin-surface-strong)}
+body.single-product.gloskin-ui1 .flex-control-thumbs{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 0;padding:0;list-style:none}
+body.single-product.gloskin-ui1 .flex-control-thumbs li{width:72px}
+body.single-product.gloskin-ui1 .flex-control-thumbs img{width:72px;height:72px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);object-fit:contain;background:var(--gloskin-surface-strong);cursor:pointer;opacity:.72;transition:opacity 140ms ease,border-color 140ms ease}
+body.single-product.gloskin-ui1 .flex-control-thumbs img:hover{opacity:1}
+body.single-product.gloskin-ui1 .flex-control-thumbs img.flex-active{border-color:var(--gloskin-accent);opacity:1}
+body.single-product.gloskin-ui1 a.woocommerce-product-gallery__trigger{position:absolute;z-index:2;top:14px;right:14px;width:38px;height:38px;border-radius:999px;background:var(--gloskin-bg);box-shadow:0 6px 18px color-mix(in srgb,var(--gloskin-text) 12%,transparent)}
+
+/* SP-006: one native Woo tabs owner, styled to the Gloskin type language. */
+body.single-product.gloskin-ui1 .woocommerce-tabs{grid-column:1 / -1;margin-top:clamp(36px,5vw,64px);padding-top:clamp(28px,4vw,44px);border-top:1px solid var(--gloskin-border)}
+body.single-product.gloskin-ui1 .woocommerce-tabs ul.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 24px;padding:0;list-style:none;border-bottom:1px solid var(--gloskin-border)}
+body.single-product.gloskin-ui1 .woocommerce-tabs ul.tabs li{margin:0}
+body.single-product.gloskin-ui1 .woocommerce-tabs ul.tabs li a{display:inline-flex;padding:10px 4px;margin-bottom:-1px;border-bottom:2px solid transparent;color:var(--gloskin-muted);font-family:var(--gloskin-font-heading);font-size:1.05rem;font-weight:600;text-decoration:none}
+body.single-product.gloskin-ui1 .woocommerce-tabs ul.tabs li.active a,body.single-product.gloskin-ui1 .woocommerce-tabs ul.tabs li a:hover{border-bottom-color:var(--gloskin-accent);color:var(--gloskin-text)}
+body.single-product.gloskin-ui1 .woocommerce-tabs .woocommerce-Tabs-panel{max-width:var(--gloskin-reading)}
+body.single-product.gloskin-ui1 .woocommerce-tabs table.woocommerce-product-attributes{width:100%;margin:0;border:0;border-top:1px solid var(--gloskin-border)}
+body.single-product.gloskin-ui1 .woocommerce-tabs table.woocommerce-product-attributes tr{border-bottom:1px solid var(--gloskin-border)}
+body.single-product.gloskin-ui1 .woocommerce-tabs table.woocommerce-product-attributes th{width:220px;padding:12px 18px 12px 0;font-weight:700;text-align:left}
+body.single-product.gloskin-ui1 .woocommerce-tabs table.woocommerce-product-attributes td{padding:12px 0;color:var(--gloskin-muted)}
+
+/* SP-006: exactly one related-products section, styled to visual parity
+ * with the canonical Gloskin product-card system without a second query. */
+body.single-product.gloskin-ui1 .related.products{grid-column:1 / -1;margin-top:clamp(36px,5vw,64px);padding-top:clamp(28px,4vw,44px);border-top:1px solid var(--gloskin-border)}
+body.single-product.gloskin-ui1 .related.products>h2{margin-bottom:clamp(20px,3vw,32px);font-size:clamp(1.4rem,2.4vw,1.9rem)}
+body.single-product.gloskin-ui1 .related.products ul.products{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(16px,2.4vw,28px);margin:0;padding:0;list-style:none}
+body.single-product.gloskin-ui1 .related.products ul.products li.product{overflow:hidden;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);background:var(--gloskin-bg);box-shadow:0 8px 28px color-mix(in srgb,var(--gloskin-text) 5%,transparent)}
+body.single-product.gloskin-ui1 .related.products ul.products li.product a img{aspect-ratio:1/1;object-fit:cover}
+body.single-product.gloskin-ui1 .related.products ul.products li.product .woocommerce-loop-product__title{padding:16px 16px 0;font-family:var(--gloskin-font-heading);font-size:1.02rem}
+body.single-product.gloskin-ui1 .related.products ul.products li.product .price{padding:4px 16px 16px}
+body.single-product.gloskin-ui1 .related.products ul.products li.product .button{margin:0 16px 16px}
+
+@media (max-width:1040px){
+	body.single-product.gloskin-ui1 div.product{grid-template-columns:1fr}
+	body.single-product.gloskin-ui1 div.product>.summary{position:static;max-height:none;overflow:visible}
+	body.single-product.gloskin-ui1 .related.products ul.products{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:600px){
+	body.single-product.gloskin-ui1 .related.products ul.products{grid-template-columns:1fr}
+	body.single-product.gloskin-ui1 div.product form.cart .single_add_to_cart_button{width:100%}
+	body.single-product.gloskin-ui1 .woocommerce-tabs ul.tabs{overflow-x:auto;flex-wrap:nowrap}
+}
+
+/* -----------------------------------------------------------------
+ * SP-004 -- Gloskin Quick Add modal. Same overlay contract as Search/
+ * Auth/Cart/Wishlist (data-gloskin-overlay, aria-hidden, hidden), so the
+ * existing single-overlay JS controller owns focus/scroll lock without
+ * any new plumbing. Structurally modeled on the auth overlay so it never
+ * introduces a second overlay visual language.
+ * ----------------------------------------------------------------- */
+.gloskin-ui1-quickadd{position:fixed;z-index:9998;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity 240ms ease;pointer-events:none}
+.gloskin-ui1-quickadd[aria-hidden="false"]{opacity:1;pointer-events:auto}
+.gloskin-ui1-quickadd[hidden]{display:none}
+.gloskin-ui1-quickadd__backdrop{position:absolute;inset:0;border:0;background:color-mix(in srgb,var(--gloskin-brand-charcoal) 52%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.gloskin-ui1-quickadd__panel{position:relative;z-index:1;width:min(100%,560px);max-height:min(88vh,720px);overflow-y:auto;padding:clamp(20px,4vw,32px);border:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);border-radius:var(--gloskin-radius-lg);background:var(--gloskin-bg);box-shadow:0 28px 78px color-mix(in srgb,var(--gloskin-brand-charcoal) 24%,transparent);transform:translateY(8px);transition:transform 240ms cubic-bezier(.22,1,.36,1)}
+.gloskin-ui1-quickadd[aria-hidden="false"] .gloskin-ui1-quickadd__panel{transform:translateY(0)}
+.gloskin-ui1-quickadd__head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.gloskin-ui1-quickadd__head strong{font-family:var(--gloskin-font-heading);font-size:1.15rem;font-weight:600}
+.gloskin-ui1-quickadd__close{flex:0 0 auto;width:38px;height:38px;border:1px solid var(--gloskin-border);border-radius:999px;background:transparent;color:inherit;cursor:pointer;display:grid;place-items:center}
+.gloskin-ui1-quickadd__body{display:grid;gap:16px}
+.gloskin-ui1-quickadd__product{display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:center}
+.gloskin-ui1-quickadd__image{width:96px;height:96px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);object-fit:contain;background:var(--gloskin-surface-strong)}
+.gloskin-ui1-quickadd__form form.cart{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+.gloskin-ui1-quickadd__form .single_add_to_cart_button[aria-busy="true"]{opacity:.72;pointer-events:none}
+.gloskin-ui1-quickadd__loading{display:flex;align-items:center;justify-content:center;min-height:160px;color:var(--gloskin-muted)}
+.gloskin-ui1-quickadd__error{margin:0;padding:12px 14px;border:1px solid color-mix(in srgb,var(--gloskin-accent) 40%,var(--gloskin-border));border-radius:var(--gloskin-radius-sm);background:var(--gloskin-accent-soft);color:var(--gloskin-text)}
+@media (max-width:600px){
+	.gloskin-ui1-quickadd{align-items:flex-end;padding:0}
+	.gloskin-ui1-quickadd__panel{width:100%;max-height:calc(100dvh - max(12px,env(safe-area-inset-top)));border-radius:var(--gloskin-radius-lg) var(--gloskin-radius-lg) 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom))}
+}
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-quickadd,.gloskin-ui1-quickadd__panel{transition:none !important}}

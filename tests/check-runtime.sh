@@ -11,6 +11,8 @@ php tests/sample-product-importer-hardening.php
 php tests/sample-product-woo-missing.php
 ./tests/check-presentation.sh
 ./tests/plugin-check-remediation-contract.sh
+./tests/single-product-commerce-contract.sh
+php tests/single-product-guard-contract.php
 python tests/readiness-contract-smoke.py
 php tests/readiness-php-smoke.php
 php tests/rendered-shell-auth-smoke.php

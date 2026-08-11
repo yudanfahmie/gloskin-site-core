@@ -483,13 +483,14 @@ final class Gloskin_Site_Core_Template_Service {
 	/** @return array<string,mixed> */
 	private function commerce_header_context() {
 		return array(
-			'available'    => $this->woocommerce->available(),
-			'account_url'  => $this->woocommerce->account_url(),
-			'cart_url'     => $this->woocommerce->cart_url(),
-			'checkout_url' => $this->woocommerce->checkout_url(),
-			'cart_count'   => $this->woocommerce->cart_count(),
-			'mini_cart'    => $this->woocommerce->render_mini_cart_body(),
-			'quick_auth'   => $this->woocommerce->should_render_quick_auth(),
+			'available'            => $this->woocommerce->available(),
+			'account_url'          => $this->woocommerce->account_url(),
+			'cart_url'             => $this->woocommerce->cart_url(),
+			'checkout_url'         => $this->woocommerce->checkout_url(),
+			'cart_count'           => $this->woocommerce->cart_count(),
+			'mini_cart'            => $this->woocommerce->render_mini_cart_body(),
+			'quick_auth'           => $this->woocommerce->should_render_quick_auth(),
+			'add_to_cart_ajax_url' => $this->woocommerce->add_to_cart_ajax_url(),
 		);
 	}
 

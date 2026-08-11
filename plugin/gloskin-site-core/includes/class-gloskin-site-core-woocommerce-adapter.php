@@ -36,6 +36,32 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		add_filter( 'woocommerce_add_to_cart_fragments', array( $this, 'cart_fragments' ) );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
 		add_action( 'gloskin_site_core_shell_footer', array( $this, 'render_quick_auth_overlay' ), 10 );
+		// Priority 1: run before core's do_blocks (9)/do_shortcode (11) so a
+		// stripped nested embed never executes. See SP-001.
+		add_filter( 'the_content', array( $this, 'guard_single_product_description_content' ), 1 );
+		// SP-005: HD main image on the single-product gallery only -- Woo's
+		// own display-size filter, never a global image-size override.
+		add_filter( 'woocommerce_gallery_image_size', array( $this, 'single_product_gallery_image_size' ) );
+	}
+
+	/**
+	 * SP-005: high-resolution *main* single-product gallery image only.
+	 *
+	 * Scoped to Woo's own `woocommerce_gallery_image_size` filter, which Woo
+	 * only ever applies while rendering the single-product gallery itself
+	 * (wc_get_gallery_image_html()) -- so this can never affect catalog
+	 * cards, thumbnails, related products, cart or mini-cart images, all of
+	 * which use their own separate, already-optimized sizes elsewhere. The
+	 * thumbnail rail keeps `woocommerce_gallery_thumbnail_size` untouched,
+	 * and the zoom/lightbox full image already defaults to Woo's own 'full'
+	 * via `woocommerce_gallery_full_size`; responsive srcset/sizes markup is
+	 * WordPress core behavior on any registered/full image size, so it is
+	 * preserved automatically.
+	 *
+	 * @return string
+	 */
+	public function single_product_gallery_image_size() {
+		return 'full';
 	}
 
 	/**
@@ -111,6 +137,26 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	/* -----------------------------------------------------------------
 	 * Commerce header context
 	 * ----------------------------------------------------------------- */
+
+	/**
+	 * SP-003/SP-004: WooCommerce's own documented AJAX add-to-cart endpoint
+	 * URL (WC_AJAX::get_endpoint('add_to_cart')). Reading this here rather
+	 * than depending on Woo's own wc-add-to-cart script being enqueued
+	 * (which Gloskin only enqueues when the unrelated
+	 * woocommerce_enable_ajax_add_to_cart catalog-loop setting is on)
+	 * means the single-product page and Quick Add modal can always reach
+	 * Woo's real mutation endpoint. This never mutates cart/session state
+	 * itself -- it only returns the URL Woo itself documents for that
+	 * purpose.
+	 *
+	 * @return string
+	 */
+	public function add_to_cart_ajax_url() {
+		if ( ! $this->is_available() || ! class_exists( 'WC_AJAX' ) ) {
+			return '';
+		}
+		return (string) WC_AJAX::get_endpoint( 'add_to_cart' );
+	}
 
 	/**
 	 * Canonical Woo My Account URL, or empty when Woo is absent.
@@ -435,6 +481,18 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 				),
 			),
 		) );
+		register_rest_route( 'gloskin/v1', '/products/quick-add', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'rest_quick_add_projection' ),
+			'permission_callback' => '__return_true',
+			'args'                => array(
+				'id' => array(
+					'required'          => true,
+					'type'              => 'integer',
+					'sanitize_callback' => 'absint',
+				),
+			),
+		) );
 	}
 
 	/**
@@ -475,6 +533,76 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 			);
 		}
 		return rest_ensure_response( array( 'products' => $products ) );
+	}
+
+	/**
+	 * SP-004 read-only Quick Add projection for a single variable product.
+	 *
+	 * Returns normalized identity/price data plus the *native* Woo
+	 * variations_form markup, captured by calling Woo's own
+	 * woocommerce_template_single_add_to_cart() with the product's own
+	 * WC_Product wired into the $product global -- the exact same
+	 * function/template chain Woo's single-product page itself uses
+	 * (single-product/add-to-cart/variable.php). This never hand-rolls a
+	 * variation resolver, never reads/writes the cart, and never mutates
+	 * any state: it is a presentation read only, matching the existing
+	 * wishlist products/resolve endpoint's contract.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function rest_quick_add_projection( $request ) {
+		$empty = array( 'found' => false );
+		if ( ! $this->is_available() || ! function_exists( 'wc_get_product' ) ) {
+			return rest_ensure_response( $empty );
+		}
+
+		$id                = absint( $request->get_param( 'id' ) );
+		$quick_add_product = $id ? wc_get_product( $id ) : false;
+		if ( ! is_object( $quick_add_product ) || ! method_exists( $quick_add_product, 'get_status' )
+			|| 'publish' !== $quick_add_product->get_status()
+			|| ! method_exists( $quick_add_product, 'get_type' ) || 'variable' !== $quick_add_product->get_type()
+			|| ! $quick_add_product->is_purchasable() ) {
+			return rest_ensure_response( $empty );
+		}
+
+		$form_html = '';
+		if ( function_exists( 'woocommerce_template_single_add_to_cart' ) ) {
+			/*
+			 * Woo's own single-product add-to-cart templates read the
+			 * $product global by documented convention --
+			 * woocommerce_template_single_add_to_cart() dispatches to
+			 * woocommerce_variable_add_to_cart(), which renders
+			 * single-product/add-to-cart/variable.php using it. Swap it in
+			 * only to capture this one native render, then restore whatever
+			 * was there before; no global state is left mutated afterward,
+			 * and nothing here reads or writes cart/session state.
+			 */
+			$previous_global = isset( $GLOBALS['product'] ) ? $GLOBALS['product'] : null;
+			$GLOBALS['product'] = $quick_add_product;
+			ob_start();
+			woocommerce_template_single_add_to_cart();
+			$form_html = trim( (string) ob_get_clean() );
+			if ( null === $previous_global ) {
+				unset( $GLOBALS['product'] );
+			} else {
+				$GLOBALS['product'] = $previous_global;
+			}
+		}
+
+		if ( '' === $form_html ) {
+			return rest_ensure_response( $empty );
+		}
+
+		return rest_ensure_response( array(
+			'found'      => true,
+			'id'         => (int) $id,
+			'name'       => (string) $quick_add_product->get_name(),
+			'url'        => (string) get_permalink( $id ),
+			'price_html' => (string) $quick_add_product->get_price_html(),
+			'image_html' => (string) wp_get_attachment_image( absint( $quick_add_product->get_image_id() ), 'medium', false, array( 'class' => 'gloskin-ui1-quickadd__image', 'loading' => 'lazy', 'alt' => '' ) ),
+			'form_html'  => $form_html,
+		) );
 	}
 
 	/* -----------------------------------------------------------------
@@ -727,6 +855,69 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		}
 
 		return $normalized;
+	}
+
+	/**
+	 * SP-001 content-integrity guard for the single product's own render.
+	 *
+	 * WooCommerce's own single-product tabs template calls the core
+	 * the_content() template tag on the product's own post_content, which
+	 * runs it through the full `the_content` filter chain (Gutenberg block
+	 * rendering, shortcode execution, wpautop, embeds). A product's stored
+	 * description can never legitimately contain a nested copy of a Woo
+	 * single-product block or catalog shortcode -- if one was ever pasted,
+	 * imported, or copied from another product into the description field,
+	 * Woo would recursively render a second full gallery/summary/variation-
+	 * form/tabs stack *inside* the Description tab: exactly the nested
+	 * `.product` root SP-001 forbids.
+	 *
+	 * This is scoped strictly to the product's own singular render
+	 * (is_product() + in_the_loop() + the current loop post literally being
+	 * that product), so it never touches product content rendered anywhere
+	 * else -- catalog/related-product cards and REST/search results use
+	 * title/excerpt fields, never the_content(). It never disables
+	 * the_content filtering globally, never forks a Woo template, and never
+	 * hides anything with CSS: the offending embed is removed from the
+	 * content itself, at the exact boundary that would produce the
+	 * duplicate, before block/shortcode execution runs (priority 1, ahead
+	 * of core's do_blocks/do_shortcode).
+	 *
+	 * @param string $content Content being filtered.
+	 * @return string
+	 */
+	public function guard_single_product_description_content( $content ) {
+		if ( ! is_string( $content ) || '' === $content ) {
+			return $content;
+		}
+		if ( ! function_exists( 'is_product' ) || ! is_product() || ! in_the_loop() ) {
+			return $content;
+		}
+		$post = get_post();
+		if ( ! $post instanceof WP_Post || 'product' !== $post->post_type ) {
+			return $content;
+		}
+
+		$woo_block_names = 'single-product|product-details|product-gallery|add-to-cart-form|product-price|product-meta|breadcrumbs|product-image-gallery|product-details-heading|product-stock-indicator';
+		// Paired blocks, e.g. <!-- wp:woocommerce/single-product --> ... <!-- /wp:woocommerce/single-product -->.
+		$content = (string) preg_replace(
+			'#<!--\s*wp:woocommerce/(?:' . $woo_block_names . ')(?:\s+\{[^}]*\})?\s*-->.*?<!--\s*/wp:woocommerce/(?:' . $woo_block_names . ')\s*-->#is',
+			'',
+			$content
+		);
+		// Self-closing blocks, e.g. <!-- wp:woocommerce/product-gallery /-->.
+		$content = (string) preg_replace(
+			'#<!--\s*wp:woocommerce/(?:' . $woo_block_names . ')(?:\s+\{[^}]*\})?\s*/-->#is',
+			'',
+			$content
+		);
+		// Self-referencing product/catalog shortcodes, paired or self-closing.
+		$content = (string) preg_replace(
+			'/\[(product_page|add_to_cart|add_to_cart_url|products|product_category|product|woocommerce_[a-z_]+)\b[^\]]*\](?:.*?\[\/\1\])?/is',
+			'',
+			$content
+		);
+
+		return $content;
 	}
 
 	/**

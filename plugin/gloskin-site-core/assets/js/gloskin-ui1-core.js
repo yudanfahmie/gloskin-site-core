@@ -709,6 +709,192 @@
 	}
 
 	/* -----------------------------------------------------------------
+	 * SP-003/SP-004 -- Woo-owned AJAX add-to-cart bridge.
+	 *
+	 * WooCommerce remains the sole cart/session/validation authority.
+	 * This submits to Woo's own documented wc-ajax=add_to_cart endpoint
+	 * (URL supplied server-side by WooCommerce_Adapter::add_to_cart_ajax_url(),
+	 * WC_AJAX::get_endpoint('add_to_cart')) with the *entire* serialized
+	 * form.cart, exactly like Woo's own wc-add-to-cart.js does for its
+	 * loop buttons -- so variation_id, attribute selections, quantity, nonce fields
+	 * Woo itself rendered travel unmodified. No custom Gloskin cart
+	 * mutation endpoint exists anywhere in this bridge.
+	 *
+	 * On success it dispatches the same `added_to_cart` jQuery event
+	 * Woo's own script fires, so the existing initCart() listener (added
+	 * long before this task) opens the cart sheet -- this never
+	 * duplicates that logic. On any failure it falls back to a genuine
+	 * native form submit, so Woo's own server-rendered validation/stock
+	 * notices take over exactly as they would with JS disabled.
+	 * ----------------------------------------------------------------- */
+
+	function ajaxAddToCart(form, button) {
+		var config = window.gloskinData || {};
+		if (!config.addToCartAjaxUrl || typeof fetch === 'undefined' || typeof FormData === 'undefined') {
+			return false;
+		}
+
+		var formData = new FormData(form);
+		var productIdField = form.querySelector('input[name="add-to-cart"]');
+		if (productIdField && !formData.get('product_id')) {
+			formData.set('product_id', productIdField.value);
+		}
+
+		if (button) { button.setAttribute('aria-busy', 'true'); }
+
+		fetch(config.addToCartAjaxUrl, { method: 'POST', credentials: 'same-origin', body: formData })
+			.then(function (res) {
+				if (!res.ok) { throw new Error('add_to_cart_http'); }
+				return res.json();
+			})
+			.then(function (response) {
+				if (!response || response.error) { throw new Error('add_to_cart_error'); }
+				if (button) { button.setAttribute('aria-busy', 'false'); }
+				if (window.jQuery) {
+					window.jQuery(document.body).trigger('added_to_cart', [
+						response.fragments,
+						response.cart_hash,
+						button ? window.jQuery(button) : window.jQuery()
+					]);
+				} else {
+					overlay.open('cart');
+				}
+			})
+			.catch(function () {
+				/* Restore button state and fall back to a real native POST --
+				 * never invent Gloskin-only error copy here; Woo's own
+				 * server-rendered notices are the authoritative error UX. */
+				if (button) { button.removeAttribute('aria-busy'); }
+				form.submit();
+			});
+
+		return true;
+	}
+
+	/* -----------------------------------------------------------------
+	 * SP-003 -- Single product page: progressive AJAX add-to-cart for
+	 * both the simple form and the variable form's already-selected
+	 * variation. The page itself owns the one native variation form; this
+	 * never opens the Quick Add modal here and never guesses a variation.
+	 * ----------------------------------------------------------------- */
+
+	function initSingleProductAjax() {
+		if (!document.body.classList.contains('single-product')) { return; }
+		var form = document.querySelector('div.product form.cart');
+		if (!form) { return; }
+
+		form.addEventListener('submit', function (event) {
+			var button = form.querySelector('.single_add_to_cart_button');
+			if (!button || button.disabled || button.classList.contains('disabled')) {
+				/* Woo's own variation script owns this disabled state until a
+				 * valid, purchasable, in-stock variation is selected. */
+				return;
+			}
+			if (form.classList.contains('variations_form')) {
+				var variationId = form.querySelector('input.variation_id, input[name="variation_id"]');
+				if (!variationId || !parseInt(variationId.value, 10)) {
+					/* No Woo-selected variation yet -- never AJAX-add the
+					 * variable parent blindly; let native submit/validation run. */
+					return;
+				}
+			}
+			event.preventDefault();
+			ajaxAddToCart(form, button);
+		});
+	}
+
+	/* -----------------------------------------------------------------
+	 * SP-004 -- Gloskin Quick Add modal for variable catalog cards.
+	 *
+	 * Lazy-loads the minimum purchasing projection only when opened (never
+	 * preloaded per-card), renders Woo's own native variations_form markup
+	 * captured server-side, binds Woo's own wc_variation_form() plugin so
+	 * selection/availability/price logic is 100% Woo's, then reuses the
+	 * exact same ajaxAddToCart() bridge as the single-product page.
+	 * ----------------------------------------------------------------- */
+
+	function initQuickAdd() {
+		var config = window.gloskinData || {};
+		if (!config.woo) { return; }
+		var modal = document.querySelector('[data-gloskin-overlay="quickadd"]');
+		var body = modal ? modal.querySelector('[data-gloskin-quickadd-body]') : null;
+		if (!modal || !body) { return; }
+
+		var cache = {};
+		var currentId = null;
+
+		function renderLoading() {
+			body.innerHTML = '<div class="gloskin-ui1-quickadd__loading"><span>' + escapeHtml('Memuat produk…') + '</span></div>';
+		}
+
+		function renderError() {
+			body.innerHTML = '<p class="gloskin-ui1-quickadd__error">' + escapeHtml('Produk belum dapat dimuat. Silakan buka halaman produk untuk memilih varian.') + '</p>';
+		}
+
+		function bindForm(form) {
+			/* Use Woo's own variation-form plugin -- never a Gloskin variation
+			 * resolver. If the script has not finished registering yet (very
+			 * unlikely by the time this async render runs), the form still
+			 * degrades to native select/submit behavior, never a crash. */
+			if (window.jQuery && typeof window.jQuery.fn.wc_variation_form === 'function') {
+				window.jQuery(form).wc_variation_form();
+			}
+			form.addEventListener('submit', function (event) {
+				var button = form.querySelector('.single_add_to_cart_button');
+				if (!button || button.disabled || button.classList.contains('disabled')) { return; }
+				if (form.classList.contains('variations_form')) {
+					var variationId = form.querySelector('input.variation_id, input[name="variation_id"]');
+					if (!variationId || !parseInt(variationId.value, 10)) { return; }
+				}
+				event.preventDefault();
+				ajaxAddToCart(form, button);
+				/* Close the quick-add modal as the cart sheet takes over --
+				 * one overlay owner at a time, via the existing controller. */
+				overlay.close();
+			});
+		}
+
+		function render(data) {
+			var html = '<div class="gloskin-ui1-quickadd__product">';
+			html += data.image_html || '';
+			html += '<div><strong>' + escapeHtml(data.name || '') + '</strong>';
+			if (data.price_html) { html += '<div class="gloskin-ui1-product-price">' + data.price_html + '</div>'; }
+			html += '</div></div>';
+			html += '<div class="gloskin-ui1-quickadd__form">' + (data.form_html || '') + '</div>';
+			body.innerHTML = html;
+			var form = body.querySelector('form.cart');
+			if (form) { bindForm(form); }
+		}
+
+		function open(productId) {
+			currentId = productId;
+			overlay.open('quickadd');
+			if (cache[productId]) { render(cache[productId]); return; }
+			renderLoading();
+			var url = (config.restUrl || '/wp-json/gloskin/v1/') + 'products/quick-add?id=' + encodeURIComponent(productId);
+			fetch(url, { headers: { 'X-WP-Nonce': config.restNonce || '' } })
+				.then(function (res) { return res.json(); })
+				.then(function (data) {
+					if (!data || !data.found) { throw new Error('quickadd_not_found'); }
+					cache[productId] = data;
+					if (currentId === productId) { render(data); }
+				})
+				.catch(function () {
+					if (currentId === productId) { renderError(); }
+				});
+		}
+
+		document.addEventListener('click', function (event) {
+			var trigger = event.target.closest && event.target.closest('[data-gloskin-quickadd-open]');
+			if (!trigger) { return; }
+			var productId = trigger.getAttribute('data-gloskin-quickadd-product');
+			if (!productId) { return; }
+			event.preventDefault();
+			open(productId);
+		});
+	}
+
+	/* -----------------------------------------------------------------
 	 * Wishlist (localStorage for all users)
 	 * ----------------------------------------------------------------- */
 
@@ -892,6 +1078,8 @@
 		initSearch();
 		initAuth();
 		initCart();
+		initSingleProductAjax();
+		initQuickAdd();
 		initWishlist();
 	}
 

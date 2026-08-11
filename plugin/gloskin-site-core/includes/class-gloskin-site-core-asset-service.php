@@ -96,6 +96,28 @@ final class Gloskin_Site_Core_Asset_Service {
 		if ( 'yes' === get_option( 'woocommerce_enable_ajax_add_to_cart' ) && wp_script_is( 'wc-add-to-cart', 'registered' ) ) {
 			wp_enqueue_script( 'wc-add-to-cart' );
 		}
+		if ( $this->variation_form_may_render() && wp_script_is( 'wc-add-to-cart-variation', 'registered' ) ) {
+			wp_enqueue_script( 'wc-add-to-cart-variation' );
+		}
+	}
+
+	/**
+	 * Whether a Woo native variation form can genuinely appear on this
+	 * request: the single-product page itself (Woo's own conditional
+	 * loader already covers this case too, but is_product() is cheap and
+	 * explicit here), or a Gloskin catalog view whose cards can open the
+	 * SP-004 Quick Add modal (shop/skincare/skincare-category/home all
+	 * render gloskin_ui1_render_product_card()). Never enqueued site-wide.
+	 *
+	 * @return bool
+	 */
+	private function variation_form_may_render() {
+		if ( function_exists( 'is_product' ) && is_product() ) {
+			return true;
+		}
+		$context = function_exists( 'get_query_var' ) ? get_query_var( 'gloskin_context', array() ) : array();
+		$view    = is_array( $context ) && isset( $context['view'] ) ? (string) $context['view'] : '';
+		return in_array( $view, array( 'home', 'shop', 'skincare', 'skincare-category' ), true );
 	}
 
 	/**
