@@ -1,0 +1,25 @@
+/*
+ * Native Woo single-product geometry normalization.
+ *
+ * WooCommerce 11 classic layout still applies float/percentage dimensions to
+ * gallery/summary and clearfix pseudo-elements + fixed loop-card widths to
+ * Related Products. Once Gloskin's primary product becomes a CSS Grid those
+ * legacy dimensions no longer describe the containing layout: the 48% values
+ * create half-empty gallery/summary tracks, while ul.products clearfix
+ * pseudos become real grid items and the 22.05% card width then shrinks each
+ * related card inside its assigned cell.
+ *
+ * This file owns only that proven Woo->Gloskin geometry boundary. It does not
+ * alter product data, markup, the outer container, or any nested [product_page]
+ * embed because every selector is anchored to the canonical primary-product
+ * direct child.
+ */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product{row-gap:0}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.woocommerce-product-gallery,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.summary{float:none;clear:none;width:100%;max-width:none;margin:0;box-sizing:border-box}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products::before,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products::after{content:none;display:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product{float:none;clear:none;width:100%;max-width:none;margin:0;box-sizing:border-box}
+@media (max-width:1040px){
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.summary{margin-top:clamp(24px,4vw,32px)}
+}
