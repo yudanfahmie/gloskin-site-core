@@ -554,3 +554,79 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.ca
 	.gloskin-ui1-shop-categories a{padding-inline:14px;white-space:nowrap}
 }
 @media (prefers-reduced-motion:reduce){.gloskin-ui1-shop-results,.gloskin-ui1-shop-categories a{transition:none !important}}
+
+/* -----------------------------------------------------------------
+ * Gloskin Form + Action Kit -- coverage completion pass. Same tokens and
+ * primitives as the Form Kit above; presentation only. Closes concrete
+ * gaps found while auditing every public form/action surface against the
+ * kit already declared in this file:
+ * (1) WooCommerce Blocks Checkout/Cart primary actions render a
+ *     <button class="wc-block-components-button ..."> (Place Order,
+ *     Proceed to Checkout, Apply Coupon, checkout-step Continue) that never
+ *     carries Woo's classic `.button` class, so the `.woocommerce a.button/
+ *     button.button/input.button` rule above never matches it and it was
+ *     falling back to WooCommerce Blocks' own default accent colour --
+ *     purple/blue leakage on the checkout's single most important CTA;
+ * (2) the WC Blocks text-input/textarea/combobox bridge above had no
+ *     hover/focus-visible/invalid treatment of its own, so it fell back to
+ *     the browser's default outline instead of this kit's field-focus-ring;
+ * (3) aria-invalid / aria-disabled attribute states -- Woo's own
+ *     .form-row.woocommerce-invalid wrapper class stays the classic-form
+ *     owner above; this is the attribute-driven equivalent for the
+ *     Gloskin contact/search form and any field a script marks directly;
+ * (4) no visible pressed/:active state existed on any action button;
+ * (5) the premium bordered table surface below was My-Account-only
+ *     (gloskin-ui1-readiness.css); Cart/order-received/order-pay use the
+ *     same table.shop_table markup and had no equivalent.
+ * No Woo/Blocks JS, validation, cart/checkout state, or markup is touched
+ * anywhere below -- every selector is additive presentation only.
+ * ----------------------------------------------------------------- */
+
+/* 1. Woo Blocks primary actions. `.wc-block-components-checkout-place-
+   order-button` and `.wc-block-cart__submit-button` are WooCommerce
+   Blocks' own class names for Place Order / Proceed to Checkout;
+   `.wc-block-components-button` (excluding its own `.is-link` and
+   `--outlined` modifier classes, both real WC Blocks variants) is the safe
+   general fallback so every other block action converges on one primitive
+   instead of a second accent system. */
+.gloskin-ui1 .wc-block-components-checkout-place-order-button,
+.gloskin-ui1 .wc-block-cart__submit-button,
+.gloskin-ui1 .wc-block-components-button:not(.is-link):not(.wc-block-components-button--outlined){background:var(--gloskin-accent);border-color:var(--gloskin-accent);color:var(--gloskin-inverse)}
+.gloskin-ui1 .wc-block-components-checkout-place-order-button:hover,
+.gloskin-ui1 .wc-block-cart__submit-button:hover,
+.gloskin-ui1 .wc-block-components-button:not(.is-link):not(.wc-block-components-button--outlined):hover{background:var(--gloskin-accent-strong);border-color:var(--gloskin-accent-strong)}
+.gloskin-ui1 .wc-block-components-button.wc-block-components-button--outlined{background:transparent;border-color:var(--gloskin-border);color:var(--gloskin-text)}
+.gloskin-ui1 .wc-block-components-button.wc-block-components-button--outlined:hover{border-color:var(--gloskin-accent);color:var(--gloskin-accent-strong)}
+.gloskin-ui1 .wc-block-components-button[aria-disabled="true"],.gloskin-ui1 .wc-block-components-button.is-loading{opacity:.65;pointer-events:none}
+
+/* 2. Field hover/focus-visible/invalid parity for the WC Blocks text-input/
+   textarea/combobox bridge declared earlier in this file -- same hover
+   tint, focus ring and invalid tint as every other field in this kit.
+   `.has-error` is WC Blocks' own wrapper modifier class; `aria-invalid`
+   covers the attribute WC Blocks also sets on the input itself. */
+.gloskin-ui1 .wc-block-components-text-input input:hover,.gloskin-ui1 .wc-block-components-textarea textarea:hover,.gloskin-ui1 .wc-block-components-combobox input:hover{border-color:color-mix(in srgb,var(--gloskin-accent) 32%,var(--gloskin-field-border))}
+.gloskin-ui1 .wc-block-components-text-input input:focus-visible,.gloskin-ui1 .wc-block-components-textarea textarea:focus-visible,.gloskin-ui1 .wc-block-components-combobox input:focus-visible{outline:none;border-color:var(--gloskin-accent);background:var(--gloskin-field-bg-focus);box-shadow:var(--gloskin-field-focus-ring)}
+.gloskin-ui1 .wc-block-components-text-input.has-error input,.gloskin-ui1 .wc-block-components-text-input input[aria-invalid="true"],.gloskin-ui1 .wc-block-components-combobox input[aria-invalid="true"]{border-color:var(--gloskin-accent-strong);background:color-mix(in srgb,var(--gloskin-accent) 4%,var(--gloskin-field-bg))}
+
+/* 3. aria-invalid / aria-disabled attribute states for the Gloskin-owned
+   form primitive and native Woo text fields. Deliberately does not add a
+   bare :invalid pseudo-class rule -- that fires on an untouched required
+   field before any submission attempt, which is exactly the premature
+   error-painting the .woocommerce-invalid wrapper class above avoids. */
+.gloskin-ui1-form input[aria-invalid="true"],.gloskin-ui1-form select[aria-invalid="true"],.gloskin-ui1-form textarea[aria-invalid="true"],.gloskin-ui1 .woocommerce input.input-text[aria-invalid="true"],.gloskin-ui1 .woocommerce select[aria-invalid="true"],.gloskin-ui1 .woocommerce textarea[aria-invalid="true"]{border-color:var(--gloskin-accent-strong);background:color-mix(in srgb,var(--gloskin-accent) 4%,var(--gloskin-field-bg))}
+.gloskin-ui1-form input[aria-disabled="true"],.gloskin-ui1-form select[aria-disabled="true"],.gloskin-ui1-form textarea[aria-disabled="true"],.gloskin-ui1 .woocommerce input.input-text[aria-disabled="true"],.gloskin-ui1 .woocommerce select[aria-disabled="true"]{background:var(--gloskin-field-disabled);color:var(--gloskin-muted);cursor:not-allowed}
+
+/* 4. Pressed/active state -- restrained, reuses the `transform` transition
+   each button rule already declares above, so no new transition property
+   is introduced. prefers-reduced-motion is already handled globally
+   (gloskin-ui1-core-base.css forces every transition-duration to 0.01ms). */
+.gloskin-ui1-button:active{transform:translateY(0)}
+.gloskin-ui1-form button:active,.gloskin-ui1-form input[type="submit"]:active,.gloskin-ui1 .woocommerce a.button:active,.gloskin-ui1 .woocommerce button.button:active,.gloskin-ui1 .woocommerce input.button:active,.gloskin-ui1 .wc-block-components-button:active{transform:translateY(1px)}
+
+/* 5. Cart/order tables outside My Account (Cart, order-received, order-pay)
+   share the exact table.shop_table surface gloskin-ui1-readiness.css
+   already declares for My Account, broadened here to the general
+   .woocommerce ancestor rather than account-page-only. Same values, no
+   conflicting declaration. */
+.gloskin-ui1 .woocommerce table.shop_table{border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);border-collapse:separate;overflow:hidden;background:var(--gloskin-bg)}
+.gloskin-ui1 .woocommerce table.shop_table th,.gloskin-ui1 .woocommerce table.shop_table td{padding:13px 14px;border-color:var(--gloskin-border);vertical-align:middle}

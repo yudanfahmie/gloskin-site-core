@@ -342,6 +342,27 @@ for expected in \
   grep -qF -- "$expected" "$core_css" || { echo "Form Kit Woo coverage missing: $expected" >&2; exit 1; }
 done
 
+# Form + Action Kit unification pass: WC Blocks primary CTA never falls back
+# to Woo Blocks' own default accent (Place Order/Proceed to Checkout/general
+# button primitive), WC Blocks fields share this kit's focus-visible ring,
+# aria-invalid/aria-disabled attribute states are covered, a real :active
+# state exists, and the premium table surface is not My-Account-only.
+for expected in \
+  '.gloskin-ui1 .wc-block-components-checkout-place-order-button' \
+  '.gloskin-ui1 .wc-block-cart__submit-button' \
+  '.gloskin-ui1 .wc-block-components-button:not(.is-link):not(.wc-block-components-button--outlined){background:var(--gloskin-accent)' \
+  '.gloskin-ui1 .wc-block-components-text-input input:focus-visible' \
+  '[aria-invalid="true"]' \
+  '[aria-disabled="true"]' \
+  '.gloskin-ui1-form button:active' \
+  '.gloskin-ui1 .woocommerce table.shop_table{border:1px solid var(--gloskin-border)'; do
+  grep -qF -- "$expected" "$core_css" || { echo "Form + Action Kit coverage missing: $expected" >&2; exit 1; }
+done
+
+# Presentation load order is won through the dependency graph, not !important.
+grep -qF -- 'registered_woo_style_deps' "$plugin_root/includes/class-gloskin-site-core-asset-service.php" \
+  || { echo "Woo style dependency ordering helper missing from AssetService" >&2; exit 1; }
+
 # My-account fields stay on the same field kit as cart/checkout instead of a
 # separate/older set of values.
 grep -qF -- '.woocommerce-account .woocommerce form .form-row input.input-text,.woocommerce-account .woocommerce form .form-row textarea,.woocommerce-account .woocommerce form select{min-height:var(--gloskin-field-height)' "$readiness_css" \

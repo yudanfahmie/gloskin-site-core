@@ -56,10 +56,14 @@ final class Gloskin_Site_Core_Asset_Service {
 
 		$registry = $this->registry();
 		foreach ( $registry['styles'] as $handle => $asset ) {
-			$src = ! empty( $asset['external'] )
+			$src  = ! empty( $asset['external'] )
 				? (string) $asset['src']
 				: plugins_url( $asset['src'], $this->plugin_file );
-			wp_register_style( $handle, $src, $asset['deps'], $this->version, $asset['media'] );
+			$deps = $asset['deps'];
+			if ( 'gloskin-ui1-production' === $handle ) {
+				$deps = array_merge( $deps, $this->registered_woo_style_deps() );
+			}
+			wp_register_style( $handle, $src, $deps, $this->version, $asset['media'] );
 			wp_enqueue_style( $handle );
 		}
 		foreach ( $registry['scripts'] as $handle => $asset ) {
@@ -108,6 +112,43 @@ final class Gloskin_Site_Core_Asset_Service {
 		if ( $this->variation_form_may_render() && wp_script_is( 'wc-add-to-cart-variation', 'registered' ) ) {
 			wp_enqueue_script( 'wc-add-to-cart-variation' );
 		}
+	}
+
+	/**
+	 * Presentation load-order only: when WooCommerce's own public style
+	 * handles are already registered (classic frontend styles, Select2, or
+	 * WooCommerce Blocks' style bundles), make the final Gloskin form-
+	 * presentation layer (gloskin-ui1-production, last in the registry
+	 * dependency chain) depend on them. This guarantees the cascade always
+	 * resolves Gloskin-after-Woo through the dependency graph itself,
+	 * rather than relying on both plugins keeping the same hook priority.
+	 * Never registers, forks, dequeues or replaces a Woo stylesheet -- a
+	 * read-only handle check, same pattern as
+	 * enqueue_native_commerce_scripts() below.
+	 *
+	 * @return array<int,string>
+	 */
+	private function registered_woo_style_deps() {
+		if ( ! function_exists( 'wp_style_is' ) ) {
+			return array();
+		}
+		$candidates = array(
+			'woocommerce-general',
+			'woocommerce-layout',
+			'woocommerce-smallscreen',
+			'select2',
+			'wc-blocks-style',
+			'wc-blocks-vendors-style',
+			'wc-blocks-checkout-style',
+			'wc-blocks-cart-style',
+		);
+		$deps = array();
+		foreach ( $candidates as $candidate ) {
+			if ( wp_style_is( $candidate, 'registered' ) ) {
+				$deps[] = $candidate;
+			}
+		}
+		return $deps;
 	}
 
 	/**
