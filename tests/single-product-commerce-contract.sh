@@ -95,7 +95,7 @@ grep -qF "formData.set('product_id', String(variationId));" "$core_js" || fail "
 # no-JS/error fallback -- the Quick Add trigger enhances the same anchor,
 # it never replaces it with a JS-only control.
 grep -qF "data-gloskin-quickadd-open data-gloskin-quickadd-product=" "$helpers" || fail "SP-004: Quick Add trigger attributes missing from the product card"
-grep -qF '<a href="<?php echo esc_url( (string) $product[' "$helpers" || fail "SP-004: product card add-to-cart control is no longer a real <a href> fallback"
+grep -qF '<a href="<?php echo esc_url( $action_url ); ?>"' "$helpers" || fail "SP-004: product card add-to-cart control is no longer a real <a href> fallback"
 
 # 7b. Native Woo Related Products cards (not the Gloskin card helper) can
 # open the same Quick Add modal via progressive-enhancement event
@@ -160,5 +160,61 @@ fi
 grep -qF 'data-gloskin-overlay="quickadd"' "$quickadd_tpl" || fail "SP-004/SP-007: Quick Add markup missing the shared overlay contract"
 overlay_controller_count="$(grep -c 'var overlay = (function ()' "$core_js")"
 [[ "$overlay_controller_count" == "1" ]] || fail "SP-007: expected exactly one overlay controller definition, found $overlay_controller_count"
+
+# -----------------------------------------------------------------------
+# 2026-08-12 hardening: SP-001 sku-targeted self-reference (proven live on
+# staging), the floating/sticky purchase dock, commerce accent
+# normalization, and the post-success View Cart helper.
+# -----------------------------------------------------------------------
+
+# SP-001: the guard now also resolves a [product_page sku="..."] self-
+# reference through Woo's own documented wc_get_product_id_by_sku(), the
+# exact live-proven root cause -- never a hand-rolled SKU lookup.
+grep -qF 'function is_self_referencing_product_page_shortcode(' "$adapter" \
+	|| fail "SP-001 hardening: sku-aware self-reference helper missing"
+grep -qF 'wc_get_product_id_by_sku( $sku )' "$adapter" \
+	|| fail "SP-001 hardening: sku self-reference must resolve through Woo's own wc_get_product_id_by_sku()"
+
+# Purchase dock: exactly one native form.cart is wrapped (never cloned) via
+# Woo's own woocommerce_before/after_add_to_cart_form hooks, scoped to the
+# page's own primary product only.
+grep -qF "add_action( 'woocommerce_before_add_to_cart_form', array( \$this, 'open_purchase_dock' ) );" "$adapter" \
+	|| fail "purchase dock: open hook not registered on woocommerce_before_add_to_cart_form"
+grep -qF "add_action( 'woocommerce_after_add_to_cart_form', array( \$this, 'close_purchase_dock' ) );" "$adapter" \
+	|| fail "purchase dock: close hook not registered on woocommerce_after_add_to_cart_form"
+grep -qF 'function is_primary_single_product_context(' "$adapter" \
+	|| fail "purchase dock: primary-product scoping guard missing (would also wrap a legitimate nested different-product embed)"
+grep -qF 'gloskin-ui1-purchase-dock' "$adapter" || fail "purchase dock: wrapper markup missing from the adapter"
+grep -qF '.gloskin-ui1-purchase-dock{' "$core_css" || fail "purchase dock: dock surface styling missing from core CSS"
+if grep -qE '\.summary\{[^}]*position:sticky|div\.product>\.summary\{position:sticky' "$core_css"; then
+	fail "summary scroll: the whole-summary sticky/scrollable model must be removed, not just relocated"
+fi
+if grep -qE 'gloskin-ui1-purchase-dock\{[^}]*overflow' "$core_css"; then
+	fail "purchase dock: must never grow an internal scrollbar"
+fi
+
+# Commerce accent: Add to Cart / Pilih Varian use the Gloskin accent on
+# every required surface, including the two contexts the shared
+# .woocommerce-scoped base rule cannot reach (product cards, Quick Add).
+grep -qF 'background:var(--gloskin-accent);color:var(--gloskin-inverse);border-color:transparent}' "$core_css" \
+	|| fail "commerce accent: product-card/Quick Add Add to Cart accent rule missing"
+grep -qF 'a.add_to_cart_button,.gloskin-ui1-quickadd__form .single_add_to_cart_button' "$core_css" \
+	|| fail "commerce accent: accent rule no longer covers both product-card Add to Cart/Pilih Varian and Quick Add"
+grep -qF 'var(--gloskin-accent-strong)' "$core_css" || fail "commerce accent: hover state must use --gloskin-accent-strong"
+
+# View Cart: idempotent, success-only, single-product custom AJAX helper
+# (Woo's own wc-add-to-cart.js already creates this natively for catalog-
+# loop ajax_add_to_cart buttons, which is why this only targets the
+# single-product page's own bridge). Styled as a secondary action, never
+# duplicated on repeat adds.
+grep -qF 'function renderSingleProductViewCartLink(submitter)' "$core_js" \
+	|| fail "View Cart: single-product success helper missing"
+grep -qF "link.className = 'added_to_cart wc-forward';" "$core_js" \
+	|| fail "View Cart: helper must use Woo's own added_to_cart/wc-forward class contract"
+grep -qF "submitter.parentNode.querySelector('a.added_to_cart.wc-forward');" "$core_js" \
+	|| fail "View Cart: helper must reuse an existing link (idempotent) instead of always inserting a new one"
+grep -qF 'onSuccess: function () { renderSingleProductViewCartLink(submitter); }' "$core_js" \
+	|| fail "View Cart: helper must run only after a confirmed successful Woo mutation, not on dispatch"
+grep -qF '.gloskin-ui1 a.added_to_cart.wc-forward{' "$core_css" || fail "View Cart: secondary-action styling missing"
 
 echo "single-product commerce contract passed"

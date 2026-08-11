@@ -310,12 +310,10 @@ body.single-product.gloskin-ui1 div.product table.variations td,body.single-prod
 body.single-product.gloskin-ui1 div.product .woocommerce-notices-wrapper:not(:empty){grid-column:1 / -1}
 body.single-product.gloskin-ui1 div.product .product_meta{margin-top:6px;padding-top:16px;border-top:1px solid var(--gloskin-border);color:var(--gloskin-muted);font-size:.92rem}
 
-/* Optional soft-sticky summary: desktop and tall viewports only, never
- * fighting the admin bar/sticky header stack, and always independently
- * scrollable so long variation/notice content can never be clipped. */
-@media (min-width:1040px) and (min-height:760px){
-	body.single-product.gloskin-ui1 div.product>.summary{position:sticky;top:calc(var(--gloskin-ui1-nav-sticky-top) + 140px);max-height:calc(100vh - var(--gloskin-ui1-nav-sticky-top) - 172px);overflow-y:auto}
-}
+/* The summary itself stays in normal document flow -- no internal
+ * scrollbar, no clipped variation/stock/error content. Only the purchase
+ * dock below (the native form.cart, wrapped by
+ * WooCommerce_Adapter::open/close_purchase_dock()) floats. */
 
 /* Gallery kit: consistent frame, contain strategy for packshots (never
  * destructive cover-cropping), restrained radius, active thumbnail state.
@@ -357,13 +355,37 @@ body.single-product.gloskin-ui1 .related.products ul.products li.product .button
 
 @media (max-width:1040px){
 	body.single-product.gloskin-ui1 div.product{grid-template-columns:1fr}
-	body.single-product.gloskin-ui1 div.product>.summary{position:static;max-height:none;overflow:visible}
 	body.single-product.gloskin-ui1 .related.products ul.products{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:600px){
 	body.single-product.gloskin-ui1 .related.products ul.products{grid-template-columns:1fr}
 	body.single-product.gloskin-ui1 div.product form.cart .single_add_to_cart_button{width:100%}
 	body.single-product.gloskin-ui1 .woocommerce-tabs ul.tabs{overflow-x:auto;flex-wrap:nowrap}
+}
+
+/* -----------------------------------------------------------------
+ * Purchase dock -- the SAME native form.cart Woo already renders, wrapped
+ * (never cloned) by WooCommerce_Adapter::open/close_purchase_dock() around
+ * woocommerce_before/after_add_to_cart_form. One elevated, sticky-toward-
+ * bottom surface on BOTH desktop and mobile. It is a child of .summary, so
+ * CSS position:sticky's containing block is .summary's own box: it can
+ * never float past .summary's bottom edge, which is exactly where Tabs/
+ * Related Products/Footer begin -- no extra JS boundary math needed, and
+ * it never overlaps the sticky header (position:sticky, not fixed, and a
+ * modest z-index well under the header's).
+ * ----------------------------------------------------------------- */
+body.single-product.gloskin-ui1 .gloskin-ui1-purchase-dock{z-index:5;margin-top:6px;padding:16px 18px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);background:var(--gloskin-bg);box-shadow:0 16px 38px color-mix(in srgb,var(--gloskin-text) 12%,transparent)}
+body.single-product.gloskin-ui1 .gloskin-ui1-purchase-dock form.cart{margin-block:0}
+/* Degrade rule: only stick when there is real viewport height to float
+ * within: below this, the dock stays in normal document flow (still the
+ * same bordered surface) rather than fighting a short/landscape viewport
+ * or ever growing an internal scroll box. Height-only (no min-width), so
+ * both desktop and mobile get the floating treatment identically. */
+@media (min-height:560px){
+	body.single-product.gloskin-ui1 .gloskin-ui1-purchase-dock{position:sticky;bottom:max(16px,env(safe-area-inset-bottom))}
+}
+@media (max-width:600px){
+	body.single-product.gloskin-ui1 .gloskin-ui1-purchase-dock{padding:14px 16px calc(14px + env(safe-area-inset-bottom))}
 }
 
 /* -----------------------------------------------------------------
@@ -402,6 +424,35 @@ body.single-product.gloskin-ui1 .related.products ul.products li.product .button
 .gloskin-ui1-card--product .gloskin-ui1-card__body{display:flex;flex-direction:column;min-width:0}
 .gloskin-ui1-card--product .gloskin-ui1-card__actions{display:grid;grid-template-columns:minmax(0,1fr);gap:0;margin-top:auto;padding-top:18px;min-width:0}
 .gloskin-ui1-card--product .gloskin-ui1-card__actions .gloskin-ui1-button{display:inline-flex;align-items:center;justify-content:center;width:100%;max-width:100%;min-width:0;min-height:44px;text-align:center;white-space:normal}
+
+/* -----------------------------------------------------------------
+ * Commerce accent normalization. The base ruleset (gloskin-ui1-core-base.css)
+ * already colors every Woo `.button` the Gloskin accent, but only inside a
+ * `.woocommerce` ancestor -- true on Cart/Checkout/My Account and the
+ * native single-product summary (single_add_to_cart_button, Related
+ * Products buttons), so those need no change here. Shop/Skincare/Home
+ * product cards (including AJAX-injected Shop cards, which reuse the exact
+ * same gloskin_ui1_render_product_card() markup) and the Quick Add modal
+ * render outside that ancestor, so their purchase CTA otherwise falls back
+ * to an unstyled `.gloskin-ui1-button` base with no `--primary` variant.
+ * This closes exactly that gap -- the neutral "Lihat Produk" ghost
+ * fallback and the secondary View Cart link below are deliberately never
+ * matched, and an invalid/out-of-stock control stays visually neutral.
+ * ----------------------------------------------------------------- */
+.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button,.gloskin-ui1-quickadd__form .single_add_to_cart_button{background:var(--gloskin-accent);color:var(--gloskin-inverse);border-color:transparent}
+.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button:hover,.gloskin-ui1-quickadd__form .single_add_to_cart_button:hover{background:var(--gloskin-accent-strong)}
+.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button.disabled,.gloskin-ui1-quickadd__form .single_add_to_cart_button:disabled,.gloskin-ui1-quickadd__form .single_add_to_cart_button.disabled{background:var(--gloskin-surface-strong);color:var(--gloskin-muted);border-color:var(--gloskin-border);opacity:.7;pointer-events:none}
+
+/* Post-success View Cart -- secondary action, never the primary accent
+ * treatment above. Covers Woo's own native `added_to_cart wc-forward`
+ * anchor (catalog-loop AJAX add-to-cart, when
+ * woocommerce_enable_ajax_add_to_cart is on -- Woo itself replaces rather
+ * than duplicates this element on repeat adds) and the single-product
+ * page's own idempotent equivalent inserted by gloskin-ui1-core.js
+ * (initSingleProductAjax(), since Woo does not create one there natively). */
+.gloskin-ui1 a.added_to_cart.wc-forward{display:inline-flex;align-items:center;justify-content:center;min-height:38px;margin-top:8px;padding:8px 14px;border:1px solid var(--gloskin-border);border-radius:999px;background:transparent;color:var(--gloskin-text);font-weight:700;font-size:.86rem;text-decoration:none;transition:border-color 140ms ease,color 140ms ease}
+.gloskin-ui1 a.added_to_cart.wc-forward:hover{border-color:color-mix(in srgb,var(--gloskin-accent) 40%,var(--gloskin-border));color:var(--gloskin-accent-strong)}
+body.single-product.gloskin-ui1 div.product form.cart a.added_to_cart.wc-forward{margin-top:0}
 
 /* Quick Add release hardening. Woo native variation markup remains untouched;
    these scoped rules only stabilize geometry, scrolling and control fit. */

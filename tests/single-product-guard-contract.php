@@ -1,12 +1,12 @@
 <?php
 /**
- * SP-001 behavioral proof (narrowed 2026-08-11 hotfix): Gloskin_Site_Core_
- * WooCommerce_Adapter::guard_single_product_description_content() strips
- * a *self-referencing* Woo single-product block/[product_page] embed --
- * one that targets the current product's own ID -- and leaves every other
- * kind of content, including legitimate cross-sell/editorial Woo
- * shortcodes and single-product embeds of a *different* product,
- * completely untouched.
+ * SP-001 behavioral proof (root cause proven live on staging 2026-08-12):
+ * Gloskin_Site_Core_WooCommerce_Adapter::guard_single_product_description_content()
+ * strips a *self-referencing* Woo single-product block/[product_page] embed
+ * -- one that targets the current product's own ID or own SKU -- and
+ * leaves every other kind of content, including legitimate cross-sell/
+ * editorial Woo shortcodes and single-product embeds of a *different*
+ * product, completely untouched.
  */
 declare(strict_types=1);
 
@@ -33,6 +33,15 @@ function absint($value) { return abs((int) $value); }
 // single-class PHP contract harnesses.
 function add_action() {}
 function add_filter() {}
+
+// SKU->post-ID resolution stub for the sku-targeted self-reference branch
+// (the proven live root cause -- see cases G/H below). Mirrors Woo's own
+// documented wc_get_product_id_by_sku() contract: known SKU -> post ID,
+// unknown SKU -> 0.
+$GLOBALS['gl_stub_sku_map'] = array('GLS-SMP-002' => 501, 'GLS-OTHER-999' => 777);
+function wc_get_product_id_by_sku($sku) {
+	return isset($GLOBALS['gl_stub_sku_map'][$sku]) ? $GLOBALS['gl_stub_sku_map'][$sku] : 0;
+}
 
 require dirname(__DIR__) . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php';
 
@@ -70,6 +79,22 @@ $self_shortcode = '<p>Deskripsi.</p>[product_page id="501"]';
 ok(strpos($adapter->guard_single_product_description_content($self_shortcode), '[product_page') === false, 'D1: self-referencing [product_page] shortcode must be stripped');
 $other_shortcode = '<p>Deskripsi.</p>[product_page id="777"]';
 ok($adapter->guard_single_product_description_content($other_shortcode) === $other_shortcode, 'D2: [product_page] referencing a different product must be preserved');
+
+// G. [product_page sku="GLS-SMP-002"] self-referencing the current product
+// (id 501) via its own SKU -- the exact live-proven root cause -- is
+// stripped even though it carries no numeric id= attribute at all.
+$self_sku_shortcode = '<p>Deskripsi.</p>[product_page sku="GLS-SMP-002"]';
+ok(strpos($adapter->guard_single_product_description_content($self_sku_shortcode), '[product_page') === false, 'G: self-referencing [product_page sku] shortcode must be stripped');
+
+// H. [product_page sku="GLS-OTHER-999"] resolves to a different product
+// (id 777, not this product's own 501) -- legitimate cross-sell, preserved.
+$other_sku_shortcode = '<p>Deskripsi.</p>[product_page sku="GLS-OTHER-999"]';
+ok($adapter->guard_single_product_description_content($other_sku_shortcode) === $other_sku_shortcode, 'H1: [product_page sku] referencing a different product must be preserved');
+
+// H2. An unknown SKU (resolves to no product at all) must never be treated
+// as self-referencing.
+$unknown_sku_shortcode = '<p>Deskripsi.</p>[product_page sku="NOT-A-REAL-SKU"]';
+ok($adapter->guard_single_product_description_content($unknown_sku_shortcode) === $unknown_sku_shortcode, 'H2: [product_page sku] with an unresolvable SKU must be preserved');
 
 // E. Genuine editorial/cross-sell Woo shortcodes must never be touched --
 // none of these render a nested .product single-page root, and blanket-

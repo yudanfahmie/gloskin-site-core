@@ -42,6 +42,12 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		// SP-005: HD main image on the single-product gallery only -- Woo's
 		// own display-size filter, never a global image-size override.
 		add_filter( 'woocommerce_gallery_image_size', array( $this, 'single_product_gallery_image_size' ) );
+		// Purchase dock: wrap Woo's own single form.cart output (never a
+		// clone) so it can become a floating/sticky bottom purchase surface.
+		// Both hooks fire from single-product/add-to-cart/simple.php and
+		// .../variable.php around the one native <form class="cart">.
+		add_action( 'woocommerce_before_add_to_cart_form', array( $this, 'open_purchase_dock' ) );
+		add_action( 'woocommerce_after_add_to_cart_form', array( $this, 'close_purchase_dock' ) );
 	}
 
 	/**
@@ -62,6 +68,59 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 */
 	public function single_product_gallery_image_size() {
 		return 'full';
+	}
+
+	/**
+	 * True only for the page's own primary product render -- never a
+	 * different-product `[product_page]`/`woocommerce/single-product`
+	 * embed that may legitimately be nested inside this product's own
+	 * description (SP-001 preserves those; see
+	 * guard_single_product_description_content()). is_product()/
+	 * in_the_loop() alone cannot distinguish the two: both stay true for
+	 * the whole outer the_content() call, including while a nested embed's
+	 * own local WP_Query renders. get_queried_object() is set once from the
+	 * *main* query and is never touched by that nested query's own
+	 * the_post() calls, so comparing it against the current global $post is
+	 * the reliable discriminator.
+	 *
+	 * @return bool
+	 */
+	private function is_primary_single_product_context() {
+		if ( ! function_exists( 'is_product' ) || ! is_product() ) {
+			return false;
+		}
+		$queried = get_queried_object();
+		$current = get_post();
+		return $queried instanceof WP_Post && $current instanceof WP_Post
+			&& (int) $queried->ID === (int) $current->ID;
+	}
+
+	/**
+	 * Purchase dock open tag. Wraps Woo's own native form.cart output
+	 * (single-product/add-to-cart/simple.php and .../variable.php both fire
+	 * woocommerce_before_add_to_cart_form immediately before <form
+	 * class="cart">) so it can become a floating/sticky bottom purchase
+	 * surface -- exactly one native form, never cloned, never a second
+	 * variation/quantity/Add to Cart control. Presentation only; CSS lives
+	 * in gloskin-ui1-core.css.
+	 *
+	 * @return void
+	 */
+	public function open_purchase_dock() {
+		if ( ! $this->is_primary_single_product_context() ) {
+			return;
+		}
+		echo '<div class="gloskin-ui1-purchase-dock" data-gloskin-purchase-dock>';
+	}
+
+	/**
+	 * @return void
+	 */
+	public function close_purchase_dock() {
+		if ( ! $this->is_primary_single_product_context() ) {
+			return;
+		}
+		echo '</div>';
 	}
 
 	/**
@@ -916,26 +975,30 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 
 	/**
 	 * SP-001 content-integrity guard for the single product's own render --
-	 * narrowed after verification (see the 2026-08-11 hotfix addendum in
-	 * docs/audits/single-product-commerce-remediation-2026-08-11.md).
+	 * root cause proven live on staging 2026-08-12 (see the corresponding
+	 * addendum in docs/audits/single-product-commerce-remediation-2026-08-11.md).
 	 *
 	 * WooCommerce's own single-product tabs template calls the core
 	 * the_content() template tag on the product's own post_content, which
 	 * runs it through the full `the_content` filter chain (Gutenberg block
-	 * rendering, shortcode execution, wpautop, embeds). The canonical
-	 * sample bundle's own "Gloskin Fresh Gel Facial Wash" description
-	 * (plugin/gloskin-site-core/migration-runtime/gloskin-sample-products-v1/products.json)
-	 * was inspected directly and contains only plain heading/paragraph
-	 * HTML -- no Woo block or shortcode of any kind -- so no evidence
-	 * supports treating a broad shortcode family as the confirmed root
-	 * cause. This repo has no live WordPress/WooCommerce/browser runtime,
-	 * so the exact staging post_content and active callback chain could
-	 * not be inspected live; that remains explicitly PENDING, not claimed
-	 * VERIFIED (see the audit doc).
+	 * rendering, shortcode execution, wpautop, embeds). Live DOM inspection
+	 * of https://gloskin-id.markas.cloud/product/fresh-gel-facial-wash/
+	 * (product #988106, SKU GLS-SMP-002) proved the nested `div.product`
+	 * inside `.woocommerce-Tabs-panel--description` carries that exact same
+	 * product ID and is wrapped in `div.woocommerce > div.single-product`
+	 * -- the literal output markup of WooCommerce's own `[product_page]`
+	 * shortcode template (templates/shortcodes/product.php), not a
+	 * Gutenberg block. The product's own description embeds
+	 * `[product_page sku="GLS-SMP-002"]`, targeting its *own* SKU. The
+	 * previously deployed guard only ever matched a self-referencing
+	 * numeric `id="…"` attribute, so this sku-targeted self-reference
+	 * always survived to execute -- the confirmed root cause. See
+	 * is_self_referencing_product_page_shortcode() for the sku-aware fix.
 	 *
-	 * What *is* true regardless of the unconfirmed trigger: a product's
-	 * own description can never legitimately embed a live copy of its own
-	 * single-product page -- that is true self-recursion, not editorial
+	 * What was already true before this was proven, and remains the guard's
+	 * governing principle: a product's own description can never
+	 * legitimately embed a live copy of its own single-product page --
+	 * that is true self-recursion, not editorial
 	 * content, and is the one mechanism that would reproduce SP-001's
 	 * reported symptom (a second full gallery/summary/tabs/add-to-cart
 	 * stack nested inside the Description tab) verbatim. This guard is
@@ -991,20 +1054,55 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 			},
 			$content
 		);
-		// Legacy [product_page id="..."] shortcode, self-referencing only.
+		// Legacy [product_page id="..."] / [product_page sku="..."] shortcode,
+		// self-referencing only.
 		$content = (string) preg_replace_callback(
 			'/\[product_page\b([^\]]*)\]/i',
 			function ( $matches ) use ( $current_id ) {
-				if ( preg_match( '/\bid\s*=\s*["\']?(\d+)/', (string) $matches[1], $id_match )
-					&& absint( $id_match[1] ) === $current_id ) {
-					return '';
-				}
-				return $matches[0];
+				return $this->is_self_referencing_product_page_shortcode( (string) $matches[1], $current_id ) ? '' : $matches[0];
 			},
 			$content
 		);
 
 		return $content;
+	}
+
+	/**
+	 * SP-001 root cause, proven against live staging DOM evidence (product
+	 * #988106, "Gloskin Fresh Gel Facial Wash"): the previously deployed
+	 * guard only ever recognized a self-referencing `[product_page id="…"]`
+	 * numeric attribute. This product's own description instead embeds
+	 * `[product_page sku="…"]` targeting its *own* SKU (a non-numeric
+	 * catalog SKU, not a post ID) -- a self-reference the id-only regex can
+	 * never match, so the shortcode always survived to execute, producing
+	 * exactly the reported nested gallery/summary/form/tabs/related stack
+	 * inside `.woocommerce-Tabs-panel--description` (confirmed live: the
+	 * nested `div.product` carries the identical product ID as the page's
+	 * own queried product). This checks the shortcode's `id` attribute
+	 * first, then falls back to resolving a `sku` attribute through Woo's
+	 * own documented `wc_get_product_id_by_sku()` lookup -- never a
+	 * hand-rolled SKU resolver. A shortcode referencing a genuinely
+	 * different product (by id or by sku) is left completely untouched, per
+	 * the narrowed-guard rule already established for the block variant.
+	 *
+	 * @param string $attrs Raw shortcode attribute string (inside the brackets, after the tag name).
+	 * @param int    $current_id Current product's own post ID.
+	 * @return bool
+	 */
+	private function is_self_referencing_product_page_shortcode( $attrs, $current_id ) {
+		if ( preg_match( '/\bid\s*=\s*["\']?(\d+)/', $attrs, $id_match ) ) {
+			return absint( $id_match[1] ) === $current_id;
+		}
+		if ( preg_match( '/\bsku\s*=\s*["\']([^"\']+)["\']/', $attrs, $sku_match )
+			&& function_exists( 'wc_get_product_id_by_sku' ) ) {
+			$sku = trim( (string) $sku_match[1] );
+			if ( '' === $sku ) {
+				return false;
+			}
+			$resolved_id = absint( wc_get_product_id_by_sku( $sku ) );
+			return $resolved_id > 0 && $resolved_id === $current_id;
+		}
+		return false;
 	}
 
 	/**

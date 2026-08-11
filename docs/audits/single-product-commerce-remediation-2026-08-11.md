@@ -460,18 +460,32 @@ WPPC-013 changed from ambiguous `OPEN` to `BLOCKED_OWNER/DEFERRED`, consistent w
 
 A fresh WordPress Plugin Check scan was **not run** -- this environment has no WP-CLI, PHPCS, or Plugin Check tooling installed, and no staging access. Reported SKIPPED, not PASS.
 
+## 2026-08-12 final hardening: SP-001 proven and fixed, purchase dock added
+
+This pass had live staging/browser access (`https://gloskin-id.markas.cloud`, the site `.cpanel.yml` deploys to) and a local PHP 8.2 CLI (`C:\xampp\php\php.exe`) not found by the previous pass, so the previously PENDING/SKIPPED items below could actually be exercised instead of assumed.
+
+**SP-001 root cause: proven, not narrowed further.** Live DOM inspection of `/product/fresh-gel-facial-wash/` (product #988106, SKU `GLS-SMP-002`) reproduced the reported duplication exactly (`div.product.type-product`: 2, gallery/summary/form.cart/tabs/related: 2 each, H1: 1) and captured the second `div.product`'s full DOM ancestry: it sits inside `.woocommerce-Tabs-panel--description > div.woocommerce > div.single-product > div#product-988106...` -- the literal output markup of WooCommerce's own `[product_page]` shortcode template, carrying the identical product ID. The product's own description embeds `[product_page sku="GLS-SMP-002"]`, targeting its own SKU. The guard deployed at the audited HEAD only ever matched a self-referencing numeric `id="…"` attribute, so this SKU-targeted self-reference always survived to execute -- the confirmed, evidence-backed root cause. Fixed in `guard_single_product_description_content()`/`is_self_referencing_product_page_shortcode()`: a `[product_page sku="…"]` self-reference is now also resolved through Woo's own documented `wc_get_product_id_by_sku()` and stripped before shortcode execution, exactly like the existing id-based case. Proven behaviorally in `tests/single-product-guard-contract.php` (cases G/H: self-referencing sku stripped; different-product and unresolvable sku preserved untouched).
+
+**Purchase dock added.** `WooCommerce_Adapter::open_purchase_dock()`/`close_purchase_dock()` wrap (never clone) Woo's own `form.cart` via `woocommerce_before_add_to_cart_form`/`woocommerce_after_add_to_cart_form`, scoped to the page's own primary product only (`is_primary_single_product_context()` -- distinguishes the page's real product from a legitimate different-product `[product_page]` embed that may still be nested in its description, since both keep `is_product()`/`in_the_loop()` true throughout the same outer `the_content()` call). CSS makes the wrapper a bordered, elevated, sticky-toward-bottom surface on both desktop and mobile (height-only media gate, degrades to normal flow on short viewports, safe-area aware, never an internal scroll box). The old whole-summary `position:sticky; overflow-y:auto; max-height:…` model (SP-002) is removed; `.summary` is normal document flow.
+
+**Commerce accent normalized.** The existing `.woocommerce`-scoped base rule already colors every Woo `.button` the Gloskin accent; that ancestor is genuinely absent for Shop/Skincare/Home product cards and the Quick Add modal, so those two contexts had an unstyled `.gloskin-ui1-button` base with no `--primary` variant. Added a scoped accent rule for exactly those two gaps, plus a neutral disabled/out-of-stock state.
+
+**View Cart.** Woo's own `wc-add-to-cart.js` already inserts/reuses a `a.added_to_cart.wc-forward` link for catalog-loop AJAX buttons when `woocommerce_enable_ajax_add_to_cart` is on; that script never binds to a single-product `form.cart` submit at all, so nothing created one there. Added the smallest idempotent equivalent (`renderSingleProductViewCartLink()`), fired only from `ajaxAddToCart()`'s `onSuccess` callback (never on dispatch), reusing/updating the same node on repeat adds. Both variants now share one secondary-action style (`a.added_to_cart.wc-forward` in `gloskin-ui1-core.css`), never the primary accent treatment.
+
+**Pre-existing, unrelated failure noted, not fixed:** `tests/check-presentation.sh` fails on `shop.php` no longer containing `gloskin_ui1_render_product_card` as a literal string (it now delegates to `templates/parts/shop-results.php`, introduced by the unrelated `enhance shop catalog navigation` commit prior to this pass). Confirmed via `git stash` to already fail identically on unmodified `main`. Out of this task's file scope (single-product commerce only; "do not redesign Shop"), left for a separate follow-up. `tests/shop-catalog-contract.php` also has a pre-existing PHP parse error (line 57, an unescaped array-index inside a double-quoted string) that likewise reproduces identically on unmodified `main`; same disposition.
+
 ## Verification status
 
 | Item | Status |
 |---|---|
-| Simple AJAX payload contract | PASS (behavioral, `tests/single-product-ajax-payload.test.js`) / browser SKIPPED |
-| Variable AJAX payload contract | PASS (behavioral) / browser SKIPPED |
+| Simple AJAX payload contract | PASS (behavioral, `tests/single-product-ajax-payload.test.js`) |
+| Variable AJAX payload contract | PASS (behavioral) |
 | Native fallback semantics | PASS (behavioral + static) |
-| Catalog Quick Add | PASS (static + endpoint hardening) / browser SKIPPED |
-| Related-product Quick Add | PASS (static bridge added) / browser SKIPPED |
-| SP-001 runtime root cause | **PENDING** (guard narrowed to verified-safe scope; live trigger unconfirmed) |
-| Duplicate DOM counts | SKIPPED -- no live WordPress/browser runtime in this environment |
-| `./tests/check-architecture.sh` | PASS (truthful, no longer gamed) |
-| `./tests/check-runtime.sh` | PASS |
-| Fresh Plugin Check | SKIPPED -- no tooling/staging access |
-| Staging browser UAT (A-H) | SKIPPED -- no live WordPress/WooCommerce/theme/browser runtime in this environment |
+| Catalog Quick Add | PASS (static + endpoint hardening) |
+| Related-product Quick Add | PASS (static bridge added) |
+| SP-001 runtime root cause | **PROVEN** 2026-08-12 live on staging -- sku-targeted `[product_page]` self-reference; fixed and behaviorally proven (`tests/single-product-guard-contract.php` cases G/H) |
+| Duplicate DOM counts (pre-fix) | PROVEN live 2026-08-12: 2/2/2/2/2/1 (product/gallery/summary/form/tabs/related/H1) -- see addendum above |
+| `./tests/check-architecture.sh` | PASS |
+| `./tests/check-runtime.sh` | PASS except two pre-existing, unrelated failures (see addendum above); not caused by this pass |
+| Fresh Plugin Check | SKIPPED -- no Plugin Check tooling/staging admin access |
+| Staging browser UAT (A-H) | Pre-fix SP-001 duplication PROVEN live; post-fix dock/accent/View Cart UAT reported in the final engineer report |

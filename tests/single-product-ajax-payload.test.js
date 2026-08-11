@@ -223,7 +223,7 @@ assert(!ajaxSource.includes('nativeFallbackSubmit(form, submitter)'), 'post-disp
 assert(ajaxSource.includes('clearWooSubmitBusy(submitter)'), 'post-dispatch failures must clear aria-busy');
 assert(ajaxSource.includes('requestWooFragmentRefresh()'), 'post-dispatch ambiguity may reconcile visible cart state non-mutatively');
 assert(ajaxSource.includes('notifyFailure(null, error)'), 'post-dispatch failure must expose a recoverable lifecycle callback');
-assert(coreSource.includes('if (!ajaxAddToCart(form, submitter)) {\n\t\t\t\tnativeFallbackSubmit(form, submitter);'), 'pre-dispatch payload/runtime failure must retain native fallback');
+assert(coreSource.includes('if (!ajaxAddToCart(form, submitter, {\n\t\t\t\tonSuccess: function () { renderSingleProductViewCartLink(submitter); }\n\t\t\t})) {\n\t\t\t\tnativeFallbackSubmit(form, submitter);'), 'pre-dispatch payload/runtime failure must retain native fallback');
 
 const singleStart = coreSource.indexOf('function initSingleProductAjax()');
 const singleEnd = coreSource.indexOf('/* -----------------------------------------------------------------\n\t * SP-004', singleStart);

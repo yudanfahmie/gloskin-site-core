@@ -981,6 +981,32 @@
 	 * simple products and Woo-selected variable products only.
 	 * ----------------------------------------------------------------- */
 
+	/**
+	 * Post-success View Cart, single-product page only. WooCommerce's own
+	 * wc-add-to-cart.js inserts a Woo-native `a.added_to_cart.wc-forward`
+	 * link next to the button it bound -- but only for catalog-loop
+	 * `.ajax_add_to_cart` buttons; it never binds to a single-product
+	 * form.cart submit at all, so nothing creates that link here natively.
+	 * This is the smallest idempotent equivalent: same class contract,
+	 * canonical cart URL, inserted only after a confirmed successful Woo
+	 * mutation (never on dispatch alone), and reusing/updating the same
+	 * node on every repeat add rather than ever inserting a second one.
+	 * No cart mutation logic lives here -- purely a success presentation.
+	 */
+	function renderSingleProductViewCartLink(submitter) {
+		var config = window.gloskinData || {};
+		var cartUrl = config.cartUrl;
+		if (!submitter || !submitter.parentNode || !cartUrl) { return; }
+		var link = submitter.parentNode.querySelector('a.added_to_cart.wc-forward');
+		if (!link) {
+			link = document.createElement('a');
+			link.className = 'added_to_cart wc-forward';
+			submitter.parentNode.insertBefore(link, submitter.nextSibling);
+		}
+		link.setAttribute('href', cartUrl);
+		link.textContent = 'Lihat Keranjang';
+	}
+
 	function initSingleProductAjax() {
 		if (!document.body.classList.contains('single-product')) { return; }
 		var form = document.querySelector('div.product form.cart');
@@ -1000,7 +1026,9 @@
 				return;
 			}
 			event.preventDefault();
-			if (!ajaxAddToCart(form, submitter)) {
+			if (!ajaxAddToCart(form, submitter, {
+				onSuccess: function () { renderSingleProductViewCartLink(submitter); }
+			})) {
 				nativeFallbackSubmit(form, submitter);
 			}
 		});
