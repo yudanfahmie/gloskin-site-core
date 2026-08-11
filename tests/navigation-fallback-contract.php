@@ -27,6 +27,7 @@ function get_nav_menu_locations() { return array( 'gloskin-primary' => 1 ); }
 function wp_get_nav_menu_items( $id ) { return $GLOBALS['gl_menu_items']; }
 function home_url( $path = '' ) { return 'https://example.test' . $path; }
 function sanitize_title( $value ) { return strtolower( trim( (string) $value ) ); }
+function sanitize_text_field( $value ) { return trim( strip_tags( (string) $value ) ); }
 function absint( $value ) { return abs( (int) $value ); }
 function wp_parse_url( $url, $component ) { return parse_url( (string) $url, $component ); }
 function trailingslashit( $value ) { return rtrim( (string) $value, '/' ) . '/'; }

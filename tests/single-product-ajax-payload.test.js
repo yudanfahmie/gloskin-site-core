@@ -1,141 +1,141 @@
 'use strict';
-/**
- * Behavioral proof of the Woo add_to_cart AJAX payload contract fixed in
- * this hotfix -- exercises the real production functions from
- * gloskin-ui1-core.js (required directly, not reimplemented here) against
- * fixtures shaped exactly like WooCommerce's own rendered markup. No DOM
- * emulation dependency: fields are plain objects implementing only the
- * small querySelector(All) surface the functions under test actually use.
- */
+
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+
+const corePath = path.join(__dirname, '..', 'plugin', 'gloskin-site-core', 'assets', 'js', 'gloskin-ui1-core.js');
+const coreSource = fs.readFileSync(corePath, 'utf8');
 const {
-	resolveWooSubmitter,
-	shouldInterceptWooSubmit,
-	buildAddToCartPayload
-} = require('../plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js');
+  resolveWooSubmitter,
+  isSupportedSingleProductAjaxForm,
+  shouldInterceptWooSubmit,
+  normalizeAddToCartPayload,
+  hasWooAjaxBridge,
+  hasWooVariationRuntime
+} = require(corePath);
 
-function field(attrs) {
-	const f = Object.assign({ tag: 'input', type: 'text', disabled: false, checked: true, value: '', name: '', className: '' }, attrs);
-	f.classList = { contains: (name) => f.className.split(' ').indexOf(name) !== -1 };
-	return f;
+function classList(names) {
+  const set = new Set(names || []);
+  return { contains: (name) => set.has(name) };
 }
 
-/**
- * Minimal form fixture: matches only the exact selector strings the
- * production code queries, against a flat field list -- not a general
- * CSS engine, deliberately, since the functions under test never need one.
- */
-function form(fields, className) {
-	className = className || 'cart';
-	const classes = className.split(' ');
-	return {
-		classList: { contains: (name) => classes.indexOf(name) !== -1 },
-		querySelector(selector) {
-			if (selector === 'input.variation_id, input[name="variation_id"]') {
-				return fields.find((f) => f.name === 'variation_id') || null;
-			}
-			if (selector === 'input[name="add-to-cart"]') {
-				return fields.find((f) => f.name === 'add-to-cart' && f.tag === 'input') || null;
-			}
-			if (selector === '.single_add_to_cart_button[type="submit"]' || selector === '.single_add_to_cart_button') {
-				return fields.find((f) => f.isAddToCartButton) || null;
-			}
-			return null;
-		},
-		querySelectorAll(selector) {
-			if (selector === 'input[name], select[name], textarea[name]') {
-				return fields.filter((f) => f.name && f.tag !== 'button');
-			}
-			return [];
-		}
-	};
+function makeRoot(typeClass) {
+  return { classList: classList([typeClass]) };
 }
 
-// -------------------------------------------------------------------
-// A. SIMPLE product fixture -- Woo's real single-product/add-to-cart/
-// simple.php template puts name="add-to-cart" value="<id>" on the
-// *submit button itself*, never a hidden field.
-// -------------------------------------------------------------------
-(function testSimpleProductPayload() {
-	const quantity = field({ name: 'quantity', value: '2' });
-	const button = field({
-		tag: 'button', type: 'submit', name: 'add-to-cart', value: '101',
-		isAddToCartButton: true, className: 'single_add_to_cart_button'
-	});
-	const simpleForm = form([quantity, button]);
+function makeForm(options = {}) {
+  const root = options.root || null;
+  const variationId = options.variationId || '';
+  const fallbackSubmitter = options.fallbackSubmitter || null;
+  return {
+    classList: classList(options.classes || []),
+    closest(selector) {
+      return selector === 'div.product' ? root : null;
+    },
+    querySelector(selector) {
+      if (selector === 'input.variation_id, input[name="variation_id"]') {
+        return variationId === null ? null : { value: String(variationId) };
+      }
+      if (selector === '.single_add_to_cart_button[type="submit"]' || selector === '.single_add_to_cart_button') {
+        return fallbackSubmitter;
+      }
+      return null;
+    }
+  };
+}
 
-	const submitter = resolveWooSubmitter(simpleForm, { submitter: button });
-	assert.strictEqual(submitter, button, 'resolveWooSubmitter must prefer event.submitter');
-	assert.strictEqual(shouldInterceptWooSubmit(simpleForm, submitter), true, 'simple product with an enabled button must be intercepted');
+function submitter(value = '101', extra = {}) {
+  return Object.assign({
+    name: 'add-to-cart',
+    value: String(value),
+    disabled: false,
+    classList: classList([])
+  }, extra);
+}
 
-	const payload = buildAddToCartPayload(simpleForm, submitter);
-	assert.strictEqual(payload.get('product_id'), '101', 'simple product_id must come from the submit button, not a nonexistent hidden field');
-	assert.strictEqual(payload.get('quantity'), '2', 'quantity field must travel through unmodified');
+// Production ownership: the browser serializes successful controls. Gloskin
+// must not recreate input/select/file/repeated-control semantics by hand.
+assert(coreSource.includes('new FormData(form)'), 'production payload must originate from native FormData(form)');
+assert(!coreSource.includes('function serializeWooForm'), 'manual Woo form serializer must not remain in production');
+assert(!coreSource.includes("form.querySelectorAll('input[name], select[name], textarea[name]')"), 'manual successful-control scan must be removed');
+assert(!coreSource.includes("formData.set('variation_id'"), 'variation_id must remain the browser/Woo supplied value');
 
-	// event.submitter unavailable (older engine) -- must fall back to the
-	// canonical .single_add_to_cart_button and still resolve correctly.
-	const fallbackSubmitter = resolveWooSubmitter(simpleForm, null);
-	assert.strictEqual(fallbackSubmitter, button, 'resolveWooSubmitter must fall back to .single_add_to_cart_button');
-	const fallbackPayload = buildAddToCartPayload(simpleForm, fallbackSubmitter);
-	assert.strictEqual(fallbackPayload.get('product_id'), '101', 'fallback submitter path must still derive the correct product_id');
+// Actual submitter wins, with fallback only for implicit submissions.
+const clicked = submitter('101');
+const fallback = submitter('999');
+const simpleForm = makeForm({ root: makeRoot('product-type-simple'), fallbackSubmitter: fallback });
+assert.strictEqual(resolveWooSubmitter(simpleForm, { submitter: clicked }), clicked, 'SubmitEvent.submitter must win');
+assert.strictEqual(resolveWooSubmitter(simpleForm, {}), fallback, 'canonical Woo submitter fallback must remain');
+assert.strictEqual(isSupportedSingleProductAjaxForm(simpleForm), true, 'simple product root must be supported');
+assert.strictEqual(shouldInterceptWooSubmit(simpleForm, clicked), true, 'eligible simple submit must be interceptable');
 
-	console.log('A. simple product AJAX payload: OK');
-})();
+const simpleData = new FormData();
+simpleData.append('quantity', '2');
+normalizeAddToCartPayload(simpleData, clicked);
+assert.strictEqual(simpleData.get('add-to-cart'), '101', 'actual submitter name/value must be appended');
+assert.strictEqual(simpleData.get('product_id'), '101', 'simple product_id must derive from actual submitter when absent');
+assert.strictEqual(simpleData.get('quantity'), '2', 'native payload fields must survive normalization');
 
-// -------------------------------------------------------------------
-// B. VARIABLE product fixture -- hidden add-to-cart=202 (parent), hidden
-// product_id=202 (parent), hidden variation_id=205 (Woo-selected). The
-// mutation payload's product_id must become 205, never the parent 202.
-// -------------------------------------------------------------------
-(function testVariableProductPayload() {
-	const addToCartHidden = field({ name: 'add-to-cart', value: '202' });
-	const productIdHidden = field({ name: 'product_id', value: '202' });
-	const variationIdHidden = field({ name: 'variation_id', value: '205' });
-	const quantity = field({ name: 'quantity', value: '1' });
-	const button = field({
-		tag: 'button', type: 'submit', isAddToCartButton: true,
-		className: 'single_add_to_cart_button'
-	}); // Woo's variable.php button carries no name/value of its own.
-	const variableForm = form([addToCartHidden, productIdHidden, variationIdHidden, quantity, button], 'cart variations_form');
+// Variable payload keeps Woo's selected variation_id intact and uses that
+// variation as product_id for WC_AJAX::add_to_cart(). Repeated values survive.
+const variableForm = makeForm({
+  root: makeRoot('product-type-variable'),
+  classes: ['variations_form'],
+  variationId: '205'
+});
+const variableButton = submitter('202');
+assert.strictEqual(isSupportedSingleProductAjaxForm(variableForm), true, 'variable variations_form must be supported');
+assert.strictEqual(shouldInterceptWooSubmit(variableForm, variableButton), true, 'selected variation must be interceptable');
+const variableData = new FormData();
+variableData.append('product_id', '202');
+variableData.append('variation_id', '205');
+variableData.append('attribute_pa_size', '30ml');
+variableData.append('addon[]', 'alpha');
+variableData.append('addon[]', 'beta');
+normalizeAddToCartPayload(variableData, variableButton);
+assert.strictEqual(variableData.get('product_id'), '205', 'selected variation must become AJAX product_id');
+assert.strictEqual(variableData.get('variation_id'), '205', 'variation_id must remain intact');
+assert.deepStrictEqual(variableData.getAll('addon[]'), ['alpha', 'beta'], 'repeated/multi-value native fields must survive');
 
-	assert.strictEqual(shouldInterceptWooSubmit(variableForm, button), true, 'a valid Woo-selected variation must be interceptable');
+const unselectedVariable = makeForm({
+  root: makeRoot('product-type-variable'),
+  classes: ['variations_form'],
+  variationId: '0'
+});
+assert.strictEqual(shouldInterceptWooSubmit(unselectedVariable, variableButton), false, 'variable form must stay native until Woo selects a variation');
+assert.strictEqual(shouldInterceptWooSubmit(simpleForm, submitter('101', { disabled: true })), false, 'disabled submitter must stay native');
+assert.strictEqual(shouldInterceptWooSubmit(simpleForm, submitter('101', { classList: classList(['disabled']) })), false, 'Woo disabled class must stay native');
 
-	const payload = buildAddToCartPayload(variableForm, button);
-	assert.strictEqual(payload.get('product_id'), '205', 'variable AJAX must post the selected variation as product_id, never the parent');
-	assert.strictEqual(payload.get('variation_id'), '205', 'variation_id field must still be present');
+// Unsupported Woo product roots must never enter the custom single-product AJAX bridge.
+for (const type of ['product-type-grouped', 'product-type-external', 'product-type-affiliate', 'product-type-custom']) {
+  assert.strictEqual(isSupportedSingleProductAjaxForm(makeForm({ root: makeRoot(type) })), false, `${type} must bypass Gloskin AJAX`);
+}
+assert.strictEqual(isSupportedSingleProductAjaxForm(makeForm({ root: makeRoot('product-type-variable') })), false, 'variable root without variations_form must bypass');
 
-	console.log('B. variable product AJAX payload uses the selected variation, never the parent: OK');
-})();
+function jq() { return {}; }
+jq.fn = { wc_variation_form() {} };
+const completeRuntime = {
+  gloskinData: { woo: true, addToCartAjaxUrl: '/?wc-ajax=add_to_cart' },
+  fetch() {},
+  FormData,
+  jQuery: jq,
+  wc_cart_fragments_params: {}
+};
+assert.strictEqual(hasWooAjaxBridge(completeRuntime), true, 'complete Woo AJAX/event/fragment bridge must be accepted');
+assert.strictEqual(hasWooVariationRuntime(completeRuntime), true, 'Woo variation runtime must be accepted');
+assert.strictEqual(hasWooAjaxBridge(Object.assign({}, completeRuntime, { jQuery: null })), false, 'AJAX must decline without jQuery event bridge');
+assert.strictEqual(hasWooAjaxBridge(Object.assign({}, completeRuntime, { wc_cart_fragments_params: undefined })), false, 'AJAX must decline without Woo cart-fragments runtime');
+assert(coreSource.includes("trigger('wc_fragment_refresh')"), 'AJAX success must hand fragment DOM application back to Woo cart fragments');
+const noVariationPlugin = Object.assign({}, completeRuntime, { jQuery: function () {} });
+noVariationPlugin.jQuery.fn = {};
+assert.strictEqual(hasWooVariationRuntime(noVariationPlugin), false, 'Quick Add must decline without wc_variation_form');
 
-// -------------------------------------------------------------------
-// C. VARIABLE product with no selection yet (variation_id=0) -- must
-// never be intercepted, so no Gloskin AJAX mutation is ever attempted.
-// -------------------------------------------------------------------
-(function testNoVariationSelectedNeverIntercepted() {
-	const addToCartHidden = field({ name: 'add-to-cart', value: '202' });
-	const variationIdHidden = field({ name: 'variation_id', value: '0' });
-	const button = field({ tag: 'button', type: 'submit', isAddToCartButton: true, disabled: true });
-	const unselectedForm = form([addToCartHidden, variationIdHidden, button], 'cart variations_form');
+// Both Quick Add entry paths call the same progressive runtime gate before
+// preventDefault; their real href remains server-rendered by the card/related link.
+const quickAddGateOccurrences = (coreSource.match(/!canOpenQuickAdd\(\)/g) || []).length;
+assert.strictEqual(quickAddGateOccurrences, 2, 'catalog and Related Products Quick Add must both gate runtime before interception');
+assert(coreSource.includes("if (!trigger || !canOpenQuickAdd()) { return; }"), 'catalog Quick Add must return before preventDefault when runtime is absent');
+assert(coreSource.includes("if (!relatedTrigger || !canOpenQuickAdd()) { return; }"), 'Related Products Quick Add must return before preventDefault when runtime is absent');
 
-	assert.strictEqual(shouldInterceptWooSubmit(unselectedForm, button), false, 'variation_id=0 must never be intercepted for AJAX mutation');
-
-	// Missing the field entirely must be treated identically to zero.
-	const missingFieldForm = form([addToCartHidden, field({ tag: 'button', type: 'submit', isAddToCartButton: true })], 'cart variations_form');
-	const enabledButton = missingFieldForm.querySelector('.single_add_to_cart_button');
-	assert.strictEqual(shouldInterceptWooSubmit(missingFieldForm, enabledButton), false, 'a variations_form with no variation_id field at all must never be intercepted');
-
-	console.log('C. unselected variation is never AJAX-mutated: OK');
-})();
-
-// -------------------------------------------------------------------
-// D. A disabled Woo button (native invalid/out-of-stock state) must
-// never be intercepted, simple or variable.
-// -------------------------------------------------------------------
-(function testDisabledButtonNeverIntercepted() {
-	const disabledButton = field({ tag: 'button', type: 'submit', isAddToCartButton: true, disabled: true });
-	const simpleForm = form([field({ name: 'quantity', value: '1' }), disabledButton]);
-	assert.strictEqual(shouldInterceptWooSubmit(simpleForm, disabledButton), false, 'a disabled submit control must never be intercepted');
-	console.log('D. disabled Woo button is never intercepted: OK');
-})();
-
-console.log('single-product AJAX payload contract: OK');
+console.log('single-product AJAX payload/runtime contract: OK');

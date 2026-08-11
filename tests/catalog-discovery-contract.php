@@ -2,11 +2,10 @@
 declare(strict_types=1);
 
 /**
- * Gloskin Catalog Discovery v1 -- proves the WooCommerce Adapter's public
- * catalog projections (products_for_category(), products_paginated()) stay
- * strictly Woo-native: status=publish only, catalog-visibility respected,
- * exact category filtering, and Woo's own limit/page/paginate=true
- * pagination contract instead of a fixed record ceiling.
+ * Gloskin Catalog Discovery v1 -- proves public catalog projections and live
+ * search stay Woo-native. Catalog uses exclude-from-catalog; live search uses
+ * exclude-from-search, so Search only remains searchable while Catalog only
+ * and Hidden do not leak into search results.
  */
 
 define( 'ABSPATH', __DIR__ . '/' );
@@ -27,6 +26,7 @@ class WP_Term {
 class WooCommerce {}
 
 $GLOBALS['gl_catalog'] = array();
+$GLOBALS['gl_last_get_posts_args'] = array();
 
 class Fixture_Product {
 	public $id;
@@ -57,25 +57,44 @@ class Fixture_Product {
 	public function supports( $feature ) { return 'ajax_add_to_cart' === $feature; }
 }
 
-/**
- * Woo's own documented visibility-term resolver -- the adapter must use
- * this (or return no filter) rather than hand-rolling taxonomy SQL.
- */
 function wc_get_product_visibility_term_ids() {
 	return array( 'exclude-from-catalog' => 999, 'exclude-from-search' => 998 );
 }
 
-/**
- * Minimal WC_Product_Query simulation: status filter, exact category
- * filter, the catalog-visibility tax_query, and -- critically -- Woo's own
- * limit/page/paginate=true contract (not a hand-rolled fixed ceiling).
- */
+/** @return array<int,int> */
+function excluded_visibility_terms( $args ) {
+	$excluded = array();
+	foreach ( (array) ( $args['tax_query'] ?? array() ) as $clause ) {
+		if ( ! is_array( $clause ) || 'product_visibility' !== ( $clause['taxonomy'] ?? '' ) || 'NOT IN' !== ( $clause['operator'] ?? '' ) ) {
+			continue;
+		}
+		$excluded = array_merge( $excluded, array_map( 'intval', (array) ( $clause['terms'] ?? array() ) ) );
+	}
+	return array_values( array_unique( $excluded ) );
+}
+
+function product_has_visibility_term( $product, $term_id ) {
+	if ( 999 === (int) $term_id ) {
+		return in_array( $product->catalog_visibility, array( 'search', 'hidden' ), true );
+	}
+	if ( 998 === (int) $term_id ) {
+		return in_array( $product->catalog_visibility, array( 'catalog', 'hidden' ), true );
+	}
+	return false;
+}
+
+/** Minimal WC_Product_Query simulation used by catalog projections. */
 function wc_get_products( $args ) {
 	$results = array();
+	$excluded_terms = excluded_visibility_terms( $args );
 	foreach ( $GLOBALS['gl_catalog'] as $product ) {
 		if ( isset( $args['status'] ) && $product->status !== $args['status'] ) { continue; }
 		if ( ! empty( $args['category'] ) && ! array_intersect( (array) $args['category'], $product->categories ) ) { continue; }
-		if ( ! empty( $args['tax_query'] ) && in_array( $product->catalog_visibility, array( 'hidden', 'search' ), true ) ) { continue; }
+		$excluded = false;
+		foreach ( $excluded_terms as $term_id ) {
+			if ( product_has_visibility_term( $product, $term_id ) ) { $excluded = true; break; }
+		}
+		if ( $excluded ) { continue; }
 		$results[] = $product;
 	}
 	if ( ! empty( $args['paginate'] ) ) {
@@ -92,6 +111,32 @@ function wc_get_products( $args ) {
 	return $results;
 }
 
+/** WordPress get_posts simulation used by live product search. */
+function get_posts( $args ) {
+	$GLOBALS['gl_last_get_posts_args'] = $args;
+	$excluded_terms = excluded_visibility_terms( $args );
+	$needle = strtolower( (string) ( $args['s'] ?? '' ) );
+	$posts = array();
+	foreach ( $GLOBALS['gl_catalog'] as $product ) {
+		if ( 'product' !== ( $args['post_type'] ?? 'product' ) ) { continue; }
+		if ( isset( $args['post_status'] ) && $product->status !== $args['post_status'] ) { continue; }
+		if ( '' !== $needle && false === strpos( strtolower( $product->name ), $needle ) ) { continue; }
+		$excluded = false;
+		foreach ( $excluded_terms as $term_id ) {
+			if ( product_has_visibility_term( $product, $term_id ) ) { $excluded = true; break; }
+		}
+		if ( $excluded ) { continue; }
+		$posts[] = (object) array(
+			'ID'           => $product->id,
+			'post_title'   => $product->name,
+			'post_content' => 'Deskripsi ' . $product->name,
+			'post_excerpt' => '',
+		);
+	}
+	return array_slice( $posts, 0, max( 1, (int) ( $args['posts_per_page'] ?? 5 ) ) );
+}
+
+function wc_get_product( $id ) { return $GLOBALS['gl_catalog'][ (int) $id ] ?? null; }
 function get_term_by( $field, $value, $taxonomy ) {
 	if ( 'product_cat' !== $taxonomy ) { return false; }
 	foreach ( $GLOBALS['gl_catalog'] as $product ) {
@@ -100,20 +145,27 @@ function get_term_by( $field, $value, $taxonomy ) {
 	return false;
 }
 function get_term_link( $term ) { return 'https://example.test/product-category/' . $term->slug . '/'; }
-function get_permalink( $id ) { return 'https://example.test/product/' . $id . '/'; }
+function get_permalink( $post_or_id ) {
+	$id = is_object( $post_or_id ) && isset( $post_or_id->ID ) ? $post_or_id->ID : (int) $post_or_id;
+	return 'https://example.test/product/' . $id . '/';
+}
+function get_the_title( $post ) { return is_object( $post ) ? (string) $post->post_title : ''; }
+function has_excerpt( $post ) { return is_object( $post ) && '' !== trim( (string) ( $post->post_excerpt ?? '' ) ); }
+function get_the_excerpt( $post ) { return is_object( $post ) ? (string) ( $post->post_excerpt ?? '' ) : ''; }
+function get_post_thumbnail_id( $id ) { return 0; }
+function wp_trim_words( $text, $limit = 55 ) { return (string) $text; }
 function absint( $value ) { return abs( (int) $value ); }
 function sanitize_title( $value ) { $value = strtolower( trim( (string) $value ) ); return preg_replace( '/[^a-z0-9-]+/', '-', $value ); }
+function sanitize_text_field( $value ) { return trim( strip_tags( (string) $value ) ); }
 function is_wp_error( $value ) { return $value instanceof WP_Error; }
 function wp_strip_all_tags( $value ) { return trim( strip_tags( (string) $value ) ); }
 function __( $text, $domain = 'default' ) { return $text; }
+if ( ! function_exists( 'mb_strlen' ) ) { function mb_strlen( $value ) { return strlen( (string) $value ); } }
 
 require dirname( __DIR__ ) . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php';
 
 $adapter = new Gloskin_Site_Core_WooCommerce_Adapter();
 
-/**
- * @param array<int,array<string,mixed>> $products
- */
 function seed( array $products ) {
 	$GLOBALS['gl_catalog'] = array();
 	foreach ( $products as $p ) {
@@ -122,55 +174,67 @@ function seed( array $products ) {
 	}
 }
 
-/* A + B: the shop-style paginated projection returns only published
- * products; the draft parent products the sample importer intentionally
- * creates never leak into it. */
+/* Published catalog only; drafts do not leak. */
 seed( array(
 	array( 'id' => 1, 'name' => 'Published Simple', 'status' => 'publish', 'categories' => array( 'serum' ) ),
 	array( 'id' => 2, 'name' => 'Draft Parent', 'status' => 'draft', 'categories' => array( 'serum' ) ),
 ) );
 $catalog = $adapter->products_paginated( 1, 12 );
-ok( 1 === count( $catalog['products'] ), 'A: shop catalog projection returns only published catalog-visible products' );
-ok( 'Published Simple' === $catalog['products'][0]['name'], 'A: the correct published product is surfaced' );
-ok( ! in_array( 'Draft Parent', array_column( $catalog['products'], 'name' ), true ), 'B: a draft parent product never appears publicly' );
+ok( 1 === count( $catalog['products'] ), 'shop catalog projection returns only published products' );
+ok( 'Published Simple' === $catalog['products'][0]['name'], 'correct published product surfaced' );
 
-/* Catalog-visibility: hidden/search-only products never leak either. */
+/* Catalog semantics: Search only + Hidden are excluded from catalog. */
 seed( array(
 	array( 'id' => 3, 'name' => 'Visible', 'status' => 'publish', 'categories' => array( 'serum' ) ),
-	array( 'id' => 4, 'name' => 'Hidden', 'status' => 'publish', 'categories' => array( 'serum' ), 'catalog_visibility' => 'hidden' ),
-	array( 'id' => 5, 'name' => 'Search Only', 'status' => 'publish', 'categories' => array( 'serum' ), 'catalog_visibility' => 'search' ),
+	array( 'id' => 4, 'name' => 'Search Only', 'status' => 'publish', 'categories' => array( 'serum' ), 'catalog_visibility' => 'search' ),
+	array( 'id' => 5, 'name' => 'Catalog Only', 'status' => 'publish', 'categories' => array( 'serum' ), 'catalog_visibility' => 'catalog' ),
+	array( 'id' => 6, 'name' => 'Hidden', 'status' => 'publish', 'categories' => array( 'serum' ), 'catalog_visibility' => 'hidden' ),
 ) );
 $visibility_catalog = $adapter->products_paginated( 1, 12 );
-$visible_names = array_column( $visibility_catalog['products'], 'name' );
-ok( in_array( 'Visible', $visible_names, true ), 'catalog visibility: a normally-visible product still appears' );
-ok( ! in_array( 'Hidden', $visible_names, true ), 'catalog visibility: a hidden product does not leak into the catalog' );
-ok( ! in_array( 'Search Only', $visible_names, true ), 'catalog visibility: a search-only product does not leak into the catalog' );
+$catalog_names = array_column( $visibility_catalog['products'], 'name' );
+ok( in_array( 'Visible', $catalog_names, true ), 'visible product appears in catalog' );
+ok( in_array( 'Catalog Only', $catalog_names, true ), 'catalog-only product remains in catalog' );
+ok( ! in_array( 'Search Only', $catalog_names, true ), 'search-only product excluded from catalog' );
+ok( ! in_array( 'Hidden', $catalog_names, true ), 'hidden product excluded from catalog' );
 
-/* C + D + E: category context filters by exact Woo category slug -- a
- * product assigned to serum appears there and nowhere else. */
+/* Live-search semantics: Visible + Search only appear; exclude-from-search does not. */
+seed( array(
+	array( 'id' => 20, 'name' => 'Searchable Visible', 'status' => 'publish', 'categories' => array( 'serum' ) ),
+	array( 'id' => 21, 'name' => 'Searchable Search Only', 'status' => 'publish', 'categories' => array( 'serum' ), 'catalog_visibility' => 'search' ),
+	array( 'id' => 22, 'name' => 'Searchable Catalog Only', 'status' => 'publish', 'categories' => array( 'serum' ), 'catalog_visibility' => 'catalog' ),
+	array( 'id' => 23, 'name' => 'Searchable Hidden', 'status' => 'publish', 'categories' => array( 'serum' ), 'catalog_visibility' => 'hidden' ),
+	array( 'id' => 24, 'name' => 'Searchable Draft', 'status' => 'draft', 'categories' => array( 'serum' ) ),
+) );
+$search = $adapter->search_products( 'Searchable', 6 );
+$search_names = array_column( $search, 'title' );
+ok( in_array( 'Searchable Visible', $search_names, true ), 'visible product appears in live search' );
+ok( in_array( 'Searchable Search Only', $search_names, true ), 'search-only product remains searchable' );
+ok( ! in_array( 'Searchable Catalog Only', $search_names, true ), 'catalog-only product excluded from live search' );
+ok( ! in_array( 'Searchable Hidden', $search_names, true ), 'hidden product excluded from live search' );
+ok( ! in_array( 'Searchable Draft', $search_names, true ), 'draft product excluded from live search' );
+$search_terms = excluded_visibility_terms( $GLOBALS['gl_last_get_posts_args'] );
+ok( in_array( 998, $search_terms, true ), 'live search uses Woo exclude-from-search visibility term' );
+ok( ! in_array( 999, $search_terms, true ), 'live search must not reuse exclude-from-catalog' );
+
+/* Exact Woo category projection. */
 seed( array(
 	array( 'id' => 10, 'name' => 'Serum A', 'status' => 'publish', 'categories' => array( 'serum' ) ),
 	array( 'id' => 11, 'name' => 'Toner A', 'status' => 'publish', 'categories' => array( 'toner' ) ),
 ) );
 $serum = $adapter->products_for_category( 'serum', 20 );
-ok( 1 === count( $serum ) && 'Serum A' === $serum[0]['name'], 'D: a published product assigned to serum appears in the Serum catalog projection' );
-ok( ! in_array( 'Toner A', array_column( $serum, 'name' ), true ), 'E: a product assigned to another category cannot appear in Serum' );
-$toner = $adapter->products_for_category( 'toner', 20 );
-ok( 1 === count( $toner ) && 'Toner A' === $toner[0]['name'], 'C: category context filters by exact Woo category slug' );
+ok( 1 === count( $serum ) && 'Serum A' === $serum[0]['name'], 'serum projection filters exact category' );
+ok( ! in_array( 'Toner A', array_column( $serum, 'name' ), true ), 'other category does not leak into serum' );
 
-/* F: pagination uses Woo's own limit/page/paginate contract, not a fixed
- * 20-record ceiling -- prove with 15 published products across two pages
- * of 12. */
+/* Woo pagination, not a fixed catalog ceiling. */
 $many = array();
 for ( $i = 1; $i <= 15; $i++ ) {
 	$many[] = array( 'id' => 100 + $i, 'name' => 'Product ' . $i, 'status' => 'publish', 'categories' => array( 'serum' ) );
 }
 seed( $many );
 $page1 = $adapter->products_paginated( 1, 12 );
-ok( 12 === count( $page1['products'] ), 'F: page 1 respects the 12-per-page limit' );
-ok( 15 === $page1['total'], 'F: total reflects the full published catalog, not a 20-record assumption' );
-ok( 2 === $page1['max_pages'], 'F: max_pages is computed from Woo pagination, not a fixed page count' );
+ok( 12 === count( $page1['products'] ), 'page 1 respects 12-per-page limit' );
+ok( 15 === $page1['total'] && 2 === $page1['max_pages'], 'pagination reflects full Woo result set' );
 $page2 = $adapter->products_paginated( 2, 12 );
-ok( 3 === count( $page2['products'] ), 'F: page 2 returns the remaining products via Woo pagination, not a hard ceiling' );
+ok( 3 === count( $page2['products'] ), 'page 2 returns remaining products' );
 
 echo "catalog discovery contract: OK\n";

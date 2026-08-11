@@ -617,7 +617,8 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * ----------------------------------------------------------------- */
 
 	/**
-	 * Search published products by title/content.
+	 * Search published products by title/content, respecting Woo's native
+	 * search visibility term without inheriting catalog-only semantics.
 	 *
 	 * @param string $query Search query.
 	 * @param int    $limit Max results.
@@ -636,6 +637,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 			'post_status'    => 'publish',
 			'posts_per_page' => max( 1, min( absint( $limit ), 6 ) ),
 			's'              => $query,
+			'tax_query'      => $this->search_visibility_tax_query(), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Woo's native product_visibility taxonomy on a bounded live-search query; no custom SQL.
 		) );
 		$results = array();
 		foreach ( $posts as $post ) {
@@ -784,6 +786,32 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 			return false;
 		}
 		return (bool) has_term( $exclude_from_catalog, 'product_visibility', absint( $product_id ) );
+	}
+
+	/**
+	 * Woo-native search-visibility filter for live search. Search-only
+	 * products remain eligible; only products carrying Woo's own
+	 * exclude-from-search term (Catalog only or Hidden) are excluded.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	private function search_visibility_tax_query() {
+		if ( ! function_exists( 'wc_get_product_visibility_term_ids' ) ) {
+			return array();
+		}
+		$terms = wc_get_product_visibility_term_ids();
+		$exclude_from_search = isset( $terms['exclude-from-search'] ) ? absint( $terms['exclude-from-search'] ) : 0;
+		if ( ! $exclude_from_search ) {
+			return array();
+		}
+		return array(
+			array(
+				'taxonomy' => 'product_visibility',
+				'field'    => 'term_taxonomy_id',
+				'terms'    => array( $exclude_from_search ),
+				'operator' => 'NOT IN',
+			),
+		);
 	}
 
 	private function catalog_visibility_tax_query() {
