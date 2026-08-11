@@ -23,6 +23,7 @@ $gloskin_commerce_render  = isset( $gloskin_context['commerce_render_mode'] ) ? 
 require __DIR__ . '/parts/template-helpers.php';
 require __DIR__ . '/parts/readiness-helpers.php';
 require __DIR__ . '/parts/composition-helpers.php';
+require __DIR__ . '/parts/product-description-boundary.php';
 ?><!doctype html>
 <html lang="id">
 <head>
@@ -52,6 +53,10 @@ require __DIR__ . '/parts/composition-helpers.php';
 			remove_action( 'woocommerce_cart_is_empty', 'wc_empty_cart_message', 10 );
 			add_action( 'woocommerce_cart_is_empty', 'gloskin_ui1_render_native_cart_empty_state', 10 );
 		}
+		/* Keep Woo's native single-product renderer, but isolate the Description
+		 * tab from unrelated global the_content callbacks that can recursively
+		 * render another complete product tree. */
+		gloskin_ui1_register_product_description_boundary();
 		echo '<div class="woocommerce gloskin-ui1-commerce-native">';
 		if ( 'woocommerce' === $gloskin_commerce_render && function_exists( 'woocommerce_content' ) ) {
 			woocommerce_content();

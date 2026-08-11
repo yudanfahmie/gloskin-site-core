@@ -14,6 +14,7 @@ php tests/sample-product-woo-missing.php
 ./tests/plugin-check-remediation-contract.sh
 ./tests/single-product-commerce-contract.sh
 php tests/single-product-guard-contract.php
+php tests/single-product-description-boundary-contract.php
 node tests/single-product-ajax-payload.test.js
 php tests/shop-catalog-contract.php
 node tests/shop-catalog-controller.test.js
