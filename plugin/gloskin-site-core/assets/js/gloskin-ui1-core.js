@@ -34,6 +34,64 @@
 		document.dispatchEvent(new CustomEvent('gloskin:sticky-nav-hold'));
 	}
 
+	/* -----------------------------------------------------------------
+	 * Shared confirmed-success feedback. Presentation only: callers invoke
+	 * this after their existing state owner has completed a real mutation
+	 * and reflected that state. No cart/wishlist count is written here.
+	 * ----------------------------------------------------------------- */
+
+	var SUCCESS_SOUND_URI = 'data:audio/wav;base64,UklGRuQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YcADAACAgICAgIB/f35+f3+AgIGAgICAf39+fn5+f4GCg4OCf317ent+goWGhYJ/fHp6fH6Bg4ODgoGAf359fHt7fYGEh4iGgXt2dHZ7gYiLi4eBenZ1d3yBhIaGhIOBf358enh4e3+FioyKhX11cHF2f4iOj4uEfHVzdHl/hIaHhoSCgH59e3l4en2DiIyLh4B3cnB0e4SMj42Hf3dzc3d9goaHhoSCgH99e3l4eXyBhouMiYN6c3ByeIGKjo6Jgnp0c3V7gIWHh4WDgYB+fHp4eHp/hIqMi4V9dnFxdX6HjY+MhXx2c3R5foOGh4aEgoB/fXt5eHl9goiMjIiAeHJwc3uEi4+NiH94dHN3fIKFh4aEgoF/fXt5eHl7gIaLjIqDe3RwcXeAiY6PioJ6dXN1eoCEh4eFg4GAfnx6eXh6foSJjIuGfnZxcHV9ho2PjIV9dnN0eH6DhoeGhIKAf317eXh5fYKHi4yIgXlycHN6g4uPjoiAeXRzdnyBhYeGhYOBf358enh5e4CFioyKhHx0cHF3f4iOj4uDe3VzdXp/hIaHhYOBgH58enl4en6DiYyLhn93cXB0fIWMj42GfndzdHh9goaHhoSCgH99e3l4eXyBh4uMiYJ6c3ByeYKKj46JgXl0c3Z7gYWHhoWDgX9+fHp4eHt/hYqMioV9dXBxdn+Ijo+LhHx1c3R5f4SGh4aEgoB+fXt5eHp9g4iMi4eAd3JwdHuEjI+Nh393c3N3fYKGh4aEgoB/fXt5eHl8gYaLjImDenNwcniBio6OiYJ6dHN1e4CFh4eFg4GAfnx6eHh6f4SKjIuFfXZxcXV+h42PjIV8dnN0eX6DhoeGhIKAf317eXh5fYKIjIyIgHhycHN7hIuPjYh/eHRzd3yChYeGhIKBf317eXh5e4CGioyJg3t0cHJ4gImOjoqCe3V0dnqAhIaGhYOBgH59e3l5e36DiIqJhX54c3N3fYWKjIqEfnh2dnp+goWFhIOBgH9+fHt6e32BhYiIhoF7dnR2e4KHiomFgHt4d3l9gYOEhIOBgH9+fXx7e32Ag4aHhoJ9eXd3en+EiIiGgn16eXp8f4KDg4OBgIB/fn18fH1/gYSFhYN/fHl5en6ChYaFgn98ent8f4GCgoKBgIB/f359fX1+gIKDhIOAfnt6e32Ag4SEgoB+fHx9foCBgYGBgIB/f39+fn5+f4GCgoKBf319fX5/gYKCgYB/fn5+f3+AgICAgICAf39/f39/f4CAgYCAgH9/f39/gICAgIB/f39/f3+AgIA=';
+	var successAudio = null;
+	var lastSuccessSoundAt = 0;
+	var SUCCESS_SOUND_COOLDOWN_MS = 280;
+
+	function feedbackReducedMotion(root) {
+		return !!(root && root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
+	}
+
+	function visibleFeedbackTargets(type, root) {
+		var selector = type === 'cart'
+			? '[data-gloskin-cart-open]'
+			: '[data-gloskin-wishlist-open], [data-gloskin-wishlist-open-from-drawer]';
+		return Array.prototype.filter.call(root.document.querySelectorAll(selector), function (node) {
+			var rect = typeof node.getBoundingClientRect === 'function' ? node.getBoundingClientRect() : { width: 0, height: 0 };
+			if (!rect.width || !rect.height) { return false; }
+			if (!root.getComputedStyle) { return true; }
+			var style = root.getComputedStyle(node);
+			return style.display !== 'none' && style.visibility !== 'hidden';
+		});
+	}
+
+	function successFeedback(type, runtime) {
+		var root = runtimeWindow(runtime);
+		if ((type !== 'cart' && type !== 'wishlist') || !root || !root.document) { return false; }
+
+		if (!feedbackReducedMotion(root)) {
+			visibleFeedbackTargets(type, root).forEach(function (node) {
+				node.classList.remove('is-success-pulse');
+				void node.offsetWidth;
+				node.classList.add('is-success-pulse');
+				root.setTimeout(function () { node.classList.remove('is-success-pulse'); }, 460);
+			});
+		}
+
+		if (root.document.visibilityState !== 'visible' || typeof root.Audio !== 'function') { return true; }
+		var now = Date.now();
+		if (now - lastSuccessSoundAt < SUCCESS_SOUND_COOLDOWN_MS) { return true; }
+
+		try {
+			if (!successAudio) {
+				successAudio = new root.Audio(SUCCESS_SOUND_URI);
+				successAudio.preload = 'auto';
+				successAudio.volume = 0.16;
+			}
+			lastSuccessSoundAt = now;
+			successAudio.currentTime = 0;
+			var playback = successAudio.play();
+			if (playback && typeof playback.catch === 'function') { playback.catch(function () {}); }
+		} catch (e) {}
+		return true;
+	}
 
 	function emptyStateIcon(kind) {
 		var paths = {
@@ -251,18 +309,10 @@
 	}
 
 	/* -----------------------------------------------------------------
-	 * Top-level desktop nav: single liquid bubble that glides between the
-	 * hovered/focused item and rests on the active one, replacing the old
-	 * per-link ::before top rail. The whole top-level row (link + optional
-	 * chevron) owns the interaction hit area, while the link remains the
-	 * bubble geometry/foreground target. CSS owns the link's no-JS fallback.
-	 *
-	 * Movement is two-phase so the shape genuinely deforms while travelling
-	 * instead of sliding as a fixed rectangle: it first bridges (stretches
-	 * across) both the old and new item on a fast transition, then settles
-	 * onto just the target on a slower spring-out one. Leaving with nothing
-	 * to rest on collapses through a centered circle before shrinking to
-	 * 0x0 rather than fading out at its last size.
+	 * Top-level desktop nav bubble. Geometry snaps while invisible to the
+	 * hovered/focused link's final box; the only visible entrance/exit is a
+	 * center-origin scale + opacity transition. No translate/left/top/size
+	 * property is animated, so there is no directional or diagonal travel.
 	 * ----------------------------------------------------------------- */
 
 	function initNavBubble() {
@@ -279,12 +329,7 @@
 			return row && link ? { row: row, link: link } : null;
 		}).filter(Boolean);
 		var links = targets.map(function (target) { return target.link; });
-
-		var BRIDGE_MS = 170; /* matches .gloskin-ui1-nav__bubble's default (fast) transition duration */
-		var DOT = 14; /* circle diameter for the collapse-to-nothing exit */
 		var bubbled = null;
-		var current = null; /* last painted rect, relative to nav */
-		var settleTimer = null;
 
 		function setBubbled(link) {
 			if (bubbled && bubbled !== link) { bubbled.classList.remove('is-bubbled'); }
@@ -298,55 +343,25 @@
 			return { left: linkRect.left - navRect.left, top: linkRect.top - navRect.top, width: linkRect.width, height: linkRect.height };
 		}
 
-		function paint(rect) {
-			bubble.style.width = rect.width + 'px';
-			bubble.style.height = rect.height + 'px';
-			bubble.style.transform = 'translate(' + rect.left + 'px,' + rect.top + 'px)';
-		}
-
-		function clearSettle() {
-			if (settleTimer) { clearTimeout(settleTimer); settleTimer = null; }
-		}
-
-		function moveTo(link) {
-			clearSettle();
+		function place(link, force) {
 			if (!link) { hide(); return; }
+			if (!force && bubbled === link && bubble.classList.contains('is-visible')) { return; }
 			var target = rectFor(link);
+			bubble.classList.add('is-repositioning');
+			bubble.classList.remove('is-visible');
+			bubble.style.left = target.left + 'px';
+			bubble.style.top = target.top + 'px';
+			bubble.style.width = target.width + 'px';
+			bubble.style.height = target.height + 'px';
+			void bubble.offsetWidth;
+			bubble.classList.remove('is-repositioning');
 			bubble.classList.add('is-visible');
-			bubble.classList.remove('is-settling');
-			if (current) {
-				paint({
-					left: Math.min(current.left, target.left),
-					top: Math.min(current.top, target.top),
-					width: Math.max(current.left + current.width, target.left + target.width) - Math.min(current.left, target.left),
-					height: Math.max(current.height, target.height)
-				});
-				settleTimer = setTimeout(function () {
-					bubble.classList.add('is-settling');
-					paint(target);
-					settleTimer = null;
-				}, BRIDGE_MS);
-			} else {
-				paint(target);
-			}
-			current = target;
 			setBubbled(link);
 		}
 
 		function hide() {
-			clearSettle();
+			bubble.classList.remove('is-visible');
 			setBubbled(null);
-			if (!current) { bubble.classList.remove('is-visible'); return; }
-			var cx = current.left + current.width / 2;
-			var cy = current.top + current.height / 2;
-			bubble.classList.remove('is-settling');
-			paint({ left: cx - DOT / 2, top: cy - DOT / 2, width: DOT, height: DOT });
-			settleTimer = setTimeout(function () {
-				paint({ left: cx, top: cy, width: 0, height: 0 });
-				bubble.classList.remove('is-visible');
-				current = null;
-				settleTimer = null;
-			}, BRIDGE_MS);
 		}
 
 		function activeLink() {
@@ -355,21 +370,19 @@
 			})[0] || null;
 		}
 
-		function restToActive() { moveTo(activeLink()); }
+		function restToActive() { place(activeLink(), false); }
 
 		targets.forEach(function (target) {
-			target.row.addEventListener('mouseenter', function () { moveTo(target.link); });
-			target.row.addEventListener('focusin', function () { moveTo(target.link); });
+			target.row.addEventListener('mouseenter', function () { place(target.link, false); });
+			target.row.addEventListener('focusin', function () { place(target.link, false); });
 		});
 		nav.addEventListener('mouseleave', restToActive);
 		list.addEventListener('focusout', function (event) {
 			if (!list.contains(event.relatedTarget)) { restToActive(); }
 		});
 		window.addEventListener('resize', function () {
-			/* Layout may have reflowed; snap to the fresh rect directly
-			 * instead of bridging from a now-stale cached one. */
-			current = null;
-			restToActive();
+			var link = bubbled || activeLink();
+			if (link) { place(link, true); }
 		});
 
 		restToActive();
@@ -513,7 +526,6 @@
 		function updateClear() {
 			if (clearBtn) { clearBtn.hidden = !input.value; }
 		}
-
 
 		function clearResults() {
 			clearTimeout(debounceTimer);
@@ -696,17 +708,15 @@
 			}, 12000);
 		}, true);
 
-		/* Listen for WooCommerce AJAX add-to-cart (jQuery event). Woo passes
-		 * the source button as the third argument -- used only to clear its
-		 * busy state, never to mutate cart state ourselves. The existing
-		 * [data-gloskin-cart-count-sr] fragment (see
-		 * Gloskin_Site_Core_WooCommerce_Adapter::cart_fragments()) carries
-		 * aria-live in header.php, so this update is announced without a
-		 * separate toast/notification system. */
+		/* Woo's confirmed added_to_cart lifecycle remains the only success
+		 * signal. Fragments/state listeners run on this event first; the rAF
+		 * queues decorative feedback after that real-state reflection without
+		 * ever fabricating a cart count. */
 		if (window.jQuery) {
 			window.jQuery(document.body).on('added_to_cart', function (event, fragments, cartHash, $button) {
 				if ($button && $button.length) { $button.attr('aria-busy', 'false'); }
 				overlay.open('cart');
+				window.requestAnimationFrame(function () { successFeedback('cart'); });
 			});
 		}
 	}
@@ -1126,7 +1136,7 @@
 			html += '<div><strong>' + escapeHtml(data.name || '') + '</strong>';
 			if (data.price_html) { html += '<div class="gloskin-ui1-product-price">' + data.price_html + '</div>'; }
 			html += '</div></div>';
-			html += '<div class="gloskin-ui1-quickadd__form">' + (data.form_html || '') + '</div>';
+			html += '<div class="gloskin-ui1-quickadd__form gloskin-ui1-form">' + (data.form_html || '') + '</div>';
 			html += '<div class="gloskin-ui1-quickadd__status" data-gloskin-quickadd-status aria-live="polite"></div>';
 			body.innerHTML = html;
 			var form = body.querySelector('form.cart');
@@ -1415,7 +1425,10 @@
 		}
 
 		function saveIds(ids) {
-			try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ids.slice(0, MAX_ITEMS))); } catch (e) {}
+			try {
+				localStorage.setItem(STORAGE_KEY, JSON.stringify(ids.slice(0, MAX_ITEMS)));
+				return true;
+			} catch (e) { return false; }
 		}
 
 		function toggle(productId) {
@@ -1425,12 +1438,10 @@
 			var index = ids.indexOf(productId);
 			if (index !== -1) {
 				ids.splice(index, 1);
-				saveIds(ids);
-				return false;
+				return saveIds(ids) ? false : true;
 			}
 			ids.push(productId);
-			saveIds(ids);
-			return true;
+			return saveIds(ids);
 		}
 
 		function isWished(productId) {
@@ -1460,9 +1471,11 @@
 			if (!btn) { return; }
 			var productId = parseInt(btn.getAttribute('data-gloskin-wishlist-toggle'), 10);
 			if (!productId) { return; }
+			var wasActive = isWished(productId);
 			var active = toggle(productId);
 			applyState(btn, active);
 			updateBadges();
+			if (!wasActive && active) { successFeedback('wishlist'); }
 		});
 
 		function syncToggles() {
@@ -1480,6 +1493,10 @@
 			Array.prototype.forEach.call(badges, function (badge) {
 				badge.textContent = count;
 				badge.classList.toggle('is-active', count > 0);
+			});
+			var utilities = document.querySelectorAll('[data-gloskin-wishlist-open], [data-gloskin-wishlist-open-from-drawer]');
+			Array.prototype.forEach.call(utilities, function (utility) {
+				utility.classList.toggle('is-active', count > 0);
 			});
 		}
 
@@ -1598,6 +1615,7 @@
 			dispatchWooAddedToCart: dispatchWooAddedToCart,
 			handleWooAddToCartResponse: handleWooAddToCartResponse,
 			isWooSubmitBusy: isWooSubmitBusy,
+			successFeedback: successFeedback,
 			parseShopCatalogHash: parseShopCatalogHash,
 			buildShopCatalogHash: buildShopCatalogHash
 		};

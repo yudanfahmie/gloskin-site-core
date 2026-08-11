@@ -193,13 +193,17 @@ if grep -qE 'gloskin-ui1-purchase-dock\{[^}]*overflow' "$core_css"; then
 	fail "purchase dock: must never grow an internal scrollbar"
 fi
 
-# Commerce accent: Add to Cart / Pilih Varian use the Gloskin accent on
-# every required surface, including the two contexts the shared
-# .woocommerce-scoped base rule cannot reach (product cards, Quick Add).
-grep -qF 'background:var(--gloskin-accent);color:var(--gloskin-inverse);border-color:transparent}' "$core_css" \
-	|| fail "commerce accent: product-card/Quick Add Add to Cart accent rule missing"
-grep -qF 'a.add_to_cart_button,.gloskin-ui1-quickadd__form .single_add_to_cart_button' "$core_css" \
-	|| fail "commerce accent: accent rule no longer covers both product-card Add to Cart/Pilih Varian and Quick Add"
+# Commerce accent: catalog cards still need their explicit card action skin.
+# Quick Add now carries the canonical .gloskin-ui1-form root, so its native
+# Woo button inherits the global Form/Action Kit instead of keeping a second
+# modal-specific color/state owner.
+grep -qF '.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button{background:var(--gloskin-accent);color:var(--gloskin-inverse);border-color:transparent}' "$core_css" \
+	|| fail "commerce accent: product-card Add to Cart accent rule missing"
+grep -qF 'gloskin-ui1-quickadd__form gloskin-ui1-form' "$core_js" \
+	|| fail "commerce accent: Quick Add dynamic form no longer inherits the canonical Form/Action Kit"
+if grep -qF '.gloskin-ui1-quickadd__form .single_add_to_cart_button{background:' "$core_css"; then
+	fail "commerce accent: Quick Add reintroduced a modal-specific button color owner"
+fi
 grep -qF 'var(--gloskin-accent-strong)' "$core_css" || fail "commerce accent: hover state must use --gloskin-accent-strong"
 
 # View Cart: idempotent, success-only, single-product custom AJAX helper

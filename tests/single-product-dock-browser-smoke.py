@@ -1,17 +1,5 @@
 #!/usr/bin/env python3
-"""Focused browser fixture for the single-product purchase dock and the
-primary-product CSS/JS scope hardening (2026-08-12 regression-hardening
-pass).
-
-Mirrors the fixture-driven pattern already used by
-tests/quick-add-browser-smoke.py: load the real production CSS/JS against a
-synthetic page built to match WooCommerce's actual rendered markup (verified
-live on staging -- see docs/audits/single-product-commerce-remediation-2026-08-11.md),
-including a legitimate different-product [product_page] embed nested inside
-the Description tab, in the exact DOM position WooCommerce's own shortcode
-template renders it. No live WordPress/WooCommerce instance is required or
-contacted.
-"""
+"""Real Chromium geometry/state smoke for the bounded single-product purchase dock."""
 from pathlib import Path
 
 try:
@@ -21,191 +9,142 @@ except Exception:
     raise SystemExit(77)
 
 ROOT = Path(__file__).resolve().parents[1]
-CSS_BASE = (ROOT / "plugin/gloskin-site-core/assets/css/gloskin-ui1-core-base.css").read_text(encoding="utf-8")
-CSS_CORE = (ROOT / "plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css").read_text(encoding="utf-8")
-JS_CORE = (ROOT / "plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js").read_text(encoding="utf-8")
+PLUGIN = ROOT / "plugin" / "gloskin-site-core"
+CSS_BASE = (PLUGIN / "assets/css/gloskin-ui1-core-base.css").read_text(encoding="utf-8")
+CSS_CORE = (PLUGIN / "assets/css/gloskin-ui1-core.css").read_text(encoding="utf-8")
+JS_CORE = (PLUGIN / "assets/js/gloskin-ui1-core.js").read_text(encoding="utf-8")
+JS_DOCK = (PLUGIN / "assets/js/gloskin-ui1-purchase-dock.js").read_text(encoding="utf-8")
 
-# Primary product (#501) purchase dock, wrapped exactly the way
-# WooCommerce_Adapter::open_purchase_dock()/close_purchase_dock() do around
-# woocommerce_before/after_add_to_cart_form -- one native form.cart, never
-# cloned. Nested inside it: WooCommerce's own Description tab, containing a
-# legitimate *different*-product (#777) [product_page] embed in the exact
-# ancestry live staging proved for the self-referencing case
-# (.woocommerce-Tabs-panel--description > div.woocommerce > div.single-product
-# > div.product), which must never inherit the primary PDP grid/gallery/
-# tabs/dock treatment.
 HTML = r"""
-<!doctype html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body class="wp-singular product-template-default single single-product postid-501 gloskin-ui1 gloskin-ui1--medical woocommerce woocommerce-page">
-<header style="height:80px;background:#fafafa" data-test-header>site header</header>
-<main id="gloskin-main" class="gloskin-ui1-main">
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body class="wp-singular single single-product gloskin-ui1 gloskin-ui1--medical woocommerce woocommerce-page">
+<div data-test-pre style="height:700px"></div>
 <div class="woocommerce gloskin-ui1-commerce-native">
-<div id="product-501" class="product type-product post-501 status-publish instock product_cat-facial-wash purchasable product-type-variable">
-  <div class="woocommerce-product-gallery">
-    <div class="woocommerce-product-gallery__wrapper"><div class="woocommerce-product-gallery__image"><img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22600%22/%3E" alt=""></div></div>
-  </div>
+<div id="product-501" class="product type-product product-type-variable">
+  <div class="woocommerce-product-gallery"><div class="woocommerce-product-gallery__wrapper"><div class="woocommerce-product-gallery__image"><img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22600%22/%3E" alt=""></div></div></div>
   <div class="summary entry-summary">
     <h1 class="product_title">Gloskin Fresh Gel Facial Wash</h1>
-    <p class="price"><span class="amount">Rp119.000&ndash;Rp189.000</span></p>
-    <div class="woocommerce-product-details__short-description"><p>Facial wash bertekstur gel segar.</p></div>
+    <div class="fixture-summary-copy">Purchase information</div>
     <div class="gloskin-ui1-purchase-dock" data-gloskin-purchase-dock>
-      <form class="variations_form cart" action="/product/fresh-gel-facial-wash/" method="post" data-product_id="501">
-        <table class="variations"><tbody><tr><th><label for="pa_ukuran">Ukuran</label></th><td><select id="pa_ukuran" name="attribute_pa_ukuran"><option value="">Pilih</option><option value="30ml">30 ml</option></select></td></tr></tbody></table>
-        <div class="single_variation_wrap">
-          <div class="woocommerce-variation-add-to-cart variations_button">
-            <div class="quantity"><input class="input-text qty text" type="number" name="quantity" value="1" min="1"></div>
-            <button type="submit" class="single_add_to_cart_button button alt" name="add-to-cart" value="501">Tambah ke keranjang</button>
-            <input type="hidden" name="product_id" value="501">
-            <input type="hidden" class="variation_id" name="variation_id" value="0">
-          </div>
-        </div>
+      <form class="variations_form cart" action="#" method="post" data-product_id="501">
+        <table class="variations"><tbody><tr><th><label for="pa_ukuran">Ukuran</label></th><td><select id="pa_ukuran"><option>30 ml</option></select></td></tr></tbody></table>
+        <div class="single_variation_wrap"><div class="woocommerce-variation-add-to-cart variations_button">
+          <div class="quantity"><input class="input-text qty text" type="number" value="1"></div>
+          <button id="primary-add" type="submit" class="single_add_to_cart_button button alt">Tambah ke keranjang</button>
+        </div></div>
       </form>
     </div>
-    <div class="product_meta">SKU: GLS-SMP-002</div>
   </div>
-  <div class="woocommerce-tabs wc-tabs-wrapper">
-    <ul class="tabs"><li class="description_tab active"><a href="#tab-description">Deskripsi</a></li></ul>
-    <div id="tab-description" class="woocommerce-Tabs-panel woocommerce-Tabs-panel--description panel entry-content wc-tab">
-      <h3>Karakter produk</h3>
-      <p>Pembersih wajah berformat gel.</p>
-      <p>Lihat juga:</p>
-      <div class="woocommerce">
-        <div class="single-product">
-          <div id="product-777" class="product type-product post-777 status-publish instock purchasable product-type-simple" data-test-nested-product>
-            <div class="woocommerce-product-gallery">
-              <div class="woocommerce-product-gallery__wrapper"><div class="woocommerce-product-gallery__image"><img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22600%22/%3E" alt=""></div></div>
-            </div>
-            <div class="summary entry-summary" data-test-nested-summary>
-              <h1 class="product_title">A Different Cross-Sell Product</h1>
-              <p class="price"><span class="amount">Rp99.000</span></p>
-              <form class="cart" action="/product/other-product/" method="post" data-product_id="777">
-                <button type="submit" class="single_add_to_cart_button button alt" name="add-to-cart" value="777">Tambah ke keranjang</button>
-                <input type="hidden" name="product_id" value="777">
-              </form>
-            </div>
-            <div class="woocommerce-tabs wc-tabs-wrapper" data-test-nested-tabs>
-              <ul class="tabs"><li class="description_tab active"><a href="#">Deskripsi</a></li></ul>
-              <div class="woocommerce-Tabs-panel woocommerce-Tabs-panel--description panel entry-content wc-tab"><p>Different product's own description.</p></div>
-            </div>
-          </div>
-        </div>
-      </div>
+  <div class="woocommerce-tabs wc-tabs-wrapper" data-test-tabs>
+    <div class="woocommerce-Tabs-panel"><p>Deskripsi utama.</p>
+      <div class="woocommerce"><div class="single-product"><div id="product-777" class="product product-type-simple" data-test-nested-product>
+        <div class="summary" data-test-nested-summary><form class="cart"><button>Nested add</button></form></div>
+      </div></div></div>
     </div>
   </div>
-  <div class="related products">
-    <h2>Produk terkait</h2>
-    <ul class="products">
-      <li class="product"><a href="/product/related-1/"><img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22/%3E" alt=""><span class="woocommerce-loop-product__title">Related 1</span></a><span class="price"><span class="amount">Rp150.000</span></span><a class="button add_to_cart_button" href="#">Tambah ke keranjang</a></li>
-    </ul>
-  </div>
-</div>
-</div>
-</main>
-<footer style="height:200px;background:#eee" data-test-footer>site footer</footer>
-</body>
-</html>
+  <div class="related products" data-test-related><h2>Produk terkait</h2></div>
+</div></div>
+<footer data-test-footer style="height:500px">Footer</footer>
+</body></html>
+"""
+
+FIXTURE_CSS = r"""
+[data-test-pre]{height:700px}
+.gloskin-ui1-commerce-native>div.product>.woocommerce-product-gallery .woocommerce-product-gallery__wrapper{min-height:1500px}
+.gloskin-ui1-commerce-native>div.product>.summary .fixture-summary-copy{height:900px}
+.gloskin-ui1-commerce-native>div.product>.woocommerce-tabs{min-height:520px}
+.gloskin-ui1-commerce-native>div.product>.related.products{min-height:420px}
+@media(max-width:1040px){[data-test-pre]{height:300px}}
 """
 
 RUNTIME = r"""
-window.gloskinData = {
-  woo: true,
-  restUrl: '/wp-json/gloskin/v1/',
-  restNonce: 'fixture',
-  cartUrl: '/cart/',
-  addToCartAjaxUrl: '/?wc-ajax=add_to_cart'
-};
-window.wc_cart_fragments_params = {};
-window.wc_add_to_cart_params = {};
-(function () {
-  const handlers = {};
-  function jq(target) {
-    return {
-      length: target ? 1 : 0,
-      on(name, handler) { handlers[name] = handler; return this; },
-      trigger(name, args) { if (handlers[name]) { handlers[name].apply(target, [null].concat(args || [])); } return this; },
-      attr(name, value) { if (target && target.setAttribute && value !== undefined) { target.setAttribute(name, value); } return this; }
-    };
-  }
-  window.jQuery = jq;
-})();
+window.gloskinData={woo:true,restUrl:'/wp-json/gloskin/v1/',restNonce:'fixture',cartUrl:'/cart/',addToCartAjaxUrl:'/?wc-ajax=add_to_cart'};
+window.wc_cart_fragments_params={}; window.wc_add_to_cart_params={};
+(function(){ function jq(target){ return {length:target?1:0,on:function(){return this;},trigger:function(){return this;},attr:function(n,v){if(target&&target.setAttribute)target.setAttribute(n,v);return this;}};} jq.fn={wc_variation_form:function(){}}; window.jQuery=jq; }());
 """
 
 
-def require(condition, message):
-    if not condition:
+def require(value, message):
+    if not value:
         raise AssertionError(message)
 
 
+def snapshot(page):
+    return page.evaluate("""() => {
+      const product=document.querySelector('.gloskin-ui1-commerce-native>div.product');
+      const summary=product.querySelector(':scope>.summary');
+      const dock=summary.querySelector('[data-gloskin-purchase-dock]');
+      const tabs=product.querySelector(':scope>.woocommerce-tabs');
+      const slot=summary.querySelector('.gloskin-ui1-purchase-dock-slot');
+      const d=dock.getBoundingClientRect(), s=summary.getBoundingClientRect(), t=tabs.getBoundingClientRect();
+      return {classes:dock.className,position:getComputedStyle(dock).position,left:d.left,width:d.width,top:d.top,bottom:d.bottom,height:d.height,summaryLeft:s.left,summaryWidth:s.width,tabsTop:t.top,slotHeight:slot?slot.getBoundingClientRect().height:-1,formCount:product.querySelectorAll(':scope>.summary [data-gloskin-purchase-dock] form.cart').length,pageForms:product.querySelectorAll('form.cart').length,overflow:getComputedStyle(dock).overflowY};
+    }""")
+
+
 with sync_playwright() as p:
-    chromium_path = Path('/usr/bin/chromium')
-    if not chromium_path.exists():
+    chromium = Path('/usr/bin/chromium')
+    if not chromium.exists():
         print("single-product-dock-browser-smoke: SKIPPED (chromium unavailable)")
         raise SystemExit(77)
-    browser = p.chromium.launch(headless=True, executable_path=str(chromium_path), args=['--no-sandbox'])
-    page = browser.new_page(viewport={"width": 1280, "height": 900})
-    page.set_content(HTML)
-    page.add_style_tag(content=CSS_BASE + "\n" + CSS_CORE)
-    page.add_script_tag(content=RUNTIME)
-    page.add_script_tag(content=JS_CORE)
+    browser = p.chromium.launch(headless=True, executable_path=str(chromium), args=['--no-sandbox'])
 
-    # A. Exactly one product root gets the primary PDP two-column grid --
-    # the nested different-product embed must default to plain block flow,
-    # never inherit gallery/summary/tabs/dock geometry.
-    primary_display = page.evaluate("getComputedStyle(document.querySelector('.gloskin-ui1-commerce-native > div.product')).display")
-    nested_display = page.evaluate("getComputedStyle(document.querySelector('[data-test-nested-product]')).display")
-    require(primary_display == 'grid', 'primary product root must receive the PDP two-column grid layout')
-    require(nested_display != 'grid', 'nested different-product embed must NOT inherit the primary PDP grid layout')
-    nested_summary_display = page.evaluate("getComputedStyle(document.querySelector('[data-test-nested-summary]')).flexDirection")
-    require(nested_summary_display != 'column', 'nested embed summary must not receive primary summary flex layout')
+    for width, height in [(1728,900),(1440,900),(1024,768),(768,1024),(390,844),(430,932),(844,390)]:
+        page = browser.new_page(viewport={"width":width,"height":height})
+        page.set_content(HTML)
+        page.add_style_tag(content=CSS_BASE + "\n" + CSS_CORE + "\n" + FIXTURE_CSS)
+        page.add_script_tag(content=RUNTIME)
+        page.evaluate("window.__primaryFormBefore=document.querySelector('[data-gloskin-purchase-dock] form.cart')")
+        page.add_script_tag(content=JS_CORE)
+        page.add_script_tag(content=JS_DOCK)
+        page.wait_for_timeout(120)
 
-    # B. Exactly one purchase dock, wrapping exactly one form.cart -- the
-    # dock-scoped selector gloskin-ui1-core.js now queries.
-    dock_count = page.locator('[data-gloskin-purchase-dock]').count()
-    require(dock_count == 1, f'expected exactly one purchase dock, found {dock_count}')
-    dock_form_count = page.locator('[data-gloskin-purchase-dock] form.cart').count()
-    require(dock_form_count == 1, f'expected exactly one form.cart inside the purchase dock, found {dock_form_count}')
-    bound_product_id = page.evaluate("document.querySelector('[data-gloskin-purchase-dock] form.cart').getAttribute('data-product_id')")
-    require(bound_product_id == '501', 'JS single-product AJAX must bind the primary product\'s own form, never the nested embed\'s')
+        require(page.evaluate("getComputedStyle(document.querySelector('.gloskin-ui1-commerce-native>div.product')).display") == 'grid', 'primary product lost grid scope')
+        require(page.evaluate("getComputedStyle(document.querySelector('[data-test-nested-product]')).display") != 'grid', 'nested product inherited primary grid scope')
+        require(page.locator('[data-gloskin-purchase-dock]').count() == 1, 'purchase dock duplicated')
+        require(page.locator('[data-gloskin-purchase-dock] form.cart').count() == 1, 'dock must retain exactly one native form.cart')
 
-    # C. Desktop, tall viewport: the dock floats/sticks.
-    dock_position_desktop = page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-purchase-dock]')).position")
-    require(dock_position_desktop == 'sticky', 'desktop dock must be position:sticky when viewport height permits')
-    dock_overflow_desktop = page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-purchase-dock]')).overflowY")
-    require(dock_overflow_desktop not in ('auto', 'scroll'), 'dock must never grow an internal scrollbar on desktop')
+        summary_doc_top = page.evaluate("document.querySelector('.gloskin-ui1-commerce-native>div.product>.summary').getBoundingClientRect().top+scrollY")
+        page.evaluate("y=>scrollTo(0,y)", max(0, summary_doc_top + 30))
+        page.wait_for_timeout(160)
+        active = snapshot(page)
+        require(active['overflow'] not in ('auto','scroll'), f'dock gained internal scrolling at {width}x{height}: {active}')
+        require(page.evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1'), f'horizontal overflow at {width}x{height}')
 
-    # D. Mobile viewport, still tall enough: same floating dock, no
-    # horizontal overflow, touch-safe CTA.
-    page.set_viewport_size({"width": 390, "height": 844})
-    page.wait_for_timeout(30)
-    dock_position_mobile = page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-purchase-dock]')).position")
-    require(dock_position_mobile == 'sticky', 'mobile dock must also be position:sticky -- never desktop-only')
-    require(page.evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1'), 'mobile page must not horizontally overflow')
-    button_box = page.locator('[data-gloskin-purchase-dock] .single_add_to_cart_button').bounding_box()
-    require(button_box and button_box['height'] >= 44, 'mobile Add to Cart must remain touch-safe (>=44px)')
-    dock_overflow_mobile = page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-purchase-dock]')).overflowY")
-    require(dock_overflow_mobile not in ('auto', 'scroll'), 'dock must never grow an internal scrollbar on mobile')
+        if height < 560:
+            require('is-floating' not in active['classes'] and 'is-boundary' not in active['classes'], f'short viewport floated: {active}')
+            require(active['position'] not in ('fixed','absolute'), f'short viewport did not degrade to flow: {active}')
+            page.close(); continue
 
-    # E. Short viewport: degrade to normal document flow, never a scroll box.
-    page.set_viewport_size({"width": 1280, "height": 420})
-    page.wait_for_timeout(30)
-    dock_position_short = page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-purchase-dock]')).position")
-    require(dock_position_short != 'sticky', 'short viewport must degrade the dock to normal document flow')
-    dock_overflow_short = page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-purchase-dock]')).overflowY")
-    require(dock_overflow_short not in ('auto', 'scroll'), 'degraded short-viewport dock must still never grow an internal scrollbar')
+        require('is-floating' in active['classes'] and active['position'] == 'fixed', f'dock did not genuinely float at {width}x{height}: {active}')
+        require(abs(active['left'] - active['summaryLeft']) < 1.1, f'floating dock left drifted from summary at {width}x{height}: {active}')
+        require(abs(active['width'] - active['summaryWidth']) < 1.1, f'floating dock width drifted from summary at {width}x{height}: {active}')
+        require(abs((height - active['bottom']) - 16) < 1.5, f'floating bottom gap wrong at {width}x{height}: {active}')
+        require(active['slotHeight'] >= active['height'] - 1, f'placeholder does not preserve dock height at {width}x{height}: {active}')
 
-    # F. No overlap: scrolled to the bottom of a tall desktop viewport, the
-    # sticky dock never covers the footer or the sticky header.
-    page.set_viewport_size({"width": 1280, "height": 900})
-    page.wait_for_timeout(30)
-    page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
-    page.wait_for_timeout(30)
-    dock_box = page.locator('[data-gloskin-purchase-dock]').bounding_box()
-    footer_box = page.locator('[data-test-footer]').bounding_box()
-    header_box = page.locator('[data-test-header]').bounding_box()
-    require(dock_box and footer_box and dock_box['y'] + dock_box['height'] <= footer_box['y'] + 1, 'purchase dock must never overlap the footer')
-    require(dock_box and header_box and dock_box['y'] >= header_box['y'] + header_box['height'] - 1, 'purchase dock must never overlap the header')
+        old_height = active['height']
+        page.evaluate("""() => { const x=document.createElement('div'); x.style.height='64px'; x.textContent='variation availability'; document.querySelector('[data-gloskin-purchase-dock] form.cart').appendChild(x); }""")
+        page.wait_for_timeout(160)
+        grown = snapshot(page)
+        require(grown['height'] >= old_height + 60, f'dock resize was not observed at {width}x{height}: {grown}')
+        require(grown['slotHeight'] >= grown['height'] - 1, f'placeholder stale after dock resize at {width}x{height}: {grown}')
+
+        page.locator('#pa_ukuran').focus()
+        tabs_doc_top = page.evaluate("document.querySelector('.gloskin-ui1-commerce-native>div.product>.woocommerce-tabs').getBoundingClientRect().top+scrollY")
+        page.evaluate("y=>scrollTo(0,y)", max(0, tabs_doc_top - height + 8))
+        page.wait_for_timeout(180)
+        boundary = snapshot(page)
+        require('is-boundary' in boundary['classes'] and boundary['position'] == 'absolute', f'dock did not settle before tabs at {width}x{height}: {boundary}')
+        require(boundary['bottom'] <= boundary['tabsTop'] - 10, f'dock overlaps tabs at {width}x{height}: {boundary}')
+        require(page.evaluate("document.activeElement===document.querySelector('#pa_ukuran')"), f'focus moved during dock state change at {width}x{height}')
+        require(page.evaluate("window.__primaryFormBefore===document.querySelector('[data-gloskin-purchase-dock] form.cart')"), f'form node identity changed at {width}x{height}')
+
+        related_doc_top = page.evaluate("document.querySelector('.gloskin-ui1-commerce-native>div.product>.related.products').getBoundingClientRect().top+scrollY")
+        page.evaluate("y=>scrollTo(0,y)", related_doc_top + 120)
+        page.wait_for_timeout(160)
+        after = snapshot(page)
+        require(after['position'] != 'fixed' and 'is-floating' not in after['classes'], f'dock still covers Related/Footer at {width}x{height}: {after}')
+        require(page.evaluate("window.__primaryFormBefore===document.querySelector('[data-gloskin-purchase-dock] form.cart')"), f'form identity changed after release at {width}x{height}')
+        page.close()
 
     browser.close()
 

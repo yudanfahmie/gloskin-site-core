@@ -331,7 +331,7 @@ grep -qF -- '.gloskin-ui1-form input:not([type="checkbox"]):not([type="radio"]),
 # Woo cart/checkout/account/product coverage: quantity, invalid state,
 # checkbox/radio, Select2 adapter, notices, autofill, WC Blocks bridge.
 for expected in \
-  '.gloskin-ui1 .woocommerce .quantity .qty{width:76px' \
+  '.gloskin-ui1 .woocommerce .quantity .qty,.gloskin-ui1-form .quantity .qty{width:76px' \
   '.gloskin-ui1 .woocommerce form .form-row.woocommerce-invalid input.input-text' \
   '.gloskin-ui1 input[type="checkbox"],.gloskin-ui1 input[type="radio"]{width:18px;height:18px' \
   '.gloskin-ui1 .select2-container .select2-selection--single{height:var(--gloskin-field-height)' \
@@ -376,7 +376,7 @@ grep -qF -- ':focus-visible{outline:none;border-color:var(--gloskin-accent);back
   || { echo "Form Kit focus-visible field ring missing" >&2; exit 1; }
 
 # A real mobile rule exists for the kit.
-grep -qF -- '@media (max-width:760px){.gloskin-ui1 .woocommerce .quantity .qty{width:84px}' "$core_css" \
+grep -qF -- '@media (max-width:760px){.gloskin-ui1 .woocommerce .quantity .qty,.gloskin-ui1-form .quantity .qty{width:84px}' "$core_css" \
   || { echo "Form Kit mobile rule missing" >&2; exit 1; }
 
 # Every new Form Kit selector stays scoped under .gloskin-ui1 -- no bare

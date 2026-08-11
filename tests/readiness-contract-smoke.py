@@ -131,13 +131,13 @@ require(".gloskin-ui1-footer__brand::after" in production and ".gloskin-ui1-foot
 require("--gloskin-ui1-brand-primary-height:clamp(44px,6vw,80px)" in production and ".gloskin-ui1-header__inner img.gloskin-ui1-brand__image" in production and ".gloskin-ui1-footer img.gloskin-ui1-brand__image--footer" in production, "header primary and footer logos must share one responsive display-size token")
 require(".gloskin-ui1-footer .gloskin-ui1-brand--footer{grid-column:auto;justify-self:start;align-self:start;margin:0}" in production and ".gloskin-ui1-footer__brand{justify-items:start;text-align:left}" in production, "footer brand must cancel the global centered grid-column and remain left-aligned")
 require(".gloskin-ui1-footer__clinics{grid-template-columns:repeat(2,max-content)" in production and ".gloskin-ui1-footer__clinics li,.gloskin-ui1-footer__clinics a{white-space:nowrap}" in production and "@media (max-width:420px){.gloskin-ui1-footer__clinics{grid-template-columns:1fr}}" in production, "footer clinic labels must stay one-line with a narrow-phone safe column")
-for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "readiness-browser-smoke.py", "rendered-shell-auth-smoke.php"):
+for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "readiness-browser-smoke.py", "rendered-shell-auth-smoke.php", "micro-interactions-contract.sh"):
     require(required in runner, f"{required} must run through tests/check-runtime.sh")
 
 # Woo/account page heading and version sync.
 require("gloskin_ui1_render_commerce_page_heading" in shell, "cart/checkout/account H1 owner missing")
 header_version = re.search(r"\* Version:\s*([0-9.]+)", main_plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == "0.7.36", "plugin/kernel version mismatch")
+require(header_version == kernel_version == "0.7.37", "plugin/kernel version mismatch")
 
 print("readiness-contract-smoke: OK")

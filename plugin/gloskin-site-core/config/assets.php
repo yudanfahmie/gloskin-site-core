@@ -52,6 +52,15 @@ return array(
 			'deps'      => array(),
 			'in_footer' => true,
 		),
+		/* Core is already the broad interaction owner. Keep the bounded PDP
+		 * viewport controller separate and tiny so its observer/measurement
+		 * lifecycle cannot inflate that cross-site module; AssetService still
+		 * remains the sole enqueue owner and this script no-ops off PDPs. */
+		'gloskin-ui1-purchase-dock' => array(
+			'src'       => 'assets/js/gloskin-ui1-purchase-dock.js',
+			'deps'      => array( 'gloskin-ui1-core' ),
+			'in_footer' => true,
+		),
 	),
 	'admin_scripts' => array(
 		'gloskin-ui1-admin' => array(

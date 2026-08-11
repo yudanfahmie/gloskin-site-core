@@ -128,15 +128,10 @@ body.gloskin-ui1{
 }
 .gloskin-ui1-section--contrast .gloskin-ui1-section__action .gloskin-ui1-text-link{color:var(--gloskin-inverse)}
 
-/* Top-level desktop navigation: a single liquid bubble tracks whichever
-   item is hovered/focused/active and glides between them. gloskin-ui1-core.js
-   initNavBubble bridges across the old+new item first (fast transition,
-   default state below) then settles onto just the target (.is-settling,
-   slower spring-out easing) so the shape visibly stretches like a real
-   liquid blob instead of sliding as a fixed rectangle; leaving with nothing
-   to rest on collapses through a centered circle before shrinking to
-   nothing. The link keeps an accent no-JS fallback, while .is-bubbled is the
-   sole white-foreground state and snaps immediately with the bubble target. */
+/* Top-level desktop navigation: bubble geometry is snapped invisibly by
+   initNavBubble() to the target link's final rectangle. Visible motion is
+   center-origin scale + opacity only: no translate, width/height, left/top
+   transition, liquid bridge or diagonal travel. */
 .gloskin-ui1-nav--desktop{position:relative;z-index:0}
 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{
 	position:relative;
@@ -153,7 +148,7 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled:hover{
 	color:#fff;
 	transition-duration:0s;
-	opacity:1 !important;
+	opacity:1;
 }
 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__toggle:hover{
 	background:transparent;
@@ -168,11 +163,13 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 	border-radius:999px;
 	background:var(--gloskin-accent);
 	opacity:0;
+	transform:scale(0);
+	transform-origin:center;
 	pointer-events:none;
-	transition:transform 170ms cubic-bezier(.4,0,.2,1),width 170ms cubic-bezier(.4,0,.2,1),height 170ms cubic-bezier(.4,0,.2,1),opacity 200ms ease;
+	transition:transform 180ms cubic-bezier(.22,1,.36,1),opacity 160ms ease;
 }
-.gloskin-ui1-nav__bubble.is-visible{opacity:1}
-.gloskin-ui1-nav__bubble.is-settling{transition:transform 380ms cubic-bezier(.22,1,.36,1),width 380ms cubic-bezier(.22,1,.36,1),height 380ms cubic-bezier(.22,1,.36,1),opacity 200ms ease}
+.gloskin-ui1-nav__bubble.is-visible{opacity:1;transform:scale(1)}
+.gloskin-ui1-nav__bubble.is-repositioning{transition:none}
 
 /* Desktop dropdown submenu: single consistent presentational owner (skeleton
    position/sizing stays in gloskin-ui1-core-base.css). */
@@ -369,4 +366,4 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 /* Gloskin Form Kit -- premium label character. Structure/spacing lives in
    gloskin-ui1-core.css; this only tunes weight/letter-spacing to match the
    rest of the Mulish body-copy hierarchy (nav links, eyebrow) above. */
-.gloskin-ui1-form label,.gloskin-ui1 .woocommerce form label{font-weight:600;letter-spacing:.01em}
+.gloskin-ui1-form label,.gloskin-ui1 .woocommerce form label,.gloskin-ui1-auth-forms label{font-weight:600;letter-spacing:.01em}

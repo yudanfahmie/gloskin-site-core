@@ -67,11 +67,17 @@ img.gloskin-ui1-brand__image--compact{height:clamp(32px,3vw,45px)}
 .gloskin-ui1-nav__toggle{width:26px;height:26px;margin-left:-4px;border-radius:6px;transition:background-color 140ms ease}
 .gloskin-ui1-nav__toggle:hover{background:color-mix(in srgb,var(--gloskin-surface) 74%,transparent)}
 .gloskin-ui1-header__zone{gap:6px}
-.gloskin-ui1-utility-btn{position:relative;display:inline-grid;width:40px;height:40px;border:0;border-radius:999px;background:transparent;color:var(--gloskin-text);cursor:pointer;place-items:center;transition:background-color 140ms ease}
+.gloskin-ui1-utility-btn{position:relative;display:inline-grid;width:40px;height:40px;border:0;border-radius:999px;background:transparent;color:var(--gloskin-text);cursor:pointer;place-items:center;transition:background-color 140ms ease,color 140ms ease}
 .gloskin-ui1-utility-btn:hover{background:color-mix(in srgb,var(--gloskin-surface) 74%,transparent)}
 .gloskin-ui1-utility-btn svg{display:block}
+.gloskin-ui1-utility-btn--wishlist.is-active,.gloskin-ui1-drawer__utility-link.is-active{color:var(--gloskin-accent-readable)}
 .gloskin-ui1-badge{position:absolute;top:2px;right:2px;display:grid;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--gloskin-muted);color:var(--gloskin-inverse);font-size:.65rem;font-weight:800;line-height:1;place-items:center;pointer-events:none;opacity:.6;transition:background-color 160ms ease,opacity 160ms ease}
 .gloskin-ui1-badge.is-active{background:var(--gloskin-accent);opacity:1}
+@keyframes gloskin-ui1-success-pulse{0%,100%{transform:scale(1)}45%{transform:scale(1.08)}}
+@keyframes gloskin-ui1-success-badge{0%,100%{transform:scale(1)}45%{transform:scale(1.12)}}
+.gloskin-ui1-utility-btn.is-success-pulse{animation:gloskin-ui1-success-pulse 360ms ease-out}
+.gloskin-ui1-utility-btn.is-success-pulse>.gloskin-ui1-badge{animation:gloskin-ui1-success-badge 360ms ease-out}
+.gloskin-ui1-drawer__utility-link.is-success-pulse>svg{animation:gloskin-ui1-success-pulse 360ms ease-out}
 .gloskin-ui1-header__contact{min-height:38px;padding:8px 14px;border-color:color-mix(in srgb,var(--gloskin-border) 76%,transparent);font-size:.88rem}
 .gloskin-ui1-nav__chevron{display:block;width:11px;height:11px;transform:rotate(0deg);transform-origin:50% 50%;transition:transform 190ms cubic-bezier(.22,1,.36,1)}
 .gloskin-ui1-nav__toggle[aria-expanded="true"] .gloskin-ui1-nav__chevron{transform:rotate(180deg)}
@@ -79,12 +85,13 @@ img.gloskin-ui1-brand__image--compact{height:clamp(32px,3vw,45px)}
 @media (max-width:782px){body.admin-bar.gloskin-ui1{--gloskin-ui1-admin-bar-height:46px}}
 @media (max-width:760px){.gloskin-ui1-header__inner{min-height:64px}}
 @media (max-width:600px){body.admin-bar.gloskin-ui1{--gloskin-ui1-admin-bar-height:0px}}
-@media (prefers-reduced-motion:reduce){.gloskin-ui1-header__nav-row,.gloskin-ui1-nav__chevron,.gloskin-ui1-nav__link,.gloskin-ui1-nav__toggle,.gloskin-ui1-compact-brand,.gloskin-ui1-header__zone--compact,.gloskin-ui1-drawer-toggle__dot,.gloskin-ui1-nav__bubble{transition:none !important}}
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-header__nav-row,.gloskin-ui1-nav__chevron,.gloskin-ui1-nav__link,.gloskin-ui1-nav__toggle,.gloskin-ui1-compact-brand,.gloskin-ui1-header__zone--compact,.gloskin-ui1-drawer-toggle__dot,.gloskin-ui1-nav__bubble{transition:none !important}.gloskin-ui1-utility-btn.is-success-pulse,.gloskin-ui1-utility-btn.is-success-pulse>.gloskin-ui1-badge,.gloskin-ui1-drawer__utility-link.is-success-pulse>svg{animation:none}}
 
 /* Overlay scroll lock */
 html.gloskin-ui1-overlay-open{overflow:hidden}
 
-/* Search overlay — full-screen command-style layer */
+/* Search overlay — full-screen command-style layer. Geometry stays here;
+   field/action skin below is owned by the shared Form/Action Kit. */
 .gloskin-ui1-search-overlay{position:fixed;z-index:9998;inset:0;display:flex;align-items:flex-start;justify-content:center;opacity:0;transition:opacity 220ms ease;pointer-events:none}
 .gloskin-ui1-search-overlay[aria-hidden="false"]{opacity:1;pointer-events:auto}
 .gloskin-ui1-search-overlay[hidden]{display:none}
@@ -92,21 +99,15 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1-search-overlay__canvas{position:relative;z-index:1;width:min(calc(100% - 40px),1000px);max-height:calc(100vh - 40px);margin-top:clamp(80px,12vh,160px);overflow-y:auto;padding:clamp(20px,3vw,36px);border-radius:var(--gloskin-radius-lg);background:var(--gloskin-bg);box-shadow:0 30px 80px color-mix(in srgb,var(--gloskin-brand-charcoal) 24%,transparent);transform:translateY(-12px);transition:transform 220ms cubic-bezier(.22,1,.36,1)}
 .gloskin-ui1-search-overlay[aria-hidden="false"] .gloskin-ui1-search-overlay__canvas{transform:translateY(0)}
 .gloskin-ui1-search-overlay__head{display:flex;align-items:center;gap:12px}
-.gloskin-ui1-search-overlay__field{position:relative;display:flex;flex:1;align-items:center;gap:10px;padding:0 14px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);background:var(--gloskin-surface);transition:border-color 140ms ease}
-.gloskin-ui1-search-overlay__field:focus-within{border-color:var(--gloskin-accent)}
+.gloskin-ui1-search-overlay__field{position:relative;display:flex;flex:1;align-items:center;gap:10px;min-height:var(--gloskin-field-height);padding:0 14px;border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-field-bg);transition:border-color 140ms ease,background-color 140ms ease,box-shadow 140ms ease}
+.gloskin-ui1-search-overlay__field:hover{border-color:color-mix(in srgb,var(--gloskin-accent) 32%,var(--gloskin-field-border))}
+.gloskin-ui1-search-overlay__field:focus-within{border-color:var(--gloskin-accent);background:var(--gloskin-field-bg-focus);box-shadow:var(--gloskin-field-focus-ring)}
 .gloskin-ui1-search-overlay__icon{flex:0 0 22px;color:var(--gloskin-muted)}
-.gloskin-ui1-search-overlay__input{flex:1;min-height:48px;border:0;background:transparent;color:var(--gloskin-text);font:inherit;font-size:1.05rem;outline:none}
-/* The field wrapper already shows a clear focus state via its own
-   border-color change on :focus-within (above); the generic :focus-visible
-   outline (gloskin-ui1-core-base.css) would draw a second, offset red
-   rectangle around the input itself, reading as a ghost double border. This
-   selector matches that rule's specificity and comes later in the cascade,
-   so it wins without needing !important. */
-.gloskin-ui1-search-overlay__input:focus-visible{outline:none}
+.gloskin-ui1-search-overlay__input{flex:1;min-width:0;width:100%;min-height:calc(var(--gloskin-field-height) - 2px);padding:0;border:0;background:transparent;color:var(--gloskin-text);font:inherit;font-size:1.05rem;outline:none;box-shadow:none}
+.gloskin-ui1-search-overlay__input:focus-visible{outline:none;box-shadow:none}
 .gloskin-ui1-search-overlay__input::placeholder{color:var(--gloskin-muted)}
-.gloskin-ui1-search-overlay__clear{width:28px;height:28px;border:0;border-radius:999px;background:var(--gloskin-surface-strong);color:var(--gloskin-muted);font-size:1.1rem;cursor:pointer}
-.gloskin-ui1-search-overlay__clear:hover{color:var(--gloskin-text)}
-.gloskin-ui1-search-overlay__close{flex:0 0 auto;border:0;background:transparent;color:var(--gloskin-accent-readable);font:inherit;font-weight:700;cursor:pointer}
+.gloskin-ui1-search-overlay__clear{font-size:1.1rem}
+.gloskin-ui1-search-overlay__close{flex:0 0 auto}
 .gloskin-ui1-search-overlay__body{margin-top:20px;min-height:60px}
 .gloskin-ui1-search-overlay__loading{display:flex;justify-content:center;padding:28px}
 .gloskin-ui1-search-overlay__loading span{width:24px;height:24px;border:2px solid var(--gloskin-border);border-top-color:var(--gloskin-accent);border-radius:50%;animation:gloskin-spin .7s linear infinite}
@@ -122,9 +123,10 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1-search-results__excerpt{font-size:.88rem;color:var(--gloskin-muted)}
 .gloskin-ui1-search-results__price{font-size:.88rem;color:var(--gloskin-accent-readable);font-weight:700}
 .gloskin-ui1-search-overlay__fallback{display:flex;gap:8px;margin-top:16px}
-.gloskin-ui1-search-overlay__fallback input{flex:1;min-height:46px;padding:10px 14px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);background:var(--gloskin-bg);color:var(--gloskin-text);font:inherit}
+.gloskin-ui1-search-overlay__fallback input{flex:1}
 
-/* Side sheets — shared structure for cart and wishlist */
+/* Side sheets — shared structure for cart and wishlist; close/action skin is
+   supplied by the global Form/Action Kit below. */
 .gloskin-ui1-sheet{position:fixed;z-index:9998;inset:0;display:grid;grid-template-columns:1fr min(92vw,420px);opacity:0;transition:opacity 260ms ease;pointer-events:none}
 .gloskin-ui1-sheet[aria-hidden="false"]{opacity:1;pointer-events:auto}
 .gloskin-ui1-sheet[hidden]{display:none}
@@ -132,7 +134,7 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1-sheet__panel{grid-column:2;display:flex;flex-direction:column;overflow-y:auto;background:var(--gloskin-bg);box-shadow:-16px 0 48px color-mix(in srgb,var(--gloskin-text) 14%,transparent);transform:translateX(20px);transition:transform 260ms cubic-bezier(.22,1,.36,1)}
 .gloskin-ui1-sheet[aria-hidden="false"] .gloskin-ui1-sheet__panel{transform:translateX(0)}
 .gloskin-ui1-sheet__head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px;border-bottom:1px solid var(--gloskin-border);font-family:var(--gloskin-font-heading);font-size:1.2rem}
-.gloskin-ui1-sheet__close{width:38px;height:38px;border:1px solid var(--gloskin-border);border-radius:999px;background:transparent;color:inherit;cursor:pointer;display:grid;place-items:center}
+.gloskin-ui1-sheet__close{flex:0 0 auto}
 
 /* Cart sheet body */
 .gloskin-ui1-cart-sheet__body{flex:1;padding:20px 24px}
@@ -145,8 +147,7 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1-cart-sheet__item-name{font-weight:600;color:var(--gloskin-text)}
 .gloskin-ui1-cart-sheet__item-variation{font-size:.82rem;color:var(--gloskin-muted)}
 .gloskin-ui1-cart-sheet__item-meta{font-size:.88rem;color:var(--gloskin-muted)}
-.gloskin-ui1-cart-sheet__item-remove{align-self:start;width:28px;height:28px;border:0;border-radius:999px;background:transparent;color:var(--gloskin-muted);font-size:1.1rem;line-height:1;text-decoration:none;text-align:center;cursor:pointer}
-.gloskin-ui1-cart-sheet__item-remove:hover{color:var(--gloskin-accent)}
+.gloskin-ui1-cart-sheet__item-remove{align-self:start;font-size:1.1rem;line-height:1;text-decoration:none;text-align:center}
 .gloskin-ui1-cart-sheet__summary{display:flex;justify-content:space-between;padding:16px 0;border-top:1px solid var(--gloskin-border);font-weight:700}
 .gloskin-ui1-cart-sheet__actions{display:grid;gap:8px;margin-top:8px}
 .gloskin-ui1-cart-sheet__empty{display:grid;gap:12px;padding:40px 0;text-align:center;color:var(--gloskin-muted)}
@@ -159,8 +160,7 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1-wishlist-sheet__item-link{text-decoration:none;display:grid;gap:2px}
 .gloskin-ui1-wishlist-sheet__item-name{font-weight:600;color:var(--gloskin-text)}
 .gloskin-ui1-wishlist-sheet__item-price{font-size:.88rem;color:var(--gloskin-accent-readable);font-weight:700}
-.gloskin-ui1-wishlist-sheet__item-remove{align-self:center;width:28px;height:28px;border:0;border-radius:999px;background:transparent;color:var(--gloskin-muted);font-size:1.1rem;cursor:pointer}
-.gloskin-ui1-wishlist-sheet__item-remove:hover{color:var(--gloskin-accent)}
+.gloskin-ui1-wishlist-sheet__item-remove{align-self:center;font-size:1.1rem}
 .gloskin-ui1-wishlist-sheet__empty{display:grid;gap:12px;padding:40px 0;text-align:center;color:var(--gloskin-muted)}
 .gloskin-ui1-wishlist-sheet__empty .gloskin-ui1-text-link{justify-self:center}
 .gloskin-ui1-wishlist-sheet__error{color:var(--gloskin-muted);text-align:center;padding:28px 0}
@@ -190,15 +190,14 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
    Gloskin Form Kit v1 -- refinements layered on the shared field primitive
    (gloskin-ui1-core-base.css). Presentation only: WooCommerce keeps every
    field's markup, validation, country/state logic, cart/checkout/order
-   business logic and submission. Nothing here initializes Select2, adds a
-   custom dropdown/validation library, or forks a Woo template.
+   business logic and submission. Modal/component CSS owns geometry only.
    ========================================================================== */
 
 /* Labels carry most of the premium identity; sizing/rhythm here, the exact
    Mulish weight/letter-spacing finishing lives in gloskin-ui1-production.css.
    Woo's own required-marker markup (abbr.required) is kept, only re-tinted. */
-.gloskin-ui1-form label,.gloskin-ui1 .woocommerce form label{display:block;margin-bottom:7px;font-size:.92rem;line-height:1.3}
-.gloskin-ui1 .woocommerce form .required{color:var(--gloskin-accent-strong);text-decoration:none}
+.gloskin-ui1-form label,.gloskin-ui1 .woocommerce form label,.gloskin-ui1-auth-forms label{display:block;margin-bottom:7px;font-size:.92rem;line-height:1.3}
+.gloskin-ui1 .woocommerce form .required,.gloskin-ui1-auth-forms .required{color:var(--gloskin-accent-strong);text-decoration:none}
 
 /* Field-group rhythm: calm rather than compressed. Woo's own two-column rows
    (col2-set, form-row-first/-last) stay Woo-owned; only vertical gap/help
@@ -207,11 +206,32 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1 .woocommerce form .form-row:last-child{margin-bottom:0}
 .gloskin-ui1 .woocommerce-input-wrapper .woocommerce-error,.gloskin-ui1 .woocommerce form .form-row .description{margin-top:7px;font-size:.86rem}
 
+/* Quick Auth captures Woo's native form outside a .woocommerce wrapper, and
+   Search's fallback field is also first-party. Alias those existing roots to
+   the same field tokens rather than creating modal-specific values. */
+.gloskin-ui1-auth-forms input.input-text,.gloskin-ui1-auth-forms select,.gloskin-ui1-auth-forms textarea,.gloskin-ui1-search-overlay__fallback input{width:100%;min-height:var(--gloskin-field-height);padding:12px 16px;border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-field-bg);color:var(--gloskin-text);font:inherit;transition:border-color 140ms ease,background-color 140ms ease,box-shadow 140ms ease}
+.gloskin-ui1-auth-forms input.input-text:hover,.gloskin-ui1-auth-forms select:hover,.gloskin-ui1-auth-forms textarea:hover,.gloskin-ui1-search-overlay__fallback input:hover{border-color:color-mix(in srgb,var(--gloskin-accent) 32%,var(--gloskin-field-border))}
+.gloskin-ui1-auth-forms input.input-text:focus-visible,.gloskin-ui1-auth-forms select:focus-visible,.gloskin-ui1-auth-forms textarea:focus-visible,.gloskin-ui1-search-overlay__fallback input:focus-visible{outline:none;border-color:var(--gloskin-accent);background:var(--gloskin-field-bg-focus);box-shadow:var(--gloskin-field-focus-ring)}
+
+/* One compact action primitive for every first-party modal close/clear/remove
+   surface. Individual modal CSS supplies placement only. */
+.gloskin-ui1-action-icon,.gloskin-ui1-sheet__close,.gloskin-ui1-quickadd__close,.gloskin-ui1-search-overlay__clear,.gloskin-ui1-drawer__close,.gloskin-ui1-cart-sheet__item-remove,.gloskin-ui1-wishlist-sheet__item-remove{display:grid;flex:0 0 auto;width:38px;height:38px;padding:0;border:1px solid var(--gloskin-field-border);border-radius:999px;background:transparent;color:var(--gloskin-text);cursor:pointer;place-items:center;transition:border-color 140ms ease,background-color 140ms ease,color 140ms ease}
+.gloskin-ui1-action-icon:hover,.gloskin-ui1-sheet__close:hover,.gloskin-ui1-quickadd__close:hover,.gloskin-ui1-search-overlay__clear:hover,.gloskin-ui1-drawer__close:hover,.gloskin-ui1-cart-sheet__item-remove:hover,.gloskin-ui1-wishlist-sheet__item-remove:hover{border-color:color-mix(in srgb,var(--gloskin-accent) 36%,var(--gloskin-field-border));background:var(--gloskin-surface);color:var(--gloskin-accent-strong)}
+.gloskin-ui1-search-overlay__clear,.gloskin-ui1-cart-sheet__item-remove,.gloskin-ui1-wishlist-sheet__item-remove{width:28px;height:28px;border:0;background:var(--gloskin-surface-strong);color:var(--gloskin-muted)}
+.gloskin-ui1-action-icon:focus-visible,.gloskin-ui1-sheet__close:focus-visible,.gloskin-ui1-quickadd__close:focus-visible,.gloskin-ui1-search-overlay__clear:focus-visible,.gloskin-ui1-drawer__close:focus-visible,.gloskin-ui1-cart-sheet__item-remove:focus-visible,.gloskin-ui1-wishlist-sheet__item-remove:focus-visible{outline:3px solid var(--gloskin-accent-readable);outline-offset:2px}
+
+/* Search cancel is the shared secondary action; captured native Woo Auth
+   submits use the shared primary action tokens. */
+.gloskin-ui1-search-overlay__close{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border:1px solid var(--gloskin-border);border-radius:999px;background:transparent;color:var(--gloskin-text);font:inherit;font-weight:700;cursor:pointer;text-decoration:none;transition:border-color 140ms ease,color 140ms ease,background-color 140ms ease}
+.gloskin-ui1-search-overlay__close:hover{border-color:var(--gloskin-accent);color:var(--gloskin-accent-strong)}
+.gloskin-ui1-auth-forms .button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 18px;border:1px solid var(--gloskin-accent);border-radius:999px;background:var(--gloskin-accent);color:var(--gloskin-inverse);font:inherit;font-weight:700;cursor:pointer;transition:background-color 140ms ease,border-color 140ms ease,transform 140ms ease}
+.gloskin-ui1-auth-forms .button:hover{background:var(--gloskin-accent-strong);border-color:var(--gloskin-accent-strong)}
+
 /* Select: native keyboard behaviour, semantics and Woo country/state logic
    are untouched -- only the default UA arrow is replaced with a quiet inline
    chevron. The luxury (dark) variant swaps in a light-colored arrow. */
-.gloskin-ui1-form select,.gloskin-ui1 .woocommerce select{appearance:none;padding-right:40px;background-repeat:no-repeat;background-position:right 14px center;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7' fill='none'%3E%3Cpath d='M1 1L5.5 5.5L10 1' stroke='%236F6667' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
-.gloskin-ui1--luxury .gloskin-ui1-form select,.gloskin-ui1--luxury .woocommerce select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7' fill='none'%3E%3Cpath d='M1 1L5.5 5.5L10 1' stroke='%23FBFBFA' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+.gloskin-ui1-form select,.gloskin-ui1 .woocommerce select,.gloskin-ui1-auth-forms select{appearance:none;padding-right:40px;background-repeat:no-repeat;background-position:right 14px center;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7' fill='none'%3E%3Cpath d='M1 1L5.5 5.5L10 1' stroke='%236F6667' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+.gloskin-ui1--luxury .gloskin-ui1-form select,.gloskin-ui1--luxury .woocommerce select,.gloskin-ui1--luxury .gloskin-ui1-auth-forms select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7' fill='none'%3E%3Cpath d='M1 1L5.5 5.5L10 1' stroke='%23FBFBFA' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
 
 /* Select2 -- WooCommerce's own enhanced country/state control. Presentation
    only: Gloskin never initializes, configures or replaces Select2. The
@@ -234,15 +254,15 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1 input[type="checkbox"],.gloskin-ui1 input[type="radio"]{width:18px;height:18px;margin:0;accent-color:var(--gloskin-accent);vertical-align:middle}
 .gloskin-ui1 .woocommerce-form__label-for-checkbox,.gloskin-ui1 .woocommerce ul#shipping_method li label,.gloskin-ui1 .woocommerce ul.wc_payment_methods li label{display:inline-flex;align-items:center;gap:9px;cursor:pointer}
 
-/* Quantity: a compact premium field, not a full-width text input. Woo's own
-   stepper markup/behaviour is untouched; no +/- buttons are added here. */
-.gloskin-ui1 .woocommerce .quantity .qty{width:76px;min-height:var(--gloskin-field-height);padding:10px 12px;text-align:center}
+/* Quantity: same compact primitive in native Woo and any .gloskin-ui1-form
+   (including dynamically loaded Quick Add). */
+.gloskin-ui1 .woocommerce .quantity .qty,.gloskin-ui1-form .quantity .qty{width:76px;min-height:var(--gloskin-field-height);padding:10px 12px;text-align:center}
 
 /* Validation: Woo adds these classes to the .form-row wrapper (not the input
    itself) once a submission attempt fails, so this never flags an untouched
    required field on page load. Border + tinted surface, never color alone --
    Woo's own error text remains the primary, always-present signal. */
-.gloskin-ui1 .woocommerce form .form-row.woocommerce-invalid input.input-text,.gloskin-ui1 .woocommerce form .form-row.woocommerce-invalid-required-field input.input-text,.gloskin-ui1 .woocommerce form .form-row.woocommerce-invalid select,.gloskin-ui1 .woocommerce form .form-row.woocommerce-invalid textarea{border-color:var(--gloskin-accent-strong);background:color-mix(in srgb,var(--gloskin-accent) 4%,var(--gloskin-field-bg))}
+.gloskin-ui1 .woocommerce form .form-row.woocommerce-invalid input.input-text,.gloskin-ui1 .woocommerce form .form-row.woocommerce-invalid-required-field input.input-text,.gloskin-ui1 .woocommerce form .form-row.woocommerce-invalid select,.gloskin-ui1 .woocommerce form .form-row.woocommerce-invalid textarea,.gloskin-ui1-auth-forms [aria-invalid="true"]{border-color:var(--gloskin-accent-strong);background:color-mix(in srgb,var(--gloskin-accent) 4%,var(--gloskin-field-bg))}
 .gloskin-ui1 .woocommerce-error,.gloskin-ui1 .woocommerce-message,.gloskin-ui1 .woocommerce-info{display:flex;align-items:center;gap:12px;margin:0 0 20px;padding:14px 16px;border:1px solid var(--gloskin-border);border-top:2px solid var(--gloskin-accent);border-radius:var(--gloskin-field-radius);background:var(--gloskin-bg);list-style:none}
 .gloskin-ui1 .woocommerce-error{border-top-color:var(--gloskin-accent-strong)}
 .gloskin-ui1 .woocommerce-error li{margin:0}
@@ -257,15 +277,16 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1 .wc-block-components-text-input input,.gloskin-ui1 .wc-block-components-textarea textarea,.gloskin-ui1 .wc-block-components-combobox input{min-height:var(--gloskin-field-height);border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-field-bg)}
 .gloskin-ui1 .wc-block-components-checkbox svg{fill:var(--gloskin-accent)}
 
-@media (max-width:760px){.gloskin-ui1 .woocommerce .quantity .qty{width:84px}.gloskin-ui1 .select2-results__option{padding:11px 14px}}
+@media (max-width:760px){.gloskin-ui1 .woocommerce .quantity .qty,.gloskin-ui1-form .quantity .qty{width:84px}.gloskin-ui1 .select2-results__option{padding:11px 14px}}
 
 /* Gloskin Commerce Interaction Bridge v1 -- small presentation feedback for
    native Woo add-to-cart requests. WooCommerce's own wc-add-to-cart.js
    toggles .loading/.added; aria-busy is set/cleared by the small JS bridge
    in gloskin-ui1-core.js. Neither this CSS nor that JS mutates cart state --
    Woo alone owns the request, fragments and cart mutation. */
-.gloskin-ui1-button.loading,.gloskin-ui1-button[aria-busy="true"]{opacity:.6;pointer-events:none}
+.gloskin-ui1-button.loading,.gloskin-ui1-button[aria-busy="true"],.gloskin-ui1-form button.loading,.gloskin-ui1-form button[aria-busy="true"],.gloskin-ui1-auth-forms .button.loading,.gloskin-ui1-auth-forms .button[aria-busy="true"]{opacity:.6;pointer-events:none}
 .gloskin-ui1-button.added::after{content:"\2713";margin-left:6px}
+.gloskin-ui1-form button:disabled,.gloskin-ui1-form button.disabled,.gloskin-ui1-auth-forms .button:disabled,.gloskin-ui1-auth-forms .button.disabled{background:var(--gloskin-field-disabled);color:var(--gloskin-muted);border-color:var(--gloskin-field-border);opacity:.72;cursor:not-allowed;pointer-events:none}
 
 /* Gloskin Catalog Discovery v1 -- compact category rail + catalog header.
    Pure navigation/presentation reusing the Form Kit field tokens for a
@@ -436,8 +457,8 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloski
  * SP-004 -- Gloskin Quick Add modal. Same overlay contract as Search/
  * Auth/Cart/Wishlist (data-gloskin-overlay, aria-hidden, hidden), so the
  * existing single-overlay JS controller owns focus/scroll lock without
- * any new plumbing. Structurally modeled on the auth overlay so it never
- * introduces a second overlay visual language.
+ * any new plumbing. Modal CSS owns geometry; the dynamically applied
+ * .gloskin-ui1-form root receives the shared Form/Action skin above.
  * ----------------------------------------------------------------- */
 .gloskin-ui1-quickadd{position:fixed;z-index:9998;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity 240ms ease;pointer-events:none}
 .gloskin-ui1-quickadd[aria-hidden="false"]{opacity:1;pointer-events:auto}
@@ -447,12 +468,11 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloski
 .gloskin-ui1-quickadd[aria-hidden="false"] .gloskin-ui1-quickadd__panel{transform:translateY(0)}
 .gloskin-ui1-quickadd__head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
 .gloskin-ui1-quickadd__head strong{font-family:var(--gloskin-font-heading);font-size:1.15rem;font-weight:600}
-.gloskin-ui1-quickadd__close{flex:0 0 auto;width:38px;height:38px;border:1px solid var(--gloskin-border);border-radius:999px;background:transparent;color:inherit;cursor:pointer;display:grid;place-items:center}
+.gloskin-ui1-quickadd__close{flex:0 0 auto}
 .gloskin-ui1-quickadd__body{display:grid;gap:16px}
 .gloskin-ui1-quickadd__product{display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:center}
 .gloskin-ui1-quickadd__image{width:96px;height:96px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);object-fit:contain;background:var(--gloskin-surface-strong)}
 .gloskin-ui1-quickadd__form form.cart{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
-.gloskin-ui1-quickadd__form .single_add_to_cart_button[aria-busy="true"]{opacity:.72;pointer-events:none}
 .gloskin-ui1-quickadd__loading{display:flex;align-items:center;justify-content:center;min-height:160px;color:var(--gloskin-muted)}
 .gloskin-ui1-quickadd__error{margin:0;padding:12px 14px;border:1px solid color-mix(in srgb,var(--gloskin-accent) 40%,var(--gloskin-border));border-radius:var(--gloskin-radius-sm);background:var(--gloskin-accent-soft);color:var(--gloskin-text)}
 @media (max-width:600px){
@@ -469,23 +489,12 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloski
 .gloskin-ui1-card--product .gloskin-ui1-card__actions{display:grid;grid-template-columns:minmax(0,1fr);gap:0;margin-top:auto;padding-top:18px;min-width:0}
 .gloskin-ui1-card--product .gloskin-ui1-card__actions .gloskin-ui1-button{display:inline-flex;align-items:center;justify-content:center;width:100%;max-width:100%;min-width:0;min-height:44px;text-align:center;white-space:normal}
 
-/* -----------------------------------------------------------------
- * Commerce accent normalization. The base ruleset (gloskin-ui1-core-base.css)
- * already colors every Woo `.button` the Gloskin accent, but only inside a
- * `.woocommerce` ancestor -- true on Cart/Checkout/My Account and the
- * native single-product summary (single_add_to_cart_button, Related
- * Products buttons), so those need no change here. Shop/Skincare/Home
- * product cards (including AJAX-injected Shop cards, which reuse the exact
- * same gloskin_ui1_render_product_card() markup) and the Quick Add modal
- * render outside that ancestor, so their purchase CTA otherwise falls back
- * to an unstyled `.gloskin-ui1-button` base with no `--primary` variant.
- * This closes exactly that gap -- the neutral "Lihat Produk" ghost
- * fallback and the secondary View Cart link below are deliberately never
- * matched, and an invalid/out-of-stock control stays visually neutral.
- * ----------------------------------------------------------------- */
-.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button,.gloskin-ui1-quickadd__form .single_add_to_cart_button{background:var(--gloskin-accent);color:var(--gloskin-inverse);border-color:transparent}
-.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button:hover,.gloskin-ui1-quickadd__form .single_add_to_cart_button:hover{background:var(--gloskin-accent-strong)}
-.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button.disabled,.gloskin-ui1-quickadd__form .single_add_to_cart_button:disabled,.gloskin-ui1-quickadd__form .single_add_to_cart_button.disabled{background:var(--gloskin-surface-strong);color:var(--gloskin-muted);border-color:var(--gloskin-border);opacity:.7;pointer-events:none}
+/* Catalog cards are outside .woocommerce/.gloskin-ui1-form, so this one card
+   action remains the explicit catalog purchase skin. Quick Add is no longer
+   matched here: it inherits the global Form/Action Kit. */
+.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button{background:var(--gloskin-accent);color:var(--gloskin-inverse);border-color:transparent}
+.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button:hover{background:var(--gloskin-accent-strong)}
+.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button.disabled{background:var(--gloskin-surface-strong);color:var(--gloskin-muted);border-color:var(--gloskin-border);opacity:.7;pointer-events:none}
 
 /* Post-success View Cart -- secondary action, never the primary accent
  * treatment above. Covers Woo's own native `added_to_cart wc-forward`
@@ -514,7 +523,7 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.ca
 .gloskin-ui1-quickadd__form .woocommerce-variation{margin:0;min-width:0}
 .gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;min-width:0}
 .gloskin-ui1-quickadd__form .quantity{margin:0}
-.gloskin-ui1-quickadd__form .single_add_to_cart_button{width:100%;max-width:100%;min-width:0;min-height:44px}
+.gloskin-ui1-quickadd__form .single_add_to_cart_button{width:100%;max-width:100%;min-width:0}
 .gloskin-ui1-quickadd__loading{min-height:220px}
 .gloskin-ui1-quickadd__status:empty{display:none}
 .gloskin-ui1-quickadd__error{display:grid;gap:12px;align-content:center;min-height:120px}
@@ -621,7 +630,7 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.ca
    is introduced. prefers-reduced-motion is already handled globally
    (gloskin-ui1-core-base.css forces every transition-duration to 0.01ms). */
 .gloskin-ui1-button:active{transform:translateY(0)}
-.gloskin-ui1-form button:active,.gloskin-ui1-form input[type="submit"]:active,.gloskin-ui1 .woocommerce a.button:active,.gloskin-ui1 .woocommerce button.button:active,.gloskin-ui1 .woocommerce input.button:active,.gloskin-ui1 .wc-block-components-button:active{transform:translateY(1px)}
+.gloskin-ui1-form button:active,.gloskin-ui1-form input[type="submit"]:active,.gloskin-ui1-auth-forms .button:active,.gloskin-ui1 .woocommerce a.button:active,.gloskin-ui1 .woocommerce button.button:active,.gloskin-ui1 .woocommerce input.button:active,.gloskin-ui1 .wc-block-components-button:active{transform:translateY(1px)}
 
 /* 5. Cart/order tables outside My Account (Cart, order-received, order-pay)
    share the exact table.shop_table surface gloskin-ui1-readiness.css

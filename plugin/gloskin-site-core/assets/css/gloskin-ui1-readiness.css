@@ -68,7 +68,7 @@
 .woocommerce-account #customer_login .col-1,.woocommerce-account #customer_login .col-2{float:none;width:auto;margin:0}
 .woocommerce-account .woocommerce-form-login,.woocommerce-account .woocommerce-form-register{margin:0;padding:0;border:0;background:transparent}
 
-/* Quick Auth: native Woo form markup inside the existing unified overlay controller. */
+/* Quick Auth: modal CSS owns geometry only. Form/action skin comes from the global kit in core.css. */
 .gloskin-ui1-auth-overlay{position:fixed;z-index:9998;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity 240ms ease;pointer-events:none}
 .gloskin-ui1-auth-overlay[aria-hidden="false"]{opacity:1;pointer-events:auto}.gloskin-ui1-auth-overlay[hidden]{display:none}
 .gloskin-ui1-auth-overlay__backdrop{position:absolute;inset:0;border:0;background:color-mix(in srgb,var(--gloskin-brand-charcoal) 52%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
@@ -76,19 +76,15 @@
 .gloskin-ui1-auth-overlay[aria-hidden="false"] .gloskin-ui1-auth-overlay__panel{transform:translateY(0)}
 .gloskin-ui1-auth-overlay__head{display:grid;grid-template-columns:1fr auto;gap:10px 18px;align-items:start;margin-bottom:20px}
 .gloskin-ui1-auth-overlay__head h2{margin:0;font-family:var(--gloskin-font-heading);font-size:clamp(1.65rem,3vw,2.25rem);font-weight:600}.gloskin-ui1-auth-overlay__head p{grid-column:1;margin:0;color:var(--gloskin-muted)}
-.gloskin-ui1-auth-overlay__head>.gloskin-ui1-sheet__close{grid-column:2;grid-row:1;width:38px;height:38px;border:1px solid var(--gloskin-border);border-radius:999px;background:transparent;color:var(--gloskin-text);cursor:pointer;display:grid;place-items:center}
+.gloskin-ui1-auth-overlay__head>.gloskin-ui1-sheet__close{grid-column:2;grid-row:1}
 .gloskin-ui1-auth-switch{display:flex;gap:6px;margin:0 0 22px;padding:4px;border-radius:999px;background:var(--gloskin-surface)}
 .gloskin-ui1-auth-switch button{flex:1;min-height:38px;border:0;border-radius:999px;background:transparent;color:var(--gloskin-muted);font:inherit;font-weight:700;cursor:pointer}.gloskin-ui1-auth-switch button.is-active{background:var(--gloskin-bg);color:var(--gloskin-text);box-shadow:0 1px 5px color-mix(in srgb,var(--gloskin-text) 8%,transparent)}
 .gloskin-ui1-auth-overlay #customer_login{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}.gloskin-ui1-auth-overlay #customer_login .col-1,.gloskin-ui1-auth-overlay #customer_login .col-2{float:none;width:auto;margin:0}
 .gloskin-ui1-auth-overlay [data-gloskin-auth-forms].is-enhanced #customer_login{display:block}.gloskin-ui1-auth-overlay [data-gloskin-auth-forms].is-enhanced #customer_login .col-1,.gloskin-ui1-auth-overlay [data-gloskin-auth-forms].is-enhanced #customer_login .col-2{width:100%}
 .gloskin-ui1-auth-overlay .woocommerce-form{margin:0;padding:0;border:0;background:transparent}.gloskin-ui1-auth-overlay .woocommerce-form h2,.gloskin-ui1-auth-overlay #customer_login h2{font-family:var(--gloskin-font-heading);font-size:1.3rem}
-.gloskin-ui1-auth-overlay .form-row{margin-bottom:14px}.gloskin-ui1-auth-overlay label{display:block;margin-bottom:6px;font-size:.9rem;font-weight:700}.gloskin-ui1-auth-overlay input.input-text{width:100%;min-height:48px;padding:10px 13px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);background:var(--gloskin-surface);color:var(--gloskin-text);font:inherit}.gloskin-ui1-auth-overlay input.input-text:hover{border-color:color-mix(in srgb,var(--gloskin-accent) 32%,var(--gloskin-border))}
-/* :focus-visible (not :focus) so a mouse click never shows a ring here
-   while keyboard focus still does -- same rule every other field in this
-   kit follows; the shared field-focus-ring token keeps it one system
-   instead of this overlay's own bespoke outline. */
-.gloskin-ui1-auth-overlay input.input-text:focus-visible{outline:none;border-color:var(--gloskin-accent);background:var(--gloskin-field-bg-focus);box-shadow:var(--gloskin-field-focus-ring)}
-.gloskin-ui1-auth-overlay .woocommerce-form-login__rememberme{display:inline-flex;align-items:center;gap:8px}.gloskin-ui1-auth-overlay .woocommerce-form-login__rememberme input{margin:0}.gloskin-ui1-auth-overlay .button{min-height:44px;padding:10px 18px;border:1px solid var(--gloskin-accent);border-radius:999px;background:var(--gloskin-accent);color:var(--gloskin-inverse);font:inherit;font-weight:700;cursor:pointer}.gloskin-ui1-auth-overlay .lost_password{margin-bottom:0}.gloskin-ui1-auth-overlay .lost_password a{color:var(--gloskin-accent-readable)}
+.gloskin-ui1-auth-overlay .form-row{margin-bottom:14px}
+.gloskin-ui1-auth-overlay .woocommerce-form-login__rememberme{display:inline-flex;align-items:center;gap:8px}.gloskin-ui1-auth-overlay .woocommerce-form-login__rememberme input{margin:0}
+.gloskin-ui1-auth-overlay .lost_password{margin-bottom:0}.gloskin-ui1-auth-overlay .lost_password a{color:var(--gloskin-accent-readable)}
 
 @media (max-width:782px){
  .woocommerce-account .gloskin-ui1-commerce-heading>.gloskin-ui1-container,.woocommerce-account .gloskin-ui1-commerce-native{width:calc(100% - 28px)}
