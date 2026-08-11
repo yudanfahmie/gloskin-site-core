@@ -108,6 +108,17 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 	 * overwrites an existing merchant configuration, and never creates a
 	 * duplicate page.
 	 *
+	 * Documented lifecycle exception (architecture audit, hotfix): this is
+	 * the one place in the plugin allowed to check class_exists('WooCommerce')
+	 * outside the canonical WooCommerce_Adapter. LifecycleService runs from
+	 * admin_init and from the static Kernel::activate()/deactivate()
+	 * entrypoints WordPress calls directly on register_activation_hook/
+	 * register_deactivation_hook -- neither path ever constructs
+	 * Gloskin_Site_Core_WooCommerce_Adapter (Kernel::boot() only
+	 * instantiates it on the non-admin frontend branch), so there is no
+	 * adapter instance to delegate to here. This narrow exception is
+	 * enforced, not merely asserted, by tests/check-architecture.sh.
+	 *
 	 * @param int $shop_page_id Gloskin's own provisioned /shop/ page ID.
 	 * @return void
 	 */

@@ -3,6 +3,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+./tests/check-architecture.sh
 python tests/check-language.py
 python tests/sample-product-migration-contract.py
 php tests/sample-product-migration.php
@@ -13,6 +14,7 @@ php tests/sample-product-woo-missing.php
 ./tests/plugin-check-remediation-contract.sh
 ./tests/single-product-commerce-contract.sh
 php tests/single-product-guard-contract.php
+node tests/single-product-ajax-payload.test.js
 python tests/readiness-contract-smoke.py
 php tests/readiness-php-smoke.php
 php tests/rendered-shell-auth-smoke.php

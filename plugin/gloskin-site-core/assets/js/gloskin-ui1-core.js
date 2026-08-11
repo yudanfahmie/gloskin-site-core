@@ -724,23 +724,144 @@
 	 * Woo's own script fires, so the existing initCart() listener (added
 	 * long before this task) opens the cart sheet -- this never
 	 * duplicates that logic. On any failure it falls back to a genuine
-	 * native form submit, so Woo's own server-rendered validation/stock
-	 * notices take over exactly as they would with JS disabled.
+	 * native form resubmission, so Woo's own server-rendered validation/
+	 * stock notices take over exactly as they would with JS disabled.
 	 * ----------------------------------------------------------------- */
 
-	function ajaxAddToCart(form, button) {
+	/**
+	 * Resolve the control that actually triggered this submit. Prefer the
+	 * browser's own SubmitEvent.submitter (correct even if a form ever had
+	 * more than one submit control); fall back to the canonical Woo
+	 * .single_add_to_cart_button only when a submitter genuinely is not
+	 * available (older engines, or a non-click implicit submission some
+	 * browsers do not attach a submitter to).
+	 */
+	function resolveWooSubmitter(form, event) {
+		if (event && event.submitter) { return event.submitter; }
+		return form.querySelector('.single_add_to_cart_button[type="submit"]') || form.querySelector('.single_add_to_cart_button');
+	}
+
+	/**
+	 * Single shared eligibility gate for both the single-product page and
+	 * the Quick Add modal: never intercept a disabled/unavailable control,
+	 * and for a variations_form, never intercept until Woo's own variation
+	 * script has produced a valid, positive variation_id. This is the one
+	 * place that decision is made, so both callers can never drift.
+	 */
+	function shouldInterceptWooSubmit(form, submitter) {
+		if (!submitter || submitter.disabled || submitter.classList.contains('disabled')) {
+			return false;
+		}
+		if (form.classList.contains('variations_form')) {
+			var variationField = form.querySelector('input.variation_id, input[name="variation_id"]');
+			var variationId = variationField ? parseInt(variationField.value, 10) : 0;
+			if (!variationId) { return false; }
+		}
+		return true;
+	}
+
+	/**
+	 * Serialize a Woo form the same way a real native submission would:
+	 * every named, enabled field (respecting checkbox/radio checked
+	 * state), plus the *actual* activated submitter's own name/value.
+	 * Deliberately manual rather than the browser-only
+	 * `new FormData(form, submitter)` constructor overload -- that
+	 * two-argument form is an HTML-spec browser integration with no
+	 * equivalent in a plain JS/Node environment, so keeping this explicit
+	 * is both more portable and independently testable (see
+	 * tests/single-product-ajax-payload.test.js) without pulling in a DOM
+	 * emulation dependency this repo does not otherwise need.
+	 */
+	function serializeWooForm(form, submitter) {
+		var formData = new FormData();
+		var fields = form.querySelectorAll('input[name], select[name], textarea[name]');
+		Array.prototype.forEach.call(fields, function (field) {
+			if (field.disabled) { return; }
+			var type = (field.type || '').toLowerCase();
+			if (type === 'submit' || type === 'button' || type === 'image' || type === 'reset' || type === 'file') { return; }
+			if ((type === 'checkbox' || type === 'radio') && !field.checked) { return; }
+			formData.append(field.name, field.value);
+		});
+		if (submitter && submitter.name) {
+			formData.append(submitter.name, submitter.value);
+		}
+		return formData;
+	}
+
+	/**
+	 * Build the exact wc-ajax=add_to_cart payload from a real Woo form,
+	 * normalizing only the one field WC_AJAX::add_to_cart() actually keys
+	 * off: product_id. Every other Woo-rendered field (quantity,
+	 * variation_id, attribute_*, nonces) travels through unmodified --
+	 * nothing here is guessed or hand-rolled.
+	 */
+	function buildAddToCartPayload(form, submitter) {
+		var formData = serializeWooForm(form, submitter);
+
+		var variationField = form.querySelector('input.variation_id, input[name="variation_id"]');
+		var variationId = variationField ? parseInt(variationField.value, 10) : 0;
+
+		if (variationId > 0) {
+			/* WC_AJAX::add_to_cart() resolves which product to mutate purely
+			 * from product_id, and treats the request as a variation add
+			 * when product_id itself identifies the *variation* post
+			 * (WC_Cart::add_to_cart() -> wc_get_product($product_id) is a
+			 * WC_Product_Variation). Post the Woo-selected variation as
+			 * product_id -- never the variable parent -- while keeping the
+			 * native variation_id field too. This never guesses a
+			 * variation; it only relays what Woo's own variation form
+			 * already computed. */
+			formData.set('product_id', String(variationId));
+			formData.set('variation_id', String(variationId));
+		} else if (!formData.get('product_id')) {
+			var fromSubmitter = submitter && submitter.name === 'add-to-cart' && submitter.value ? submitter.value : '';
+			var hiddenAddToCart = form.querySelector('input[name="add-to-cart"]');
+			var fallbackId = fromSubmitter || (hiddenAddToCart ? hiddenAddToCart.value : '');
+			if (fallbackId) { formData.set('product_id', fallbackId); }
+		}
+
+		return formData;
+	}
+
+	/**
+	 * Native fallback: re-dispatch a genuine browser submission carrying
+	 * the real submitter, so Woo's own form action/method, interactive
+	 * validation, and any other registered submit listeners all run
+	 * exactly as they would with JS disabled. requestSubmit() re-fires the
+	 * 'submit' event (unlike .submit()), so a one-shot bypass flag lets
+	 * that exact next submit fall straight through to the browser instead
+	 * of re-entering this same AJAX interception.
+	 */
+	function nativeFallbackSubmit(form, submitter) {
+		if (typeof form.requestSubmit === 'function') {
+			form.setAttribute('data-gloskin-ajax-bypass', '1');
+			try {
+				form.requestSubmit(submitter || undefined);
+				return;
+			} catch (e) {
+				form.removeAttribute('data-gloskin-ajax-bypass');
+			}
+		}
+		/* Small legacy fallback only, for engines without requestSubmit():
+		 * cannot carry the submitter's name/value, but still preserves the
+		 * form's real action/method -- never a custom cart endpoint. */
+		form.submit();
+	}
+
+	function ajaxAddToCart(form, submitter) {
 		var config = window.gloskinData || {};
 		if (!config.addToCartAjaxUrl || typeof fetch === 'undefined' || typeof FormData === 'undefined') {
 			return false;
 		}
 
-		var formData = new FormData(form);
-		var productIdField = form.querySelector('input[name="add-to-cart"]');
-		if (productIdField && !formData.get('product_id')) {
-			formData.set('product_id', productIdField.value);
+		var formData = buildAddToCartPayload(form, submitter);
+		if (!formData.get('product_id')) {
+			/* Nothing to identify the product -- never invent one. Decline
+			 * to intercept so the caller's native fallback takes over. */
+			return false;
 		}
 
-		if (button) { button.setAttribute('aria-busy', 'true'); }
+		if (submitter) { submitter.setAttribute('aria-busy', 'true'); }
 
 		fetch(config.addToCartAjaxUrl, { method: 'POST', credentials: 'same-origin', body: formData })
 			.then(function (res) {
@@ -749,23 +870,24 @@
 			})
 			.then(function (response) {
 				if (!response || response.error) { throw new Error('add_to_cart_error'); }
-				if (button) { button.setAttribute('aria-busy', 'false'); }
+				if (submitter) { submitter.setAttribute('aria-busy', 'false'); }
 				if (window.jQuery) {
 					window.jQuery(document.body).trigger('added_to_cart', [
 						response.fragments,
 						response.cart_hash,
-						button ? window.jQuery(button) : window.jQuery()
+						submitter ? window.jQuery(submitter) : window.jQuery()
 					]);
 				} else {
 					overlay.open('cart');
 				}
 			})
 			.catch(function () {
-				/* Restore button state and fall back to a real native POST --
-				 * never invent Gloskin-only error copy here; Woo's own
-				 * server-rendered notices are the authoritative error UX. */
-				if (button) { button.removeAttribute('aria-busy'); }
-				form.submit();
+				/* Restore button state and fall back to a real native
+				 * resubmission -- never invent Gloskin-only error copy here;
+				 * Woo's own server-rendered notices are the authoritative
+				 * error UX. */
+				if (submitter) { submitter.removeAttribute('aria-busy'); }
+				nativeFallbackSubmit(form, submitter);
 			});
 
 		return true;
@@ -784,22 +906,24 @@
 		if (!form) { return; }
 
 		form.addEventListener('submit', function (event) {
-			var button = form.querySelector('.single_add_to_cart_button');
-			if (!button || button.disabled || button.classList.contains('disabled')) {
-				/* Woo's own variation script owns this disabled state until a
-				 * valid, purchasable, in-stock variation is selected. */
+			if (form.getAttribute('data-gloskin-ajax-bypass') === '1') {
+				/* One-shot native-fallback resubmission -- let it proceed
+				 * uninterrupted instead of re-entering AJAX interception. */
+				form.removeAttribute('data-gloskin-ajax-bypass');
 				return;
 			}
-			if (form.classList.contains('variations_form')) {
-				var variationId = form.querySelector('input.variation_id, input[name="variation_id"]');
-				if (!variationId || !parseInt(variationId.value, 10)) {
-					/* No Woo-selected variation yet -- never AJAX-add the
-					 * variable parent blindly; let native submit/validation run. */
-					return;
-				}
+			var submitter = resolveWooSubmitter(form, event);
+			if (!shouldInterceptWooSubmit(form, submitter)) {
+				/* Woo's own variation script owns the disabled state until a
+				 * valid, purchasable, in-stock variation is selected -- never
+				 * AJAX-add the variable parent blindly; let native
+				 * submit/validation run. */
+				return;
 			}
 			event.preventDefault();
-			ajaxAddToCart(form, button);
+			if (!ajaxAddToCart(form, submitter)) {
+				nativeFallbackSubmit(form, submitter);
+			}
 		});
 	}
 
@@ -840,17 +964,20 @@
 				window.jQuery(form).wc_variation_form();
 			}
 			form.addEventListener('submit', function (event) {
-				var button = form.querySelector('.single_add_to_cart_button');
-				if (!button || button.disabled || button.classList.contains('disabled')) { return; }
-				if (form.classList.contains('variations_form')) {
-					var variationId = form.querySelector('input.variation_id, input[name="variation_id"]');
-					if (!variationId || !parseInt(variationId.value, 10)) { return; }
+				if (form.getAttribute('data-gloskin-ajax-bypass') === '1') {
+					form.removeAttribute('data-gloskin-ajax-bypass');
+					return;
 				}
+				var submitter = resolveWooSubmitter(form, event);
+				if (!shouldInterceptWooSubmit(form, submitter)) { return; }
 				event.preventDefault();
-				ajaxAddToCart(form, button);
-				/* Close the quick-add modal as the cart sheet takes over --
-				 * one overlay owner at a time, via the existing controller. */
-				overlay.close();
+				if (ajaxAddToCart(form, submitter)) {
+					/* Close the quick-add modal as the cart sheet takes over --
+					 * one overlay owner at a time, via the existing controller. */
+					overlay.close();
+				} else {
+					nativeFallbackSubmit(form, submitter);
+				}
 			});
 		}
 
@@ -891,6 +1018,26 @@
 			if (!productId) { return; }
 			event.preventDefault();
 			open(productId);
+		});
+
+		/* Native Woo Related Products cards (body.single-product
+		 * .related.products) render through Woo's own content-product.php
+		 * loop, not the Gloskin product-card helper -- there is no second
+		 * card renderer or related-products query to keep in sync here.
+		 * Bridge the exact same real add_to_cart_button.product_type_variable
+		 * control (canonical href + data-product_id, Woo's own loop
+		 * contract) into the same Quick Add modal purely via event
+		 * delegation. Without JS the exact same link still navigates to the
+		 * product page normally. */
+		document.addEventListener('click', function (event) {
+			var relatedTrigger = event.target.closest && event.target.closest(
+				'body.single-product .related.products a.add_to_cart_button.product_type_variable[data-product_id]:not([data-gloskin-quickadd-open])'
+			);
+			if (!relatedTrigger) { return; }
+			var relatedProductId = relatedTrigger.getAttribute('data-product_id');
+			if (!relatedProductId) { return; }
+			event.preventDefault();
+			open(relatedProductId);
 		});
 	}
 
@@ -1083,9 +1230,27 @@
 		initWishlist();
 	}
 
-	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', init);
-	} else {
-		init();
+	/* Browser entrypoint only -- guarded so this file can also be required
+	 * from plain Node for the payload-construction unit tests below
+	 * (tests/single-product-ajax-payload.test.js), without needing a DOM
+	 * emulation dependency this repo does not otherwise carry. */
+	if (typeof document !== 'undefined') {
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', init);
+		} else {
+			init();
+		}
+	}
+
+	/* Node-only export of the small pure functions the payload-contract
+	 * regression test exercises directly. `module` never exists in a
+	 * browser, so this branch is always dead code there. */
+	if (typeof module !== 'undefined' && module.exports) {
+		module.exports = {
+			resolveWooSubmitter: resolveWooSubmitter,
+			shouldInterceptWooSubmit: shouldInterceptWooSubmit,
+			serializeWooForm: serializeWooForm,
+			buildAddToCartPayload: buildAddToCartPayload
+		};
 	}
 }());

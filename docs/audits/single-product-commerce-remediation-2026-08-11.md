@@ -417,3 +417,61 @@ The product journey must become:
 **Single variable product -> native inline Woo variation selection -> Woo AJAX add -> Gloskin cart sheet**
 
 while the single-product page contains exactly one product UI, one gallery, one form, one tabs section and one related-products section, with sharp responsive product imagery and no second commerce engine.
+
+---
+
+# 2026-08-11 hotfix verification/closure addendum
+
+Targeted release-blocker correction on top of `df49478` (the commit that closed the sections above). This does not rewrite any finding recorded earlier in this document; it records what the hotfix pass actually verified, fixed, and could not verify.
+
+## Real defects found and fixed in the original AJAX bridge
+
+- **Simple-product `product_id` was silently never sent.** WooCommerce's own `single-product/add-to-cart/simple.php` template puts `name="add-to-cart" value="<id>"` on the submit **button**, not a hidden field. The original bridge only ever read `input[name="add-to-cart"]`, which does not exist for simple products, so `product_id` was never included in the AJAX payload. `WC_AJAX::add_to_cart()` calls `wp_die( 0 )` when `product_id` is absent, which is not valid JSON, so every simple-product AJAX attempt was silently failing and falling back to a native submit. Fixed: `product_id` is now derived from the real activated submitter (`event.submitter`, with a `.single_add_to_cart_button` fallback), matching Woo's own button-carries-the-id convention.
+- **Variable AJAX would have posted the wrong product.** The bridge sent Woo's rendered `product_id` field as-is, which is the *parent* variable product's ID. `WC_AJAX::add_to_cart()` resolves which product to mutate purely from `product_id`, and only correctly identifies a variation add when `product_id` itself is the **variation's** post ID. Fixed: once Woo's own variation script has produced a valid `variation_id > 0`, the payload's `product_id` is overridden to that variation ID (kept alongside the native `variation_id` field). No variation is ever guessed; the value is only ever read from Woo's own computed hidden field.
+- **Native fallback used `form.submit()`.** This bypasses the `submit` event entirely (no interactive validation, no other registered submit listeners), and for a simple product it could never include the button's own `name="add-to-cart"` value since `.submit()` never carries a submitter. Fixed: `nativeFallbackSubmit()` now calls `form.requestSubmit(submitter)`, which re-dispatches a genuine `submit` event carrying the real submitter, with a one-shot `data-gloskin-ajax-bypass` flag so that specific resubmission does not re-enter AJAX interception. A bare `form.submit()` remains only as the smallest possible fallback for engines without `requestSubmit()`.
+- **Native Woo Related Products cards had no Quick Add bridge.** They render through Woo's own `content-product.php` loop, not the Gloskin product-card helper, so the original `[data-gloskin-quickadd-open]` delegation never matched them. Fixed: a second, narrowly scoped delegated click listener matches `body.single-product .related.products a.add_to_cart_button.product_type_variable[data-product_id]` directly (Woo's own native loop markup and `data-product_id` contract) and opens the same Quick Add modal. No second related-products query or card renderer was introduced.
+- **The Quick Add public projection did not check catalog visibility.** A product explicitly marked "Search results only" or "Hidden" could still be pulled into the catalog Quick Add surface by guessing its ID. Fixed: `rest_quick_add_projection()` now also rejects products excluded from the catalog via the same Woo-native `exclude-from-catalog` visibility term the rest of the catalog projection already enforces (`is_excluded_from_catalog()`). This is a read-only consistency check, not an authentication system.
+
+All four are proven behaviorally (not just by grep) in `tests/single-product-ajax-payload.test.js`, run via plain Node against fixtures shaped exactly like WooCommerce's real simple/variable markup -- no DOM-emulation dependency was added; the payload-construction functions are exported from `gloskin-ui1-core.js` behind a `typeof module !== 'undefined'` guard that is always dead code in a browser.
+
+## SP-001 root cause: still not runtime-verified; guard narrowed
+
+The canonical sample bundle's own "Gloskin Fresh Gel Facial Wash" description (`plugin/gloskin-site-core/migration-runtime/gloskin-sample-products-v1/products.json`) was inspected directly in this pass: it contains only plain `<h3>`/`<p>` HTML, no Woo block or shortcode of any kind. This confirms the original finding's own observation and means the previous **broad** content guard (stripping entire shortcode families -- `[products]`, `[product_category]`, `[product]`, any `woocommerce_*` shortcode, and eight different Woo block names) was not justified by any verified evidence and risked silently deleting legitimate editorial/cross-sell content a merchant might deliberately place in a description.
+
+This environment has no live WordPress/WooCommerce/theme/browser runtime, so the actual staging `post_content` for the specific product in the screenshot, and the live `the_content` filter chain/callback list active on that install, could not be inspected. **SP-001 runtime root cause remains PENDING, not VERIFIED.**
+
+The guard has been narrowed to the one mechanism that is unambiguously never legitimate regardless of the unconfirmed trigger: a product description embedding a `woocommerce/single-product` block or legacy `[product_page]` shortcode that targets **that exact same product's own ID** (true self-recursion). A single-product block/shortcode referencing a *different* product, and every other Woo catalog shortcode (`[products]`, `[product_category]`, `[product]`, `[add_to_cart]`), now passes through completely untouched. Proven behaviorally in `tests/single-product-guard-contract.php` (self-reference stripped; other-product and legitimate content preserved byte-for-byte).
+
+If the duplicate still reproduces on staging after this deploys, the remaining candidates are genuinely external to this plugin (an active theme's own `single-product.php` override, or another active plugin double-invoking the Woo template loader) and require direct staging inspection (view-source, Query Monitor's hook list, or equivalent) that only someone with staging/wp-admin access can perform.
+
+## `tests/check-architecture.sh` Woo-availability-gate audit
+
+Three files contained `class_exists( 'WooCommerce' )`. Audited each:
+
+- `class-gloskin-site-core-woocommerce-adapter.php` -- the canonical adapter; kept, unconditionally.
+- `class-gloskin-site-core-asset-service.php` -- **redundant**, removed. Its per-handle `wp_script_is( '...', 'registered' )` checks are already sufficient: when WooCommerce is inactive, Woo never registers those handles, so the class-existence check added no additional safety.
+- `class-gloskin-site-core-lifecycle-service.php::align_woo_shop_page()` -- **genuinely necessary, kept and documented in place.** This method runs from `admin_init` and from the static `Kernel::activate()`/`deactivate()` entrypoints WordPress calls directly; `Kernel::boot()` only ever constructs `WooCommerce_Adapter` on the non-admin frontend branch, so there is no adapter instance for this method to delegate to in either of its real call paths.
+
+`tests/check-architecture.sh` now asserts this by name (exactly the adapter, plus at most this one documented lifecycle exception) instead of a blind count, so it is wired into `tests/check-runtime.sh` and genuinely enforces the rule rather than gaming the grep.
+
+## Plugin Check ledger
+
+WPPC-013 changed from ambiguous `OPEN` to `BLOCKED_OWNER/DEFERRED`, consistent with WPPC-012 -- both wait on the same owner license/distribution decision and neither is independently actionable. No license was invented; no WPPC-001..011/014/015 fix already closed was reopened or reverted.
+
+A fresh WordPress Plugin Check scan was **not run** -- this environment has no WP-CLI, PHPCS, or Plugin Check tooling installed, and no staging access. Reported SKIPPED, not PASS.
+
+## Verification status
+
+| Item | Status |
+|---|---|
+| Simple AJAX payload contract | PASS (behavioral, `tests/single-product-ajax-payload.test.js`) / browser SKIPPED |
+| Variable AJAX payload contract | PASS (behavioral) / browser SKIPPED |
+| Native fallback semantics | PASS (behavioral + static) |
+| Catalog Quick Add | PASS (static + endpoint hardening) / browser SKIPPED |
+| Related-product Quick Add | PASS (static bridge added) / browser SKIPPED |
+| SP-001 runtime root cause | **PENDING** (guard narrowed to verified-safe scope; live trigger unconfirmed) |
+| Duplicate DOM counts | SKIPPED -- no live WordPress/browser runtime in this environment |
+| `./tests/check-architecture.sh` | PASS (truthful, no longer gamed) |
+| `./tests/check-runtime.sh` | PASS |
+| Fresh Plugin Check | SKIPPED -- no tooling/staging access |
+| Staging browser UAT (A-H) | SKIPPED -- no live WordPress/WooCommerce/theme/browser runtime in this environment |

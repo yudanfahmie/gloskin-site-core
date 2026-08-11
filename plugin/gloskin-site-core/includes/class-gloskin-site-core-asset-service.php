@@ -84,10 +84,19 @@ final class Gloskin_Site_Core_Asset_Service {
 	 * keeps sole ownership of the script's src/deps/localized cart params,
 	 * and nothing here registers, forks or replaces a Woo asset.
 	 *
+	 * Availability hardening note (architecture audit, hotfix): this
+	 * deliberately does not also gate on class_exists('WooCommerce'). The
+	 * per-handle wp_script_is(..., 'registered') checks below are already
+	 * sufficient and strictly narrower -- when WooCommerce is inactive,
+	 * Woo never registers these handles at all, so every branch here is
+	 * already a no-op without a redundant second gate. WooCommerce
+	 * availability itself stays owned by the one canonical adapter
+	 * (Gloskin_Site_Core_WooCommerce_Adapter::is_available()).
+	 *
 	 * @return void
 	 */
 	private function enqueue_native_commerce_scripts() {
-		if ( ! class_exists( 'WooCommerce' ) || ! function_exists( 'wp_script_is' ) ) {
+		if ( ! function_exists( 'wp_script_is' ) ) {
 			return;
 		}
 		if ( wp_script_is( 'wc-cart-fragments', 'registered' ) ) {

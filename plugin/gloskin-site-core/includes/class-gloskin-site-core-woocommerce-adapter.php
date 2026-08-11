@@ -562,7 +562,14 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		if ( ! is_object( $quick_add_product ) || ! method_exists( $quick_add_product, 'get_status' )
 			|| 'publish' !== $quick_add_product->get_status()
 			|| ! method_exists( $quick_add_product, 'get_type' ) || 'variable' !== $quick_add_product->get_type()
-			|| ! $quick_add_product->is_purchasable() ) {
+			|| ! $quick_add_product->is_purchasable()
+			|| $this->is_excluded_from_catalog( $id ) ) {
+			/* Hardening: align this public projection with the same
+			 * catalog-visibility policy products()/products_paginated()
+			 * already enforce, so a product explicitly marked "Search
+			 * results only" or "Hidden" cannot be pulled into the catalog
+			 * Quick Add surface merely by guessing its ID. This is a
+			 * read-only consistency check, not an auth system. */
 			return rest_ensure_response( $empty );
 		}
 
@@ -757,6 +764,28 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 *
 	 * @return array<int,array<string,mixed>>
 	 */
+	/**
+	 * Single-product companion to catalog_visibility_tax_query(): the same
+	 * Woo-native "exclude-from-catalog" term, checked against one already-
+	 * resolved product ID rather than added to a wc_get_products() query.
+	 * Used by rest_quick_add_projection() so a product hidden from the
+	 * catalog cannot be exposed there merely by knowing/guessing its ID.
+	 *
+	 * @param int $product_id Product ID.
+	 * @return bool
+	 */
+	private function is_excluded_from_catalog( $product_id ) {
+		if ( ! function_exists( 'wc_get_product_visibility_term_ids' ) || ! function_exists( 'has_term' ) ) {
+			return false;
+		}
+		$terms = wc_get_product_visibility_term_ids();
+		$exclude_from_catalog = isset( $terms['exclude-from-catalog'] ) ? absint( $terms['exclude-from-catalog'] ) : 0;
+		if ( ! $exclude_from_catalog ) {
+			return false;
+		}
+		return (bool) has_term( $exclude_from_catalog, 'product_visibility', absint( $product_id ) );
+	}
+
 	private function catalog_visibility_tax_query() {
 		if ( ! function_exists( 'wc_get_product_visibility_term_ids' ) ) {
 			return array();
@@ -858,29 +887,49 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	}
 
 	/**
-	 * SP-001 content-integrity guard for the single product's own render.
+	 * SP-001 content-integrity guard for the single product's own render --
+	 * narrowed after verification (see the 2026-08-11 hotfix addendum in
+	 * docs/audits/single-product-commerce-remediation-2026-08-11.md).
 	 *
 	 * WooCommerce's own single-product tabs template calls the core
 	 * the_content() template tag on the product's own post_content, which
 	 * runs it through the full `the_content` filter chain (Gutenberg block
-	 * rendering, shortcode execution, wpautop, embeds). A product's stored
-	 * description can never legitimately contain a nested copy of a Woo
-	 * single-product block or catalog shortcode -- if one was ever pasted,
-	 * imported, or copied from another product into the description field,
-	 * Woo would recursively render a second full gallery/summary/variation-
-	 * form/tabs stack *inside* the Description tab: exactly the nested
-	 * `.product` root SP-001 forbids.
+	 * rendering, shortcode execution, wpautop, embeds). The canonical
+	 * sample bundle's own "Gloskin Fresh Gel Facial Wash" description
+	 * (plugin/gloskin-site-core/migration-runtime/gloskin-sample-products-v1/products.json)
+	 * was inspected directly and contains only plain heading/paragraph
+	 * HTML -- no Woo block or shortcode of any kind -- so no evidence
+	 * supports treating a broad shortcode family as the confirmed root
+	 * cause. This repo has no live WordPress/WooCommerce/browser runtime,
+	 * so the exact staging post_content and active callback chain could
+	 * not be inspected live; that remains explicitly PENDING, not claimed
+	 * VERIFIED (see the audit doc).
 	 *
-	 * This is scoped strictly to the product's own singular render
-	 * (is_product() + in_the_loop() + the current loop post literally being
-	 * that product), so it never touches product content rendered anywhere
-	 * else -- catalog/related-product cards and REST/search results use
+	 * What *is* true regardless of the unconfirmed trigger: a product's
+	 * own description can never legitimately embed a live copy of its own
+	 * single-product page -- that is true self-recursion, not editorial
+	 * content, and is the one mechanism that would reproduce SP-001's
+	 * reported symptom (a second full gallery/summary/tabs/add-to-cart
+	 * stack nested inside the Description tab) verbatim. This guard is
+	 * narrowed to strip *only* a `woocommerce/single-product` Gutenberg
+	 * block or a legacy `[product_page]` shortcode whose own target ID
+	 * equals the current product's own ID. Genuine editorial/cross-sell
+	 * Woo content -- [products], [product_category], [product],
+	 * [add_to_cart], a single-product block/shortcode referencing a
+	 * *different* product, or any other woocommerce/* block -- is left
+	 * completely untouched; none of those render a nested `.product` root
+	 * matching the reported symptom, and stripping them was unjustified
+	 * overreach not supported by any verified evidence.
+	 *
+	 * Scoped strictly to the product's own singular render (is_product() +
+	 * in_the_loop() + the current loop post literally being that product),
+	 * so it never touches product content rendered anywhere else --
+	 * catalog/related-product cards and REST/search results use
 	 * title/excerpt fields, never the_content(). It never disables
-	 * the_content filtering globally, never forks a Woo template, and never
-	 * hides anything with CSS: the offending embed is removed from the
-	 * content itself, at the exact boundary that would produce the
-	 * duplicate, before block/shortcode execution runs (priority 1, ahead
-	 * of core's do_blocks/do_shortcode).
+	 * the_content filtering globally, never forks a Woo template, and
+	 * never hides anything with CSS: a genuinely self-referencing embed is
+	 * removed from the content itself, before block/shortcode execution
+	 * runs (priority 1, ahead of core's do_blocks/do_shortcode).
 	 *
 	 * @param string $content Content being filtered.
 	 * @return string
@@ -896,28 +945,50 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		if ( ! $post instanceof WP_Post || 'product' !== $post->post_type ) {
 			return $content;
 		}
+		$current_id = absint( $post->ID );
 
-		$woo_block_names = 'single-product|product-details|product-gallery|add-to-cart-form|product-price|product-meta|breadcrumbs|product-image-gallery|product-details-heading|product-stock-indicator';
-		// Paired blocks, e.g. <!-- wp:woocommerce/single-product --> ... <!-- /wp:woocommerce/single-product -->.
-		$content = (string) preg_replace(
-			'#<!--\s*wp:woocommerce/(?:' . $woo_block_names . ')(?:\s+\{[^}]*\})?\s*-->.*?<!--\s*/wp:woocommerce/(?:' . $woo_block_names . ')\s*-->#is',
-			'',
+		// Paired block, e.g. <!-- wp:woocommerce/single-product {"productId":501} --> ... <!-- /wp:woocommerce/single-product -->.
+		$content = (string) preg_replace_callback(
+			'#<!--\s*wp:woocommerce/single-product(\s+(\{[^}]*\}))?\s*-->.*?<!--\s*/wp:woocommerce/single-product\s*-->#is',
+			function ( $matches ) use ( $current_id ) {
+				return $this->strip_if_self_referencing_single_product( $matches, $current_id );
+			},
 			$content
 		);
-		// Self-closing blocks, e.g. <!-- wp:woocommerce/product-gallery /-->.
-		$content = (string) preg_replace(
-			'#<!--\s*wp:woocommerce/(?:' . $woo_block_names . ')(?:\s+\{[^}]*\})?\s*/-->#is',
-			'',
+		// Self-closing block, e.g. <!-- wp:woocommerce/single-product {"productId":501} /-->.
+		$content = (string) preg_replace_callback(
+			'#<!--\s*wp:woocommerce/single-product(\s+(\{[^}]*\}))?\s*/-->#is',
+			function ( $matches ) use ( $current_id ) {
+				return $this->strip_if_self_referencing_single_product( $matches, $current_id );
+			},
 			$content
 		);
-		// Self-referencing product/catalog shortcodes, paired or self-closing.
-		$content = (string) preg_replace(
-			'/\[(product_page|add_to_cart|add_to_cart_url|products|product_category|product|woocommerce_[a-z_]+)\b[^\]]*\](?:.*?\[\/\1\])?/is',
-			'',
+		// Legacy [product_page id="..."] shortcode, self-referencing only.
+		$content = (string) preg_replace_callback(
+			'/\[product_page\b([^\]]*)\]/i',
+			function ( $matches ) use ( $current_id ) {
+				if ( preg_match( '/\bid\s*=\s*["\']?(\d+)/', (string) $matches[1], $id_match )
+					&& absint( $id_match[1] ) === $current_id ) {
+					return '';
+				}
+				return $matches[0];
+			},
 			$content
 		);
 
 		return $content;
+	}
+
+	/**
+	 * @param array<int,string> $matches Regex match set; index 2 (if present) is the block's raw JSON attrs.
+	 * @param int                $current_id Current product's own post ID.
+	 * @return string
+	 */
+	private function strip_if_self_referencing_single_product( array $matches, $current_id ) {
+		$json      = isset( $matches[2] ) ? $matches[2] : '';
+		$attrs     = '' !== $json ? json_decode( $json, true ) : null;
+		$target_id = is_array( $attrs ) && isset( $attrs['productId'] ) ? absint( $attrs['productId'] ) : 0;
+		return ( $target_id && $target_id === $current_id ) ? '' : $matches[0];
 	}
 
 	/**

@@ -31,8 +31,21 @@ if (( service_count > 8 )); then
 	exit 1
 fi
 
-woo_gate_count="$(grep -RIl "class_exists( 'WooCommerce'" "$plugin_root/includes" --include='*.php' | wc -l | tr -d ' ')"
-[[ "$woo_gate_count" == "1" ]] || { echo "Woo availability must be resolved in exactly one adapter, found $woo_gate_count gates" >&2; exit 1; }
+# Woo availability must resolve through exactly one canonical adapter.
+# The one narrow, documented exception: LifecycleService::align_woo_shop_page()
+# runs from admin_init and from the static Kernel::activate()/deactivate()
+# entrypoints, neither of which ever constructs WooCommerce_Adapter (see
+# Kernel::boot()), so there is no adapter instance for it to delegate to.
+# This is asserted explicitly by name, not merely counted, so a *new*
+# unrelated gate anywhere else still fails the check.
+woo_gate_files="$(grep -RIl "class_exists( 'WooCommerce'" "$plugin_root/includes" --include='*.php')"
+woo_gate_count="$(echo "$woo_gate_files" | grep -c . || true)"
+adapter_file="$plugin_root/includes/class-gloskin-site-core-woocommerce-adapter.php"
+lifecycle_file="$plugin_root/includes/class-gloskin-site-core-lifecycle-service.php"
+echo "$woo_gate_files" | grep -qF "$adapter_file" || { echo "canonical WooCommerce_Adapter no longer resolves Woo availability" >&2; exit 1; }
+unexpected_gates="$(echo "$woo_gate_files" | grep -vF "$adapter_file" | grep -vF "$lifecycle_file" || true)"
+[[ -z "$unexpected_gates" ]] || { echo "Woo availability gate(s) outside the adapter and the documented LifecycleService exception: $unexpected_gates" >&2; exit 1; }
+[[ "$woo_gate_count" -le 2 ]] || { echo "expected at most 2 Woo availability gates (adapter + documented lifecycle exception), found $woo_gate_count: $woo_gate_files" >&2; exit 1; }
 
 required_templates=(home about treatments treatment skincare skincare-category clinics clinic doctors doctor contact insights shop)
 for template in "${required_templates[@]}"; do
