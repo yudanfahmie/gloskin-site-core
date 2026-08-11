@@ -115,7 +115,10 @@
 			document.documentElement.classList.add('gloskin-ui1-overlay-open');
 			holdStickyNav();
 			setTriggersExpanded(id, true);
-			var nodes = focusable(el);
+			/* Focus only meaningful dialog controls. Backdrops are intentionally
+			 * outside role=dialog and must never win initial keyboard focus. */
+			var panel = el.querySelector('[role="dialog"]');
+			var nodes = focusable(panel || el);
 			if (nodes.length) { nodes[0].focus(); }
 		}
 
@@ -774,6 +777,14 @@
 		}
 	}
 
+	function isWooSubmitBusy(submitter) {
+		return !!(
+			submitter &&
+			typeof submitter.getAttribute === 'function' &&
+			submitter.getAttribute('aria-busy') === 'true'
+		);
+	}
+
 	function requestWooFragmentRefresh(runtime) {
 		var root = runtimeWindow(runtime);
 		if (
@@ -808,10 +819,12 @@
 
 	function handleWooAddToCartResponse(response, submitter, runtime) {
 		var root = runtimeWindow(runtime);
+		var options = arguments.length > 3 && arguments[3] ? arguments[3] : {};
+		var redirectOnError = options.redirectOnError !== false;
 		clearWooSubmitBusy(submitter);
 		if (!response) { return false; }
 		if (response.error) {
-			if (response.product_url && root && root.location) {
+			if (redirectOnError && response.product_url && root && root.location) {
 				root.location.href = response.product_url;
 				return false;
 			}
@@ -893,7 +906,8 @@
 	/**
 	 * Native fallback: re-dispatch a genuine browser submission carrying
 	 * the real submitter, so Woo's own form action/method, validation and
-	 * listeners remain authoritative.
+	 * listeners remain authoritative. It is only legal before any mutation
+	 * request has been dispatched.
 	 */
 	function nativeFallbackSubmit(form, submitter) {
 		if (typeof form.requestSubmit === 'function') {
@@ -909,6 +923,7 @@
 	}
 
 	function ajaxAddToCart(form, submitter) {
+		var lifecycle = arguments.length > 2 && arguments[2] ? arguments[2] : {};
 		if (!hasWooAjaxBridge()) { return false; }
 		var config = window.gloskinData || {};
 		var formData;
@@ -921,6 +936,12 @@
 
 		if (submitter) { submitter.setAttribute('aria-busy', 'true'); }
 
+		function notifyFailure(response, error) {
+			if (typeof lifecycle.onFailure === 'function') {
+				lifecycle.onFailure(response || null, error || null);
+			}
+		}
+
 		try {
 			window.fetch(config.addToCartAjaxUrl, { method: 'POST', credentials: 'same-origin', body: formData })
 				.then(function (res) {
@@ -929,15 +950,27 @@
 				})
 				.then(function (response) {
 					if (!response) { throw new Error('add_to_cart_response'); }
-					handleWooAddToCartResponse(response, submitter);
+					var succeeded = handleWooAddToCartResponse(
+						response,
+						submitter,
+						undefined,
+						{ redirectOnError: lifecycle.redirectOnError !== false }
+					);
+					if (succeeded) {
+						if (typeof lifecycle.onSuccess === 'function') { lifecycle.onSuccess(response); }
+						return;
+					}
+					notifyFailure(response, null);
 				})
-				.catch(function () {
+				.catch(function (error) {
 					clearWooSubmitBusy(submitter);
 					requestWooFragmentRefresh();
+					notifyFailure(null, error);
 				});
 		} catch (e) {
 			clearWooSubmitBusy(submitter);
 			requestWooFragmentRefresh();
+			notifyFailure(null, e);
 		}
 
 		return true;
@@ -959,6 +992,10 @@
 				return;
 			}
 			var submitter = resolveWooSubmitter(form, event);
+			if (isWooSubmitBusy(submitter)) {
+				event.preventDefault();
+				return;
+			}
 			if (!shouldInterceptWooSubmit(form, submitter) || !hasWooAjaxBridge()) {
 				return;
 			}
@@ -982,17 +1019,39 @@
 
 		var cache = {};
 		var currentId = null;
+		var currentUrl = '';
 
 		function canOpenQuickAdd() {
 			return hasWooVariationRuntime() && typeof fetch === 'function';
+		}
+
+		function recoveryMarkup(message, productUrl) {
+			var html = '<div class="gloskin-ui1-quickadd__error" role="status">';
+			html += '<p>' + escapeHtml(message) + '</p>';
+			if (productUrl) {
+				html += '<a class="gloskin-ui1-button gloskin-ui1-button--ghost gloskin-ui1-button--small" href="' + escapeHtml(productUrl) + '">' + escapeHtml('Lihat Produk') + '</a>';
+			}
+			return html + '</div>';
 		}
 
 		function renderLoading() {
 			body.innerHTML = '<div class="gloskin-ui1-quickadd__loading"><span>' + escapeHtml('Memuat produk…') + '</span></div>';
 		}
 
-		function renderError() {
-			body.innerHTML = '<p class="gloskin-ui1-quickadd__error">' + escapeHtml('Produk belum dapat dimuat. Silakan buka halaman produk untuk memilih varian.') + '</p>';
+		function renderLoadError() {
+			body.innerHTML = recoveryMarkup('Produk belum dapat dimuat. Silakan buka halaman produk untuk memilih varian.', currentUrl);
+		}
+
+		function clearMutationStatus() {
+			var status = body.querySelector('[data-gloskin-quickadd-status]');
+			if (status) { status.innerHTML = ''; }
+		}
+
+		function renderMutationError(response) {
+			var status = body.querySelector('[data-gloskin-quickadd-status]');
+			if (!status) { return; }
+			var productUrl = response && response.product_url ? response.product_url : currentUrl;
+			status.innerHTML = recoveryMarkup('Produk belum berhasil ditambahkan. Pilihan Anda tetap tersedia; silakan coba lagi atau buka halaman produk.', productUrl);
 		}
 
 		function bindForm(form) {
@@ -1004,43 +1063,58 @@
 					return;
 				}
 				var submitter = resolveWooSubmitter(form, event);
+				if (isWooSubmitBusy(submitter)) {
+					event.preventDefault();
+					return;
+				}
 				if (!shouldInterceptWooSubmit(form, submitter) || !hasWooAjaxBridge()) { return; }
 				event.preventDefault();
-				if (ajaxAddToCart(form, submitter)) {
-					overlay.close();
-				} else {
+				clearMutationStatus();
+				/* Dispatch is not success. Keep Quick Add open until Woo emits
+				 * added_to_cart; initCart then switches through the one existing
+				 * overlay controller so Quick Add and Cart can never overlap. */
+				if (!ajaxAddToCart(form, submitter, {
+					redirectOnError: false,
+					onFailure: function (response) { renderMutationError(response); }
+				})) {
 					nativeFallbackSubmit(form, submitter);
 				}
 			});
 		}
 
 		function render(data) {
+			currentUrl = data.url || currentUrl;
 			var html = '<div class="gloskin-ui1-quickadd__product">';
 			html += data.image_html || '';
 			html += '<div><strong>' + escapeHtml(data.name || '') + '</strong>';
 			if (data.price_html) { html += '<div class="gloskin-ui1-product-price">' + data.price_html + '</div>'; }
 			html += '</div></div>';
 			html += '<div class="gloskin-ui1-quickadd__form">' + (data.form_html || '') + '</div>';
+			html += '<div class="gloskin-ui1-quickadd__status" data-gloskin-quickadd-status aria-live="polite"></div>';
 			body.innerHTML = html;
 			var form = body.querySelector('form.cart');
 			if (form) { bindForm(form); }
 		}
 
-		function open(productId) {
+		function open(productId, productUrl) {
 			currentId = productId;
+			currentUrl = productUrl || '';
 			overlay.open('quickadd');
 			if (cache[productId]) { render(cache[productId]); return; }
 			renderLoading();
 			var url = (config.restUrl || '/wp-json/gloskin/v1/') + 'products/quick-add?id=' + encodeURIComponent(productId);
 			fetch(url, { headers: { 'X-WP-Nonce': config.restNonce || '' } })
-				.then(function (res) { return res.json(); })
+				.then(function (res) {
+					if (!res.ok) { throw new Error('quickadd_http'); }
+					return res.json();
+				})
 				.then(function (data) {
 					if (!data || !data.found) { throw new Error('quickadd_not_found'); }
 					cache[productId] = data;
 					if (currentId === productId) { render(data); }
 				})
 				.catch(function () {
-					if (currentId === productId) { renderError(); }
+					if (currentId === productId) { renderLoadError(); }
 				});
 		}
 
@@ -1050,7 +1124,7 @@
 			var productId = trigger.getAttribute('data-gloskin-quickadd-product');
 			if (!productId) { return; }
 			event.preventDefault();
-			open(productId);
+			open(productId, trigger.getAttribute('href') || '');
 		});
 
 		document.addEventListener('click', function (event) {
@@ -1061,7 +1135,7 @@
 			var relatedProductId = relatedTrigger.getAttribute('data-product_id');
 			if (!relatedProductId) { return; }
 			event.preventDefault();
-			open(relatedProductId);
+			open(relatedProductId, relatedTrigger.getAttribute('href') || '');
 		});
 	}
 
@@ -1265,7 +1339,8 @@
 			hasWooVariationRuntime: hasWooVariationRuntime,
 			hasWooNativeAddToCartRuntime: hasWooNativeAddToCartRuntime,
 			dispatchWooAddedToCart: dispatchWooAddedToCart,
-			handleWooAddToCartResponse: handleWooAddToCartResponse
+			handleWooAddToCartResponse: handleWooAddToCartResponse,
+			isWooSubmitBusy: isWooSubmitBusy
 		};
 	}
 }());

@@ -394,3 +394,43 @@ body.single-product.gloskin-ui1 .related.products ul.products li.product .button
 	.gloskin-ui1-quickadd__panel{width:100%;max-height:calc(100dvh - max(12px,env(safe-area-inset-top)));border-radius:var(--gloskin-radius-lg) var(--gloskin-radius-lg) 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom))}
 }
 @media (prefers-reduced-motion:reduce){.gloskin-ui1-quickadd,.gloskin-ui1-quickadd__panel{transition:none !important}}
+
+/* Product-card action hardening: product cards alone own a bottom-anchored,
+   single-action footer. Generic clinic/doctor/treatment card geometry is not
+   affected. */
+.gloskin-ui1-card--product{display:grid;grid-template-rows:auto minmax(0,1fr);min-width:0;height:100%}
+.gloskin-ui1-card--product .gloskin-ui1-card__body{display:flex;flex-direction:column;min-width:0}
+.gloskin-ui1-card--product .gloskin-ui1-card__actions{display:grid;grid-template-columns:minmax(0,1fr);gap:0;margin-top:auto;padding-top:18px;min-width:0}
+.gloskin-ui1-card--product .gloskin-ui1-card__actions .gloskin-ui1-button{display:inline-flex;align-items:center;justify-content:center;width:100%;max-width:100%;min-width:0;min-height:44px;text-align:center;white-space:normal}
+
+/* Quick Add release hardening. Woo native variation markup remains untouched;
+   these scoped rules only stabilize geometry, scrolling and control fit. */
+.gloskin-ui1-quickadd__panel{display:flex;flex-direction:column;overflow:hidden}
+.gloskin-ui1-quickadd__head{flex:0 0 auto}
+.gloskin-ui1-quickadd__body{flex:1 1 auto;min-width:0;min-height:220px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding-right:2px}
+.gloskin-ui1-quickadd__product{grid-template-columns:96px minmax(0,1fr);min-width:0}
+.gloskin-ui1-quickadd__product>div{min-width:0;overflow-wrap:anywhere}
+.gloskin-ui1-quickadd__form,.gloskin-ui1-quickadd__form form.cart,.gloskin-ui1-quickadd__form .single_variation_wrap{min-width:0}
+.gloskin-ui1-quickadd__form form.cart{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch;margin:0}
+.gloskin-ui1-quickadd__form table.variations{width:100%;max-width:100%;margin:0;table-layout:fixed;border:0}
+.gloskin-ui1-quickadd__form table.variations th,.gloskin-ui1-quickadd__form table.variations td{display:block;width:100%;padding:0 0 8px;border:0;text-align:left}
+.gloskin-ui1-quickadd__form table.variations select{width:100%;max-width:100%;min-width:0}
+.gloskin-ui1-quickadd__form .single_variation_wrap{display:grid;gap:12px}
+.gloskin-ui1-quickadd__form .woocommerce-variation{margin:0;min-width:0}
+.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;min-width:0}
+.gloskin-ui1-quickadd__form .quantity{margin:0}
+.gloskin-ui1-quickadd__form .single_add_to_cart_button{width:100%;max-width:100%;min-width:0;min-height:44px}
+.gloskin-ui1-quickadd__loading{min-height:220px}
+.gloskin-ui1-quickadd__status:empty{display:none}
+.gloskin-ui1-quickadd__error{display:grid;gap:12px;align-content:center;min-height:120px}
+.gloskin-ui1-quickadd__error p{margin:0}
+.gloskin-ui1-quickadd__error .gloskin-ui1-button{justify-self:start}
+@media (max-width:600px){
+	.gloskin-ui1-quickadd__panel{padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+	.gloskin-ui1-quickadd__body{min-height:200px}
+	.gloskin-ui1-quickadd__product{grid-template-columns:72px minmax(0,1fr);gap:12px}
+	.gloskin-ui1-quickadd__image{width:72px;height:72px}
+	.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart{grid-template-columns:minmax(0,1fr);align-items:stretch}
+	.gloskin-ui1-quickadd__form .quantity .qty{width:96px;max-width:100%}
+	.gloskin-ui1-quickadd__error .gloskin-ui1-button{width:100%;justify-self:stretch}
+}

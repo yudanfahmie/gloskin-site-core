@@ -301,6 +301,10 @@ if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
 		$url      = isset( $product['url'] ) ? (string) $product['url'] : '';
 		$image_id = isset( $product['image_id'] ) ? absint( $product['image_id'] ) : 0;
 		$id       = isset( $product['id'] ) ? absint( $product['id'] ) : 0;
+		$type     = isset( $product['type'] ) ? (string) $product['type'] : '';
+		$is_variable = 'variable' === $type;
+		$can_purchase = ! empty( $product['purchasable'] ) && ! empty( $product['in_stock'] );
+		$action_url = $is_variable ? $url : ( isset( $product['add_to_cart_url'] ) ? (string) $product['add_to_cart_url'] : '' );
 		?>
 		<article class="gloskin-ui1-card gloskin-ui1-card--product">
 			<div class="gloskin-ui1-card__media-wrap">
@@ -318,38 +322,30 @@ if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
 				<?php if ( ! empty( $product['price_html'] ) ) : ?><div class="gloskin-ui1-product-price"><?php echo wp_kses_post( (string) $product['price_html'] ); ?></div><?php endif; ?>
 				<?php if ( ! empty( $product['short_description'] ) ) : ?><p class="gloskin-ui1-card__copy"><?php echo esc_html( wp_trim_words( (string) $product['short_description'], 24 ) ); ?></p><?php endif; ?>
 				<div class="gloskin-ui1-card__actions">
-					<a class="gloskin-ui1-text-link" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'Lihat Produk', 'gloskin-site-core' ); ?></a>
-					<?php if ( ! empty( $product['purchasable'] ) && ! empty( $product['in_stock'] ) && ! empty( $product['add_to_cart_url'] ) ) :
+					<?php if ( $can_purchase && '' !== $action_url ) :
 						/* Mirror WooCommerce's own native loop add-to-cart contract
 						 * (class/data-attribute composition) so Woo's own frontend
-						 * scripts (wc-add-to-cart.js) can bind to this button exactly
-						 * as they would to Woo's native archive markup -- ajax only
-						 * where Woo itself says the product supports it; every other
-						 * type/state falls back to a plain working link (Select
-						 * options / product page) with no Gloskin-invented shortcut. */
-						$is_variable  = 'variable' === (string) ( $product['type'] ?? '' );
+						 * scripts can bind exactly where Woo declares AJAX support.
+						 * Variable products keep the canonical product URL as their
+						 * no-JS fallback while Quick Add remains enhancement only. */
 						$cart_classes = array( 'gloskin-ui1-button', 'gloskin-ui1-button--small', 'button', 'add_to_cart_button' );
-						if ( ! empty( $product['type'] ) ) {
-							$cart_classes[] = 'product_type_' . sanitize_html_class( (string) $product['type'] );
+						if ( '' !== $type ) {
+							$cart_classes[] = 'product_type_' . sanitize_html_class( $type );
 						}
 						if ( ! empty( $product['ajax_add_to_cart'] ) ) {
 							$cart_classes[] = 'ajax_add_to_cart';
 						}
 						if ( $is_variable ) {
-							/* SP-004 progressive enhancement: the exact same canonical
-							 * href stays the no-JS/error fallback (Woo's own
-							 * add_to_cart_url() for a variable product resolves back
-							 * to the product page when no variation is selected). JS
-							 * only ever intercepts this one control to open the
-							 * Gloskin Quick Add modal; no second control is added. */
 							$cart_classes[] = 'gloskin-ui1-quickadd-trigger';
 						}
 						$cart_label = '' !== trim( (string) ( $product['add_to_cart_description'] ?? '' ) )
 							? (string) $product['add_to_cart_description']
-							: (string) $product['add_to_cart_text'];
-						$cart_text = $is_variable ? __( 'Pilih Varian', 'gloskin-site-core' ) : (string) $product['add_to_cart_text'];
+							: (string) ( $product['add_to_cart_text'] ?? '' );
+						$cart_text = $is_variable ? __( 'Pilih Varian', 'gloskin-site-core' ) : (string) ( $product['add_to_cart_text'] ?? '' );
 						?>
-						<a href="<?php echo esc_url( (string) $product['add_to_cart_url'] ); ?>" data-quantity="1" class="<?php echo esc_attr( implode( ' ', $cart_classes ) ); ?>" data-product_id="<?php echo esc_attr( (string) $id ); ?>" data-product_sku="<?php echo esc_attr( (string) ( $product['sku'] ?? '' ) ); ?>"<?php echo $is_variable ? ' data-gloskin-quickadd-open data-gloskin-quickadd-product="' . esc_attr( (string) $id ) . '" aria-haspopup="dialog"' : ''; ?> aria-label="<?php echo esc_attr( $cart_label ); ?>" rel="nofollow"><?php echo esc_html( $cart_text ); ?></a>
+						<a href="<?php echo esc_url( $action_url ); ?>" data-quantity="1" class="<?php echo esc_attr( implode( ' ', $cart_classes ) ); ?>" data-product_id="<?php echo esc_attr( (string) $id ); ?>" data-product_sku="<?php echo esc_attr( (string) ( $product['sku'] ?? '' ) ); ?>"<?php echo $is_variable ? ' data-gloskin-quickadd-open data-gloskin-quickadd-product="' . esc_attr( (string) $id ) . '" aria-haspopup="dialog"' : ''; ?> aria-label="<?php echo esc_attr( $cart_label ); ?>" rel="nofollow"><?php echo esc_html( $cart_text ); ?></a>
+					<?php elseif ( '' !== $url ) : ?>
+						<a class="gloskin-ui1-button gloskin-ui1-button--small gloskin-ui1-button--ghost" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'Lihat Produk', 'gloskin-site-core' ); ?></a>
 					<?php endif; ?>
 				</div>
 			</div>

@@ -15,7 +15,8 @@ const {
   hasWooVariationRuntime,
   hasWooNativeAddToCartRuntime,
   dispatchWooAddedToCart,
-  handleWooAddToCartResponse
+  handleWooAddToCartResponse,
+  isWooSubmitBusy
 } = require(corePath);
 
 function classList(names) {
@@ -106,9 +107,13 @@ const unselectedVariable = makeForm({
   classes: ['variations_form'],
   variationId: '0'
 });
-assert.strictEqual(shouldInterceptWooSubmit(unselectedVariable, variableButton), false, 'variable form must stay native until Woo selects a variation');
+assert.strictEqual(shouldInterceptWooSubmit(unselectedVariable, variableButton), false, 'variable form with no valid variation must not mutate cart');
 assert.strictEqual(shouldInterceptWooSubmit(simpleForm, submitter('101', { disabled: true })), false, 'disabled submitter must stay native');
 assert.strictEqual(shouldInterceptWooSubmit(simpleForm, submitter('101', { classList: classList(['disabled']) })), false, 'Woo disabled class must stay native');
+
+// Busy state is an explicit duplicate-submit guard while the POST is in flight.
+assert.strictEqual(isWooSubmitBusy({ getAttribute: (name) => name === 'aria-busy' ? 'true' : null }), true, 'aria-busy=true must block repeat submission');
+assert.strictEqual(isWooSubmitBusy({ getAttribute: () => 'false' }), false, 'aria-busy=false must not block a later user submission');
 
 // Unsupported Woo product roots must never enter the custom single-product AJAX bridge.
 for (const type of ['product-type-grouped', 'product-type-external', 'product-type-affiliate', 'product-type-custom']) {
@@ -132,7 +137,6 @@ assert.strictEqual(hasWooAjaxBridge(Object.assign({}, completeRuntime, { wc_cart
 const noVariationPlugin = Object.assign({}, completeRuntime, { jQuery: function () {} });
 noVariationPlugin.jQuery.fn = {};
 assert.strictEqual(hasWooVariationRuntime(noVariationPlugin), false, 'Quick Add must decline without wc_variation_form');
-
 
 // Network lifecycle: Woo's native add-to-cart runtime already owns the
 // fragments returned with added_to_cart, so a successful custom add must not
@@ -179,10 +183,9 @@ const successSubmitter = {
 };
 handleWooAddToCartResponse({ fragments: { '.mini': '<div></div>' }, cart_hash: 'ok' }, successSubmitter, successLifecycle.runtime);
 assert.deepStrictEqual(successBusyOps, [['remove', 'aria-busy']], 'successful AJAX response must clear aria-busy before Woo lifecycle dispatch');
-assert.deepStrictEqual(successLifecycle.events, ['added_to_cart'], 'successful native-runtime path must not request fragments twice');
+assert.deepStrictEqual(successLifecycle.events, ['added_to_cart'], 'successful native-runtime path must dispatch Woo added_to_cart');
 
-// Woo's own error redirect convention stays authoritative and busy state is
-// cleared before navigation. No second add-to-cart mutation is synthesized.
+// Default single-product behavior preserves Woo's own error redirect convention.
 const redirectLifecycle = eventRuntime(true);
 const busyOps = [];
 const busySubmitter = {
@@ -190,9 +193,24 @@ const busySubmitter = {
   setAttribute(name, value) { busyOps.push(['set', name, value]); }
 };
 handleWooAddToCartResponse({ error: true, product_url: '/product/needs-options/' }, busySubmitter, redirectLifecycle.runtime);
-assert.strictEqual(redirectLifecycle.runtime.location.href, '/product/needs-options/', 'response.error + product_url must follow Woo product URL');
+assert.strictEqual(redirectLifecycle.runtime.location.href, '/product/needs-options/', 'default response.error + product_url must follow Woo product URL');
 assert.deepStrictEqual(busyOps, [['remove', 'aria-busy']], 'Woo error redirect must clear aria-busy');
-assert.deepStrictEqual(redirectLifecycle.events, [], 'Woo error redirect must not dispatch success/refresh events');
+assert.deepStrictEqual(redirectLifecycle.events, [], 'Woo error redirect must not dispatch success events');
+
+// Quick Add may retain context on a Woo error response instead of navigating;
+// this path is non-mutating and only allows fragment reconciliation.
+const quickErrorLifecycle = eventRuntime(true);
+const quickBusyOps = [];
+const quickBusySubmitter = { removeAttribute(name) { quickBusyOps.push(['remove', name]); } };
+handleWooAddToCartResponse(
+  { error: true, product_url: '/product/needs-options/' },
+  quickBusySubmitter,
+  quickErrorLifecycle.runtime,
+  { redirectOnError: false }
+);
+assert.strictEqual(quickErrorLifecycle.runtime.location.href, '/before/', 'Quick Add error must keep user context instead of redirecting');
+assert.deepStrictEqual(quickBusyOps, [['remove', 'aria-busy']], 'Quick Add Woo error must clear aria-busy');
+assert.deepStrictEqual(quickErrorLifecycle.events, ['wc_fragment_refresh'], 'Quick Add error may only reconcile fragments non-mutatively');
 
 // Once ajaxAddToCart has reached fetch(), no catch path may replay the same
 // mutation through requestSubmit/native fallback. Pre-dispatch callers still
@@ -204,11 +222,39 @@ const ajaxSource = coreSource.slice(ajaxStart, ajaxEnd);
 assert(!ajaxSource.includes('nativeFallbackSubmit(form, submitter)'), 'post-dispatch AJAX failure must never replay add-to-cart through native submission');
 assert(ajaxSource.includes('clearWooSubmitBusy(submitter)'), 'post-dispatch failures must clear aria-busy');
 assert(ajaxSource.includes('requestWooFragmentRefresh()'), 'post-dispatch ambiguity may reconcile visible cart state non-mutatively');
+assert(ajaxSource.includes('notifyFailure(null, error)'), 'post-dispatch failure must expose a recoverable lifecycle callback');
 assert(coreSource.includes('if (!ajaxAddToCart(form, submitter)) {\n\t\t\t\tnativeFallbackSubmit(form, submitter);'), 'pre-dispatch payload/runtime failure must retain native fallback');
+
 const singleStart = coreSource.indexOf('function initSingleProductAjax()');
 const singleEnd = coreSource.indexOf('/* -----------------------------------------------------------------\n\t * SP-004', singleStart);
 const singleSource = coreSource.slice(singleStart, singleEnd);
-assert(singleSource.indexOf('!hasWooAjaxBridge()') < singleSource.indexOf('event.preventDefault();'), 'unavailable Woo bridge must return before preventDefault so native submission remains authoritative');
+const bridgeGate = singleSource.indexOf('if (!shouldInterceptWooSubmit(form, submitter) || !hasWooAjaxBridge())');
+const interceptPrevent = singleSource.indexOf('event.preventDefault();', bridgeGate);
+assert(bridgeGate >= 0 && interceptPrevent > bridgeGate, 'unavailable Woo bridge must return before the AJAX interception preventDefault so native submission remains authoritative');
+assert(singleSource.includes('if (isWooSubmitBusy(submitter))'), 'single-product AJAX must prevent accidental repeat submission while busy');
+
+// Quick Add dispatch is no longer treated as success. The modal remains open
+// until dispatchWooAddedToCart emits Woo's actual added_to_cart lifecycle;
+// initCart then switches to Cart through the one existing overlay controller.
+const quickStart = coreSource.indexOf('function initQuickAdd()');
+const quickEnd = coreSource.indexOf('/* -----------------------------------------------------------------\n\t * Wishlist', quickStart);
+assert(quickStart >= 0 && quickEnd > quickStart, 'Quick Add source block must be locatable');
+const quickSource = coreSource.slice(quickStart, quickEnd);
+assert(!quickSource.includes('if (ajaxAddToCart(form, submitter)) {\n\t\t\t\toverlay.close();'), 'Quick Add must not close merely because AJAX was dispatched');
+assert(!quickSource.includes('overlay.close();'), 'Quick Add must not own a competing success overlay transition');
+assert(quickSource.includes('redirectOnError: false'), 'Quick Add must preserve user context on Woo error response');
+assert(quickSource.includes('onFailure: function (response) { renderMutationError(response); }'), 'Quick Add must render post-dispatch recovery without replay');
+assert(quickSource.includes('if (isWooSubmitBusy(submitter))'), 'Quick Add must prevent accidental repeat submission while busy');
+assert(quickSource.includes("open(productId, trigger.getAttribute('href') || '')"), 'Quick Add recovery must retain the triggering canonical product URL');
+assert(quickSource.includes("open(relatedProductId, relatedTrigger.getAttribute('href') || '')"), 'Related Products must feed the same Quick Add recovery URL/controller');
+assert(quickSource.includes('data-gloskin-quickadd-status'), 'Quick Add must expose an in-dialog recovery/status region');
+assert(quickSource.includes('Lihat Produk'), 'Quick Add recovery must offer a real product-detail action when available');
+
+const cartStart = coreSource.indexOf('function initCart()');
+const cartEnd = coreSource.indexOf('/* -----------------------------------------------------------------\n\t * SP-003/SP-004', cartStart);
+const cartSource = coreSource.slice(cartStart, cartEnd);
+assert(cartSource.includes("on('added_to_cart'"), 'Woo actual success event must remain the transition signal');
+assert(cartSource.includes("overlay.open('cart');"), 'actual Woo success must switch through the existing overlay controller');
 
 // Both Quick Add entry paths call the same progressive runtime gate before
 // preventDefault; their real href remains server-rendered by the card/related link.

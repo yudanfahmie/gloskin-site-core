@@ -2,13 +2,9 @@
 declare(strict_types=1);
 
 /**
- * Proves the Gloskin product-card add-to-cart link mirrors WooCommerce's own
- * native loop add-to-cart contract (classes/data-attributes) so Woo's own
- * wc-add-to-cart.js can bind to it exactly as it would to Woo's native
- * archive markup -- and that eligibility is never hand-invented: it is read
- * straight from the values Gloskin_Site_Core_WooCommerce_Adapter::
- * normalize_products() computes from WC_Product (see task: "Gloskin Commerce
- * Interaction Bridge v1").
+ * Focused product-card commerce contract: one disciplined footer action while
+ * preserving WooCommerce's native loop add-to-cart compatibility and real
+ * product-detail fallbacks.
  */
 
 define( 'ABSPATH', __DIR__ . '/' );
@@ -43,8 +39,16 @@ function render_card( array $product ) {
 	return (string) ob_get_clean();
 }
 
+function footer_markup( $html ) {
+	if ( preg_match( '/<div class="gloskin-ui1-card__actions">(.*?)<\/div>/s', $html, $matches ) ) {
+		return $matches[1];
+	}
+	return '';
+}
+
 /* -----------------------------------------------------------------
- * A. Simple, AJAX-eligible product: full native Woo contract present.
+ * A. Simple, AJAX-eligible product: full native Woo contract present,
+ * with exactly one footer action and no competing detail text CTA.
  * ----------------------------------------------------------------- */
 $simple = array(
 	'id'                      => 101,
@@ -62,20 +66,22 @@ $simple = array(
 	'ajax_add_to_cart'        => true,
 );
 $html = render_card( $simple );
-ok( false !== strpos( $html, 'add_to_cart_button' ), 'simple: add_to_cart_button class present' );
-ok( false !== strpos( $html, 'ajax_add_to_cart' ), 'simple: ajax_add_to_cart class present when Woo supports it' );
-ok( false !== strpos( $html, 'product_type_simple' ), 'simple: product_type_<type> class present' );
-ok( false !== strpos( $html, 'data-product_id="101"' ), 'simple: data-product_id present' );
-ok( false !== strpos( $html, 'data-product_sku="GLS-001"' ), 'simple: data-product_sku present' );
-ok( false !== strpos( $html, 'data-quantity="1"' ), 'simple: data-quantity present' );
-ok( false !== strpos( $html, 'rel="nofollow"' ), 'simple: rel=nofollow present' );
-ok( false !== strpos( $html, 'gloskin-ui1-button' ) && false !== strpos( $html, 'gloskin-ui1-button--small' ), 'simple: Gloskin visual classes retained' );
-ok( 1 === preg_match( '/href="([^"]+)"[^>]*class="[^"]*add_to_cart_button/', $html, $m ) && '' !== trim( $m[1] ), 'simple: working href retained for JS-disabled fallback' );
+$footer = footer_markup( $html );
+ok( false !== strpos( $footer, 'button' ), 'simple: native Woo button class present' );
+ok( false !== strpos( $footer, 'add_to_cart_button' ), 'simple: add_to_cart_button class present' );
+ok( false !== strpos( $footer, 'ajax_add_to_cart' ), 'simple: ajax_add_to_cart class present only when Woo supports it' );
+ok( false !== strpos( $footer, 'product_type_simple' ), 'simple: product_type_<type> class present' );
+ok( false !== strpos( $footer, 'data-product_id="101"' ), 'simple: data-product_id present' );
+ok( false !== strpos( $footer, 'data-product_sku="GLS-001"' ), 'simple: data-product_sku present' );
+ok( false !== strpos( $footer, 'data-quantity="1"' ), 'simple: data-quantity present' );
+ok( false !== strpos( $footer, 'rel="nofollow"' ), 'simple: rel=nofollow present' );
+ok( 1 === substr_count( $footer, '<a ' ), 'simple: exactly one footer CTA' );
+ok( false === strpos( $footer, 'Lihat Produk' ), 'simple: duplicate Lihat Produk footer CTA removed' );
+ok( 1 === preg_match( '/href="([^"]+)"[^>]*class="[^"]*add_to_cart_button/', $footer, $m ) && '' !== trim( $m[1] ), 'simple: working native href retained' );
 
 /* -----------------------------------------------------------------
- * B. Variable product: purchasable/in-stock (so still gets a working
- * link to the product page for option selection) but NOT eligible for
- * archive AJAX -- Woo's own contract, never a Gloskin shortcut.
+ * B. Variable product: one Pilih Varian action, canonical href is retained
+ * for no-JS fallback, and Quick Add attributes remain enhancement-only.
  * ----------------------------------------------------------------- */
 $variable = array(
 	'id'                      => 202,
@@ -93,24 +99,35 @@ $variable = array(
 	'ajax_add_to_cart'        => false,
 );
 $html = render_card( $variable );
-ok( false === strpos( $html, 'ajax_add_to_cart' ), 'variable: ajax_add_to_cart class absent when Woo does not support it' );
-ok( false !== strpos( $html, 'add_to_cart_button' ), 'variable: still gets a purchasable/in-stock working link' );
-ok( false !== strpos( $html, 'product_type_variable' ), 'variable: product_type_variable class present' );
-ok( false !== strpos( $html, 'href="https://example.test/product/hydrating-serum/"' ), 'variable: link still navigates to product page (Select options), not blind AJAX' );
+$footer = footer_markup( $html );
+ok( false === strpos( $footer, 'ajax_add_to_cart' ), 'variable: no invented AJAX eligibility' );
+ok( false !== strpos( $footer, 'add_to_cart_button' ), 'variable: Woo loop action class retained' );
+ok( false !== strpos( $footer, 'product_type_variable' ), 'variable: product_type_variable class present' );
+ok( false !== strpos( $footer, 'href="https://example.test/product/hydrating-serum/"' ), 'variable: canonical product-detail href retained' );
+ok( false !== strpos( $footer, 'data-gloskin-quickadd-open' ), 'variable: Quick Add progressive-enhancement marker retained' );
+ok( false !== strpos( $footer, 'data-gloskin-quickadd-product="202"' ), 'variable: Quick Add product id retained' );
+ok( false !== strpos( $footer, 'aria-haspopup="dialog"' ), 'variable: dialog relationship retained' );
+ok( false !== strpos( $footer, '>Pilih Varian</a>' ), 'variable: disciplined Pilih Varian commerce action rendered' );
+ok( 1 === substr_count( $footer, '<a ' ), 'variable: exactly one footer CTA' );
+ok( false === strpos( $footer, 'Lihat Produk' ), 'variable: competing Lihat Produk footer CTA removed' );
 
 /* -----------------------------------------------------------------
- * Not purchasable / out of stock / missing URL: no add-to-cart link at
- * all (existing gate preserved; nothing new invented here).
+ * C. Unavailable/non-purchasable/no-cart-url products never receive a fake
+ * add-to-cart class. A single canonical detail action remains available.
  * ----------------------------------------------------------------- */
 foreach (
 	array(
 		'out of stock'    => array_merge( $simple, array( 'in_stock' => false ) ),
 		'not purchasable' => array_merge( $simple, array( 'purchasable' => false ) ),
-		'no url'          => array_merge( $simple, array( 'add_to_cart_url' => '' ) ),
+		'no cart url'     => array_merge( $simple, array( 'add_to_cart_url' => '' ) ),
 	) as $label => $fixture
 ) {
 	$html = render_card( $fixture );
-	ok( false === strpos( $html, 'add_to_cart_button' ), "gate preserved: {$label}" );
+	$footer = footer_markup( $html );
+	ok( false === strpos( $footer, 'add_to_cart_button' ), "unavailable: {$label} gets no fake add-to-cart" );
+	ok( false !== strpos( $footer, 'href="https://example.test/product/gentle-cleanser/"' ), "unavailable: {$label} keeps canonical detail navigation" );
+	ok( false !== strpos( $footer, '>Lihat Produk</a>' ), "unavailable: {$label} gets an intentional detail action" );
+	ok( 1 === substr_count( $footer, '<a ' ), "unavailable: {$label} has exactly one footer CTA" );
 }
 
 echo "product card commerce contract: OK\n";
