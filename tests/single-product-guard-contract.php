@@ -21,10 +21,12 @@ class WP_Post {
 $GLOBALS['gl_stub_is_product'] = true;
 $GLOBALS['gl_stub_in_the_loop'] = true;
 $GLOBALS['gl_stub_post'] = new WP_Post(501, 'product');
+$GLOBALS['gl_stub_queried_object'] = new WP_Post(501, 'product');
 
 function is_product() { return $GLOBALS['gl_stub_is_product']; }
 function in_the_loop() { return $GLOBALS['gl_stub_in_the_loop']; }
 function get_post() { return $GLOBALS['gl_stub_post']; }
+function get_queried_object() { return $GLOBALS['gl_stub_queried_object']; }
 function absint($value) { return abs((int) $value); }
 
 // Everything else this class file needs at parse time (none of it is
@@ -113,5 +115,25 @@ $GLOBALS['gl_stub_in_the_loop'] = true;
 $GLOBALS['gl_stub_post'] = new WP_Post(9, 'post');
 ok($adapter->guard_single_product_description_content($self_block) === $self_block, 'F3: must no-op when the loop post is not a product');
 $GLOBALS['gl_stub_post'] = new WP_Post(501, 'product');
+
+// I. Purchase-dock one-shot guard (2026-08-12 release-gate finding, live-
+// proven on staging): open_purchase_dock()/close_purchase_dock() must
+// render the dock wrapper AT MOST ONCE per request even when this same
+// product's own primary-product context (get_post() === get_queried_object(),
+// both product 501) is observed a second time -- exactly what an external,
+// same-product duplicate render looks like from inside this class, since
+// is_primary_single_product_context() alone cannot tell that apart from
+// the genuine primary render.
+ob_start(); $adapter->open_purchase_dock(); $i1_open = ob_get_clean();
+ok($i1_open === '<div class="gloskin-ui1-purchase-dock" data-gloskin-purchase-dock>', 'I1: first open_purchase_dock() in a primary context must render the wrapper');
+ob_start(); $adapter->close_purchase_dock(); $i1_close = ob_get_clean();
+ok($i1_close === '</div>', 'I2: matching close_purchase_dock() must render the closing tag');
+
+// Simulate a second same-product primary-context pass (the live-proven
+// duplicate render): still get_post() === get_queried_object(), same IDs.
+ob_start(); $adapter->open_purchase_dock(); $i2_open = ob_get_clean();
+ok($i2_open === '', 'I3: a second open_purchase_dock() this request must never render a second dock');
+ob_start(); $adapter->close_purchase_dock(); $i2_close = ob_get_clean();
+ok($i2_close === '', 'I4: close_purchase_dock() must stay balanced -- no stray closing tag for a dock that was never opened');
 
 echo "single-product SP-001 content guard contract: OK\n";

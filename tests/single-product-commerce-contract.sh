@@ -236,4 +236,19 @@ fi
 grep -qF "document.querySelector('[data-gloskin-purchase-dock] form.cart')" "$core_js" \
 	|| fail "single-product AJAX: must bind the canonical purchase-dock form only"
 
+# 2026-08-12 release-gate finding, live-proven on staging: an external,
+# same-product duplicate render (is_primary_single_product_context() alone
+# cannot distinguish "this same product rendered a second time by
+# something outside this plugin" from the genuine primary render -- both
+# legitimately see get_post() === get_queried_object()) could otherwise
+# make open_purchase_dock()/close_purchase_dock() emit a second floating
+# dock. A one-shot-per-request static guard makes the first invocation the
+# sole owner, guaranteeing at most one dock renders regardless of cause.
+grep -qF 'private static $purchase_dock_rendered = false;' "$adapter" \
+	|| fail "purchase dock: one-shot-per-request guard missing (duplicate dock reproduced live on staging)"
+grep -qF 'if ( self::$purchase_dock_rendered || ! $this->is_primary_single_product_context() ) {' "$adapter" \
+	|| fail "purchase dock: open_purchase_dock() no longer gates on the one-shot flag"
+grep -qF 'if ( ! self::$purchase_dock_open ) {' "$adapter" \
+	|| fail "purchase dock: close_purchase_dock() no longer stays balanced with the one-shot open flag"
+
 echo "single-product commerce contract passed"

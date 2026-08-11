@@ -81,7 +81,17 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * own local WP_Query renders. get_queried_object() is set once from the
 	 * *main* query and is never touched by that nested query's own
 	 * the_post() calls, so comparing it against the current global $post is
-	 * the reliable discriminator.
+	 * the reliable discriminator for a *different*-product embed.
+	 *
+	 * This deliberately does not, and cannot, detect the *same* product
+	 * being re-rendered a second time by something outside this plugin
+	 * (live staging proved such a duplicate can still occur; see the
+	 * 2026-08-12 release-gate addendum in
+	 * docs/audits/single-product-commerce-remediation-2026-08-11.md) --
+	 * from inside that second render, get_post() legitimately still
+	 * resolves to the same product ID as get_queried_object(). Guarding
+	 * against that is open_purchase_dock()'s own one-shot-per-request
+	 * responsibility below, kept as a separate, narrower concern.
 	 *
 	 * @return bool
 	 */
@@ -96,6 +106,22 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	}
 
 	/**
+	 * Whether a purchase dock is currently open (close_purchase_dock() must
+	 * only ever emit a closing tag for a dock this same request actually
+	 * opened, keeping the two calls balanced).
+	 *
+	 * @var bool
+	 */
+	private static $purchase_dock_open = false;
+
+	/**
+	 * Whether a purchase dock has already been emitted this request.
+	 *
+	 * @var bool
+	 */
+	private static $purchase_dock_rendered = false;
+
+	/**
 	 * Purchase dock open tag. Wraps Woo's own native form.cart output
 	 * (single-product/add-to-cart/simple.php and .../variable.php both fire
 	 * woocommerce_before_add_to_cart_form immediately before <form
@@ -104,12 +130,25 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * variation/quantity/Add to Cart control. Presentation only; CSS lives
 	 * in gloskin-ui1-core.css.
 	 *
+	 * One-shot-per-request hardening (2026-08-12 release-gate finding):
+	 * is_primary_single_product_context() alone cannot tell this render
+	 * apart from an external, same-product duplicate render elsewhere on
+	 * the same request -- both legitimately see get_post() === the page's
+	 * own queried product. Since a real Woo single-product page always
+	 * renders its own primary form.cart before any nested Description-tab
+	 * content, the *first* time this fires in a primary-product context is
+	 * always the genuine one; a static flag makes that the sole owner and
+	 * guarantees at most one dock renders regardless of what triggers a
+	 * second pass.
+	 *
 	 * @return void
 	 */
 	public function open_purchase_dock() {
-		if ( ! $this->is_primary_single_product_context() ) {
+		if ( self::$purchase_dock_rendered || ! $this->is_primary_single_product_context() ) {
 			return;
 		}
+		self::$purchase_dock_rendered = true;
+		self::$purchase_dock_open     = true;
 		echo '<div class="gloskin-ui1-purchase-dock" data-gloskin-purchase-dock>';
 	}
 
@@ -117,9 +156,10 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return void
 	 */
 	public function close_purchase_dock() {
-		if ( ! $this->is_primary_single_product_context() ) {
+		if ( ! self::$purchase_dock_open ) {
 			return;
 		}
+		self::$purchase_dock_open = false;
 		echo '</div>';
 	}
 
