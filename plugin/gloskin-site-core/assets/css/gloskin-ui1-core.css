@@ -434,3 +434,28 @@ body.single-product.gloskin-ui1 .related.products ul.products li.product .button
 	.gloskin-ui1-quickadd__form .quantity .qty{width:96px;max-width:100%}
 	.gloskin-ui1-quickadd__error .gloskin-ui1-button{width:100%;justify-self:stretch}
 }
+
+/* Shop catalog enhancement: one semantic category nav beside the SSR result region. */
+.gloskin-ui1-shop-catalog{display:grid;grid-template-columns:minmax(210px,240px) minmax(0,1fr);align-items:start;gap:clamp(24px,4vw,48px);min-width:0}
+.gloskin-ui1-shop-categories{position:sticky;top:calc(var(--gloskin-ui1-nav-sticky-top) + 76px);min-width:0;padding:2px 18px 2px 0;border-right:1px solid var(--gloskin-border)}
+.gloskin-ui1-shop-categories ul{display:grid;gap:4px;margin:0;padding:0;list-style:none}
+.gloskin-ui1-shop-categories a{display:flex;min-height:44px;align-items:center;padding:9px 12px;border:1px solid transparent;border-radius:var(--gloskin-radius-sm);color:var(--gloskin-muted);font-size:.92rem;font-weight:650;text-decoration:none;transition:border-color 140ms ease,background-color 140ms ease,color 140ms ease}
+.gloskin-ui1-shop-categories a:hover{border-color:color-mix(in srgb,var(--gloskin-accent) 30%,var(--gloskin-border));color:var(--gloskin-text)}
+.gloskin-ui1-shop-categories a[aria-current="page"]{border-color:color-mix(in srgb,var(--gloskin-accent) 38%,var(--gloskin-border));background:var(--gloskin-accent-soft);color:var(--gloskin-accent-strong)}
+.gloskin-ui1-shop-results-column,.gloskin-ui1-shop-results,.gloskin-ui1-shop-grid{min-width:0}
+.gloskin-ui1-shop-results{transition:opacity 160ms ease}
+.gloskin-ui1-shop-results[aria-busy="true"]{opacity:.68}
+.gloskin-ui1-shop-status:empty{display:none}
+.gloskin-ui1-shop-status:not(:empty){display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 22px;padding:12px 14px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);background:var(--gloskin-bg);color:var(--gloskin-muted);font-size:.92rem}
+.gloskin-ui1-shop-status .gloskin-ui1-button{width:auto;min-height:38px}
+.gloskin-ui1-shop-pagination{margin-top:32px}
+.gloskin-ui1-shop-pagination ul{align-items:center}
+[data-gloskin-shop-results-heading]{scroll-margin-top:calc(var(--gloskin-ui1-nav-sticky-top) + 96px)}
+@media (max-width:900px){
+	.gloskin-ui1-shop-catalog{grid-template-columns:minmax(0,1fr);gap:24px}
+	.gloskin-ui1-shop-categories{position:static;top:auto;overflow-x:auto;max-width:100%;padding:0 0 8px;border-right:0;border-bottom:1px solid var(--gloskin-border);-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain;scrollbar-width:thin}
+	.gloskin-ui1-shop-categories ul{display:flex;width:max-content;min-width:100%;gap:8px}
+	.gloskin-ui1-shop-categories li{flex:0 0 auto}
+	.gloskin-ui1-shop-categories a{padding-inline:14px;white-space:nowrap}
+}
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-shop-results,.gloskin-ui1-shop-categories a{transition:none !important}}

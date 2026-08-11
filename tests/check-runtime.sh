@@ -15,6 +15,8 @@ php tests/sample-product-woo-missing.php
 ./tests/single-product-commerce-contract.sh
 php tests/single-product-guard-contract.php
 node tests/single-product-ajax-payload.test.js
+php tests/shop-catalog-contract.php
+node tests/shop-catalog-controller.test.js
 python tests/readiness-contract-smoke.py
 php tests/readiness-php-smoke.php
 php tests/rendered-shell-auth-smoke.php
@@ -36,6 +38,7 @@ if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/nu
   python tests/page-richness-smoke.py
   python tests/readiness-browser-smoke.py
   python tests/quick-add-browser-smoke.py
+  python tests/shop-catalog-browser-smoke.py
 else
   echo "browser smoke skipped: Chromium/Playwright unavailable"
 fi

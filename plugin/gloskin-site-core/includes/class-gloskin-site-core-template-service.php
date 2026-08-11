@@ -495,7 +495,7 @@ final class Gloskin_Site_Core_Template_Service {
 	}
 
 	/* -----------------------------------------------------------------
-	 * REST API: live search
+	 * REST API: live search and read-only Shop catalog projection
 	 * ----------------------------------------------------------------- */
 
 	/** @return void */
@@ -509,6 +509,25 @@ final class Gloskin_Site_Core_Template_Service {
 					'required'          => true,
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
+				),
+			),
+		) );
+		register_rest_route( 'gloskin/v1', '/shop/catalog', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'rest_shop_catalog' ),
+			'permission_callback' => '__return_true',
+			'args'                => array(
+				'page' => array(
+					'required'          => false,
+					'type'              => 'integer',
+					'default'           => 1,
+					'sanitize_callback' => 'absint',
+				),
+				'category' => array(
+					'required'          => false,
+					'type'              => 'string',
+					'default'           => '',
+					'sanitize_callback' => 'sanitize_title',
 				),
 			),
 		) );
@@ -552,6 +571,71 @@ final class Gloskin_Site_Core_Template_Service {
 		}
 
 		return rest_ensure_response( array( 'groups' => $groups ) );
+	}
+
+	/**
+	 * Read-only Shop projection. WooCommerce remains the sole product query
+	 * authority; this validates the existing skincare mapping, delegates to
+	 * products_paginated(), then renders the exact same partial SSR uses.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function rest_shop_catalog( $request ) {
+		$page     = max( 1, min( 1000, absint( $request->get_param( 'page' ) ) ) );
+		$category = sanitize_title( (string) $request->get_param( 'category' ) );
+		$mappings = $this->skincare_mappings();
+		$mapping  = null;
+
+		if ( '' !== $category ) {
+			foreach ( $mappings as $candidate ) {
+				$candidate_slug = isset( $candidate['woo_slug'] ) ? sanitize_title( (string) $candidate['woo_slug'] ) : '';
+				if ( $candidate_slug === $category ) {
+					$mapping = $candidate;
+					break;
+				}
+			}
+			if ( null === $mapping ) {
+				return new WP_Error( 'gloskin_shop_category', __( 'Kategori produk tidak tersedia.', 'gloskin-site-core' ), array( 'status' => 400 ) );
+			}
+		}
+
+		$catalog = $this->woocommerce->products_paginated( $page, 12, $category );
+		$results = array(
+			'products'       => $catalog['products'],
+			'total'          => $catalog['total'],
+			'page'           => $catalog['page'],
+			'max_pages'      => $catalog['max_pages'],
+			'category'       => $category,
+			'category_label' => is_array( $mapping ) && isset( $mapping['label'] ) ? (string) $mapping['label'] : '',
+			'woo_ready'      => $this->woocommerce->available(),
+		);
+		$html = $this->render_shop_results( $results );
+		if ( '' === $html ) {
+			return new WP_Error( 'gloskin_shop_render', __( 'Katalog belum dapat dirender.', 'gloskin-site-core' ), array( 'status' => 500 ) );
+		}
+		return rest_ensure_response( array(
+			'html'      => $html,
+			'category'  => $category,
+			'page'      => (int) $catalog['page'],
+			'total'     => (int) $catalog['total'],
+			'max_pages' => (int) $catalog['max_pages'],
+		) );
+	}
+
+	/**
+	 * @param array<string,mixed> $results Shop result context.
+	 * @return string
+	 */
+	private function render_shop_results( $results ) {
+		$partial = $this->plugin_root . '/templates/parts/shop-results.php';
+		if ( ! is_readable( $partial ) ) {
+			return '';
+		}
+		$gloskin_shop_results = $results;
+		ob_start();
+		include $partial;
+		return trim( (string) ob_get_clean() );
 	}
 
 	/**

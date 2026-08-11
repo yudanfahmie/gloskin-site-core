@@ -67,10 +67,10 @@ for rel in (
     "plugin/gloskin-site-core/templates/pages/clinics.php",
     "plugin/gloskin-site-core/templates/pages/doctors.php",
     "plugin/gloskin-site-core/templates/pages/insights.php",
-    "plugin/gloskin-site-core/templates/pages/shop.php",
     "plugin/gloskin-site-core/templates/pages/skincare-category.php",
 ):
     require("gloskin_ui1_render_empty_state" in read(rel), f"meaningful zero state missing in {rel}")
+require("gloskin_ui1_render_empty_state" in read("plugin/gloskin-site-core/templates/parts/shop-results.php"), "meaningful Shop zero state must live in the shared SSR/AJAX renderer")
 
 # Native Woo My Account/auth ownership and real shell lifecycle.
 require("woocommerce-MyAccount-navigation" in css and "woocommerce-MyAccount-content" in css, "native My Account workspace styling missing")
@@ -99,7 +99,7 @@ require("initAuth()" in js and "overlay.open('auth')" in js, "auth must use exis
 require("data-gloskin-auth-open-from-drawer" in mobile and "data-gloskin-auth-open-from-drawer" in js, "mobile quick-auth path missing")
 for forbidden in ("wp_ajax_nopriv", "wp_ajax_", "register_rest_route( 'gloskin/v1', '/login", "localStorage.setItem('password", "sessionStorage"):
     require(forbidden not in adapter + js, f"custom credential/auth path forbidden: {forbidden}")
-require(js.count("fetch(") == 4, "unexpected frontend fetch path added (expected: search, wishlist resolve, Woo-owned add_to_cart AJAX, Quick Add read-only projection)")
+require(js.count("fetch(") == 5, "unexpected frontend fetch path added (expected: search, wishlist resolve, Woo-owned add_to_cart AJAX, Quick Add read-only projection, Shop read-only catalog projection)")
 
 # Final shell/header/drawer/footer polish stays scoped to existing presentation owners.
 require(".gloskin-ui1-sheet{top:var(--gloskin-ui1-admin-bar-height)}" in production, "commerce sheets must reuse the canonical admin-bar offset")
@@ -127,6 +127,6 @@ for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "read
 require("gloskin_ui1_render_commerce_page_heading" in shell, "cart/checkout/account H1 owner missing")
 header_version = re.search(r"\* Version:\s*([0-9.]+)", main_plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == "0.7.30", "plugin/kernel version mismatch")
+require(header_version == kernel_version == "0.7.31", "plugin/kernel version mismatch")
 
 print("readiness-contract-smoke: OK")

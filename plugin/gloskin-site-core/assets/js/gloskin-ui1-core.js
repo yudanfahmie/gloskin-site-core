@@ -1140,6 +1140,224 @@
 	}
 
 	/* -----------------------------------------------------------------
+	 * Shop catalog -- SSR-first, read-only AJAX enhancement.
+	 * ----------------------------------------------------------------- */
+
+	function parseShopCatalogHash(hash, defaultPage) {
+		var state = { category: '', page: Math.max(1, parseInt(defaultPage, 10) || 1) };
+		var raw = String(hash || '').replace(/^#/, '');
+		if (!raw) { return state; }
+		state.page = 1;
+		raw.split('&').forEach(function (pair) {
+			var bits = pair.split('=');
+			var key = decodeURIComponent(bits.shift() || '');
+			var value = decodeURIComponent(bits.join('=') || '');
+			if (key === 'category') { state.category = value; }
+			if (key === 'page') { state.page = Math.max(1, parseInt(value, 10) || 1); }
+		});
+		return state;
+	}
+
+	function buildShopCatalogHash(category, page) {
+		var parts = [];
+		if (category) { parts.push('category=' + encodeURIComponent(category)); }
+		page = Math.max(1, parseInt(page, 10) || 1);
+		if (page > 1) { parts.push('page=' + page); }
+		return parts.length ? '#' + parts.join('&') : '';
+	}
+
+	function initShopCatalog() {
+		var root = document.querySelector('[data-gloskin-shop-catalog]');
+		if (!root || typeof window.fetch !== 'function') { return; }
+		var categories = root.querySelector('[data-gloskin-shop-categories]');
+		var results = root.querySelector('[data-gloskin-shop-results]');
+		if (!categories || !results) { return; }
+
+		var config = window.gloskinData || {};
+		var initialPage = Math.max(1, parseInt(root.getAttribute('data-gloskin-shop-initial-page'), 10) || 1);
+		var initialUrl = window.location.href;
+		var shopUrl = root.getAttribute('data-gloskin-shop-url') || '/shop/';
+		var currentCategory = '';
+		var currentPage = initialPage;
+		var requestSequence = 0;
+		var abortController = null;
+		var retryRequest = null;
+
+		function stateForLocation() {
+			var defaultPage = window.location.href.split('#')[0] === initialUrl.split('#')[0] ? initialPage : 1;
+			return parseShopCatalogHash(window.location.hash, defaultPage);
+		}
+
+		function categoryFallback(category) {
+			var links = categories.querySelectorAll('[data-gloskin-shop-category]');
+			for (var i = 0; i < links.length; i++) {
+				if ((links[i].getAttribute('data-gloskin-shop-category') || '') === category) {
+					return links[i].getAttribute('href') || shopUrl;
+				}
+			}
+			return shopUrl;
+		}
+
+		function updateCategoryState(category) {
+			var links = categories.querySelectorAll('[data-gloskin-shop-category]');
+			Array.prototype.forEach.call(links, function (link) {
+				var active = (link.getAttribute('data-gloskin-shop-category') || '') === category;
+				if (active) { link.setAttribute('aria-current', 'page'); }
+				else { link.removeAttribute('aria-current'); }
+			});
+		}
+
+		function clearStatus() {
+			var status = results.querySelector('[data-gloskin-shop-status]');
+			if (status) { status.innerHTML = ''; }
+		}
+
+		function showCatalogFailure(fallbackHref) {
+			var status = results.querySelector('[data-gloskin-shop-status]');
+			if (!status) { return; }
+			status.innerHTML = '';
+			var copy = document.createElement('span');
+			copy.textContent = 'Katalog belum dapat diperbarui. Hasil sebelumnya tetap ditampilkan.';
+			var retry = document.createElement('button');
+			retry.type = 'button';
+			retry.className = 'gloskin-ui1-button gloskin-ui1-button--ghost gloskin-ui1-button--small';
+			retry.setAttribute('data-gloskin-shop-retry', '');
+			retry.textContent = 'Coba lagi';
+			var fallback = document.createElement('a');
+			fallback.className = 'gloskin-ui1-text-link';
+			fallback.href = fallbackHref || shopUrl;
+			fallback.textContent = 'Buka halaman biasa';
+			status.appendChild(copy);
+			status.appendChild(retry);
+			status.appendChild(fallback);
+		}
+
+		function setBusy(busy) {
+			results.setAttribute('aria-busy', busy ? 'true' : 'false');
+			root.classList.toggle('is-loading', !!busy);
+		}
+
+		function historyTarget(category, page) {
+			try {
+				var target = new URL(shopUrl, window.location.href);
+				target.hash = buildShopCatalogHash(category, page);
+				return target.pathname + target.search + target.hash;
+			} catch (e) {
+				return shopUrl + buildShopCatalogHash(category, page);
+			}
+		}
+
+		function updateHistory(category, page, mode) {
+			if (!window.history || mode === 'none') { return; }
+			var target = historyTarget(category, page);
+			var state = { gloskinShop: true, category: category, page: page };
+			if (mode === 'replace' && typeof window.history.replaceState === 'function') {
+				window.history.replaceState(state, '', target);
+			} else if (mode === 'push' && typeof window.history.pushState === 'function') {
+				window.history.pushState(state, '', target);
+			}
+		}
+
+		function revealPaginationContext() {
+			var heading = results.querySelector('[data-gloskin-shop-results-heading]');
+			if (!heading) { return; }
+			try { heading.focus({ preventScroll: true }); } catch (e) { heading.focus(); }
+			if (typeof heading.scrollIntoView === 'function') {
+				var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+				heading.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+			}
+		}
+
+		function requestCatalog(category, page, options) {
+			options = options || {};
+			category = String(category || '');
+			page = Math.max(1, parseInt(page, 10) || 1);
+			var sequence = ++requestSequence;
+			if (abortController) { abortController.abort(); }
+			abortController = typeof window.AbortController !== 'undefined' ? new window.AbortController() : null;
+			var fallbackHref = options.fallbackHref || categoryFallback(category);
+			retryRequest = { category: category, page: page, options: options, fallbackHref: fallbackHref };
+			clearStatus();
+			setBusy(true);
+
+			var endpoint = (config.restUrl || '/wp-json/gloskin/v1/') + 'shop/catalog?category=' + encodeURIComponent(category) + '&page=' + encodeURIComponent(page);
+			var fetchOptions = { method: 'GET', credentials: 'same-origin', headers: { 'X-WP-Nonce': config.restNonce || '' } };
+			if (abortController) { fetchOptions.signal = abortController.signal; }
+
+			return window.fetch(endpoint, fetchOptions)
+				.then(function (response) {
+					if (!response.ok) { throw new Error('shop_catalog_http'); }
+					return response.json();
+				})
+				.then(function (data) {
+					if (sequence !== requestSequence) { return false; }
+					if (!data || typeof data.html !== 'string') { throw new Error('shop_catalog_response'); }
+					results.innerHTML = data.html;
+					currentCategory = String(data.category || '');
+					currentPage = Math.max(1, parseInt(data.page, 10) || 1);
+					updateCategoryState(currentCategory);
+					updateHistory(currentCategory, currentPage, options.historyMode || 'none');
+					document.dispatchEvent(new CustomEvent('gloskin:catalog-updated', { detail: { category: currentCategory, page: currentPage } }));
+					if (options.pagination) { revealPaginationContext(); }
+					return true;
+				})
+				.catch(function (error) {
+					if (error && error.name === 'AbortError') { return false; }
+					if (sequence !== requestSequence) { return false; }
+					showCatalogFailure(fallbackHref);
+					return false;
+				})
+				.then(function (result) {
+					if (sequence === requestSequence) {
+						setBusy(false);
+						abortController = null;
+					}
+					return result;
+				});
+		}
+
+		root.addEventListener('click', function (event) {
+			var categoryLink = event.target.closest && event.target.closest('[data-gloskin-shop-category]');
+			if (categoryLink && categories.contains(categoryLink)) {
+				event.preventDefault();
+				var category = categoryLink.getAttribute('data-gloskin-shop-category') || '';
+				requestCatalog(category, 1, { historyMode: 'push', fallbackHref: categoryLink.getAttribute('href') || shopUrl });
+				return;
+			}
+
+			var pageLink = event.target.closest && event.target.closest('[data-gloskin-shop-page]');
+			if (pageLink && results.contains(pageLink)) {
+				var page = Math.max(1, parseInt(pageLink.getAttribute('data-gloskin-shop-page'), 10) || 1);
+				event.preventDefault();
+				requestCatalog(currentCategory, page, { historyMode: 'push', pagination: true, fallbackHref: pageLink.getAttribute('href') || shopUrl });
+				return;
+			}
+
+			var retry = event.target.closest && event.target.closest('[data-gloskin-shop-retry]');
+			if (retry && results.contains(retry) && retryRequest) {
+				event.preventDefault();
+				requestCatalog(retryRequest.category, retryRequest.page, {
+					historyMode: retryRequest.options.historyMode || 'none',
+					pagination: !!retryRequest.options.pagination,
+					fallbackHref: retryRequest.fallbackHref
+				});
+			}
+		});
+
+		window.addEventListener('popstate', function () {
+			var state = stateForLocation();
+			requestCatalog(state.category, state.page, { historyMode: 'none', fallbackHref: categoryFallback(state.category) });
+		});
+
+		var initialState = stateForLocation();
+		currentCategory = initialState.category;
+		currentPage = initialState.page;
+		if (window.location.hash) {
+			requestCatalog(currentCategory, currentPage, { historyMode: 'replace', fallbackHref: categoryFallback(currentCategory) });
+		}
+	}
+
+	/* -----------------------------------------------------------------
 	 * Wishlist (localStorage for all users)
 	 * ----------------------------------------------------------------- */
 
@@ -1289,6 +1507,7 @@
 				});
 		}
 
+		document.addEventListener('gloskin:catalog-updated', syncToggles);
 		syncToggles();
 	}
 
@@ -1318,6 +1537,7 @@
 		initCart();
 		initSingleProductAjax();
 		initQuickAdd();
+		initShopCatalog();
 		initWishlist();
 	}
 
@@ -1340,7 +1560,9 @@
 			hasWooNativeAddToCartRuntime: hasWooNativeAddToCartRuntime,
 			dispatchWooAddedToCart: dispatchWooAddedToCart,
 			handleWooAddToCartResponse: handleWooAddToCartResponse,
-			isWooSubmitBusy: isWooSubmitBusy
+			isWooSubmitBusy: isWooSubmitBusy,
+			parseShopCatalogHash: parseShopCatalogHash,
+			buildShopCatalogHash: buildShopCatalogHash
 		};
 	}
 }());
