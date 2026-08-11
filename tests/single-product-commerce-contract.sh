@@ -142,7 +142,7 @@ fi
 # 14. Mobile single product collapses to one column and the Quick Add
 # modal stays a touch-safe bottom sheet; neither introduces horizontal
 # overflow (no fixed px widths wider than a narrow viewport).
-grep -qF 'body.single-product.gloskin-ui1 div.product{grid-template-columns:1fr}' "$core_css" \
+grep -qF 'body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product{grid-template-columns:1fr}' "$core_css" \
 	|| fail "SP-002/SP-007#14: single-product mobile one-column collapse rule missing"
 grep -qF '.gloskin-ui1-quickadd{align-items:flex-end;padding:0}' "$core_css" \
 	|| fail "SP-004/SP-007#14: Quick Add mobile bottom-sheet rule missing"
@@ -216,5 +216,24 @@ grep -qF "submitter.parentNode.querySelector('a.added_to_cart.wc-forward');" "$c
 grep -qF 'onSuccess: function () { renderSingleProductViewCartLink(submitter); }' "$core_js" \
 	|| fail "View Cart: helper must run only after a confirmed successful Woo mutation, not on dispatch"
 grep -qF '.gloskin-ui1 a.added_to_cart.wc-forward{' "$core_css" || fail "View Cart: secondary-action styling missing"
+
+# -----------------------------------------------------------------------
+# Regression-hardening pass: primary-product CSS scope tightened to a
+# direct child of .gloskin-ui1-commerce-native (never a bare
+# "body.single-product.gloskin-ui1 div.product"), and single-product AJAX
+# bound to the canonical purchase-dock form only (never a bare
+# "div.product form.cart" that could also match a legitimate different-
+# product [product_page] embed nested in the Description tab).
+# -----------------------------------------------------------------------
+if grep -qE 'body\.single-product\.gloskin-ui1 div\.product[ {,.>:]' "$core_css"; then
+	fail "primary PDP scope: a bare 'body.single-product.gloskin-ui1 div.product' selector reappeared -- must anchor on .gloskin-ui1-commerce-native>div.product"
+fi
+grep -qF 'body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product{display:grid' "$core_css" \
+	|| fail "primary PDP scope: direct-child grid anchor rule missing"
+if grep -qF "document.querySelector('div.product form.cart')" "$core_js"; then
+	fail "single-product AJAX: must not re-introduce the unscoped 'div.product form.cart' query"
+fi
+grep -qF "document.querySelector('[data-gloskin-purchase-dock] form.cart')" "$core_js" \
+	|| fail "single-product AJAX: must bind the canonical purchase-dock form only"
 
 echo "single-product commerce contract passed"

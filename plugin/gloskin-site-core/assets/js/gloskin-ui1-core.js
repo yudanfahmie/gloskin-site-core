@@ -1009,7 +1009,16 @@
 
 	function initSingleProductAjax() {
 		if (!document.body.classList.contains('single-product')) { return; }
-		var form = document.querySelector('div.product form.cart');
+		/* Scoped to the canonical purchase form only: [data-gloskin-purchase-dock]
+		 * is server-rendered by WooCommerce_Adapter::open_purchase_dock()/
+		 * close_purchase_dock(), which only ever wrap the page's own primary
+		 * product's form.cart (is_primary_single_product_context() -- see the
+		 * adapter). A plain 'div.product form.cart' query would also match a
+		 * legitimate different-product [product_page] embed's own form.cart if
+		 * one ever preceded the primary form in document order; anchoring on
+		 * the dock removes that ambiguity entirely rather than relying on
+		 * incidental DOM order. */
+		var form = document.querySelector('[data-gloskin-purchase-dock] form.cart');
 		if (!form || !isSupportedSingleProductAjaxForm(form)) { return; }
 
 		form.addEventListener('submit', function (event) {

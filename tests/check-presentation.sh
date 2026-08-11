@@ -445,8 +445,19 @@ template_service="$plugin_root/includes/class-gloskin-site-core-template-service
 lifecycle="$plugin_root/includes/class-gloskin-site-core-lifecycle-service.php"
 
 # G. One canonical product-card primitive is reused everywhere -- no
-# competing shop/category/grid-specific card renderer exists.
-for view_template in shop.php skincare-category.php skincare.php; do
+# competing shop/category/grid-specific card renderer exists. shop.php's
+# product grid is shared with the read-only REST catalog projection via
+# templates/parts/shop-results.php (see
+# Gloskin_Site_Core_Template_Service::render_shop_results()), so shop.php
+# itself no longer calls the renderer literally -- verify the actual
+# current delegation chain (shop.php -> shop-results.php ->
+# gloskin_ui1_render_product_card()) instead of assuming a direct call.
+shop_results_partial="$templates/parts/shop-results.php"
+grep -qF 'gloskin_ui1_render_product_card' "$shop_results_partial" \
+  || { echo "canonical product-card primitive not reused: shop-results.php" >&2; exit 1; }
+grep -qF 'shop-results.php' "$templates/pages/shop.php" \
+  || { echo "shop.php no longer delegates its product grid to the shared shop-results.php partial" >&2; exit 1; }
+for view_template in skincare-category.php skincare.php; do
   grep -qF 'gloskin_ui1_render_product_card' "$templates/pages/$view_template" \
     || { echo "canonical product-card primitive not reused: $view_template" >&2; exit 1; }
 done

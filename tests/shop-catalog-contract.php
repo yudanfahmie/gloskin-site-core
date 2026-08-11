@@ -47,14 +47,14 @@ ok( false !== strpos( $service, "'/templates/parts/shop-results.php'" ) && false
 ok( false !== strpos( $results, "require_once __DIR__ . '/template-helpers.php'" ) && false !== strpos( $results, "require_once __DIR__ . '/readiness-helpers.php'" ), 'shared renderer must load existing helper owners when invoked by REST' );
 ok( false !== strpos( $results, 'gloskin_ui1_render_product_card' ), 'shared renderer must reuse canonical product-card helper' );
 ok( false !== strpos( $results, 'data-gloskin-shop-count' ) && false !== strpos( $results, 'data-gloskin-shop-status' ), 'shared renderer must own count and polite status region' );
-ok( false !== strpos( $results, "home_url( '/shop/page/' . $page . '/' )" ) && false !== strpos( $results, 'data-gloskin-shop-page' ), 'shared renderer must keep canonical Shop pagination fallback even when invoked from REST' );
+ok( false !== strpos( $results, 'home_url( \'/shop/page/\' . $page . \'/\' )' ) && false !== strpos( $results, 'data-gloskin-shop-page' ), 'shared renderer must keep canonical Shop pagination fallback even when invoked from REST' );
 ok( false !== strpos( $results, 'gloskin_ui1_render_empty_state' ), 'shared renderer must own Shop empty states' );
 
 /* Read-only projection delegates to existing Woo owner. */
 ok( false !== strpos( $service, "register_rest_route( 'gloskin/v1', '/shop/catalog'" ), 'Template Service must own the small Shop projection' );
 ok( false !== strpos( $service, "'methods'             => 'GET'" ), 'Shop projection must be GET only' );
 ok( false !== strpos( $service, '$this->woocommerce->products_paginated( $page, 12, $category )' ), 'Shop projection must delegate exactly to existing products_paginated() with server-owned 12/page' );
-ok( false !== strpos( $service, "isset( $candidate['woo_slug'] )" ) && false !== strpos( $service, '$candidate_slug === $category' ), 'Shop projection must validate category against existing woo_slug mappings' );
+ok( false !== strpos( $service, 'isset( $candidate[\'woo_slug\'] )' ) && false !== strpos( $service, '$candidate_slug === $category' ), 'Shop projection must validate category against existing woo_slug mappings' );
 ok( false === strpos( $service, 'wc_get_products(' ) && false === strpos( $service, 'wp_ajax_nopriv' ), 'Template Service must not introduce a second Woo query or public wp_ajax path' );
 ok( false !== strpos( $adapter, 'public function products_paginated(' ), 'existing Woo catalog owner must remain present' );
 foreach ( array( "'html'", "'category'", "'page'", "'total'", "'max_pages'" ) as $field ) {
