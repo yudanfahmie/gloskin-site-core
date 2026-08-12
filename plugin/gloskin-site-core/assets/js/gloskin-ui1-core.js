@@ -719,6 +719,37 @@
 				window.requestAnimationFrame(function () { successFeedback('cart'); });
 			});
 		}
+
+		/* Cart-row pending presentation only -- WooCommerce's own
+		 * wc-add-to-cart.js (add-to-cart.js) owns the actual delegated
+		 * .remove_from_cart_button AJAX request/mutation; this never
+		 * intercepts or duplicates it. Marking the row before Woo's own
+		 * handler resolves gives an immediate skeleton/pending row instead
+		 * of a dead click. Woo's own fragment replacement (which swaps out
+		 * .gloskin-ui1-cart-sheet__body entirely on a confirmed
+		 * removed_from_cart) naturally clears this row along with it; the
+		 * removed_from_cart listener below is only a defensive cleanup for
+		 * any row fragments did not happen to replace. On a real AJAX/
+		 * network failure Woo's own fallback navigates to the remove link's
+		 * href, so no recovery timeout is needed here either. */
+		document.body.addEventListener('click', function (event) {
+			var removeButton = event.target.closest && event.target.closest('.remove_from_cart_button');
+			if (!removeButton) { return; }
+			var row = removeButton.closest('.gloskin-ui1-cart-sheet__item');
+			if (!row) { return; }
+			row.classList.add('is-removing');
+			row.setAttribute('aria-busy', 'true');
+		}, true);
+
+		if (window.jQuery) {
+			window.jQuery(document.body).on('removed_from_cart', function () {
+				var pending = document.querySelectorAll('.gloskin-ui1-cart-sheet__item.is-removing');
+				Array.prototype.forEach.call(pending, function (row) {
+					row.classList.remove('is-removing');
+					row.removeAttribute('aria-busy');
+				});
+			});
+		}
 	}
 
 	/* -----------------------------------------------------------------
@@ -1279,9 +1310,40 @@
 			status.appendChild(fallback);
 		}
 
+		var SKELETON_CARD_COUNT = 8;
+
+		function skeletonMarkup() {
+			var card = '<div class="gloskin-ui1-shop-skeleton__card"><div class="gloskin-ui1-shop-skeleton__media"></div><div class="gloskin-ui1-shop-skeleton__line gloskin-ui1-shop-skeleton__line--title"></div><div class="gloskin-ui1-shop-skeleton__line gloskin-ui1-shop-skeleton__line--price"></div></div>';
+			var cards = '';
+			for (var i = 0; i < SKELETON_CARD_COUNT; i += 1) { cards += card; }
+			return '<div class="gloskin-ui1-shop-skeleton" data-gloskin-shop-skeleton aria-hidden="true"><div class="gloskin-ui1-shop-skeleton__grid">' + cards + '</div></div>';
+		}
+
+		/* Extends the existing aria-busy/is-loading presentation state -- no
+		 * second loading controller. The skeleton is an overlay appended
+		 * inside results, never a replacement of it: the previous grid stays
+		 * in the DOM underneath (results.innerHTML is only ever reassigned by
+		 * the existing success path in requestCatalog()), so on failure
+		 * removing the skeleton simply reveals that same previous grid again.
+		 * Height is locked before the skeleton is inserted so neither
+		 * inserting nor removing it can shift the page. */
 		function setBusy(busy) {
 			results.setAttribute('aria-busy', busy ? 'true' : 'false');
 			root.classList.toggle('is-loading', !!busy);
+			var live = root.querySelector('[data-gloskin-shop-status-live]');
+			if (busy) {
+				if (!results.querySelector('[data-gloskin-shop-skeleton]')) {
+					var height = results.getBoundingClientRect().height;
+					if (height > 0) { results.style.minHeight = height + 'px'; }
+					results.insertAdjacentHTML('beforeend', skeletonMarkup());
+				}
+				if (live) { live.textContent = 'Memuat produk'; }
+			} else {
+				var skeleton = results.querySelector('[data-gloskin-shop-skeleton]');
+				if (skeleton) { skeleton.remove(); }
+				results.style.removeProperty('min-height');
+				if (live) { live.textContent = ''; }
+			}
 		}
 
 		function historyTarget(category, page) {
@@ -1466,6 +1528,48 @@
 			}
 		}
 
+		function wishlistEmptyStateMarkup() {
+			return emptyStateMarkup(
+				'wishlist',
+				'Belum ada produk favorit',
+				'Produk yang Anda simpan akan muncul di sini agar mudah ditemukan kembali.',
+				'Lihat Skincare',
+				config.cartUrl ? config.cartUrl.replace(/\/cart\/$/, '/skincare/') : '/skincare/'
+			);
+		}
+
+		/* Removing from inside the already-open sheet must never refetch/
+		 * rebuild the whole body (that full-sheet loading-spinner rebuild is
+		 * the real "reload" this replaces) -- only the closest list item is
+		 * collapsed/removed in place. localStorage mutation itself has no
+		 * meaningful wait, so this is a short opacity/transform transition,
+		 * not a skeleton. */
+		function removeSheetItem(item, btn) {
+			var list = item.parentElement;
+			var next = item.nextElementSibling;
+			var prev = item.previousElementSibling;
+			var focusTarget = (next && next.querySelector('[data-gloskin-wishlist-toggle]')) ||
+				(prev && prev.querySelector('[data-gloskin-wishlist-toggle]'));
+			if (!focusTarget) {
+				var panel = item.closest('.gloskin-ui1-sheet__panel');
+				focusTarget = panel && (panel.querySelector('.gloskin-ui1-sheet__close') || panel.querySelector('[data-gloskin-overlay-close]'));
+			}
+			if (focusTarget) { focusTarget.focus(); }
+
+			item.classList.add('is-removing');
+			item.setAttribute('aria-busy', 'true');
+			btn.disabled = true;
+
+			var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			window.setTimeout(function () {
+				item.remove();
+				if (list && !list.children.length) {
+					var body = document.querySelector('[data-gloskin-wishlist-body]');
+					if (body) { body.innerHTML = wishlistEmptyStateMarkup(); }
+				}
+			}, reduceMotion ? 0 : 170);
+		}
+
 		document.addEventListener('click', function (e) {
 			var btn = e.target.closest('[data-gloskin-wishlist-toggle]');
 			if (!btn) { return; }
@@ -1473,7 +1577,12 @@
 			if (!productId) { return; }
 			var wasActive = isWished(productId);
 			var active = toggle(productId);
-			applyState(btn, active);
+			var sheetItem = btn.closest('.gloskin-ui1-wishlist-sheet__item');
+			if (sheetItem) {
+				removeSheetItem(sheetItem, btn);
+			} else {
+				applyState(btn, active);
+			}
 			updateBadges();
 			if (!wasActive && active) { successFeedback('wishlist'); }
 		});
@@ -1505,13 +1614,7 @@
 			if (!body) { return; }
 			var ids = getIds();
 			if (!ids.length) {
-				body.innerHTML = emptyStateMarkup(
-					'wishlist',
-					'Belum ada produk favorit',
-					'Produk yang Anda simpan akan muncul di sini agar mudah ditemukan kembali.',
-					'Lihat Skincare',
-					config.cartUrl ? config.cartUrl.replace(/\/cart\/$/, '/skincare/') : '/skincare/'
-				);
+				body.innerHTML = wishlistEmptyStateMarkup();
 				return;
 			}
 			body.innerHTML = '<div class="gloskin-ui1-search-overlay__loading"><span></span></div>';
@@ -1526,13 +1629,7 @@
 					saveIds(currentIds);
 
 					if (!products.length) {
-						body.innerHTML = emptyStateMarkup(
-							'wishlist',
-							'Belum ada produk favorit',
-							'Produk yang Anda simpan akan muncul di sini agar mudah ditemukan kembali.',
-							'Lihat Skincare',
-							config.cartUrl ? config.cartUrl.replace(/\/cart\/$/, '/skincare/') : '/skincare/'
-						);
+						body.innerHTML = wishlistEmptyStateMarkup();
 						return;
 					}
 					var html = '<ul class="gloskin-ui1-wishlist-sheet__list">';

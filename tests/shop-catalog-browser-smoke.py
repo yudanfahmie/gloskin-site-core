@@ -33,7 +33,9 @@ HTML = r"""<!doctype html>
 <article class="gloskin-ui1-card gloskin-ui1-card--product"><div class="gloskin-ui1-card__body"><h3>SSR Product</h3><div class="gloskin-ui1-card__actions"><a class="gloskin-ui1-button button add_to_cart_button ajax_add_to_cart product_type_simple" href="/?add-to-cart=101" data-product_id="101">Tambah</a></div></div></article>
 </div>
 <nav class="gloskin-ui1-pagination gloskin-ui1-shop-pagination"><ul><li><a href="/shop/page/2/" data-gloskin-shop-page="2">2</a></li></ul></nav>
-</div></div>
+</div>
+<span class="screen-reader-text" data-gloskin-shop-status-live aria-live="polite"></span>
+</div>
 </div></div></section>
 </main>
 <div class="gloskin-ui1-quickadd" data-gloskin-overlay="quickadd" aria-hidden="true" hidden>
@@ -122,12 +124,41 @@ with sync_playwright() as p:
     require(sidebar and 205 <= sidebar['width'] <= 245, 'desktop category sidebar must stay approximately 210-240px')
     require(page.evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1'), 'desktop Shop must not horizontally overflow')
 
+    results_height_before = page.locator('[data-gloskin-shop-results]').bounding_box()['height']
     serum = page.locator('[data-gloskin-shop-category="serum"]')
+    # A single atomic snapshot immediately after the click: the fixture's
+    # fetch for this category resolves quickly (~25ms), so multiple
+    # separate Playwright round-trips risk crossing into the success path
+    # mid-check the way one batched read cannot.
     serum.click()
-    require(page.locator('[data-gloskin-shop-results]').get_attribute('aria-busy') == 'true', 'category request must mark results busy')
-    require(marker(page) == 'initial', 'loading must preserve the previous successful grid')
+    snapshot = page.evaluate(r"""() => {
+      const results = document.querySelector('[data-gloskin-shop-results]');
+      const skeleton = document.querySelector('[data-gloskin-shop-skeleton]');
+      const live = document.querySelector('[data-gloskin-shop-status-live]');
+      return {
+        busy: results.getAttribute('aria-busy'),
+        marker: document.querySelector('[data-gloskin-shop-grid]').dataset.resultMarker,
+        skeletonPresent: !!skeleton,
+        skeletonAriaHidden: skeleton ? skeleton.getAttribute('aria-hidden') : null,
+        skeletonCards: skeleton ? skeleton.querySelectorAll('.gloskin-ui1-shop-skeleton__card').length : 0,
+        previousGridPresent: !!document.querySelector('[data-gloskin-shop-grid][data-result-marker="initial"]'),
+        resultsHeight: results.getBoundingClientRect().height,
+        liveStatus: live ? live.textContent : null
+      };
+    }""")
+    require(snapshot['busy'] == 'true', f'category request must mark results busy: {snapshot}')
+    require(snapshot['marker'] == 'initial', f'loading must preserve the previous successful grid: {snapshot}')
+    require(snapshot['skeletonPresent'], f'category request must overlay a skeleton immediately: {snapshot}')
+    require(snapshot['skeletonAriaHidden'] == 'true', f'skeleton overlay must be aria-hidden: {snapshot}')
+    require(snapshot['skeletonCards'] >= 6, f'skeleton must render enough placeholder cards to fill the visible result area: {snapshot}')
+    require(snapshot['previousGridPresent'], f'previous grid must remain in the DOM underneath the skeleton overlay: {snapshot}')
+    require(abs(snapshot['resultsHeight'] - results_height_before) <= 2, f"skeleton must not shift page height ({results_height_before} -> {snapshot['resultsHeight']})")
+    require((snapshot['liveStatus'] or '').strip() != '', f'skeleton must expose a screen-reader loading status: {snapshot}')
     page.wait_for_function("document.querySelector('[data-gloskin-shop-grid]').dataset.resultMarker === 'serum-1'")
     require(page.locator('[data-gloskin-shop-results]').get_attribute('aria-busy') == 'false', 'success must clear aria-busy')
+    require(page.locator('[data-gloskin-shop-skeleton]').count() == 0, 'success must remove the skeleton overlay')
+    require(page.evaluate("document.querySelector('[data-gloskin-shop-status-live]').textContent") == '', 'success must clear the screen-reader loading status')
+    require(page.evaluate("!document.querySelector('[data-gloskin-shop-results]').style.minHeight"), 'success must release the locked results height')
     require(page.locator('[data-gloskin-shop-category="serum"]').get_attribute('aria-current') == 'page', 'successful category must update aria-current')
     require('#category=serum' in page.url and 'page=' not in page.url, 'category state must use clean hash state and reset page 1')
     require(page.evaluate("document.activeElement === document.querySelector('[data-gloskin-shop-category=\"serum\"]')"), 'ordinary category selection must not force focus into results')
@@ -147,16 +178,20 @@ with sync_playwright() as p:
 
     page.locator('[data-gloskin-shop-category="facial-wash"]').click()
     page.wait_for_timeout(8)
+    require(page.locator('[data-gloskin-shop-skeleton]').count() == 1, 'rapid successive category clicks must keep exactly one skeleton overlay')
     page.locator('[data-gloskin-shop-category="toner"]').click()
+    require(page.locator('[data-gloskin-shop-skeleton]').count() == 1, 'skeleton must not flash/duplicate when a newer request supersedes an in-flight one')
     page.wait_for_function("document.querySelector('[data-gloskin-shop-grid]').dataset.resultMarker === 'toner-1'")
     page.wait_for_timeout(190)
     require(marker(page) == 'toner-1', 'stale response must not overwrite latest category')
     require(page.locator('[data-gloskin-shop-category="toner"]').get_attribute('aria-current') == 'page', 'latest category remains active after stale response resolves')
     require(page.locator('[data-gloskin-shop-grid] .ajax_add_to_cart.product_type_simple').count() == 1, 'injected simple card must retain Woo native delegated Add to Cart contract')
+    require(page.locator('[data-gloskin-shop-skeleton]').count() == 0, 'skeleton must be gone once the latest (non-stale) request finally settles')
 
     page.evaluate('window.__shopFail = true')
     page.locator('[data-gloskin-shop-category="facial-wash"]').click()
     page.wait_for_function("document.querySelector('[data-gloskin-shop-results]').getAttribute('aria-busy') === 'false'")
+    require(page.locator('[data-gloskin-shop-skeleton]').count() == 0, 'failure must remove the skeleton and reveal the previous grid again')
     require(marker(page) == 'toner-1', 'failed GET must preserve previous successful results')
     require(page.locator('[data-gloskin-shop-retry]').count() == 1, 'failed GET must expose safe retry')
     require(page.locator('[data-gloskin-shop-status] a').get_attribute('href') == '/skincare/facial-wash/', 'failure must expose normal canonical fallback link')

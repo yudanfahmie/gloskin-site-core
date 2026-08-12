@@ -34,8 +34,18 @@ HTML = """
 </div>
 <button id='wishlistToggle' data-gloskin-wishlist-toggle='17' data-label-add='Save' data-label-remove='Remove'>heart</button>
 <button id='fakeAdd'>add</button>
-<div class='gloskin-ui1-sheet' data-gloskin-overlay='cart' aria-hidden='true' hidden><div class='gloskin-ui1-sheet__panel' role='dialog'><button data-gloskin-overlay-close>close</button></div></div>
-<div class='gloskin-ui1-sheet' data-gloskin-overlay='wishlist' aria-hidden='true' hidden><div class='gloskin-ui1-sheet__panel' role='dialog'><button data-gloskin-overlay-close>close</button><div data-gloskin-wishlist-body></div></div></div>
+<div class='gloskin-ui1-sheet' data-gloskin-overlay='cart' aria-hidden='true' hidden><div class='gloskin-ui1-sheet__panel' role='dialog'><button data-gloskin-overlay-close>close</button>
+  <ul class='gloskin-ui1-cart-sheet__list'>
+    <li class='gloskin-ui1-cart-sheet__item' id='cartRow1'><span class='gloskin-ui1-cart-sheet__item-details'>Row 1</span><a href='/cart/?remove_item=key1' class='remove remove_from_cart_button gloskin-ui1-cart-sheet__item-remove' data-cart_item_key='key1'>&times;</a></li>
+  </ul>
+</div></div>
+<div class='gloskin-ui1-sheet' data-gloskin-overlay='wishlist' aria-hidden='true' hidden><div class='gloskin-ui1-sheet__panel' role='dialog'><button class='gloskin-ui1-sheet__close' data-gloskin-overlay-close>close</button>
+  <div data-gloskin-wishlist-body>
+    <ul class='gloskin-ui1-wishlist-sheet__list'>
+      <li class='gloskin-ui1-wishlist-sheet__item' id='wishRow42'><a class='gloskin-ui1-wishlist-sheet__item-link' href='/product/42/'>Product 42</a><button class='gloskin-ui1-wishlist-sheet__item-remove' type='button' data-gloskin-wishlist-toggle='42' aria-label='Hapus Product 42'>&times;</button></li>
+    </ul>
+  </div>
+</div></div>
 
 <div class='gloskin-ui1-form'><input id='globalField'><button id='globalButton'>Global action</button></div>
 <div class='gloskin-ui1-auth-forms'><input id='authField' class='input-text'><button id='authButton' class='button'>Auth action</button></div>
@@ -62,6 +72,14 @@ window.Audio = function(uri) {
   jq.fn = {};
   window.jQuery = jq;
 })();
+/* Minimal stand-in for WooCommerce's own add-to-cart.js delegated
+ * .remove_from_cart_button handler (preventDefault + AJAX + fragments) --
+ * only the preventDefault so this fixture can assert Gloskin's own
+ * row-marking listener never fights Woo's real behavior/navigation. */
+document.addEventListener('click', function (e) {
+  var btn = e.target.closest && e.target.closest('.remove_from_cart_button');
+  if (btn) { e.preventDefault(); }
+});
 </script>
 </body></html>
 """
@@ -157,6 +175,60 @@ with sync_playwright() as p:
     require(page.evaluate("localStorage.getItem('gloskin_wishlist')") == "[]", "wishlist removal state incorrect")
     require(not page.locator("#wishlistUtility").evaluate("e => e.classList.contains('is-active')"), "wishlist header reflection stale after removal")
     require(page.evaluate("window.__plays") == 2, "wishlist removal incorrectly played celebratory sound")
+
+    # Cart-row pending: clicking a .remove_from_cart_button marks only its
+    # closest row -- no navigation, Woo's own delegated AJAX (not mocked as
+    # real jQuery here) is untouched, dimensions preserved. removed_from_cart
+    # is the defensive cleanup path fragments would normally cover. The cart
+    # overlay was closed above; make it visible directly since the
+    # open/focus-trap flow itself is unrelated, pre-existing behavior.
+    page.evaluate("""() => {
+      const sheet = document.querySelector('[data-gloskin-overlay="cart"]');
+      sheet.hidden = false;
+      sheet.setAttribute('aria-hidden', 'false');
+    }""")
+    nav_before_cart = page.url
+    page.locator('#cartRow1 .remove_from_cart_button').click()
+    require(page.url == nav_before_cart, "cart row remove caused a navigation")
+    require(page.locator('#cartRow1').evaluate("e => e.classList.contains('is-removing') && e.getAttribute('aria-busy') === 'true'"), "cart row did not enter pending state on remove click")
+    require(page.locator('#cartRow1').evaluate("e => e.getBoundingClientRect().width") > 0, "cart row lost its dimensions while pending")
+    page.evaluate("window.jQuery(document.body).trigger('removed_from_cart', [])")
+    page.wait_for_timeout(20)
+    require(page.locator('#cartRow1').evaluate("e => !e.classList.contains('is-removing') && !e.hasAttribute('aria-busy')"), "removed_from_cart did not clear the pending row")
+
+    # Wishlist in-sheet removal: seeded as already-wished, sheet made visible
+    # directly (the fetch-backed full-sheet open/render path is unrelated,
+    # pre-existing behavior, not under test here) so only the removal
+    # interaction itself is exercised -- no full-sheet refetch/rebuild, no
+    # navigation, the closest item collapses in place, overlay stays open,
+    # and removing the only item renders the existing canonical empty state.
+    page.evaluate("localStorage.setItem('gloskin_wishlist', JSON.stringify([42]))")
+    wishlist_sheet = page.locator('[data-gloskin-overlay="wishlist"]')
+    page.evaluate("""() => {
+      const sheet = document.querySelector('[data-gloskin-overlay="wishlist"]');
+      sheet.hidden = false;
+      sheet.setAttribute('aria-hidden', 'false');
+    }""")
+    nav_before_wishlist = page.url
+    page.locator('#wishRow42 [data-gloskin-wishlist-toggle]').click()
+    require(page.url == nav_before_wishlist, "wishlist in-sheet removal caused a navigation")
+    page.wait_for_timeout(240)
+    require(page.locator('#wishRow42').count() == 0, "wishlist in-sheet removal did not remove the closest item")
+    require(page.evaluate("localStorage.getItem('gloskin_wishlist')") == "[]", "wishlist in-sheet removal did not persist")
+    require(wishlist_sheet.get_attribute("aria-hidden") == "false", "wishlist overlay closed itself during in-sheet removal")
+    require(page.locator('[data-gloskin-wishlist-body] .gloskin-ui1-empty-state').count() == 1, "last wishlist item removal did not render the canonical empty state")
+    require(page.evaluate("window.__plays") == 2, "wishlist removal incorrectly played celebratory sound")
+
+    # Restore both sheets to hidden -- they were shown directly above without
+    # going through the overlay controller -- so they cannot intercept the
+    # remaining fixture's pointer interactions.
+    page.evaluate("""() => {
+      ['cart', 'wishlist'].forEach(function (name) {
+        var sheet = document.querySelector('[data-gloskin-overlay="' + name + '"]');
+        sheet.hidden = true;
+        sheet.setAttribute('aria-hidden', 'true');
+      });
+    }""")
 
     page.emulate_media(reduced_motion="reduce")
     page.locator(".gloskin-ui1-nav__row").nth(0).hover()

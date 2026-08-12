@@ -148,6 +148,15 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1-cart-sheet__item-variation{font-size:.82rem;color:var(--gloskin-muted)}
 .gloskin-ui1-cart-sheet__item-meta{font-size:.88rem;color:var(--gloskin-muted)}
 .gloskin-ui1-cart-sheet__item-remove{align-self:start;font-size:1.1rem;line-height:1;text-decoration:none;text-align:center}
+/* Pending row while Woo's own .remove_from_cart_button AJAX request is in
+ * flight (see initCart() in gloskin-ui1-core.js). Row dimensions are
+ * preserved -- only content is dimmed/hidden under a restrained shimmer, the
+ * row is disabled, and no manual fragment/count mutation happens here; Woo's
+ * own fragment replacement clears this row (and the .is-removing class with
+ * it) on success. */
+.gloskin-ui1-cart-sheet__item.is-removing{position:relative;pointer-events:none}
+.gloskin-ui1-cart-sheet__item.is-removing>*{visibility:hidden}
+.gloskin-ui1-cart-sheet__item.is-removing::after{content:"";position:absolute;inset:0;border-radius:var(--gloskin-radius-sm);background:linear-gradient(90deg,var(--gloskin-surface-strong) 25%,var(--gloskin-surface) 37%,var(--gloskin-surface-strong) 63%);background-size:400% 100%;animation:gloskin-skeleton-shimmer 1.4s ease infinite}
 .gloskin-ui1-cart-sheet__summary{display:flex;justify-content:space-between;padding:16px 0;border-top:1px solid var(--gloskin-border);font-weight:700}
 .gloskin-ui1-cart-sheet__actions{display:grid;gap:8px;margin-top:8px}
 .gloskin-ui1-cart-sheet__empty{display:grid;gap:12px;padding:40px 0;text-align:center;color:var(--gloskin-muted)}
@@ -156,7 +165,12 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 /* Wishlist sheet body */
 .gloskin-ui1-wishlist-sheet__body{flex:1;padding:20px 24px}
 .gloskin-ui1-wishlist-sheet__list{margin:0;padding:0;list-style:none;display:grid;gap:12px}
-.gloskin-ui1-wishlist-sheet__item{display:grid;grid-template-columns:1fr auto;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--gloskin-border)}
+.gloskin-ui1-wishlist-sheet__item{display:grid;grid-template-columns:1fr auto;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--gloskin-border);transition:opacity 170ms ease,transform 170ms ease}
+/* Removing an item from inside the already-open sheet is a synchronous
+ * localStorage mutation (see removeSheetItem() in gloskin-ui1-core.js) --
+ * a short transition, never a skeleton/fake wait. The node is removed once
+ * this finishes. */
+.gloskin-ui1-wishlist-sheet__item.is-removing{opacity:0;transform:scale(.96);pointer-events:none}
 .gloskin-ui1-wishlist-sheet__item-link{text-decoration:none;display:grid;gap:2px}
 .gloskin-ui1-wishlist-sheet__item-name{font-weight:600;color:var(--gloskin-text)}
 .gloskin-ui1-wishlist-sheet__item-price{font-size:.88rem;color:var(--gloskin-accent-readable);font-weight:700}
@@ -184,7 +198,7 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1-wishlist-toggle--detail{position:static;margin-top:14px;width:44px;height:44px;border:1px solid var(--gloskin-border);box-shadow:none}
 
 /* Reduced motion for overlays/sheets */
-@media (prefers-reduced-motion:reduce){.gloskin-ui1-search-overlay,.gloskin-ui1-sheet,.gloskin-ui1-search-overlay__canvas,.gloskin-ui1-sheet__panel,.gloskin-ui1-badge{transition:none !important}.gloskin-ui1-search-overlay__loading span{animation:none}}
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-search-overlay,.gloskin-ui1-sheet,.gloskin-ui1-search-overlay__canvas,.gloskin-ui1-sheet__panel,.gloskin-ui1-badge,.gloskin-ui1-wishlist-sheet__item{transition:none !important}.gloskin-ui1-search-overlay__loading span,.gloskin-ui1-cart-sheet__item.is-removing::after{animation:none}}
 
 /* ==========================================================================
    Gloskin Form Kit v1 -- refinements layered on the shared field primitive
@@ -608,8 +622,24 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.ca
 .gloskin-ui1-shop-categories a:hover{border-color:color-mix(in srgb,var(--gloskin-accent) 30%,var(--gloskin-border));color:var(--gloskin-text)}
 .gloskin-ui1-shop-categories a[aria-current="page"]{border-color:color-mix(in srgb,var(--gloskin-accent) 38%,var(--gloskin-border));background:var(--gloskin-accent-soft);color:var(--gloskin-accent-strong)}
 .gloskin-ui1-shop-results-column,.gloskin-ui1-shop-results,.gloskin-ui1-shop-grid{min-width:0}
-.gloskin-ui1-shop-results{transition:opacity 160ms ease}
+.gloskin-ui1-shop-results{position:relative;transition:opacity 160ms ease}
 .gloskin-ui1-shop-results[aria-busy="true"]{opacity:.68}
+/* Extends the existing aria-busy/is-loading state owned by setBusy() in
+ * initShopCatalog() -- one loading controller, this is presentation only.
+ * The skeleton overlays the previous grid (still in the DOM underneath;
+ * results.innerHTML is only ever reassigned by the existing success path),
+ * so a failed request just removes the skeleton and that same grid is
+ * revealed again. */
+.gloskin-ui1-shop-skeleton{position:absolute;inset:0;z-index:1;overflow:hidden;background:var(--gloskin-surface)}
+.gloskin-ui1-shop-skeleton__grid{display:grid;gap:clamp(16px,2.4vw,28px);grid-template-columns:repeat(3,minmax(0,1fr))}
+.gloskin-ui1-shop-skeleton__card{overflow:hidden;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);background:var(--gloskin-bg)}
+.gloskin-ui1-shop-skeleton__media{aspect-ratio:1;background:linear-gradient(90deg,var(--gloskin-surface-strong) 25%,var(--gloskin-surface) 37%,var(--gloskin-surface-strong) 63%);background-size:400% 100%;animation:gloskin-skeleton-shimmer 1.4s ease infinite}
+.gloskin-ui1-shop-skeleton__line{height:12px;margin:16px clamp(20px,3vw,28px) 0;border-radius:999px;background:linear-gradient(90deg,var(--gloskin-surface-strong) 25%,var(--gloskin-surface) 37%,var(--gloskin-surface-strong) 63%);background-size:400% 100%;animation:gloskin-skeleton-shimmer 1.4s ease infinite}
+.gloskin-ui1-shop-skeleton__line--title{width:65%}
+.gloskin-ui1-shop-skeleton__line--price{width:35%;margin-bottom:clamp(20px,3vw,28px)}
+@keyframes gloskin-skeleton-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@media (max-width:1040px){.gloskin-ui1-shop-skeleton__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){.gloskin-ui1-shop-skeleton__grid{grid-template-columns:1fr}}
 .gloskin-ui1-shop-status:empty{display:none}
 .gloskin-ui1-shop-status:not(:empty){display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 22px;padding:12px 14px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);background:var(--gloskin-bg);color:var(--gloskin-muted);font-size:.92rem}
 .gloskin-ui1-shop-status .gloskin-ui1-button{width:auto;min-height:38px}
@@ -623,7 +653,7 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.ca
 	.gloskin-ui1-shop-categories li{flex:0 0 auto}
 	.gloskin-ui1-shop-categories a{padding-inline:14px;white-space:nowrap}
 }
-@media (prefers-reduced-motion:reduce){.gloskin-ui1-shop-results,.gloskin-ui1-shop-categories a{transition:none !important}}
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-shop-results,.gloskin-ui1-shop-categories a{transition:none !important}.gloskin-ui1-shop-skeleton__media,.gloskin-ui1-shop-skeleton__line{animation:none}}
 
 /* -----------------------------------------------------------------
  * Gloskin Form + Action Kit -- coverage completion pass. Same tokens and

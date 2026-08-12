@@ -106,7 +106,18 @@ final class Gloskin_Site_Core_Asset_Service {
 		if ( wp_script_is( 'wc-cart-fragments', 'registered' ) ) {
 			wp_enqueue_script( 'wc-cart-fragments' );
 		}
-		if ( 'yes' === get_option( 'woocommerce_enable_ajax_add_to_cart' ) && wp_script_is( 'wc-add-to-cart', 'registered' ) ) {
+		/* wc-add-to-cart (add-to-cart.js) also owns the .remove_from_cart_button
+		 * delegated AJAX removal handler the Gloskin cart sheet's remove links
+		 * depend on (see render_mini_cart_body()). That sheet is rendered
+		 * site-wide in header.php whenever WooCommerce is available -- the
+		 * SAME condition already covered by the wp_script_is() check below --
+		 * independent of woocommerce_enable_ajax_add_to_cart, which only
+		 * controls whether Woo's *own* catalog-loop templates mark their Add
+		 * to Cart buttons ajax_add_to_cart; it never gates whether this script
+		 * itself may load. Gating the enqueue on that unrelated option left
+		 * cart-sheet removal falling back to a full navigation whenever it was
+		 * off (or its default, which is off). */
+		if ( wp_script_is( 'wc-add-to-cart', 'registered' ) ) {
 			wp_enqueue_script( 'wc-add-to-cart' );
 		}
 		if ( $this->variation_form_may_render() && wp_script_is( 'wc-add-to-cart-variation', 'registered' ) ) {

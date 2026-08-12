@@ -73,6 +73,26 @@ ok( false !== strpos( $js, "document.dispatchEvent(new CustomEvent('gloskin:cata
 ok( false !== strpos( $js, "document.addEventListener('gloskin:catalog-updated', syncToggles)" ), 'wishlist owner must re-sync only toggle state after catalog update' );
 ok( false !== strpos( $js, "event.target.closest('[data-gloskin-quickadd-open]')" ), 'Quick Add must remain delegated for injected cards' );
 
+/* Ghost-space fix: the shop-intro section itself (not just its inner
+ * content) is conditional on real page content -- no empty padded DOM
+ * section, no negative margin/fixed-height/CSS-hiding compensation. */
+ok( false !== strpos( $shop, "<?php if ( gloskin_ui1_has_content( \$gloskin_context['page'] ) ) : ?>\n<section class=\"gloskin-ui1-section gloskin-ui1-section--tight\" data-gloskin-section=\"shop-intro\">" ), 'the whole shop-intro section, not only its inner content, must be conditional on real page content' );
+ok( false === strpos( $css, 'shop-intro' ), 'shop-intro ghost space must not be patched with CSS' );
+
+/* Shop filter skeleton extends the existing aria-busy/is-loading setBusy()
+ * state -- one loading controller, tied to the same requestSequence/
+ * AbortController stale-request guard already covering setBusy() itself. */
+ok( 1 === substr_count( $js, 'function setBusy(busy) {' ), 'skeleton must extend the existing single setBusy() owner, not a second loading controller' );
+ok( false !== strpos( $js, 'function skeletonMarkup()' ), 'shop skeleton markup owner missing' );
+ok( false !== strpos( $js, "results.insertAdjacentHTML('beforeend', skeletonMarkup())" ), 'skeleton must overlay results, never replace the previous grid' );
+ok( false !== strpos( $js, "results.querySelector('[data-gloskin-shop-skeleton]')" ), 'skeleton insertion/removal must be idempotent' );
+ok( false !== strpos( $js, 'results.style.minHeight = height' ) && false !== strpos( $js, "results.style.removeProperty('min-height')" ), 'skeleton must lock/release results height to avoid a scroll jump' );
+ok( false !== strpos( $js, "aria-hidden=\"true\"><div class=\"gloskin-ui1-shop-skeleton__grid\">" ), 'skeleton overlay must be aria-hidden' );
+ok( false !== strpos( $shop, 'data-gloskin-shop-status-live' ), 'shop must expose a persistent screen-reader loading status outside the replaced results region' );
+ok( false !== strpos( $css, '.gloskin-ui1-shop-skeleton{' ) && false !== strpos( $css, '.gloskin-ui1-shop-skeleton__grid{' ), 'shop skeleton grid presentation missing' );
+ok( false !== strpos( $css, '@keyframes gloskin-skeleton-shimmer' ), 'skeleton shimmer must be CSS-only, no JS animation loop' );
+ok( false === strpos( $js, 'setInterval(' ), 'skeleton must not use a JS polling/animation interval' );
+
 /* Responsive layout stays one component. */
 ok( false !== strpos( $css, 'grid-template-columns:minmax(210px,240px) minmax(0,1fr)' ), 'desktop Shop must use compact 210-240px sidebar' );
 ok( false !== strpos( $css, '@media (max-width:900px)' ) && false !== strpos( $css, '.gloskin-ui1-shop-categories{position:static;top:auto;overflow-x:auto' ), 'same Shop category nav must become horizontal overflow presentation on smaller screens' );

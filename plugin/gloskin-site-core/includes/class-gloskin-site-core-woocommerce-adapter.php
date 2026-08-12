@@ -517,12 +517,18 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 				echo '</span>';
 				echo '</span>';
 				if ( $item['remove_url'] ) {
-					/* Woo-native remove markup: wc-cart-fragments.js already binds AJAX
-					 * remove + fragment refresh to `a.remove` links carrying these data
-					 * attributes, so no custom cart JS is needed here. */
+					/* Woo-native remove contract: WooCommerce's own wc-add-to-cart.js
+					 * (add-to-cart.js) binds delegated AJAX removal on the
+					 * `.remove_from_cart_button` class specifically (verified against
+					 * the actual bundled Woo 11 script) -- the plain `remove` class
+					 * alone is not enough. It reads data-cart_item_key, POSTs to Woo's
+					 * own remove_from_cart endpoint, and on success triggers
+					 * `removed_from_cart` with the response fragments; on real
+					 * network/AJAX failure it falls back to this same href. Gloskin
+					 * never runs a second cart-mutation request for this. */
 					/* translators: %s: cart line item's product name, used in the remove link's accessible label. */
 					$item_remove_label = sprintf( __( 'Hapus %s', 'gloskin-site-core' ), $item['name'] );
-					echo '<a href="' . esc_url( $item['remove_url'] ) . '" class="remove gloskin-ui1-cart-sheet__item-remove" aria-label="' . esc_attr( $item_remove_label ) . '" data-product_id="' . esc_attr( $item['product_id'] ) . '" data-cart_item_key="' . esc_attr( $item['key'] ) . '" data-product_sku="">&times;</a>';
+					echo '<a href="' . esc_url( $item['remove_url'] ) . '" class="remove remove_from_cart_button gloskin-ui1-cart-sheet__item-remove" aria-label="' . esc_attr( $item_remove_label ) . '" data-product_id="' . esc_attr( $item['product_id'] ) . '" data-cart_item_key="' . esc_attr( $item['key'] ) . '" data-product_sku="">&times;</a>';
 				}
 				echo '</li>';
 			}

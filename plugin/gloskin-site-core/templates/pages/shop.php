@@ -14,13 +14,13 @@ $gloskin_shop_results = array(
 );
 $gloskin_shop_results_partial = dirname( __DIR__ ) . '/parts/shop-results.php';
 ?>
+<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?>
 <section class="gloskin-ui1-section gloskin-ui1-section--tight" data-gloskin-section="shop-intro">
 	<div class="gloskin-ui1-container">
-		<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?>
-			<div class="gloskin-ui1-container--narrow gloskin-ui1-section__intro"><?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?></div>
-		<?php endif; ?>
+		<div class="gloskin-ui1-container--narrow gloskin-ui1-section__intro"><?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?></div>
 	</div>
 </section>
+<?php endif; ?>
 <section class="gloskin-ui1-section gloskin-ui1-section--soft" data-gloskin-section="shop-products" data-gloskin-shop-catalog data-gloskin-shop-url="<?php echo esc_url( $gloskin_shop_url ); ?>" data-gloskin-shop-initial-page="<?php echo esc_attr( (string) $gloskin_shop_results['page'] ); ?>">
 	<div class="gloskin-ui1-container">
 		<div class="gloskin-ui1-shop-catalog">
@@ -39,6 +39,7 @@ $gloskin_shop_results_partial = dirname( __DIR__ ) . '/parts/shop-results.php';
 				<div class="gloskin-ui1-shop-results" data-gloskin-shop-results aria-busy="false">
 					<?php if ( is_readable( $gloskin_shop_results_partial ) ) { include $gloskin_shop_results_partial; } ?>
 				</div>
+				<span class="screen-reader-text" data-gloskin-shop-status-live aria-live="polite"></span>
 			</div>
 		</div>
 	</div>

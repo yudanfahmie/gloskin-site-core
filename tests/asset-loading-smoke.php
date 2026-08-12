@@ -80,13 +80,21 @@ if ( in_array( 'wc-add-to-cart', $GLOBALS['gl_scripts'], true ) || in_array( 'wc
 class WooCommerce {}
 $GLOBALS['gl_woo_registered_scripts'] = array( 'wc-cart-fragments', 'wc-add-to-cart' );
 
+// wc-add-to-cart also owns the .remove_from_cart_button delegated AJAX
+// removal handler the site-wide Gloskin cart sheet depends on
+// (WooCommerce_Adapter::render_mini_cart_body()), so it must be enqueued
+// whenever WooCommerce is present -- independent of the unrelated
+// woocommerce_enable_ajax_add_to_cart catalog-loop option, which only
+// controls whether Woo's own templates mark catalog buttons
+// ajax_add_to_cart, never whether this script itself may load.
 $GLOBALS['gl_asset_context'] = array( 'view' => 'home' );
 $GLOBALS['gl_styles'] = array();
 $GLOBALS['gl_scripts'] = array();
 $GLOBALS['gl_options'] = array();
 $service->enqueue_frontend();
-if ( ! in_array( 'wc-cart-fragments', $GLOBALS['gl_scripts'], true ) ) { fwrite( STDERR, "wc-cart-fragments not enqueued once WooCommerce is present\n" ); exit( 1 ); }
-if ( in_array( 'wc-add-to-cart', $GLOBALS['gl_scripts'], true ) ) { fwrite( STDERR, "wc-add-to-cart enqueued despite woocommerce_enable_ajax_add_to_cart being disabled\n" ); exit( 1 ); }
+if ( ! in_array( 'wc-cart-fragments', $GLOBALS['gl_scripts'], true ) || ! in_array( 'wc-add-to-cart', $GLOBALS['gl_scripts'], true ) ) {
+	fwrite( STDERR, "native Woo cart-fragments/add-to-cart scripts not enqueued once WooCommerce is present\n" ); exit( 1 );
+}
 
 $GLOBALS['gl_options']['woocommerce_enable_ajax_add_to_cart'] = 'yes';
 $GLOBALS['gl_styles'] = array();
