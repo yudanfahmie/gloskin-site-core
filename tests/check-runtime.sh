@@ -21,6 +21,7 @@ php tests/single-product-description-boundary-contract.php
 node tests/single-product-ajax-payload.test.js
 php tests/shop-catalog-contract.php
 node tests/shop-catalog-controller.test.js
+python tests/storefront-regression-contract.py
 python tests/readiness-contract-smoke.py
 php tests/readiness-php-smoke.php
 php tests/rendered-shell-auth-smoke.php
@@ -43,6 +44,7 @@ if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/nu
   python tests/readiness-browser-smoke.py
   python tests/quick-add-browser-smoke.py
   python tests/shop-catalog-browser-smoke.py
+  python tests/public-rest-get-browser-smoke.py
   python tests/single-product-dock-browser-smoke.py
   python tests/single-product-ghost-space-browser-smoke.py
   python tests/micro-interactions-browser-smoke.py

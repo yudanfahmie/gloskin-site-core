@@ -597,7 +597,7 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 		if ( false === strpos( $mini_cart, 'gloskin-ui1-cart-sheet__item-media' )
 			|| false === strpos( $mini_cart, 'Test Product' )
 			|| false === strpos( $mini_cart, 'Ukuran: 30ml' )
-			|| false === strpos( $mini_cart, 'class="remove gloskin-ui1-cart-sheet__item-remove"' )
+			|| false === strpos( $mini_cart, 'class="remove remove_from_cart_button gloskin-ui1-cart-sheet__item-remove"' )
 			|| false === strpos( $mini_cart, 'data-cart_item_key="gl_test_cart_item_key"' ) ) {
 			fwrite( STDERR, "Mini-cart item rendering incomplete: {$mini_cart}\n" ); exit( 1 );
 		}

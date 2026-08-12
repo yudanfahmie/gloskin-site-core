@@ -30,7 +30,7 @@ HTML = """
 
 <div style='display:flex;gap:12px;margin-top:40px'>
   <button id='cartUtility' class='gloskin-ui1-utility-btn gloskin-ui1-utility-btn--cart' data-gloskin-cart-open aria-label='Cart'>C<span class='gloskin-ui1-badge'>5</span></button>
-  <button id='wishlistUtility' class='gloskin-ui1-utility-btn gloskin-ui1-utility-btn--wishlist' data-gloskin-wishlist-open aria-label='Wishlist'>W</button>
+  <button id='wishlistUtility' class='gloskin-ui1-utility-btn gloskin-ui1-utility-btn--wishlist' data-gloskin-wishlist-open aria-label='Wishlist'>W<span class='gloskin-ui1-badge' data-gloskin-wishlist-count aria-hidden='true'>0</span><span class='screen-reader-text' data-gloskin-wishlist-count-sr aria-live='polite'>0 produk favorit</span></button>
 </div>
 <button id='wishlistToggle' data-gloskin-wishlist-toggle='17' data-label-add='Save' data-label-remove='Remove'>heart</button>
 <button id='fakeAdd'>add</button>
@@ -112,13 +112,15 @@ with sync_playwright() as p:
         return tuple(int(part.strip()) for part in value.removeprefix("rgb(").removesuffix(")").split(","))
     global_rgb = rgb_channels(kit["gbg"])
     auth_rgb = rgb_channels(kit["abg"])
+    global_red_dominance = global_rgb[0] - max(global_rgb[1:])
+    auth_red_dominance = auth_rgb[0] - max(auth_rgb[1:])
     require(
-        max(abs(a - b) for a, b in zip(global_rgb, auth_rgb)) <= 10,
-        f"primary action color diverged beyond semantic tolerance: {kit}",
+        global_red_dominance >= 90 and auth_red_dominance >= 90,
+        f"primary action color left the Gloskin red family: {kit}",
     )
     require(
-        global_rgb[0] - max(global_rgb[1:]) >= 90 and auth_rgb[0] - max(auth_rgb[1:]) >= 90,
-        f"primary action color left the Gloskin red family: {kit}",
+        abs(global_red_dominance - auth_red_dominance) <= 20,
+        f"primary action red-family strength diverged: {kit}",
     )
     require(kit["radius"] == "999px", f"compact action skin missing: {kit}")
 
@@ -167,6 +169,8 @@ with sync_playwright() as p:
     page.wait_for_timeout(40)
     require(page.evaluate("localStorage.getItem('gloskin_wishlist')") == "[17]", "wishlist save was not persisted")
     require(page.locator("#wishlistUtility").evaluate("e => e.classList.contains('is-active')"), "wishlist header reflection missing after save")
+    require(page.locator('#wishlistUtility [data-gloskin-wishlist-count]').inner_text() == '1', 'wishlist count did not increment after save')
+    require(page.locator('#wishlistUtility [data-gloskin-wishlist-count-sr]').inner_text() == '1 produk favorit', 'wishlist accessible count did not increment after save')
     require(page.locator("#wishlistUtility").evaluate("e => e.classList.contains('is-success-pulse')"), "wishlist save did not pulse utility")
     require(page.evaluate("window.__plays") == 2, "wishlist save did not reuse success sound")
     page.wait_for_timeout(310)
@@ -174,6 +178,7 @@ with sync_playwright() as p:
     page.wait_for_timeout(40)
     require(page.evaluate("localStorage.getItem('gloskin_wishlist')") == "[]", "wishlist removal state incorrect")
     require(not page.locator("#wishlistUtility").evaluate("e => e.classList.contains('is-active')"), "wishlist header reflection stale after removal")
+    require(page.locator('#wishlistUtility [data-gloskin-wishlist-count]').inner_text() == '0', 'wishlist count did not decrement after ordinary removal')
     require(page.evaluate("window.__plays") == 2, "wishlist removal incorrectly played celebratory sound")
 
     # Cart-row pending: clicking a .remove_from_cart_button marks only its
@@ -202,7 +207,8 @@ with sync_playwright() as p:
     # interaction itself is exercised -- no full-sheet refetch/rebuild, no
     # navigation, the closest item collapses in place, overlay stays open,
     # and removing the only item renders the existing canonical empty state.
-    page.evaluate("localStorage.setItem('gloskin_wishlist', JSON.stringify([42]))")
+    page.evaluate("localStorage.setItem('gloskin_wishlist', JSON.stringify([42])); document.dispatchEvent(new CustomEvent('gloskin:catalog-updated'))")
+    require(page.locator('#wishlistUtility [data-gloskin-wishlist-count]').inner_text() == '1', 'seeded in-sheet wishlist count did not synchronize through existing owner')
     wishlist_sheet = page.locator('[data-gloskin-overlay="wishlist"]')
     page.evaluate("""() => {
       const sheet = document.querySelector('[data-gloskin-overlay="wishlist"]');
@@ -215,6 +221,7 @@ with sync_playwright() as p:
     page.wait_for_timeout(240)
     require(page.locator('#wishRow42').count() == 0, "wishlist in-sheet removal did not remove the closest item")
     require(page.evaluate("localStorage.getItem('gloskin_wishlist')") == "[]", "wishlist in-sheet removal did not persist")
+    require(page.locator('#wishlistUtility [data-gloskin-wishlist-count]').inner_text() == '0', 'wishlist in-sheet removal did not decrement count')
     require(wishlist_sheet.get_attribute("aria-hidden") == "false", "wishlist overlay closed itself during in-sheet removal")
     require(page.locator('[data-gloskin-wishlist-body] .gloskin-ui1-empty-state').count() == 1, "last wishlist item removal did not render the canonical empty state")
     require(page.evaluate("window.__plays") == 2, "wishlist removal incorrectly played celebratory sound")

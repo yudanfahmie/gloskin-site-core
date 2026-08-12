@@ -34,6 +34,15 @@
 		document.dispatchEvent(new CustomEvent('gloskin:sticky-nav-hold'));
 	}
 
+	/* Public Gloskin REST projections are deliberately guest-readable. Do not
+	 * attach wp_rest nonces to these GETs: an expired/stale nonce turns a public
+	 * route into a REST-cookie authentication failure before permission_callback
+	 * can allow the request. Credentials stay same-origin for normal browser
+	 * semantics, but these projections never depend on authenticated identity. */
+	function publicRestGetOptions() {
+		return { method: 'GET', credentials: 'same-origin' };
+	}
+
 	/* -----------------------------------------------------------------
 	 * Shared confirmed-success feedback. Presentation only: callers invoke
 	 * this after their existing state owner has completed a real mutation
@@ -570,7 +579,7 @@
 			resultsContainer.innerHTML = '<div class="gloskin-ui1-search-overlay__loading" aria-label="Memuat hasil"><span aria-hidden="true"></span></div>';
 
 			var url = (config.restUrl || '/wp-json/gloskin/v1/') + 'search?q=' + encodeURIComponent(query);
-			var fetchOpts = { headers: { 'X-WP-Nonce': config.restNonce || '' } };
+			var fetchOpts = publicRestGetOptions();
 			if (abortController) { fetchOpts.signal = abortController.signal; }
 
 			fetch(url, fetchOpts)
@@ -1181,7 +1190,7 @@
 			if (cache[productId]) { render(cache[productId]); return; }
 			renderLoading();
 			var url = (config.restUrl || '/wp-json/gloskin/v1/') + 'products/quick-add?id=' + encodeURIComponent(productId);
-			fetch(url, { headers: { 'X-WP-Nonce': config.restNonce || '' } })
+			fetch(url, publicRestGetOptions())
 				.then(function (res) {
 					if (!res.ok) { throw new Error('quickadd_http'); }
 					return res.json();
@@ -1390,7 +1399,7 @@
 			setBusy(true);
 
 			var endpoint = (config.restUrl || '/wp-json/gloskin/v1/') + 'shop/catalog?category=' + encodeURIComponent(category) + '&page=' + encodeURIComponent(page);
-			var fetchOptions = { method: 'GET', credentials: 'same-origin', headers: { 'X-WP-Nonce': config.restNonce || '' } };
+			var fetchOptions = publicRestGetOptions();
 			if (abortController) { fetchOptions.signal = abortController.signal; }
 
 			return window.fetch(endpoint, fetchOptions)
@@ -1603,6 +1612,10 @@
 				badge.textContent = count;
 				badge.classList.toggle('is-active', count > 0);
 			});
+			var countLabels = document.querySelectorAll('[data-gloskin-wishlist-count-sr]');
+			Array.prototype.forEach.call(countLabels, function (label) {
+				label.textContent = count + ' produk favorit';
+			});
 			var utilities = document.querySelectorAll('[data-gloskin-wishlist-open], [data-gloskin-wishlist-open-from-drawer]');
 			Array.prototype.forEach.call(utilities, function (utility) {
 				utility.classList.toggle('is-active', count > 0);
@@ -1620,7 +1633,7 @@
 			body.innerHTML = '<div class="gloskin-ui1-search-overlay__loading"><span></span></div>';
 
 			var url = (config.restUrl || '/wp-json/gloskin/v1/') + 'products/resolve?ids=' + ids.join(',');
-			fetch(url, { headers: { 'X-WP-Nonce': config.restNonce || '' } })
+			fetch(url, publicRestGetOptions())
 				.then(function (res) { return res.json(); })
 				.then(function (data) {
 					var products = data.products || [];

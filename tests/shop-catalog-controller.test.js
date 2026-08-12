@@ -29,6 +29,8 @@ assert(shop.includes('new window.AbortController()'), 'AbortController must canc
 assert((shop.match(/sequence !== requestSequence/g) || []).length >= 2, 'stale success and failure paths must both be ignored');
 assert(shop.includes("results.setAttribute('aria-busy', busy ? 'true' : 'false')"), 'aria-busy must be driven by one result owner');
 assert(shop.includes('showCatalogFailure(fallbackHref)'), 'failed GET must surface inline recovery');
+assert(shop.includes('var fetchOptions = publicRestGetOptions();'), 'Shop GET must use the shared guest-safe public REST transport');
+assert(!shop.includes('X-WP-Nonce') && !shop.includes('restNonce'), 'Shop public GET must not send/read a REST nonce');
 assert(shop.includes('Hasil sebelumnya tetap ditampilkan'), 'failure copy must explicitly preserve previous results');
 assert(!shop.includes("results.innerHTML = ''"), 'Shop controller must never blank previous results while loading/failing');
 assert(shop.includes("window.addEventListener('popstate'"), 'back/forward restoration must be wired');

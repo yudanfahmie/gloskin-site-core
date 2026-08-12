@@ -421,9 +421,10 @@ for expected in \
   grep -qF -- "$expected" "$adapter" || { echo "Woo cart fragment contract missing: $expected" >&2; exit 1; }
 done
 
-# F. Mini-cart remove stays native Woo-fragment-driven -- no custom remove
-# endpoint, just the a.remove markup wc-cart-fragments.js already binds to.
-grep -qF -- 'class="remove gloskin-ui1-cart-sheet__item-remove"' "$adapter" \
+# F. Mini-cart remove stays Woo-native -- no custom remove endpoint. Woo's
+# wc-add-to-cart.js delegated removal handler binds .remove_from_cart_button;
+# wc-cart-fragments remains the fragment reflection owner after that mutation.
+grep -qF -- 'class="remove remove_from_cart_button gloskin-ui1-cart-sheet__item-remove"' "$adapter" \
   || { echo "native Woo remove-link markup missing from mini-cart" >&2; exit 1; }
 
 # G. Wishlist toggle stays localStorage-only -- no network mutation request.

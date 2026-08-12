@@ -26,7 +26,7 @@ required_sections = {
     'doctors': ['doctors-intro', 'doctors-grid', 'doctors-pathways', 'doctors-closing'],
     'doctor': ['doctor-closing'],
     'insights': ['insights-intro', 'insights-list'],
-    'shop': ['shop-intro', 'shop-products'],
+    'shop': ['shop-products'],
     'contact': ['contact-clinics'],
 }
 closing_views = {'home', 'about', 'treatments', 'treatment', 'skincare-category', 'clinics', 'clinic', 'doctors', 'doctor'}

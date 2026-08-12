@@ -50,6 +50,7 @@ window.gloskinData = { woo:true, restUrl:'/wp-json/gloskin/v1/', restNonce:'fixt
 window.wc_cart_fragments_params = {};
 window.wc_add_to_cart_params = {};
 window.__shopFail = false;
+window.__publicGetRequests = [];
 (function(){
   const handlers = {};
   function jq(target){ return {
@@ -75,8 +76,11 @@ function resultHtml(category, page){
     '<div class="gloskin-ui1-grid gloskin-ui1-grid--cards gloskin-ui1-shop-grid" data-gloskin-shop-grid data-result-marker="'+category+'-'+page+'">'+
     '<article class="gloskin-ui1-card gloskin-ui1-card--product"><div class="gloskin-ui1-card__body"><h3>'+label+' '+page+'</h3><button type="button" class="gloskin-ui1-wishlist-toggle" data-gloskin-wishlist-toggle="'+productId+'" aria-pressed="false" data-label-add="Simpan" data-label-remove="Hapus">♥</button><div class="gloskin-ui1-card__actions">'+action+'</div></div></article></div>'+pagination;
 }
-window.fetch = function(url){
-  const text = String(url);
+window.fetch = function(url, options){
+  const text = String(url); options = options || {};
+  if (text.indexOf('products/quick-add') !== -1 || text.indexOf('shop/catalog') !== -1) {
+    window.__publicGetRequests.push({url:text, method:options.method || 'GET', credentials:options.credentials || '', headers:options.headers || null});
+  }
   if (text.indexOf('products/quick-add') !== -1) {
     return Promise.resolve({ok:true,json:function(){return Promise.resolve({found:true,id:202,name:'Serum Variable',url:'/product/serum-variable/',price_html:'Rp200.000',image_html:'',form_html:'<form class="variations_form cart"><select name="attribute_pa_size"><option value="30ml">30 ml</option></select><div class="single_variation_wrap"><button type="submit" class="single_add_to_cart_button button" name="add-to-cart" value="202">Tambah</button><input class="variation_id" name="variation_id" value="205"><input name="product_id" value="202"></div></form>'});}});
   }
@@ -162,6 +166,9 @@ with sync_playwright() as p:
     require(page.locator('[data-gloskin-shop-category="serum"]').get_attribute('aria-current') == 'page', 'successful category must update aria-current')
     require('#category=serum' in page.url and 'page=' not in page.url, 'category state must use clean hash state and reset page 1')
     require(page.evaluate("document.activeElement === document.querySelector('[data-gloskin-shop-category=\"serum\"]')"), 'ordinary category selection must not force focus into results')
+    first_shop_request = page.evaluate("window.__publicGetRequests.find(r => r.url.includes('shop/catalog'))")
+    require(first_shop_request and first_shop_request['method'] == 'GET' and first_shop_request['credentials'] == 'same-origin', f'Shop category GET transport invalid: {first_shop_request}')
+    require(first_shop_request['headers'] in (None, {}), f'Shop category GET leaked stale nonce/header: {first_shop_request}')
 
     wished = page.locator('[data-gloskin-wishlist-toggle="202"]')
     require(wished.get_attribute('aria-pressed') == 'true' and 'is-wished' in (wished.get_attribute('class') or ''), 'injected wished product must restore active wishlist state')
@@ -169,11 +176,15 @@ with sync_playwright() as p:
     page.locator('[data-gloskin-quickadd-open]').click()
     page.wait_for_selector('[data-gloskin-overlay="quickadd"][aria-hidden="false"]')
     page.wait_for_selector('[data-gloskin-quickadd-body] form.variations_form')
+    quick_request = page.evaluate("window.__publicGetRequests.find(r => r.url.includes('products/quick-add'))")
+    require(quick_request and quick_request['headers'] in (None, {}) and quick_request['method'] == 'GET', f'Quick Add public GET leaked stale nonce/header: {quick_request}')
     page.keyboard.press('Escape')
 
     page.locator('[data-gloskin-shop-page="2"]').click()
     page.wait_for_function("document.querySelector('[data-gloskin-shop-grid]').dataset.resultMarker === 'serum-2'")
     require('#category=serum&page=2' in page.url, 'pagination must preserve selected category in history state')
+    page_two_request = page.evaluate("window.__publicGetRequests.filter(r => r.url.includes('shop/catalog') && r.url.includes('page=2')).slice(-1)[0]")
+    require(page_two_request and page_two_request['headers'] in (None, {}) and page_two_request['method'] == 'GET', f'Shop pagination GET leaked stale nonce/header: {page_two_request}')
     require(page.evaluate("document.activeElement.hasAttribute('data-gloskin-shop-results-heading')"), 'pagination success must move focus to new results heading')
 
     page.locator('[data-gloskin-shop-category="facial-wash"]').click()
