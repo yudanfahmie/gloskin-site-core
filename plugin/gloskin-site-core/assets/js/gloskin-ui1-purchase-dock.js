@@ -9,8 +9,27 @@
 		var summary = product ? product.querySelector(':scope > .summary') : null;
 		var docks = summary ? summary.querySelectorAll('[data-gloskin-purchase-dock]') : [];
 		var dock = docks.length === 1 ? docks[0] : null;
-		var boundary = product ? (product.querySelector(':scope > .woocommerce-tabs') || product.querySelector(':scope > .related.products')) : null;
-		if (!product || !summary || !dock || !boundary || dock.querySelectorAll('form.cart').length !== 1) { return; }
+		if (!product || !summary || !dock || dock.querySelectorAll('form.cart').length !== 1) { return; }
+
+		/* Release boundary: the SAME dock must stay floating through Tabs AND
+		 * Related Products, releasing only at the end of Related Products. A
+		 * dedicated end sentinel placed immediately after ".related.products"
+		 * (never the tabs section itself) is the boundary target; when no
+		 * Related Products section exists, the sentinel falls back to the
+		 * canonical product-end boundary (the last position inside the
+		 * primary product root) so the dock still has a defined release
+		 * point. This sentinel is a presentation-only marker, not cloned/
+		 * moved product content. */
+		var related = product.querySelector(':scope > .related.products');
+		var boundary = document.createElement('span');
+		boundary.className = 'gloskin-ui1-purchase-dock-end';
+		boundary.setAttribute('aria-hidden', 'true');
+		boundary.style.cssText = 'display:block;height:1px;pointer-events:none;visibility:hidden;';
+		if (related) {
+			related.insertAdjacentElement('afterend', boundary);
+		} else {
+			product.appendChild(boundary);
+		}
 
 		var BOTTOM_GAP = 16;
 		var BOUNDARY_GAP = 12;
@@ -101,9 +120,10 @@
 			/* Once the dock has genuinely entered floating mode, a desktop
 			 * gallery may keep the first PDP grid row alive after the summary's
 			 * own content box has left the viewport. Keep the SAME dock floating
-			 * until the real Tabs boundary releases it; only scrolling back above
-			 * the purchase region (marker below + summary not visible) returns it
-			 * to normal flow. This avoids depending on artificial summary height. */
+			 * through Tabs and Related Products until the end-of-Related
+			 * boundary releases it; only scrolling back above the purchase
+			 * region (marker below + summary not visible) returns it to normal
+			 * flow. This avoids depending on artificial summary height. */
 			if (!summaryVisible && markerPosition === 'below') { return 'normal'; }
 			if (boundaryReached && state !== 'normal') { return 'boundary'; }
 			if (state === 'floating' || state === 'boundary') {

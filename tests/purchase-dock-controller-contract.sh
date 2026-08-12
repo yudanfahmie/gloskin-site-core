@@ -15,12 +15,22 @@ grep -qF "summary.querySelectorAll('[data-gloskin-purchase-dock]')" "$dock_js" |
 grep -qF "dock.querySelectorAll('form.cart').length !== 1" "$dock_js" || fail "dock controller no longer requires exactly one native form.cart"
 grep -qF "new IntersectionObserver" "$dock_js" || fail "dock controller must use IntersectionObserver"
 grep -qF "new ResizeObserver" "$dock_js" || fail "dock controller must use one ResizeObserver for dynamic form height"
-grep -qF "--gloskin-purchase-dock-bottom" "$dock_js" || fail "dock bottom safe-area variable missing"
+grep -qF -- "--gloskin-purchase-dock-bottom" "$dock_js" || fail "dock bottom safe-area variable missing"
 grep -qF "gloskin-ui1-purchase-dock-slot" "$dock_js" || fail "fixed-mode placeholder missing"
 grep -qF "dock.style.position = 'fixed'" "$dock_js" || fail "genuine viewport-bottom fixed state missing"
 grep -qF "dock.style.position = 'absolute'" "$dock_js" || fail "tabs-boundary settlement state missing"
 grep -qF "window.innerHeight >= 560" "$dock_js" || fail "short-viewport degrade threshold missing"
 grep -qF "height <= window.innerHeight * 0.55" "$dock_js" || fail "oversized-dock degrade guard missing"
+
+# The dock must float through Tabs AND Related Products, releasing only at
+# the end-of-Related boundary -- never settling before/at Tabs (the fixed
+# early-release bug).
+grep -qF "product.querySelector(':scope > .related.products')" "$dock_js" || fail "release boundary no longer targets Related Products"
+grep -qF "related.insertAdjacentElement('afterend', boundary)" "$dock_js" || fail "end-of-Related sentinel is not placed immediately after .related.products"
+grep -qF "product.appendChild(boundary)" "$dock_js" || fail "product-end fallback boundary missing for Related-Products-absent case"
+if grep -qF "product.querySelector(':scope > .woocommerce-tabs')" "$dock_js"; then
+  fail "dock controller regressed to releasing at the Tabs boundary instead of end-of-Related"
+fi
 
 if grep -qE "addEventListener\(['\"]scroll|setInterval\(|cloneNode\(|innerHTML\s*=|requestAnimationFrame\([^)]*scroll" "$dock_js"; then
   fail "dock controller introduced a scroll loop, clone/rebuild, or HTML replacement"

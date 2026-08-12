@@ -74,10 +74,10 @@ def snapshot(page):
       const product=document.querySelector('.gloskin-ui1-commerce-native>div.product');
       const summary=product.querySelector(':scope>.summary');
       const dock=summary.querySelector('[data-gloskin-purchase-dock]');
-      const tabs=product.querySelector(':scope>.woocommerce-tabs');
+      const related=product.querySelector(':scope>.related.products');
       const slot=summary.querySelector('.gloskin-ui1-purchase-dock-slot');
-      const d=dock.getBoundingClientRect(), s=summary.getBoundingClientRect(), t=tabs.getBoundingClientRect();
-      return {classes:dock.className,position:getComputedStyle(dock).position,left:d.left,width:d.width,top:d.top,bottom:d.bottom,height:d.height,summaryLeft:s.left,summaryWidth:s.width,tabsTop:t.top,slotHeight:slot?slot.getBoundingClientRect().height:-1,formCount:product.querySelectorAll(':scope>.summary [data-gloskin-purchase-dock] form.cart').length,pageForms:product.querySelectorAll('form.cart').length,overflow:getComputedStyle(dock).overflowY};
+      const d=dock.getBoundingClientRect(), s=summary.getBoundingClientRect(), r=related.getBoundingClientRect();
+      return {classes:dock.className,position:getComputedStyle(dock).position,left:d.left,width:d.width,top:d.top,bottom:d.bottom,height:d.height,summaryLeft:s.left,summaryWidth:s.width,relatedBottom:r.bottom,slotHeight:slot?slot.getBoundingClientRect().height:-1,formCount:product.querySelectorAll(':scope>.summary [data-gloskin-purchase-dock] form.cart').length,pageForms:product.querySelectorAll('form.cart').length,overflow:getComputedStyle(dock).overflowY};
     }""")
 
 
@@ -129,20 +129,41 @@ with sync_playwright() as p:
         require(grown['slotHeight'] >= grown['height'] - 1, f'placeholder stale after dock resize at {width}x{height}: {grown}')
 
         page.locator('#pa_ukuran').focus()
-        tabs_doc_top = page.evaluate("document.querySelector('.gloskin-ui1-commerce-native>div.product>.woocommerce-tabs').getBoundingClientRect().top+scrollY")
-        page.evaluate("y=>scrollTo(0,y)", max(0, tabs_doc_top - height + 8))
-        page.wait_for_timeout(180)
-        boundary = snapshot(page)
-        require('is-boundary' in boundary['classes'] and boundary['position'] == 'absolute', f'dock did not settle before tabs at {width}x{height}: {boundary}')
-        require(boundary['bottom'] <= boundary['tabsTop'] - 10, f'dock overlaps tabs at {width}x{height}: {boundary}')
-        require(page.evaluate("document.activeElement===document.querySelector('#pa_ukuran')"), f'focus moved during dock state change at {width}x{height}')
-        require(page.evaluate("window.__primaryFormBefore===document.querySelector('[data-gloskin-purchase-dock] form.cart')"), f'form node identity changed at {width}x{height}')
 
+        # The SAME dock must stay floating (fixed) all the way through Tabs --
+        # it must NOT settle/release when Tabs comes into view (the fixed bug).
+        tabs_doc_top = page.evaluate("document.querySelector('.gloskin-ui1-commerce-native>div.product>.woocommerce-tabs').getBoundingClientRect().top+scrollY")
+        page.evaluate("y=>scrollTo(0,y)", max(0, tabs_doc_top + 60))
+        page.wait_for_timeout(180)
+        through_tabs = snapshot(page)
+        require('is-floating' in through_tabs['classes'] and through_tabs['position'] == 'fixed', f'dock released while scrolling through Tabs at {width}x{height}: {through_tabs}')
+        require(page.evaluate("document.activeElement===document.querySelector('#pa_ukuran')"), f'focus moved during dock state change at {width}x{height}')
+        require(page.evaluate("window.__primaryFormBefore===document.querySelector('[data-gloskin-purchase-dock] form.cart')"), f'form node identity changed while floating through Tabs at {width}x{height}')
+
+        # It must also still be floating partway through Related Products --
+        # it only releases at the END of Related Products, not at its start.
         related_doc_top = page.evaluate("document.querySelector('.gloskin-ui1-commerce-native>div.product>.related.products').getBoundingClientRect().top+scrollY")
-        page.evaluate("y=>scrollTo(0,y)", related_doc_top + 120)
+        page.evaluate("y=>scrollTo(0,y)", related_doc_top + 60)
+        page.wait_for_timeout(180)
+        through_related = snapshot(page)
+        require('is-floating' in through_related['classes'] and through_related['position'] == 'fixed', f'dock released before reaching the end of Related Products at {width}x{height}: {through_related}')
+        require(page.evaluate("window.__primaryFormBefore===document.querySelector('[data-gloskin-purchase-dock] form.cart')"), f'form node identity changed while floating through Related Products at {width}x{height}')
+
+        # Release happens at the end-of-Related-Products boundary: the dock
+        # settles into flow, positioned above the related-END sentinel by its
+        # own height + gap, so it never covers the final related-product card.
+        related_doc_bottom = page.evaluate("(() => { const r = document.querySelector('.gloskin-ui1-commerce-native>div.product>.related.products').getBoundingClientRect(); return r.top + r.height + scrollY; })()")
+        page.evaluate("y=>scrollTo(0,y)", max(0, related_doc_bottom - height + 8))
+        page.wait_for_timeout(180)
+        released = snapshot(page)
+        require('is-boundary' in released['classes'] and released['position'] == 'absolute', f'dock did not release at the end of Related Products at {width}x{height}: {released}')
+        require(released['bottom'] <= released['relatedBottom'] + 1, f'dock overlaps the final Related Products content at {width}x{height}: {released}')
+        require(page.evaluate("window.__primaryFormBefore===document.querySelector('[data-gloskin-purchase-dock] form.cart')"), f'form node identity changed at release at {width}x{height}')
+
+        page.evaluate("y=>scrollTo(0,y)", related_doc_bottom + 150)
         page.wait_for_timeout(160)
         after = snapshot(page)
-        require(after['position'] != 'fixed' and 'is-floating' not in after['classes'], f'dock still covers Related/Footer at {width}x{height}: {after}')
+        require(after['position'] != 'fixed' and 'is-floating' not in after['classes'], f'dock still covers/enters the footer at {width}x{height}: {after}')
         require(page.evaluate("window.__primaryFormBefore===document.querySelector('[data-gloskin-purchase-dock] form.cart')"), f'form identity changed after release at {width}x{height}')
         page.close()
 

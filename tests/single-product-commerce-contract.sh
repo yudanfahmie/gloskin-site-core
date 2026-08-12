@@ -139,6 +139,19 @@ if grep -qE "wp_get_attachment_image\([^)]*'full'" "$adapter" "$helpers"; then
 	fail "SP-005: an image helper call was forced to 'full' outside the single-product main gallery"
 fi
 
+# Gallery presentation: no artificial surface tint behind the packshot, and
+# the thumbnail rail stays centered regardless of thumbnail count. object-
+# fit/aspect-ratio/border/radius/zoom behavior are untouched.
+grep -qF 'div.product .woocommerce-product-gallery__image{background:transparent}' "$core_css" \
+	|| fail "gallery: primary image container must render a transparent background"
+grep -qF 'div.product .woocommerce-product-gallery__image img{width:100%;height:auto;aspect-ratio:1/1;object-fit:contain;background:transparent}' "$core_css" \
+	|| fail "gallery: primary image element must render a transparent background"
+if grep -qE "woocommerce-product-gallery__image(\s*img)?\{[^}]*background:var\(--gloskin-surface-strong\)" "$core_css"; then
+	fail "gallery: artificial surface-strong tint reintroduced behind the gallery image"
+fi
+grep -qF '.flex-control-thumbs{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px' "$core_css" \
+	|| fail "gallery: thumbnail rail is not centered"
+
 # 14. Mobile single product collapses to one column and the Quick Add
 # modal stays a touch-safe bottom sheet; neither introduces horizontal
 # overflow (no fixed px widths wider than a narrow viewport).
@@ -205,6 +218,21 @@ if grep -qF '.gloskin-ui1-quickadd__form .single_add_to_cart_button{background:'
 	fail "commerce accent: Quick Add reintroduced a modal-specific button color owner"
 fi
 grep -qF 'var(--gloskin-accent-strong)' "$core_css" || fail "commerce accent: hover state must use --gloskin-accent-strong"
+
+# Commerce accent hardening: PDP primary Add to Cart and native Related
+# Products loop buttons own their accent/hover/disabled state by the real
+# WooCommerce button class, never only the generic co-class -- so a later-
+# loaded theme/plugin stylesheet targeting `.single_add_to_cart_button` or
+# `.add_to_cart_button` directly can no longer win with native purple.
+for expected in \
+  '.gloskin-ui1 .woocommerce form.cart button.single_add_to_cart_button,' \
+  '.gloskin-ui1 .gloskin-ui1-form form.cart button.single_add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);color:var(--gloskin-inverse)}' \
+  '.related.products ul.products li.product .add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);color:var(--gloskin-inverse)}'; do
+  grep -qF -- "$expected" "$core_css" || fail "commerce accent: PDP/related CTA hardening missing: $expected"
+done
+if grep -qE "single_add_to_cart_button:disabled[^{]*\{[^}]*background:var\(--gloskin-accent\)" "$core_css"; then
+  fail "commerce accent: disabled Add to Cart must not render the active accent color"
+fi
 
 # View Cart: idempotent, success-only, single-product custom AJAX helper
 # (Woo's own wc-add-to-cart.js already creates this natively for catalog-

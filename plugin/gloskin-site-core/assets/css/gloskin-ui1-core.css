@@ -350,6 +350,26 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.ca
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart .woocommerce-variation-add-to-cart{display:flex;flex-wrap:wrap;align-items:center;gap:10px;min-width:0;max-width:100%}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart .single_add_to_cart_button{min-width:220px;max-width:100%}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart .single_add_to_cart_button[aria-busy="true"]{opacity:.72;pointer-events:none}
+/* CTA color ownership: the Gloskin Form/Action Kit stays the ONE owner of
+ * every purchase CTA color. The generic `.woocommerce button.button` base
+ * rule (gloskin-ui1-core-base.css) only wins while Woo keeps a plain
+ * `.button` class alongside `.single_add_to_cart_button` -- naming the real
+ * WooCommerce button class directly here means ownership no longer depends
+ * on that co-class surviving a theme/plugin stylesheet loaded later with
+ * equal-or-higher specificity. Presentation only; no Woo markup, validation
+ * or purchasability state is touched. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart .single_add_to_cart_button,
+.gloskin-ui1 .woocommerce form.cart button.single_add_to_cart_button,
+.gloskin-ui1 .gloskin-ui1-form form.cart button.single_add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);color:var(--gloskin-inverse)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart .single_add_to_cart_button:hover,
+.gloskin-ui1 .woocommerce form.cart button.single_add_to_cart_button:hover,
+.gloskin-ui1 .gloskin-ui1-form form.cart button.single_add_to_cart_button:hover{background:var(--gloskin-accent-strong);border-color:var(--gloskin-accent-strong)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart .single_add_to_cart_button:disabled,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart .single_add_to_cart_button.disabled,
+.gloskin-ui1 .woocommerce form.cart button.single_add_to_cart_button:disabled,
+.gloskin-ui1 .woocommerce form.cart button.single_add_to_cart_button.disabled,
+.gloskin-ui1 .gloskin-ui1-form form.cart button.single_add_to_cart_button:disabled,
+.gloskin-ui1 .gloskin-ui1-form form.cart button.single_add_to_cart_button.disabled{background:var(--gloskin-field-disabled);color:var(--gloskin-muted);border-color:var(--gloskin-field-border);opacity:.72;cursor:not-allowed;pointer-events:none}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-variation{padding:14px 16px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);background:var(--gloskin-surface)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-variation-availability .stock{margin:0}
 /* table-layout:fixed (not the auto-layout default) so a <select>'s own
@@ -373,9 +393,9 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .produc
  * single_product_gallery_image_size()); this only frames whatever size
  * Woo hands the gallery -- it never forces sizing itself. */
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-product-gallery__wrapper{margin:0;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-lg);background:var(--gloskin-bg);overflow:hidden}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-product-gallery__image{background:var(--gloskin-surface-strong)}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-product-gallery__image img{width:100%;height:auto;aspect-ratio:1/1;object-fit:contain;background:var(--gloskin-surface-strong)}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .flex-control-thumbs{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 0;padding:0;list-style:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-product-gallery__image{background:transparent}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-product-gallery__image img{width:100%;height:auto;aspect-ratio:1/1;object-fit:contain;background:transparent}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .flex-control-thumbs{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px;margin:12px 0 0;padding:0;list-style:none}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .flex-control-thumbs li{width:72px}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .flex-control-thumbs img{width:72px;height:72px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);object-fit:contain;background:var(--gloskin-surface-strong);cursor:pointer;opacity:.72;transition:opacity 140ms ease,border-color 140ms ease}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .flex-control-thumbs img:hover{opacity:1}
@@ -404,6 +424,13 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .relate
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .woocommerce-loop-product__title{padding:16px 16px 0;font-family:var(--gloskin-font-heading);font-size:1.02rem}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .price{padding:4px 16px 16px}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .button{margin:0 16px 16px}
+/* Related Products keeps Woo's own native loop card/button markup (SP-006);
+ * this owns its CTA color explicitly by the real Woo loop button class
+ * rather than relying on the generic `.button` co-class alone. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);color:var(--gloskin-inverse)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button:hover{background:var(--gloskin-accent-strong);border-color:var(--gloskin-accent-strong)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button.disabled,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button.loading{background:var(--gloskin-field-disabled);color:var(--gloskin-muted);border-color:var(--gloskin-field-border);opacity:.72;cursor:not-allowed;pointer-events:none}
 
 @media (max-width:1040px){
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product{grid-template-columns:1fr}
