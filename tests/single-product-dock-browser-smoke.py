@@ -105,7 +105,16 @@ def rects_intersect(a_left, a_top, a_right, a_bottom, b_left, b_top, b_right, b_
 
 def assert_visual(data, width, height):
     require(data['pageOverflow'] <= 1, f'horizontal overflow at {width}x{height}: {data}')
-    require(data['dockBackground'] == 'rgba(0, 0, 0, 0)', f'floating/settled dock regained white surface at {width}x{height}: {data}')
+    if 'is-floating' in data['classes']:
+        # Floating over whatever content is currently scrolled beneath it,
+        # the outer bar needs its own calm Gloskin surface so
+        # Description/Related content cannot bleed through -- it must not
+        # be transparent, but it must also not be the old rounded/heavy
+        # card silhouette (checked below) or the accent-red slab.
+        require(data['dockBackground'] not in ('rgba(0, 0, 0, 0)', 'transparent'), f'floating dock outer bar is transparent, content will bleed through at {width}x{height}: {data}')
+        require(data['dockBackground'] != data['accentBackground'], f'floating dock outer bar regained the crimson slab at {width}x{height}: {data}')
+    else:
+        require(data['dockBackground'] == 'rgba(0, 0, 0, 0)', f'settled home dock regained an outer surface (should stay transparent in normal flow) at {width}x{height}: {data}')
     require(data['radius'] == '0px', f'dock radius returned at {width}x{height}: {data}')
     require(data['shadow'] == 'none' or 'is-floating' in data['classes'], f'settled dock regained a heavy shadow at {width}x{height}: {data}')
     require(all(bg == 'rgba(0, 0, 0, 0)' for bg in data['wrapperBackgrounds']), f'inner white wrapper panel returned at {width}x{height}: {data}')

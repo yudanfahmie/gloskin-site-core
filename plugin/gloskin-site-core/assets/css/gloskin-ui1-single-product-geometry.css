@@ -51,14 +51,18 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloski
  * wrapper is unchanged and simply owns the full grid row. It is
  * deliberately NOT a detached card: no rounded silhouette, no heavy
  * floating-card shadow, no inset accent-card treatment, no desktop pixel
- * cap. Only a restrained top border/shadow appears while genuinely
- * floating, as its one subtle elevation cue. Structural Woo wrappers stay
- * transparent; only real Form Kit controls and the canonical accent CTA
+ * cap. In its settled home state the outer bar stays transparent for the
+ * cleanest natural-flow presentation. While genuinely floating (fixed over
+ * whatever content is currently scrolled beneath it) the outer bar instead
+ * takes the one calm Gloskin surface + a restrained top border/shadow as
+ * its subtle elevation cue -- otherwise Description/Related content visibly
+ * bleeds through the fixed bar. Structural Woo wrappers stay transparent in
+ * both states; only real Form Kit controls and the canonical accent CTA
  * paint surfaces. In fixed mode JS supplies viewport position + the full
  * primary-product lane width; this CSS never caps it back to the summary
  * column or any fixed pixel width. */
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{position:static;grid-column:1/-1;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:clamp(14px,1.4vw,18px) 0;border:0;border-radius:0;background:transparent;color:var(--gloskin-text);box-shadow:none;visibility:visible;opacity:1;will-change:transform,opacity}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating{transition:transform 260ms cubic-bezier(.22,1,.36,1),opacity 180ms ease-out;border-top:1px solid var(--gloskin-border);box-shadow:0 -10px 26px color-mix(in srgb,var(--gloskin-text) 6%,transparent)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating{transition:transform 260ms cubic-bezier(.22,1,.36,1),opacity 180ms ease-out;background:var(--gloskin-bg);border-top:1px solid var(--gloskin-border);box-shadow:0 -10px 26px color-mix(in srgb,var(--gloskin-text) 6%,transparent)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock form.cart{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1.35fr) minmax(340px,.65fr);align-items:end;gap:12px 24px;margin:0;background:transparent;box-shadow:none}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product.product-type-simple>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock form.cart{grid-template-columns:auto minmax(0,1fr)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations,
