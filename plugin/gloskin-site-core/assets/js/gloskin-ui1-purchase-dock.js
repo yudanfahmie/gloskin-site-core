@@ -17,6 +17,57 @@
 		 * geometry is always measured from this SAME node. */
 		var container = product;
 		var formBefore = dock.querySelector('form.cart');
+		var identityBefore = dock.querySelector('[data-gloskin-purchase-identity]');
+		var variationTableBefore = formBefore.querySelector('table.variations');
+		var variationSelectsBefore = Array.prototype.slice.call(formBefore.querySelectorAll('table.variations select'));
+		var singleVariationBefore = formBefore.querySelector('.woocommerce-variation.single_variation');
+		var singleVariationWrapBefore = formBefore.querySelector('.single_variation_wrap');
+		var quantityBefore = formBefore.querySelector('.quantity');
+		var submitBefore = formBefore.querySelector('.single_add_to_cart_button');
+
+		function sameNodeList(before, after) {
+			if (before.length !== after.length) { return false; }
+			for (var index = 0; index < before.length; index += 1) {
+				if (before[index] !== after[index]) { return false; }
+			}
+			return true;
+		}
+
+		function prepareComposition() {
+			if (!identityBefore || !submitBefore) { return false; }
+
+			var productRegion = document.createElement('div');
+			productRegion.className = 'gloskin-ui1-purchase-dock__product';
+			productRegion.setAttribute('data-gloskin-purchase-product', '');
+			var actionRegion = document.createElement('div');
+			actionRegion.className = 'gloskin-ui1-purchase-dock__action';
+			actionRegion.setAttribute('data-gloskin-purchase-action', '');
+
+			productRegion.appendChild(identityBefore);
+			if (variationTableBefore) { productRegion.appendChild(variationTableBefore); }
+
+			if (singleVariationWrapBefore) {
+				actionRegion.appendChild(singleVariationWrapBefore);
+			} else {
+				if (quantityBefore) { actionRegion.appendChild(quantityBefore); }
+				actionRegion.appendChild(submitBefore);
+			}
+
+			formBefore.appendChild(productRegion);
+			formBefore.appendChild(actionRegion);
+			dock.setAttribute('data-gloskin-purchase-composed', 'true');
+			return true;
+		}
+
+		function nativeNodesPreserved() {
+			var afterSelects = Array.prototype.slice.call(formBefore.querySelectorAll('table.variations select'));
+			return dock.querySelector('form.cart') === formBefore
+				&& dock.querySelector('[data-gloskin-purchase-identity]') === identityBefore
+				&& sameNodeList(variationSelectsBefore, afterSelects)
+				&& formBefore.querySelector('.quantity') === quantityBefore
+				&& formBefore.querySelector('.single_add_to_cart_button') === submitBefore
+				&& (!singleVariationBefore || formBefore.querySelector('.woocommerce-variation.single_variation') === singleVariationBefore);
+		}
 
 		var BOTTOM_GAP = 16;
 		var MIN_FLOAT_HEIGHT = 560;
@@ -34,6 +85,7 @@
 		 * the SAME dock node into it, 6) establish observers/geometry below,
 		 * 7) reveal only after a requestAnimationFrame confirms layout. */
 		dock.classList.add('is-preparing');
+		prepareComposition();
 
 		var safetyReveal = window.setTimeout(function () {
 			if (!ready) {
@@ -230,8 +282,8 @@
 				setState('home', false);
 			}
 
-			if (dock.querySelector('form.cart') !== formBefore && window.console && window.console.error) {
-				window.console.error('gloskin-ui1-purchase-dock: native form node identity changed during relocation');
+			if (!nativeNodesPreserved() && window.console && window.console.error) {
+				window.console.error('gloskin-ui1-purchase-dock: native Woo node identity changed during presentation composition');
 			}
 		});
 	}

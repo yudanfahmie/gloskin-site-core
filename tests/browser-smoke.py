@@ -58,7 +58,35 @@ def load(page, html):
         'https://images.unsplash.com/**',
         lambda route: route.fulfill(status=200, content_type='image/svg+xml', body=EDITORIAL_STUB),
     )
+    # render-fixture.php uses example.test as its intentionally fake WordPress
+    # origin. Fulfill only fixture-owned asset requests locally; REST requests must
+    # fall through to the more specific commerce mocks registered by each test.
+    def fixture_origin(route):
+        if '/wp-json/' in route.request.url:
+            route.fallback()
+        elif route.request.resource_type == 'document':
+            route.fulfill(status=200, content_type='text/html', body='<!doctype html><title>Gloskin browser fixture</title>')
+        elif route.request.url.endswith('/gloskin-logotext.svg'):
+            route.fulfill(
+                status=200,
+                content_type='image/svg+xml',
+                path=str(ROOT / 'plugin/gloskin-site-core/assets/images/gloskin-logotext.svg'),
+            )
+        elif route.request.resource_type == 'image':
+            route.fulfill(status=200, content_type='image/svg+xml', body=EDITORIAL_STUB)
+        else:
+            route.fulfill(status=204, body='')
+    page.route('https://example.test/**', fixture_origin)
+    # Establish a normal same-origin document before set_content(). This keeps
+    # localStorage-backed wishlist behavior testable instead of running on the
+    # opaque about:blank origin used by a bare set_content() page.
+    page.goto('https://example.test/__gloskin-browser-fixture', wait_until='domcontentloaded')
     page.set_content(html, wait_until='domcontentloaded')
+    # Chromium may legitimately defer off-screen loading=lazy images. Promote only
+    # inside the browser fixture so the existing broken-source assertion tests the
+    # URL response rather than viewport-dependent lazy-loading heuristics.
+    page.locator('main img[loading="lazy"]').evaluate_all("els => els.forEach(el => { el.loading = 'eager'; })")
+    page.wait_for_function("() => Array.from(document.querySelectorAll('main img')).every(img => img.complete && img.naturalWidth > 0 && img.naturalHeight > 0)", timeout=5000)
     page.add_style_tag(path=str(BASE_CSS))
     page.add_style_tag(path=str(CSS))
     page.add_style_tag(path=str(PRODUCTION_CSS))
@@ -582,8 +610,11 @@ with sync_playwright() as p:
     page.on('console', lambda msg, e=errors: e.append(msg.text) if msg.type == 'error' else None)
     page.on('pageerror', lambda err, e=errors: e.append(str(err)))
     load(page, fixtures['shop'])
-    if page.locator('[data-gloskin-search-open]').count() != 1:
-        raise SystemExit('commerce/woo-absent: search trigger missing')
+    # The layered header has one primary search trigger plus a compact-sticky
+    # trigger. Assert the primary owner rather than treating the compact duplicate
+    # presentation as a commerce-control duplication.
+    if page.locator('.gloskin-ui1-header__inner [data-gloskin-search-open]').count() != 1:
+        raise SystemExit('commerce/woo-absent: primary search trigger missing')
     if (page.locator('[data-gloskin-cart-open]').count()
             or page.locator('[data-gloskin-wishlist-open]').count()
             or page.locator('.gloskin-ui1-utility-btn--account').count()):
@@ -604,15 +635,18 @@ with sync_playwright() as p:
     page.route('**/wp-json/gloskin/v1/products/resolve**', mock_resolve)
     load(page, woo_shop_html)
 
-    if page.locator('.gloskin-ui1-utility-btn--account').count() != 1:
-        raise SystemExit('commerce/woo-active: account icon missing')
-    if page.locator('[data-gloskin-wishlist-open]').count() != 1:
-        raise SystemExit('commerce/woo-active: wishlist icon missing')
-    if page.locator('[data-gloskin-cart-open]').count() != 1:
-        raise SystemExit('commerce/woo-active: cart icon missing')
+    primary_tools = '.gloskin-ui1-header__inner'
+    compact_tools = '.gloskin-ui1-header__zone--compact'
+    for selector, label in (
+        ('.gloskin-ui1-utility-btn--account', 'account'),
+        ('[data-gloskin-wishlist-open]', 'wishlist'),
+        ('[data-gloskin-cart-open]', 'cart'),
+    ):
+        if page.locator(f'{primary_tools} {selector}').count() != 1 or page.locator(f'{compact_tools} {selector}').count() != 1:
+            raise SystemExit(f'commerce/woo-active: layered {label} controls missing or duplicated')
     if page.locator('.gloskin-ui1-header__nav-row').count() != 1:
         raise SystemExit('commerce/woo-active: two-layer nav row missing')
-    badge_text = page.locator('[data-gloskin-cart-count]').inner_text().strip()
+    badge_text = page.locator(f'{primary_tools} [data-gloskin-cart-count]').inner_text().strip()
     if badge_text != '2':
         raise SystemExit(f'commerce/woo-active: cart badge incorrect: {badge_text!r}')
 
@@ -621,14 +655,14 @@ with sync_playwright() as p:
     page.evaluate('(y) => window.scrollTo(0,y)', real_scroll['target']); page.wait_for_timeout(100)
     if not nav_row.evaluate("el => el.classList.contains('is-hidden')"):
         raise SystemExit('commerce/woo-active: nav did not hide before overlay safeguard test')
-    page.evaluate("document.querySelector('[data-gloskin-cart-open]').click()")
+    page.evaluate("document.querySelector('.gloskin-ui1-header__inner [data-gloskin-cart-open]').click()")
     page.wait_for_timeout(80)
     if nav_row.evaluate("el => el.classList.contains('is-hidden')"):
         raise SystemExit('commerce/woo-active: nav stayed hidden while cart sheet opened')
     page.keyboard.press('Escape'); page.wait_for_timeout(350)
     page.evaluate('window.scrollTo(0,0)'); page.wait_for_timeout(80)
 
-    search_trigger = page.locator('[data-gloskin-search-open]')
+    search_trigger = page.locator('.gloskin-ui1-header__inner [data-gloskin-search-open]')
     search_trigger.click(); page.wait_for_timeout(80)
     search_overlay = page.locator('[data-gloskin-overlay="search"]')
     if search_overlay.get_attribute('aria-hidden') != 'false':
@@ -654,7 +688,7 @@ with sync_playwright() as p:
     wishlist_toggle.click(); page.wait_for_timeout(50)
     if wishlist_toggle.get_attribute('aria-pressed') != 'true':
         raise SystemExit('commerce/woo-active: wishlist toggle did not report pressed state')
-    page.locator('[data-gloskin-wishlist-open]').click(); page.wait_for_timeout(250)
+    page.locator('.gloskin-ui1-header__inner [data-gloskin-wishlist-open]').click(); page.wait_for_timeout(250)
     wishlist_sheet = page.locator('[data-gloskin-overlay="wishlist"]')
     if wishlist_sheet.get_attribute('aria-hidden') != 'false':
         raise SystemExit('commerce/woo-active: wishlist sheet did not open')
@@ -662,7 +696,7 @@ with sync_playwright() as p:
         raise SystemExit('commerce/woo-active: wishlist sheet did not list the resolved product')
     page.keyboard.press('Escape'); page.wait_for_timeout(350)
 
-    cart_trigger = page.locator('[data-gloskin-cart-open]')
+    cart_trigger = page.locator('.gloskin-ui1-header__inner [data-gloskin-cart-open]')
     cart_trigger.click(); page.wait_for_timeout(80)
     cart_sheet = page.locator('[data-gloskin-overlay="cart"]')
     if cart_sheet.get_attribute('aria-hidden') != 'false':
@@ -678,7 +712,7 @@ with sync_playwright() as p:
     checkout_href = page.locator('.gloskin-ui1-cart-sheet__actions a').first.get_attribute('href') or ''
     if not checkout_href.startswith('https://example.test/'):
         raise SystemExit(f'commerce/woo-active: checkout/cart link not canonical: {checkout_href!r}')
-    page.locator('.gloskin-ui1-sheet__backdrop').click(force=True); page.wait_for_timeout(350)
+    page.locator('[data-gloskin-overlay="cart"] .gloskin-ui1-sheet__backdrop').click(force=True); page.wait_for_timeout(350)
     if cart_sheet.get_attribute('hidden') is None:
         raise SystemExit('commerce/woo-active: cart sheet did not close via backdrop')
     if not cart_trigger.evaluate('el => el === document.activeElement'):
@@ -697,8 +731,9 @@ with sync_playwright() as p:
         raise SystemExit('commerce/mobile: header overflow')
     if page.locator('.gloskin-ui1-utility-btn--account:visible').count() or page.locator('.gloskin-ui1-utility-btn--wishlist:visible').count():
         raise SystemExit('commerce/mobile: account/wishlist crowd the mobile header')
-    if page.locator('[data-gloskin-cart-open]').count() != 1:
-        raise SystemExit('commerce/mobile: cart trigger missing on mobile')
+    mobile_cart = page.locator('.gloskin-ui1-header__inner [data-gloskin-cart-open]')
+    if mobile_cart.count() != 1 or not mobile_cart.is_visible():
+        raise SystemExit('commerce/mobile: primary cart trigger missing or hidden on mobile')
     page.locator('[data-gloskin-drawer-open]').click(); page.wait_for_timeout(80)
     if page.locator('.gloskin-ui1-drawer__utility-link').count() < 2:
         raise SystemExit('commerce/mobile: account/wishlist not reachable from the drawer')
@@ -707,7 +742,7 @@ with sync_playwright() as p:
 
     page = browser.new_page(viewport={'width': 1440, 'height': 900}, reduced_motion='reduce')
     load(page, woo_shop_html)
-    page.locator('[data-gloskin-cart-open]').click(); page.wait_for_timeout(50)
+    page.locator('.gloskin-ui1-header__inner [data-gloskin-cart-open]').click(); page.wait_for_timeout(50)
     page.keyboard.press('Escape'); page.wait_for_timeout(30)
     if page.locator('[data-gloskin-overlay="cart"]').get_attribute('hidden') is None:
         raise SystemExit('commerce/reduced-motion: cart sheet did not close immediately')

@@ -19,6 +19,7 @@ asset_service="$includes/class-gloskin-site-core-asset-service.php"
 template_service="$includes/class-gloskin-site-core-template-service.php"
 core_js="$plugin_root/assets/js/gloskin-ui1-core.js"
 core_css="$plugin_root/assets/css/gloskin-ui1-core.css"
+geometry="$plugin_root/assets/css/gloskin-ui1-single-product-geometry.css"
 
 fail() { echo "$1" >&2; exit 1; }
 
@@ -206,20 +207,22 @@ if grep -qE 'gloskin-ui1-purchase-dock\{[^}]*overflow' "$core_css"; then
 	fail "purchase dock: must never grow an internal scrollbar"
 fi
 
-# Purchase dock visual contract: one neutral Gloskin surface, transparent
-# structural Woo wrappers, and the existing canonical accent CTA. The dock
-# must never return to the full-container crimson slab / inverse-white CTA.
+# Purchase dock visual contract: core.css remains the base/no-JS Form Kit
+# owner, while enhanced geometry deliberately becomes the Gloskin accent
+# command bar with transparent structural wrappers and an inverse CTA.
 grep -qF -- 'gloskin-ui1-purchase-dock{z-index:5;width:100%;max-width:calc(100vw - 32px);margin:6px auto 0;padding:clamp(14px,1.4vw,18px)' "$core_css" \
-	|| fail "purchase dock: compact neutral surface geometry missing"
-grep -qF -- 'background:var(--gloskin-bg);color:var(--gloskin-text)' "$core_css" \
-	|| fail "purchase dock: neutral Gloskin surface missing"
-grep -qF -- 'gloskin-ui1-purchase-dock form.cart{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin:0;max-width:none;background:transparent;box-shadow:none}' "$core_css" \
-	|| fail "purchase dock: structural form wrapper is not transparent/compact"
-if grep -qE 'gloskin-ui1-purchase-dock\{[^}]*background:var\(--gloskin-accent\)' "$core_css"; then
-	fail "purchase dock: giant accent-red slab returned"
+	|| fail "purchase dock: base/no-JS fallback geometry missing"
+grep -qF -- 'background:var(--gloskin-accent);color:var(--gloskin-inverse)' "$geometry" \
+	|| fail "purchase dock: enhanced accent outer surface missing"
+grep -qF -- 'form.cart{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1fr) auto' "$geometry" \
+	|| fail "purchase dock: enhanced one-row form composition missing"
+grep -qF -- '.single_add_to_cart_button{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;min-height:46px;padding:10px 18px;background:var(--gloskin-inverse)' "$geometry" \
+	|| fail "purchase dock: inverse CTA on accent surface missing"
+if grep -qE 'purchase-dock-home.*purchase-dock\.is-floating\{[^}]*background:var\(--gloskin-bg\)' "$geometry"; then
+	fail "purchase dock: floating outer background regressed to neutral/white"
 fi
-if grep -qF -- 'gloskin-ui1-purchase-dock .single_add_to_cart_button{background:var(--gloskin-inverse)' "$core_css"; then
-	fail "purchase dock: inverse-white CTA override returned"
+if grep -qF 'grid-template-columns:minmax(0,1.35fr)' "$geometry"; then
+	fail "purchase dock: previous oversized 1.35fr/.65fr composition returned"
 fi
 
 # Commerce accent: catalog cards still need their explicit card action skin.

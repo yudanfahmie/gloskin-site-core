@@ -50,6 +50,17 @@ with sync_playwright() as p:
             page.on('console', lambda msg, e=errors: e.append(msg.text) if msg.type == 'error' else None)
             page.on('pageerror', lambda err, e=errors: e.append(str(err)))
             page.route('https://images.unsplash.com/**', lambda route: route.fulfill(status=200, content_type='image/svg+xml', body=EDITORIAL_STUB))
+            # render-fixture.php intentionally emits example.test as its fake
+            # WordPress origin. Keep this browser-only fixture deterministic so
+            # console errors still signal application failures rather than DNS.
+            page.route(
+                'https://example.test/**',
+                lambda route: route.fulfill(
+                    status=200 if route.request.resource_type == 'image' else 204,
+                    content_type='image/svg+xml' if route.request.resource_type == 'image' else 'text/plain',
+                    body=EDITORIAL_STUB if route.request.resource_type == 'image' else '',
+                ),
+            )
             page.set_content(fixtures[view], wait_until='domcontentloaded')
             page.add_style_tag(path=str(BASE_CSS))
             page.add_style_tag(path=str(CSS))

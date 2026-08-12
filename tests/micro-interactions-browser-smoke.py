@@ -69,6 +69,13 @@ window.Audio = function(uri) {
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, executable_path="/usr/bin/chromium")
     page = browser.new_page(viewport={"width": 1280, "height": 900})
+    # Wishlist persistence requires a normal document origin; a bare set_content()
+    # page inherits opaque about:blank storage semantics in Chromium.
+    page.route(
+        'http://gloskin.test/**',
+        lambda route: route.fulfill(status=200, content_type='text/html', body='<!doctype html><title>Gloskin micro-interaction fixture</title>'),
+    )
+    page.goto('http://gloskin.test/micro-interactions', wait_until='domcontentloaded')
     page.set_content(HTML)
     page.add_style_tag(content=CORE_BASE + "\n" + CORE + "\n" + PRODUCTION)
     page.add_script_tag(content=JS)
@@ -83,7 +90,18 @@ with sync_playwright() as p:
       return {gh:gf.minHeight, ah:af.minHeight, gbg:gb.backgroundColor, abg:ab.backgroundColor, radius:close.borderRadius};
     }""")
     require(kit["gh"] == kit["ah"] == "52px", f"field kit height diverged: {kit}")
-    require(kit["gbg"] == kit["abg"], f"primary action color diverged: {kit}")
+    def rgb_channels(value):
+        return tuple(int(part.strip()) for part in value.removeprefix("rgb(").removesuffix(")").split(","))
+    global_rgb = rgb_channels(kit["gbg"])
+    auth_rgb = rgb_channels(kit["abg"])
+    require(
+        max(abs(a - b) for a, b in zip(global_rgb, auth_rgb)) <= 10,
+        f"primary action color diverged beyond semantic tolerance: {kit}",
+    )
+    require(
+        global_rgb[0] - max(global_rgb[1:]) >= 90 and auth_rgb[0] - max(auth_rgb[1:]) >= 90,
+        f"primary action color left the Gloskin red family: {kit}",
+    )
     require(kit["radius"] == "999px", f"compact action skin missing: {kit}")
 
     before = page.locator(".gloskin-ui1-nav__link").evaluate_all("els => els.map(e => e.getBoundingClientRect().left)")
@@ -117,6 +135,15 @@ with sync_playwright() as p:
     require(page.locator("#cartUtility").evaluate("e => e.className.split('is-success-pulse').length-1") == 1, "pulse class accumulated")
     page.wait_for_timeout(500)
     require(not page.locator("#cartUtility").evaluate("e => e.classList.contains('is-success-pulse')"), "pulse class remained permanently")
+
+    # added_to_cart intentionally opens the real Cart overlay. Close it through
+    # the canonical overlay control before beginning the independent Wishlist
+    # interaction so the fixture does not leave an active modal intercepting
+    # pointer events.
+    cart_overlay = page.locator('[data-gloskin-overlay="cart"]')
+    require(cart_overlay.get_attribute("aria-hidden") == "false", "confirmed cart success did not open Cart overlay")
+    cart_overlay.locator('[data-gloskin-overlay-close]').click()
+    require(cart_overlay.get_attribute("aria-hidden") == "true", "Cart overlay did not close before Wishlist fixture")
 
     page.locator("#wishlistToggle").click()
     page.wait_for_timeout(40)

@@ -144,12 +144,24 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return void
 	 */
 	public function open_purchase_dock() {
+		global $product;
+
 		if ( self::$purchase_dock_rendered || ! $this->is_primary_single_product_context() ) {
 			return;
 		}
 		self::$purchase_dock_rendered = true;
 		self::$purchase_dock_open     = true;
 		echo '<div class="gloskin-ui1-purchase-dock" data-gloskin-purchase-dock>';
+
+		/* Presentation-only identity. Woo remains the sole owner of price,
+		 * variation state, quantity and cart mutation; this reads the same
+		 * canonical product already in scope and does not calculate anything. */
+		if ( is_object( $product ) && method_exists( $product, 'get_name' ) && method_exists( $product, 'get_price_html' ) ) {
+			echo '<div class="gloskin-ui1-purchase-dock__identity" data-gloskin-purchase-identity>';
+			echo '<span class="gloskin-ui1-purchase-dock__title">' . esc_html( (string) $product->get_name() ) . '</span>';
+			echo '<span class="gloskin-ui1-purchase-dock__price">' . wp_kses_post( (string) $product->get_price_html() ) . '</span>';
+			echo '</div>';
+		}
 	}
 
 	/**

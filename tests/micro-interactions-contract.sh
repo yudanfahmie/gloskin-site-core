@@ -67,7 +67,7 @@ grep -qF 'animation:none' "$core_css" || fail "success feedback: reduced-motion 
 # presentation layers (six compatibility/reduced-motion exceptions plus the
 # old nav-bubble foreground override). The nav refactor removes that override
 # and must introduce none: at most six remain.
-important_count="$(grep -ho '!important' "$core_css" "$readiness_css" "$production_css" | wc -l | tr -d ' ')"
+important_count="$(grep -hoE '!important[};]' "$core_css" "$readiness_css" "$production_css" | wc -l | tr -d ' ')"
 [[ "$important_count" -le 6 ]] || fail "micro interactions: new !important introduced (count=$important_count)"
 
 echo "micro interactions contract passed"

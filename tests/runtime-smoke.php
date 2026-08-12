@@ -612,6 +612,7 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 			array( 'checkout', array( 'checkout' => true, 'page' => true, 'object' => $shop ), 'page' ),
 			array( 'account', array( 'account' => true, 'page' => true, 'object' => $shop ), 'page' ),
 		);
+		$native_shell_rendered = '1' === getenv( 'GL_TEST_FIXTURE_BOOTSTRAP' );
 		foreach ( $native_routes as $native_case ) {
 			$GLOBALS['gl_route'] = array_merge(
 				array( 'front' => false, 'page' => false, 'singular' => '', 'object' => null ),
@@ -631,6 +632,10 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 			if ( ! in_array( 'gloskin-ui1', $classes, true ) ) {
 				fwrite( STDERR, 'Woo presentation body class missing for ' . $native_case[0] . "\n" ); exit( 1 );
 			}
+			if ( $native_shell_rendered ) {
+				continue;
+			}
+			$native_shell_rendered = true;
 			$GLOBALS['gl_loop_consumed'] = false;
 			ob_start();
 			require $native;

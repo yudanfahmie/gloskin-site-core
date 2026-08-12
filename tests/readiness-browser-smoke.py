@@ -61,6 +61,10 @@ check(executable, "Chromium executable not found")
 with sync_playwright() as p:
     browser = p.chromium.launch(executable_path=executable, headless=True, args=["--no-sandbox"])
     page = browser.new_page(viewport={"width": 1440, "height": 900})
+    # The rendered shell fixture intentionally uses example.test for WordPress
+    # URLs. Keep those fixture-owned requests local so the console-error contract
+    # tests application/runtime failures rather than DNS for the dummy host.
+    page.route('https://example.test/**', lambda route: route.fulfill(status=204, body=''))
     errors = []
     page.on("pageerror", lambda error: errors.append(f"pageerror: {error}"))
     page.on("console", lambda msg: errors.append(f"console: {msg.text}") if msg.type == "error" else None)

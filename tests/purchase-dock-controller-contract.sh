@@ -30,6 +30,12 @@ grep -qF "related.insertAdjacentElement('afterend', home);" "$dock_js" || fail "
 grep -qF "product.appendChild(home);" "$dock_js" || fail "dock home must fall back to the end of the primary product root when Related is absent"
 grep -qF "home.appendChild(dock);" "$dock_js" || fail "the SAME dock node must be reparented into its home"
 if grep -qE "cloneNode\(|innerHTML\s*=|outerHTML\s*=" "$dock_js"; then fail "dock controller must never clone/rebuild native Woo markup"; fi
+grep -qF "productRegion.appendChild(identityBefore);" "$dock_js" || fail "server identity is not moved into the left product region"
+grep -qF "productRegion.appendChild(variationTableBefore);" "$dock_js" || fail "native variation table is not moved into the left product region"
+grep -qF "actionRegion.appendChild(singleVariationWrapBefore);" "$dock_js" || fail "native variable purchase action is not moved into the right action region"
+grep -qF "formBefore.querySelector('.quantity') === quantityBefore" "$dock_js" || fail "quantity node identity assertion missing"
+grep -qF "formBefore.querySelector('.single_add_to_cart_button') === submitBefore" "$dock_js" || fail "submit node identity assertion missing"
+grep -qF "sameNodeList(variationSelectsBefore, afterSelects)" "$dock_js" || fail "variation-select identity assertion missing"
 
 # Full-width fixed geometry is PDP-container geometry, never a summary/
 # purchase-slot rect and never a hard desktop cap.
@@ -79,14 +85,18 @@ grep -qF '.gloskin-ui1-purchase-dock.is-preparing{visibility:hidden;opacity:0;tr
 grep -qF "var safetyReveal = window.setTimeout" "$dock_js" || fail "runtime anti-flicker fail-safe missing"
 grep -qF "window.clearTimeout(safetyReveal);" "$dock_js" || fail "successful init must clear safety reveal timer"
 
-# Enhanced presentation is intentionally not a card/surface. Full-width form
-# controls distribute horizontally on desktop; only real field/CTA primitives
-# keep their own surfaces. The home wrapper spans the full grid row.
+# Enhanced presentation is one deliberate accent command bar. Core CSS stays
+# the base/no-JS owner; this geometry file is the sole enhanced composition owner.
 grep -qF '>.gloskin-ui1-purchase-dock-home{grid-column:1/-1;width:100%;min-width:0}' "$geometry" || fail "full-width dock-home owner missing"
-grep -qF '>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{position:static;grid-column:1/-1;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:clamp(14px,1.4vw,18px) 0;border:0;border-radius:0;background:transparent' "$geometry" || fail "home-anchored full-width transparent dock owner missing"
-grep -qF '>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock form.cart{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1.35fr) minmax(340px,.65fr)' "$geometry" || fail "desktop full-width purchase layout missing"
-grep -qF '>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations tr{display:grid;width:100%;grid-template-columns:auto minmax(0,1fr)' "$geometry" || fail "variation row is not compact/horizontal"
-grep -qF '@media (max-width:760px)' "$geometry" || fail "narrow-screen stacked dock layout missing"
+grep -qF '>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{position:static;grid-column:1/-1;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:12px clamp(18px,2vw,28px);border:0;border-radius:0;background:var(--gloskin-accent);color:var(--gloskin-inverse)' "$geometry" || fail "enhanced accent purchase surface missing"
+grep -qF 'form.cart{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:clamp(20px,3vw,48px)' "$geometry" || fail "desktop one-row command-bar grid missing"
+grep -qF '.gloskin-ui1-purchase-dock__product{display:flex;align-items:center' "$geometry" || fail "left product/variant region missing"
+grep -qF '.gloskin-ui1-purchase-dock__action{display:flex;align-items:center;justify-content:flex-end' "$geometry" || fail "right purchase-action region missing"
+grep -qF 'table.variations select{width:100%;max-width:100%;min-width:0;min-height:46px;background:var(--gloskin-bg);color:var(--gloskin-text)}' "$geometry" || fail "native variation select lost its light field surface"
+grep -qF '.single_add_to_cart_button{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;min-height:46px;padding:10px 18px;background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}' "$geometry" || fail "on-accent inverse CTA treatment missing"
+grep -qF '@media (max-width:680px)' "$geometry" || fail "proven narrow-mobile stacked composition missing"
+if grep -qF 'grid-template-columns:minmax(0,1.35fr)' "$geometry"; then fail "old 1.35fr/.65fr dock composition returned"; fi
+if grep -qE 'purchase-dock-home.*purchase-dock\.is-floating\{[^}]*background:var\(--gloskin-bg\)' "$geometry"; then fail "floating dock regressed to neutral/white outer background"; fi
 if grep -qF '!important' "$geometry"; then fail "single-product geometry introduced !important"; fi
 if grep -qF 'max-width:720px' "$geometry" "$core_css"; then fail "an old-contract 720px desktop width cap still exists"; fi
 if grep -qF '.is-relocated' "$geometry" "$dock_js"; then fail "dock reintroduced the superseded summary-slot .is-relocated absolute-boundary model"; fi

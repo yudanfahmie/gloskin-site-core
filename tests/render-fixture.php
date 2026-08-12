@@ -1,9 +1,11 @@
 <?php
 declare(strict_types=1);
 
+putenv( 'GL_TEST_FIXTURE_BOOTSTRAP=1' );
 ob_start();
 require __DIR__ . '/runtime-smoke.php';
 ob_end_clean();
+putenv( 'GL_TEST_FIXTURE_BOOTSTRAP' );
 
 $view = getenv( 'GLOSKIN_FIXTURE_VIEW' ) ?: 'home';
 
