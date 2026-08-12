@@ -150,6 +150,22 @@ grep -qF 'div.product .woocommerce-product-gallery__image img{width:100%;height:
 if grep -qE "woocommerce-product-gallery__image(\s*img)?\{[^}]*background:var\(--gloskin-surface-strong\)" "$core_css"; then
 	fail "gallery: artificial surface-strong tint reintroduced behind the gallery image"
 fi
+
+# Gallery ghost-gutter fix, proven live on the real hydrated staging PDP: the
+# frame (border/radius/background/clip) must live on the outer, JS-
+# independent .woocommerce-product-gallery box -- present and correctly
+# sized in the server-rendered no-JS markup too -- never on
+# .woocommerce-product-gallery__wrapper, which FlexSlider resizes into a
+# multi-slide strip (real slides + infinite-loop clones) far wider than the
+# visible frame and translates horizontally. Framing the wrapper instead
+# only put the rounded corner at the strip's own x:0, producing an
+# inconsistent "ghost" rounded gutter distinct from the always-stable
+# viewport frame.
+grep -qF 'div.product .woocommerce-product-gallery{border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-lg);background:var(--gloskin-bg);overflow:hidden}' "$core_css" \
+	|| fail "gallery: frame ownership is not anchored to the stable outer .woocommerce-product-gallery box"
+if grep -qE "woocommerce-product-gallery__wrapper\{[^}]*(border:|border-radius:|overflow:hidden)" "$core_css"; then
+	fail "gallery: frame ownership regressed back onto the FlexSlider-managed multi-slide wrapper"
+fi
 grep -qF '.flex-control-thumbs{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px' "$core_css" \
 	|| fail "gallery: thumbnail rail is not centered"
 

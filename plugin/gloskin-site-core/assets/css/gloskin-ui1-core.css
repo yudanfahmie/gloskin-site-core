@@ -392,7 +392,18 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .produc
  * SP-005 HD policy lives server-side (WooCommerce_Adapter::
  * single_product_gallery_image_size()); this only frames whatever size
  * Woo hands the gallery -- it never forces sizing itself. */
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-product-gallery__wrapper{margin:0;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-lg);background:var(--gloskin-bg);overflow:hidden}
+/* The frame (border/radius/background/clip) is owned by the outer,
+ * JS-independent .woocommerce-product-gallery box -- always exactly one
+ * fixed size, present in the server-rendered no-JS markup too -- never by
+ * .woocommerce-product-gallery__wrapper. FlexSlider resizes/translates that
+ * wrapper into a multi-slide strip (real slides + infinite-loop clones) far
+ * wider than the visible frame and only its own left edge, at slide index
+ * 0, ever carried the intended rounded corner; every other slide showed a
+ * flat, unbordered edge. Framing the outer box instead removes that
+ * per-slide inconsistency entirely and fixes the ghost rounded gutter that
+ * was visible at the left edge of the default (first) slide. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-product-gallery{border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-lg);background:var(--gloskin-bg);overflow:hidden}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-product-gallery__wrapper{margin:0}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-product-gallery__image{background:transparent}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-product-gallery__image img{width:100%;height:auto;aspect-ratio:1/1;object-fit:contain;background:transparent}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .flex-control-thumbs{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px;margin:12px 0 0;padding:0;list-style:none}

@@ -128,6 +128,23 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloski
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{display:flex;align-items:center;gap:10px;min-width:0;max-width:100%}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__quantity{margin:0}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__quantity .qty{min-height:46px;background:var(--gloskin-bg);color:var(--gloskin-text)}
+/* Compact minus/plus steppers around the SAME native input.qty (never
+ * cloned/replaced). __qty-control is the pill-shaped stepper shell added to
+ * the SAME .quantity node __quantity already marks; the native input drops
+ * its own standalone field border/radius so the pill reads as one control,
+ * not a border nested inside another border. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control{display:flex;align-items:stretch;min-height:46px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);overflow:hidden;background:var(--gloskin-bg)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .qty{width:44px;min-width:0;min-height:44px;padding:0;border:0;border-radius:0;background:transparent;text-align:center;-moz-appearance:textfield}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .qty::-webkit-inner-spin-button,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .qty::-webkit-outer-spin-button{margin:0;-webkit-appearance:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-minus,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-plus{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:34px;min-height:44px;padding:0;border:0;background:transparent;color:var(--gloskin-text);font:inherit;font-size:1.05rem;font-weight:700;line-height:1;cursor:pointer;transition:background-color 140ms ease}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-minus{border-right:1px solid var(--gloskin-border)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-plus{border-left:1px solid var(--gloskin-border)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-minus:hover,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-plus:hover{background:var(--gloskin-surface)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-minus:disabled,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-plus:disabled{opacity:.4;cursor:not-allowed;background:transparent}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;min-height:46px;padding:10px 18px;background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit:hover{background:color-mix(in srgb,var(--gloskin-inverse) 92%,var(--gloskin-accent-soft));border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
 

@@ -30,13 +30,13 @@ def markup(kind):
         <div class="single_variation_wrap">
           <div class="woocommerce-variation single_variation" style="display:none"><div class="woocommerce-variation-price"><span class="price">Rp189.000</span></div><div class="woocommerce-variation-availability"><p class="stock">Tersedia</p></div></div>
           <div class="woocommerce-variation-add-to-cart variations_button">
-            <div class="quantity"><input class="input-text qty text" type="number" value="1"></div>
+            <div class="quantity"><input class="input-text qty text" type="number" value="1" min="1" max="6" step="1"></div>
             <button type="submit" class="single_add_to_cart_button button alt">Add to cart</button>
           </div>
         </div>
       </form>""" if variable else r"""
       <form class="cart" action="#" method="post">
-        <div class="quantity"><input class="input-text qty text" type="number" value="1"></div>
+        <div class="quantity"><input class="input-text qty text" type="number" value="1" min="1" max="6" step="1"></div>
         <button type="submit" class="single_add_to_cart_button button alt">Add to cart</button>
       </form>"""
     return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -166,6 +166,43 @@ def assert_nodes(page, kind, width, height):
     require(page.evaluate("window.__selectsBefore.length===document.querySelectorAll('[data-gloskin-purchase-dock] table.variations select').length && window.__selectsBefore.every((n,i)=>n===document.querySelectorAll('[data-gloskin-purchase-dock] table.variations select')[i])"), f'{kind}: variation select identity/count changed at {width}x{height}')
     require(page.evaluate("!window.__singleVariationBefore||window.__singleVariationBefore===document.querySelector('[data-gloskin-purchase-dock] .woocommerce-variation.single_variation')"), f'{kind}: single-variation node identity changed at {width}x{height}')
     require(page.locator('[data-gloskin-purchase-dock]').count() == 1 and page.locator('form.cart').count() == 1 and page.locator('.quantity').count() == 1 and page.locator('.single_add_to_cart_button').count() == 1, f'{kind}: native Woo control count duplicated at {width}x{height}')
+    require(page.locator('input.qty').count() == 1 and page.locator('.gloskin-ui1-purchase-dock__qty-minus').count() == 1 and page.locator('.gloskin-ui1-purchase-dock__qty-plus').count() == 1, f'{kind}: quantity steppers duplicated at {width}x{height}')
+
+
+def assert_qty_steppers(page, kind, width, height):
+    require(page.evaluate("window.__quantityBefore.classList.contains('gloskin-ui1-purchase-dock__qty-control')"), f'{kind}: qty-control class missing at {width}x{height}')
+    before = page.evaluate("document.querySelector('input.qty').value")
+    page.click('.gloskin-ui1-purchase-dock__qty-plus')
+    page.click('.gloskin-ui1-purchase-dock__qty-plus')
+    after_plus = page.evaluate("document.querySelector('input.qty').value")
+    require(float(after_plus) == float(before) + 2, f'{kind}: plus stepper did not increase by native step at {width}x{height}: before={before} after={after_plus}')
+    page.click('.gloskin-ui1-purchase-dock__qty-minus')
+    after_minus = page.evaluate("document.querySelector('input.qty').value")
+    require(float(after_minus) == float(before) + 1, f'{kind}: minus stepper did not decrease by native step at {width}x{height}: after={after_minus}')
+    page.evaluate("() => { const i=document.querySelector('input.qty'); i.value = i.min || '1'; i.dispatchEvent(new Event('change',{bubbles:true})); }")
+    page.click('.gloskin-ui1-purchase-dock__qty-minus')
+    at_min = page.evaluate("document.querySelector('input.qty').value")
+    require(float(at_min) == float(page.evaluate("document.querySelector('input.qty').min") or 1), f'{kind}: minus stepper did not clamp to native min at {width}x{height}: {at_min}')
+    page.evaluate("() => { const i=document.querySelector('input.qty'); i.value = i.max || '99'; i.dispatchEvent(new Event('change',{bubbles:true})); }")
+    page.click('.gloskin-ui1-purchase-dock__qty-plus')
+    at_max = page.evaluate("document.querySelector('input.qty').value")
+    require(float(at_max) == float(page.evaluate("document.querySelector('input.qty').max")), f'{kind}: plus stepper did not clamp to native max at {width}x{height}: {at_max}')
+    page.evaluate("() => { const i=document.querySelector('input.qty'); i.value = i.min || '1'; i.dispatchEvent(new Event('change',{bubbles:true})); }")
+    events = page.evaluate("""() => {
+      const input = document.querySelector('input.qty');
+      const seen = {input:false, change:false};
+      const onInput = () => { seen.input = true; };
+      const onChange = () => { seen.change = true; };
+      input.addEventListener('input', onInput);
+      input.addEventListener('change', onChange);
+      document.querySelector('.gloskin-ui1-purchase-dock__qty-plus').click();
+      input.removeEventListener('input', onInput);
+      input.removeEventListener('change', onChange);
+      return seen;
+    }""")
+    require(events['input'] and events['change'], f'{kind}: stepper click did not dispatch native input+change events at {width}x{height}: {events}')
+    require(page.evaluate("window.__quantityBefore===document.querySelector('[data-gloskin-purchase-dock] .quantity') && window.__quantityBefore.querySelector('input.qty')===document.querySelector('input.qty')"), f'{kind}: quantity input node identity changed by stepper interaction at {width}x{height}')
+    require(page.locator('.gloskin-ui1-purchase-dock__qty-minus').count() == 1 and page.locator('.gloskin-ui1-purchase-dock__qty-plus').count() == 1, f'{kind}: stepper buttons duplicated after interaction at {width}x{height}')
 
 
 with sync_playwright() as p:
@@ -192,6 +229,7 @@ with sync_playwright() as p:
         if width >= 1024:
             require(data['height'] <= 104.5, f'{kind}: desktop dock exceeds 104px target at {width}x{height}: {data}')
         require(data['dockParentIsHome'] and data['homeIsDirectChildOfProduct'] and data['homeAfterRelated'] and data['originInSummary'], f'{kind}: home/origin architecture regressed at {width}x{height}: {data}')
+        assert_qty_steppers(page,kind,width,height)
 
         if kind == 'variable' and width >= 1024:
             page.evaluate("""() => {const v=document.querySelector('.woocommerce-variation.single_variation');v.style.display='flex';document.querySelector('select').value='100ml';}""")

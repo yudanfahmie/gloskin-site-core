@@ -49,6 +49,31 @@ grep -qF "quantityBefore.classList.add('gloskin-ui1-purchase-dock__quantity');" 
 grep -qF "submitBefore.classList.add('gloskin-ui1-purchase-dock__submit');" "$dock_js" || fail "native .single_add_to_cart_button is not given its own CSS ownership class"
 grep -qF "formBefore.classList.contains('gloskin-ui1-purchase-dock__form')" "$dock_js" || fail "post-composition identity check no longer verifies the ownership class survived on the SAME native form node"
 
+# Compact minus/plus quantity steppers: enhance the SAME native input.qty in
+# place -- no clone, no second quantity state, idempotent via a data flag,
+# and clicks are handled by exactly one delegated listener bound once on the
+# stable dock root (never per-button, never polled/intervalled), resolving
+# the current input at click time.
+grep -qF "function enhanceQuantityControls(quantity)" "$dock_js" || fail "quantity stepper enhancement owner missing"
+grep -qF "if (!quantity || quantity.dataset.gloskinQtyEnhanced === '1') { return; }" "$dock_js" || fail "quantity stepper enhancement is not idempotent"
+grep -qF "var input = quantity.querySelector('input.qty');" "$dock_js" || fail "quantity stepper must enhance the SAME native input.qty, never a clone"
+grep -qF "input.insertAdjacentElement('beforebegin', minus);" "$dock_js" || fail "minus control must be inserted next to the SAME native input, not clone it"
+grep -qF "input.insertAdjacentElement('afterend', plus);" "$dock_js" || fail "plus control must be inserted next to the SAME native input, not clone it"
+grep -qF "quantity.dataset.gloskinQtyEnhanced = '1';" "$dock_js" || fail "quantity stepper enhancement flag never set"
+grep -qF "enhanceQuantityControls(quantityBefore);" "$dock_js" || fail "quantity stepper enhancement is not wired into dock composition"
+if grep -qE "cloneNode\(" "$dock_js"; then fail "dock controller must never clone the native quantity input"; fi
+grep -qF "function stepQuantityInput(input, direction)" "$dock_js" || fail "quantity step owner missing"
+if grep -qF "input.disabled || input.readOnly" "$dock_js"; then :; else fail "quantity step must respect native disabled/readonly state"; fi
+grep -qF "input.dispatchEvent(new Event('input', { bubbles: true }));" "$dock_js" || fail "quantity step must dispatch a native input event"
+grep -qF "input.dispatchEvent(new Event('change', { bubbles: true }));" "$dock_js" || fail "quantity step must dispatch a native change event"
+grep -qF "if (next < min) { next = min; }" "$dock_js" || fail "quantity step does not clamp to the native min"
+grep -qF "if (next > max) { next = max; }" "$dock_js" || fail "quantity step does not clamp to the native max"
+grep -qF "dock.addEventListener('click', function (event) {" "$dock_js" || fail "quantity stepper must use one delegated click listener on the dock root"
+if grep -qE "addEventListener\(['\"]click['\"].*qty-(minus|plus)" "$dock_js"; then fail "quantity stepper must not bind a listener directly per button"; fi
+if grep -qF "setInterval(" "$dock_js"; then fail "quantity stepper must never poll"; fi
+grep -qF "quantityBefore.classList.contains('gloskin-ui1-purchase-dock__qty-control')" "$dock_js" || fail "post-composition identity check no longer verifies the qty-control class survived"
+grep -qF "quantityBefore.querySelector('input.qty') === quantityInputBefore" "$dock_js" || fail "post-composition identity check no longer verifies the SAME native input.qty node survived"
+
 # Full-width fixed geometry is PDP-container geometry, never a summary/
 # purchase-slot rect and never a hard desktop cap.
 grep -qF "function fullWidthGeometry()" "$dock_js" || fail "full-width geometry owner missing"
@@ -106,6 +131,9 @@ grep -qF '.gloskin-ui1-purchase-dock__product{display:flex;align-items:center' "
 grep -qF '.gloskin-ui1-purchase-dock__action{display:flex;align-items:center;justify-content:flex-end' "$geometry" || fail "right purchase-action region missing"
 grep -qF '.gloskin-ui1-purchase-dock__variants select{width:auto;flex:1 1 auto;max-width:100%;min-width:0;min-height:46px;background:var(--gloskin-bg);color:var(--gloskin-text)}' "$geometry" || fail "native variation select lost its light field surface"
 grep -qF '.gloskin-ui1-purchase-dock__submit{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;min-height:46px;padding:10px 18px;background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}' "$geometry" || fail "on-accent inverse CTA treatment missing"
+grep -qF '.gloskin-ui1-purchase-dock__qty-control{display:flex' "$geometry" || fail "qty-control pill shell missing"
+grep -qF '.gloskin-ui1-purchase-dock__qty-minus,' "$geometry" || fail "qty-minus button styling missing"
+grep -qF '.gloskin-ui1-purchase-dock__qty-plus{' "$geometry" || fail "qty-plus button styling missing"
 # Proven live against the real hydrated staging PDP: WooCommerce's own
 # woocommerce.css applies `content:" ";display:table` clearfix pseudo-
 # elements to form.cart, which become real (empty) grid items and split the

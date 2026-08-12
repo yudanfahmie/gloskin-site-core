@@ -23,6 +23,7 @@
 		var singleVariationBefore = formBefore.querySelector('.woocommerce-variation.single_variation');
 		var singleVariationWrapBefore = formBefore.querySelector('.single_variation_wrap');
 		var quantityBefore = formBefore.querySelector('.quantity');
+		var quantityInputBefore = quantityBefore ? quantityBefore.querySelector('input.qty') : null;
 		var submitBefore = formBefore.querySelector('.single_add_to_cart_button');
 
 		function sameNodeList(before, after) {
@@ -31,6 +32,53 @@
 				if (before[index] !== after[index]) { return false; }
 			}
 			return true;
+		}
+
+		/* Compact minus/plus steppers around the SAME native input.qty --
+		 * never a clone, never a second quantity state. Idempotent: checks
+		 * a data flag before ever inserting, so it is safe to call again
+		 * (dock re-entry/recomposition) without duplicating buttons. The
+		 * click behavior itself is one delegated listener bound once on the
+		 * dock root below, so no per-button listener is ever attached and
+		 * there is nothing to duplicate even if this runs again. */
+		function enhanceQuantityControls(quantity) {
+			if (!quantity || quantity.dataset.gloskinQtyEnhanced === '1') { return; }
+			var input = quantity.querySelector('input.qty');
+			if (!input) { return; }
+			quantity.classList.add('gloskin-ui1-purchase-dock__qty-control');
+			var minus = document.createElement('button');
+			minus.type = 'button';
+			minus.className = 'gloskin-ui1-purchase-dock__qty-minus';
+			minus.setAttribute('aria-label', 'Decrease quantity');
+			minus.textContent = '−';
+			var plus = document.createElement('button');
+			plus.type = 'button';
+			plus.className = 'gloskin-ui1-purchase-dock__qty-plus';
+			plus.setAttribute('aria-label', 'Increase quantity');
+			plus.textContent = '+';
+			input.insertAdjacentElement('beforebegin', minus);
+			input.insertAdjacentElement('afterend', plus);
+			quantity.dataset.gloskinQtyEnhanced = '1';
+		}
+
+		function stepQuantityInput(input, direction) {
+			if (!input || input.disabled || input.readOnly) { return; }
+			var step = parseFloat(input.step);
+			if (!isFinite(step) || step <= 0) { step = 1; }
+			var min = input.min !== '' && input.min != null ? parseFloat(input.min) : -Infinity;
+			var max = input.max !== '' && input.max != null ? parseFloat(input.max) : Infinity;
+			if (!isFinite(min)) { min = -Infinity; }
+			if (!isFinite(max)) { max = Infinity; }
+			var current = parseFloat(input.value);
+			if (isNaN(current)) { current = isFinite(min) ? min : 0; }
+			var next = current + (direction * step);
+			if (next < min) { next = min; }
+			if (next > max) { next = max; }
+			next = Math.round(next * 1e6) / 1e6;
+			if (next === current) { return; }
+			input.value = next;
+			input.dispatchEvent(new Event('input', { bubbles: true }));
+			input.dispatchEvent(new Event('change', { bubbles: true }));
 		}
 
 		function prepareComposition() {
@@ -45,7 +93,10 @@
 			if (variationTableBefore) { variationTableBefore.classList.add('gloskin-ui1-purchase-dock__variants'); }
 			if (singleVariationWrapBefore) { singleVariationWrapBefore.classList.add('gloskin-ui1-purchase-dock__variation-action'); }
 			if (singleVariationBefore) { singleVariationBefore.classList.add('gloskin-ui1-purchase-dock__variation-state'); }
-			if (quantityBefore) { quantityBefore.classList.add('gloskin-ui1-purchase-dock__quantity'); }
+			if (quantityBefore) {
+				quantityBefore.classList.add('gloskin-ui1-purchase-dock__quantity');
+				enhanceQuantityControls(quantityBefore);
+			}
 			submitBefore.classList.add('gloskin-ui1-purchase-dock__submit');
 
 			var productRegion = document.createElement('div');
@@ -78,7 +129,7 @@
 				&& dock.querySelector('[data-gloskin-purchase-identity]') === identityBefore
 				&& sameNodeList(variationSelectsBefore, afterSelects)
 				&& formBefore.querySelector('.quantity') === quantityBefore
-				&& (!quantityBefore || quantityBefore.classList.contains('gloskin-ui1-purchase-dock__quantity'))
+				&& (!quantityBefore || (quantityBefore.classList.contains('gloskin-ui1-purchase-dock__quantity') && quantityBefore.classList.contains('gloskin-ui1-purchase-dock__qty-control') && quantityBefore.querySelector('input.qty') === quantityInputBefore))
 				&& formBefore.querySelector('.single_add_to_cart_button') === submitBefore
 				&& submitBefore.classList.contains('gloskin-ui1-purchase-dock__submit')
 				&& (!singleVariationBefore || (formBefore.querySelector('.woocommerce-variation.single_variation') === singleVariationBefore && singleVariationBefore.classList.contains('gloskin-ui1-purchase-dock__variation-state')));
@@ -101,6 +152,24 @@
 		 * 7) reveal only after a requestAnimationFrame confirms layout. */
 		dock.classList.add('is-preparing');
 		prepareComposition();
+
+		/* One delegated listener on the stable dock root, bound exactly
+		 * once for the dock's lifetime. It resolves the current
+		 * input.qty at click time rather than closing over a captured
+		 * reference, so it stays correct even if Woo's own variation
+		 * lifecycle ever changes what is inside .gloskin-ui1-purchase-
+		 * dock__qty-control -- no duplicate listeners, no stale nodes,
+		 * no polling. */
+		dock.addEventListener('click', function (event) {
+			var minusButton = event.target.closest ? event.target.closest('.gloskin-ui1-purchase-dock__qty-minus') : null;
+			var plusButton = event.target.closest ? event.target.closest('.gloskin-ui1-purchase-dock__qty-plus') : null;
+			if (!minusButton && !plusButton) { return; }
+			var control = (minusButton || plusButton).closest('.gloskin-ui1-purchase-dock__qty-control');
+			var input = control ? control.querySelector('input.qty') : null;
+			if (!input) { return; }
+			event.preventDefault();
+			stepQuantityInput(input, minusButton ? -1 : 1);
+		});
 
 		var safetyReveal = window.setTimeout(function () {
 			if (!ready) {
