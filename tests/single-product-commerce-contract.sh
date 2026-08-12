@@ -214,9 +214,9 @@ grep -qF -- 'gloskin-ui1-purchase-dock{z-index:5;width:100%;max-width:calc(100vw
 	|| fail "purchase dock: base/no-JS fallback geometry missing"
 grep -qF -- 'background:var(--gloskin-accent);color:var(--gloskin-inverse)' "$geometry" \
 	|| fail "purchase dock: enhanced accent outer surface missing"
-grep -qF -- 'form.cart{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1fr) auto' "$geometry" \
+grep -qF -- '.gloskin-ui1-purchase-dock__form{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1fr) auto' "$geometry" \
 	|| fail "purchase dock: enhanced one-row form composition missing"
-grep -qF -- '.single_add_to_cart_button{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;min-height:46px;padding:10px 18px;background:var(--gloskin-inverse)' "$geometry" \
+grep -qF -- '.gloskin-ui1-purchase-dock__submit{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;min-height:46px;padding:10px 18px;background:var(--gloskin-inverse)' "$geometry" \
 	|| fail "purchase dock: inverse CTA on accent surface missing"
 if grep -qE 'purchase-dock-home.*purchase-dock\.is-floating\{[^}]*background:var\(--gloskin-bg\)' "$geometry"; then
 	fail "purchase dock: floating outer background regressed to neutral/white"

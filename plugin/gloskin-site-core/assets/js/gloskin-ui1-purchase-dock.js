@@ -36,6 +36,18 @@
 		function prepareComposition() {
 			if (!identityBefore || !submitBefore) { return false; }
 
+			/* Presentation-only CSS ownership hooks on the SAME captured
+			 * native Woo nodes -- never a clone, never rebuilt markup, never
+			 * a second submit/quantity/variation control. This lets the
+			 * dock's own geometry own its cascade by class instead of
+			 * racing broad native Woo selectors for specificity. */
+			formBefore.classList.add('gloskin-ui1-purchase-dock__form');
+			if (variationTableBefore) { variationTableBefore.classList.add('gloskin-ui1-purchase-dock__variants'); }
+			if (singleVariationWrapBefore) { singleVariationWrapBefore.classList.add('gloskin-ui1-purchase-dock__variation-action'); }
+			if (singleVariationBefore) { singleVariationBefore.classList.add('gloskin-ui1-purchase-dock__variation-state'); }
+			if (quantityBefore) { quantityBefore.classList.add('gloskin-ui1-purchase-dock__quantity'); }
+			submitBefore.classList.add('gloskin-ui1-purchase-dock__submit');
+
 			var productRegion = document.createElement('div');
 			productRegion.className = 'gloskin-ui1-purchase-dock__product';
 			productRegion.setAttribute('data-gloskin-purchase-product', '');
@@ -62,11 +74,14 @@
 		function nativeNodesPreserved() {
 			var afterSelects = Array.prototype.slice.call(formBefore.querySelectorAll('table.variations select'));
 			return dock.querySelector('form.cart') === formBefore
+				&& formBefore.classList.contains('gloskin-ui1-purchase-dock__form')
 				&& dock.querySelector('[data-gloskin-purchase-identity]') === identityBefore
 				&& sameNodeList(variationSelectsBefore, afterSelects)
 				&& formBefore.querySelector('.quantity') === quantityBefore
+				&& (!quantityBefore || quantityBefore.classList.contains('gloskin-ui1-purchase-dock__quantity'))
 				&& formBefore.querySelector('.single_add_to_cart_button') === submitBefore
-				&& (!singleVariationBefore || formBefore.querySelector('.woocommerce-variation.single_variation') === singleVariationBefore);
+				&& submitBefore.classList.contains('gloskin-ui1-purchase-dock__submit')
+				&& (!singleVariationBefore || (formBefore.querySelector('.woocommerce-variation.single_variation') === singleVariationBefore && singleVariationBefore.classList.contains('gloskin-ui1-purchase-dock__variation-state')));
 		}
 
 		var BOTTOM_GAP = 16;

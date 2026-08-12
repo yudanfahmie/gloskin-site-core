@@ -50,6 +50,21 @@ def markup(kind):
 <div class="related products" data-related><h2>Related products</h2><div data-related-card></div></div></div></div>
 <footer data-footer>Footer</footer></body></html>"""
 
+# Exact relevant clearfix from WooCommerce 11.0.0's own woocommerce.css:
+# `.woocommerce div.product form.cart::before,::after{content:" ";display:table}`
+# plus `::after{clear:both}`. Proven live on the real hydrated staging PDP as
+# the actual root cause of the one-row command bar regressing into two rows
+# with product/action swapped into the wrong track: once this stylesheet
+# makes form.cart a CSS Grid container, those two generated pseudo-elements
+# stop being harmless clearfix decoration and become real (empty) grid
+# items. This fixture embeds the exact upstream rule so a regression here is
+# caught the same way single-product-ghost-space-browser-smoke.py embeds
+# real WooCommerce classic-layout CSS for its own conflict class.
+WOO_LEGACY_CLEARFIX = r"""
+.woocommerce div.product form.cart::before,.woocommerce div.product form.cart::after{content:" ";display:table}
+.woocommerce div.product form.cart::after{clear:both}
+"""
+
 FIXTURE = r"""
 [data-pre]{height:700px}
 .gloskin-ui1-commerce-native{width:min(calc(100% - 40px),1400px);margin-inline:auto}
@@ -89,7 +104,7 @@ def snapshot(page):
       const ds=getComputedStyle(dock), fs=getComputedStyle(form), cta=dock.querySelector('.single_add_to_cart_button'), select=dock.querySelector('select');
       const wrappers=['form.cart','[data-gloskin-purchase-product]','[data-gloskin-purchase-action]','table.variations','table.variations tbody','table.variations tr','table.variations td','.single_variation_wrap','.woocommerce-variation','.woocommerce-variation-add-to-cart'].map(sel=>dock.querySelector(sel)).filter(Boolean);
       function resolved(value){const x=document.createElement('i');x.style.cssText='position:absolute;visibility:hidden;background:'+value+';color:'+value;document.body.appendChild(x);const s=getComputedStyle(x);const out={background:s.backgroundColor,color:s.color};x.remove();return out;}
-      return {classes:dock.className,position:ds.position,visibility:ds.visibility,opacity:Number(ds.opacity),left:d.left,width:d.width,top:d.top,bottom:d.bottom,height:d.height,
+      return {classes:dock.className,position:ds.position,visibility:ds.visibility,opacity:Number(ds.opacity),left:d.left,width:d.width,top:d.top,bottom:d.bottom,height:d.height,dockRadius:ds.borderRadius,
         productLeft:p.left,productWidth:p.width,relatedBottom:r.bottom,relatedCardTop:rc.top,relatedCardBottom:rc.bottom,relatedCardLeft:rc.left,relatedCardRight:rc.right,footerTop:f.top,footerBottom:f.bottom,footerLeft:f.left,footerRight:f.right,
         homeTop:h?h.top:null,homeMinHeight:home?home.style.minHeight:null,dockBackground:ds.backgroundColor,formColumns:fs.gridTemplateColumns,
         wrapperBackgrounds:wrappers.map(el=>getComputedStyle(el).backgroundColor),wrapperShadows:wrappers.map(el=>getComputedStyle(el).boxShadow),wrapperRadii:wrappers.map(el=>getComputedStyle(el).borderRadius),
@@ -99,7 +114,12 @@ def snapshot(page):
         productRect:{left:pr.left,right:pr.right,top:pr.top,bottom:pr.bottom},actionRect:{left:ar.left,right:ar.right,top:ar.top,bottom:ar.bottom},
         pageOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
         dockParentIsHome:!!home&&dock.parentElement===home,homeIsDirectChildOfProduct:!!home&&home.parentElement===product,homeAfterRelated:!!home&&related.nextElementSibling===home,originInSummary:!!origin&&origin.parentElement===product.querySelector(':scope>.summary'),
-        identityInProduct:identity.parentElement===productRegion,variationInProduct:!select||select.closest('table.variations').parentElement===productRegion,quantityInAction:actionRegion.contains(dock.querySelector('.quantity')),submitInAction:actionRegion.contains(cta)};
+        identityInProduct:identity.parentElement===productRegion,variationInProduct:!select||select.closest('table.variations').parentElement===productRegion,quantityInAction:actionRegion.contains(dock.querySelector('.quantity')),submitInAction:actionRegion.contains(cta),
+        customFormClass:form.classList.contains('gloskin-ui1-purchase-dock__form'),customSubmitClass:cta.classList.contains('gloskin-ui1-purchase-dock__submit'),
+        customQuantityClass:!dock.querySelector('.quantity')||dock.querySelector('.quantity').classList.contains('gloskin-ui1-purchase-dock__quantity'),
+        customVariantsClass:!dock.querySelector('table.variations')||dock.querySelector('table.variations').classList.contains('gloskin-ui1-purchase-dock__variants'),
+        customVariationActionClass:!dock.querySelector('.single_variation_wrap')||dock.querySelector('.single_variation_wrap').classList.contains('gloskin-ui1-purchase-dock__variation-action'),
+        customVariationStateClass:!dock.querySelector('.woocommerce-variation.single_variation')||dock.querySelector('.woocommerce-variation.single_variation').classList.contains('gloskin-ui1-purchase-dock__variation-state')};
     }""")
 
 
@@ -110,6 +130,8 @@ def rects_intersect(a_left,a_top,a_right,a_bottom,b_left,b_top,b_right,b_bottom)
 def assert_visual(data, kind, width, height):
     require(data['pageOverflow'] <= 1, f'{kind}: horizontal overflow at {width}x{height}: {data}')
     require(data['dockBackground'] == data['accent'], f'{kind}: outer dock is not Gloskin accent at {width}x{height}: {data}')
+    dock_radius_px = float(data['dockRadius'].removesuffix('px'))
+    require(8 <= dock_radius_px <= 12, f'{kind}: outer dock radius is not a restrained 8-12px premium radius at {width}x{height}: {data}')
     require(all(bg == 'rgba(0, 0, 0, 0)' for bg in data['wrapperBackgrounds']), f'{kind}: structural wrapper surface returned at {width}x{height}: {data}')
     require(all(sh == 'none' for sh in data['wrapperShadows']), f'{kind}: structural wrapper shadow returned at {width}x{height}: {data}')
     require(all(rad == '0px' for rad in data['wrapperRadii']), f'{kind}: structural wrapper radius returned at {width}x{height}: {data}')
@@ -119,6 +141,7 @@ def assert_visual(data, kind, width, height):
     require(data['ctaColor'] == data['accentStrong'], f'{kind}: CTA foreground is not accent-strong at {width}x{height}: {data}')
     require(data['title'] == 'Fresh Gel Facial Wash' and data['price'], f'{kind}: product identity missing at {width}x{height}: {data}')
     require(data['identityInProduct'] and data['variationInProduct'] and data['quantityInAction'] and data['submitInAction'], f'{kind}: left/right composition ownership incorrect at {width}x{height}: {data}')
+    require(data['customFormClass'] and data['customSubmitClass'] and data['customQuantityClass'] and data['customVariantsClass'] and data['customVariationActionClass'] and data['customVariationStateClass'], f'{kind}: Gloskin semantic CSS-ownership classes missing from the SAME native nodes at {width}x{height}: {data}')
     if width >= 768:
         cols=[x for x in data['formColumns'].split(' ') if x.endswith('px')]
         require(len(cols) == 2, f'{kind}: wide purchase interface is not one two-track row at {width}x{height}: {data}')
@@ -158,7 +181,7 @@ with sync_playwright() as p:
       for width,height in VIEWPORTS:
         page=browser.new_page(viewport={'width':width,'height':height})
         page.set_content(markup(kind))
-        page.add_style_tag(content=CSS_BASE+'\n'+CSS_CORE+'\n'+CSS_GEOMETRY+'\n'+FIXTURE)
+        page.add_style_tag(content=WOO_LEGACY_CLEARFIX+'\n'+CSS_BASE+'\n'+CSS_CORE+'\n'+CSS_GEOMETRY+'\n'+FIXTURE)
         capture_nodes(page)
         if page.evaluate("matchMedia('(scripting: enabled)').matches"):
             require(page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-purchase-dock]')).visibility") == 'hidden', f'{kind}: pre-init anti-flicker gate missing at {width}x{height}')

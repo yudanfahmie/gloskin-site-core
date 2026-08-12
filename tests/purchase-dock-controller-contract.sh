@@ -37,6 +37,18 @@ grep -qF "formBefore.querySelector('.quantity') === quantityBefore" "$dock_js" |
 grep -qF "formBefore.querySelector('.single_add_to_cart_button') === submitBefore" "$dock_js" || fail "submit node identity assertion missing"
 grep -qF "sameNodeList(variationSelectsBefore, afterSelects)" "$dock_js" || fail "variation-select identity assertion missing"
 
+# Geometry ownership is anchored to Gloskin-only semantic classes added to
+# the SAME captured native Woo nodes -- presentation-only CSS hooks, never a
+# clone/rebuild -- so the command bar owns its cascade by class instead of
+# racing broad native Woo selectors for specificity.
+grep -qF "formBefore.classList.add('gloskin-ui1-purchase-dock__form');" "$dock_js" || fail "native form.cart is not given its own CSS ownership class"
+grep -qF "variationTableBefore.classList.add('gloskin-ui1-purchase-dock__variants');" "$dock_js" || fail "native table.variations is not given its own CSS ownership class"
+grep -qF "singleVariationWrapBefore.classList.add('gloskin-ui1-purchase-dock__variation-action');" "$dock_js" || fail "native .single_variation_wrap is not given its own CSS ownership class"
+grep -qF "singleVariationBefore.classList.add('gloskin-ui1-purchase-dock__variation-state');" "$dock_js" || fail "native .woocommerce-variation.single_variation is not given its own CSS ownership class"
+grep -qF "quantityBefore.classList.add('gloskin-ui1-purchase-dock__quantity');" "$dock_js" || fail "native .quantity is not given its own CSS ownership class"
+grep -qF "submitBefore.classList.add('gloskin-ui1-purchase-dock__submit');" "$dock_js" || fail "native .single_add_to_cart_button is not given its own CSS ownership class"
+grep -qF "formBefore.classList.contains('gloskin-ui1-purchase-dock__form')" "$dock_js" || fail "post-composition identity check no longer verifies the ownership class survived on the SAME native form node"
+
 # Full-width fixed geometry is PDP-container geometry, never a summary/
 # purchase-slot rect and never a hard desktop cap.
 grep -qF "function fullWidthGeometry()" "$dock_js" || fail "full-width geometry owner missing"
@@ -88,12 +100,31 @@ grep -qF "window.clearTimeout(safetyReveal);" "$dock_js" || fail "successful ini
 # Enhanced presentation is one deliberate accent command bar. Core CSS stays
 # the base/no-JS owner; this geometry file is the sole enhanced composition owner.
 grep -qF '>.gloskin-ui1-purchase-dock-home{grid-column:1/-1;width:100%;min-width:0}' "$geometry" || fail "full-width dock-home owner missing"
-grep -qF '>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{position:static;grid-column:1/-1;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:12px clamp(18px,2vw,28px);border:0;border-radius:0;background:var(--gloskin-accent);color:var(--gloskin-inverse)' "$geometry" || fail "enhanced accent purchase surface missing"
-grep -qF 'form.cart{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:clamp(20px,3vw,48px)' "$geometry" || fail "desktop one-row command-bar grid missing"
+grep -qF '>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{position:static;grid-column:1/-1;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:12px clamp(18px,2vw,28px);border:0;border-radius:var(--gloskin-radius-sm);background:var(--gloskin-accent);color:var(--gloskin-inverse)' "$geometry" || fail "enhanced accent purchase surface missing"
+grep -qF '.gloskin-ui1-purchase-dock__form{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:clamp(20px,3vw,48px)' "$geometry" || fail "desktop one-row command-bar grid missing"
 grep -qF '.gloskin-ui1-purchase-dock__product{display:flex;align-items:center' "$geometry" || fail "left product/variant region missing"
 grep -qF '.gloskin-ui1-purchase-dock__action{display:flex;align-items:center;justify-content:flex-end' "$geometry" || fail "right purchase-action region missing"
-grep -qF 'table.variations select{width:100%;max-width:100%;min-width:0;min-height:46px;background:var(--gloskin-bg);color:var(--gloskin-text)}' "$geometry" || fail "native variation select lost its light field surface"
-grep -qF '.single_add_to_cart_button{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;min-height:46px;padding:10px 18px;background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}' "$geometry" || fail "on-accent inverse CTA treatment missing"
+grep -qF '.gloskin-ui1-purchase-dock__variants select{width:auto;flex:1 1 auto;max-width:100%;min-width:0;min-height:46px;background:var(--gloskin-bg);color:var(--gloskin-text)}' "$geometry" || fail "native variation select lost its light field surface"
+grep -qF '.gloskin-ui1-purchase-dock__submit{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;min-height:46px;padding:10px 18px;background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}' "$geometry" || fail "on-accent inverse CTA treatment missing"
+# Proven live against the real hydrated staging PDP: WooCommerce's own
+# woocommerce.css applies `content:" ";display:table` clearfix pseudo-
+# elements to form.cart, which become real (empty) grid items and split the
+# one-row command bar into two rows the instant form.cart becomes a CSS
+# Grid container. Neutralized at the exact same specificity pattern already
+# used for Related Products' ul.products::before/::after clearfix above.
+grep -qF '.gloskin-ui1-purchase-dock__form::before,' "$geometry" || fail "form.cart clearfix pseudo-element neutralization missing"
+grep -qF '.gloskin-ui1-purchase-dock__form::after{content:none;display:none}' "$geometry" || fail "form.cart clearfix pseudo-element neutralization incomplete"
+# A third-party site plugin (wpcodebox2, outside this repository) wraps every
+# <table> in document.body -- including the reparented table.variations --
+# in an unstyled `.table-container` div via its own MutationObserver, and
+# that plugin's own responsive stylesheet gives `.table-container table
+# tr`/`td` a card border/radius/padding at its own max-width:768px
+# breakpoint. display:contents removes the wrapper from the render tree so
+# table.variations stays a direct flex item of __product; the shared
+# structural-wrapper reset explicitly also zeroes border/margin (not just
+# background/shadow/radius) so that third-party card treatment cannot win.
+grep -qF '.table-container{display:contents}' "$geometry" || fail "third-party table-wrapper neutralization missing"
+grep -qF 'background:transparent;box-shadow:none;border-radius:0;border:0;margin:0}' "$geometry" || fail "structural wrapper reset no longer also zeroes border/margin"
 grep -qF '@media (max-width:680px)' "$geometry" || fail "proven narrow-mobile stacked composition missing"
 if grep -qF 'grid-template-columns:minmax(0,1.35fr)' "$geometry"; then fail "old 1.35fr/.65fr dock composition returned"; fi
 if grep -qE 'purchase-dock-home.*purchase-dock\.is-floating\{[^}]*background:var\(--gloskin-bg\)' "$geometry"; then fail "floating dock regressed to neutral/white outer background"; fi

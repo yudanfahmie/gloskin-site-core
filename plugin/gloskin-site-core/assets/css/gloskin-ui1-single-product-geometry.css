@@ -51,73 +51,116 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloski
  * accent purchase surface in both floating and settled-home states. The SAME
  * native Woo form and controls are composed into one deliberate desktop row;
  * only presentation wrappers are new, and every structural wrapper stays
- * transparent. JS still owns only preparation/floating/home geometry. */
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{position:static;grid-column:1/-1;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:12px clamp(18px,2vw,28px);border:0;border-radius:0;background:var(--gloskin-accent);color:var(--gloskin-inverse);box-shadow:none;visibility:visible;opacity:1;will-change:transform,opacity}
+ * transparent. JS still owns only preparation/floating/home geometry.
+ *
+ * Geometry ownership is anchored to the Gloskin-only semantic classes JS
+ * attaches to the SAME captured native nodes in prepareComposition() --
+ * __form/__variants/__variation-action/__variation-state/__quantity/
+ * __submit -- instead of broad native Woo selectors, so this component owns
+ * its cascade outright instead of racing Woo's own form.cart rules on tied
+ * specificity.
+ *
+ * form.cart::before/::after are explicitly neutralized below: WooCommerce's
+ * own woocommerce.css applies a legacy `content:" ";display:table` clearfix
+ * to div.product form.cart. That is harmless while form.cart is a block, but
+ * the instant this stylesheet makes form.cart (== .gloskin-ui1-purchase-
+ * dock__form) a CSS Grid container, those two generated pseudo-elements stop
+ * being ignorable decoration and become real (empty) grid items -- splitting
+ * the intended single-row 2-column command bar into two implicit rows, with
+ * the product/action cells shifted into the wrong track. Proven directly
+ * against the real hydrated staging PDP: disabling only this one Woo rule
+ * (`.woocommerce div.product form.cart::before,::after{content:" ";
+ * display:table}`) restored the single-row layout, and no theme/WPCB
+ * baseline rule was involved. This is the exact same class of conflict, and
+ * the exact same fix, already applied above for Related Products'
+ * ul.products::before/::after. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{position:static;grid-column:1/-1;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:12px clamp(18px,2vw,28px);border:0;border-radius:var(--gloskin-radius-sm);background:var(--gloskin-accent);color:var(--gloskin-inverse);box-shadow:none;visibility:visible;opacity:1;will-change:transform,opacity}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating{transition:transform 260ms cubic-bezier(.22,1,.36,1),opacity 180ms ease-out;box-shadow:0 -10px 28px color-mix(in srgb,var(--gloskin-brand-charcoal) 16%,transparent)}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock form.cart{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:clamp(20px,3vw,48px);margin:0;background:transparent;box-shadow:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__form::before,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__form::after{content:none;display:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__form{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:clamp(20px,3vw,48px);margin:0;background:transparent;box-shadow:none}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__product{display:flex;align-items:center;gap:clamp(16px,2.2vw,30px);min-width:0;background:transparent;box-shadow:none;border-radius:0}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__identity{display:grid;gap:2px;flex:0 1 300px;min-width:170px;max-width:360px;background:transparent;box-shadow:none;border-radius:0}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__title{display:block;overflow:hidden;color:var(--gloskin-inverse);font-family:var(--gloskin-font-heading);font-size:clamp(.98rem,1.25vw,1.12rem);font-weight:600;line-height:1.15;text-overflow:ellipsis;white-space:nowrap}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__price{display:block;color:var(--gloskin-inverse);font-size:.98rem;font-weight:750;line-height:1.2;white-space:nowrap}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__price .price{color:inherit;font-size:inherit}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__action{display:flex;align-items:center;justify-content:flex-end;min-width:0;background:transparent;box-shadow:none;border-radius:0}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations tbody,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations tr,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations th,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations td,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .single_variation_wrap,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{background:transparent;box-shadow:none;border-radius:0}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations{display:block;flex:0 1 330px;width:min(330px,100%);max-width:100%;margin:0;border:0;table-layout:fixed}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations tbody{display:flex;align-items:center;gap:10px;width:100%}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations tr{display:grid;flex:1 1 0;width:auto;min-width:0;grid-template-columns:auto minmax(120px,1fr);align-items:center;gap:8px}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations th,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations td{display:block;width:auto;min-width:0;padding:0;border:0;text-align:left}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations th{color:color-mix(in srgb,var(--gloskin-inverse) 82%,transparent);font-size:.78rem;font-weight:700;white-space:nowrap}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations td{width:100%}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations select{width:100%;max-width:100%;min-width:0;min-height:46px;background:var(--gloskin-bg);color:var(--gloskin-text)}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations .reset_variations{color:var(--gloskin-inverse);font-size:.75rem}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .single_variation_wrap{display:flex;align-items:center;gap:10px;min-width:0;max-width:100%}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation{display:flex;align-items:center;gap:8px;max-width:180px;margin:0;padding:0;border:0;color:var(--gloskin-inverse);font-size:.8rem;line-height:1.15}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation p{margin:0;color:inherit}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation .price{color:var(--gloskin-inverse);font-size:.86rem;white-space:nowrap}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants tbody,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants tr,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants th,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants td,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-action,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-state,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{background:transparent;box-shadow:none;border-radius:0;border:0;margin:0}
+/* A third-party site plugin (wpcodebox2 baseline-frontend.js/.css, outside
+ * this repository) runs a MutationObserver that wraps every <table>
+ * anywhere in document.body -- including this SAME native table.variations
+ * once it is reparented here -- in a `.table-container` div, and that same
+ * plugin's own generic "responsive card table" stylesheet targets
+ * `.table-container table tr`/`td` by that ancestor class (a plain DOM
+ * relationship unaffected by display:contents below) with a card border,
+ * radius, padding and a `content:attr(data-label)` label pseudo-element,
+ * all only active at its own max-width:768px breakpoint -- proven directly
+ * against the real hydrated staging PDP: table.variations tr grew a visible
+ * card border at exactly 768px wide until these were neutralized. Only
+ * border-radius/box-shadow are covered by the shared reset above; border,
+ * margin and the label pseudo need their own explicit reset here because
+ * this plugin owns them at higher specificity than that shared rule alone
+ * contests. display:contents removes the `.table-container` wrapper box
+ * itself from the render tree entirely, so table.variations stays a direct
+ * flex item of __product exactly as this file already lays it out, without
+ * touching that third-party plugin. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .table-container{display:contents}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants td::before,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants td::after{content:none;display:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants{display:block;flex:0 1 330px;width:min(330px,100%);max-width:100%;margin:0;border:0;table-layout:fixed}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants tbody{display:flex;align-items:center;gap:10px;width:100%}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants tr{display:grid;flex:1 1 0;width:auto;min-width:0;grid-template-columns:auto minmax(120px,1fr);align-items:center;gap:8px}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants th{display:block;width:auto;min-width:0;padding:0;border:0;text-align:left;color:color-mix(in srgb,var(--gloskin-inverse) 82%,transparent);font-size:.78rem;font-weight:700;white-space:nowrap}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants td{display:flex;align-items:center;gap:6px;width:100%;min-width:0;padding:0;border:0;text-align:left}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants select{width:auto;flex:1 1 auto;max-width:100%;min-width:0;min-height:46px;background:var(--gloskin-bg);color:var(--gloskin-text)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants .reset_variations{flex:0 0 auto;color:var(--gloskin-inverse);font-size:.75rem;white-space:nowrap}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-action{display:flex;align-items:center;gap:10px;min-width:0;max-width:100%}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-state{display:flex;align-items:center;gap:8px;max-width:180px;margin:0;padding:0;border:0;color:var(--gloskin-inverse);font-size:.8rem;line-height:1.15}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-state p{margin:0;color:inherit}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-state .price{color:var(--gloskin-inverse);font-size:.86rem;white-space:nowrap}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{display:flex;align-items:center;gap:10px;min-width:0;max-width:100%}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .quantity{margin:0}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .quantity .qty{min-height:46px;background:var(--gloskin-bg);color:var(--gloskin-text)}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .single_add_to_cart_button{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;min-height:46px;padding:10px 18px;background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .single_add_to_cart_button:hover{background:color-mix(in srgb,var(--gloskin-inverse) 92%,var(--gloskin-accent-soft));border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__quantity{margin:0}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__quantity .qty{min-height:46px;background:var(--gloskin-bg);color:var(--gloskin-text)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;min-height:46px;padding:10px 18px;background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit:hover{background:color-mix(in srgb,var(--gloskin-inverse) 92%,var(--gloskin-accent-soft));border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
 
 @media (max-width:1040px){
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.summary{margin-top:clamp(24px,4vw,32px)}
 }
 
 /* Purchase dock structural wrappers are presentation-only; field controls own any radius. */
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock form.cart,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__form,
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__product,
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__identity,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations tbody,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations tr,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations th,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations td,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .single_variation_wrap,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .woocommerce-variation,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__variants,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__variants tbody,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__variants tr,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__variants th,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__variants td,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__variation-action,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__variation-state,
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{border-radius:0}
 
 @media (max-width:680px){
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{padding:12px 14px calc(12px + env(safe-area-inset-bottom))}
-	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock form.cart{grid-template-columns:minmax(0,1fr);gap:10px}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__form{grid-template-columns:minmax(0,1fr);gap:10px}
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__product{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__identity{min-width:0;max-width:none}
-	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations{width:100%;max-width:none}
-	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations tbody{display:grid;gap:8px}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants{width:100%;max-width:none}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants tbody{display:grid;gap:8px}
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__action{width:100%;justify-content:stretch}
-	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .single_variation_wrap{display:grid;width:100%;gap:8px}
-	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation{max-width:none}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-action{display:grid;width:100%;gap:8px}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-state{max-width:none}
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{display:grid;width:100%;grid-template-columns:auto minmax(0,1fr)}
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product.product-type-simple>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__action{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px}
-	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .single_add_to_cart_button{width:100%;max-width:none;min-width:0}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit{width:100%;max-width:none;min-width:0}
 }
 @media (prefers-reduced-motion:reduce){
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating{transition:none}
