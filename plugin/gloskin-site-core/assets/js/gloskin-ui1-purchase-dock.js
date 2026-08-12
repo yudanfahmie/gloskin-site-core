@@ -33,6 +33,9 @@
 
 		var BOTTOM_GAP = 16;
 		var BOUNDARY_GAP = 12;
+		var VIEWPORT_GUTTER = 16;
+		var DESKTOP_MIN_WIDTH = 1024;
+		var DESKTOP_MAX_WIDTH = 720;
 		var state = 'normal';
 		var summaryVisible = false;
 		var markerPosition = 'unknown';
@@ -46,6 +49,12 @@
 		marker.setAttribute('aria-hidden', 'true');
 		marker.style.cssText = 'display:block;height:1px;margin-bottom:-1px;pointer-events:none;visibility:hidden;';
 
+		/* This zero-height slot remains in the summary's ORIGINAL normal-flow
+		 * purchase column for the entire controller lifecycle. Its width/left
+		 * therefore stay independent of whether the dock itself is static,
+		 * fixed or boundary-settled. It is both the placeholder and the one
+		 * stable geometry anchor -- never measure width from the fixed dock or
+		 * from the full two-column product grid. */
 		var slot = document.createElement('div');
 		slot.className = 'gloskin-ui1-purchase-dock-slot';
 		slot.setAttribute('aria-hidden', 'true');
@@ -73,16 +82,24 @@
 			dock.style.removeProperty('position');
 		}
 
+		function anchorGeometry() {
+			var slotRect = slot.getBoundingClientRect();
+			var availableWidth = Math.max(0, window.innerWidth - (VIEWPORT_GUTTER * 2));
+			var widthCap = window.innerWidth >= DESKTOP_MIN_WIDTH ? Math.min(DESKTOP_MAX_WIDTH, availableWidth) : availableWidth;
+			var width = Math.min(slotRect.width, widthCap);
+			var left = slotRect.left + Math.max(0, (slotRect.width - width) / 2);
+			var maxLeft = Math.max(VIEWPORT_GUTTER, window.innerWidth - VIEWPORT_GUTTER - width);
+			left = Math.min(Math.max(left, VIEWPORT_GUTTER), maxLeft);
+			return { left: left, width: width, slotRect: slotRect };
+		}
+
 		function setState(next) {
 			if (next === state) {
 				if (next !== 'normal') { updateGeometry(); }
 				return;
 			}
-			/* Entrance: only when genuinely (re-)entering the fixed floating
-			 * state (not the in-flow settled/boundary state) does the dock
-			 * slide up from the bottom -- a transform-only animation (cheap,
-			 * compositor-only, never touches layout) so it stays smooth and
-			 * stable regardless of viewport size. */
+			/* Entrance remains the existing transform-only enhancement. Width,
+			 * internal structure and purchase state are untouched by it. */
 			var entering = next === 'floating' && state !== 'floating';
 			state = next;
 			dock.classList.toggle('is-floating', next === 'floating');
@@ -97,7 +114,7 @@
 			updateGeometry();
 			if (entering) {
 				dock.style.transform = 'translateY(100%)';
-				void dock.offsetHeight; /* flush layout so the starting position is committed before the next-frame swap */
+				void dock.offsetHeight;
 				window.requestAnimationFrame(function () {
 					dock.style.removeProperty('transform');
 				});
@@ -107,47 +124,52 @@
 		function updateGeometry() {
 			if (state === 'normal') { return; }
 			var height = dockHeight();
-			/* Full-container-width surface: spans the whole primary product
-			 * grid (both the gallery and summary columns), not just .summary,
-			 * both while floating and while settled -- one stable width/left
-			 * source (productRect) for both states instead of tracking two
-			 * different rects. */
 			var productRect = product.getBoundingClientRect();
+			var anchor = anchorGeometry();
 			slot.style.height = height + 'px';
-			dock.style.width = productRect.width + 'px';
+			dock.style.width = anchor.width + 'px';
 
 			if (state === 'floating') {
 				dock.style.position = 'fixed';
-				dock.style.left = productRect.left + 'px';
+				dock.style.left = anchor.left + 'px';
 				dock.style.top = 'auto';
 				dock.style.bottom = 'var(--gloskin-purchase-dock-bottom)';
 				return;
 			}
 
-			var boundaryRect = boundary.getBoundingClientRect();
-			var topWithinProduct = boundaryRect.top - productRect.top - height - BOUNDARY_GAP;
+			/* Release at the existing end-of-Related boundary, but settle the
+			 * same node back over its preserved normal-flow slot. This avoids
+			 * covering the final Related card while keeping the exact same width
+			 * and native form node through floating -> boundary. */
 			dock.style.position = 'absolute';
-			dock.style.left = '0px';
-			dock.style.top = Math.max(0, topWithinProduct) + 'px';
+			dock.style.left = (anchor.left - productRect.left) + 'px';
+			dock.style.top = (anchor.slotRect.top - productRect.top) + 'px';
 			dock.style.bottom = 'auto';
+		}
+
+		function currentMarkerPosition() {
+			var rect = marker.getBoundingClientRect();
+			if (rect.bottom < 0) { return 'above'; }
+			if (rect.top > window.innerHeight) { return 'below'; }
+			return 'inside';
 		}
 
 		function desiredState() {
 			if (!canFloat()) { return 'normal'; }
-			/* Once the dock has genuinely entered floating mode, a desktop
-			 * gallery may keep the first PDP grid row alive after the summary's
-			 * own content box has left the viewport. Keep the SAME dock floating
-			 * through Tabs and Related Products until the end-of-Related
-			 * boundary releases it; only scrolling back above the purchase
-			 * region (marker below + summary not visible) returns it to normal
-			 * flow. This avoids depending on artificial summary height. */
-			if (!summaryVisible && markerPosition === 'below') { return 'normal'; }
+			/* IntersectionObserver callbacks for summary and marker are not
+			 * guaranteed to arrive in the same order after a large scroll jump.
+			 * Read the marker's CURRENT rect when resolving state so a stale
+			 * cached `below` value cannot unlatch a dock that has already begun
+			 * floating through Tabs/Related. This is event-driven geometry read,
+			 * never a scroll listener/polling loop. */
+			var markerNow = currentMarkerPosition();
+			if (!summaryVisible && markerNow === 'below') { return 'normal'; }
 			if (boundaryReached && state !== 'normal') { return 'boundary'; }
 			if (state === 'floating' || state === 'boundary') {
 				return boundaryReached ? 'boundary' : 'floating';
 			}
 			if (!summaryVisible) { return 'normal'; }
-			if (markerPosition === 'below' || markerPosition === 'above') { return 'floating'; }
+			if (markerNow === 'below' || markerNow === 'above') { return 'floating'; }
 			return 'normal';
 		}
 
@@ -170,7 +192,11 @@
 			}, { root: null, rootMargin: '0px 0px -' + markerBottomMargin + 'px 0px', threshold: 0 });
 			markerObserver.observe(marker);
 
-			var boundaryBottomMargin = Math.max(0, BOTTOM_GAP - BOUNDARY_GAP);
+			/* Shrink the observer root to the floating dock's own top edge. The
+			 * end-of-Related sentinel releases the dock only when the final
+			 * Related content is about to enter the dock's footprint -- not
+			 * merely when the sentinel first becomes visible in the viewport. */
+			var boundaryBottomMargin = Math.max(0, BOTTOM_GAP + height + BOUNDARY_GAP);
 			boundaryObserver = new IntersectionObserver(function (entries) {
 				var entry = entries[entries.length - 1];
 				boundaryReached = entry.isIntersecting || entry.boundingClientRect.top < 0;

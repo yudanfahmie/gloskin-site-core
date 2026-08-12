@@ -454,49 +454,54 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .relate
 /* -----------------------------------------------------------------
  * Purchase dock -- the SAME native form.cart Woo already renders, wrapped
  * (never cloned) by WooCommerce_Adapter::open/close_purchase_dock() around
- * woocommerce_before/after_add_to_cart_form. One elevated, sticky-toward-
- * bottom surface on BOTH desktop and mobile. It is a child of .summary, so
- * CSS position:sticky's containing block is .summary's own box: it can
- * never float past .summary's bottom edge, which is exactly where Tabs/
- * Related Products/Footer begin -- no extra JS boundary math needed, and
- * it never overlaps the sticky header (position:sticky, not fixed, and a
- * modest z-index well under the header's). Also anchored on the primary-
- * product direct-child scope above -- open_purchase_dock()/
- * close_purchase_dock() already only ever render for the page's own
- * primary product (is_primary_single_product_context()), so this is
- * defense-in-depth, not the sole guarantee.
+ * woocommerce_before/after_add_to_cart_form. The observer-driven controller
+ * owns only floating/boundary position and width; this block is the ONE
+ * presentation owner for the dock surface and its internal Woo geometry.
  *
- * Full-container-width accent surface: gloskin-ui1-purchase-dock.js sizes
- * the floating/settled dock to the primary product grid's own box (both
- * columns), not just .summary, so this CSS owns only color/elevation --
- * width/left is JS-computed geometry, same division of ownership as
- * before. will-change hints the compositor for the one animated property
- * (transform); it is cheap to keep on this single small element always.
- * The entrance slide-up (JS sets transform:translateY(100%) then removes
- * it on the next frame) only needs a transition on .is-floating -- the
- * settled/boundary state never uses transform. */
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock{z-index:5;margin-top:6px;padding:16px 18px;border:1px solid var(--gloskin-accent-strong);border-radius:var(--gloskin-radius-md);background:var(--gloskin-accent);color:var(--gloskin-inverse);box-shadow:0 16px 38px color-mix(in srgb,var(--gloskin-text) 12%,transparent);will-change:transform}
+ * The dock intentionally reads as one compact purchase component, not an
+ * accent-red banner containing a second white panel. Structural Woo wrappers
+ * are transparent; only real Form Kit controls keep field surfaces. Desktop
+ * width is capped to the purchase-column scale and the controller measures
+ * the preserved normal-flow slot so fixed state can never inflate its own
+ * geometry. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock{z-index:5;width:100%;max-width:calc(100vw - 32px);margin:6px auto 0;padding:clamp(14px,1.4vw,18px);border:1px solid color-mix(in srgb,var(--gloskin-border) 82%,var(--gloskin-accent) 18%);border-radius:var(--gloskin-radius-md);background:var(--gloskin-bg);color:var(--gloskin-text);box-shadow:inset 0 3px 0 var(--gloskin-accent),0 14px 34px color-mix(in srgb,var(--gloskin-text) 10%,transparent);will-change:transform}
+@media (min-width:1024px){
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock{max-width:720px}
+}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock.is-floating{transition:transform 260ms cubic-bezier(.22,1,.36,1)}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock form.cart{margin-block:0}
-/* Contrast: the Add to Cart button and stock/availability text default to
- * the same accent-on-inverse colors used everywhere else, which would
- * disappear against this dock's own accent-red surface. Same Form/Action
- * Kit, one more scoped context -- not a second button skin. */
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .single_add_to_cart_button{background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent)}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .single_add_to_cart_button:hover{background:var(--gloskin-bg);color:var(--gloskin-accent-strong)}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .single_add_to_cart_button:disabled,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .single_add_to_cart_button.disabled{background:color-mix(in srgb,var(--gloskin-inverse) 32%,transparent);border-color:transparent;color:var(--gloskin-inverse);opacity:.72}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .stock{color:var(--gloskin-inverse)}
-/* Degrade rule: only stick when there is real viewport height to float
- * within: below this, the dock stays in normal document flow (still the
- * same bordered surface) rather than fighting a short/landscape viewport
- * or ever growing an internal scroll box. Height-only (no min-width), so
- * both desktop and mobile get the floating treatment identically. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock form.cart{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin:0;max-width:none;background:transparent;box-shadow:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product.product-type-simple .gloskin-ui1-purchase-dock form.cart{grid-template-columns:auto minmax(0,1fr);align-items:center}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations tbody,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations tr,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations th,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations td,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .single_variation_wrap,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .woocommerce-variation,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{background:transparent;box-shadow:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations{display:block;width:100%;max-width:100%;margin:0;border:0;table-layout:fixed}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations tbody{display:block;width:100%}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations tr{display:grid;width:100%;grid-template-columns:minmax(0,1fr);gap:6px}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations tr+tr{margin-top:10px}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations th,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations td{display:block;width:100%;padding:0;border:0;text-align:left}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock table.variations select{width:100%;max-width:100%;min-width:0}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .single_variation_wrap{display:grid;gap:10px;min-width:0;max-width:100%}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .woocommerce-variation{margin:0;padding:0;border:0;border-radius:0}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;min-width:0;max-width:100%}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .quantity{margin:0}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .single_add_to_cart_button{width:100%;min-width:0;max-width:100%}
+/* Degrade rule: only float when there is real viewport height. The same
+ * content-driven surface remains in normal flow for short/oversized docks;
+ * there is never an internal scroll area. */
 @media (min-height:560px){
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock{position:sticky;bottom:max(16px,env(safe-area-inset-bottom))}
 }
 @media (max-width:600px){
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock{padding:14px 16px calc(14px + env(safe-area-inset-bottom))}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product.product-type-simple .gloskin-ui1-purchase-dock form.cart,
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{grid-template-columns:minmax(0,1fr);align-items:stretch}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .single_add_to_cart_button{width:100%}
 }
 
 /* -----------------------------------------------------------------
