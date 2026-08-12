@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.7.38';
+	const VERSION = '0.7.39';
 
 	/** @var string */
 	private $plugin_file;

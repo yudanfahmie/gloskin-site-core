@@ -76,8 +76,8 @@ def snapshot(page):
       const dock=summary.querySelector('[data-gloskin-purchase-dock]');
       const related=product.querySelector(':scope>.related.products');
       const slot=summary.querySelector('.gloskin-ui1-purchase-dock-slot');
-      const d=dock.getBoundingClientRect(), s=summary.getBoundingClientRect(), r=related.getBoundingClientRect();
-      return {classes:dock.className,position:getComputedStyle(dock).position,left:d.left,width:d.width,top:d.top,bottom:d.bottom,height:d.height,summaryLeft:s.left,summaryWidth:s.width,relatedBottom:r.bottom,slotHeight:slot?slot.getBoundingClientRect().height:-1,formCount:product.querySelectorAll(':scope>.summary [data-gloskin-purchase-dock] form.cart').length,pageForms:product.querySelectorAll('form.cart').length,overflow:getComputedStyle(dock).overflowY};
+      const d=dock.getBoundingClientRect(), p=product.getBoundingClientRect(), r=related.getBoundingClientRect();
+      return {classes:dock.className,position:getComputedStyle(dock).position,left:d.left,width:d.width,top:d.top,bottom:d.bottom,height:d.height,transform:getComputedStyle(dock).transform,productLeft:p.left,productWidth:p.width,relatedBottom:r.bottom,slotHeight:slot?slot.getBoundingClientRect().height:-1,formCount:product.querySelectorAll(':scope>.summary [data-gloskin-purchase-dock] form.cart').length,pageForms:product.querySelectorAll('form.cart').length,overflow:getComputedStyle(dock).overflowY};
     }""")
 
 
@@ -105,7 +105,10 @@ with sync_playwright() as p:
 
         summary_doc_top = page.evaluate("document.querySelector('.gloskin-ui1-commerce-native>div.product>.summary').getBoundingClientRect().top+scrollY")
         page.evaluate("y=>scrollTo(0,y)", max(0, summary_doc_top + 30))
-        page.wait_for_timeout(160)
+        # Longer than the 260ms entrance slide-up transition so the transform
+        # assertion below observes the settled end state, not a mid-animation
+        # interpolated matrix.
+        page.wait_for_timeout(420)
         active = snapshot(page)
         require(active['overflow'] not in ('auto','scroll'), f'dock gained internal scrolling at {width}x{height}: {active}')
         require(page.evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1'), f'horizontal overflow at {width}x{height}')
@@ -116,10 +119,11 @@ with sync_playwright() as p:
             page.close(); continue
 
         require('is-floating' in active['classes'] and active['position'] == 'fixed', f'dock did not genuinely float at {width}x{height}: {active}')
-        require(abs(active['left'] - active['summaryLeft']) < 1.1, f'floating dock left drifted from summary at {width}x{height}: {active}')
-        require(abs(active['width'] - active['summaryWidth']) < 1.1, f'floating dock width drifted from summary at {width}x{height}: {active}')
+        require(abs(active['left'] - active['productLeft']) < 1.1, f'floating dock left drifted from the full product container at {width}x{height}: {active}')
+        require(abs(active['width'] - active['productWidth']) < 1.1, f'floating dock is not full container width at {width}x{height}: {active}')
         require(abs((height - active['bottom']) - 16) < 1.5, f'floating bottom gap wrong at {width}x{height}: {active}')
         require(active['slotHeight'] >= active['height'] - 1, f'placeholder does not preserve dock height at {width}x{height}: {active}')
+        require(active['transform'] in ('none', 'matrix(1, 0, 0, 1, 0, 0)'), f'entrance transform did not settle back to none at {width}x{height}: {active}')
 
         old_height = active['height']
         page.evaluate("""() => { const x=document.createElement('div'); x.style.height='64px'; x.textContent='variation availability'; document.querySelector('[data-gloskin-purchase-dock] form.cart').appendChild(x); }""")

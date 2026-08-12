@@ -78,6 +78,12 @@
 				if (next !== 'normal') { updateGeometry(); }
 				return;
 			}
+			/* Entrance: only when genuinely (re-)entering the fixed floating
+			 * state (not the in-flow settled/boundary state) does the dock
+			 * slide up from the bottom -- a transform-only animation (cheap,
+			 * compositor-only, never touches layout) so it stays smooth and
+			 * stable regardless of viewport size. */
+			var entering = next === 'floating' && state !== 'floating';
 			state = next;
 			dock.classList.toggle('is-floating', next === 'floating');
 			dock.classList.toggle('is-boundary', next === 'boundary');
@@ -85,22 +91,34 @@
 			if (next === 'normal') {
 				slot.style.height = '0px';
 				clearPosition();
+				dock.style.removeProperty('transform');
 				return;
 			}
 			updateGeometry();
+			if (entering) {
+				dock.style.transform = 'translateY(100%)';
+				void dock.offsetHeight; /* flush layout so the starting position is committed before the next-frame swap */
+				window.requestAnimationFrame(function () {
+					dock.style.removeProperty('transform');
+				});
+			}
 		}
 
 		function updateGeometry() {
 			if (state === 'normal') { return; }
 			var height = dockHeight();
-			var summaryRect = summary.getBoundingClientRect();
+			/* Full-container-width surface: spans the whole primary product
+			 * grid (both the gallery and summary columns), not just .summary,
+			 * both while floating and while settled -- one stable width/left
+			 * source (productRect) for both states instead of tracking two
+			 * different rects. */
 			var productRect = product.getBoundingClientRect();
 			slot.style.height = height + 'px';
-			dock.style.width = summaryRect.width + 'px';
+			dock.style.width = productRect.width + 'px';
 
 			if (state === 'floating') {
 				dock.style.position = 'fixed';
-				dock.style.left = summaryRect.left + 'px';
+				dock.style.left = productRect.left + 'px';
 				dock.style.top = 'auto';
 				dock.style.bottom = 'var(--gloskin-purchase-dock-bottom)';
 				return;
@@ -108,9 +126,8 @@
 
 			var boundaryRect = boundary.getBoundingClientRect();
 			var topWithinProduct = boundaryRect.top - productRect.top - height - BOUNDARY_GAP;
-			var leftWithinProduct = summaryRect.left - productRect.left;
 			dock.style.position = 'absolute';
-			dock.style.left = leftWithinProduct + 'px';
+			dock.style.left = '0px';
 			dock.style.top = Math.max(0, topWithinProduct) + 'px';
 			dock.style.bottom = 'auto';
 		}

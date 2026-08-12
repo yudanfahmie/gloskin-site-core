@@ -206,6 +206,16 @@ if grep -qE 'gloskin-ui1-purchase-dock\{[^}]*overflow' "$core_css"; then
 	fail "purchase dock: must never grow an internal scrollbar"
 fi
 
+# Purchase dock accent surface: full-container-width red (accent) background,
+# with the Add to Cart button/stock text inverted for contrast against it --
+# same Form/Action Kit, one more scoped context, never a second button skin.
+grep -qF -- 'gloskin-ui1-purchase-dock{z-index:5;margin-top:6px;padding:16px 18px;border:1px solid var(--gloskin-accent-strong);border-radius:var(--gloskin-radius-md);background:var(--gloskin-accent);color:var(--gloskin-inverse)' "$core_css" \
+	|| fail "purchase dock: accent-red surface missing"
+grep -qF -- 'gloskin-ui1-purchase-dock .single_add_to_cart_button{background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent)}' "$core_css" \
+	|| fail "purchase dock: Add to Cart contrast inversion against the red surface missing"
+grep -qF -- 'gloskin-ui1-purchase-dock .stock{color:var(--gloskin-inverse)}' "$core_css" \
+	|| fail "purchase dock: stock/availability text contrast against the red surface missing"
+
 # Commerce accent: catalog cards still need their explicit card action skin.
 # Quick Add now carries the canonical .gloskin-ui1-form root, so its native
 # Woo button inherits the global Form/Action Kit instead of keeping a second

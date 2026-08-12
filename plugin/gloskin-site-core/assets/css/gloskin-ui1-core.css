@@ -465,9 +465,28 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .relate
  * close_purchase_dock() already only ever render for the page's own
  * primary product (is_primary_single_product_context()), so this is
  * defense-in-depth, not the sole guarantee.
- * ----------------------------------------------------------------- */
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock{z-index:5;margin-top:6px;padding:16px 18px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);background:var(--gloskin-bg);box-shadow:0 16px 38px color-mix(in srgb,var(--gloskin-text) 12%,transparent)}
+ *
+ * Full-container-width accent surface: gloskin-ui1-purchase-dock.js sizes
+ * the floating/settled dock to the primary product grid's own box (both
+ * columns), not just .summary, so this CSS owns only color/elevation --
+ * width/left is JS-computed geometry, same division of ownership as
+ * before. will-change hints the compositor for the one animated property
+ * (transform); it is cheap to keep on this single small element always.
+ * The entrance slide-up (JS sets transform:translateY(100%) then removes
+ * it on the next frame) only needs a transition on .is-floating -- the
+ * settled/boundary state never uses transform. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock{z-index:5;margin-top:6px;padding:16px 18px;border:1px solid var(--gloskin-accent-strong);border-radius:var(--gloskin-radius-md);background:var(--gloskin-accent);color:var(--gloskin-inverse);box-shadow:0 16px 38px color-mix(in srgb,var(--gloskin-text) 12%,transparent);will-change:transform}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock.is-floating{transition:transform 260ms cubic-bezier(.22,1,.36,1)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock form.cart{margin-block:0}
+/* Contrast: the Add to Cart button and stock/availability text default to
+ * the same accent-on-inverse colors used everywhere else, which would
+ * disappear against this dock's own accent-red surface. Same Form/Action
+ * Kit, one more scoped context -- not a second button skin. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .single_add_to_cart_button{background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .single_add_to_cart_button:hover{background:var(--gloskin-bg);color:var(--gloskin-accent-strong)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .single_add_to_cart_button:disabled,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .single_add_to_cart_button.disabled{background:color-mix(in srgb,var(--gloskin-inverse) 32%,transparent);border-color:transparent;color:var(--gloskin-inverse);opacity:.72}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .stock{color:var(--gloskin-inverse)}
 /* Degrade rule: only stick when there is real viewport height to float
  * within: below this, the dock stays in normal document flow (still the
  * same bordered surface) rather than fighting a short/landscape viewport

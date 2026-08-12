@@ -37,6 +37,17 @@ if grep -qE "addEventListener\(['\"]scroll|setInterval\(|cloneNode\(|innerHTML\s
 fi
 if grep -qF '!important' "$dock_js"; then fail "dock controller introduced !important"; fi
 
+# Full-container-width geometry: the floating/settled dock spans the whole
+# primary product grid box (productRect), not just .summary.
+grep -qF "dock.style.width = productRect.width + 'px';" "$dock_js" || fail "dock width no longer sourced from the full product container"
+grep -qF "dock.style.left = productRect.left + 'px';" "$dock_js" || fail "floating dock left no longer sourced from the full product container"
+
+# Entrance: transform-only (compositor-cheap) slide-up when genuinely
+# (re-)entering the fixed floating state; settles back to no inline
+# transform on release so it never lingers as stale geometry.
+grep -qF "dock.style.transform = 'translateY(100%)';" "$dock_js" || fail "entrance slide-up starting transform missing"
+grep -qF "dock.style.removeProperty('transform');" "$dock_js" || fail "entrance transform is never cleared"
+
 grep -qF "'gloskin-ui1-purchase-dock' => array(" "$assets" || fail "dock controller is not registered by canonical AssetService registry"
 grep -qF "'src'       => 'assets/js/gloskin-ui1-purchase-dock.js'" "$assets" || fail "dock controller registry path changed"
 grep -qF "'deps'      => array( 'gloskin-ui1-core' )" "$assets" || fail "dock controller must load after canonical core interaction owner"
