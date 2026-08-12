@@ -12,45 +12,59 @@
 		var dock = docks.length === 1 ? docks[0] : null;
 		if (!product || !summary || !dock || dock.querySelectorAll('form.cart').length !== 1) { return; }
 
+		/* The geometry owner is the canonical primary PDP content container,
+		 * never .summary/a purchase slot inside it. Full-width floating
+		 * geometry is always measured from this SAME node. */
+		var container = product;
+		var formBefore = dock.querySelector('form.cart');
+
 		var BOTTOM_GAP = 16;
 		var MIN_FLOAT_HEIGHT = 560;
-		var state = 'mounting';
+		var state = 'preparing';
 		var ready = false;
-		var boundaryReached = false;
-		var boundaryObserver = null;
+		var atHome = false;
+		var homeObserver = null;
 		var rebuildFrame = 0;
 		var revealFrame = 0;
 		var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-		/* Anti-flicker lifecycle: hide the existing server-rendered dock only
-		 * while THIS enhancement task relocates it. CSS also suppresses the
-		 * pre-footer first paint when scripting is enabled, with its own
-		 * fail-safe reveal. The exact same native form node is moved once. */
-		dock.style.visibility = 'hidden';
-		dock.style.opacity = '0';
+		/* Deterministic preparation sequence, all synchronous in one task:
+		 * 1) mark preparing, 2) native form already captured above, 3) leave
+		 * an inert origin marker, 4) create the full-width home, 5) reparent
+		 * the SAME dock node into it, 6) establish observers/geometry below,
+		 * 7) reveal only after a requestAnimationFrame confirms layout. */
+		dock.classList.add('is-preparing');
+
 		var safetyReveal = window.setTimeout(function () {
 			if (!ready) {
-				dock.style.visibility = 'visible';
-				dock.style.opacity = '1';
+				dock.classList.remove('is-preparing');
+				dock.classList.add('is-ready');
 			}
 		}, 1000);
 
-		/* The boundary is the dock's final normal-flow position. Put it directly
-		 * after Related Products (or at product end when Related is absent),
-		 * then move the SAME wrapper after that marker. Because the dock becomes
-		 * a direct child of the primary product grid it can own the entire grid
-		 * row instead of inheriting .summary's half-width geometry. */
-		var boundary = document.createElement('span');
-		boundary.className = 'gloskin-ui1-purchase-dock-end';
-		boundary.setAttribute('aria-hidden', 'true');
-		boundary.style.cssText = 'display:block;grid-column:1/-1;height:1px;margin:0;pointer-events:none;visibility:hidden;';
+		/* One tiny inert marker where the purchase form originally lived.
+		 * No dock-height placeholder is left behind: .summary reserves none
+		 * of the dock's space -- that is intentional, not a regression. */
+		var origin = document.createElement('span');
+		origin.className = 'gloskin-ui1-purchase-dock-origin';
+		origin.setAttribute('aria-hidden', 'true');
+		dock.parentNode.insertBefore(origin, dock);
+
+		/* The dock's real, normal-flow, full-width DOM home: directly after
+		 * Related Products, or at the end of the primary product root when
+		 * Related is absent. This -- not the old summary slot -- is where
+		 * the SAME node settles once its floating footprint would otherwise
+		 * reach it, so it can never enter Footer. */
+		var home = document.createElement('div');
+		home.className = 'gloskin-ui1-purchase-dock-home';
 		if (related) {
-			related.insertAdjacentElement('afterend', boundary);
+			related.insertAdjacentElement('afterend', home);
 		} else {
-			product.appendChild(boundary);
+			product.appendChild(home);
 		}
-		boundary.insertAdjacentElement('afterend', dock);
-		dock.classList.add('is-relocated');
+
+		/* Reparent the SAME node once. Never cloneNode/innerHTML-rebuild. */
+		home.appendChild(dock);
 
 		product.style.setProperty('--gloskin-purchase-dock-bottom', 'max(16px, env(safe-area-inset-bottom))');
 
@@ -63,22 +77,34 @@
 			return window.innerHeight >= MIN_FLOAT_HEIGHT && height > 0 && height <= window.innerHeight * 0.55;
 		}
 
-		function fullBlockGeometry() {
-			var rect = product.getBoundingClientRect();
+		/* Full-block fixed geometry always derives from the PDP container,
+		 * never a summary/purchase slot and never an arbitrary desktop cap.
+		 * Clamping only guards the safe viewport edges on narrow devices. */
+		function fullWidthGeometry() {
+			var rect = container.getBoundingClientRect();
 			var viewportWidth = document.documentElement.clientWidth || window.innerWidth;
 			var left = Math.max(0, rect.left);
 			var right = Math.min(viewportWidth, rect.right);
-			return {
-				left: left,
-				width: Math.max(0, right - left)
-			};
+			return { left: left, width: Math.max(0, right - left) };
 		}
 
-		function boundaryReachedNow() {
+		function homeReachedNow() {
 			var height = dockHeight();
-			var rect = boundary.getBoundingClientRect();
+			var rect = home.getBoundingClientRect();
 			var releaseLine = window.innerHeight - BOTTOM_GAP - height;
 			return rect.top <= releaseLine;
+		}
+
+		/* While floating, home reserves the dock's real measured height so
+		 * Footer/next content never jumps when the dock later settles into
+		 * normal flow -- intentional occupancy, not ghost space, and never
+		 * reserved back inside .summary. */
+		function reserveHomeHeight() {
+			home.style.minHeight = dockHeight() + 'px';
+		}
+
+		function releaseHomeHeight() {
+			home.style.removeProperty('min-height');
 		}
 
 		function clearFloatingGeometry() {
@@ -89,31 +115,37 @@
 			dock.style.removeProperty('position');
 		}
 
+		function revealReady() {
+			dock.classList.remove('is-preparing');
+			dock.classList.add('is-ready');
+		}
+
 		function revealStatic() {
-			dock.style.visibility = 'visible';
-			dock.style.opacity = '1';
+			revealReady();
+			dock.style.removeProperty('opacity');
+			dock.style.removeProperty('visibility');
 			dock.style.removeProperty('transform');
 		}
 
 		function revealFloating(animate) {
+			revealReady();
 			if (revealFrame) {
 				window.cancelAnimationFrame(revealFrame);
 				revealFrame = 0;
 			}
-			dock.style.visibility = 'visible';
 			if (!animate || prefersReducedMotion) {
-				dock.style.opacity = '1';
+				dock.style.removeProperty('opacity');
 				dock.style.removeProperty('transform');
 				return;
 			}
 			dock.style.opacity = '0';
-			dock.style.transform = 'translateY(calc(100% + 24px))';
+			dock.style.transform = 'translateY(calc(100% + 20px))';
 			void dock.offsetHeight;
 			revealFrame = window.requestAnimationFrame(function () {
 				revealFrame = 0;
 				if (state !== 'floating') { return; }
 				dock.style.opacity = '1';
-				dock.style.removeProperty('transform');
+				dock.style.transform = 'translateY(0)';
 			});
 		}
 
@@ -124,7 +156,7 @@
 			}
 			state = next;
 			dock.classList.toggle('is-floating', next === 'floating');
-			dock.classList.toggle('is-boundary', next === 'boundary');
+			dock.classList.toggle('is-home', next === 'home');
 
 			if (next === 'floating') {
 				updateFloatingGeometry();
@@ -133,45 +165,47 @@
 			}
 
 			clearFloatingGeometry();
+			releaseHomeHeight();
 			revealStatic();
 		}
 
 		function updateFloatingGeometry() {
 			if (state !== 'floating') { return; }
-			var geometry = fullBlockGeometry();
+			var geometry = fullWidthGeometry();
 			dock.style.position = 'fixed';
 			dock.style.left = geometry.left + 'px';
 			dock.style.top = 'auto';
 			dock.style.width = geometry.width + 'px';
 			dock.style.bottom = 'var(--gloskin-purchase-dock-bottom)';
+			reserveHomeHeight();
 		}
 
 		function syncState(animate) {
 			if (!ready) { return; }
-			boundaryReached = boundaryReachedNow();
+			atHome = homeReachedNow();
 			if (!canFloat()) {
-				setState('normal', false);
+				setState('home', false);
 				return;
 			}
-			setState(boundaryReached ? 'boundary' : 'floating', animate);
+			setState(atHome ? 'home' : 'floating', animate);
 		}
 
-		function rebuildBoundaryObserver() {
-			if (boundaryObserver) { boundaryObserver.disconnect(); }
+		function rebuildHomeObserver() {
+			if (homeObserver) { homeObserver.disconnect(); }
 			var rootBottomMargin = Math.max(0, BOTTOM_GAP + dockHeight());
-			boundaryObserver = new IntersectionObserver(function (entries) {
+			homeObserver = new IntersectionObserver(function (entries) {
 				var entry = entries[entries.length - 1];
-				boundaryReached = entry.isIntersecting || entry.boundingClientRect.top < 0;
+				atHome = entry.isIntersecting || entry.boundingClientRect.top < 0;
 				if (ready) { syncState(true); }
 			}, { root: null, rootMargin: '0px 0px -' + rootBottomMargin + 'px 0px', threshold: 0 });
-			boundaryObserver.observe(boundary);
+			homeObserver.observe(home);
 		}
 
 		function scheduleRebuild() {
 			if (rebuildFrame) { window.cancelAnimationFrame(rebuildFrame); }
 			rebuildFrame = window.requestAnimationFrame(function () {
 				rebuildFrame = 0;
-				rebuildBoundaryObserver();
+				rebuildHomeObserver();
 				syncState(false);
 			});
 		}
@@ -180,20 +214,24 @@
 		resizeObserver.observe(dock);
 		window.addEventListener('resize', scheduleRebuild, { passive: true });
 		window.addEventListener('orientationchange', scheduleRebuild, { passive: true });
-		rebuildBoundaryObserver();
+		rebuildHomeObserver();
 
 		/* One frame after relocation lets the browser resolve the full-width
-		 * form geometry before the floating bar is shown. This avoids the
-		 * half-width -> full-width flash and makes the first visible frame the
-		 * slide-up presentation state. */
+		 * home-anchored geometry before the floating bar is shown. This
+		 * avoids the summary-card -> bottom-dock flash and makes the first
+		 * visible frame the slide-up presentation state. */
 		window.requestAnimationFrame(function () {
 			ready = true;
 			window.clearTimeout(safetyReveal);
-			boundaryReached = boundaryReachedNow();
-			if (canFloat() && !boundaryReached) {
+			atHome = homeReachedNow();
+			if (canFloat() && !atHome) {
 				setState('floating', true);
 			} else {
-				setState(boundaryReached ? 'boundary' : 'normal', false);
+				setState('home', false);
+			}
+
+			if (dock.querySelector('form.cart') !== formBefore && window.console && window.console.error) {
+				window.console.error('gloskin-ui1-purchase-dock: native form node identity changed during relocation');
 			}
 		});
 	}

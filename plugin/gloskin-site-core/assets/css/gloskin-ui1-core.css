@@ -460,14 +460,13 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .relate
  *
  * The dock intentionally reads as one compact purchase component, not an
  * accent-red banner containing a second white panel. Structural Woo wrappers
- * are transparent; only real Form Kit controls keep field surfaces. Desktop
- * width is capped to the purchase-column scale and the controller measures
- * the preserved normal-flow slot so fixed state can never inflate its own
- * geometry. */
+ * are transparent; only real Form Kit controls keep field surfaces. This
+ * base rule is the pre-enhancement/no-JS presentation only: it never caps
+ * width to an arbitrary desktop pixel value, because
+ * gloskin-ui1-single-product-geometry.css takes over full PDP-container
+ * width ownership the instant the controller relocates this SAME node into
+ * its post-Related home. */
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock{z-index:5;width:100%;max-width:calc(100vw - 32px);margin:6px auto 0;padding:clamp(14px,1.4vw,18px);border:1px solid color-mix(in srgb,var(--gloskin-border) 82%,var(--gloskin-accent) 18%);border-radius:var(--gloskin-radius-md);background:var(--gloskin-bg);color:var(--gloskin-text);box-shadow:inset 0 3px 0 var(--gloskin-accent),0 14px 34px color-mix(in srgb,var(--gloskin-text) 10%,transparent);will-change:transform}
-@media (min-width:1024px){
-	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock{max-width:720px}
-}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock.is-floating{transition:transform 260ms cubic-bezier(.22,1,.36,1)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock form.cart{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin:0;max-width:none;background:transparent;box-shadow:none}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product.product-type-simple .gloskin-ui1-purchase-dock form.cart{grid-template-columns:auto minmax(0,1fr);align-items:center}

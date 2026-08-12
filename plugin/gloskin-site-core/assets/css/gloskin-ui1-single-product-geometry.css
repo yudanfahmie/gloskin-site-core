@@ -23,55 +23,73 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .relate
 
 /* Progressive-enhancement anti-flicker: while scripting is available, keep
  * the server-rendered summary dock out of the first painted frame only until
- * the controller relocates that SAME node after Related Products. The zero-
+ * the controller finishes its synchronous preparation (origin marker, full-
+ * width home, reparent, geometry, observers) and marks it ready. The zero-
  * duration delayed animation is a fail-safe: if the enhancement script fails,
  * the native Woo form becomes visible again instead of being stranded hidden.
  * With scripting disabled this rule never applies, so the native no-JS form
  * remains immediately usable in its server-rendered summary position. */
 @keyframes gloskin-purchase-dock-failsafe{to{visibility:visible}}
 @media (scripting:enabled){
-	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock:not(.is-relocated){visibility:hidden;animation:gloskin-purchase-dock-failsafe 0s linear 900ms forwards}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock:not(.is-ready){visibility:hidden;animation:gloskin-purchase-dock-failsafe 0s linear 900ms forwards}
 }
+/* Belt-and-braces: the controller's own inline preparing state, independent
+ * of the scripting-media fail-safe above. No transition here -- entrance
+ * motion is opt-in per state below, never implied while still preparing. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock.is-preparing{visibility:hidden;opacity:0;transition:none}
 
-/* Enhanced dock geometry: after DOM readiness the existing wrapper is moved
- * once, unchanged, to the full-width grid row immediately after Related.
- * It is deliberately NOT a card/surface: no white panel, border, radius or
- * shadow. Only actual Form Kit controls and the canonical accent CTA paint
- * surfaces. In fixed mode JS supplies viewport position + the full primary-
- * product lane width; this CSS never caps it back to the summary column. */
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated{grid-column:1/-1;position:relative;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--gloskin-text);box-shadow:none;visibility:visible;opacity:1;will-change:transform,opacity}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated.is-floating{transition:transform 260ms cubic-bezier(.22,1,.36,1),opacity 180ms ease-out}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated form.cart{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1.35fr) minmax(340px,.65fr);align-items:end;gap:12px 24px;margin:0;background:transparent;box-shadow:none}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product.product-type-simple>.gloskin-ui1-purchase-dock.is-relocated form.cart{grid-template-columns:auto minmax(0,1fr)}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated table.variations,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated table.variations tbody,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated table.variations tr,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated table.variations th,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated table.variations td,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated .single_variation_wrap,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated .woocommerce-variation,
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated .woocommerce-variation-add-to-cart{background:transparent;box-shadow:none}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated table.variations{display:block;width:100%;max-width:100%;margin:0;border:0;table-layout:fixed}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated table.variations tbody{display:block;width:100%}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated table.variations tr{display:grid;width:100%;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated table.variations tr+tr{margin-top:10px}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated table.variations th{display:block;width:auto;padding:0;border:0;text-align:left;white-space:nowrap}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated table.variations td{display:block;width:100%;min-width:0;padding:0;border:0;text-align:left}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated table.variations select{width:100%;max-width:100%;min-width:0}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated .single_variation_wrap{display:grid;align-self:end;gap:10px;min-width:0;max-width:100%}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated .woocommerce-variation{margin:0;padding:0;border:0;border-radius:0}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated .woocommerce-variation-add-to-cart{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;min-width:0;max-width:100%}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated .quantity{margin:0}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated .single_add_to_cart_button{width:100%;min-width:0;max-width:100%}
+/* The dock's real, normal-flow DOM home: a direct full-width row of the
+ * primary product grid, placed immediately after Related Products (or at
+ * the end of the primary product root when Related is absent). This is not
+ * a card -- it is the dock's real destination, independent of .summary's
+ * width. While the dock floats fixed above it, JS reserves its real
+ * measured height here so Footer/next content never jumps when it settles;
+ * .summary itself never reserves any of that space. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home{grid-column:1/-1;width:100%;min-width:0}
+
+/* Enhanced dock geometry: once relocated into its home, the existing
+ * wrapper is unchanged and simply owns the full grid row. It is
+ * deliberately NOT a detached card: no rounded silhouette, no heavy
+ * floating-card shadow, no inset accent-card treatment, no desktop pixel
+ * cap. Only a restrained top border/shadow appears while genuinely
+ * floating, as its one subtle elevation cue. Structural Woo wrappers stay
+ * transparent; only real Form Kit controls and the canonical accent CTA
+ * paint surfaces. In fixed mode JS supplies viewport position + the full
+ * primary-product lane width; this CSS never caps it back to the summary
+ * column or any fixed pixel width. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{position:static;grid-column:1/-1;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:clamp(14px,1.4vw,18px) 0;border:0;border-radius:0;background:transparent;color:var(--gloskin-text);box-shadow:none;visibility:visible;opacity:1;will-change:transform,opacity}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating{transition:transform 260ms cubic-bezier(.22,1,.36,1),opacity 180ms ease-out;border-top:1px solid var(--gloskin-border);box-shadow:0 -10px 26px color-mix(in srgb,var(--gloskin-text) 6%,transparent)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock form.cart{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1.35fr) minmax(340px,.65fr);align-items:end;gap:12px 24px;margin:0;background:transparent;box-shadow:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product.product-type-simple>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock form.cart{grid-template-columns:auto minmax(0,1fr)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations tbody,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations tr,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations th,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations td,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .single_variation_wrap,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{background:transparent;box-shadow:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations{display:block;width:100%;max-width:100%;margin:0;border:0;table-layout:fixed}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations tbody{display:block;width:100%}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations tr{display:grid;width:100%;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations tr+tr{margin-top:10px}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations th{display:block;width:auto;padding:0;border:0;text-align:left;white-space:nowrap}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations td{display:block;width:100%;min-width:0;padding:0;border:0;text-align:left}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations select{width:100%;max-width:100%;min-width:0}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .single_variation_wrap{display:grid;align-self:end;gap:10px;min-width:0;max-width:100%}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation{margin:0;padding:0;border:0;border-radius:0}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;min-width:0;max-width:100%}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .quantity{margin:0}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .single_add_to_cart_button{width:100%;min-width:0;max-width:100%}
 
 @media (max-width:1040px){
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.summary{margin-top:clamp(24px,4vw,32px)}
 }
 @media (max-width:760px){
-	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated form.cart,
-	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product.product-type-simple>.gloskin-ui1-purchase-dock.is-relocated form.cart{grid-template-columns:minmax(0,1fr);gap:10px}
-	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated table.variations tr{grid-template-columns:minmax(0,1fr);gap:6px}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock form.cart,
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product.product-type-simple>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock form.cart{grid-template-columns:minmax(0,1fr);gap:10px}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock table.variations tr{grid-template-columns:minmax(0,1fr);gap:6px}
 }
 @media (prefers-reduced-motion:reduce){
-	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock.is-relocated.is-floating{transition:none}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating{transition:none}
 }
