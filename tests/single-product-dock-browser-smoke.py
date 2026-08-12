@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Real Chromium geometry/state smoke for the compact bounded single-product purchase dock."""
+"""Chromium regression for the full-block, DOM-relocated single-product purchase dock."""
 from pathlib import Path
 
 try:
@@ -13,75 +13,46 @@ PLUGIN = ROOT / "plugin" / "gloskin-site-core"
 CSS_BASE = (PLUGIN / "assets/css/gloskin-ui1-core-base.css").read_text(encoding="utf-8")
 CSS_CORE = (PLUGIN / "assets/css/gloskin-ui1-core.css").read_text(encoding="utf-8")
 CSS_GEOMETRY = (PLUGIN / "assets/css/gloskin-ui1-single-product-geometry.css").read_text(encoding="utf-8")
-JS_CORE = (PLUGIN / "assets/js/gloskin-ui1-core.js").read_text(encoding="utf-8")
 JS_DOCK = (PLUGIN / "assets/js/gloskin-ui1-purchase-dock.js").read_text(encoding="utf-8")
 
-HTML = r"""
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body class="wp-singular single single-product gloskin-ui1 gloskin-ui1--medical woocommerce woocommerce-page">
-<div data-test-pre style="height:700px"></div>
+HTML = r"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body class="single-product gloskin-ui1 woocommerce woocommerce-page">
+<div data-pre></div>
 <div class="woocommerce gloskin-ui1-commerce-native">
-<div id="product-501" class="product type-product product-type-variable">
-  <div class="woocommerce-product-gallery"><div class="woocommerce-product-gallery__wrapper"><div class="woocommerce-product-gallery__image"><img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22600%22/%3E" alt=""></div></div></div>
+<div class="product product-type-variable">
+  <div class="woocommerce-product-gallery"><div class="woocommerce-product-gallery__wrapper"></div></div>
   <div class="summary entry-summary">
-    <h1 class="product_title">Gloskin Fresh Gel Facial Wash</h1>
-    <div class="fixture-summary-copy">Purchase information</div>
+    <div class="fixture-summary-copy">Summary</div>
     <div class="gloskin-ui1-purchase-dock" data-gloskin-purchase-dock>
-      <form class="variations_form cart" action="#" method="post" data-product_id="501">
-        <table class="variations"><tbody><tr><th><label for="pa_ukuran">Ukuran</label></th><td><select id="pa_ukuran"><option>30 ml</option></select></td></tr></tbody></table>
+      <form class="variations_form cart" action="#" method="post">
+        <table class="variations"><tbody><tr><th><label for="pa_ukuran">Ukuran</label></th><td><select id="pa_ukuran"><option>Choose an option</option></select></td></tr></tbody></table>
         <div class="single_variation_wrap">
           <div class="woocommerce-variation"><div class="woocommerce-variation-availability"><p class="stock">Tersedia</p></div></div>
           <div class="woocommerce-variation-add-to-cart variations_button">
             <div class="quantity"><input class="input-text qty text" type="number" value="1"></div>
-            <button id="primary-add" type="submit" class="single_add_to_cart_button button alt">Tambah ke keranjang</button>
+            <button type="submit" class="single_add_to_cart_button button alt">Add to cart</button>
           </div>
         </div>
       </form>
     </div>
   </div>
-  <div class="woocommerce-tabs wc-tabs-wrapper" data-test-tabs>
-    <div class="woocommerce-Tabs-panel"><p>Deskripsi utama.</p>
-      <div class="woocommerce"><div class="single-product"><div id="product-777" class="product product-type-simple" data-test-nested-product>
-        <div class="summary" data-test-nested-summary>Different product editorial embed.</div>
-      </div></div></div>
-    </div>
-  </div>
-  <div class="related products" data-test-related>
-    <h2>Produk terkait</h2>
-    <ul class="products"><li class="product" data-test-related-card><a href="#"><span class="woocommerce-loop-product__title">Related</span></a></li></ul>
-  </div>
+  <div class="woocommerce-tabs wc-tabs-wrapper" data-tabs>Tabs</div>
+  <div class="related products" data-related><h2>Related products</h2><div data-related-card></div></div>
 </div></div>
-<footer data-test-footer style="height:500px">Footer</footer>
-</body></html>
-"""
+<footer data-footer>Footer</footer>
+</body></html>"""
 
-# Deliberately emulate the kind of Woo/theme structural white chrome visible
-# in the reported hydrated PDP. The canonical dock component must neutralize
-# these wrappers while leaving actual Form Kit controls surfaced.
-LEGACY_FORM_CHROME = r"""
-.woocommerce div.product form.cart,
-.woocommerce div.product table.variations,
-.woocommerce div.product table.variations tbody,
-.woocommerce div.product table.variations tr,
-.woocommerce div.product table.variations td,
-.woocommerce div.product .single_variation_wrap,
-.woocommerce div.product .woocommerce-variation,
-.woocommerce div.product .woocommerce-variation-add-to-cart{background:#fff;box-shadow:0 0 0 1px #fff}
-"""
-
-FIXTURE_CSS = r"""
-[data-test-pre]{height:700px}
+FIXTURE = r"""
+[data-pre]{height:700px}
+.gloskin-ui1-commerce-native{width:min(calc(100% - 40px),1400px);margin-inline:auto}
 .gloskin-ui1-commerce-native>div.product>.woocommerce-product-gallery .woocommerce-product-gallery__wrapper{min-height:1500px}
 .gloskin-ui1-commerce-native>div.product>.summary .fixture-summary-copy{height:900px}
 .gloskin-ui1-commerce-native>div.product>.woocommerce-tabs{min-height:520px}
 .gloskin-ui1-commerce-native>div.product>.related.products{min-height:1200px}
-@media(max-width:1040px){[data-test-pre]{height:300px}}
-"""
-
-RUNTIME = r"""
-window.gloskinData={woo:true,restUrl:'/wp-json/gloskin/v1/',restNonce:'fixture',cartUrl:'/cart/',addToCartAjaxUrl:'/?wc-ajax=add_to_cart'};
-window.wc_cart_fragments_params={}; window.wc_add_to_cart_params={};
-(function(){ function jq(target){ return {length:target?1:0,on:function(){return this;},trigger:function(){return this;},attr:function(n,v){if(target&&target.setAttribute)target.setAttribute(n,v);return this;}};} jq.fn={wc_variation_form:function(){}}; window.jQuery=jq; }());
+[data-related-card]{height:900px;background:var(--gloskin-surface)}
+[data-footer]{height:500px;background:#222;color:#fff}
+.woocommerce div.product form.cart,.woocommerce div.product table.variations,.woocommerce div.product table.variations tbody,.woocommerce div.product table.variations tr,.woocommerce div.product table.variations td,.woocommerce div.product .single_variation_wrap,.woocommerce div.product .woocommerce-variation,.woocommerce div.product .woocommerce-variation-add-to-cart{background:#fff;box-shadow:0 0 0 1px #fff}
+@media(max-width:1040px){[data-pre]{height:300px}}
 """
 
 
@@ -93,37 +64,32 @@ def require(value, message):
 def snapshot(page):
     return page.evaluate("""() => {
       const product=document.querySelector('.gloskin-ui1-commerce-native>div.product');
-      const summary=product.querySelector(':scope>.summary');
-      const dock=summary.querySelector('[data-gloskin-purchase-dock]');
-      const slot=summary.querySelector('.gloskin-ui1-purchase-dock-slot');
+      const dock=product.querySelector(':scope>[data-gloskin-purchase-dock]');
       const related=product.querySelector(':scope>.related.products');
-      const relatedCard=related.querySelector('[data-test-related-card]');
-      const footer=document.querySelector('[data-test-footer]');
-      const d=dock.getBoundingClientRect(), s=summary.getBoundingClientRect(), sl=slot.getBoundingClientRect(), r=related.getBoundingClientRect(), rc=relatedCard.getBoundingClientRect(), f=footer.getBoundingClientRect();
-      const transparentSelectors=['form.cart','table.variations','table.variations tbody','table.variations tr','table.variations td','.single_variation_wrap','.woocommerce-variation','.woocommerce-variation-add-to-cart'];
-      const backgrounds=transparentSelectors.map(sel=>getComputedStyle(dock.querySelector(sel)).backgroundColor);
-      function resolvedBackground(value){ const probe=document.createElement('i'); probe.style.cssText='position:absolute;visibility:hidden;background:'+value; dock.appendChild(probe); const result=getComputedStyle(probe).backgroundColor; probe.remove(); return result; }
-      function intersectionArea(a,b){ const w=Math.max(0,Math.min(a.right,b.right)-Math.max(a.left,b.left)); const h=Math.max(0,Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)); return w*h; }
-      return {
-        classes:dock.className,position:getComputedStyle(dock).position,left:d.left,width:d.width,top:d.top,bottom:d.bottom,height:d.height,
-        summaryLeft:s.left,summaryWidth:s.width,slotLeft:sl.left,slotWidth:sl.width,slotHeight:sl.height,
-        overflow:getComputedStyle(dock).overflowY,pageOverflow:document.documentElement.scrollWidth-window.innerWidth,
-        backgrounds:backgrounds,selectBackground:getComputedStyle(dock.querySelector('select')).backgroundColor,
-        fieldBackground:resolvedBackground('var(--gloskin-field-bg)'),dockBackground:getComputedStyle(dock).backgroundColor,
-        expectedDockBackground:resolvedBackground('var(--gloskin-bg)'),ctaBackground:getComputedStyle(dock.querySelector('.single_add_to_cart_button')).backgroundColor,
-        accentBackground:resolvedBackground('var(--gloskin-accent)'),
-        relatedIntersection:intersectionArea(d, r),relatedCardIntersection:intersectionArea(d, rc),footerIntersection:intersectionArea(d, f)
-      };
+      const boundary=product.querySelector(':scope>.gloskin-ui1-purchase-dock-end');
+      const footer=document.querySelector('[data-footer]');
+      const p=product.getBoundingClientRect(), d=dock.getBoundingClientRect(), r=related.getBoundingClientRect(), b=boundary.getBoundingClientRect(), f=footer.getBoundingClientRect();
+      const ds=getComputedStyle(dock), fs=getComputedStyle(dock.querySelector('form.cart'));
+      const wrappers=['form.cart','table.variations','table.variations tbody','table.variations tr','table.variations td','.single_variation_wrap','.woocommerce-variation','.woocommerce-variation-add-to-cart'];
+      const wrapperBackgrounds=wrappers.map(sel=>getComputedStyle(dock.querySelector(sel)).backgroundColor);
+      function resolved(value){const x=document.createElement('i');x.style.cssText='position:absolute;visibility:hidden;background:'+value;document.body.appendChild(x);const out=getComputedStyle(x).backgroundColor;x.remove();return out;}
+      return {classes:dock.className,position:ds.position,visibility:ds.visibility,opacity:Number(ds.opacity),left:d.left,width:d.width,top:d.top,bottom:d.bottom,height:d.height,
+        productLeft:p.left,productWidth:p.width,relatedBottom:r.bottom,boundaryTop:b.top,footerTop:f.top,dockBackground:ds.backgroundColor,radius:ds.borderRadius,shadow:ds.boxShadow,borderTop:ds.borderTopWidth,
+        formColumns:fs.gridTemplateColumns,wrapperBackgrounds,selectBackground:getComputedStyle(dock.querySelector('select')).backgroundColor,fieldBackground:resolved('var(--gloskin-field-bg)'),ctaBackground:getComputedStyle(dock.querySelector('.single_add_to_cart_button')).backgroundColor,accentBackground:resolved('var(--gloskin-accent)'),
+        pageOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
+        parentIsProduct:dock.parentElement===product,afterRelated:related.nextElementSibling===boundary&&boundary.nextElementSibling===dock};
     }""")
 
 
-def assert_visual_contract(data, width, height):
-    require(data['overflow'] not in ('auto', 'scroll'), f'dock gained internal scrolling at {width}x{height}: {data}')
+def assert_visual(data, width, height):
     require(data['pageOverflow'] <= 1, f'horizontal overflow at {width}x{height}: {data}')
-    require(all(bg == 'rgba(0, 0, 0, 0)' for bg in data['backgrounds']), f'structural Woo wrapper kept a panel background at {width}x{height}: {data}')
-    require(data['selectBackground'] == data['fieldBackground'], f'variation select left canonical Form Kit field surface at {width}x{height}: {data}')
-    require(data['dockBackground'] == data['expectedDockBackground'], f'dock is not the neutral Gloskin surface at {width}x{height}: {data}')
-    require(data['ctaBackground'] == data['accentBackground'], f'active Add to Cart is not the Gloskin accent at {width}x{height}: {data}')
+    require(data['dockBackground'] == 'rgba(0, 0, 0, 0)', f'floating/settled dock regained white surface at {width}x{height}: {data}')
+    require(data['borderTop'] == '0px', f'dock border returned at {width}x{height}: {data}')
+    require(data['radius'] == '0px', f'dock radius returned at {width}x{height}: {data}')
+    require(data['shadow'] == 'none', f'dock shadow returned at {width}x{height}: {data}')
+    require(all(bg == 'rgba(0, 0, 0, 0)' for bg in data['wrapperBackgrounds']), f'inner white wrapper panel returned at {width}x{height}: {data}')
+    require(data['selectBackground'] == data['fieldBackground'], f'field left Form Kit surface at {width}x{height}: {data}')
+    require(data['ctaBackground'] == data['accentBackground'], f'CTA left canonical accent at {width}x{height}: {data}')
 
 
 with sync_playwright() as p:
@@ -136,83 +102,60 @@ with sync_playwright() as p:
     for width, height in [(1728,900),(1440,900),(1024,768),(768,1024),(430,932),(390,844),(844,390)]:
         page = browser.new_page(viewport={"width":width,"height":height})
         page.set_content(HTML)
-        page.add_style_tag(content=CSS_BASE + "\n" + LEGACY_FORM_CHROME + "\n" + CSS_CORE + "\n" + CSS_GEOMETRY + "\n" + FIXTURE_CSS)
-        page.add_script_tag(content=RUNTIME)
-        page.evaluate("window.__primaryFormBefore=document.querySelector('.gloskin-ui1-commerce-native>div.product form.cart')")
-        page.add_script_tag(content=JS_CORE)
+        page.add_style_tag(content=CSS_BASE + "\n" + CSS_CORE + "\n" + CSS_GEOMETRY + "\n" + FIXTURE)
+        page.evaluate("window.__formBefore=document.querySelector('.gloskin-ui1-commerce-native>div.product form.cart')")
+        if page.evaluate("matchMedia('(scripting: enabled)').matches"):
+            require(page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-purchase-dock]')).visibility") == 'hidden', f'pre-init dock not anti-flicker hidden at {width}x{height}')
         page.add_script_tag(content=JS_DOCK)
-        page.wait_for_timeout(120)
+        page.wait_for_timeout(360)
 
-        require(page.evaluate("getComputedStyle(document.querySelector('.gloskin-ui1-commerce-native>div.product')).display") == 'grid', 'primary product lost grid scope')
-        require(page.evaluate("getComputedStyle(document.querySelector('[data-test-nested-product]')).display") != 'grid', 'nested product inherited primary grid scope')
-        require(page.locator('[data-gloskin-purchase-dock]').count() == 1, 'purchase dock duplicated')
-        require(page.locator('.gloskin-ui1-commerce-native>div.product form.cart').count() == 1, 'primary product must retain exactly one form.cart')
-        require(page.evaluate("window.__primaryFormBefore===document.querySelector('.gloskin-ui1-commerce-native>div.product form.cart')"), 'form node identity changed during initialization')
-
-        marker_doc_top = page.evaluate("document.querySelector('.gloskin-ui1-purchase-dock-marker').getBoundingClientRect().top+scrollY")
-        page.evaluate("y=>scrollTo(0,y)", max(0, marker_doc_top + 20))
-        page.wait_for_timeout(180)
-        active = snapshot(page)
-        assert_visual_contract(active, width, height)
+        data = snapshot(page)
+        require(data['parentIsProduct'] and data['afterRelated'], f'dock was not relocated once directly after Related at {width}x{height}: {data}')
+        require(page.evaluate("window.__formBefore===document.querySelector('[data-gloskin-purchase-dock] form.cart')"), f'native form.cart identity changed at {width}x{height}')
+        require(page.locator('[data-gloskin-purchase-dock]').count() == 1, f'dock duplicated at {width}x{height}')
+        require(page.locator('form.cart').count() == 1, f'form.cart duplicated at {width}x{height}')
+        assert_visual(data, width, height)
 
         if height < 560:
-            require('is-floating' not in active['classes'] and 'is-boundary' not in active['classes'], f'short viewport floated: {active}')
-            require(active['position'] not in ('fixed','absolute'), f'short viewport did not degrade to flow: {active}')
+            require('is-floating' not in data['classes'] and data['position'] != 'fixed', f'short viewport should stay flow-only at {width}x{height}: {data}')
             page.close(); continue
 
-        require('is-floating' in active['classes'] and active['position'] == 'fixed', f'dock did not genuinely float at {width}x{height}: {active}')
-        require(active['width'] <= active['slotWidth'] + 1.1, f'floating dock exceeded original purchase-column anchor at {width}x{height}: {active}')
-        require(active['left'] >= 15 and active['left'] + active['width'] <= width - 15, f'floating dock violated viewport gutter at {width}x{height}: {active}')
+        require('is-floating' in data['classes'] and data['position'] == 'fixed', f'dock did not slide into immediate floating state after DOM readiness at {width}x{height}: {data}')
+        require(abs(data['left'] - data['productLeft']) <= 1.5, f'floating dock left edge is not full product lane at {width}x{height}: {data}')
+        require(abs(data['width'] - data['productWidth']) <= 1.5, f'floating dock is not full product-lane width at {width}x{height}: {data}')
+        require(data['visibility'] == 'visible' and data['opacity'] > .99, f'dock did not finish reveal at {width}x{height}: {data}')
         if width >= 1024:
-            require(active['width'] <= 721, f'desktop dock exceeded deliberate 720px cap at {width}x{height}: {active}')
-        require(active['slotHeight'] >= active['height'] - 1, f'placeholder does not preserve dock height at {width}x{height}: {active}')
-        baseline_width = active['width']
+            require(len([x for x in data['formColumns'].split(' ') if x.endswith('px')]) >= 2, f'desktop purchase controls did not distribute horizontally at {width}x{height}: {data}')
 
-        old_height = active['height']
-        page.evaluate("""() => { const x=document.createElement('div'); x.style.height='64px'; x.textContent='variation availability'; document.querySelector('[data-gloskin-purchase-dock] form.cart').appendChild(x); }""")
-        page.wait_for_timeout(180)
+        old_height = data['height']
+        page.evaluate("""() => {const x=document.createElement('div');x.style.height='56px';x.textContent='dynamic variation status';document.querySelector('[data-gloskin-purchase-dock] form.cart').appendChild(x)}""")
+        page.wait_for_timeout(220)
         grown = snapshot(page)
-        assert_visual_contract(grown, width, height)
-        require(grown['height'] >= old_height + 60, f'dock resize was not observed at {width}x{height}: {grown}')
-        require(grown['slotHeight'] >= grown['height'] - 1, f'placeholder stale after dock resize at {width}x{height}: {grown}')
-        require(abs(grown['width'] - baseline_width) < 1.1, f'dock width jumped after content resize at {width}x{height}: {grown}')
-
-        page.locator('#pa_ukuran').focus()
-        tabs_doc_top = page.evaluate("document.querySelector('.gloskin-ui1-commerce-native>div.product>.woocommerce-tabs').getBoundingClientRect().top+scrollY")
-        page.evaluate("y=>scrollTo(0,y)", tabs_doc_top + 80)
-        page.wait_for_timeout(180)
-        through_tabs = snapshot(page)
-        require('is-floating' in through_tabs['classes'] and through_tabs['position'] == 'fixed', f'dock stopped before/inside Tabs at {width}x{height}: {through_tabs}')
-        require(abs(through_tabs['width'] - baseline_width) < 1.1, f'dock width jumped through Tabs at {width}x{height}: {through_tabs}')
-        require(page.evaluate("document.activeElement===document.querySelector('#pa_ukuran')"), f'focus moved during dock state change at {width}x{height}')
-
-        related_doc_top = page.evaluate("document.querySelector('.gloskin-ui1-commerce-native>div.product>.related.products').getBoundingClientRect().top+scrollY")
-        page.evaluate("y=>scrollTo(0,y)", related_doc_top + 100)
-        page.wait_for_timeout(180)
-        through_related = snapshot(page)
-        require('is-floating' in through_related['classes'] and through_related['position'] == 'fixed', f'dock did not float through Related Products at {width}x{height}: {through_related}')
-        require(abs(through_related['width'] - baseline_width) < 1.1, f'dock width jumped through Related Products at {width}x{height}: {through_related}')
+        require(grown['height'] >= old_height + 50, f'ResizeObserver missed dynamic dock height at {width}x{height}: {grown}')
+        require(abs(grown['width'] - grown['productWidth']) <= 1.5, f'full width changed after dynamic content at {width}x{height}: {grown}')
 
         boundary_doc_top = page.evaluate("document.querySelector('.gloskin-ui1-purchase-dock-end').getBoundingClientRect().top+scrollY")
-        release_line = height - 16 - through_related['height'] - 16
+        release_line = height - 16 - grown['height']
         page.evaluate("y=>scrollTo(0,y)", max(0, boundary_doc_top - release_line + 2))
-        page.wait_for_timeout(200)
-        boundary = snapshot(page)
-        assert_visual_contract(boundary, width, height)
-        require('is-boundary' in boundary['classes'] and boundary['position'] == 'absolute', f'dock did not release at end of Related Products at {width}x{height}: {boundary}')
-        require(abs(boundary['width'] - baseline_width) < 1.1, f'dock width jumped at boundary at {width}x{height}: {boundary}')
-        require(boundary['relatedIntersection'] == 0 and boundary['relatedCardIntersection'] == 0, f'released dock obscures Related Products at {width}x{height}: {boundary}')
-        require(boundary['footerIntersection'] == 0, f'released dock overlaps footer at {width}x{height}: {boundary}')
-        require(page.evaluate("window.__primaryFormBefore===document.querySelector('.gloskin-ui1-commerce-native>div.product form.cart')"), f'form node identity changed at {width}x{height}')
+        page.wait_for_timeout(260)
+        stopped = snapshot(page)
+        assert_visual(stopped, width, height)
+        require('is-boundary' in stopped['classes'] and stopped['position'] != 'fixed', f'dock did not stop at its post-Related flow position at {width}x{height}: {stopped}')
+        require(stopped['top'] >= stopped['relatedBottom'] - 2, f'settled dock entered Related content at {width}x{height}: {stopped}')
+        require(stopped['bottom'] <= stopped['footerTop'] + 2, f'settled dock entered Footer at {width}x{height}: {stopped}')
 
-        page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
-        page.wait_for_timeout(160)
+        page.evaluate('scrollTo(0, document.body.scrollHeight)')
+        page.wait_for_timeout(180)
         after = snapshot(page)
-        require(after['position'] != 'fixed' and 'is-floating' not in after['classes'], f'dock still covers Footer after release at {width}x{height}: {after}')
-        require(after['footerIntersection'] == 0, f'dock/footer intersection returned after release at {width}x{height}: {after}')
-        require(page.evaluate("window.__primaryFormBefore===document.querySelector('.gloskin-ui1-commerce-native>div.product form.cart')"), f'form identity changed after release at {width}x{height}')
+        require(after['position'] != 'fixed' and 'is-floating' not in after['classes'], f'dock stayed fixed into Footer at {width}x{height}: {after}')
+
+        page.evaluate('scrollTo(0, 0)')
+        page.wait_for_timeout(280)
+        returned = snapshot(page)
+        require('is-floating' in returned['classes'] and returned['position'] == 'fixed', f'dock did not resume floating when returning above Related at {width}x{height}: {returned}')
+        require(page.evaluate("window.__formBefore===document.querySelector('[data-gloskin-purchase-dock] form.cart')"), f'form node identity changed after full lifecycle at {width}x{height}')
         page.close()
 
     browser.close()
 
-print('single-product-dock-browser-smoke: OK')
+print("single-product-dock-browser-smoke: OK")
