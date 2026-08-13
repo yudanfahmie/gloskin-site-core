@@ -53,7 +53,7 @@
 .woocommerce-account .woocommerce table.shop_table th,.woocommerce-account .woocommerce table.shop_table td{padding:13px 14px;border-color:var(--gloskin-border);vertical-align:middle}
 .woocommerce-account .woocommerce form .form-row input.input-text,.woocommerce-account .woocommerce form .form-row textarea,.woocommerce-account .woocommerce form select{min-height:var(--gloskin-field-height);border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-field-bg);color:var(--gloskin-text)}
 .woocommerce-account .woocommerce fieldset{margin:26px 0 0;padding:20px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md)}
-.woocommerce-account .woocommerce .button{border-radius:999px}
+.woocommerce-account .woocommerce .button{border-radius:var(--gloskin-action-radius)}
 .gloskin-ui1-commerce-native .gloskin-ui1-empty-state+.return-to-shop{display:none}
 .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-info,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-message,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-error{display:flex;align-items:center;gap:12px;min-height:58px;margin:0;padding:13px 14px 13px 16px;border:1px solid var(--gloskin-border);border-top:2px solid var(--gloskin-accent);border-radius:var(--gloskin-radius-sm);background:var(--gloskin-bg);box-shadow:none;color:var(--gloskin-text)}
 .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-error{border-top-color:var(--gloskin-accent-strong)}

@@ -18,6 +18,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Register the boundary only for a real Woo single-product request.
  *
+ * PDP simplification: Woo's own Description/Additional Information/Reviews
+ * tab strip is removed entirely (Woo's own woocommerce_output_product_data_tabs()
+ * template already no-ops when the tabs array is empty -- no template fork
+ * needed). The Short Description is now the one canonical PDP body field,
+ * rendered natively by Woo's own woocommerce_template_single_excerpt() in
+ * the primary summary; this boundary keeps its safety-formatting pipeline
+ * alive by rerouting it onto that field via woocommerce_short_description
+ * instead, so a self-referencing/recursive [product_page] or
+ * wp:woocommerce/single-product embed can never re-enter a full
+ * single-product render from there either.
+ *
  * @return void
  */
 function gloskin_ui1_register_product_description_boundary() {
@@ -25,25 +36,31 @@ function gloskin_ui1_register_product_description_boundary() {
 		return;
 	}
 	add_filter( 'woocommerce_product_tabs', 'gloskin_ui1_product_tabs_description_boundary', PHP_INT_MAX );
+	add_filter( 'woocommerce_short_description', 'gloskin_ui1_format_product_description' );
 }
 
 /**
- * Keep Woo's tabs and tab visibility rules; replace only Description output.
+ * Remove every Woo product tab. Content that used to live in
+ * Description/Additional Information/Reviews now lives in the Short
+ * Description primary summary and native product facts instead.
  *
  * @param array<string,mixed> $tabs Woo product tabs.
  * @return array<string,mixed>
  */
 function gloskin_ui1_product_tabs_description_boundary( $tabs ) {
-	if ( ! is_array( $tabs ) || ! isset( $tabs['description'] ) || ! is_array( $tabs['description'] ) ) {
-		return $tabs;
-	}
-	$tabs['description']['callback'] = 'gloskin_ui1_render_product_description';
-	return $tabs;
+	return array();
 }
 
 /**
  * Render Woo's own product description through a small, request-local
  * presentation pipeline. No product/cart/stock state is created here.
+ *
+ * Currently unreachable via woocommerce_product_tabs (all tabs are removed
+ * -- see gloskin_ui1_product_tabs_description_boundary() above), kept as
+ * the Description tab's own would-be renderer in case tabs are ever
+ * reintroduced. The active safety pipeline for the now-primary Short
+ * Description field is gloskin_ui1_format_product_description() below,
+ * reused directly on woocommerce_short_description.
  *
  * @return void
  */

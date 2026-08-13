@@ -24,6 +24,7 @@ node tests/shop-catalog-controller.test.js
 python tests/storefront-regression-contract.py
 php tests/rest-sanitize-callback-contract.php
 python tests/header-admin-contract.py
+php tests/description-consolidation-contract.php
 python tests/readiness-contract-smoke.py
 php tests/readiness-php-smoke.php
 php tests/rendered-shell-auth-smoke.php

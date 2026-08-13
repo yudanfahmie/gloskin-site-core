@@ -18,6 +18,9 @@ final class Gloskin_Site_Core_Admin_Service {
 	const MIGRATION_SLUG       = 'gloskin-sample-product-import';
 	const MIGRATION_AJAX       = 'gloskin_site_core_sample_product_import';
 	const MIGRATION_NONCE      = 'gloskin_site_core_sample_product_import';
+	const CONSOLIDATION_OPTION = 'gloskin_site_core_description_consolidation';
+	const CONSOLIDATION_ACTION = 'gloskin_site_core_consolidate_descriptions';
+	const CONSOLIDATION_NONCE  = 'gloskin_site_core_consolidate_descriptions';
 
 	/** @var Gloskin_Site_Core_Content_Service */
 	private $content;
@@ -52,6 +55,14 @@ final class Gloskin_Site_Core_Admin_Service {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_migration_assets' ), 30 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_settings_assets' ), 30 );
 		add_action( 'wp_ajax_' . self::MIGRATION_AJAX, array( $this, 'ajax_sample_product_import' ) );
+		add_action( 'admin_post_' . self::CONSOLIDATION_ACTION, array( $this, 'handle_consolidate_descriptions' ) );
+		// Goal 5: classic Woo Product edit screen only. remove_post_type_support()
+		// and add_meta_boxes()/remove_meta_box() are both inert on the newer
+		// React/block-based Product Block Editor route (a different admin page
+		// entirely, not driven by these meta-box/post-type-support APIs) -- no
+		// DOM-hack or editor-detection branch is needed either way.
+		add_action( 'init', array( $this, 'maybe_simplify_product_editor' ) );
+		add_action( 'add_meta_boxes', array( $this, 'maybe_reprioritize_short_description_box' ), 20 );
 	}
 
 	public function register_settings() {
@@ -249,7 +260,51 @@ final class Gloskin_Site_Core_Admin_Service {
 					</div>
 					<?php submit_button(); ?>
 				</form>
+				<?php $this->render_description_consolidation_card(); ?>
 			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Goal 4/5: a separate card/form (deliberately outside the settings
+	 * <form action="options.php"> above -- HTML forms cannot nest) that
+	 * triggers the one-canonical-description consolidation and reports its
+	 * real result. Retiring the main content editor (see
+	 * maybe_simplify_product_editor()) only ever activates after this has
+	 * actually run at least once.
+	 *
+	 * @return void
+	 */
+	private function render_description_consolidation_card() {
+		if ( ! current_user_can( self::MIGRATION_CAPABILITY ) ) {
+			return;
+		}
+		$summary = get_option( self::CONSOLIDATION_OPTION, array() );
+		$done    = is_array( $summary ) && ! empty( $summary['completed_at'] );
+		?>
+		<div class="gloskin-admin-card" style="margin-top:var(--gloskin-admin-space-4,24px)">
+			<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Product Descriptions', 'gloskin-site-core' ); ?></h2>
+			<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Consolidates every product\'s existing long description into its Short Description, deterministically, without deleting or duplicating content -- the Short Description becomes the one primary PDP body field.', 'gloskin-site-core' ); ?></p>
+			<?php if ( $done ) : ?>
+				<p>
+					<?php
+					printf(
+						/* translators: %1$d: products audited; %2$d: products actually migrated. */
+						esc_html__( 'Terakhir dijalankan: %1$d produk diaudit, %2$d produk dimigrasikan.', 'gloskin-site-core' ),
+						isset( $summary['audited'] ) ? (int) $summary['audited'] : 0,
+						isset( $summary['migrated'] ) ? (int) $summary['migrated'] : 0
+					);
+					?>
+				</p>
+			<?php else : ?>
+				<p><?php echo esc_html__( 'Belum pernah dijalankan. Editor konten utama tetap aktif sampai konsolidasi ini terbukti berjalan.', 'gloskin-site-core' ); ?></p>
+			<?php endif; ?>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<?php wp_nonce_field( self::CONSOLIDATION_NONCE ); ?>
+				<input type="hidden" name="action" value="<?php echo esc_attr( self::CONSOLIDATION_ACTION ); ?>" />
+				<button type="submit" class="button button-secondary"><?php echo esc_html( $done ? __( 'Run Again', 'gloskin-site-core' ) : __( 'Consolidate Product Descriptions', 'gloskin-site-core' ) ); ?></button>
+			</form>
 		</div>
 		<?php
 	}
@@ -424,6 +479,101 @@ final class Gloskin_Site_Core_Admin_Service {
 		} catch ( Throwable $error ) {
 			wp_send_json_error( array( 'message' => $error->getMessage(), 'state' => $this->sample_importer()->get_summary() ), 409 );
 		}
+	}
+
+	/**
+	 * Goal 4: audit every real Woo product and deterministically migrate any
+	 * long-description content missing from its Short Description into it --
+	 * never deleting/overwriting post_content, never duplicating a paragraph
+	 * already present. Records a real, honest summary (not a guess) for the
+	 * admin card above and for the editor-simplification gate below.
+	 *
+	 * @return void
+	 */
+	public function handle_consolidate_descriptions() {
+		if ( ! current_user_can( self::MIGRATION_CAPABILITY ) ) {
+			wp_die( esc_html__( 'Capability manage_woocommerce diperlukan.', 'gloskin-site-core' ) );
+		}
+		check_admin_referer( self::CONSOLIDATION_NONCE );
+		$audited  = 0;
+		$migrated = 0;
+		if ( function_exists( 'wc_get_products' ) && function_exists( 'wc_get_product' ) && class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' ) ) {
+			$ids = wc_get_products(
+				array(
+					'limit'   => -1,
+					'return'  => 'ids',
+					'status'  => array( 'publish', 'draft', 'private' ),
+					'type'    => array( 'simple', 'variable' ),
+				)
+			);
+			foreach ( (array) $ids as $id ) {
+				$product = wc_get_product( $id );
+				if ( ! $product ) {
+					continue;
+				}
+				$audited++;
+				$merge = Gloskin_Site_Core_WooCommerce_Adapter::consolidate_description_content( $product->get_short_description(), $product->get_description() );
+				if ( ! $merge['changed'] ) {
+					continue;
+				}
+				$product->set_short_description( $merge['result'] );
+				$product->save();
+				$migrated++;
+			}
+		}
+		update_option(
+			self::CONSOLIDATION_OPTION,
+			array(
+				'audited'      => $audited,
+				'migrated'     => $migrated,
+				'completed_at' => time(),
+			)
+		);
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::SETTINGS_SLUG ) );
+		exit;
+	}
+
+	/**
+	 * @return bool True once handle_consolidate_descriptions() has actually run.
+	 */
+	private function descriptions_consolidated() {
+		$summary = get_option( self::CONSOLIDATION_OPTION, array() );
+		return is_array( $summary ) && ! empty( $summary['completed_at'] );
+	}
+
+	/**
+	 * Goal 5: retire the main WordPress content editor on the classic Woo
+	 * Product edit screen, but only after consolidation is proven -- never
+	 * unconditionally. Woo product data (price/stock/attributes/etc.) is
+	 * untouched; this only removes the 'editor' post-type support, which
+	 * WordPress core itself uses to decide whether to render the main
+	 * content editor at all.
+	 *
+	 * @return void
+	 */
+	public function maybe_simplify_product_editor() {
+		if ( ! $this->descriptions_consolidated() ) {
+			return;
+		}
+		remove_post_type_support( 'product', 'editor' );
+	}
+
+	/**
+	 * Goal 5: move the native "Product short description" (postexcerpt) box
+	 * to the top of the classic Product edit screen, immediately below the
+	 * title, and give it a clearer heading -- still WordPress's own
+	 * post_excerpt_meta_box callback, so it still only ever saves to Woo's
+	 * canonical post_excerpt. No duplicate description meta is created.
+	 *
+	 * @param string $post_type Current screen's post type.
+	 * @return void
+	 */
+	public function maybe_reprioritize_short_description_box( $post_type ) {
+		if ( 'product' !== $post_type || ! function_exists( 'remove_meta_box' ) ) {
+			return;
+		}
+		remove_meta_box( 'postexcerpt', 'product', 'normal' );
+		add_meta_box( 'postexcerpt', __( 'Product Description (Deskripsi Produk)', 'gloskin-site-core' ), 'post_excerpt_meta_box', 'product', 'normal', 'high' );
 	}
 
 	private function sample_importer() {

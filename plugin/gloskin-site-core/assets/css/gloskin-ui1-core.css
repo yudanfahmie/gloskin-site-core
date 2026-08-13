@@ -258,9 +258,9 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 
 /* Search cancel is the shared secondary action; captured native Woo Auth
    submits use the shared primary action tokens. */
-.gloskin-ui1-search-overlay__close{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border:1px solid var(--gloskin-border);border-radius:999px;background:transparent;color:var(--gloskin-text);font:inherit;font-weight:700;cursor:pointer;text-decoration:none;transition:border-color 140ms ease,color 140ms ease,background-color 140ms ease}
+.gloskin-ui1-search-overlay__close{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-action-radius);background:transparent;color:var(--gloskin-text);font:inherit;font-weight:700;cursor:pointer;text-decoration:none;transition:border-color 140ms ease,color 140ms ease,background-color 140ms ease}
 .gloskin-ui1-search-overlay__close:hover{border-color:var(--gloskin-accent);color:var(--gloskin-accent-strong)}
-.gloskin-ui1-auth-forms .button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 18px;border:1px solid var(--gloskin-accent);border-radius:999px;background:var(--gloskin-accent);color:var(--gloskin-inverse);font:inherit;font-weight:700;cursor:pointer;transition:background-color 140ms ease,border-color 140ms ease,transform 140ms ease}
+.gloskin-ui1-auth-forms .button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 18px;border:1px solid var(--gloskin-accent);border-radius:var(--gloskin-action-radius);background:var(--gloskin-accent);color:var(--gloskin-inverse);font:inherit;font-weight:700;cursor:pointer;transition:background-color 140ms ease,border-color 140ms ease,transform 140ms ease}
 .gloskin-ui1-auth-forms .button:hover{background:var(--gloskin-accent-strong);border-color:var(--gloskin-accent-strong)}
 
 /* Select: native keyboard behaviour, semantics and Woo country/state logic
@@ -386,6 +386,26 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.ca
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart .woocommerce-variation-add-to-cart{display:flex;flex-wrap:wrap;align-items:center;gap:10px;min-width:0;max-width:100%}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart .single_add_to_cart_button{min-width:220px;max-width:100%}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart .single_add_to_cart_button[aria-busy="true"]{opacity:.72;pointer-events:none}
+/* Custom Gloskin Add to Cart loading feedback. Woo remains the sole owner
+ * of .loading (its own native ajax_add_to_cart.js, used by Shop-card
+ * add_to_cart_button loop links) and [aria-busy="true"] (this plugin's
+ * existing custom AJAX bridge, used by PDP/Quick Add's
+ * single_add_to_cart_button) -- this only restyles the two existing state
+ * markers, identically, across Shop card / Quick Add / PDP purchase dock,
+ * since all three render this same native Woo button markup. Suppresses
+ * Woo's own default gear/font-icon spinner (and any legacy <img
+ * class="wc-loading">) in favor of one thin ring spinner beside the label. */
+.gloskin-ui1 a.add_to_cart_button.loading,
+.gloskin-ui1 a.add_to_cart_button[aria-busy="true"],
+.gloskin-ui1 button.single_add_to_cart_button.loading,
+.gloskin-ui1 button.single_add_to_cart_button[aria-busy="true"]{position:relative;opacity:.72;pointer-events:none}
+.gloskin-ui1 a.add_to_cart_button.loading img.wc-loading,
+.gloskin-ui1 button.single_add_to_cart_button.loading img.wc-loading{display:none}
+.gloskin-ui1 a.add_to_cart_button.loading::after,
+.gloskin-ui1 a.add_to_cart_button[aria-busy="true"]::after,
+.gloskin-ui1 button.single_add_to_cart_button.loading::after,
+.gloskin-ui1 button.single_add_to_cart_button[aria-busy="true"]::after{content:"";position:absolute;top:50%;right:14px;width:15px;height:15px;margin-top:-8px;border:2px solid currentColor;border-right-color:transparent;border-radius:999px;background:none;font-family:inherit;animation:gloskin-atc-spin 650ms linear infinite}
+@keyframes gloskin-atc-spin{to{transform:rotate(360deg)}}
 /* CTA color ownership: the Gloskin Form/Action Kit stays the ONE owner of
  * every purchase CTA color. The generic `.woocommerce button.button` base
  * rule (gloskin-ui1-core-base.css) only wins while Woo keeps a plain
@@ -600,7 +620,7 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloski
  * than duplicates this element on repeat adds) and the single-product
  * page's own idempotent equivalent inserted by gloskin-ui1-core.js
  * (initSingleProductAjax(), since Woo does not create one there natively). */
-.gloskin-ui1 a.added_to_cart.wc-forward{display:inline-flex;align-items:center;justify-content:center;min-height:38px;margin-top:8px;padding:8px 14px;border:1px solid var(--gloskin-border);border-radius:999px;background:transparent;color:var(--gloskin-text);font-weight:700;font-size:.86rem;text-decoration:none;transition:border-color 140ms ease,color 140ms ease}
+.gloskin-ui1 a.added_to_cart.wc-forward{display:inline-flex;align-items:center;justify-content:center;min-height:38px;margin-top:8px;padding:8px 14px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-action-radius);background:transparent;color:var(--gloskin-text);font-weight:700;font-size:.86rem;text-decoration:none;transition:border-color 140ms ease,color 140ms ease}
 .gloskin-ui1 a.added_to_cart.wc-forward:hover{border-color:color-mix(in srgb,var(--gloskin-accent) 40%,var(--gloskin-border));color:var(--gloskin-accent-strong)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart a.added_to_cart.wc-forward{margin-top:0}
 

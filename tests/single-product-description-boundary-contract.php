@@ -59,6 +59,7 @@ require dirname(__DIR__) . '/plugin/gloskin-site-core/templates/parts/product-de
 
 gloskin_ui1_register_product_description_boundary();
 ok(isset($GLOBALS['gl_filters']['woocommerce_product_tabs']), 'Description boundary must register on woocommerce_product_tabs');
+ok(isset($GLOBALS['gl_filters']['woocommerce_short_description']), 'Short description must be routed through the safety-formatting pipeline now that it is the one primary PDP body field');
 ok(!isset($GLOBALS['gl_filters']['the_content']), 'Description boundary must never register another the_content filter');
 
 $tabs = array(
@@ -66,8 +67,7 @@ $tabs = array(
     'additional_information' => array('title' => 'Additional information', 'callback' => 'woocommerce_product_additional_information_tab'),
 );
 $bounded = gloskin_ui1_product_tabs_description_boundary($tabs);
-ok($bounded['description']['callback'] === 'gloskin_ui1_render_product_description', 'Description callback must use the safe boundary');
-ok($bounded['additional_information'] === $tabs['additional_information'], 'Unrelated Woo tabs must stay byte-equivalent');
+ok($bounded === array(), 'PDP simplification: every Woo product tab (Description/Additional Information/Reviews) must be removed, content now lives in the Short Description primary summary');
 
 class GL_Test_Product {
     public function get_description() {
@@ -96,5 +96,15 @@ gloskin_ui1_render_product_description();
 $soft = ob_get_clean();
 ok(strpos($soft, 'Editorial copy.') !== false, 'shortcode failure must preserve the editorial description');
 ok($GLOBALS['gl_the_content_calls'] === 0, 'shortcode failure path must still avoid the_content');
+
+// The Short Description primary-summary field must reuse the exact same
+// self-reference guard as the old Description tab -- not a second,
+// divergent copy -- since migrated post_content can carry the same risky
+// embeds into post_excerpt.
+$risky_short_description = '<p>Ringkasan.</p>[product_page id="777"]<!-- wp:woocommerce/single-product {"productId":777} --><div>BLOCK PRODUCT</div><!-- /wp:woocommerce/single-product -->';
+$formatted_short_description = gloskin_ui1_format_product_description($risky_short_description);
+ok(strpos($formatted_short_description, 'Ringkasan.') !== false, 'Short description own content must still render');
+ok(strpos($formatted_short_description, 'single-product') === false, 'Short description must never render a nested product_page embed');
+ok(strpos($formatted_short_description, 'BLOCK PRODUCT') === false, 'Short description must never render a nested single-product block');
 
 echo "single-product-description-boundary: OK\n";

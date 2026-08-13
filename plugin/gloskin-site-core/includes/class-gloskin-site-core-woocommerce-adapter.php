@@ -30,8 +30,12 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	 * @return void
 	 */
 	public function register() {
-		add_action( 'woocommerce_product_meta_end', array( $this, 'render_product_facts' ), 20 );
-		add_action( 'woocommerce_single_product_summary', array( $this, 'render_wishlist_toggle' ), 31 );
+		// ZAP-like PDP simplification: rehook facts directly into the primary
+		// summary (right after the native short-description excerpt at
+		// priority 20, before add-to-cart at 30) instead of depending on
+		// woocommerce_product_meta_end, which only fires from inside the
+		// native meta block this same simplification removes below.
+		add_action( 'woocommerce_single_product_summary', array( $this, 'render_product_facts' ), 21 );
 		add_filter( 'body_class', array( $this, 'body_classes' ) );
 		add_filter( 'woocommerce_add_to_cart_fragments', array( $this, 'cart_fragments' ) );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
@@ -48,6 +52,15 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		// .../variable.php around the one native <form class="cart">.
 		add_action( 'woocommerce_before_add_to_cart_form', array( $this, 'open_purchase_dock' ) );
 		add_action( 'woocommerce_after_add_to_cart_form', array( $this, 'close_purchase_dock' ) );
+		// ZAP-like PDP simplification: rating/native meta (SKU/category/tag)/
+		// sharing/PDP-only wishlist detail/related products are removed via
+		// Woo's own documented hooks -- never a template fork, never a CSS
+		// display:none over live markup. Deferred to woocommerce_before_
+		// single_product (fires per-request, immediately before Woo's own
+		// woocommerce_single_product_summary output) so these remove_action()
+		// calls always run after Woo's wc-template-hooks.php has registered
+		// its defaults, regardless of Gloskin/WooCommerce plugin load order.
+		add_action( 'woocommerce_before_single_product', array( $this, 'simplify_single_product_summary' ) );
 	}
 
 	/**
@@ -173,6 +186,24 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		}
 		self::$purchase_dock_open = false;
 		echo '</div>';
+	}
+
+	/**
+	 * ZAP-like PDP simplification: strip rating summary, the native
+	 * SKU/category/tag meta block, sharing, and the PDP-only wishlist
+	 * detail control from the primary single-product summary, and remove
+	 * Related Products from below it. Every removal uses Woo's own
+	 * documented hook contract (never a template fork, never hiding live
+	 * markup with CSS). The header/product-card Wishlist control is a
+	 * separate control entirely and is never touched here.
+	 *
+	 * @return void
+	 */
+	public function simplify_single_product_summary() {
+		remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_rating', 10 );
+		remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_meta', 40 );
+		remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_sharing', 50 );
+		remove_action( 'woocommerce_after_single_product_summary', 'woocommerce_output_related_products', 20 );
 	}
 
 	/**
@@ -1235,6 +1266,70 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		$attrs     = '' !== $json ? json_decode( $json, true ) : null;
 		$target_id = is_array( $attrs ) && isset( $attrs['productId'] ) ? absint( $attrs['productId'] ) : 0;
 		return ( $target_id && $target_id === $current_id ) ? '' : $matches[0];
+	}
+
+	/**
+	 * Deterministic, content-preserving merge for the one-canonical-
+	 * description consolidation: post_content (description) rich body
+	 * migrated into post_excerpt (short description) becoming the one
+	 * primary PDP field -- never a blind overwrite/discard.
+	 *
+	 * Every meaningful block already present (by stripped-text containment,
+	 * case-insensitive) in the short description is left alone; only blocks
+	 * unique to the long description are appended, in order, once. Never
+	 * mutates post_content itself -- callers keep the original description
+	 * as the unmodified, unconsolidated source of truth.
+	 *
+	 * @param string $short_description Current Woo short description (post_excerpt).
+	 * @param string $description Current Woo description (post_content).
+	 * @return array{result:string,changed:bool}
+	 */
+	public static function consolidate_description_content( $short_description, $description ) {
+		$short_description = (string) $short_description;
+		$description        = (string) $description;
+
+		if ( '' === trim( wp_strip_all_tags( $description ) ) ) {
+			return array( 'result' => $short_description, 'changed' => false );
+		}
+		if ( '' === trim( wp_strip_all_tags( $short_description ) ) ) {
+			return array( 'result' => $description, 'changed' => true );
+		}
+
+		$existing_text = wp_strip_all_tags( $short_description );
+		$missing       = array();
+		foreach ( self::split_into_text_blocks( $description ) as $block ) {
+			$block_text = trim( wp_strip_all_tags( $block ) );
+			if ( '' === $block_text || false !== stripos( $existing_text, $block_text ) ) {
+				continue;
+			}
+			$missing[] = $block;
+		}
+
+		if ( ! $missing ) {
+			return array( 'result' => $short_description, 'changed' => false );
+		}
+
+		$merged = rtrim( $short_description ) . "\n\n" . implode( "\n\n", $missing );
+		return array( 'result' => $merged, 'changed' => true );
+	}
+
+	/**
+	 * Split content into comparable text blocks: real <p> blocks when
+	 * present (the common WYSIWYG-authored case), otherwise blank-line-
+	 * separated plain-text paragraphs.
+	 *
+	 * @param string $content Raw HTML/plain-text content.
+	 * @return array<int,string>
+	 */
+	private static function split_into_text_blocks( $content ) {
+		$content = trim( (string) $content );
+		if ( '' === $content ) {
+			return array();
+		}
+		if ( preg_match_all( '/<(p|h[1-6])[^>]*>.*?<\/\1>/is', $content, $matches ) && $matches[0] ) {
+			return $matches[0];
+		}
+		return array_values( array_filter( array_map( 'trim', preg_split( '/\n\s*\n/', $content ) ) ) );
 	}
 
 	/**

@@ -318,4 +318,83 @@ grep -qF 'if ( self::$purchase_dock_rendered || ! $this->is_primary_single_produ
 grep -qF 'if ( ! self::$purchase_dock_open ) {' "$adapter" \
 	|| fail "purchase dock: close_purchase_dock() no longer stays balanced with the one-shot open flag"
 
+# -----------------------------------------------------------------------
+# Storefront/PDP refinement pass: one modest Action Kit radius token, a
+# custom Gloskin Add-to-Cart loader replacing Woo's default gear, and
+# ZAP-like PDP structural simplification via Woo's own documented hooks.
+# -----------------------------------------------------------------------
+core_base_css="$plugin_root/assets/css/gloskin-ui1-core-base.css"
+readiness_css="$plugin_root/assets/css/gloskin-ui1-readiness.css"
+description_boundary="$templates/parts/product-description-boundary.php"
+
+# One action-radius owner, reused (not redefined) by every textual CTA.
+grep -qF -- '--gloskin-action-radius:var(--gloskin-field-radius);' "$core_base_css" \
+	|| fail "action radius: one canonical --gloskin-action-radius token missing"
+for expected in \
+	'.gloskin-ui1-button{display:inline-flex;min-height:46px;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border:1px solid transparent;border-radius:var(--gloskin-action-radius)' \
+	'.gloskin-ui1-form button,.gloskin-ui1-form input[type="submit"],.gloskin-ui1 .woocommerce a.button,.gloskin-ui1 .woocommerce button.button,.gloskin-ui1 .woocommerce input.button{display:inline-flex;min-height:46px;align-items:center;justify-content:center;padding:12px 22px;border:0;border-radius:var(--gloskin-action-radius)'; do
+	grep -qF -- "$expected" "$core_base_css" || fail "action radius: text CTA no longer uses the shared token: $expected"
+done
+grep -qF -- '.gloskin-ui1-search-overlay__close{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-action-radius)' "$core_css" \
+	|| fail "action radius: search overlay Cancel button no longer uses the shared token"
+grep -qF -- '.gloskin-ui1-auth-forms .button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 18px;border:1px solid var(--gloskin-accent);border-radius:var(--gloskin-action-radius)' "$core_css" \
+	|| fail "action radius: Auth submit button no longer uses the shared token"
+grep -qF -- '.gloskin-ui1 a.added_to_cart.wc-forward{display:inline-flex;align-items:center;justify-content:center;min-height:38px;margin-top:8px;padding:8px 14px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-action-radius)' "$core_css" \
+	|| fail "action radius: View Cart link no longer uses the shared token"
+grep -qF -- '.woocommerce-account .woocommerce .button{border-radius:var(--gloskin-action-radius)}' "$readiness_css" \
+	|| fail "action radius: My Account button no longer uses the shared token"
+
+# Intentional circular controls are explicitly preserved -- icon-only
+# utility buttons, close icons, badges/counters, nav bubble.
+for preserved in \
+	'.gloskin-ui1-utility-btn{position:relative;display:inline-grid;width:40px;height:40px;border:0;border-radius:999px' \
+	'.gloskin-ui1-badge{position:absolute;top:2px;right:2px;display:grid;min-width:17px;height:17px;padding:0 4px;border-radius:999px'; do
+	grep -qF -- "$preserved" "$core_css" || fail "action radius: an intentionally-circular icon/badge control lost its radius: $preserved"
+done
+nav_bubble_rule="$(sed -n '/\.gloskin-ui1-nav__bubble{/,/^}/p' "$plugin_root/assets/css/gloskin-ui1-production.css")"
+echo "$nav_bubble_rule" | grep -qF 'border-radius:999px;' || fail "action radius: nav bubble must stay circular"
+
+# Custom Gloskin Add-to-Cart loader: reuses the existing .loading/
+# [aria-busy="true"] state markers (Woo's own native ajax_add_to_cart.js
+# and this plugin's own existing custom AJAX bridge, respectively) across
+# Shop card, Quick Add and PDP purchase dock alike -- never a new
+# fetch/network owner, never a Woo gear glyph.
+grep -qF 'a.add_to_cart_button.loading::after' "$core_css" || fail "Add to Cart loader: shop-card/related loading state rule missing"
+grep -qF 'button.single_add_to_cart_button.loading::after' "$core_css" || fail "Add to Cart loader: PDP/Quick Add loading state rule missing"
+grep -qF '[aria-busy="true"]::after' "$core_css" || fail "Add to Cart loader: aria-busy loading state rule missing"
+grep -qF '@keyframes gloskin-atc-spin{to{transform:rotate(360deg)}}' "$core_css" || fail "Add to Cart loader: spin animation missing"
+grep -qF 'animation:gloskin-atc-spin 650ms linear infinite' "$core_css" || fail "Add to Cart loader: expected ~650ms rotation timing missing"
+grep -qF 'border:2px solid currentColor' "$core_css" || fail "Add to Cart loader: ring must use currentColor"
+if grep -qE '\.add_to_cart_button\.loading::after\{[^}]*content:"\\\\' "$core_css"; then
+	fail "Add to Cart loader: Woo's own icon-font glyph content must be suppressed, not reused"
+fi
+grep -qF 'img.wc-loading{display:none}' "$core_css" || fail "Add to Cart loader: legacy Woo <img class=\"wc-loading\"> must also be suppressed"
+if grep -RqE "fetch\(|XMLHttpRequest|\.ajax\(" <(sed -n '/gloskin-atc-spin/,/^$/p' "$core_css"); then
+	fail "Add to Cart loader: must be presentation-only CSS, no new network logic"
+fi
+
+# ZAP-like PDP simplification via Woo's own documented hooks -- never a
+# template fork, never CSS display:none over live rating/meta/sharing/
+# related markup.
+grep -qF "function simplify_single_product_summary()" "$adapter" || fail "PDP simplify: hook-owning method missing"
+grep -qF "remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_rating', 10 );" "$adapter" || fail "PDP simplify: rating summary must be removed via Woo's own hook"
+grep -qF "remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_meta', 40 );" "$adapter" || fail "PDP simplify: native SKU/category/tag meta block must be removed via Woo's own hook"
+grep -qF "remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_sharing', 50 );" "$adapter" || fail "PDP simplify: sharing must be removed via Woo's own hook"
+grep -qF "remove_action( 'woocommerce_after_single_product_summary', 'woocommerce_output_related_products', 20 );" "$adapter" || fail "PDP simplify: Related Products must be removed via Woo's own hook"
+grep -qF "add_action( 'woocommerce_before_single_product', array( \$this, 'simplify_single_product_summary' ) );" "$adapter" || fail "PDP simplify: removal must be deferred past Woo's own hook registration (load-order safe)"
+if grep -qF "add_action( 'woocommerce_single_product_summary', array( \$this, 'render_wishlist_toggle' )" "$adapter"; then
+	fail "PDP simplify: the PDP-only wishlist detail control must no longer be hooked into the primary summary"
+fi
+grep -qF "function render_wishlist_toggle()" "$adapter" || fail "PDP simplify: render_wishlist_toggle() itself must remain (header/product-card Wishlist stays untouched, only the PDP hook is removed)"
+grep -qF "add_action( 'woocommerce_single_product_summary', array( \$this, 'render_product_facts' ), 21 );" "$adapter" || fail "PDP simplify: product facts must be rehooked directly into the primary summary (no longer depend on the removed meta wrapper)"
+grep -qF 'return array();' "$description_boundary" || fail "PDP simplify: all Woo product tabs (Description/Additional Information/Reviews) must be removed"
+grep -qF "add_filter( 'woocommerce_short_description', 'gloskin_ui1_format_product_description' );" "$description_boundary" || fail "PDP simplify: the short description (now the one primary PDP body field) must reuse the existing safety-formatting pipeline"
+
+# Exactly one native form.cart is still wrapped (purchase dock unchanged)
+# and no second cart-mutation owner was introduced by any of the above.
+grep -qF "add_action( 'woocommerce_before_add_to_cart_form', array( \$this, 'open_purchase_dock' ) );" "$adapter" || fail "purchase dock regression: open hook missing after PDP simplification"
+if grep -RInE "wp_ajax_(nopriv_)?gloskin_(add_to_cart|cart|checkout)" "$adapter" "$core_js"; then
+	fail "PDP simplify: a second cart-mutation owner was introduced"
+fi
+
 echo "single-product commerce contract passed"
