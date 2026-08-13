@@ -374,9 +374,12 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
    remove control, no second cart owner, no custom AJAX flow. This only
    re-skins the existing wc-block-cart-item__* structure WC already
    renders, and reuses Gloskin tokens in place of WC Blocks' own default
-   (unthemed) border/spacing values. */
-.wc-block-cart-items__row,
-.wc-block-cart-items thead{border-bottom-color:var(--gloskin-border)}
+   (unthemed) border/spacing values. The extra wp-block-woocommerce-cart-
+   line-items-block ancestor class is required, not decorative: WC's own
+   block stylesheet sets these same properties at that specificity, so a
+   bare .wc-block-cart-items__row rule silently loses the cascade. */
+.wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row,
+.wp-block-woocommerce-cart-line-items-block .wc-block-cart-items thead{border-bottom-color:var(--gloskin-border)}
 .wc-block-cart-item__image img{
 	border-radius:var(--gloskin-radius-sm);
 	object-fit:cover;
@@ -420,55 +423,44 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 .wc-block-components-quantity-selector__button:hover{background:var(--gloskin-surface)}
 .wc-block-components-quantity-selector__button:disabled{opacity:.4;cursor:not-allowed}
 
-/* Remove action: calm, touch-safe (36px, up from WC's default 24px icon-
-   only target), grouped with the stepper by WC's own existing
-   wc-block-cart-item__quantity flex row -- no wrapper markup added. */
+/* Remove action: calm, grouped with the stepper by WC's own existing
+   wc-block-cart-item__quantity flex row (no wrapper markup added). WC's
+   own stylesheet pins this control's width/height at !important, which
+   this codebase does not override with !important of its own (see
+   CONTRIBUTING.md) -- so the visible icon stays WC's native 24px, and
+   touch-safety instead comes from an invisible expanded hit area (an
+   effective ~40px target) via ::after, which is not fighting anything. */
 .wc-block-cart-item__remove-link{
-	display:inline-flex;
-	align-items:center;
-	justify-content:center;
-	width:36px;
-	height:36px;
+	position:relative;
 	border-radius:var(--gloskin-radius-sm);
 	color:var(--gloskin-muted);
 	transition:background-color 140ms ease,color 140ms ease;
 }
+.wc-block-cart-item__remove-link::after{content:"";position:absolute;inset:-8px}
 .wc-block-cart-item__remove-link:hover{background:var(--gloskin-surface);color:var(--gloskin-accent-strong)}
-.wc-block-cart-item__remove-link svg{width:18px;height:18px}
 
 /* Mobile row contract. WC's own Cart block already switches each row from
    table-row to a bare CSS grid at its own <=768px breakpoint (matched
-   here), but leaves the subtotal column at native width -- it overflows
-   the row on narrow phones -- and stretches the image/product cells to
-   match the row's tallest cell, opening a large empty gap before the
-   stepper. Re-owning grid-template-areas keeps every existing WC node
-   (image/product/total) exactly where it is in the DOM -- no markup
-   rebuild, one scoped wrapper strategy instead of ad hoc per-node nudges
-   -- while giving each one a stable, non-overlapping slot: the image
-   top-left, product meta beside it, and the item's own subtotal as a
-   distinct right-aligned line underneath instead of a clipped side
-   column. */
+   here): image | product-meta | subtotal as three grid items sharing the
+   row, with the subtotal's own column sized from its content via
+   grid-auto-columns. Left at WC's default that column overflows the row
+   on narrow phones (WC's content-based auto sizing exceeds the space
+   actually left after the other two columns + gaps), and the row
+   stretches every cell (including the image) to match its tallest
+   sibling. Only grid-auto-columns/align-items are touched here -- WC's
+   own explicit grid-template-columns and per-item grid-column/row
+   placement are !important in its stylesheet and are deliberately left
+   alone (see the remove-action comment above re: !important policy);
+   overriding them with a named grid-area, as an earlier version of this
+   rule did, silently lost that cascade and made the subtotal render on
+   top of the product title instead of the intended distinct line -- a
+   worse regression than the original overflow, caught via a real-
+   staging screenshot before shipping the corrected version below. */
 @media (max-width:768px){
 	.wc-block-cart-items__row{
-		display:grid;
-		grid-template-columns:76px 1fr;
-		grid-template-areas:
-			"image product"
-			"image total";
-		column-gap:14px;
-		row-gap:10px;
+		grid-auto-columns:72px;
 		align-items:start;
-		padding:18px 0;
 	}
-	.wc-block-cart-item__image{grid-area:image;align-self:start}
 	.wc-block-cart-item__image img{width:76px;height:76px}
-	.wc-block-cart-item__product{grid-area:product;min-width:0}
-	.wc-block-cart-item__total{
-		grid-area:total;
-		display:flex;
-		align-items:center;
-		justify-content:flex-end;
-		padding-top:10px;
-		border-top:1px solid var(--gloskin-border);
-	}
+	.wc-block-cart-item__total{padding-top:8px}
 }
