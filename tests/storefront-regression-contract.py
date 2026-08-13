@@ -12,6 +12,7 @@ def require(cond, message):
         raise AssertionError(message)
 
 js = read('plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js')
+css = read('plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css')
 header = read('plugin/gloskin-site-core/templates/parts/header.php')
 template_service = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php')
 woo = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php')
@@ -60,8 +61,27 @@ require("document.querySelectorAll('[data-gloskin-wishlist-count]')" in js, 'wis
 require("document.querySelectorAll('[data-gloskin-wishlist-count-sr]')" in js, 'wishlist accessible count reflection missing')
 require("localStorage.setItem(STORAGE_KEY" in js and js.count("var STORAGE_KEY = 'gloskin_wishlist'") == 1, 'wishlist must keep one localStorage owner')
 
+# Wishlist zero-badge: updateBadges() stays the sole badge owner, but must
+# also hide the bubble at count 0 -- a visible display:grid badge otherwise
+# defeats the [hidden] attribute, so one wishlist-scoped CSS rule (never
+# touching the Cart badge, never !important) is required alongside it.
+require('badge.hidden = count < 1;' in js, 'updateBadges() must hide the wishlist badge at count 0')
+require('[data-gloskin-wishlist-count][hidden]{display:none}' in css, 'wishlist-specific hidden-badge CSS rule missing')
+require('!important' not in css.split('[data-gloskin-wishlist-count][hidden]')[1][:40], 'wishlist hidden-badge rule must not use !important')
+require(css.count('[data-gloskin-wishlist-count][hidden]') == 1, 'wishlist hidden-badge rule must not duplicate/generalize to Cart badge')
+
+# Live staging proof (2026-08-13): wc_get_products() with no 'category' key
+# at all -- the only shape the unfiltered "Semua Produk" REST projection
+# used -- fatals specifically through rest_shop_catalog(); every mapped
+# category (which always sets 'category') already proved safe there. The
+# unfiltered branch must reuse that same proven query shape instead of the
+# broken omitted-argument one, via the existing products_paginated() owner.
+require('private function published_category_slugs()' in woo, 'products_paginated() unfiltered branch must have a published-category-slug source')
+require("'taxonomy'   => 'product_cat'" in woo, 'published_category_slugs() must read Woo\'s own product_cat taxonomy')
+require('$catalog_categories = $this->published_category_slugs();' in woo and "$args['category'] = $catalog_categories;" in woo, 'unfiltered products_paginated() must set an explicit category arg instead of omitting it')
+
 header_version = re.search(r'\* Version:\s*([0-9.]+)', plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == '0.7.48', 'production version must be synchronized at 0.7.48')
+require(header_version == kernel_version == '0.7.49', 'production version must be synchronized at 0.7.49')
 
 print('storefront regression contract: OK')

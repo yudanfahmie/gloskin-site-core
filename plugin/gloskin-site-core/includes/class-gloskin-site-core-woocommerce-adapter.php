@@ -859,6 +859,22 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 			$args['category'] = array( $category_slug );
 			$args['orderby']  = 'menu_order';
 			$args['order']    = 'ASC';
+		} else {
+			/* Live staging proof (2026-08-13): wc_get_products() with no
+			 * 'category' key at all -- the only shape "Semua Produk" used --
+			 * fatals specifically when dispatched through the REST route
+			 * (rest_shop_catalog()); every single mapped category, which
+			 * always sets 'category', already proved safe there, and the
+			 * identical unfiltered args succeed through the SSR shop_context()
+			 * call to this same method. Passing every published product_cat
+			 * slug reuses that already-proven query shape instead of the
+			 * broken omitted-argument one, while still returning the full
+			 * unfiltered catalog (every real product carries at least one
+			 * category, Woo's own "Uncategorized" included). */
+			$catalog_categories = $this->published_category_slugs();
+			if ( ! empty( $catalog_categories ) ) {
+				$args['category'] = $catalog_categories;
+			}
 		}
 
 		$result = wc_get_products( $args );
@@ -872,6 +888,26 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 			'page'      => max( 1, absint( $page ) ),
 			'max_pages' => max( 1, absint( $result->max_num_pages ) ),
 		);
+	}
+
+	/**
+	 * All published Woo product category slugs. Read-only, existing
+	 * `product_cat` taxonomy owner (WooCommerce) only -- used solely so
+	 * products_paginated()'s unfiltered branch can give wc_get_products()
+	 * an explicit 'category' argument instead of omitting it.
+	 *
+	 * @return array<int,string>
+	 */
+	private function published_category_slugs() {
+		if ( ! function_exists( 'get_terms' ) ) {
+			return array();
+		}
+		$terms = get_terms( array(
+			'taxonomy'   => 'product_cat',
+			'hide_empty' => true,
+			'fields'     => 'slugs',
+		) );
+		return is_array( $terms ) ? array_values( array_filter( array_map( 'sanitize_title', $terms ) ) ) : array();
 	}
 
 	/**

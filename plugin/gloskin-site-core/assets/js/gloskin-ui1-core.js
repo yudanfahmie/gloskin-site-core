@@ -1611,6 +1611,7 @@
 			Array.prototype.forEach.call(badges, function (badge) {
 				badge.textContent = count;
 				badge.classList.toggle('is-active', count > 0);
+				badge.hidden = count < 1;
 			});
 			var countLabels = document.querySelectorAll('[data-gloskin-wishlist-count-sr]');
 			Array.prototype.forEach.call(countLabels, function (label) {

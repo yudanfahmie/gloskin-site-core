@@ -73,6 +73,11 @@ img.gloskin-ui1-brand__image--compact{height:clamp(32px,3vw,45px)}
 .gloskin-ui1-utility-btn--wishlist.is-active,.gloskin-ui1-drawer__utility-link.is-active{color:var(--gloskin-accent-readable)}
 .gloskin-ui1-badge{position:absolute;top:2px;right:2px;display:grid;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--gloskin-muted);color:var(--gloskin-inverse);font-size:.65rem;font-weight:800;line-height:1;place-items:center;pointer-events:none;opacity:.6;transition:background-color 160ms ease,opacity 160ms ease}
 .gloskin-ui1-badge.is-active{background:var(--gloskin-accent);opacity:1}
+/* Wishlist-only: updateBadges() sets [hidden] at count 0 (see gloskin-ui1-core.js).
+   The badge's own display:grid otherwise outranks the UA [hidden] rule, so this
+   narrow selector -- scoped to the wishlist count badge alone, never the Cart
+   badge -- is needed to actually hide it. */
+[data-gloskin-wishlist-count][hidden]{display:none}
 @keyframes gloskin-ui1-success-pulse{0%,100%{transform:scale(1)}45%{transform:scale(1.08)}}
 @keyframes gloskin-ui1-success-badge{0%,100%{transform:scale(1)}45%{transform:scale(1.12)}}
 .gloskin-ui1-utility-btn.is-success-pulse{animation:gloskin-ui1-success-pulse 360ms ease-out}
