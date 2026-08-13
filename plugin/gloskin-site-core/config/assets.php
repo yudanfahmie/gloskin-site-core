@@ -62,6 +62,13 @@ return array(
 			'in_footer' => true,
 		),
 	),
+	'admin_styles' => array(
+		'gloskin-admin' => array(
+			'src'   => 'assets/css/gloskin-admin.css',
+			'deps'  => array(),
+			'media' => 'all',
+		),
+	),
 	'admin_scripts' => array(
 		'gloskin-ui1-admin' => array(
 			'src'  => 'assets/js/gloskin-ui1-admin.js',
@@ -69,6 +76,15 @@ return array(
 		),
 		'gloskin-ui1-sample-import' => array(
 			'src'  => 'assets/js/gloskin-ui1-sample-product-import.js',
+			'deps' => array(),
+		),
+		/* Presentation-only tab-panel switching for the Settings screen's
+		 * horizontal tabs (gloskin-admin-tabs). Progressive enhancement: the
+		 * server renders every panel visible, this only hides the inactive
+		 * ones on load and wires click/keyboard switching. Owns no Gloskin
+		 * business logic/state -- see assets/js/gloskin-admin.js. */
+		'gloskin-admin' => array(
+			'src'  => 'assets/js/gloskin-admin.js',
 			'deps' => array(),
 		),
 	),

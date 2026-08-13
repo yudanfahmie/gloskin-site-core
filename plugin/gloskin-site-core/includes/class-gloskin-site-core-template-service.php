@@ -136,6 +136,7 @@ final class Gloskin_Site_Core_Template_Service {
 		$context['view']           = $view;
 		$context['navigation']     = $this->navigation->tree();
 		$context['design_variant'] = $this->design_variant();
+		$context['header_variant'] = $this->header_variant();
 		$context['clinic_links']   = $this->static_clinic_links();
 		$context['site_name']      = 'Gloskin';
 		$context['commerce']       = $this->commerce_header_context();
@@ -853,5 +854,21 @@ final class Gloskin_Site_Core_Template_Service {
 		$settings = get_option( Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION, array() );
 		$value = isset( $settings['design_variant'] ) ? sanitize_key( $settings['design_variant'] ) : 'medical';
 		return in_array( $value, array( 'medical', 'modern', 'luxury' ), true ) ? $value : 'medical';
+	}
+
+	/**
+	 * Canonical Header Type selection -- same one settings option
+	 * (Gloskin_Site_Core_Admin_Service::SETTINGS_OPTION, read here through
+	 * the existing shared owner constant) already used by design_variant()
+	 * above, strict-allowlisted the same way. Missing/tampered/unknown
+	 * values always resolve to 'header-1', the current production header,
+	 * so an existing site's header composition never silently changes.
+	 *
+	 * @return string 'header-1'|'header-2'
+	 */
+	private function header_variant() {
+		$settings = get_option( Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION, array() );
+		$value = isset( $settings['header_variant'] ) ? sanitize_key( $settings['header_variant'] ) : 'header-1';
+		return in_array( $value, array( 'header-1', 'header-2' ), true ) ? $value : 'header-1';
 	}
 }

@@ -57,6 +57,15 @@ img.gloskin-ui1-brand__image--compact{height:clamp(32px,3vw,45px)}
 .gloskin-ui1-header__nav-row.is-compact-sticky .gloskin-ui1-compact-brand{max-width:180px;opacity:1;transform:translateY(0);pointer-events:auto}
 .gloskin-ui1-header__nav-row.is-compact-sticky .gloskin-ui1-header__zone--compact{max-width:260px;opacity:1;transform:translateY(0);pointer-events:auto}
 
+/* Header Type 2 -- one canonical <header> row (logo/nav/actions), its own
+   sticky owner (no separate nav-row, so initSmartHeader()/initCompactSticky()
+   correctly no-op for it). Scoped entirely under the variant attribute so
+   Header Type 1 above is completely unaffected. */
+[data-gloskin-header="header-2"]{position:sticky;z-index:1000;top:var(--gloskin-ui1-nav-sticky-top);border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);background:color-mix(in srgb,var(--gloskin-bg) 92%,transparent);-webkit-backdrop-filter:saturate(120%) blur(14px);backdrop-filter:saturate(120%) blur(14px);box-shadow:0 1px 0 color-mix(in srgb,var(--gloskin-bg) 34%,transparent),0 8px 24px color-mix(in srgb,var(--gloskin-text) 3%,transparent)}
+[data-gloskin-header="header-2"] .gloskin-ui1-header__inner{grid-template-columns:auto minmax(0,1fr) auto}
+[data-gloskin-header="header-2"] .gloskin-ui1-brand{grid-column:1;justify-self:start}
+@media (max-width:1040px){[data-gloskin-header="header-2"] .gloskin-ui1-nav--desktop{display:none}}
+
 /* 6-dot mobile trigger -- converges to one centered dot when open, no X, no bars. */
 .gloskin-ui1-drawer-toggle__dot{transform:translate(0,0);transition:transform 200ms cubic-bezier(.22,1,.36,1)}
 [data-gloskin-drawer-open][aria-expanded="true"] .gloskin-ui1-drawer-toggle__dot{transform:translate(var(--gloskin-dot-x,0),var(--gloskin-dot-y,0))}

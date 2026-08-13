@@ -34,6 +34,9 @@ final class Gloskin_Site_Core_Admin_Service {
 	/** @var string */
 	private $migration_hook = '';
 
+	/** @var string */
+	private $settings_hook = '';
+
 	/** @param Gloskin_Site_Core_Content_Service $content Content owner. */
 	public function __construct( $content, $assets = null, $plugin_file = '' ) {
 		$this->content = $content; $this->assets = $assets; $this->plugin_file = (string) $plugin_file;
@@ -47,21 +50,33 @@ final class Gloskin_Site_Core_Admin_Service {
 		add_action( 'save_post', array( $this, 'save_meta' ), 20, 2 );
 		add_action( 'admin_notices', array( $this, 'content_readiness_notice' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_migration_assets' ), 30 );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_settings_assets' ), 30 );
 		add_action( 'wp_ajax_' . self::MIGRATION_AJAX, array( $this, 'ajax_sample_product_import' ) );
 	}
 
 	public function register_settings() {
 		register_setting( 'gloskin_site_core', self::SETTINGS_OPTION, array(
-			'type' => 'array', 'default' => array( 'design_variant' => 'medical', 'form_shortcode' => '' ),
+			'type' => 'array', 'default' => self::settings_defaults(),
 			'sanitize_callback' => array( $this, 'sanitize_settings' ),
 		) );
+	}
+
+	/**
+	 * Single source of truth for this one settings option's shape/defaults,
+	 * reused by both the registration default and every read fallback below.
+	 *
+	 * @return array{design_variant:string,form_shortcode:string,header_variant:string}
+	 */
+	public static function settings_defaults() {
+		return array( 'design_variant' => 'medical', 'form_shortcode' => '', 'header_variant' => 'header-1' );
 	}
 
 	public function register_admin_menu() {
 		$parent = Gloskin_Site_Core_Content_Service::ADMIN_MENU_SLUG;
 		add_menu_page( __( 'Gloskin Content Overview', 'gloskin-site-core' ), __( 'Gloskin Content', 'gloskin-site-core' ), 'edit_posts', $parent, array( $this, 'render_content_overview' ), 'dashicons-admin-site-alt3', 21 );
 		add_submenu_page( $parent, __( 'Gloskin Content Overview', 'gloskin-site-core' ), __( 'Overview', 'gloskin-site-core' ), 'edit_posts', $parent, array( $this, 'render_content_overview' ) );
-		add_submenu_page( $parent, __( 'Gloskin Settings', 'gloskin-site-core' ), __( 'Settings', 'gloskin-site-core' ), 'manage_options', self::SETTINGS_SLUG, array( $this, 'render_settings_page' ) );
+		$settings_hook = add_submenu_page( $parent, __( 'Gloskin Settings', 'gloskin-site-core' ), __( 'Settings', 'gloskin-site-core' ), 'manage_options', self::SETTINGS_SLUG, array( $this, 'render_settings_page' ) );
+		if ( is_string( $settings_hook ) ) { $this->settings_hook = $settings_hook; }
 		if ( current_user_can( self::MIGRATION_CAPABILITY ) && '' !== $this->plugin_file ) {
 			$migration = $this->sample_importer();
 			if ( $migration->should_show_menu() ) {
@@ -103,16 +118,139 @@ final class Gloskin_Site_Core_Admin_Service {
 	public function sanitize_settings( $value ) {
 		$value = is_array( $value ) ? $value : array();
 		$variant = isset( $value['design_variant'] ) ? sanitize_key( $value['design_variant'] ) : 'medical';
-		return array( 'design_variant' => in_array( $variant, array( 'medical', 'modern', 'luxury' ), true ) ? $variant : 'medical', 'form_shortcode' => isset( $value['form_shortcode'] ) ? sanitize_text_field( $value['form_shortcode'] ) : '' );
+		$header_variant = isset( $value['header_variant'] ) ? sanitize_key( $value['header_variant'] ) : 'header-1';
+		return array(
+			'design_variant' => in_array( $variant, array( 'medical', 'modern', 'luxury' ), true ) ? $variant : 'medical',
+			'form_shortcode' => isset( $value['form_shortcode'] ) ? sanitize_text_field( $value['form_shortcode'] ) : '',
+			/* Strict allowlist, same shape as design_variant above: anything
+			 * outside the two known header layouts (including a missing/
+			 * tampered value) always falls back to the default production
+			 * header, never a partial/unknown composition. */
+			'header_variant' => in_array( $header_variant, array( 'header-1', 'header-2' ), true ) ? $header_variant : 'header-1',
+		);
+	}
+
+	/**
+	 * Only enqueue the Gloskin admin presentation shell's own small CSS/JS on
+	 * this exact Settings screen -- never globally in wp-admin. AssetService
+	 * remains the sole asset registry/enqueue owner; this only asks it to.
+	 *
+	 * @param string $hook_suffix Admin screen hook.
+	 * @return void
+	 */
+	public function enqueue_settings_assets( $hook_suffix ) {
+		if ( '' === $this->settings_hook || $hook_suffix !== $this->settings_hook ) { return; }
+		if ( is_object( $this->assets ) && method_exists( $this->assets, 'enqueue_admin_settings' ) ) {
+			$this->assets->enqueue_admin_settings();
+		}
+	}
+
+	/**
+	 * @return array{header-1:string,header-2:string} Preview image URLs, keyed by variant.
+	 */
+	private function header_variant_previews() {
+		if ( '' === $this->plugin_file ) { return array( 'header-1' => '', 'header-2' => '' ); }
+		return array(
+			'header-1' => plugins_url( 'assets/admin/header-type-1.png', $this->plugin_file ),
+			'header-2' => plugins_url( 'assets/admin/header-type-2.png', $this->plugin_file ),
+		);
+	}
+
+	/**
+	 * One radio-selectable preview card for a Header Type. A real <input
+	 * type="radio"> stays the sole canonical control; the surrounding
+	 * <label> lets the whole card (including the decorative preview image)
+	 * activate it without any JS. The image itself carries alt="" -- the
+	 * adjacent title/description text is the accessible description, so the
+	 * image stays presentation-only rather than a duplicate announcement.
+	 *
+	 * @param string $value Option value (header-1|header-2).
+	 * @param string $current Currently-saved header_variant value.
+	 * @param string $title Card title.
+	 * @param string $description Card description.
+	 * @param string $preview_url Preview PNG URL.
+	 * @param int    $preview_width Preview PNG intrinsic width (avoids layout shift).
+	 * @param int    $preview_height Preview PNG intrinsic height (avoids layout shift).
+	 * @return void
+	 */
+	private function render_header_variant_card( $value, $current, $title, $description, $preview_url, $preview_width, $preview_height ) {
+		$field_id = 'gloskin-header-variant-' . $value;
+		?>
+		<label class="gloskin-admin-header-card<?php echo $current === $value ? ' is-selected' : ''; ?>" for="<?php echo esc_attr( $field_id ); ?>">
+			<input class="gloskin-admin-header-card__radio" type="radio" id="<?php echo esc_attr( $field_id ); ?>" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[header_variant]" value="<?php echo esc_attr( $value ); ?>" <?php checked( $current, $value ); ?> />
+			<?php if ( '' !== $preview_url ) : ?><span class="gloskin-admin-header-card__preview"><img src="<?php echo esc_url( $preview_url ); ?>" alt="" loading="lazy" width="<?php echo esc_attr( (string) $preview_width ); ?>" height="<?php echo esc_attr( (string) $preview_height ); ?>" /></span><?php endif; ?>
+			<span class="gloskin-admin-header-card__body">
+				<strong class="gloskin-admin-header-card__title"><?php echo esc_html( $title ); ?></strong>
+				<span class="gloskin-admin-header-card__desc"><?php echo esc_html( $description ); ?></span>
+			</span>
+		</label>
+		<?php
 	}
 
 	public function render_settings_page() {
 		if ( ! current_user_can( 'manage_options' ) ) { return; }
-		$settings = get_option( self::SETTINGS_OPTION, array( 'design_variant' => 'medical', 'form_shortcode' => '' ) );
-		$variant = isset( $settings['design_variant'] ) ? $settings['design_variant'] : 'medical';
-		$shortcode = isset( $settings['form_shortcode'] ) ? $settings['form_shortcode'] : '';
+		$settings       = get_option( self::SETTINGS_OPTION, self::settings_defaults() );
+		$variant        = isset( $settings['design_variant'] ) ? $settings['design_variant'] : 'medical';
+		$shortcode      = isset( $settings['form_shortcode'] ) ? $settings['form_shortcode'] : '';
+		$header_variant = isset( $settings['header_variant'] ) ? $settings['header_variant'] : 'header-1';
+		$previews       = $this->header_variant_previews();
+		$tabs           = array(
+			'brand'   => __( 'Brand', 'gloskin-site-core' ),
+			'header'  => __( 'Header', 'gloskin-site-core' ),
+			'booking' => __( 'Booking & Social', 'gloskin-site-core' ),
+			'mapping' => __( 'Page Mapping', 'gloskin-site-core' ),
+		);
 		?>
-		<div class="wrap"><h1><?php echo esc_html__( 'Gloskin Settings', 'gloskin-site-core' ); ?></h1><p><?php echo esc_html__( 'Konfigurasi global yang memang dimiliki Gloskin Site Core.', 'gloskin-site-core' ); ?></p><form method="post" action="options.php"><?php settings_fields( 'gloskin_site_core' ); ?><table class="form-table" role="presentation"><tr><th scope="row"><label for="gloskin-design-variant"><?php echo esc_html__( 'Design direction', 'gloskin-site-core' ); ?></label></th><td><select id="gloskin-design-variant" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[design_variant]"><option value="medical" <?php selected( $variant, 'medical' ); ?>><?php echo esc_html__( 'Medical Professional', 'gloskin-site-core' ); ?></option><option value="modern" <?php selected( $variant, 'modern' ); ?>><?php echo esc_html__( 'Modern Aesthetic', 'gloskin-site-core' ); ?></option><option value="luxury" <?php selected( $variant, 'luxury' ); ?>><?php echo esc_html__( 'Premium Luxury', 'gloskin-site-core' ); ?></option></select></td></tr><tr><th scope="row"><label for="gloskin-form-shortcode"><?php echo esc_html__( 'Contact form shortcode', 'gloskin-site-core' ); ?></label></th><td><input class="regular-text" id="gloskin-form-shortcode" type="text" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[form_shortcode]" value="<?php echo esc_attr( $shortcode ); ?>" placeholder="[contact-form-7 id=&quot;...&quot;]" /><p class="description"><?php echo esc_html__( 'The form provider continues to own submission, anti-spam, storage, confirmation and mail delivery.', 'gloskin-site-core' ); ?></p></td></tr></table><?php submit_button(); ?></form></div>
+		<div id="gloskin-admin-root" class="gloskin-admin-shell">
+			<aside class="gloskin-admin-shell__sidebar">
+				<p class="gloskin-admin-shell__eyebrow"><?php echo esc_html__( 'Gloskin Site Core', 'gloskin-site-core' ); ?></p>
+				<h1 class="gloskin-admin-shell__title"><?php echo esc_html__( 'Settings', 'gloskin-site-core' ); ?></h1>
+				<p class="gloskin-admin-shell__lede"><?php echo esc_html__( 'Konfigurasi global yang memang dimiliki Gloskin Site Core.', 'gloskin-site-core' ); ?></p>
+				<a class="gloskin-admin-shell__back" href="<?php echo esc_url( admin_url( 'admin.php?page=' . Gloskin_Site_Core_Content_Service::ADMIN_MENU_SLUG ) ); ?>">&larr; <?php echo esc_html__( 'Gloskin Content', 'gloskin-site-core' ); ?></a>
+			</aside>
+			<div class="gloskin-admin-shell__workspace">
+				<form method="post" action="options.php">
+					<?php settings_fields( 'gloskin_site_core' ); ?>
+					<div class="gloskin-admin-tabs" role="tablist" aria-label="<?php echo esc_attr__( 'Bagian pengaturan Gloskin', 'gloskin-site-core' ); ?>" data-gloskin-admin-tabs>
+						<?php foreach ( $tabs as $tab_key => $tab_label ) : ?>
+							<button type="button" class="gloskin-admin-tabs__tab<?php echo 'brand' === $tab_key ? ' is-active' : ''; ?>" id="gloskin-admin-tab-<?php echo esc_attr( $tab_key ); ?>" role="tab" aria-selected="<?php echo 'brand' === $tab_key ? 'true' : 'false'; ?>" aria-controls="gloskin-admin-panel-<?php echo esc_attr( $tab_key ); ?>" data-gloskin-admin-tab="<?php echo esc_attr( $tab_key ); ?>"><?php echo esc_html( $tab_label ); ?></button>
+						<?php endforeach; ?>
+					</div>
+					<div class="gloskin-admin-canvas">
+						<section class="gloskin-admin-card" id="gloskin-admin-panel-brand" role="tabpanel" aria-labelledby="gloskin-admin-tab-brand" data-gloskin-admin-panel="brand">
+							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Design direction', 'gloskin-site-core' ); ?></h2>
+							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Arah palet dan tone visual global Gloskin.', 'gloskin-site-core' ); ?></p>
+							<p><label class="gloskin-admin-field-label" for="gloskin-design-variant"><?php echo esc_html__( 'Design direction', 'gloskin-site-core' ); ?></label><br />
+							<select id="gloskin-design-variant" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[design_variant]"><option value="medical" <?php selected( $variant, 'medical' ); ?>><?php echo esc_html__( 'Medical Professional', 'gloskin-site-core' ); ?></option><option value="modern" <?php selected( $variant, 'modern' ); ?>><?php echo esc_html__( 'Modern Aesthetic', 'gloskin-site-core' ); ?></option><option value="luxury" <?php selected( $variant, 'luxury' ); ?>><?php echo esc_html__( 'Premium Luxury', 'gloskin-site-core' ); ?></option></select></p>
+						</section>
+						<section class="gloskin-admin-card" id="gloskin-admin-panel-header" role="tabpanel" aria-labelledby="gloskin-admin-tab-header" data-gloskin-admin-panel="header">
+							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Header layout', 'gloskin-site-core' ); ?></h2>
+							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Pilih komposisi header. Header Type 1 tetap default dan tidak berubah untuk situs yang sudah ada.', 'gloskin-site-core' ); ?></p>
+							<div class="gloskin-admin-header-picker">
+								<?php
+								$this->render_header_variant_card( 'header-1', $header_variant, __( 'Header Type 1', 'gloskin-site-core' ), __( 'Centered-logo layout (default)', 'gloskin-site-core' ), $previews['header-1'], 1440, 133 );
+								$this->render_header_variant_card( 'header-2', $header_variant, __( 'Header Type 2', 'gloskin-site-core' ), __( 'Logo / Navigation / Actions', 'gloskin-site-core' ), $previews['header-2'], 1440, 73 );
+								?>
+							</div>
+						</section>
+						<section class="gloskin-admin-card" id="gloskin-admin-panel-booking" role="tabpanel" aria-labelledby="gloskin-admin-tab-booking" data-gloskin-admin-panel="booking">
+							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Booking & Social', 'gloskin-site-core' ); ?></h2>
+							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Kanal kontak/booking global. Nomor WhatsApp dan jam operasional per klinik tetap dimiliki masing-masing halaman Klinik.', 'gloskin-site-core' ); ?></p>
+							<p><label class="gloskin-admin-field-label" for="gloskin-form-shortcode"><?php echo esc_html__( 'Contact form shortcode', 'gloskin-site-core' ); ?></label><br />
+							<input class="regular-text" id="gloskin-form-shortcode" type="text" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[form_shortcode]" value="<?php echo esc_attr( $shortcode ); ?>" placeholder="[contact-form-7 id=&quot;...&quot;]" /></p>
+							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'The form provider continues to own submission, anti-spam, storage, confirmation and mail delivery.', 'gloskin-site-core' ); ?></p>
+							<p><a class="button button-secondary" href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE ) ); ?>"><?php echo esc_html__( 'Kelola Klinik (WhatsApp, telepon, jam operasional)', 'gloskin-site-core' ); ?></a></p>
+						</section>
+						<section class="gloskin-admin-card" id="gloskin-admin-panel-mapping" role="tabpanel" aria-labelledby="gloskin-admin-tab-mapping" data-gloskin-admin-panel="mapping">
+							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Page Mapping', 'gloskin-site-core' ); ?></h2>
+							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Pemetaan kategori skincare ke Page tetap dimiliki oleh field "WooCommerce category slug" pada meta box masing-masing Page turunan Skincare.', 'gloskin-site-core' ); ?></p>
+							<p><a class="button button-secondary" href="<?php echo esc_url( admin_url( 'edit.php?post_type=page' ) ); ?>"><?php echo esc_html__( 'Kelola Pages', 'gloskin-site-core' ); ?></a></p>
+						</section>
+					</div>
+					<?php submit_button(); ?>
+				</form>
+			</div>
+		</div>
 		<?php
 	}
 

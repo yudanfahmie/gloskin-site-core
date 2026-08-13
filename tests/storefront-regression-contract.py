@@ -54,8 +54,12 @@ require("remove_from_cart_button" in js and "removed_from_cart" in js, 'cart pen
 require('wc-ajax=remove_from_cart' not in js and "remove_from_cart'" not in js, 'Gloskin must not create a second cart removal request owner')
 
 # Wishlist count is only another reflection of the existing localStorage owner.
-require(header.count('data-gloskin-wishlist-count aria-hidden="true"') == 2, 'both existing header wishlist controls need count badges')
-require(header.count('data-gloskin-wishlist-count-sr aria-live="polite"') == 2, 'both wishlist controls need accessible count reflection')
+# header.php now server-renders exactly one of two Header Type branches
+# (header-1's two wishlist controls -- main + compact-sticky -- or header-2's
+# one unified control); the source file itself contains both branches, so
+# it carries all of header-1's 2 plus header-2's 1 = 3 occurrences total.
+require(header.count('data-gloskin-wishlist-count aria-hidden="true"') == 3, 'all header-1 (2) + header-2 (1) wishlist controls need count badges')
+require(header.count('data-gloskin-wishlist-count-sr aria-live="polite"') == 3, 'all header-1 (2) + header-2 (1) wishlist controls need accessible count reflection')
 require("var count = getIds().length;" in js, 'wishlist count must derive from existing getIds owner')
 require("document.querySelectorAll('[data-gloskin-wishlist-count]')" in js, 'wishlist visual count reflection missing')
 require("document.querySelectorAll('[data-gloskin-wishlist-count-sr]')" in js, 'wishlist accessible count reflection missing')
@@ -88,6 +92,6 @@ require("return $this->products_paginated_unfiltered( $page, $per_page );" in wo
 
 header_version = re.search(r'\* Version:\s*([0-9.]+)', plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == '0.7.51', 'production version must be synchronized at 0.7.51')
+require(header_version == kernel_version == '0.7.52', 'production version must be synchronized at 0.7.52')
 
 print('storefront regression contract: OK')

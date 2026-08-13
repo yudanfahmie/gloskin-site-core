@@ -641,7 +641,7 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 			ob_start();
 			require $native;
 			$native_html = ob_get_clean();
-			if ( 1 !== substr_count( $native_html, '<header class="gloskin-ui1-header">' )
+			if ( 1 !== substr_count( $native_html, '<header class="gloskin-ui1-header"' )
 				|| 1 !== substr_count( $native_html, '<footer class="gloskin-ui1-footer">' ) ) {
 				fwrite( STDERR, 'Native Woo duplicate/missing site chrome for ' . $native_case[0] . "\n" ); exit( 1 );
 			}

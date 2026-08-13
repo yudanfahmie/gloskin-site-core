@@ -253,6 +253,29 @@ final class Gloskin_Site_Core_Asset_Service {
 	}
 
 	/**
+	 * The Gloskin Settings screen's own small presentation shell (scoped
+	 * beneath #gloskin-admin-root). Gloskin_Site_Core_Admin_Service already
+	 * gates the call to this method to that exact screen's hook -- this
+	 * method only registers/enqueues, keeping AssetService the sole asset
+	 * registry/enqueue owner. No global wp-admin CSS leakage.
+	 *
+	 * @return void
+	 */
+	public function enqueue_admin_settings() {
+		$registry = $this->registry();
+		if ( ! empty( $registry['admin_styles']['gloskin-admin'] ) ) {
+			$asset = $registry['admin_styles']['gloskin-admin'];
+			wp_register_style( 'gloskin-admin', plugins_url( $asset['src'], $this->plugin_file ), $asset['deps'], $this->version, $asset['media'] );
+			wp_enqueue_style( 'gloskin-admin' );
+		}
+		if ( ! empty( $registry['admin_scripts']['gloskin-admin'] ) ) {
+			$asset = $registry['admin_scripts']['gloskin-admin'];
+			wp_register_script( 'gloskin-admin', plugins_url( $asset['src'], $this->plugin_file ), $asset['deps'], $this->version, true );
+			wp_enqueue_script( 'gloskin-admin' );
+		}
+	}
+
+	/**
 	 * Enqueue the temporary importer controller only after AdminService has
 	 * proven the exact migration screen and capability.
 	 *
@@ -281,7 +304,7 @@ final class Gloskin_Site_Core_Asset_Service {
 			$registry       = require dirname( __DIR__ ) . '/config/assets.php';
 			$this->registry = is_array( $registry )
 				? $registry
-				: array( 'font_preload' => array(), 'styles' => array(), 'scripts' => array(), 'admin_scripts' => array() );
+				: array( 'font_preload' => array(), 'styles' => array(), 'scripts' => array(), 'admin_styles' => array(), 'admin_scripts' => array() );
 		}
 		return $this->registry;
 	}

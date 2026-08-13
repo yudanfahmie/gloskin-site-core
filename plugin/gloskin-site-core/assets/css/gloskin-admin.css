@@ -1,0 +1,90 @@
+/*
+ * Gloskin admin presentation shell -- Settings screen only.
+ *
+ * Presentation patterns only (isolated scoped root, scoped reset, tokenized
+ * spacing, two-column shell with sticky sidebar, workspace/canvas,
+ * horizontal tabs, card rhythm, responsive behavior, accessible focus).
+ * Zero runtime dependency on any external admin framework; every selector,
+ * token and class name here is Gloskin-owned. No global wp-admin CSS
+ * leakage -- every rule is scoped beneath #gloskin-admin-root, and this
+ * file is only ever enqueued on the Gloskin Settings screen.
+ *
+ * @package GloskinSiteCore
+ */
+
+#gloskin-admin-root{
+	--gloskin-admin-space-1:4px;
+	--gloskin-admin-space-2:8px;
+	--gloskin-admin-space-3:12px;
+	--gloskin-admin-space-4:16px;
+	--gloskin-admin-space-5:24px;
+	--gloskin-admin-space-6:32px;
+	--gloskin-admin-radius:10px;
+	--gloskin-admin-radius-lg:14px;
+	--gloskin-admin-border:#dcdcde;
+	--gloskin-admin-surface:#fff;
+	--gloskin-admin-surface-muted:#f6f7f7;
+	--gloskin-admin-text:#1d2327;
+	--gloskin-admin-muted:#646970;
+	--gloskin-admin-accent:#B12E2F;
+	--gloskin-admin-accent-soft:#B12E2F1a;
+	--gloskin-admin-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.04);
+	box-sizing:border-box;
+	max-width:1180px;
+	margin:24px 20px 40px 0;
+	color:var(--gloskin-admin-text);
+	font-size:14px;
+	line-height:1.5;
+}
+/* Scoped reset: only inside the Gloskin admin root, never global wp-admin. */
+#gloskin-admin-root,
+#gloskin-admin-root *,
+#gloskin-admin-root *::before,
+#gloskin-admin-root *::after{box-sizing:border-box}
+#gloskin-admin-root :focus-visible{outline:2px solid var(--gloskin-admin-accent);outline-offset:2px;border-radius:4px}
+#gloskin-admin-root h1,#gloskin-admin-root h2{margin:0 0 6px;font-weight:600}
+
+/* Two-column shell: sticky sidebar + workspace. */
+.gloskin-admin-shell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:var(--gloskin-admin-space-6);align-items:start}
+.gloskin-admin-shell__sidebar{position:sticky;top:52px;display:grid;gap:var(--gloskin-admin-space-2);padding:var(--gloskin-admin-space-5);border:1px solid var(--gloskin-admin-border);border-radius:var(--gloskin-admin-radius-lg);background:var(--gloskin-admin-surface);box-shadow:var(--gloskin-admin-shadow)}
+.gloskin-admin-shell__eyebrow{margin:0;color:var(--gloskin-admin-accent);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.gloskin-admin-shell__title{font-size:20px}
+.gloskin-admin-shell__lede{margin:0;color:var(--gloskin-admin-muted)}
+.gloskin-admin-shell__back{margin-top:var(--gloskin-admin-space-3);color:var(--gloskin-admin-accent);font-weight:600;text-decoration:none}
+.gloskin-admin-shell__back:hover{text-decoration:underline}
+.gloskin-admin-shell__workspace{min-width:0}
+
+/* Horizontal tabs. */
+.gloskin-admin-tabs{display:flex;flex-wrap:wrap;gap:var(--gloskin-admin-space-1);margin-bottom:var(--gloskin-admin-space-4);padding:var(--gloskin-admin-space-1);border:1px solid var(--gloskin-admin-border);border-radius:999px;background:var(--gloskin-admin-surface-muted);width:max-content;max-width:100%}
+.gloskin-admin-tabs__tab{margin:0;padding:9px 18px;border:0;border-radius:999px;background:transparent;color:var(--gloskin-admin-muted);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background-color 140ms ease,color 140ms ease}
+.gloskin-admin-tabs__tab:hover{color:var(--gloskin-admin-text)}
+.gloskin-admin-tabs__tab.is-active{background:var(--gloskin-admin-surface);color:var(--gloskin-admin-text);box-shadow:var(--gloskin-admin-shadow)}
+
+/* Workspace/canvas + card rhythm. */
+.gloskin-admin-canvas{display:grid;gap:var(--gloskin-admin-space-5)}
+.gloskin-admin-card{padding:var(--gloskin-admin-space-5);border:1px solid var(--gloskin-admin-border);border-radius:var(--gloskin-admin-radius-lg);background:var(--gloskin-admin-surface);box-shadow:var(--gloskin-admin-shadow)}
+.gloskin-admin-card__title{font-size:16px}
+.gloskin-admin-card__hint{margin:0 0 var(--gloskin-admin-space-4);color:var(--gloskin-admin-muted)}
+.gloskin-admin-field-label{display:inline-block;margin-bottom:var(--gloskin-admin-space-2);font-weight:600}
+
+/* Header Type radio-preview cards. */
+.gloskin-admin-header-picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--gloskin-admin-space-4)}
+.gloskin-admin-header-card{display:grid;gap:var(--gloskin-admin-space-3);padding:var(--gloskin-admin-space-3);border:2px solid var(--gloskin-admin-border);border-radius:var(--gloskin-admin-radius);background:var(--gloskin-admin-surface-muted);cursor:pointer;transition:border-color 140ms ease,background-color 140ms ease}
+.gloskin-admin-header-card:hover{border-color:color-mix(in srgb,var(--gloskin-admin-accent) 40%,var(--gloskin-admin-border))}
+.gloskin-admin-header-card.is-selected,
+.gloskin-admin-header-card:has(.gloskin-admin-header-card__radio:checked){border-color:var(--gloskin-admin-accent);background:var(--gloskin-admin-accent-soft)}
+.gloskin-admin-header-card__radio{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.gloskin-admin-header-card__preview{display:block;overflow:hidden;border:1px solid var(--gloskin-admin-border);border-radius:calc(var(--gloskin-admin-radius) - 3px);background:var(--gloskin-admin-surface)}
+.gloskin-admin-header-card__preview img{display:block;width:100%;height:auto}
+.gloskin-admin-header-card__body{display:grid;gap:2px}
+.gloskin-admin-header-card__title{font-size:13px}
+.gloskin-admin-header-card__desc{color:var(--gloskin-admin-muted);font-size:12px}
+
+@media (max-width:900px){
+	.gloskin-admin-shell{grid-template-columns:1fr}
+	.gloskin-admin-shell__sidebar{position:static}
+}
+@media (prefers-reduced-motion:reduce){
+	#gloskin-admin-root .gloskin-admin-tabs__tab,
+	#gloskin-admin-root .gloskin-admin-header-card{transition:none}
+}
