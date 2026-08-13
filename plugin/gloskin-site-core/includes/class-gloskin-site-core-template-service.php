@@ -567,10 +567,16 @@ final class Gloskin_Site_Core_Template_Service {
 	 * @return WP_REST_Response
 	 */
 	public function rest_diag_args_echo( $request ) {
+		$category_raw = $request->get_param( 'category' );
 		return rest_ensure_response( array(
-			'ok'       => true,
-			'page'     => $request->get_param( 'page' ),
-			'category' => $request->get_param( 'category' ),
+			'ok'                  => true,
+			'page'                => $request->get_param( 'page' ),
+			'category'            => $category_raw,
+			'category_gettype'    => gettype( $category_raw ),
+			'category_var_export' => var_export( $category_raw, true ),
+			'category_query_param' => $request->get_query_params(),
+			'sanitize_title_of_empty' => sanitize_title( '' ),
+			'sanitize_title_gettype'  => gettype( sanitize_title( '' ) ),
 		) );
 	}
 
