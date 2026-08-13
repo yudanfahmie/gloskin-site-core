@@ -54,6 +54,13 @@
 .woocommerce-account .woocommerce form .form-row input.input-text,.woocommerce-account .woocommerce form .form-row textarea,.woocommerce-account .woocommerce form select{min-height:var(--gloskin-field-height);border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-field-bg);color:var(--gloskin-text)}
 .woocommerce-account .woocommerce fieldset{margin:26px 0 0;padding:20px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md)}
 .woocommerce-account .woocommerce .button{border-radius:var(--gloskin-action-radius)}
+/* Real staging inspection (WooCommerce Blocks is active on Cart/Checkout,
+ * confirmed hydrated -- no classic .woocommerce-cart-form/form.checkout
+ * present on either page): both Cart's "Proceed to Checkout" and
+ * Checkout's "Place Order" render Woo Blocks' own real, shared
+ * .wc-block-components-button class, which renders at Woo Blocks' own 0px
+ * default. Scoped into the same one --gloskin-action-radius owner. */
+.gloskin-ui1 .wc-block-components-button{border-radius:var(--gloskin-action-radius)}
 .gloskin-ui1-commerce-native .gloskin-ui1-empty-state+.return-to-shop{display:none}
 .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-info,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-message,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-error{display:flex;align-items:center;gap:12px;min-height:58px;margin:0;padding:13px 14px 13px 16px;border:1px solid var(--gloskin-border);border-top:2px solid var(--gloskin-accent);border-radius:var(--gloskin-radius-sm);background:var(--gloskin-bg);box-shadow:none;color:var(--gloskin-text)}
 .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-error{border-top-color:var(--gloskin-accent-strong)}

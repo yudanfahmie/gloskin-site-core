@@ -352,6 +352,13 @@ grep -qF -- '.gloskin-ui1-auth-switch{display:flex;gap:6px;margin:0 0 22px;paddi
 grep -qF -- '.gloskin-ui1-auth-switch button{flex:1;min-height:38px;border:0;border-radius:var(--gloskin-action-radius)' "$readiness_css" \
 	|| fail "action radius: Auth login/register switch buttons no longer use the shared token"
 
+# WooCommerce Blocks (confirmed live on staging as the actual hydrated
+# Cart/Checkout implementation -- no classic form present on either page):
+# both real observed CTAs ("Proceed to Checkout", "Place Order") share
+# Woo Blocks' own real .wc-block-components-button class.
+grep -qF -- '.gloskin-ui1 .wc-block-components-button{border-radius:var(--gloskin-action-radius)}' "$readiness_css" \
+	|| fail "action radius: WooCommerce Blocks Cart/Checkout CTA (.wc-block-components-button) no longer uses the shared token"
+
 # Real staging proof (found live, not locally -- this repo has no way to
 # load WooCommerce's own actual core CSS, whose real `.woocommerce a.button,
 # .woocommerce button.button{border-radius:3px}` default otherwise wins
