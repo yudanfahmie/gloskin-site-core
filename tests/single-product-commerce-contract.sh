@@ -245,7 +245,7 @@ fi
 # Quick Add now carries the canonical .gloskin-ui1-form root, so its native
 # Woo button inherits the global Form/Action Kit instead of keeping a second
 # modal-specific color/state owner.
-grep -qF '.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button{background:var(--gloskin-accent);color:var(--gloskin-inverse);border-color:transparent}' "$core_css" \
+grep -qF '.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button{background:var(--gloskin-accent);color:var(--gloskin-inverse);border-color:transparent;border-radius:var(--gloskin-action-radius)}' "$core_css" \
 	|| fail "commerce accent: product-card Add to Cart accent rule missing"
 grep -qF 'gloskin-ui1-quickadd__form gloskin-ui1-form' "$core_js" \
 	|| fail "commerce accent: Quick Add dynamic form no longer inherits the canonical Form/Action Kit"
@@ -261,8 +261,8 @@ grep -qF 'var(--gloskin-accent-strong)' "$core_css" || fail "commerce accent: ho
 # `.add_to_cart_button` directly can no longer win with native purple.
 for expected in \
   '.gloskin-ui1 .woocommerce form.cart button.single_add_to_cart_button,' \
-  '.gloskin-ui1 .gloskin-ui1-form form.cart button.single_add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);color:var(--gloskin-inverse)}' \
-  '.related.products ul.products li.product .add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);color:var(--gloskin-inverse)}'; do
+  '.gloskin-ui1 .gloskin-ui1-form form.cart button.single_add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);border-radius:var(--gloskin-action-radius);color:var(--gloskin-inverse)}' \
+  '.related.products ul.products li.product .add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);border-radius:var(--gloskin-action-radius);color:var(--gloskin-inverse)}'; do
   grep -qF -- "$expected" "$core_css" || fail "commerce accent: PDP/related CTA hardening missing: $expected"
 done
 if grep -qE "single_add_to_cart_button:disabled[^{]*\{[^}]*background:var\(--gloskin-accent\)" "$core_css"; then
@@ -343,6 +343,22 @@ grep -qF -- '.gloskin-ui1 a.added_to_cart.wc-forward{display:inline-flex;align-i
 	|| fail "action radius: View Cart link no longer uses the shared token"
 grep -qF -- '.woocommerce-account .woocommerce .button{border-radius:var(--gloskin-action-radius)}' "$readiness_css" \
 	|| fail "action radius: My Account button no longer uses the shared token"
+
+# Real staging proof (found live, not locally -- this repo has no way to
+# load WooCommerce's own actual core CSS, whose real `.woocommerce a.button,
+# .woocommerce button.button{border-radius:3px}` default otherwise wins
+# over the generic base rule wherever a Woo `.button` co-class renders
+# outside a nested `.gloskin-ui1 .woocommerce` ancestor chain -- e.g. Shop
+# card/related/PDP Add to Cart controls that live directly under a body
+# carrying Woo's own page-level classes). Radius must be hardened on the
+# exact same three real-WooCommerce-class selectors already hardened for
+# accent color, not left on the generic base rule alone.
+for radius_hardened in \
+	'.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button{background:var(--gloskin-accent);color:var(--gloskin-inverse);border-color:transparent;border-radius:var(--gloskin-action-radius)}' \
+	'.gloskin-ui1 .gloskin-ui1-form form.cart button.single_add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);border-radius:var(--gloskin-action-radius);color:var(--gloskin-inverse)}' \
+	'.related.products ul.products li.product .add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);border-radius:var(--gloskin-action-radius);color:var(--gloskin-inverse)}'; do
+	grep -qF -- "$radius_hardened" "$core_css" || fail "action radius: production-hardened Add to Cart radius missing (would render at Woo's native 3px, not the modest 8px token): $radius_hardened"
+done
 
 # Intentional circular controls are explicitly preserved -- icon-only
 # utility buttons, close icons, badges/counters, nav bubble.

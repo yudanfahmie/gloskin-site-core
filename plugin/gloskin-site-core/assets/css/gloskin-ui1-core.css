@@ -407,16 +407,21 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.ca
 .gloskin-ui1 button.single_add_to_cart_button[aria-busy="true"]::after{content:"";position:absolute;top:50%;right:14px;width:15px;height:15px;margin-top:-8px;border:2px solid currentColor;border-right-color:transparent;border-radius:999px;background:none;font-family:inherit;animation:gloskin-atc-spin 650ms linear infinite}
 @keyframes gloskin-atc-spin{to{transform:rotate(360deg)}}
 /* CTA color ownership: the Gloskin Form/Action Kit stays the ONE owner of
- * every purchase CTA color. The generic `.woocommerce button.button` base
- * rule (gloskin-ui1-core-base.css) only wins while Woo keeps a plain
- * `.button` class alongside `.single_add_to_cart_button` -- naming the real
+ * every purchase CTA color (and, since the storefront/PDP refinement pass,
+ * radius). The generic `.woocommerce button.button` base rule
+ * (gloskin-ui1-core-base.css) only wins while Woo keeps a plain `.button`
+ * class alongside `.single_add_to_cart_button` -- naming the real
  * WooCommerce button class directly here means ownership no longer depends
  * on that co-class surviving a theme/plugin stylesheet loaded later with
- * equal-or-higher specificity. Presentation only; no Woo markup, validation
- * or purchasability state is touched. */
+ * equal-or-higher specificity. Real staging proof: WooCommerce's own core
+ * stylesheet sets `.woocommerce a.button,.woocommerce button.button{
+ * border-radius:3px}`, which otherwise wins over the generic base rule's
+ * var(--gloskin-action-radius) on real production pages this local test
+ * suite has no way to load Woo's actual core CSS to catch. Presentation
+ * only; no Woo markup, validation or purchasability state is touched. */
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart .single_add_to_cart_button,
 .gloskin-ui1 .woocommerce form.cart button.single_add_to_cart_button,
-.gloskin-ui1 .gloskin-ui1-form form.cart button.single_add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);color:var(--gloskin-inverse)}
+.gloskin-ui1 .gloskin-ui1-form form.cart button.single_add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);border-radius:var(--gloskin-action-radius);color:var(--gloskin-inverse)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart .single_add_to_cart_button:hover,
 .gloskin-ui1 .woocommerce form.cart button.single_add_to_cart_button:hover,
 .gloskin-ui1 .gloskin-ui1-form form.cart button.single_add_to_cart_button:hover{background:var(--gloskin-accent-strong);border-color:var(--gloskin-accent-strong)}
@@ -494,7 +499,7 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .relate
 /* Related Products keeps Woo's own native loop card/button markup (SP-006);
  * this owns its CTA color explicitly by the real Woo loop button class
  * rather than relying on the generic `.button` co-class alone. */
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);color:var(--gloskin-inverse)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);border-radius:var(--gloskin-action-radius);color:var(--gloskin-inverse)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button:hover{background:var(--gloskin-accent-strong);border-color:var(--gloskin-accent-strong)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button.disabled,
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button.loading{background:var(--gloskin-field-disabled);color:var(--gloskin-muted);border-color:var(--gloskin-field-border);opacity:.72;cursor:not-allowed;pointer-events:none}
@@ -609,7 +614,7 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloski
 /* Catalog cards are outside .woocommerce/.gloskin-ui1-form, so this one card
    action remains the explicit catalog purchase skin. Quick Add is no longer
    matched here: it inherits the global Form/Action Kit. */
-.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button{background:var(--gloskin-accent);color:var(--gloskin-inverse);border-color:transparent}
+.gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button{background:var(--gloskin-accent);color:var(--gloskin-inverse);border-color:transparent;border-radius:var(--gloskin-action-radius)}
 .gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button:hover{background:var(--gloskin-accent-strong)}
 .gloskin-ui1-card--product .gloskin-ui1-card__actions a.add_to_cart_button.disabled{background:var(--gloskin-surface-strong);color:var(--gloskin-muted);border-color:var(--gloskin-border);opacity:.7;pointer-events:none}
 
