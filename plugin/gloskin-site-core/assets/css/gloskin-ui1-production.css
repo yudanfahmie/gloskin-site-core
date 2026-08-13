@@ -441,26 +441,34 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 
 /* Mobile row contract. WC's own Cart block already switches each row from
    table-row to a bare CSS grid at its own <=768px breakpoint (matched
-   here): image | product-meta | subtotal as three grid items sharing the
-   row, with the subtotal's own column sized from its content via
-   grid-auto-columns. Left at WC's default that column overflows the row
-   on narrow phones (WC's content-based auto sizing exceeds the space
-   actually left after the other two columns + gaps), and the row
-   stretches every cell (including the image) to match its tallest
-   sibling. Only grid-auto-columns/align-items are touched here -- WC's
-   own explicit grid-template-columns and per-item grid-column/row
-   placement are !important in its stylesheet and are deliberately left
-   alone (see the remove-action comment above re: !important policy);
-   overriding them with a named grid-area, as an earlier version of this
-   rule did, silently lost that cascade and made the subtotal render on
-   top of the product title instead of the intended distinct line -- a
-   worse regression than the original overflow, caught via a real-
-   staging screenshot before shipping the corrected version below. */
+   here): image | product-meta | subtotal, sharing one row, with WC's own
+   grid-template-columns/per-item grid-column/row placement all set
+   !important in its stylesheet. This codebase does not add !important
+   (see the remove-action comment above), so none of that placement is
+   fought directly -- two earlier versions of this rule tried to relocate
+   the subtotal (first via grid-area, then via explicit grid-column) and
+   both looked correct in rect math but, verified on real staging with an
+   actual screenshot, rendered the subtotal on top of the product title
+   every time, because the row's height is driven entirely by the
+   product cell's own (unstretchable) content and there is no genuine
+   free row for the subtotal to occupy without either overlapping that
+   content or a second !important.
+   The one property that IS safe to touch is grid-auto-columns, which
+   only sizes the *implicit* tracks the row creates on its own when an
+   item's forced placement runs past the explicit columns -- it does not
+   compete with anything WC marks !important. The product cell's own
+   forced overflow creates the first implicit column; the subtotal (left
+   at its own default "auto" placement) creates a second. Sizing the
+   pattern "0px 80px" collapses the first (product's unused overflow,
+   the original cause of the row's inconsistent height) and gives the
+   second exactly enough width for the subtotal, positioned directly
+   after the product column with no overlap -- a plain, common inline
+   price-beside-title mobile cart pattern, verified with a real
+   screenshot at 375/390px before shipping. */
 @media (max-width:768px){
 	.wc-block-cart-items__row{
-		grid-auto-columns:72px;
+		grid-auto-columns:0px 80px;
 		align-items:start;
 	}
 	.wc-block-cart-item__image img{width:76px;height:76px}
-	.wc-block-cart-item__total{padding-top:8px}
 }
