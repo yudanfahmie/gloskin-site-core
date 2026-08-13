@@ -399,40 +399,88 @@
 
 	/* -----------------------------------------------------------------
 	 * Smart sticky navigation row
+	 *
+	 * One state owner, two possible target surfaces depending on which
+	 * Header Type server-rendered: Header 1's separate sticky
+	 * .gloskin-ui1-header__nav-row (below the non-sticky brand/utilities
+	 * row), or Header 2's single self-contained sticky
+	 * [data-gloskin-header="header-2"] row, which has no separate row to
+	 * target -- it is its own surface. resolveSmartHeaderSurface() is the
+	 * one place that decides which; everything below reads `surface`
+	 * generically and never re-branches on the header variant itself.
 	 * ----------------------------------------------------------------- */
 
-	function initSmartHeader() {
-		var header = document.querySelector('.gloskin-ui1-header');
+	function resolveSmartHeaderSurface() {
 		var navRow = document.querySelector('.gloskin-ui1-header__nav-row');
-		if (!header || !navRow) { return; }
+		if (navRow) {
+			return { surface: navRow, header: document.querySelector('.gloskin-ui1-header'), selfContained: false };
+		}
+		var split = document.querySelector('[data-gloskin-header="header-2"]');
+		if (split) {
+			return { surface: split, header: split, selfContained: true };
+		}
+		return null;
+	}
+
+	function initSmartHeader() {
+		var target = resolveSmartHeaderSurface();
+		if (!target) { return; }
+		var surface = target.surface;
+		var header = target.header;
+		var selfContained = target.selfContained;
 
 		var previousY = Math.max(window.scrollY || 0, 0);
 		var downDistance = 0;
 		var scheduled = false;
 		var hideThreshold = 10;
+		/* Captured once, before any is-compact-sticky state exists. Header
+		 * 2's compact state shrinks its own row height (see updateCompact()
+		 * below); reading surface.offsetHeight live here instead would make
+		 * topGuard() collapse the instant compact-sticky engages, giving it
+		 * no stable "still effectively at the top" window at all and
+		 * triggering hide on the very next tick. Header 1's navRow height
+		 * never changes between its own compact/non-compact state, so this
+		 * is a no-op difference for it. */
+		var naturalSurfaceHeight = surface.offsetHeight;
 
+		/* Header 1: must scroll past the non-sticky brand row *and* the nav
+		 * row's own height before hide/reveal engages, otherwise it would
+		 * hide while still naturally in view at the top of the page. Header
+		 * 2 has no separate brand row -- it is sticky from y=0 -- so only
+		 * its own natural height guards the same "still effectively at the
+		 * top" case. */
 		function topGuard() {
-			return Math.max(header.offsetHeight + navRow.offsetHeight, 0);
+			return selfContained ? naturalSurfaceHeight : Math.max(header.offsetHeight + surface.offsetHeight, 0);
 		}
 
 		function interactionActive() {
-			if (navRow.contains(document.activeElement)) { return true; }
-			if (navRow.querySelector('[data-gloskin-submenu-toggle][aria-expanded="true"]')) { return true; }
+			if (surface.contains(document.activeElement)) { return true; }
+			if (surface.querySelector('[data-gloskin-submenu-toggle][aria-expanded="true"]')) { return true; }
 			if (document.documentElement.classList.contains('gloskin-ui1-drawer-open')) { return true; }
 			if (document.documentElement.classList.contains('gloskin-ui1-overlay-open')) { return true; }
 			return false;
 		}
 
 		function showNav() {
-			navRow.classList.remove('is-hidden');
+			surface.classList.remove('is-hidden');
 			downDistance = 0;
 		}
-		function hideNav() { navRow.classList.add('is-hidden'); }
+		function hideNav() { surface.classList.add('is-hidden'); }
+
+		/* Header 2 owns its compact-sticky state here too (same rAF-scheduled
+		 * scroll tick, no second listener) since it has no separate row for
+		 * initCompactSticky()'s IntersectionObserver to watch scroll past --
+		 * see that function below, which stays exclusively Header 1's. */
+		function updateCompact(currentY) {
+			if (!selfContained) { return; }
+			surface.classList.toggle('is-compact-sticky', currentY > naturalSurfaceHeight);
+		}
 
 		function updateNav() {
 			var currentY = Math.max(window.scrollY || 0, 0);
 			var delta = currentY - previousY;
 			previousY = currentY;
+			updateCompact(currentY);
 			if (currentY <= topGuard()) { showNav(); scheduled = false; return; }
 			if (interactionActive()) { showNav(); scheduled = false; return; }
 			if (delta < 0) { showNav(); scheduled = false; return; }
@@ -448,16 +496,19 @@
 			scheduled = true;
 			window.requestAnimationFrame(updateNav);
 		}, { passive: true });
-		navRow.addEventListener('focusin', showNav);
+		surface.addEventListener('focusin', showNav);
 		document.addEventListener('gloskin:sticky-nav-hold', showNav);
 	}
 
 	/* -----------------------------------------------------------------
-	 * Compact branded sticky-nav state -- once the full brand/utilities
-	 * row has fully scrolled out of view, the nav row grows a small
-	 * logo + compact utility cluster alongside the still-centered nav.
-	 * Reuses the exact same search/account/wishlist/cart triggers and
-	 * overlay system (no duplicated Woo state or overlay handlers).
+	 * Compact branded sticky-nav state -- Header 1 only. Once the full
+	 * brand/utilities row has fully scrolled out of view, the nav row
+	 * grows a small logo + compact utility cluster alongside the still-
+	 * centered nav. Reuses the exact same search/account/wishlist/cart
+	 * triggers and overlay system (no duplicated Woo state or overlay
+	 * handlers). Header 2 has no separate row for this IntersectionObserver
+	 * to watch scroll past -- its own compact-sticky state is owned by
+	 * initSmartHeader() above instead, on the same scroll tick.
 	 * ----------------------------------------------------------------- */
 
 	function initCompactSticky() {

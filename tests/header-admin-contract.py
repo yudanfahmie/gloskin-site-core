@@ -23,6 +23,7 @@ assets_service = read("plugin/gloskin-site-core/includes/class-gloskin-site-core
 assets_config = read("plugin/gloskin-site-core/config/assets.php")
 header = read("plugin/gloskin-site-core/templates/parts/header.php")
 core_css = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css")
+core_js = read("plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js")
 admin_css = read("plugin/gloskin-site-core/assets/css/gloskin-admin.css")
 admin_js = read("plugin/gloskin-site-core/assets/js/gloskin-admin.js")
 
@@ -47,9 +48,28 @@ require("data-gloskin-drawer-open" in header, "both header variants must keep th
 # --- Header Type 2 CSS: scoped to the variant attribute, one sticky owner,
 # reuses the existing compact/mobile breakpoint, zero new !important. ---
 require('[data-gloskin-header="header-2"]{position:sticky' in core_css, "Header Type 2 must be its own sticky owner")
-require('[data-gloskin-header="header-2"] .gloskin-ui1-header__inner{grid-template-columns:auto minmax(0,1fr) auto}' in core_css, "Header Type 2 must use the specified auto/flex/auto grid")
+require('[data-gloskin-header="header-2"] .gloskin-ui1-header__inner{grid-template-columns:auto minmax(0,1fr) auto' in core_css, "Header Type 2 must use the specified auto/flex/auto grid")
 require('@media (max-width:1040px){[data-gloskin-header="header-2"] .gloskin-ui1-nav--desktop{display:none}}' in core_css, "Header Type 2 must reuse the existing 1040px compact/mobile breakpoint, not invent a new one")
 require("!important" not in core_css[core_css.index('[data-gloskin-header="header-2"]'):core_css.index('[data-gloskin-header="header-2"]') + 900], "Header Type 2 CSS must not use !important")
+
+# --- Header 2 sticky/compact behavioral parity with Header 1: one existing
+# smart-header owner, generalized target resolution, same state vocabulary,
+# same node for the compact logo (no clone), no second controller. ---
+require("function resolveSmartHeaderSurface()" in core_js, "one target-resolution helper must live inside the existing smart-header owner")
+require(core_js.count("function resolveSmartHeaderSurface()") == 1, "must not duplicate the target-resolution helper")
+for forbidden in ("initHeader2Sticky", "initHeader2Scroll", "Header2Controller", "function initSmartHeaderType2", "function initCompactStickyType2"):
+    require(forbidden not in core_js, f"must not introduce a second sticky/header controller: {forbidden}")
+require(core_js.count("function initSmartHeader()") == 1 and core_js.count("function initCompactSticky()") == 1, "must keep exactly the one existing smart-header owner (both functions), not add new ones")
+require("selfContained" in core_js, "the one smart-header owner must branch on the resolved target, not fork into separate functions")
+require("[data-gloskin-header=\"header-2\"].is-hidden{transform:translateY(calc(-100% - var(--gloskin-ui1-nav-sticky-top)))}" in core_css, "Header 2 must reuse the same is-hidden translateY state vocabulary as Header 1's nav row")
+require('[data-gloskin-header="header-2"].is-compact-sticky img.gloskin-ui1-brand__image{height:clamp(32px,3vw,45px)}' in core_css, "Header 2's compact logo must resize the SAME brand image node to Header 1's exact compact dimensions, not clone another logo")
+require('[data-gloskin-header="header-2"].is-compact-sticky .gloskin-ui1-header__inner{min-height:56px}' in core_css, "Header 2 must also reduce its row height when compact, not just the logo")
+require('img.gloskin-ui1-brand__image--compact' in core_css, "Header 1's compact-brand logo dimensions token must remain the shared source of truth")
+require("transition:transform 220ms cubic-bezier(.22,1,.36,1)" in core_css[core_css.index('[data-gloskin-header="header-2"]'):core_css.index('[data-gloskin-header="header-2"]') + 900], "Header 2 must animate its hide/reveal with the same transition timing as Header 1's nav row")
+require('[data-gloskin-header="header-2"]' in core_css[core_css.index("@media (prefers-reduced-motion:reduce)"):core_css.index("@media (prefers-reduced-motion:reduce)") + 400], "Header 2's new transitions must be included in the existing reduced-motion exemption")
+# Nav hover stays owned solely by initNavBubble() -- no second hover
+# controller introduced for Header 2's differently-shaped grid parent.
+require(core_js.count("function initNavBubble()") == 1, "nav hover bubble must remain owned by exactly one existing controller")
 
 # --- Admin shell: Gloskin-owned naming, isolated scope, zero !important. ---
 require("#gloskin-admin-root" in admin_css, "admin shell must be scoped beneath #gloskin-admin-root")

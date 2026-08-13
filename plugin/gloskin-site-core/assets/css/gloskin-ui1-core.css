@@ -61,9 +61,17 @@ img.gloskin-ui1-brand__image--compact{height:clamp(32px,3vw,45px)}
    sticky owner (no separate nav-row, so initSmartHeader()/initCompactSticky()
    correctly no-op for it). Scoped entirely under the variant attribute so
    Header Type 1 above is completely unaffected. */
-[data-gloskin-header="header-2"]{position:sticky;z-index:1000;top:var(--gloskin-ui1-nav-sticky-top);border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);background:color-mix(in srgb,var(--gloskin-bg) 92%,transparent);-webkit-backdrop-filter:saturate(120%) blur(14px);backdrop-filter:saturate(120%) blur(14px);box-shadow:0 1px 0 color-mix(in srgb,var(--gloskin-bg) 34%,transparent),0 8px 24px color-mix(in srgb,var(--gloskin-text) 3%,transparent)}
-[data-gloskin-header="header-2"] .gloskin-ui1-header__inner{grid-template-columns:auto minmax(0,1fr) auto}
+[data-gloskin-header="header-2"]{position:sticky;z-index:1000;top:var(--gloskin-ui1-nav-sticky-top);border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);background:color-mix(in srgb,var(--gloskin-bg) 92%,transparent);-webkit-backdrop-filter:saturate(120%) blur(14px);backdrop-filter:saturate(120%) blur(14px);box-shadow:0 1px 0 color-mix(in srgb,var(--gloskin-bg) 34%,transparent),0 8px 24px color-mix(in srgb,var(--gloskin-text) 3%,transparent);transition:transform 220ms cubic-bezier(.22,1,.36,1);will-change:transform}
+[data-gloskin-header="header-2"].is-hidden{transform:translateY(calc(-100% - var(--gloskin-ui1-nav-sticky-top)))}
+[data-gloskin-header="header-2"] .gloskin-ui1-header__inner{grid-template-columns:auto minmax(0,1fr) auto;transition:min-height 220ms cubic-bezier(.22,1,.36,1)}
 [data-gloskin-header="header-2"] .gloskin-ui1-brand{grid-column:1;justify-self:start}
+/* Compact-sticky state (same node as the full-size logo above -- no clone):
+   once scrolled past its own natural height, Header 2 mirrors Header 1's
+   nav-row compact-logo dimensions and trims its own row height, instead of
+   leaving a small logo inside a tall sticky row. */
+[data-gloskin-header="header-2"] img.gloskin-ui1-brand__image{transition:height 220ms cubic-bezier(.22,1,.36,1)}
+[data-gloskin-header="header-2"].is-compact-sticky .gloskin-ui1-header__inner{min-height:56px}
+[data-gloskin-header="header-2"].is-compact-sticky img.gloskin-ui1-brand__image{height:clamp(32px,3vw,45px)}
 @media (max-width:1040px){[data-gloskin-header="header-2"] .gloskin-ui1-nav--desktop{display:none}}
 
 /* 6-dot mobile trigger -- converges to one centered dot when open, no X, no bars. */
@@ -99,7 +107,7 @@ img.gloskin-ui1-brand__image--compact{height:clamp(32px,3vw,45px)}
 @media (max-width:782px){body.admin-bar.gloskin-ui1{--gloskin-ui1-admin-bar-height:46px}}
 @media (max-width:760px){.gloskin-ui1-header__inner{min-height:64px}}
 @media (max-width:600px){body.admin-bar.gloskin-ui1{--gloskin-ui1-admin-bar-height:0px}}
-@media (prefers-reduced-motion:reduce){.gloskin-ui1-header__nav-row,.gloskin-ui1-nav__chevron,.gloskin-ui1-nav__link,.gloskin-ui1-nav__toggle,.gloskin-ui1-compact-brand,.gloskin-ui1-header__zone--compact,.gloskin-ui1-drawer-toggle__dot,.gloskin-ui1-nav__bubble{transition:none !important}.gloskin-ui1-utility-btn.is-success-pulse,.gloskin-ui1-utility-btn.is-success-pulse>.gloskin-ui1-badge,.gloskin-ui1-drawer__utility-link.is-success-pulse>svg{animation:none}}
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-header__nav-row,.gloskin-ui1-nav__chevron,.gloskin-ui1-nav__link,.gloskin-ui1-nav__toggle,.gloskin-ui1-compact-brand,.gloskin-ui1-header__zone--compact,.gloskin-ui1-drawer-toggle__dot,.gloskin-ui1-nav__bubble,[data-gloskin-header="header-2"],[data-gloskin-header="header-2"] .gloskin-ui1-header__inner,[data-gloskin-header="header-2"] img.gloskin-ui1-brand__image{transition:none !important}.gloskin-ui1-utility-btn.is-success-pulse,.gloskin-ui1-utility-btn.is-success-pulse>.gloskin-ui1-badge,.gloskin-ui1-drawer__utility-link.is-success-pulse>svg{animation:none}}
 
 /* Overlay scroll lock */
 html.gloskin-ui1-overlay-open{overflow:hidden}

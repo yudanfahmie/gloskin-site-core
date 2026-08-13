@@ -36,6 +36,14 @@ ACCOUNT_WISHLIST_CART = """
 
 SEARCH_BUTTON = '<button class="gloskin-ui1-utility-btn" type="button" data-gloskin-search-open aria-expanded="false" aria-controls="gloskin-search-overlay" aria-label="Cari"><svg width="20" height="20" viewBox="0 0 20 20"></svg></button>'
 
+# Real <img class="gloskin-ui1-brand__image"> node -- matching
+# gloskin_ui1_render_brand_logo()'s actual output shape (1600x520 source,
+# 200x65 intrinsic) -- required so compact-sticky logo *height* CSS
+# transitions/measurements below are testing the real thing, not a text node.
+LOGO_SVG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='520'/%3E"
+BRAND_IMG = f'<img class="gloskin-ui1-brand__image" src="{LOGO_SVG}" width="200" height="65" alt="Gloskin">'
+COMPACT_BRAND_IMG = f'<img class="gloskin-ui1-brand__image gloskin-ui1-brand__image--compact" src="{LOGO_SVG}" width="200" height="65" alt="Gloskin">'
+
 # Header 2's actions zone: search joins account/wishlist/cart (all right).
 ACTIONS = SEARCH_BUTTON + ACCOUNT_WISHLIST_CART
 
@@ -79,7 +87,7 @@ HEADER_1 = """
     <div class="gloskin-ui1-header__zone gloskin-ui1-header__zone--start">
       {search}
     </div>
-    <a class="gloskin-ui1-brand" href="#">Gloskin</a>
+    <a class="gloskin-ui1-brand" href="#">{brand_img}</a>
     <div class="gloskin-ui1-header__zone gloskin-ui1-header__zone--end">
       {actions}
       <a class="gloskin-ui1-button gloskin-ui1-button--ghost gloskin-ui1-header__contact" href="#">Hubungi Kami</a>
@@ -89,17 +97,17 @@ HEADER_1 = """
 </header>
 <div class="gloskin-ui1-header__nav-row">
   <div class="gloskin-ui1-container gloskin-ui1-header__nav-row-inner">
-    <a class="gloskin-ui1-compact-brand" href="#" inert>Gloskin</a>
+    <a class="gloskin-ui1-compact-brand" href="#" inert>{compact_brand_img}</a>
     <nav class="gloskin-ui1-nav gloskin-ui1-nav--desktop" aria-label="Navigasi utama"><span class="gloskin-ui1-nav__bubble" aria-hidden="true"></span>{nav}</nav>
     <div class="gloskin-ui1-header__zone gloskin-ui1-header__zone--compact" inert>{search}{actions}</div>
   </div>
 </div>
-""".format(search=SEARCH_BUTTON, actions=ACCOUNT_WISHLIST_CART, drawer_toggle=DRAWER_TOGGLE, nav=NAV)
+""".format(search=SEARCH_BUTTON, actions=ACCOUNT_WISHLIST_CART, drawer_toggle=DRAWER_TOGGLE, nav=NAV, brand_img=BRAND_IMG, compact_brand_img=COMPACT_BRAND_IMG)
 
 HEADER_2 = """
 <header class="gloskin-ui1-header" data-gloskin-header="header-2">
   <div class="gloskin-ui1-container gloskin-ui1-header__inner">
-    <a class="gloskin-ui1-brand" href="#">Gloskin</a>
+    <a class="gloskin-ui1-brand" href="#">{brand_img}</a>
     <nav class="gloskin-ui1-nav gloskin-ui1-nav--desktop" aria-label="Navigasi utama"><span class="gloskin-ui1-nav__bubble" aria-hidden="true"></span>{nav}</nav>
     <div class="gloskin-ui1-header__zone gloskin-ui1-header__zone--end">
       {actions}
@@ -107,7 +115,7 @@ HEADER_2 = """
     </div>
   </div>
 </header>
-""".format(actions=ACTIONS, drawer_toggle=DRAWER_TOGGLE, nav=NAV)
+""".format(actions=ACTIONS, drawer_toggle=DRAWER_TOGGLE, nav=NAV, brand_img=BRAND_IMG)
 
 
 def page_html(header_markup):
@@ -115,7 +123,7 @@ def page_html(header_markup):
 <a class="gloskin-ui1-skip-link" href="#gloskin-main">Lewati ke konten utama</a>
 {header}
 {overlays}
-<main id="gloskin-main"><div class="gloskin-ui1-container" style="padding-block:1200px">content</div></main>
+<main id="gloskin-main"><div class="gloskin-ui1-container" style="padding-block:4000px">content</div></main>
 </body></html>""".format(header=header_markup, overlays=SHARED_OVERLAYS)
 
 
@@ -221,6 +229,112 @@ with sync_playwright() as p:
         require(page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), f"Header 2 must not horizontally overflow at {width}px")
         page.locator("[data-gloskin-drawer-open]").first.click()
         page.wait_for_function("document.querySelector('#gloskin-mobile-drawer').getAttribute('aria-hidden') === 'false'")
+        page.close()
+
+    # --- Smart sticky parity: the SAME initSmartHeader()/initCompactSticky()
+    # owner must drive both variants -- scroll-down hide, scroll-up reveal,
+    # top-state reset, submenu/overlay hold, repeated cycles, and Header 2's
+    # compact logo/row-height using the SAME logo node as Header 1's compact
+    # dimensions (no clone). ---------------------------------------------
+    def scroll_to(page, y):
+        page.evaluate(f"window.scrollTo(0, {y})")
+        page.wait_for_timeout(140)  # allow the rAF-scheduled scroll tick to settle.
+
+    def scroll_gradually(page, target_y, step=4):
+        # downDistance accumulates only from the delta of each individual
+        # scroll tick, not the whole journey (showNav() keeps resetting it to
+        # 0 on every tick while still under topGuard()) -- so, exactly like a
+        # real user's wheel/trackpad scroll, small steps are required to
+        # observe compact-sticky engage *before* accumulating enough
+        # downward delta to also cross the separate hide threshold.
+        current = page.evaluate("window.scrollY")
+        while current < target_y:
+            current = min(current + step, target_y)
+            page.evaluate(f"window.scrollTo(0, {current})")
+            page.wait_for_timeout(24)
+        page.wait_for_timeout(140)
+
+    # Header 1 baseline: nav-row hide/reveal/top-reset + compact logo size.
+    page = browser.new_page(viewport={"width": 1440, "height": 900})
+    load(page, HEADER_1)
+    nav_row = page.locator(".gloskin-ui1-header__nav-row")
+    scroll_to(page, 2000)
+    require("is-hidden" in (nav_row.get_attribute("class") or ""), "Header 1 nav row must hide after scrolling down past the threshold")
+    require("is-compact-sticky" in (nav_row.get_attribute("class") or ""), "Header 1 must still be in compact-sticky state while scrolled down")
+    scroll_to(page, 1800)
+    require("is-hidden" not in (nav_row.get_attribute("class") or ""), "Header 1 nav row must reveal immediately on scroll-up")
+    header1_compact_logo = page.evaluate("(() => { const img = document.querySelector('.gloskin-ui1-compact-brand img'); const r = img.getBoundingClientRect(); return {width: r.width, height: r.height}; })()")
+    scroll_to(page, 0)
+    require("is-compact-sticky" not in (nav_row.get_attribute("class") or ""), "Header 1 compact-sticky state must reset cleanly at the top")
+    require("is-hidden" not in (nav_row.get_attribute("class") or ""), "Header 1 must be visible at the top")
+    page.close()
+
+    # Header 2: same state vocabulary, same owner, one row, no clone.
+    page = browser.new_page(viewport={"width": 1440, "height": 900})
+    load(page, HEADER_2)
+    split = page.locator('[data-gloskin-header="header-2"]')
+    natural_row_height = page.evaluate("document.querySelector('[data-gloskin-header=\"header-2\"]').offsetHeight")
+
+    scroll_gradually(page, natural_row_height + 8)
+    require("is-compact-sticky" in (split.get_attribute("class") or ""), "Header 2 must enter compact-sticky state once scrolled past its own natural height")
+    # Compact-sticky and hidden are deliberately independent, sequential
+    # phases (compact first, hide only after a further, separate downward
+    # threshold) -- matching the task's own ordering. Whether "is-hidden"
+    # has also engaged by this exact point depends on fine-grained scroll
+    # delta accounting this test does not try to pin to the pixel; the
+    # dimension/geometry checks below hold regardless (transform, which
+    # hidden uses, never changes an element's own offsetHeight/rect size).
+    compact_row_height = page.evaluate("document.querySelector('[data-gloskin-header=\"header-2\"]').offsetHeight")
+    require(compact_row_height < natural_row_height, f"Header 2 compact row must reduce its vertical footprint: natural={natural_row_height} compact={compact_row_height}")
+    header2_compact_logo = page.evaluate("(() => { const img = document.querySelector('[data-gloskin-header=\"header-2\"] img.gloskin-ui1-brand__image'); const r = img.getBoundingClientRect(); return {width: r.width, height: r.height}; })()")
+    require(abs(header2_compact_logo["height"] - header1_compact_logo["height"]) <= 1, f"Header 2 compact logo height must match Header 1's compact logo height at the same viewport: header1={header1_compact_logo} header2={header2_compact_logo}")
+    require(header2_compact_logo["width"] > 0 and header1_compact_logo["width"] > 0, "compact logos must keep natural aspect-ratio width (no hard-coded width)")
+
+    scroll_to(page, 2000)
+    require("is-hidden" in (split.get_attribute("class") or ""), "Header 2 must hide after scrolling down past the hide threshold, same as Header 1")
+    hidden_transform = page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-header=\"header-2\"]')).transform")
+    require(hidden_transform not in ("none", ""), f"Header 2 hidden state must apply a real transform: {hidden_transform}")
+
+    scroll_to(page, 1800)
+    require("is-hidden" not in (split.get_attribute("class") or ""), "Header 2 must reveal immediately on scroll-up, same as Header 1")
+    visible_transform = page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-header=\"header-2\"]')).transform")
+    require(visible_transform in ("none", "matrix(1, 0, 0, 1, 0, 0)"), f"Header 2 visible state must not carry a stale hide transform: {visible_transform}")
+
+    # Repeated down/up/down/up cycles: no stale state.
+    for cycle_y in (2100, 1700, 2200, 1600):
+        scroll_to(page, cycle_y)
+    require("is-hidden" not in (split.get_attribute("class") or ""), "after a down/up/down/up cycle ending on scroll-up, Header 2 must end visible, not stuck hidden")
+
+    scroll_to(page, 0)
+    require("is-compact-sticky" not in (split.get_attribute("class") or ""), "Header 2 compact-sticky state must reset cleanly at the top")
+    require("is-hidden" not in (split.get_attribute("class") or ""), "Header 2 must be visible at the top")
+
+    # Submenu/overlay/focus interaction must keep Header 2 visible even past
+    # the hide threshold -- the same interactionActive() guard Header 1 uses.
+    scroll_to(page, 2000)
+    require("is-hidden" in (split.get_attribute("class") or ""), "precondition: Header 2 must be hidden before the interaction-hold check")
+    page.evaluate("document.dispatchEvent(new CustomEvent('gloskin:sticky-nav-hold'))")
+    page.wait_for_timeout(60)
+    require("is-hidden" not in (split.get_attribute("class") or ""), "an active interaction (submenu/overlay open) must keep Header 2 visible, same guard as Header 1")
+
+    # Nav hover bubble stays owned solely by initNavBubble(); Header 2's grid
+    # containing block must not break its positioning/entrance.
+    scroll_to(page, 0)
+    bubble = page.locator(".gloskin-ui1-nav__bubble")
+    page.locator(".gloskin-ui1-nav--desktop .gloskin-ui1-nav__link", has_text="Perawatan").hover()
+    page.wait_for_timeout(80)
+    require("is-visible" in (bubble.get_attribute("class") or ""), "hovering a Header 2 nav link must still show the one existing nav bubble")
+    require(page.evaluate("document.querySelectorAll('.gloskin-ui1-nav__bubble').length") == 1, "Header 2 must not introduce a second nav bubble/hover controller")
+    page.close()
+
+    # --- Admin bar offset: same --gloskin-ui1-nav-sticky-top ownership for
+    # both variants, logged-in (admin bar present) state. ------------------
+    for header_markup, selector in ((HEADER_1, ".gloskin-ui1-header__nav-row"), (HEADER_2, '[data-gloskin-header="header-2"]')):
+        page = browser.new_page(viewport={"width": 1440, "height": 900})
+        load(page, header_markup)
+        page.evaluate("document.body.classList.add('admin-bar')")
+        sticky_top = page.evaluate(f"getComputedStyle(document.querySelector('{selector}')).top")
+        require(sticky_top == "32px", f"{selector} must track the 32px admin-bar sticky-top offset when logged in: {sticky_top}")
         page.close()
 
     browser.close()
