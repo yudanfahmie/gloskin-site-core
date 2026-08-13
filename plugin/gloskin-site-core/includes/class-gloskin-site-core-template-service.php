@@ -584,12 +584,6 @@ final class Gloskin_Site_Core_Template_Service {
 	public function rest_shop_catalog( $request ) {
 		$page     = max( 1, min( 1000, absint( $request->get_param( 'page' ) ) ) );
 		$category = sanitize_title( (string) $request->get_param( 'category' ) );
-		if ( '' === $category ) {
-			// TEMPORARY diagnostic marker (removed with the real fix): proves
-			// whether the deployed code even reaches this point for the
-			// empty-category branch before any catalog query/render runs.
-			return new WP_Error( 'gloskin_shop_catalog_marker', 'reached empty-category branch', array( 'status' => 200 ) );
-		}
 		$mappings = $this->skincare_mappings();
 		$mapping  = null;
 
