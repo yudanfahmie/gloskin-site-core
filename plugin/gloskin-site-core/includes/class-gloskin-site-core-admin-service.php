@@ -247,7 +247,17 @@ final class Gloskin_Site_Core_Admin_Service {
 
 	public function render_settings_page() {
 		if ( ! current_user_can( 'manage_options' ) ) { return; }
-		$settings          = get_option( self::SETTINGS_OPTION, self::settings_defaults() );
+		/* get_option()'s own $default is only ever used when the option row
+		 * is entirely absent -- an existing site's already-saved option
+		 * (design_variant/header_variant saved by earlier tasks, here
+		 * genuinely missing the two new hero_video_* keys) returns exactly
+		 * its stored shape, silently ignoring self::settings_defaults()
+		 * below. Missing keys are merged against those defaults explicitly
+		 * so an existing site's Settings screen reflects the real
+		 * recommended defaults (enabled=true, the supplied URL) instead of
+		 * an unintentional blank/unchecked state -- proven live on staging. */
+		$defaults          = self::settings_defaults();
+		$settings          = array_merge( $defaults, get_option( self::SETTINGS_OPTION, $defaults ) );
 		$variant           = isset( $settings['design_variant'] ) ? $settings['design_variant'] : 'medical';
 		$shortcode         = isset( $settings['form_shortcode'] ) ? $settings['form_shortcode'] : '';
 		$header_variant    = isset( $settings['header_variant'] ) ? $settings['header_variant'] : 'header-1';

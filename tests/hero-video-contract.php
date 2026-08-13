@@ -149,6 +149,21 @@ $template_src = file_get_contents( dirname( __DIR__ ) . '/plugin/gloskin-site-co
 ok( strpos( $template_src, 'function hero_video()' ) !== false, 'Template Service must own the frontend hero-video resolution' );
 ok( strpos( $template_src, "require_once __DIR__ . '/class-gloskin-site-core-admin-service.php';" ) !== false, 'frontend hero-video resolution must explicitly load its Admin Service dependency (Kernel is_admin() path never does)' );
 
+// Real staging bug, fixed: get_option()'s own $default is only ever used
+// when the option row is entirely absent, never merged key-by-key into an
+// existing stored value -- an existing site's already-saved settings
+// option (genuinely missing the two new hero_video_* keys) must still
+// resolve to the documented recommended defaults (enabled=true, the
+// supplied URL), not silently read as disabled/blank.
+$hero_video_fn = substr( $template_src, strpos( $template_src, 'private function hero_video()' ) );
+$hero_video_fn = substr( $hero_video_fn, 0, strpos( $hero_video_fn, "\n\t}\n" ) );
+ok( strpos( $hero_video_fn, 'array_merge(' ) !== false, 'hero_video() must merge missing keys against settings_defaults(), never trust get_option()\'s own unused $default on an existing option' );
+ok( strpos( $hero_video_fn, "empty( \$settings['hero_video_enabled'] )" ) !== false, 'hero_video() must read the already-merged settings array, not fall back to a hand-written default inline' );
+
+$admin_settings_fn = substr( $admin_src, strpos( $admin_src, 'function render_settings_page()' ) );
+$admin_settings_fn = substr( $admin_settings_fn, 0, strpos( $admin_settings_fn, 'render_header_variant_card(' ) );
+ok( strpos( $admin_settings_fn, 'array_merge( $defaults, get_option(' ) !== false, 'the Settings screen must also merge missing keys against settings_defaults(), for the exact same reason' );
+
 // -----------------------------------------------------------------------
 // 8. JS static guards: one canonical initializer, youtube-nocookie only.
 // -----------------------------------------------------------------------

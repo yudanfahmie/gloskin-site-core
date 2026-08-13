@@ -906,18 +906,33 @@ final class Gloskin_Site_Core_Template_Service {
 	 * treats as "no video" and falls back to its current non-video media
 	 * behavior -- the hero can never break.
 	 *
+	 * Real staging proof: this one shared settings option already existed
+	 * (design_variant/header_variant were saved by earlier tasks) before
+	 * hero_video_enabled/hero_video_url were added to its schema --
+	 * get_option()'s own $default argument is only used when the option
+	 * row is entirely absent, never merged key-by-key into an existing
+	 * stored value. A plain isset()/empty() read therefore treats an
+	 * existing site's option (genuinely missing these two new keys) as
+	 * "disabled", contradicting the documented recommended default of
+	 * enabled=true. Missing keys are merged against
+	 * Admin_Service::settings_defaults() here instead, so an existing
+	 * site gets the real recommended defaults on the very first frontend
+	 * read, with no admin action required, while an admin's own explicit
+	 * saved choice (always written as a real bool/string by
+	 * sanitize_settings()) is still fully respected either way.
+	 *
 	 * @return array{video_enabled:bool,video_id:string}
 	 */
 	private function hero_video() {
-		$settings = get_option( Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION, array() );
-		$enabled  = ! empty( $settings['hero_video_enabled'] );
-		if ( ! $enabled ) {
-			return array( 'video_enabled' => false, 'video_id' => '' );
-		}
 		if ( ! class_exists( 'Gloskin_Site_Core_Admin_Service' ) ) {
 			require_once __DIR__ . '/class-gloskin-site-core-admin-service.php';
 		}
-		$url      = isset( $settings['hero_video_url'] ) ? (string) $settings['hero_video_url'] : '';
+		$defaults = class_exists( 'Gloskin_Site_Core_Admin_Service' ) ? Gloskin_Site_Core_Admin_Service::settings_defaults() : array( 'hero_video_enabled' => true, 'hero_video_url' => '' );
+		$settings = array_merge( $defaults, get_option( Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION, $defaults ) );
+		if ( empty( $settings['hero_video_enabled'] ) ) {
+			return array( 'video_enabled' => false, 'video_id' => '' );
+		}
+		$url = (string) $settings['hero_video_url'];
 		$video_id = class_exists( 'Gloskin_Site_Core_Admin_Service' ) ? Gloskin_Site_Core_Admin_Service::resolve_youtube_video_id( $url ) : '';
 		return array( 'video_enabled' => '' !== $video_id, 'video_id' => $video_id );
 	}
