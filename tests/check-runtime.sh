@@ -22,6 +22,7 @@ node tests/single-product-ajax-payload.test.js
 php tests/shop-catalog-contract.php
 node tests/shop-catalog-controller.test.js
 python tests/storefront-regression-contract.py
+php tests/rest-sanitize-callback-contract.php
 python tests/header-admin-contract.py
 python tests/readiness-contract-smoke.py
 php tests/readiness-php-smoke.php

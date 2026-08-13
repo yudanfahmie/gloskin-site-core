@@ -525,58 +525,27 @@ final class Gloskin_Site_Core_Template_Service {
 					'sanitize_callback' => 'absint',
 				),
 				'category' => array(
-					'required'          => false,
-					'type'              => 'string',
-					'default'           => '',
-					'sanitize_callback' => 'sanitize_title',
+					'required' => false,
+					'type'     => 'string',
+					'default'  => '',
+					/* Root cause proven live on staging (2026-08-13): the REST
+					 * framework invokes a registered sanitize_callback as
+					 * call_user_func( $callback, $value, $request, $param ) --
+					 * three positional arguments. sanitize_title()'s own
+					 * signature is ( $title, $fallback_title = '', $context =
+					 * 'save' ), so that call silently binds the *request
+					 * object itself* to $fallback_title. Because sanitize_title()
+					 * returns $fallback_title whenever $title is empty, every
+					 * "Semua Produk" request (category value == '') made
+					 * get_param('category') resolve to the WP_REST_Request
+					 * object instead of a string; rest_shop_catalog()'s own
+					 * (string) cast of that object then fataled uncatchably
+					 * before any business logic ran. No 'sanitize_callback' is
+					 * registered here anymore -- rest_shop_catalog() already
+					 * calls sanitize_title() itself with a single, safe
+					 * argument, which is the only correct way to use it. */
 				),
 			),
-		) );
-		// TEMPORARY diagnostic (staging-only isolation aid, removed before the
-		// final commit of this task): identical args schema to /shop/catalog
-		// above, trivial callback. Proves/disproves whether the args schema
-		// itself is the fatal trigger, independent of rest_shop_catalog()'s
-		// own body -- a prior session already proved the fatal is unaffected
-		// by that body's content (even a bare `return` there still fatals).
-		register_rest_route( 'gloskin/v1', '/diag-args-echo', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this, 'rest_diag_args_echo' ),
-			'permission_callback' => '__return_true',
-			'args'                => array(
-				'page' => array(
-					'required'          => false,
-					'type'              => 'integer',
-					'default'           => 1,
-					'sanitize_callback' => 'absint',
-				),
-				'category' => array(
-					'required'          => false,
-					'type'              => 'string',
-					'default'           => '',
-					'sanitize_callback' => 'sanitize_title',
-				),
-			),
-		) );
-	}
-
-	/**
-	 * TEMPORARY diagnostic callback -- removed before this task's final
-	 * commit. See register_rest_routes() above.
-	 *
-	 * @param WP_REST_Request $request Request object.
-	 * @return WP_REST_Response
-	 */
-	public function rest_diag_args_echo( $request ) {
-		$category_raw = $request->get_param( 'category' );
-		return rest_ensure_response( array(
-			'ok'                  => true,
-			'page'                => $request->get_param( 'page' ),
-			'category'            => $category_raw,
-			'category_gettype'    => gettype( $category_raw ),
-			'category_var_export' => var_export( $category_raw, true ),
-			'category_query_param' => $request->get_query_params(),
-			'sanitize_title_of_empty' => sanitize_title( '' ),
-			'sanitize_title_gettype'  => gettype( sanitize_title( '' ) ),
 		) );
 	}
 

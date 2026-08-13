@@ -90,6 +90,18 @@ require("'post_type'      => 'product'" in woo and "'fields'         => 'ids'" i
 require('wc_get_product( $id )' in woo, 'unfiltered branch must hydrate each page slice with the existing single-product Woo lookup')
 require("return $this->products_paginated_unfiltered( $page, $per_page );" in woo, 'products_paginated() must delegate the empty-category case to the dedicated safe owner')
 
+# The actual root cause of the live 500 (found 2026-08-13, after this
+# get_posts()-based rewrite above already shipped without resolving it):
+# the /shop/catalog route registered sanitize_title() bare as its
+# 'category' arg sanitize_callback. WordPress's REST framework invokes a
+# sanitize_callback as call_user_func($cb, $value, $request, $param) --
+# binding the whole WP_REST_Request to sanitize_title()'s $fallback_title
+# parameter -- and sanitize_title() returns $fallback_title whenever
+# $title is empty, so every empty-category request resolved get_param()
+# to the request object itself. See tests/rest-sanitize-callback-contract.php
+# for the full mechanism proof and the production route-registration guard.
+require("'sanitize_callback' => 'sanitize_title'" not in template_service, "the /shop/catalog 'category' arg must never register sanitize_title() bare as a sanitize_callback again")
+
 header_version = re.search(r'\* Version:\s*([0-9.]+)', plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
 require(header_version == kernel_version == '0.7.52', 'production version must be synchronized at 0.7.52')
