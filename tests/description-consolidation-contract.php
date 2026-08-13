@@ -118,4 +118,31 @@ if (preg_match('/gloskin[_-](product|description)[_-]meta/i', $admin_src)) {
     exit(1);
 }
 
+// -----------------------------------------------------------------------
+// Bootstrap-bug regression (found live on staging): the Kernel's is_admin()
+// request path -- which the admin-post consolidation handler runs on --
+// never require_once's the WooCommerce adapter class; only the frontend/
+// template bootstrap path does. The handler must explicitly load its own
+// dependency rather than assume Kernel composition provides it, and must
+// never write completed_at except on a genuinely executed migration pass.
+// Full behavioral proof (both branches actually exercised) lives in
+// tests/description-consolidation-bootstrap-contract.php.
+// -----------------------------------------------------------------------
+$kernel_src = file_get_contents(dirname(__DIR__) . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php');
+$admin_branch = substr($kernel_src, strpos($kernel_src, 'if ( is_admin() ) {'));
+$admin_branch = substr($admin_branch, 0, strpos($admin_branch, "\n\t\t}\n"));
+ok(strpos($admin_branch, 'class-gloskin-site-core-woocommerce-adapter.php') === false, 'test/kernel assumption stale: the is_admin() bootstrap path now loads the adapter directly -- the explicit require_once in handle_consolidate_descriptions() may be redundant, re-check this guard');
+ok(strpos($admin_src, "require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php';") !== false, 'the admin-post consolidation handler must explicitly load its own adapter dependency, since the is_admin() Kernel path never does');
+$handler_fn = substr($admin_src, strpos($admin_src, 'function handle_consolidate_descriptions'));
+$handler_fn = substr($handler_fn, 0, strpos($handler_fn, "\n\t}\n"));
+ok(strpos($handler_fn, 'try {') !== false && strpos($handler_fn, 'catch ( Throwable') !== false, 'consolidation execution must be wrapped so any failure is caught, never a silent skip');
+ok(strpos($handler_fn, '$executed = true;') !== false, 'a genuine-execution flag must exist, distinct from the audited/migrated counts themselves');
+ok(strpos($handler_fn, 'CONSOLIDATION_ERROR_OPTION') !== false, 'a failed run must record a separate, truthful error state');
+// The completed_at-writing update_option() call must be reachable only
+// through the $executed-gated success branch -- i.e. it must appear AFTER
+// the "if ( ! $executed )" early-exit, not before/unconditionally.
+$not_executed_pos = strpos($handler_fn, 'if ( ! $executed )');
+$completed_write_pos = strpos($handler_fn, "'completed_at' => time()");
+ok(false !== $not_executed_pos && false !== $completed_write_pos && $not_executed_pos < $completed_write_pos, 'completed_at must only be written after the $executed early-exit guard, never unconditionally');
+
 echo "description-consolidation-contract: OK\n";

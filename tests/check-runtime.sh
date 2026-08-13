@@ -25,6 +25,12 @@ python tests/storefront-regression-contract.py
 php tests/rest-sanitize-callback-contract.php
 python tests/header-admin-contract.py
 php tests/description-consolidation-contract.php
+GL_TEST_MODE=success php tests/description-consolidation-bootstrap-contract.php
+GL_TEST_MODE=idempotent_second_run php tests/description-consolidation-bootstrap-contract.php
+GL_TEST_MODE=missing_woo php tests/description-consolidation-bootstrap-contract.php
+GL_TEST_MODE=failing_query php tests/description-consolidation-bootstrap-contract.php
+GL_TEST_MODE=false_complete_selfheal php tests/description-consolidation-bootstrap-contract.php
+GL_TEST_MODE=real_complete_gate php tests/description-consolidation-bootstrap-contract.php
 python tests/readiness-contract-smoke.py
 php tests/readiness-php-smoke.php
 php tests/rendered-shell-auth-smoke.php

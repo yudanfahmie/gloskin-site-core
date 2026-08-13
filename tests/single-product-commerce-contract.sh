@@ -344,6 +344,14 @@ grep -qF -- '.gloskin-ui1 a.added_to_cart.wc-forward{display:inline-flex;align-i
 grep -qF -- '.woocommerce-account .woocommerce .button{border-radius:var(--gloskin-action-radius)}' "$readiness_css" \
 	|| fail "action radius: My Account button no longer uses the shared token"
 
+# The Auth login/register switch ("Masuk"/"Buat Akun") is a visible textual
+# toggle, not an icon-only/decorative control -- it must share the same
+# modest radius too, not stay a 999px pill.
+grep -qF -- '.gloskin-ui1-auth-switch{display:flex;gap:6px;margin:0 0 22px;padding:4px;border-radius:var(--gloskin-action-radius)' "$readiness_css" \
+	|| fail "action radius: Auth login/register switch container no longer uses the shared token"
+grep -qF -- '.gloskin-ui1-auth-switch button{flex:1;min-height:38px;border:0;border-radius:var(--gloskin-action-radius)' "$readiness_css" \
+	|| fail "action radius: Auth login/register switch buttons no longer use the shared token"
+
 # Real staging proof (found live, not locally -- this repo has no way to
 # load WooCommerce's own actual core CSS, whose real `.woocommerce a.button,
 # .woocommerce button.button{border-radius:3px}` default otherwise wins

@@ -18,9 +18,10 @@ final class Gloskin_Site_Core_Admin_Service {
 	const MIGRATION_SLUG       = 'gloskin-sample-product-import';
 	const MIGRATION_AJAX       = 'gloskin_site_core_sample_product_import';
 	const MIGRATION_NONCE      = 'gloskin_site_core_sample_product_import';
-	const CONSOLIDATION_OPTION = 'gloskin_site_core_description_consolidation';
-	const CONSOLIDATION_ACTION = 'gloskin_site_core_consolidate_descriptions';
-	const CONSOLIDATION_NONCE  = 'gloskin_site_core_consolidate_descriptions';
+	const CONSOLIDATION_OPTION       = 'gloskin_site_core_description_consolidation';
+	const CONSOLIDATION_ERROR_OPTION = 'gloskin_site_core_description_consolidation_error';
+	const CONSOLIDATION_ACTION       = 'gloskin_site_core_consolidate_descriptions';
+	const CONSOLIDATION_NONCE        = 'gloskin_site_core_consolidate_descriptions';
 
 	/** @var Gloskin_Site_Core_Content_Service */
 	private $content;
@@ -281,11 +282,23 @@ final class Gloskin_Site_Core_Admin_Service {
 			return;
 		}
 		$summary = get_option( self::CONSOLIDATION_OPTION, array() );
-		$done    = is_array( $summary ) && ! empty( $summary['completed_at'] );
+		$done    = $this->descriptions_consolidated();
+		$failure = get_option( self::CONSOLIDATION_ERROR_OPTION, array() );
 		?>
 		<div class="gloskin-admin-card" style="margin-top:var(--gloskin-admin-space-4,24px)">
 			<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Product Descriptions', 'gloskin-site-core' ); ?></h2>
 			<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Consolidates every product\'s existing long description into its Short Description, deterministically, without deleting or duplicating content -- the Short Description becomes the one primary PDP body field.', 'gloskin-site-core' ); ?></p>
+			<?php if ( is_array( $failure ) && ! empty( $failure['failed_at'] ) ) : ?>
+				<div class="notice notice-error inline"><p>
+					<?php
+					printf(
+						/* translators: %s: real failure reason. */
+						esc_html__( 'Konsolidasi terakhir GAGAL dan TIDAK ditandai selesai -- editor konten utama tetap aktif: %s', 'gloskin-site-core' ),
+						esc_html( isset( $failure['message'] ) ? $failure['message'] : '' )
+					);
+					?>
+				</p></div>
+			<?php endif; ?>
 			<?php if ( $done ) : ?>
 				<p>
 					<?php
@@ -488,6 +501,24 @@ final class Gloskin_Site_Core_Admin_Service {
 	 * already present. Records a real, honest summary (not a guess) for the
 	 * admin card above and for the editor-simplification gate below.
 	 *
+	 * Bug fixed: this admin-post request runs on the Kernel's is_admin()
+	 * bootstrap path, which never loads class-gloskin-site-core-woocommerce-
+	 * adapter.php (that require_once only lives on the frontend/template
+	 * bootstrap path -- see Kernel::boot()). The pure static
+	 * consolidate_description_content() helper this method depends on is
+	 * therefore explicitly required here, on this one admin-migration
+	 * execution path only -- never registering/instantiating a second Woo
+	 * adapter service, never touching Kernel's frontend composition.
+	 *
+	 * CONSOLIDATION_OPTION's completed_at is written ONLY when the audit/
+	 * migration loop genuinely executed (Woo functions present, the adapter
+	 * class/helper resolved, the product query itself succeeded). Any
+	 * failure along that path is recorded as a truthful, visible error and
+	 * leaves the prior consolidation state (and therefore the editor-
+	 * retirement gate) completely untouched -- never a silent false 0/0
+	 * "success" that could retire the main content editor on data that was
+	 * never actually migrated.
+	 *
 	 * @return void
 	 */
 	public function handle_consolidate_descriptions() {
@@ -495,18 +526,37 @@ final class Gloskin_Site_Core_Admin_Service {
 			wp_die( esc_html__( 'Capability manage_woocommerce diperlukan.', 'gloskin-site-core' ) );
 		}
 		check_admin_referer( self::CONSOLIDATION_NONCE );
+
 		$audited  = 0;
 		$migrated = 0;
-		if ( function_exists( 'wc_get_products' ) && function_exists( 'wc_get_product' ) && class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' ) ) {
+		$executed = false;
+		$error    = '';
+
+		try {
+			if ( ! function_exists( 'wc_get_products' ) || ! function_exists( 'wc_get_product' ) ) {
+				throw new RuntimeException( __( 'WooCommerce tidak aktif atau belum siap saat konsolidasi dijalankan.', 'gloskin-site-core' ) );
+			}
+			if ( ! class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' ) ) {
+				require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php';
+			}
+			if ( ! class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' )
+				|| ! method_exists( 'Gloskin_Site_Core_WooCommerce_Adapter', 'consolidate_description_content' ) ) {
+				throw new RuntimeException( __( 'Helper konsolidasi deskripsi tidak tersedia.', 'gloskin-site-core' ) );
+			}
+
 			$ids = wc_get_products(
 				array(
-					'limit'   => -1,
-					'return'  => 'ids',
-					'status'  => array( 'publish', 'draft', 'private' ),
-					'type'    => array( 'simple', 'variable' ),
+					'limit'  => -1,
+					'return' => 'ids',
+					'status' => array( 'publish', 'draft', 'private' ),
+					'type'   => array( 'simple', 'variable' ),
 				)
 			);
-			foreach ( (array) $ids as $id ) {
+			if ( ! is_array( $ids ) ) {
+				throw new RuntimeException( __( 'Query produk WooCommerce gagal.', 'gloskin-site-core' ) );
+			}
+
+			foreach ( $ids as $id ) {
 				$product = wc_get_product( $id );
 				if ( ! $product ) {
 					continue;
@@ -520,7 +570,24 @@ final class Gloskin_Site_Core_Admin_Service {
 				$product->save();
 				$migrated++;
 			}
+			$executed = true;
+		} catch ( Throwable $throwable ) {
+			$error = $throwable->getMessage();
 		}
+
+		if ( ! $executed ) {
+			update_option(
+				self::CONSOLIDATION_ERROR_OPTION,
+				array(
+					'message'  => $error,
+					'failed_at' => time(),
+				)
+			);
+			wp_safe_redirect( admin_url( 'admin.php?page=' . self::SETTINGS_SLUG . '&gloskin_consolidation=error' ) );
+			exit;
+		}
+
+		delete_option( self::CONSOLIDATION_ERROR_OPTION );
 		update_option(
 			self::CONSOLIDATION_OPTION,
 			array(
@@ -529,16 +596,36 @@ final class Gloskin_Site_Core_Admin_Service {
 				'completed_at' => time(),
 			)
 		);
-		wp_safe_redirect( admin_url( 'admin.php?page=' . self::SETTINGS_SLUG ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::SETTINGS_SLUG . '&gloskin_consolidation=success' ) );
 		exit;
 	}
 
 	/**
-	 * @return bool True once handle_consolidate_descriptions() has actually run.
+	 * True once handle_consolidate_descriptions() has actually, successfully
+	 * run. Self-heals a false-complete state left over from the pre-fix
+	 * bootstrap bug: a stored completed_at with audited=0 while WooCommerce
+	 * genuinely has products cannot be a real result (that bug always
+	 * produced exactly this shape), so it is treated as invalid and cleared
+	 * rather than trusted -- the next admin page load then reports "belum
+	 * pernah dijalankan" again, prompting a real re-run instead of silently
+	 * keeping the main editor retired on unproven data.
+	 *
+	 * @return bool
 	 */
 	private function descriptions_consolidated() {
 		$summary = get_option( self::CONSOLIDATION_OPTION, array() );
-		return is_array( $summary ) && ! empty( $summary['completed_at'] );
+		if ( ! is_array( $summary ) || empty( $summary['completed_at'] ) ) {
+			return false;
+		}
+		$audited = isset( $summary['audited'] ) ? (int) $summary['audited'] : 0;
+		if ( 0 === $audited && function_exists( 'wc_get_products' ) ) {
+			$has_products = (bool) wc_get_products( array( 'limit' => 1, 'return' => 'ids' ) );
+			if ( $has_products ) {
+				delete_option( self::CONSOLIDATION_OPTION );
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
