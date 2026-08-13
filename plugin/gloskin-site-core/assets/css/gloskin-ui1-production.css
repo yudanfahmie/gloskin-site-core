@@ -351,6 +351,7 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
    token. The footer explicitly cancels the global brand grid-column so its
    logo stays flush-left in the brand column on every breakpoint. */
 :root{--gloskin-ui1-brand-primary-height:clamp(44px,6vw,80px)}
+[data-gloskin-header="header-2"]:not(.is-compact-sticky){--gloskin-ui1-brand-primary-height:60px}
 .gloskin-ui1-header__inner img.gloskin-ui1-brand__image,
 .gloskin-ui1-footer img.gloskin-ui1-brand__image--footer{height:var(--gloskin-ui1-brand-primary-height)}
 .gloskin-ui1-footer__brand{justify-items:start;text-align:left}
