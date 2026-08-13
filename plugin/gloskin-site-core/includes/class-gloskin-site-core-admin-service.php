@@ -77,10 +77,16 @@ final class Gloskin_Site_Core_Admin_Service {
 	 * Single source of truth for this one settings option's shape/defaults,
 	 * reused by both the registration default and every read fallback below.
 	 *
-	 * @return array{design_variant:string,form_shortcode:string,header_variant:string}
+	 * @return array{design_variant:string,form_shortcode:string,header_variant:string,hero_video_enabled:bool,hero_video_url:string}
 	 */
 	public static function settings_defaults() {
-		return array( 'design_variant' => 'medical', 'form_shortcode' => '', 'header_variant' => 'header-1' );
+		return array(
+			'design_variant' => 'medical',
+			'form_shortcode' => '',
+			'header_variant' => 'header-1',
+			'hero_video_enabled' => true,
+			'hero_video_url' => 'https://www.youtube.com/watch?v=otej7WLdPh0&pp=ygUPc2tpbmNhcmUgdGVhc2Vy',
+		);
 	}
 
 	public function register_admin_menu() {
@@ -139,7 +145,47 @@ final class Gloskin_Site_Core_Admin_Service {
 			 * tampered value) always falls back to the default production
 			 * header, never a partial/unknown composition. */
 			'header_variant' => in_array( $header_variant, array( 'header-1', 'header-2' ), true ) ? $header_variant : 'header-1',
+			/* Stored as plain sanitized URL text, never trusted HTML -- the
+			 * strict YouTube-ID pattern check happens at render time via
+			 * resolve_youtube_video_id() below, so an invalid/garbled URL
+			 * here can never do worse than fall back to the existing
+			 * non-video hero media, never break the save itself. */
+			'hero_video_enabled' => ! empty( $value['hero_video_enabled'] ),
+			'hero_video_url' => isset( $value['hero_video_url'] ) ? esc_url_raw( trim( (string) $value['hero_video_url'] ) ) : '',
 		);
+	}
+
+	/**
+	 * The one pure helper that resolves a valid YouTube video ID from a
+	 * user-supplied URL, or '' when the URL is empty/malformed/non-YouTube.
+	 * Never trusts/echoes arbitrary HTML -- the return value is always
+	 * either an 11-character YouTube ID matching YouTube's own safe ID
+	 * pattern, or an empty string. Supports exactly the four documented
+	 * shapes: watch?v=, youtu.be/, /embed/, /shorts/.
+	 *
+	 * @param string $url Raw (already-sanitized-as-a-URL) hero video URL.
+	 * @return string 11-char YouTube video ID, or '' if unresolvable.
+	 */
+	public static function resolve_youtube_video_id( $url ) {
+		$url = trim( (string) $url );
+		if ( '' === $url ) {
+			return '';
+		}
+		$pattern = '~^(?:https?:)?//(?:www\.)?(?:'
+			. 'youtube\.com/watch\?(?:[^\s#]*&)?v=(?<id1>[A-Za-z0-9_-]{11})'
+			. '|youtu\.be/(?<id2>[A-Za-z0-9_-]{11})'
+			. '|youtube\.com/embed/(?<id3>[A-Za-z0-9_-]{11})'
+			. '|youtube\.com/shorts/(?<id4>[A-Za-z0-9_-]{11})'
+			. ')(?:[/?&#].*)?$~i';
+		if ( ! preg_match( $pattern, $url, $matches ) ) {
+			return '';
+		}
+		foreach ( array( 'id1', 'id2', 'id3', 'id4' ) as $key ) {
+			if ( ! empty( $matches[ $key ] ) ) {
+				return $matches[ $key ];
+			}
+		}
+		return '';
 	}
 
 	/**
@@ -201,14 +247,17 @@ final class Gloskin_Site_Core_Admin_Service {
 
 	public function render_settings_page() {
 		if ( ! current_user_can( 'manage_options' ) ) { return; }
-		$settings       = get_option( self::SETTINGS_OPTION, self::settings_defaults() );
-		$variant        = isset( $settings['design_variant'] ) ? $settings['design_variant'] : 'medical';
-		$shortcode      = isset( $settings['form_shortcode'] ) ? $settings['form_shortcode'] : '';
-		$header_variant = isset( $settings['header_variant'] ) ? $settings['header_variant'] : 'header-1';
-		$previews       = $this->header_variant_previews();
-		$tabs           = array(
+		$settings          = get_option( self::SETTINGS_OPTION, self::settings_defaults() );
+		$variant           = isset( $settings['design_variant'] ) ? $settings['design_variant'] : 'medical';
+		$shortcode         = isset( $settings['form_shortcode'] ) ? $settings['form_shortcode'] : '';
+		$header_variant    = isset( $settings['header_variant'] ) ? $settings['header_variant'] : 'header-1';
+		$hero_video_on     = ! empty( $settings['hero_video_enabled'] );
+		$hero_video_url    = isset( $settings['hero_video_url'] ) ? (string) $settings['hero_video_url'] : '';
+		$previews          = $this->header_variant_previews();
+		$tabs              = array(
 			'brand'   => __( 'Brand', 'gloskin-site-core' ),
 			'header'  => __( 'Header', 'gloskin-site-core' ),
+			'hero'    => __( 'Hero', 'gloskin-site-core' ),
 			'booking' => __( 'Booking & Social', 'gloskin-site-core' ),
 			'mapping' => __( 'Page Mapping', 'gloskin-site-core' ),
 		);
@@ -244,6 +293,14 @@ final class Gloskin_Site_Core_Admin_Service {
 								$this->render_header_variant_card( 'header-2', $header_variant, __( 'Header Type 2', 'gloskin-site-core' ), __( 'Logo / Navigation / Actions', 'gloskin-site-core' ), $previews['header-2'], 1440, 73 );
 								?>
 							</div>
+						</section>
+						<section class="gloskin-admin-card" id="gloskin-admin-panel-hero" role="tabpanel" aria-labelledby="gloskin-admin-tab-hero" data-gloskin-admin-panel="hero">
+							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Home hero video', 'gloskin-site-core' ); ?></h2>
+							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Video ditampilkan di dalam slot media hero yang sudah ada di halaman Home.', 'gloskin-site-core' ); ?></p>
+							<p><label class="gloskin-admin-field-label" for="gloskin-hero-video-enabled"><input type="checkbox" id="gloskin-hero-video-enabled" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[hero_video_enabled]" value="1" <?php checked( $hero_video_on ); ?> /> <?php echo esc_html__( 'Enable hero video', 'gloskin-site-core' ); ?></label></p>
+							<p><label class="gloskin-admin-field-label" for="gloskin-hero-video-url"><?php echo esc_html__( 'YouTube video URL', 'gloskin-site-core' ); ?></label><br />
+							<input class="regular-text" type="url" id="gloskin-hero-video-url" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[hero_video_url]" value="<?php echo esc_attr( $hero_video_url ); ?>" placeholder="https://www.youtube.com/watch?v=..." /></p>
+							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Supports standard YouTube and youtu.be URLs. Video is rendered using a performance-first poster/facade.', 'gloskin-site-core' ); ?></p>
 						</section>
 						<section class="gloskin-admin-card" id="gloskin-admin-panel-booking" role="tabpanel" aria-labelledby="gloskin-admin-tab-booking" data-gloskin-admin-panel="booking">
 							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Booking & Social', 'gloskin-site-core' ); ?></h2>

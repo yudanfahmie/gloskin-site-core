@@ -1728,6 +1728,109 @@
 	}
 
 	/* -----------------------------------------------------------------
+	 * Hero Video (performance-first poster/facade, progressive enhancement)
+	 * ----------------------------------------------------------------- */
+
+	/* Pure, testable: never auto-instantiate/autoplay when the user/device
+	 * has asked for less motion or less data. The poster/Play facade always
+	 * still works either way -- this only gates the automatic enhancement. */
+	function shouldAutoEnhanceHeroVideo() {
+		if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			return false;
+		}
+		var connection = navigator.connection || navigator.webkitConnection || navigator.mozConnection;
+		if (connection && connection.saveData) {
+			return false;
+		}
+		return true;
+	}
+
+	/* Pure, testable: privacy-enhanced domain only, muted/inline/looping
+	 * background-style autoplay, own playlist=id trick for native looping. */
+	function buildHeroVideoEmbedUrl(videoId) {
+		var encoded = encodeURIComponent(videoId);
+		return 'https://www.youtube-nocookie.com/embed/' + encoded
+			+ '?autoplay=1&mute=1&playsinline=1&loop=1&playlist=' + encoded + '&controls=0';
+	}
+
+	function scheduleHeroVideoIdle(callback) {
+		if (typeof window.requestIdleCallback === 'function') {
+			window.requestIdleCallback(callback, { timeout: 2000 });
+		} else {
+			/* One-shot fallback, never a repeating/polling timer. */
+			window.setTimeout(callback, 200);
+		}
+	}
+
+	function enhanceHeroVideo(container) {
+		var videoId = container.getAttribute('data-video-id') || '';
+		if (!videoId) { return; }
+		var loaded = false;
+
+		function loadVideo() {
+			/* Idempotent guard: only one iframe may ever be created,
+			 * regardless of how many times loadVideo() is invoked (auto
+			 * intersection/idle enhancement racing with an explicit Play
+			 * click, or a duplicate Play activation). */
+			if (loaded) { return; }
+			loaded = true;
+			var iframe = document.createElement('iframe');
+			iframe.className = 'gloskin-ui1-hero-video__iframe';
+			iframe.src = buildHeroVideoEmbedUrl(videoId);
+			iframe.title = container.getAttribute('data-video-title') || 'Gloskin hero video';
+			iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+			iframe.setAttribute('loading', 'lazy');
+			iframe.setAttribute('frameborder', '0');
+			container.appendChild(iframe);
+			container.classList.add('is-loaded');
+		}
+
+		var poster = container.querySelector('.gloskin-ui1-hero-video__poster');
+		if (poster) {
+			poster.addEventListener('error', function onPosterError() {
+				var fallback = poster.getAttribute('data-gloskin-hero-video-fallback');
+				if (fallback && poster.src !== fallback) { poster.src = fallback; }
+				poster.removeEventListener('error', onPosterError);
+			});
+		}
+
+		var playButton = container.querySelector('[data-gloskin-hero-video-play]');
+		if (playButton) {
+			playButton.addEventListener('click', function () { loadVideo(); });
+		}
+
+		if (!shouldAutoEnhanceHeroVideo()) {
+			/* Reduced motion / data saver: poster + explicit Play only. */
+			return;
+		}
+		if (typeof window.IntersectionObserver !== 'function') {
+			/* No IntersectionObserver support: poster + explicit Play only,
+			 * never a scroll-polling fallback. */
+			return;
+		}
+
+		var observer = new window.IntersectionObserver(function (entries) {
+			for (var i = 0; i < entries.length; i++) {
+				if (entries[i].isIntersecting) {
+					observer.disconnect();
+					scheduleHeroVideoIdle(loadVideo);
+					return;
+				}
+			}
+		}, { threshold: 0.5 });
+		observer.observe(container);
+	}
+
+	/* One canonical Hero Video initializer -- see init() below, called
+	 * exactly once per page load. */
+	function initHeroVideo() {
+		var containers = document.querySelectorAll('[data-gloskin-hero-video]');
+		for (var i = 0; i < containers.length; i++) {
+			enhanceHeroVideo(containers[i]);
+		}
+	}
+
+	/* -----------------------------------------------------------------
 	 * Utility
 	 * ----------------------------------------------------------------- */
 
@@ -1755,6 +1858,7 @@
 		initQuickAdd();
 		initShopCatalog();
 		initWishlist();
+		initHeroVideo();
 	}
 
 	if (typeof document !== 'undefined') {
@@ -1779,7 +1883,11 @@
 			isWooSubmitBusy: isWooSubmitBusy,
 			successFeedback: successFeedback,
 			parseShopCatalogHash: parseShopCatalogHash,
-			buildShopCatalogHash: buildShopCatalogHash
+			buildShopCatalogHash: buildShopCatalogHash,
+			shouldAutoEnhanceHeroVideo: shouldAutoEnhanceHeroVideo,
+			buildHeroVideoEmbedUrl: buildHeroVideoEmbedUrl,
+			enhanceHeroVideo: enhanceHeroVideo,
+			initHeroVideo: initHeroVideo
 		};
 	}
 }());

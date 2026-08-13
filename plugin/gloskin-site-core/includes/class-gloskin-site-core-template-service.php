@@ -250,9 +250,13 @@ final class Gloskin_Site_Core_Template_Service {
 	/** @return array<string,mixed> */
 	private function home_context() {
 		$page = $this->content_page( 'home' );
+		/* Hero video applies only to the Home hero -- every other page's
+		 * hero_context() call is untouched, never gaining a video slot. */
+		$hero = $this->hero_context( $page, __( 'Perawatan kulit, anti-aging, dan rambut yang dimulai dari konsultasi.', 'gloskin-site-core' ), __( 'Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengutamakan pemeriksaan bersama dokter sebelum menentukan langkah perawatan untuk kulit Anda.', 'gloskin-site-core' ), __( 'Cari Klinik Terdekat', 'gloskin-site-core' ), home_url( '/clinics/' ) );
+		$hero = array_merge( $hero, $this->hero_video() );
 		return array(
 			'page' => $page,
-			'hero' => $this->hero_context( $page, __( 'Perawatan kulit, anti-aging, dan rambut yang dimulai dari konsultasi.', 'gloskin-site-core' ), __( 'Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengutamakan pemeriksaan bersama dokter sebelum menentukan langkah perawatan untuk kulit Anda.', 'gloskin-site-core' ), __( 'Cari Klinik Terdekat', 'gloskin-site-core' ), home_url( '/clinics/' ) ),
+			'hero' => $hero,
 			'treatments' => $this->post_cards( Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 8 ),
 			'clinics' => $this->clinic_cards(),
 			'doctors' => $this->post_cards( Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE, 4 ),
@@ -885,5 +889,36 @@ final class Gloskin_Site_Core_Template_Service {
 		$settings = get_option( Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION, array() );
 		$value = isset( $settings['header_variant'] ) ? sanitize_key( $settings['header_variant'] ) : 'header-1';
 		return in_array( $value, array( 'header-1', 'header-2' ), true ) ? $value : 'header-1';
+	}
+
+	/**
+	 * Home hero video: same one settings option as design_variant()/
+	 * header_variant() above, resolved through Admin_Service's one pure
+	 * resolve_youtube_video_id() helper. The frontend request bootstrap
+	 * (Kernel::boot()) never loads class-gloskin-site-core-admin-service.php
+	 * -- only the is_admin() bootstrap path does -- so it is explicitly
+	 * required here, matching the same fix already applied to the
+	 * description-consolidation admin-post path. No second Admin Service is
+	 * registered/instantiated; only this one static helper is used.
+	 *
+	 * An invalid/unresolvable URL (or the feature being disabled) always
+	 * resolves to an empty video_id, which the existing hero renderer
+	 * treats as "no video" and falls back to its current non-video media
+	 * behavior -- the hero can never break.
+	 *
+	 * @return array{video_enabled:bool,video_id:string}
+	 */
+	private function hero_video() {
+		$settings = get_option( Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION, array() );
+		$enabled  = ! empty( $settings['hero_video_enabled'] );
+		if ( ! $enabled ) {
+			return array( 'video_enabled' => false, 'video_id' => '' );
+		}
+		if ( ! class_exists( 'Gloskin_Site_Core_Admin_Service' ) ) {
+			require_once __DIR__ . '/class-gloskin-site-core-admin-service.php';
+		}
+		$url      = isset( $settings['hero_video_url'] ) ? (string) $settings['hero_video_url'] : '';
+		$video_id = class_exists( 'Gloskin_Site_Core_Admin_Service' ) ? Gloskin_Site_Core_Admin_Service::resolve_youtube_video_id( $url ) : '';
+		return array( 'video_enabled' => '' !== $video_id, 'video_id' => $video_id );
 	}
 }
