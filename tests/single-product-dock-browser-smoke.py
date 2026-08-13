@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Chromium regression for the Gloskin one-row single-product purchase command bar."""
+"""Chromium regression for the Gloskin one-row single-product purchase
+command bar, including the explicit floating/settling/home/lifting state
+machine, the stable footer-handoff sentinel, hysteresis, transition lock,
+FLIP settle/lift continuity, the ambient floating signature, and reduced-
+motion coverage."""
 from pathlib import Path
 
 try:
@@ -15,7 +19,7 @@ CSS_CORE = (PLUGIN / "assets/css/gloskin-ui1-core.css").read_text(encoding="utf-
 CSS_GEOMETRY = (PLUGIN / "assets/css/gloskin-ui1-single-product-geometry.css").read_text(encoding="utf-8")
 JS_DOCK = (PLUGIN / "assets/js/gloskin-ui1-purchase-dock.js").read_text(encoding="utf-8")
 
-for old_contract in ("DESKTOP_MAX_WIDTH", "max-width:720px", "slot.getBoundingClientRect", "anchorGeometry", ".is-relocated", "grid-template-columns:minmax(0,1.35fr)"):
+for old_contract in ("DESKTOP_MAX_WIDTH", "max-width:720px", "slot.getBoundingClientRect", "anchorGeometry", ".is-relocated", "grid-template-columns:minmax(0,1.35fr)", "function homeReachedNow", "function rebuildHomeObserver"):
     if old_contract in CSS_GEOMETRY or old_contract in JS_DOCK:
         raise SystemExit(f"single-product-dock-browser-smoke: FAILED old-contract text still present: {old_contract!r}")
 if "background:var(--gloskin-accent);color:var(--gloskin-inverse)" not in CSS_GEOMETRY:
@@ -78,7 +82,10 @@ FIXTURE = r"""
 @media(max-width:1040px){[data-pre]{height:300px}}
 """
 
-VIEWPORTS = [(1728,900),(1440,900),(1024,768),(768,1024),(430,932),(390,844),(844,390)]
+VIEWPORTS = [(1728, 900), (1440, 900), (1024, 768), (768, 1024), (430, 932), (390, 844), (844, 390)]
+
+ENTRANCE_SETTLE_MS = 380  # comfortably past the 300ms CSS entrance transition
+FLIP_SETTLE_MS = 420  # comfortably past the 280ms CSS FLIP transition + fallback margin
 
 
 def require(value, message):
@@ -95,25 +102,26 @@ def snapshot(page):
       const actionRegion=dock.querySelector('[data-gloskin-purchase-action]');
       const identity=dock.querySelector('[data-gloskin-purchase-identity]');
       const related=product.querySelector(':scope>.related.products');
+      const sentinel=product.querySelector(':scope>.gloskin-ui1-purchase-dock-sentinel');
       const home=product.querySelector(':scope>.gloskin-ui1-purchase-dock-home');
       const origin=product.querySelector('.summary .gloskin-ui1-purchase-dock-origin');
       const footer=document.querySelector('[data-footer]');
       const relatedCard=document.querySelector('[data-related-card]');
-      const d=dock.getBoundingClientRect(), p=product.getBoundingClientRect(), r=related.getBoundingClientRect(), h=home?home.getBoundingClientRect():null, f=footer.getBoundingClientRect(), rc=relatedCard.getBoundingClientRect();
+      const d=dock.getBoundingClientRect(), p=product.getBoundingClientRect(), r=related.getBoundingClientRect(), h=home?home.getBoundingClientRect():null, s=sentinel?sentinel.getBoundingClientRect():null, f=footer.getBoundingClientRect(), rc=relatedCard.getBoundingClientRect();
       const pr=productRegion.getBoundingClientRect(), ar=actionRegion.getBoundingClientRect();
       const ds=getComputedStyle(dock), fs=getComputedStyle(form), cta=dock.querySelector('.single_add_to_cart_button'), select=dock.querySelector('select');
       const wrappers=['form.cart','[data-gloskin-purchase-product]','[data-gloskin-purchase-action]','table.variations','table.variations tbody','table.variations tr','table.variations td','.single_variation_wrap','.woocommerce-variation','.woocommerce-variation-add-to-cart'].map(sel=>dock.querySelector(sel)).filter(Boolean);
       function resolved(value){const x=document.createElement('i');x.style.cssText='position:absolute;visibility:hidden;background:'+value+';color:'+value;document.body.appendChild(x);const s=getComputedStyle(x);const out={background:s.backgroundColor,color:s.color};x.remove();return out;}
-      return {classes:dock.className,position:ds.position,visibility:ds.visibility,opacity:Number(ds.opacity),left:d.left,width:d.width,top:d.top,bottom:d.bottom,height:d.height,dockRadius:ds.borderRadius,
+      return {classes:dock.className,position:ds.position,visibility:ds.visibility,opacity:Number(ds.opacity),transform:ds.transform,left:d.left,width:d.width,top:d.top,bottom:d.bottom,height:d.height,dockRadius:ds.borderRadius,
         productLeft:p.left,productWidth:p.width,relatedBottom:r.bottom,relatedCardTop:rc.top,relatedCardBottom:rc.bottom,relatedCardLeft:rc.left,relatedCardRight:rc.right,footerTop:f.top,footerBottom:f.bottom,footerLeft:f.left,footerRight:f.right,
-        homeTop:h?h.top:null,homeMinHeight:home?home.style.minHeight:null,dockBackground:ds.backgroundColor,formColumns:fs.gridTemplateColumns,
+        sentinelTop:s?s.top:null,homeTop:h?h.top:null,homeMinHeight:home?home.style.minHeight:null,dockBackground:ds.backgroundColor,formColumns:fs.gridTemplateColumns,
         wrapperBackgrounds:wrappers.map(el=>getComputedStyle(el).backgroundColor),wrapperShadows:wrappers.map(el=>getComputedStyle(el).boxShadow),wrapperRadii:wrappers.map(el=>getComputedStyle(el).borderRadius),
         selectBackground:select?getComputedStyle(select).backgroundColor:null,ctaBackground:getComputedStyle(cta).backgroundColor,ctaColor:getComputedStyle(cta).color,
         accent:resolved('var(--gloskin-accent)').background,inverse:resolved('var(--gloskin-inverse)').background,accentStrong:resolved('var(--gloskin-accent-strong)').color,field:resolved('var(--gloskin-bg)').background,
         title:identity.querySelector('.gloskin-ui1-purchase-dock__title').textContent.trim(),price:identity.querySelector('.gloskin-ui1-purchase-dock__price').textContent.trim(),
         productRect:{left:pr.left,right:pr.right,top:pr.top,bottom:pr.bottom},actionRect:{left:ar.left,right:ar.right,top:ar.top,bottom:ar.bottom},
         pageOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
-        dockParentIsHome:!!home&&dock.parentElement===home,homeIsDirectChildOfProduct:!!home&&home.parentElement===product,homeAfterRelated:!!home&&related.nextElementSibling===home,originInSummary:!!origin&&origin.parentElement===product.querySelector(':scope>.summary'),
+        dockParentIsHome:!!home&&dock.parentElement===home,homeIsDirectChildOfProduct:!!home&&home.parentElement===product,homeAfterRelated:!!home&&!!sentinel&&related.nextElementSibling===sentinel&&sentinel.nextElementSibling===home,originInSummary:!!origin&&origin.parentElement===product.querySelector(':scope>.summary'),
         identityInProduct:identity.parentElement===productRegion,variationInProduct:!select||select.closest('table.variations').parentElement===productRegion,quantityInAction:actionRegion.contains(dock.querySelector('.quantity')),submitInAction:actionRegion.contains(cta),
         customFormClass:form.classList.contains('gloskin-ui1-purchase-dock__form'),customSubmitClass:cta.classList.contains('gloskin-ui1-purchase-dock__submit'),
         customQuantityClass:!dock.querySelector('.quantity')||dock.querySelector('.quantity').classList.contains('gloskin-ui1-purchase-dock__quantity'),
@@ -123,7 +131,7 @@ def snapshot(page):
     }""")
 
 
-def rects_intersect(a_left,a_top,a_right,a_bottom,b_left,b_top,b_right,b_bottom):
+def rects_intersect(a_left, a_top, a_right, a_bottom, b_left, b_top, b_right, b_bottom):
     return a_left < b_right and a_right > b_left and a_top < b_bottom and a_bottom > b_top
 
 
@@ -143,7 +151,7 @@ def assert_visual(data, kind, width, height):
     require(data['identityInProduct'] and data['variationInProduct'] and data['quantityInAction'] and data['submitInAction'], f'{kind}: left/right composition ownership incorrect at {width}x{height}: {data}')
     require(data['customFormClass'] and data['customSubmitClass'] and data['customQuantityClass'] and data['customVariantsClass'] and data['customVariationActionClass'] and data['customVariationStateClass'], f'{kind}: Gloskin semantic CSS-ownership classes missing from the SAME native nodes at {width}x{height}: {data}')
     if width >= 768:
-        cols=[x for x in data['formColumns'].split(' ') if x.endswith('px')]
+        cols = [x for x in data['formColumns'].split(' ') if x.endswith('px')]
         require(len(cols) == 2, f'{kind}: wide purchase interface is not one two-track row at {width}x{height}: {data}')
         require(data['productRect']['right'] <= data['actionRect']['left'] + 1, f'{kind}: left product and right action overlap at {width}x{height}: {data}')
         require(data['productRect']['bottom'] > data['actionRect']['top'] and data['actionRect']['bottom'] > data['productRect']['top'], f'{kind}: wide regions are not visually on one row at {width}x{height}: {data}')
@@ -205,72 +213,244 @@ def assert_qty_steppers(page, kind, width, height):
     require(page.locator('.gloskin-ui1-purchase-dock__qty-minus').count() == 1 and page.locator('.gloskin-ui1-purchase-dock__qty-plus').count() == 1, f'{kind}: stepper buttons duplicated after interaction at {width}x{height}')
 
 
-with sync_playwright() as p:
-    chromium=Path('/usr/bin/chromium')
-    if chromium.exists(): launch_kwargs={'executable_path':str(chromium)}
+def launch_browser(p):
+    chromium = Path('/usr/bin/chromium')
+    if chromium.exists():
+        launch_kwargs = {'executable_path': str(chromium)}
     else:
-        bundled=Path(p.chromium.executable_path)
+        bundled = Path(p.chromium.executable_path)
         if not bundled.exists():
-            print('single-product-dock-browser-smoke: SKIPPED (chromium unavailable)'); raise SystemExit(77)
-        launch_kwargs={}
-    browser=p.chromium.launch(headless=True,args=['--no-sandbox'],**launch_kwargs)
-    for kind in ('variable','simple'):
-      for width,height in VIEWPORTS:
-        page=browser.new_page(viewport={'width':width,'height':height})
-        page.set_content(markup(kind))
-        page.add_style_tag(content=WOO_LEGACY_CLEARFIX+'\n'+CSS_BASE+'\n'+CSS_CORE+'\n'+CSS_GEOMETRY+'\n'+FIXTURE)
-        capture_nodes(page)
-        if page.evaluate("matchMedia('(scripting: enabled)').matches"):
-            require(page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-purchase-dock]')).visibility") == 'hidden', f'{kind}: pre-init anti-flicker gate missing at {width}x{height}')
-        page.add_script_tag(content=JS_DOCK)
-        page.wait_for_function("document.querySelector('[data-gloskin-purchase-dock]').classList.contains('is-ready')",timeout=5000)
-        page.wait_for_timeout(140)
-        data=snapshot(page); assert_nodes(page,kind,width,height); assert_visual(data,kind,width,height)
-        if width >= 1024:
-            require(data['height'] <= 104.5, f'{kind}: desktop dock exceeds 104px target at {width}x{height}: {data}')
-        require(data['dockParentIsHome'] and data['homeIsDirectChildOfProduct'] and data['homeAfterRelated'] and data['originInSummary'], f'{kind}: home/origin architecture regressed at {width}x{height}: {data}')
-        assert_qty_steppers(page,kind,width,height)
+            print('single-product-dock-browser-smoke: SKIPPED (chromium unavailable)')
+            raise SystemExit(77)
+        launch_kwargs = {}
+    return p.chromium.launch(headless=True, args=['--no-sandbox'], **launch_kwargs)
 
-        if kind == 'variable' and width >= 1024:
-            page.evaluate("""() => {const v=document.querySelector('.woocommerce-variation.single_variation');v.style.display='flex';document.querySelector('select').value='100ml';}""")
-            page.wait_for_timeout(180)
-            selected=snapshot(page); assert_nodes(page,kind,width,height); assert_visual(selected,kind,width,height)
-            require(selected['height'] <= 104.5, f'variable: selected desktop dock exceeds 104px target at {width}x{height}: {selected}')
-            page.evaluate("""() => {const b=document.querySelector('.single_add_to_cart_button');b.disabled=true;b.classList.add('disabled');document.querySelector('.stock').textContent='Stok habis';}""")
-            page.wait_for_timeout(80)
-            require(page.locator('.single_add_to_cart_button:disabled').count()==1, f'variable: out-of-stock state lost native disabled submit at {width}x{height}')
-            assert_nodes(page,kind,width,height)
-            page.evaluate("""() => {const b=document.querySelector('.single_add_to_cart_button');b.disabled=false;b.classList.remove('disabled');document.querySelector('.woocommerce-variation.single_variation').style.display='none';}""")
-            page.wait_for_timeout(80)
 
-        if height < 560:
-            require('is-floating' not in data['classes'] and data['position'] != 'fixed', f'{kind}: short viewport should stay flow-only at {width}x{height}: {data}')
-            page.close(); continue
+def load_page(browser, kind, width, height, reduced_motion=None):
+    page = browser.new_page(viewport={'width': width, 'height': height})
+    if reduced_motion:
+        page.emulate_media(reduced_motion=reduced_motion)
+    page.set_content(markup(kind))
+    page.add_style_tag(content=WOO_LEGACY_CLEARFIX + '\n' + CSS_BASE + '\n' + CSS_CORE + '\n' + CSS_GEOMETRY + '\n' + FIXTURE)
+    capture_nodes(page)
+    if page.evaluate("matchMedia('(scripting: enabled)').matches"):
+        require(page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-purchase-dock]')).visibility") == 'hidden', f'{kind}: pre-init anti-flicker gate missing at {width}x{height}')
+    page.add_script_tag(content=JS_DOCK)
+    page.wait_for_function("document.querySelector('[data-gloskin-purchase-dock]').classList.contains('is-ready')", timeout=5000)
+    return page
 
-        require('is-floating' in data['classes'] and data['position']=='fixed', f'{kind}: dock did not enter floating state at {width}x{height}: {data}')
-        require(abs(data['left']-data['productLeft'])<=1.5 and abs(data['width']-data['productWidth'])<=1.5, f'{kind}: floating dock lost full PDP width at {width}x{height}: {data}')
-        require(data['visibility']=='visible' and data['opacity']>.99, f'{kind}: dock reveal incomplete at {width}x{height}: {data}')
-        require(not rects_intersect(data['left'],data['top'],data['left']+data['width'],data['bottom'],data['footerLeft'],data['footerTop'],data['footerRight'],data['footerBottom']), f'{kind}: floating dock overlaps Footer at {width}x{height}: {data}')
 
-        old_height=data['height']
-        page.evaluate("""() => {const x=document.createElement('div');x.style.height='56px';x.textContent='dynamic variation status';document.querySelector('[data-gloskin-purchase-dock] form.cart').appendChild(x)}""")
-        page.wait_for_timeout(220)
-        grown=snapshot(page)
-        require(grown['height']>=old_height+50, f'{kind}: ResizeObserver missed dynamic dock height at {width}x{height}: {grown}')
-        require(abs(grown['width']-grown['productWidth'])<=1.5, f'{kind}: full width changed after dynamic content at {width}x{height}: {grown}')
+with sync_playwright() as p:
+    browser = launch_browser(p)
+    for kind in ('variable', 'simple'):
+        for width, height in VIEWPORTS:
+            page = load_page(browser, kind, width, height)
+            page.wait_for_timeout(ENTRANCE_SETTLE_MS if height >= 560 else 60)
+            data = snapshot(page)
+            assert_nodes(page, kind, width, height)
+            assert_visual(data, kind, width, height)
+            if width >= 1024:
+                require(data['height'] <= 104.5, f'{kind}: desktop dock exceeds 104px target at {width}x{height}: {data}')
+            require(data['dockParentIsHome'] and data['homeIsDirectChildOfProduct'] and data['homeAfterRelated'] and data['originInSummary'], f'{kind}: home/sentinel/origin architecture regressed at {width}x{height}: {data}')
+            assert_qty_steppers(page, kind, width, height)
 
-        home_doc_top=page.evaluate("document.querySelector('.gloskin-ui1-purchase-dock-home').getBoundingClientRect().top+scrollY")
-        release_line=height-16-grown['height']; page.evaluate("y=>scrollTo(0,y)",max(0,home_doc_top-release_line+2)); page.wait_for_timeout(260)
-        stopped=snapshot(page); assert_visual(stopped,kind,width,height); assert_nodes(page,kind,width,height)
-        require('is-home' in stopped['classes'] and stopped['position']!='fixed', f'{kind}: dock did not settle into home at {width}x{height}: {stopped}')
-        require(stopped['top']>=stopped['relatedBottom']-2 and stopped['bottom']<=stopped['footerTop']+2, f'{kind}: settled dock crossed Related/Footer boundary at {width}x{height}: {stopped}')
-        require(not rects_intersect(stopped['left'],stopped['top'],stopped['left']+stopped['width'],stopped['bottom'],stopped['relatedCardLeft'],stopped['relatedCardTop'],stopped['relatedCardRight'],stopped['relatedCardBottom']), f'{kind}: dock overlaps final Related card at {width}x{height}: {stopped}')
+            if kind == 'variable' and width >= 1024:
+                page.evaluate("""() => {const v=document.querySelector('.woocommerce-variation.single_variation');v.style.display='flex';document.querySelector('select').value='100ml';}""")
+                page.wait_for_timeout(180)
+                selected = snapshot(page)
+                assert_nodes(page, kind, width, height)
+                assert_visual(selected, kind, width, height)
+                require(selected['height'] <= 104.5, f'variable: selected desktop dock exceeds 104px target at {width}x{height}: {selected}')
+                page.evaluate("""() => {const b=document.querySelector('.single_add_to_cart_button');b.disabled=true;b.classList.add('disabled');document.querySelector('.stock').textContent='Stok habis';}""")
+                page.wait_for_timeout(80)
+                require(page.locator('.single_add_to_cart_button:disabled').count() == 1, f'variable: out-of-stock state lost native disabled submit at {width}x{height}')
+                assert_nodes(page, kind, width, height)
+                page.evaluate("""() => {const b=document.querySelector('.single_add_to_cart_button');b.disabled=false;b.classList.remove('disabled');document.querySelector('.woocommerce-variation.single_variation').style.display='none';}""")
+                page.wait_for_timeout(80)
 
-        page.evaluate('scrollTo(0, document.body.scrollHeight)'); page.wait_for_timeout(180); after=snapshot(page)
-        require(after['position']!='fixed' and 'is-floating' not in after['classes'], f'{kind}: dock stayed fixed into Footer at {width}x{height}: {after}')
-        require(not rects_intersect(after['left'],after['top'],after['left']+after['width'],after['bottom'],after['footerLeft'],after['footerTop'],after['footerRight'],after['footerBottom']), f'{kind}: dock overlaps Footer at page bottom {width}x{height}: {after}')
-        page.evaluate('scrollTo(0,0)'); page.wait_for_timeout(280); returned=snapshot(page)
-        require('is-floating' in returned['classes'] and returned['position']=='fixed', f'{kind}: dock did not resume floating when scrolling upward at {width}x{height}: {returned}')
-        assert_nodes(page,kind,width,height); page.close()
+            if height < 560:
+                # H. SHORT VIEWPORT: normal-flow home, never an oversized fixed bar.
+                require('is-floating' not in data['classes'] and data['position'] != 'fixed', f'{kind}: short viewport should stay flow-only at {width}x{height}: {data}')
+                page.close()
+                continue
+
+            # B. ENTRANCE: reaches floating state once, opacity/transform settle cleanly.
+            require('is-floating' in data['classes'] and 'is-floating-enter' not in data['classes'] and data['position'] == 'fixed', f'{kind}: dock did not reach a clean settled floating state at {width}x{height}: {data}')
+            require(abs(data['left'] - data['productLeft']) <= 1.5 and abs(data['width'] - data['productWidth']) <= 1.5, f'{kind}: floating dock lost full PDP width at {width}x{height}: {data}')
+            require(data['visibility'] == 'visible' and data['opacity'] > .99, f'{kind}: dock entrance opacity did not settle at {width}x{height}: {data}')
+            require(data['transform'] in ('none', 'matrix(1, 0, 0, 1, 0, 0)'), f'{kind}: dock entrance transform did not settle to identity at {width}x{height}: {data}')
+            require(not rects_intersect(data['left'], data['top'], data['left'] + data['width'], data['bottom'], data['footerLeft'], data['footerTop'], data['footerRight'], data['footerBottom']), f'{kind}: floating dock overlaps Footer at {width}x{height}: {data}')
+
+            # G. DYNAMIC HEIGHT: while floating, height changes must reflect and reserve correctly, no jitter.
+            old_height = data['height']
+            page.evaluate("""() => {const x=document.createElement('div');x.style.height='56px';x.textContent='dynamic variation status';document.querySelector('[data-gloskin-purchase-dock] form.cart').appendChild(x)}""")
+            page.wait_for_timeout(220)
+            grown = snapshot(page)
+            require(grown['height'] >= old_height + 50, f'{kind}: ResizeObserver missed dynamic dock height at {width}x{height}: {grown}')
+            require(abs(grown['width'] - grown['productWidth']) <= 1.5, f'{kind}: full width changed after dynamic content at {width}x{height}: {grown}')
+            require('is-floating' in grown['classes'], f'{kind}: dynamic height change must not itself trigger a settle/lift jitter loop at {width}x{height}: {grown}')
+
+            # D. SETTLE: scroll to the very bottom of the page -- floating -> home
+            # must happen exactly once, the dock must never intersect Footer, and
+            # native nodes/dock count must survive the transition.
+            page.evaluate('scrollTo(0, document.body.scrollHeight)')
+            page.wait_for_function("document.querySelector('[data-gloskin-purchase-dock]').classList.contains('is-home')", timeout=FLIP_SETTLE_MS + 2500)
+            page.wait_for_timeout(60)
+            stopped = snapshot(page)
+            assert_visual(stopped, kind, width, height)
+            assert_nodes(page, kind, width, height)
+            require('is-home' in stopped['classes'] and stopped['position'] != 'fixed', f'{kind}: dock did not settle into home at page bottom at {width}x{height}: {stopped}')
+            require(page.locator('[data-gloskin-purchase-dock]').count() == 1, f'{kind}: exactly one dock must exist after settle at {width}x{height}')
+            require(not rects_intersect(stopped['left'], stopped['top'], stopped['left'] + stopped['width'], stopped['bottom'], stopped['footerLeft'], stopped['footerTop'], stopped['footerRight'], stopped['footerBottom']), f'{kind}: FOOTER OVERLAP: settled dock overlaps Footer at {width}x{height}: {stopped}')
+            require(not rects_intersect(stopped['left'], stopped['top'], stopped['left'] + stopped['width'], stopped['bottom'], stopped['relatedCardLeft'], stopped['relatedCardTop'], stopped['relatedCardRight'], stopped['relatedCardBottom']), f'{kind}: dock overlaps final Related card at {width}x{height}: {stopped}')
+
+            # E. BOTTOM OF PAGE: must remain home, never attempt to float again
+            # while scrolling further down (there is no further down at scrollHeight,
+            # so re-assert immediately after a no-op scroll).
+            page.evaluate('scrollTo(0, document.body.scrollHeight)')
+            page.wait_for_timeout(120)
+            still_bottom = snapshot(page)
+            require('is-home' in still_bottom['classes'] and still_bottom['position'] != 'fixed', f'{kind}: dock must stay home at the bottom of the page, never re-float at {width}x{height}: {still_bottom}')
+
+            # F. RETURN UP: scroll back to the very top -- exactly one home ->
+            # floating transition, same native nodes.
+            page.evaluate('scrollTo(0,0)')
+            page.wait_for_function("document.querySelector('[data-gloskin-purchase-dock]').classList.contains('is-floating')", timeout=FLIP_SETTLE_MS + 2500)
+            page.wait_for_timeout(60)
+            returned = snapshot(page)
+            require('is-floating' in returned['classes'] and returned['position'] == 'fixed', f'{kind}: dock did not resume floating when scrolling upward at {width}x{height}: {returned}')
+            assert_nodes(page, kind, width, height)
+            require(page.locator('[data-gloskin-purchase-dock]').count() == 1, f'{kind}: exactly one dock must exist after lift at {width}x{height}')
+
+            page.close()
     browser.close()
+
+# -----------------------------------------------------------------------
+# C. FOOTER HYSTERESIS (the actual bug class this task fixes): repeatedly
+# nudge the scroll position by a few px right around the settle boundary
+# and require that this does NOT repeatedly toggle floating/home. A real
+# shake/bounce bug would show up here as many state-class flips.
+# -----------------------------------------------------------------------
+with sync_playwright() as p:
+    browser = launch_browser(p)
+    page = load_page(browser, 'simple', 1440, 900)
+    page.wait_for_timeout(ENTRANCE_SETTLE_MS)
+
+    transitions = page.evaluate("""() => {
+      const dock = document.querySelector('[data-gloskin-purchase-dock]');
+      const home = document.querySelector('.gloskin-ui1-purchase-dock-home');
+      let seenClasses = dock.className;
+      let flips = 0;
+      const observer = new MutationObserver(() => {
+        if (dock.className !== seenClasses) { flips += 1; seenClasses = dock.className; }
+      });
+      observer.observe(dock, { attributes: true, attributeFilter: ['class'] });
+      window.__hysteresisObserver = observer;
+      window.__hysteresisFlips = () => flips;
+      return true;
+    }""")
+    require(transitions, 'hysteresis: instrumentation failed to install')
+
+    # Find the approximate settle boundary once (a real full scroll to
+    # bottom, then most of the way back) so the nudges below start right
+    # near it.
+    page.evaluate('scrollTo(0, document.body.scrollHeight)')
+    page.wait_for_function("document.querySelector('[data-gloskin-purchase-dock]').classList.contains('is-home')", timeout=FLIP_SETTLE_MS + 2500)
+    boundary_y = page.evaluate('window.scrollY')
+
+    page.evaluate("window.__hysteresisFlips_before = window.__hysteresisFlips()")
+    for delta in (2, -2, 4, -4, 2, -2, 4, -4, 2, -2):
+        page.evaluate("y => scrollTo(0, Math.max(0, window.scrollY + y))", delta)
+        page.wait_for_timeout(40)
+    page.wait_for_timeout(200)
+    flips_during_nudge = page.evaluate("window.__hysteresisFlips() - window.__hysteresisFlips_before")
+    require(flips_during_nudge <= 1, f'hysteresis: +-2/+-4px scroll nudges around the settle boundary must not repeatedly toggle floating/home, got {flips_during_nudge} class-change events')
+    page.close()
+    browser.close()
+
+# -----------------------------------------------------------------------
+# FLIP continuity: native node identity must survive a full floating ->
+# settling -> home -> lifting -> floating round trip, with no listener
+# duplication (steppers/Buy Now still work identically afterward).
+# -----------------------------------------------------------------------
+with sync_playwright() as p:
+    browser = launch_browser(p)
+    page = load_page(browser, 'simple', 1440, 900)
+    page.wait_for_timeout(ENTRANCE_SETTLE_MS)
+    assert_nodes(page, 'simple', 1440, 900)
+
+    page.evaluate('scrollTo(0, document.body.scrollHeight)')
+    page.wait_for_function("document.querySelector('[data-gloskin-purchase-dock]').classList.contains('is-home')", timeout=FLIP_SETTLE_MS + 2500)
+    assert_nodes(page, 'simple', 1440, 900)
+
+    page.evaluate('scrollTo(0, 0)')
+    page.wait_for_function("document.querySelector('[data-gloskin-purchase-dock]').classList.contains('is-floating')", timeout=FLIP_SETTLE_MS + 2500)
+    assert_nodes(page, 'simple', 1440, 900)
+
+    # Quantity stepper and Buy Now must still work identically after a full
+    # round trip -- no duplicated listeners, no stale nodes.
+    before = page.evaluate("document.querySelector('input.qty').value")
+    page.click('.gloskin-ui1-purchase-dock__qty-plus')
+    after = page.evaluate("document.querySelector('input.qty').value")
+    require(float(after) == float(before) + 1, f'FLIP continuity: quantity stepper broken after a full settle/lift round trip: before={before} after={after}')
+    require(page.locator('.gloskin-ui1-purchase-dock__buy-now').count() == 1, 'FLIP continuity: Buy Now control duplicated/lost after a full settle/lift round trip')
+    page.close()
+    browser.close()
+
+# -----------------------------------------------------------------------
+# Ambient floating signature: present while floating, paused on hover,
+# absent while settled/home, pointer-events:none (never blocks clicks).
+# -----------------------------------------------------------------------
+with sync_playwright() as p:
+    browser = launch_browser(p)
+    page = load_page(browser, 'simple', 1440, 900)
+    page.wait_for_timeout(ENTRANCE_SETTLE_MS)
+
+    ambient = page.evaluate("""() => {
+      const dock = document.querySelector('[data-gloskin-purchase-dock]');
+      const before = getComputedStyle(dock, '::before');
+      return { animation: before.animationName, pointerEvents: before.pointerEvents };
+    }""")
+    require(ambient['animation'] == 'gloskin-purchase-dock-sheen', f'ambient: floating state must run the sheen animation, got {ambient}')
+    require(ambient['pointerEvents'] == 'none', f'ambient: decorative layer must never intercept clicks, got {ambient}')
+
+    page.hover('[data-gloskin-purchase-dock]')
+    page.wait_for_timeout(60)
+    hovered = page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-purchase-dock]'), '::before').animationPlayState")
+    require(hovered == 'paused', f'ambient: sheen must pause on hover, got {hovered}')
+
+    # Add to cart mutation triggers aria-busy on the submit button; the
+    # ambient sheen must pause during it (only checked where the browser
+    # supports :has(), which real Chromium does).
+    page.evaluate("document.querySelector('.single_add_to_cart_button').setAttribute('aria-busy', 'true')")
+    page.wait_for_timeout(60)
+    busy_opacity = page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-purchase-dock]'), '::before').opacity")
+    require(float(busy_opacity) < 0.4, f'ambient: sheen must pause/fade during an active add-to-cart mutation, got opacity={busy_opacity}')
+    page.close()
+    browser.close()
+
+# -----------------------------------------------------------------------
+# I. REDUCED MOTION: no entrance slide, no FLIP animation, no shimmer;
+# states remain correct and commerce fully functional.
+# -----------------------------------------------------------------------
+with sync_playwright() as p:
+    browser = launch_browser(p)
+    page = load_page(browser, 'simple', 1440, 900, reduced_motion='reduce')
+    page.wait_for_timeout(80)  # reduced motion settles near-instantly -- no 300ms wait needed
+    data = snapshot(page)
+    require('is-floating' in data['classes'], f'reduced motion: dock must still reach floating state, got {data["classes"]}')
+    require(data['opacity'] > .99, f'reduced motion: entrance must be immediate, no lingering partial opacity: {data}')
+
+    ambient_reduced = page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-purchase-dock]'), '::before').animationName")
+    require(ambient_reduced in ('none', ''), f'reduced motion: ambient sheen must be disabled, got {ambient_reduced}')
+
+    page.evaluate('scrollTo(0, document.body.scrollHeight)')
+    page.wait_for_timeout(150)  # no 280ms FLIP to wait for under reduced motion
+    settled = snapshot(page)
+    require('is-home' in settled['classes'] and settled['position'] != 'fixed', f'reduced motion: settle must still work, immediately: {settled}')
+    require(not rects_intersect(settled['left'], settled['top'], settled['left'] + settled['width'], settled['bottom'], settled['footerLeft'], settled['footerTop'], settled['footerRight'], settled['footerBottom']), f'reduced motion: settled dock must not overlap Footer: {settled}')
+    assert_nodes(page, 'simple', 1440, 900)
+    page.close()
+    browser.close()
+
 print('single-product-dock-browser-smoke: OK')

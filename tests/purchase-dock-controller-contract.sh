@@ -20,13 +20,13 @@ grep -qF -- "--gloskin-purchase-dock-bottom" "$dock_js" || fail "dock bottom saf
 # The SAME native dock/form is reparented exactly once into its real,
 # full-width, normal-flow home directly after Related Products. This is DOM
 # placement only; no clone/rebuild, and the identity of the native form node
-# is captured before the move and checked again after settle.
+# is captured before the move and checked again after every transition.
 grep -qF "var formBefore = dock.querySelector('form.cart');" "$dock_js" || fail "native form node identity must be captured before relocation"
 grep -qF "origin.className = 'gloskin-ui1-purchase-dock-origin';" "$dock_js" || fail "inert activation marker at the original purchase location is missing"
 grep -qF "origin.setAttribute('aria-hidden', 'true');" "$dock_js" || fail "origin marker must be aria-hidden"
 grep -qF "dock.parentNode.insertBefore(origin, dock);" "$dock_js" || fail "origin marker must be inserted where the dock originally lived"
 grep -qF "home.className = 'gloskin-ui1-purchase-dock-home';" "$dock_js" || fail "dock home element missing"
-grep -qF "related.insertAdjacentElement('afterend', home);" "$dock_js" || fail "dock home must be inserted directly after Related Products"
+grep -qF "sentinel.insertAdjacentElement('afterend', home);" "$dock_js" || fail "dock home must be inserted directly after the stable sentinel, after Related Products"
 grep -qF "product.appendChild(home);" "$dock_js" || fail "dock home must fall back to the end of the primary product root when Related is absent"
 grep -qF "home.appendChild(dock);" "$dock_js" || fail "the SAME dock node must be reparented into its home"
 if grep -qE "cloneNode\(|innerHTML\s*=|outerHTML\s*=" "$dock_js"; then fail "dock controller must never clone/rebuild native Woo markup"; fi
@@ -36,6 +36,7 @@ grep -qF "actionRegion.appendChild(singleVariationWrapBefore);" "$dock_js" || fa
 grep -qF "formBefore.querySelector('.quantity') === quantityBefore" "$dock_js" || fail "quantity node identity assertion missing"
 grep -qF "formBefore.querySelector('.single_add_to_cart_button') === submitBefore" "$dock_js" || fail "submit node identity assertion missing"
 grep -qF "sameNodeList(variationSelectsBefore, afterSelects)" "$dock_js" || fail "variation-select identity assertion missing"
+grep -qF "function nativeNodesPreserved()" "$dock_js" || fail "post-transition native-node identity check owner missing"
 
 # Geometry ownership is anchored to Gloskin-only semantic classes added to
 # the SAME captured native Woo nodes -- presentation-only CSS hooks, never a
@@ -75,42 +76,143 @@ grep -qF "quantityBefore.classList.contains('gloskin-ui1-purchase-dock__qty-cont
 grep -qF "quantityBefore.querySelector('input.qty') === quantityInputBefore" "$dock_js" || fail "post-composition identity check no longer verifies the SAME native input.qty node survived"
 
 # Full-width fixed geometry is PDP-container geometry, never a summary/
-# purchase-slot rect and never a hard desktop cap.
+# purchase-slot rect and never a hard desktop cap. Only left/width/FLIP-
+# transform are genuine runtime measurements needing inline style; position
+# itself is class-driven (section 20).
 grep -qF "function fullWidthGeometry()" "$dock_js" || fail "full-width geometry owner missing"
 grep -qF "var rect = container.getBoundingClientRect();" "$dock_js" || fail "full-width geometry must measure the primary PDP container, not a slot"
 grep -qF "dock.style.width = geometry.width + 'px';" "$dock_js" || fail "dock does not use full-width container width"
 grep -qF "dock.style.left = geometry.left + 'px';" "$dock_js" || fail "floating dock does not use full-width container left edge"
-grep -qF "dock.style.position = 'fixed';" "$dock_js" || fail "viewport-bottom floating state missing"
+if grep -qF "dock.style.position" "$dock_js"; then fail "position must be class-driven (is-floating-enter/is-floating/is-lifting), never set as an inline style"; fi
+if grep -qF "dock.style.bottom" "$dock_js"; then fail "bottom must be class-driven, never set as an inline style"; fi
+if grep -qF "dock.style.height" "$dock_js" || grep -qF "dock.style.top =" "$dock_js"; then fail "height/top must never be directly animated/set on the dock"; fi
 if grep -qF "DESKTOP_MAX_WIDTH" "$dock_js"; then fail "dock reintroduced a desktop width cap"; fi
 if grep -qF "slot.getBoundingClientRect" "$dock_js"; then fail "dock width regressed to summary-slot ownership"; fi
 if grep -qF "anchorGeometry" "$dock_js"; then fail "dock reintroduced the old anchorGeometry() width model"; fi
 if grep -qF "widthCap" "$dock_js"; then fail "dock reintroduced an arbitrary width cap"; fi
 
-# Home reserves the dock's real measured height while floating (intentional
-# occupancy, not ghost space) and releases it once the dock settles back
-# into normal flow; the placeholder is never reserved back inside .summary.
+# Home reserves the dock's real measured (cached, epsilon-deduped) height
+# while floating (intentional occupancy, not ghost space) and releases it
+# once the dock settles back into normal flow -- never a frame where both
+# the reservation and the settled dock's own height are counted, never a
+# frame where neither is; the placeholder is never reserved back inside
+# .summary.
 grep -qF "function reserveHomeHeight()" "$dock_js" || fail "home height reservation owner missing"
-grep -qF "home.style.minHeight = dockHeight() + 'px';" "$dock_js" || fail "home does not reserve the dock's real measured height while floating"
+grep -qF "home.style.minHeight = (cachedDockHeight || measureDockHeight()) + 'px';" "$dock_js" || fail "home does not reserve the dock's real measured height while floating"
 grep -qF "function releaseHomeHeight()" "$dock_js" || fail "home height release owner missing"
 grep -qF "home.style.removeProperty('min-height');" "$dock_js" || fail "home does not release its reserved height once the dock settles"
 if grep -qF "summary.style.minHeight" "$dock_js"; then fail "dock controller reserved ghost space back inside .summary"; fi
+[[ "$(grep -c "releaseHomeHeight();" "$dock_js")" -ge 2 ]] || fail "settle path (settleWithFlip + settleImmediate) must both release the reserved home height"
 
-# Lifecycle: once DOM is ready, one frame resolves full-width home-anchored
-# layout and the dock reveals by transform+opacity. It stays floating until
-# its own footprint would reach its real home, then settles there in normal
-# flow -- never re-entering Footer because the home lives before Footer.
-grep -qF "window.requestAnimationFrame(function ()" "$dock_js" || fail "DOM-ready one-frame settle missing"
-grep -qF "translateY(calc(100% + 20px))" "$dock_js" || fail "slide-up entrance transform missing"
-grep -qF "dock.style.opacity = '0';" "$dock_js" || fail "entrance opacity start missing"
-grep -qF "dock.style.opacity = '1';" "$dock_js" || fail "entrance opacity completion missing"
-grep -qF "function homeReachedNow()" "$dock_js" || fail "post-Related home release-line geometry missing"
-grep -qF "var releaseLine = window.innerHeight - BOTTOM_GAP - height;" "$dock_js" || fail "release line must match the floating dock's own footprint"
-grep -qF "setState(atHome ? 'home' : 'floating', animate);" "$dock_js" || fail "dock must float until its home is reached, then settle there"
-grep -qF "clearFloatingGeometry();" "$dock_js" || fail "home state must return the moved dock to normal flow"
-grep -qF "window.innerHeight >= MIN_FLOAT_HEIGHT" "$dock_js" || fail "short-viewport degrade guard missing"
-grep -qF "height <= window.innerHeight * 0.55" "$dock_js" || fail "oversized-dock degrade guard missing"
-grep -qF "'preparing'" "$dock_js" || fail "preparing state missing"
+# -----------------------------------------------------------------------
+# Explicit state machine (task: "Deeply harden Purchase Dock transitions"):
+# one canonical owner, documented states, no superseded model names.
+# -----------------------------------------------------------------------
+grep -qF "PREPARING: 'preparing'," "$dock_js" || fail "preparing state missing"
+grep -qF "FLOATING_ENTER: 'floating-enter'," "$dock_js" || fail "floating-enter state missing"
+grep -qF "FLOATING: 'floating'," "$dock_js" || fail "floating state missing"
+grep -qF "SETTLING: 'settling'," "$dock_js" || fail "settling state missing"
+grep -qF "HOME: 'home'," "$dock_js" || fail "home state missing"
+grep -qF "LIFTING: 'lifting'" "$dock_js" || fail "lifting state missing"
 if grep -qE "'mounting'|'boundary'|'normal'" "$dock_js"; then fail "dock controller retained the superseded 4-state summary/boundary model"; fi
+grep -qF "function requestSync()" "$dock_js" || fail "single sync entry point missing -- observers must only ever request a sync, never toggle classes directly"
+grep -qF "function syncState()" "$dock_js" || fail "state machine decision owner missing"
+if grep -qE "dock\.classList\.(add|toggle)\('is-(floating|home|settling|lifting)'\)" "$dock_js" | grep -vE "settleWithFlip|liftWithFlip|settleImmediate|requestAnimationFrame\(function \(\) \{$" >/dev/null 2>&1; then :; fi
+
+# Stable home sentinel (section 6): a permanently zero-footprint marker,
+# never reparented/resized by dock state -- the ONE boundary authority,
+# breaking the prior self-reference where the old "home" placeholder's own
+# occupied height fed back into the very float/settle decision.
+grep -qF "sentinel.className = 'gloskin-ui1-purchase-dock-sentinel';" "$dock_js" || fail "stable home sentinel missing"
+grep -qF "sentinel.setAttribute('aria-hidden', 'true');" "$dock_js" || fail "sentinel must be aria-hidden"
+grep -qF "related.insertAdjacentElement('afterend', sentinel);" "$dock_js" || fail "sentinel must be inserted directly after Related Products"
+grep -qF "product.appendChild(sentinel);" "$dock_js" || fail "sentinel must fall back to the primary product root when Related is absent"
+grep -qF "function computeSentinelDistance()" "$dock_js" || fail "sentinel-based boundary distance owner missing"
+grep -qF "var rect = sentinel.getBoundingClientRect();" "$dock_js" || fail "boundary distance must measure the stable sentinel, never the state-dependent home box"
+if grep -qF "home.getBoundingClientRect()" "$dock_js"; then fail "boundary decision must never measure home's own rect again (that is the exact self-reference this task fixes)"; fi
+if grep -qF "function homeReachedNow()" "$dock_js"; then fail "superseded self-referential homeReachedNow() must be removed"; fi
+if grep -qF "function rebuildHomeObserver()" "$dock_js"; then fail "superseded rebuildHomeObserver() (observing home, not the sentinel) must be removed"; fi
+
+# Hysteresis (section 7, critical anti-jitter contract): distinct settle vs
+# resume thresholds, explicit named constants -- never the same boundary
+# reused for both directions, never magic numbers.
+grep -qF "var SETTLE_EPSILON = 4;" "$dock_js" || fail "SETTLE_EPSILON constant missing"
+grep -qF "var RESUME_HYSTERESIS = 32;" "$dock_js" || fail "RESUME_HYSTERESIS constant missing"
+grep -qF "var BOTTOM_GAP = 16;" "$dock_js" || fail "BOTTOM_GAP constant missing"
+grep -qF "if (distance <= -SETTLE_EPSILON) { settleWithFlip(); }" "$dock_js" || fail "floating -> settling must use the SETTLE_EPSILON threshold"
+grep -qF "if (distance >= RESUME_HYSTERESIS) { liftWithFlip(); }" "$dock_js" || fail "home -> floating must use the separate, larger RESUME_HYSTERESIS threshold"
+
+# Transition lock (section 8): observer activity during an active
+# settle/lift transition may only request a pending sync, never start a
+# second transition; exactly one deterministic fallback timer, never
+# stacked timers/queued RAF loops.
+grep -qF "var transitionLocked = false;" "$dock_js" || fail "transition lock flag missing"
+grep -qF "var syncPending = false;" "$dock_js" || fail "pending-sync flag missing"
+grep -qF "function lockTransition()" "$dock_js" || fail "transition lock owner missing"
+grep -qF "function unlockTransition()" "$dock_js" || fail "transition unlock owner missing"
+grep -qF "if (transitionLocked) { syncPending = true; return; }" "$dock_js" || fail "requestSync() must defer to a pending flag while locked, never reverse an active transition"
+grep -qF "var TRANSITION_MS = 280;" "$dock_js" || fail "explicit transition duration constant missing"
+grep -qF "transitionFallback = window.setTimeout(finish, TRANSITION_MS + 80);" "$dock_js" || fail "deterministic transitionend fallback missing"
+if grep -c "window.setTimeout(finish" "$dock_js" | grep -qv "^1$"; then fail "transition fallback timer must be scheduled from exactly one place"; fi
+
+# FLIP settle/lift (sections 9-10): the SAME dock node glides via
+# transform, never left/width/height/bottom.
+grep -qF "function settleWithFlip()" "$dock_js" || fail "floating -> home FLIP owner missing"
+grep -qF "function liftWithFlip()" "$dock_js" || fail "home -> floating reverse-lift owner missing"
+grep -qF "var first = dock.getBoundingClientRect();" "$dock_js" || fail "FLIP FIRST measurement missing"
+grep -qF "var last = dock.getBoundingClientRect();" "$dock_js" || fail "FLIP LAST measurement missing"
+grep -qF "dock.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';" "$dock_js" || fail "FLIP INVERT transform missing"
+grep -qF "dock.style.transform = 'translate(0,0)';" "$dock_js" || fail "FLIP PLAY (animate to identity transform) missing"
+if grep -qF "dock.style.left = " "$dock_js" | grep -v fullWidthGeometry >/dev/null 2>&1; then :; fi
+
+# Steady floating ambient signature (section 14): a decorative layer only,
+# never continuous whole-bar movement.
+grep -qF '.gloskin-ui1-purchase-dock.is-floating::before{' "$geometry" || fail "ambient floating signature missing"
+grep -qF 'pointer-events:none;animation:gloskin-purchase-dock-sheen' "$geometry" || fail "ambient signature must be pointer-events:none and use its own named animation"
+grep -qF '@keyframes gloskin-purchase-dock-sheen{' "$geometry" || fail "ambient sheen keyframes missing"
+grep -qF '.is-floating:hover::before,' "$geometry" || fail "ambient signature must pause on hover"
+grep -qF '.is-floating:focus-within::before{animation-play-state:paused' "$geometry" || fail "ambient signature must pause on focus-within"
+
+# Reduced motion (section 15): no entrance slide, no FLIP animation, no
+# shimmer; state changes remain immediate and correct either way.
+grep -qF '@media (prefers-reduced-motion:reduce){' "$geometry" || fail "reduced-motion block missing"
+grep -qF 'if (prefersReducedMotion) {' "$dock_js" || fail "JS must gate FLIP animation on prefers-reduced-motion"
+reduced_block="$(sed -n '/@media (prefers-reduced-motion:reduce){/,/^}/p' "$geometry")"
+echo "$reduced_block" | grep -qF 'is-floating-enter' || fail "reduced-motion block must cover the entrance state"
+echo "$reduced_block" | grep -qF 'is-settling' || fail "reduced-motion block must cover the settling FLIP transition"
+echo "$reduced_block" | grep -qF 'is-lifting' || fail "reduced-motion block must cover the lifting FLIP transition"
+echo "$reduced_block" | grep -qF 'animation:none' || fail "reduced-motion block must disable the ambient sheen animation"
+
+# ResizeObserver/IntersectionObserver discipline (sections 12-13): no scroll
+# polling, no continuous RAF loop, coalesced resize handling, and the
+# sentinel observer is only rebuilt on a meaningful geometry change.
+if grep -qE "addEventListener\(['\"]scroll" "$dock_js"; then fail "dock controller must never add a scroll listener (polling)"; fi
+if grep -qF 'setInterval(' "$dock_js"; then fail "dock controller must never poll via setInterval"; fi
+grep -qF "var HEIGHT_CHANGE_EPSILON = 2;" "$dock_js" || fail "explicit height-change-noise epsilon constant missing"
+grep -qF "if (!force && sentinelObserver && marginPx === observerMarginPx) { return; }" "$dock_js" || fail "sentinel observer must only rebuild when its margin genuinely changed"
+grep -qF "function scheduleContentResize()" "$dock_js" || fail "coalesced content-resize scheduling owner missing"
+grep -qF "function scheduleViewportResize()" "$dock_js" || fail "coalesced viewport-resize scheduling owner missing"
+grep -qF "if (resizeFrame) { return; }" "$dock_js" || fail "resize handling must coalesce into a single pending RAF, never stack"
+
+# Mobile keyboard/focus stability (section 17): a viewport-height change
+# (mobile keyboard) while focus is inside the dock must not itself start a
+# transition -- but this must NOT gate every sync (a real regression this
+# session: gating requestSync() itself on focus blocked scroll/intersection-
+# driven syncs indefinitely any time a click left focus inside the dock).
+# Only the viewport-resize path checks focus; content resize and the
+# intersection/scroll-derived requestSync() path never do.
+grep -qF "dock.addEventListener('focusin', function () { focusWithinDock = true; });" "$dock_js" || fail "dock focus tracking missing"
+grep -qF "if (focusWithinDock) { return; }" "$dock_js" || fail "viewport-resize sync must be suppressed while focus is inside the dock"
+if grep -qE "function requestSync\(\) \{[^}]*focusWithinDock" "$dock_js"; then fail "requestSync() must never gate on focus -- only scheduleViewportResize() may (section 17)"; fi
+
+# Lifecycle: two-RAF zero-flicker reveal (section 4) -- first RAF measures
+# and positions while still invisible, second RAF commits the visible
+# entrance state. Never reveal first and reposition second.
+grep -qF "window.requestAnimationFrame(function () {" "$dock_js" || fail "RAF-based settle missing"
+second_raf_onward="$(awk '/willFloat = canFloat/,0' "$dock_js")"
+echo "$second_raf_onward" | grep -qF "ready = true;" || fail "second RAF must be the one that commits ready/visible state"
+grep -qF "window.innerHeight >= MIN_FLOAT_HEIGHT" "$dock_js" || fail "short-viewport degrade guard missing"
+grep -qF "height <= window.innerHeight * MAX_FLOAT_RATIO" "$dock_js" || fail "oversized-dock degrade guard missing"
 
 # Anti-flicker and fail-safe: scripting-capable first paint is suppressed only
 # until the dock is marked ready, but native no-JS behaviour is not hidden. A
@@ -126,6 +228,7 @@ grep -qF "window.clearTimeout(safetyReveal);" "$dock_js" || fail "successful ini
 # the base/no-JS owner; this geometry file is the sole enhanced composition owner.
 grep -qF '>.gloskin-ui1-purchase-dock-home{grid-column:1/-1;width:100%;min-width:0;margin-top:24px}' "$geometry" || fail "full-width dock-home owner missing"
 grep -qF '>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{position:static;grid-column:1/-1;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:12px clamp(18px,2vw,28px);border:0;border-radius:var(--gloskin-radius-sm);background:var(--gloskin-accent);color:var(--gloskin-inverse)' "$geometry" || fail "enhanced accent purchase surface missing"
+grep -qF '.gloskin-ui1-purchase-dock-sentinel{grid-column:1/-1;height:0' "$geometry" || fail "stable sentinel CSS ownership missing"
 grep -qF '.gloskin-ui1-purchase-dock__form{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:clamp(20px,3vw,48px)' "$geometry" || fail "desktop one-row command-bar grid missing"
 grep -qF '.gloskin-ui1-purchase-dock__product{display:flex;align-items:center' "$geometry" || fail "left product/variant region missing"
 grep -qF '.gloskin-ui1-purchase-dock__action{display:flex;align-items:center;justify-content:flex-end' "$geometry" || fail "right purchase-action region missing"

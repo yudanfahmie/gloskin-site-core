@@ -75,7 +75,54 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloski
  * the exact same fix, already applied above for Related Products'
  * ul.products::before/::after. */
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{position:static;grid-column:1/-1;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:12px clamp(18px,2vw,28px);border:0;border-radius:var(--gloskin-radius-sm);background:var(--gloskin-accent);color:var(--gloskin-inverse);box-shadow:none;visibility:visible;opacity:1;will-change:transform,opacity}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating{transition:transform 260ms cubic-bezier(.22,1,.36,1),opacity 180ms ease-out;box-shadow:0 -10px 28px color-mix(in srgb,var(--gloskin-brand-charcoal) 16%,transparent)}
+
+/* Stable footer-handoff sentinel (task: "Deeply harden Purchase Dock
+ * transitions", section 6): permanently zero-footprint, never reparented,
+ * never resized by dock state -- this is the one boundary authority the
+ * controller measures, breaking the prior self-reference where the old
+ * "home" placeholder's own occupied height (reserved while floating,
+ * released while settled) fed back into the very decision of whether to
+ * float or settle. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-sentinel{grid-column:1/-1;height:0;margin:0;padding:0;pointer-events:none}
+
+/* Explicit state machine (sections 3, 5, 9, 10, 14): position ownership is
+ * class-driven, never inline -- only left/width/FLIP-transform genuinely
+ * need runtime measurement and stay inline. is-floating-enter/is-floating/
+ * is-lifting all sit fixed to the viewport bottom; is-settling/is-home
+ * inherit the base static position above. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating-enter,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-lifting{position:fixed;top:auto;bottom:var(--gloskin-purchase-dock-bottom)}
+
+/* Entrance (section 5): opacity/transform only, ~300ms premium
+ * deceleration. is-floating-enter is the FROM state; the class swap to
+ * is-floating (see gloskin-ui1-purchase-dock.js) is what actually plays
+ * the transition, across two RAFs so the FROM state never paints without
+ * a transition already active. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating-enter{opacity:0;transform:translateY(20px) scale(.995)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating-enter,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating{transition:opacity 300ms cubic-bezier(.22,1,.36,1),transform 300ms cubic-bezier(.22,1,.36,1),box-shadow 300ms cubic-bezier(.22,1,.36,1)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating{opacity:1;transform:translateY(0) scale(1);box-shadow:0 -10px 28px color-mix(in srgb,var(--gloskin-brand-charcoal) 16%,transparent)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-lifting{box-shadow:0 -10px 28px color-mix(in srgb,var(--gloskin-brand-charcoal) 16%,transparent)}
+
+/* FLIP settle/lift (sections 9-10): transform ONLY -- never left/width/
+ * bottom/height, which would create visible geometry wobble. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-settling,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-lifting{transition:transform 280ms cubic-bezier(.22,1,.36,1)}
+
+/* Steady-floating ambient signature (section 14): a restrained sheen
+ * traveling across the upper edge of a decorative layer only -- never the
+ * whole bar moving, never a bounce. Runs only while genuinely settled
+ * into is-floating (never is-preparing/is-settling/is-lifting), paused on
+ * hover/focus-within so interaction feels calm and precise, and paused
+ * while a mutation is in flight so it never competes with the loading
+ * indicator. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(100deg,transparent 42%,color-mix(in srgb,var(--gloskin-inverse) 20%,transparent) 50%,transparent 58%);background-size:220% 220%;background-position:200% 0%;opacity:.5;pointer-events:none;animation:gloskin-purchase-dock-sheen 6s ease-in-out infinite}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating:hover::before,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating:focus-within::before{animation-play-state:paused;opacity:.15}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating:has(.single_add_to_cart_button[aria-busy="true"])::before,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating:has(.gloskin-ui1-purchase-dock__buy-now[aria-busy="true"])::before{animation-play-state:paused;opacity:0}
+@keyframes gloskin-purchase-dock-sheen{0%,100%{background-position:200% 0%}50%{background-position:-60% 0%}}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__form::before,
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__form::after{content:none;display:none}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__form{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:clamp(20px,3vw,48px);margin:0;background:transparent;box-shadow:none}
@@ -188,5 +235,10 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloski
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit{width:100%;max-width:none;min-width:0}
 }
 @media (prefers-reduced-motion:reduce){
-	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating{transition:none}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating-enter,
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating,
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-settling,
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-lifting{transition:none}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating-enter{opacity:1;transform:none}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating::before{animation:none;display:none}
 }

@@ -1,6 +1,19 @@
 (function () {
 	'use strict';
 
+	/* One explicit state machine, one canonical owner. Internal names below;
+	 * CSS classes are the same names prefixed "is-". No other code path may
+	 * toggle these classes directly -- every transition goes through
+	 * setState()/settleWithFlip()/liftWithFlip() below. */
+	var STATE = {
+		PREPARING: 'preparing',
+		FLOATING_ENTER: 'floating-enter',
+		FLOATING: 'floating',
+		SETTLING: 'settling',
+		HOME: 'home',
+		LIFTING: 'lifting'
+	};
+
 	function initPurchaseDockFloat() {
 		if (!document.body || !document.body.classList.contains('single-product')) { return; }
 		if (typeof window.IntersectionObserver !== 'function' || typeof window.ResizeObserver !== 'function') { return; }
@@ -153,21 +166,39 @@
 				&& (!singleVariationBefore || (formBefore.querySelector('.woocommerce-variation.single_variation') === singleVariationBefore && singleVariationBefore.classList.contains('gloskin-ui1-purchase-dock__variation-state')));
 		}
 
-		var BOTTOM_GAP = 16;
-		var MIN_FLOAT_HEIGHT = 560;
-		var state = 'preparing';
+		/* -----------------------------------------------------------------
+		 * Explicit, documented constants -- no magic numbers scattered
+		 * through the geometry/hysteresis math below.
+		 * ----------------------------------------------------------------- */
+		var BOTTOM_GAP = 16; // px clearance kept between the floating dock and the viewport edge.
+		var MIN_FLOAT_HEIGHT = 560; // px: viewports shorter than this never float (section 16).
+		var MAX_FLOAT_RATIO = 0.55; // dock may never occupy more than this share of viewport height while floating.
+		var SETTLE_EPSILON = 4; // px past the natural boundary before floating -> settling actually commits.
+		var RESUME_HYSTERESIS = 32; // px the user must scroll back up beyond the settle line before home -> floating resumes.
+		var HEIGHT_CHANGE_EPSILON = 2; // px: ResizeObserver churn below this is treated as noise, never rebuilds anything.
+		var TRANSITION_MS = 280; // must match the CSS transform transition duration for is-settling/is-lifting.
+
+		var state = STATE.PREPARING;
 		var ready = false;
-		var atHome = false;
-		var homeObserver = null;
-		var rebuildFrame = 0;
-		var revealFrame = 0;
+		var transitionLocked = false;
+		var syncPending = false;
+		var cachedDockHeight = 0;
+		var focusWithinDock = false;
+		var resizeFrame = 0;
+		var viewportResizeFrame = 0;
+		var flipFrame = 0;
+		var transitionFallback = 0;
+		var sentinelObserver = null;
+		var observerMarginPx = -1;
 		var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 		/* Deterministic preparation sequence, all synchronous in one task:
 		 * 1) mark preparing, 2) native form already captured above, 3) leave
-		 * an inert origin marker, 4) create the full-width home, 5) reparent
-		 * the SAME dock node into it, 6) establish observers/geometry below,
-		 * 7) reveal only after a requestAnimationFrame confirms layout. */
+		 * an inert origin marker, 4) create the stable sentinel + full-width
+		 * home, 5) reparent the SAME dock node into home, 6) establish
+		 * observers/geometry below, 7) reveal only after two RAFs confirm
+		 * layout (measure, then commit visible state) -- never reveal first
+		 * and reposition second, which is what causes a flash. */
 		dock.classList.add('is-preparing');
 		prepareComposition();
 
@@ -214,10 +245,26 @@
 			buyNowSync.observe(submitBefore, { attributes: true, attributeFilter: ['disabled'] });
 		}
 
+		/* Section 17: a viewport-height change (mobile keyboard opening)
+		 * while focus is inside the dock must never itself start a
+		 * floating/home transition. Delegated, one-shot listeners -- no
+		 * keyboard-detection framework. */
+		dock.addEventListener('focusin', function () { focusWithinDock = true; });
+		dock.addEventListener('focusout', function () {
+			window.setTimeout(function () {
+				if (!dock.contains(document.activeElement)) {
+					focusWithinDock = false;
+					requestSync();
+				}
+			}, 0);
+		});
+
 		var safetyReveal = window.setTimeout(function () {
 			if (!ready) {
+				ready = true;
 				dock.classList.remove('is-preparing');
-				dock.classList.add('is-ready');
+				dock.classList.add('is-home');
+				state = STATE.HOME;
 			}
 		}, 1000);
 
@@ -229,6 +276,17 @@
 		origin.setAttribute('aria-hidden', 'true');
 		dock.parentNode.insertBefore(origin, dock);
 
+		/* Stable footer-handoff sentinel (section 6): a permanently zero-
+		 * footprint marker, inserted once and never reparented/resized. Its
+		 * own geometry depends only on scroll position and the surrounding
+		 * static content -- never on the dock's own floating/home state --
+		 * which is what breaks the prior self-referential boundary (the old
+		 * implementation measured `home`, whose own occupied height changed
+		 * depending on the very state it was deciding). */
+		var sentinel = document.createElement('div');
+		sentinel.className = 'gloskin-ui1-purchase-dock-sentinel';
+		sentinel.setAttribute('aria-hidden', 'true');
+
 		/* The dock's real, normal-flow, full-width DOM home: directly after
 		 * Related Products, or at the end of the primary product root when
 		 * Related is absent. This -- not the old summary slot -- is where
@@ -237,8 +295,10 @@
 		var home = document.createElement('div');
 		home.className = 'gloskin-ui1-purchase-dock-home';
 		if (related) {
-			related.insertAdjacentElement('afterend', home);
+			related.insertAdjacentElement('afterend', sentinel);
+			sentinel.insertAdjacentElement('afterend', home);
 		} else {
+			product.appendChild(sentinel);
 			product.appendChild(home);
 		}
 
@@ -247,18 +307,21 @@
 
 		product.style.setProperty('--gloskin-purchase-dock-bottom', 'max(16px, env(safe-area-inset-bottom))');
 
-		function dockHeight() {
-			return Math.ceil(dock.getBoundingClientRect().height || dock.offsetHeight || 0);
+		function measureDockHeight() {
+			return Math.round(dock.getBoundingClientRect().height || dock.offsetHeight || 0);
 		}
 
 		function canFloat() {
-			var height = dockHeight();
-			return window.innerHeight >= MIN_FLOAT_HEIGHT && height > 0 && height <= window.innerHeight * 0.55;
+			var height = cachedDockHeight || measureDockHeight();
+			return window.innerHeight >= MIN_FLOAT_HEIGHT && height > 0 && height <= window.innerHeight * MAX_FLOAT_RATIO;
 		}
 
 		/* Full-block fixed geometry always derives from the PDP container,
 		 * never a summary/purchase slot and never an arbitrary desktop cap.
-		 * Clamping only guards the safe viewport edges on narrow devices. */
+		 * Clamping only guards the safe viewport edges on narrow devices.
+		 * Only left/width are genuine runtime measurements requiring inline
+		 * style -- position/bottom are owned by the is-floating/is-floating-
+		 * enter/is-lifting CSS classes instead (section 20). */
 		function fullWidthGeometry() {
 			var rect = container.getBoundingClientRect();
 			var viewportWidth = document.documentElement.clientWidth || window.innerWidth;
@@ -267,151 +330,326 @@
 			return { left: left, width: Math.max(0, right - left) };
 		}
 
-		function homeReachedNow() {
-			var height = dockHeight();
-			var rect = home.getBoundingClientRect();
-			var releaseLine = window.innerHeight - BOTTOM_GAP - height;
-			return rect.top <= releaseLine;
+		function applyFloatingGeometry() {
+			var geometry = fullWidthGeometry();
+			dock.style.left = geometry.left + 'px';
+			dock.style.width = geometry.width + 'px';
 		}
 
-		/* While floating, home reserves the dock's real measured height so
-		 * Footer/next content never jumps when the dock later settles into
-		 * normal flow -- intentional occupancy, not ghost space, and never
-		 * reserved back inside .summary. */
+		function clearFloatingGeometry() {
+			dock.style.removeProperty('left');
+			dock.style.removeProperty('width');
+		}
+
 		function reserveHomeHeight() {
-			home.style.minHeight = dockHeight() + 'px';
+			home.style.minHeight = (cachedDockHeight || measureDockHeight()) + 'px';
 		}
 
 		function releaseHomeHeight() {
 			home.style.removeProperty('min-height');
 		}
 
-		function clearFloatingGeometry() {
-			dock.style.removeProperty('left');
-			dock.style.removeProperty('top');
-			dock.style.removeProperty('width');
-			dock.style.removeProperty('bottom');
-			dock.style.removeProperty('position');
+		/* Signed distance from the sentinel to the line the floating dock's
+		 * own top edge currently occupies. Positive: sentinel is still
+		 * below that line, safe to float. Zero/negative: the sentinel has
+		 * reached/passed it, the dock should settle. This is the ONE
+		 * boundary authority -- both the IntersectionObserver callback and
+		 * the resize-triggered resync read this same function, and it never
+		 * depends on the dock's own current state. */
+		function computeSentinelDistance() {
+			var rect = sentinel.getBoundingClientRect();
+			var floatTopLine = window.innerHeight - BOTTOM_GAP - (cachedDockHeight || measureDockHeight());
+			return rect.top - floatTopLine;
 		}
 
-		function revealReady() {
-			dock.classList.remove('is-preparing');
-			dock.classList.add('is-ready');
+		/* -----------------------------------------------------------------
+		 * Transition lock (section 8): while settling/lifting is actively
+		 * animating, observer activity may only request a re-sync, never
+		 * start a second transition. Exactly one fallback timer is ever
+		 * scheduled per transition -- never stacked, never a queued RAF
+		 * loop.
+		 * ----------------------------------------------------------------- */
+		function lockTransition() {
+			transitionLocked = true;
 		}
 
-		function revealStatic() {
-			revealReady();
-			dock.style.removeProperty('opacity');
-			dock.style.removeProperty('visibility');
-			dock.style.removeProperty('transform');
-		}
-
-		function revealFloating(animate) {
-			revealReady();
-			if (revealFrame) {
-				window.cancelAnimationFrame(revealFrame);
-				revealFrame = 0;
+		function unlockTransition() {
+			transitionLocked = false;
+			if (transitionFallback) {
+				window.clearTimeout(transitionFallback);
+				transitionFallback = 0;
 			}
-			if (!animate || prefersReducedMotion) {
-				dock.style.removeProperty('opacity');
-				dock.style.removeProperty('transform');
+			if (syncPending) {
+				syncPending = false;
+				syncState();
+			}
+		}
+
+		function afterTransition(callback) {
+			var done = false;
+			function finish(event) {
+				if (done) { return; }
+				if (event && (event.target !== dock || event.propertyName !== 'transform')) { return; }
+				done = true;
+				dock.removeEventListener('transitionend', finish);
+				callback();
+				unlockTransition();
+			}
+			dock.addEventListener('transitionend', finish);
+			transitionFallback = window.setTimeout(finish, TRANSITION_MS + 80);
+		}
+
+		/* -----------------------------------------------------------------
+		 * FLIP-style settle/lift (sections 9-10): the SAME dock node glides
+		 * between its floating and home geometry instead of teleporting.
+		 * Only transform/opacity are animated; left/width/bottom are never
+		 * animated (section 5, section 23).
+		 * ----------------------------------------------------------------- */
+		function settleWithFlip() {
+			if (transitionLocked) { syncPending = true; return; }
+			var first = dock.getBoundingClientRect();
+
+			dock.classList.remove('is-floating', 'is-floating-enter');
+			clearFloatingGeometry();
+			dock.classList.add('is-settling');
+
+			/* The dock is now a normal static child of `home`; measure its
+			 * real resting position in the SAME synchronous pass. */
+			var last = dock.getBoundingClientRect();
+
+			/* Section 11: never a frame where both the reserved home height
+			 * and the settled dock's own static height are counted, and
+			 * never a frame where neither is -- release the reservation in
+			 * this same synchronous pass, immediately after the dock itself
+			 * already occupies that space in normal flow. */
+			releaseHomeHeight();
+
+			if (prefersReducedMotion) {
+				dock.classList.remove('is-settling');
+				dock.classList.add('is-home');
+				state = STATE.HOME;
+				rebuildSentinelObserver(true);
 				return;
 			}
-			dock.style.opacity = '0';
-			dock.style.transform = 'translateY(calc(100% + 20px))';
-			void dock.offsetHeight;
-			revealFrame = window.requestAnimationFrame(function () {
-				revealFrame = 0;
-				if (state !== 'floating') { return; }
-				dock.style.opacity = '1';
-				dock.style.transform = 'translateY(0)';
+
+			state = STATE.SETTLING;
+			lockTransition();
+			var dx = first.left - last.left;
+			var dy = first.top - last.top;
+			dock.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+			void dock.offsetHeight; // force layout before animating from this inverted position
+			flipFrame = window.requestAnimationFrame(function () {
+				flipFrame = 0;
+				dock.style.transform = 'translate(0,0)';
+			});
+			afterTransition(function () {
+				dock.style.removeProperty('transform');
+				dock.classList.remove('is-settling');
+				dock.classList.add('is-home');
+				state = STATE.HOME;
+				/* IntersectionObserver guarantees an initial callback on
+				 * .observe(); forcing one fresh re-subscription right after
+				 * a completed transition re-validates the current true
+				 * geometry deterministically, rather than depending on a
+				 * native re-fire for the exact next scroll after a layout
+				 * change this significant (fixed -> static). */
+				rebuildSentinelObserver(true);
 			});
 		}
 
-		function setState(next, animate) {
-			if (next === state) {
-				if (next === 'floating') { updateFloatingGeometry(); }
+		function liftWithFlip() {
+			if (transitionLocked) { syncPending = true; return; }
+			var first = dock.getBoundingClientRect();
+
+			dock.classList.remove('is-home');
+			reserveHomeHeight();
+			dock.classList.add('is-lifting');
+			applyFloatingGeometry();
+
+			var last = dock.getBoundingClientRect();
+
+			if (prefersReducedMotion) {
+				dock.classList.remove('is-lifting');
+				dock.classList.add('is-floating');
+				state = STATE.FLOATING;
+				rebuildSentinelObserver(true);
 				return;
 			}
-			state = next;
-			dock.classList.toggle('is-floating', next === 'floating');
-			dock.classList.toggle('is-home', next === 'home');
 
-			if (next === 'floating') {
-				updateFloatingGeometry();
-				revealFloating(animate !== false);
-				return;
-			}
+			state = STATE.LIFTING;
+			lockTransition();
+			var dx = first.left - last.left;
+			var dy = first.top - last.top;
+			dock.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+			void dock.offsetHeight;
+			flipFrame = window.requestAnimationFrame(function () {
+				flipFrame = 0;
+				dock.style.transform = 'translate(0,0)';
+			});
+			afterTransition(function () {
+				dock.style.removeProperty('transform');
+				dock.classList.remove('is-lifting');
+				dock.classList.add('is-floating');
+				state = STATE.FLOATING;
+				rebuildSentinelObserver(true);
+			});
+		}
 
+		function settleImmediate() {
 			clearFloatingGeometry();
 			releaseHomeHeight();
-			revealStatic();
+			dock.classList.remove('is-floating', 'is-floating-enter', 'is-settling', 'is-lifting');
+			dock.classList.add('is-home');
+			state = STATE.HOME;
 		}
 
-		function updateFloatingGeometry() {
-			if (state !== 'floating') { return; }
-			var geometry = fullWidthGeometry();
-			dock.style.position = 'fixed';
-			dock.style.left = geometry.left + 'px';
-			dock.style.top = 'auto';
-			dock.style.width = geometry.width + 'px';
-			dock.style.bottom = 'var(--gloskin-purchase-dock-bottom)';
-			reserveHomeHeight();
-		}
-
-		function syncState(animate) {
+		/* -----------------------------------------------------------------
+		 * State machine entry point. Observers/resize/focusout only ever
+		 * call requestSync(); the machine itself decides what, if anything,
+		 * changes. Never toggles classes directly from outside this
+		 * function family.
+		 * ----------------------------------------------------------------- */
+		function requestSync() {
 			if (!ready) { return; }
-			atHome = homeReachedNow();
+			if (transitionLocked) { syncPending = true; return; }
+			syncState();
+		}
+
+		function syncState() {
 			if (!canFloat()) {
-				setState('home', false);
+				if (state === STATE.FLOATING || state === STATE.FLOATING_ENTER) { settleWithFlip(); }
+				else if (state !== STATE.HOME) { settleImmediate(); }
 				return;
 			}
-			setState(atHome ? 'home' : 'floating', animate);
+
+			var distance = computeSentinelDistance();
+
+			if (state === STATE.FLOATING || state === STATE.FLOATING_ENTER) {
+				if (distance <= -SETTLE_EPSILON) { settleWithFlip(); }
+				return;
+			}
+
+			if (state === STATE.HOME) {
+				if (distance >= RESUME_HYSTERESIS) { liftWithFlip(); }
+				return;
+			}
 		}
 
-		function rebuildHomeObserver() {
-			if (homeObserver) { homeObserver.disconnect(); }
-			var rootBottomMargin = Math.max(0, BOTTOM_GAP + dockHeight());
-			homeObserver = new IntersectionObserver(function (entries) {
-				var entry = entries[entries.length - 1];
-				atHome = entry.isIntersecting || entry.boundingClientRect.top < 0;
-				if (ready) { syncState(true); }
-			}, { root: null, rootMargin: '0px 0px -' + rootBottomMargin + 'px 0px', threshold: 0 });
-			homeObserver.observe(home);
-		}
-
-		function scheduleRebuild() {
-			if (rebuildFrame) { window.cancelAnimationFrame(rebuildFrame); }
-			rebuildFrame = window.requestAnimationFrame(function () {
-				rebuildFrame = 0;
-				rebuildHomeObserver();
-				syncState(false);
+		/* -----------------------------------------------------------------
+		 * ResizeObserver discipline (section 12): update cached geometry,
+		 * coalesce into one RAF, and only escalate to a real re-sync (or
+		 * observer rebuild) when the measured height actually changed by a
+		 * meaningful amount -- never on sub-pixel churn. The dock's own
+		 * content growing/shrinking (e.g. a variation selected) is never a
+		 * keyboard concern and always syncs normally, regardless of focus. */
+		function scheduleContentResize() {
+			if (resizeFrame) { return; }
+			resizeFrame = window.requestAnimationFrame(function () {
+				resizeFrame = 0;
+				var height = measureDockHeight();
+				var changed = Math.abs(height - cachedDockHeight) >= HEIGHT_CHANGE_EPSILON;
+				cachedDockHeight = height;
+				if (state === STATE.FLOATING || state === STATE.FLOATING_ENTER || state === STATE.LIFTING) {
+					reserveHomeHeight();
+					applyFloatingGeometry();
+				}
+				if (changed) { rebuildSentinelObserver(); }
+				requestSync();
 			});
 		}
 
-		var resizeObserver = new ResizeObserver(function () { scheduleRebuild(); });
-		resizeObserver.observe(dock);
-		window.addEventListener('resize', scheduleRebuild, { passive: true });
-		window.addEventListener('orientationchange', scheduleRebuild, { passive: true });
-		rebuildHomeObserver();
+		/* Section 17: a viewport-height change (mobile keyboard opening) is
+		 * a genuinely different signal from the dock's own content
+		 * resizing above. Safe geometry (left/width, reservation) is still
+		 * kept current, but while focus is inside the dock this must never
+		 * itself start a floating/home transition -- the focusout handler
+		 * performs one normal sync once focus actually leaves. */
+		function scheduleViewportResize() {
+			if (viewportResizeFrame) { return; }
+			viewportResizeFrame = window.requestAnimationFrame(function () {
+				viewportResizeFrame = 0;
+				if (state === STATE.FLOATING || state === STATE.FLOATING_ENTER || state === STATE.LIFTING) {
+					reserveHomeHeight();
+					applyFloatingGeometry();
+				}
+				if (focusWithinDock) { return; }
+				requestSync();
+			});
+		}
 
-		/* One frame after relocation lets the browser resolve the full-width
-		 * home-anchored geometry before the floating bar is shown. This
-		 * avoids the summary-card -> bottom-dock flash and makes the first
-		 * visible frame the slide-up presentation state. */
+		/* The single line the observer must actually catch the sentinel
+		 * crossing depends on which direction the machine currently cares
+		 * about: while HOME, the resume (lift) line; otherwise the settle
+		 * line. A single static/generous margin cannot do this -- a
+		 * binary threshold=0 observer only re-fires on ITS OWN boundary
+		 * crossing, so if that boundary sits far from the real hysteresis
+		 * line, the state machine can stop hearing about further scrolling
+		 * once the user is on the far side of the observer line but has
+		 * not yet reached (or already passed back over) the real decision
+		 * line. Deriving the margin from the SAME constants
+		 * computeSentinelDistance() uses keeps the observer boundary and
+		 * the real decision line identical, so every relevant crossing
+		 * re-fires it. This is why every settle/lift completion forces a
+		 * rebuild (sections 6/9/10) -- the relevant line moves each time
+		 * state changes. */
+		function currentBoundaryLine() {
+			var floatTopLine = window.innerHeight - BOTTOM_GAP - (cachedDockHeight || measureDockHeight());
+			return state === STATE.HOME ? floatTopLine + RESUME_HYSTERESIS : floatTopLine - SETTLE_EPSILON;
+		}
+
+		function rebuildSentinelObserver(force) {
+			var marginPx = Math.max(0, Math.min(window.innerHeight, Math.round(window.innerHeight - currentBoundaryLine())));
+			if (!force && sentinelObserver && marginPx === observerMarginPx) { return; }
+			if (sentinelObserver) { sentinelObserver.disconnect(); }
+			observerMarginPx = marginPx;
+			sentinelObserver = new IntersectionObserver(function () {
+				requestSync();
+			}, { root: null, rootMargin: "0px 0px -" + marginPx + "px 0px", threshold: 0 });
+			sentinelObserver.observe(sentinel);
+		}
+
+		var domResizeObserver = new ResizeObserver(function () { scheduleContentResize(); });
+		domResizeObserver.observe(dock);
+		window.addEventListener('resize', scheduleViewportResize, { passive: true });
+		window.addEventListener('orientationchange', scheduleViewportResize, { passive: true });
+
+		/* -----------------------------------------------------------------
+		 * Zero-flicker initial reveal (section 4): first RAF measures and
+		 * positions while still invisible; second RAF commits the visible
+		 * entrance state. Never reveal first and reposition second.
+		 * ----------------------------------------------------------------- */
 		window.requestAnimationFrame(function () {
-			ready = true;
-			window.clearTimeout(safetyReveal);
-			atHome = homeReachedNow();
-			if (canFloat() && !atHome) {
-				setState('floating', true);
-			} else {
-				setState('home', false);
-			}
+			cachedDockHeight = measureDockHeight();
+			var willFloat = canFloat() && computeSentinelDistance() > 0;
 
-			if (!nativeNodesPreserved() && window.console && window.console.error) {
-				window.console.error('gloskin-ui1-purchase-dock: native Woo node identity changed during presentation composition');
+			if (willFloat) {
+				reserveHomeHeight();
+				dock.classList.add('is-floating-enter');
+				applyFloatingGeometry();
+			} else {
+				dock.classList.add('is-home');
 			}
+			dock.classList.remove('is-preparing');
+
+			window.requestAnimationFrame(function () {
+				ready = true;
+				window.clearTimeout(safetyReveal);
+
+				if (willFloat) {
+					dock.classList.remove('is-floating-enter');
+					dock.classList.add('is-floating');
+					state = STATE.FLOATING;
+				} else {
+					state = STATE.HOME;
+				}
+				dock.classList.add('is-ready');
+
+				rebuildSentinelObserver();
+
+				if (!nativeNodesPreserved() && window.console && window.console.error) {
+					window.console.error('gloskin-ui1-purchase-dock: native Woo node identity changed during presentation composition');
+				}
+			});
 		});
 	}
 
