@@ -25,6 +25,7 @@
 		var quantityBefore = formBefore.querySelector('.quantity');
 		var quantityInputBefore = quantityBefore ? quantityBefore.querySelector('input.qty') : null;
 		var submitBefore = formBefore.querySelector('.single_add_to_cart_button');
+		var buyNowBefore = null;
 
 		function sameNodeList(before, after) {
 			if (before.length !== after.length) { return false; }
@@ -116,6 +117,23 @@
 				actionRegion.appendChild(submitBefore);
 			}
 
+			/* Buy Now: a JS-composed sibling control, never a second form/
+			 * mutation owner -- it only ever triggers the SAME real native
+			 * submit button's own click (see the delegated dock click
+			 * handler below), reusing 100% of the existing add-to-cart
+			 * validation/AJAX/native-fallback path. gloskin-ui1-core.js's
+			 * existing single-product success handler recognizes the
+			 * one-shot data-gloskin-buy-now-redirect flag set right before
+			 * that click and redirects to the cart page instead of
+			 * rendering the normal View Cart link. */
+			buyNowBefore = document.createElement('button');
+			buyNowBefore.type = 'button';
+			buyNowBefore.className = 'gloskin-ui1-purchase-dock__buy-now';
+			buyNowBefore.setAttribute('data-gloskin-buy-now', '');
+			buyNowBefore.textContent = 'Beli Sekarang';
+			buyNowBefore.disabled = !!submitBefore.disabled;
+			actionRegion.appendChild(buyNowBefore);
+
 			formBefore.appendChild(productRegion);
 			formBefore.appendChild(actionRegion);
 			dock.setAttribute('data-gloskin-purchase-composed', 'true');
@@ -163,13 +181,38 @@
 		dock.addEventListener('click', function (event) {
 			var minusButton = event.target.closest ? event.target.closest('.gloskin-ui1-purchase-dock__qty-minus') : null;
 			var plusButton = event.target.closest ? event.target.closest('.gloskin-ui1-purchase-dock__qty-plus') : null;
-			if (!minusButton && !plusButton) { return; }
-			var control = (minusButton || plusButton).closest('.gloskin-ui1-purchase-dock__qty-control');
-			var input = control ? control.querySelector('input.qty') : null;
-			if (!input) { return; }
-			event.preventDefault();
-			stepQuantityInput(input, minusButton ? -1 : 1);
+			if (minusButton || plusButton) {
+				var control = (minusButton || plusButton).closest('.gloskin-ui1-purchase-dock__qty-control');
+				var input = control ? control.querySelector('input.qty') : null;
+				if (!input) { return; }
+				event.preventDefault();
+				stepQuantityInput(input, minusButton ? -1 : 1);
+				return;
+			}
+			var buyNowButton = event.target.closest ? event.target.closest('[data-gloskin-buy-now]') : null;
+			if (buyNowButton) {
+				event.preventDefault();
+				if (!submitBefore || submitBefore.disabled) { return; }
+				/* One-shot flag, consumed and removed by gloskin-ui1-core.js's
+				 * existing single-product AJAX success handler. Triggering the
+				 * REAL submit button's own click reuses every existing
+				 * validation/interception/native-fallback path unchanged --
+				 * this never submits a second form or opens a new mutation
+				 * owner. */
+				submitBefore.setAttribute('data-gloskin-buy-now-redirect', '1');
+				submitBefore.click();
+			}
 		});
+
+		/* Keep Buy Now's enabled state mirrored to the real submit button's
+		 * own disabled state (Woo's variation-form JS toggles this as the
+		 * shopper picks a variation) -- observed, never polled. */
+		if (buyNowBefore && submitBefore && window.MutationObserver) {
+			var buyNowSync = new MutationObserver(function () {
+				buyNowBefore.disabled = !!submitBefore.disabled;
+			});
+			buyNowSync.observe(submitBefore, { attributes: true, attributeFilter: ['disabled'] });
+		}
 
 		var safetyReveal = window.setTimeout(function () {
 			if (!ready) {

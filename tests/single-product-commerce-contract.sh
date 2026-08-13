@@ -280,7 +280,7 @@ grep -qF "link.className = 'added_to_cart wc-forward';" "$core_js" \
 	|| fail "View Cart: helper must use Woo's own added_to_cart/wc-forward class contract"
 grep -qF "submitter.parentNode.querySelector('a.added_to_cart.wc-forward');" "$core_js" \
 	|| fail "View Cart: helper must reuse an existing link (idempotent) instead of always inserting a new one"
-grep -qF 'onSuccess: function () { renderSingleProductViewCartLink(submitter); }' "$core_js" \
+grep -qF 'onSuccess: function () { handleSingleProductAddToCartSuccess(submitter); }' "$core_js" \
 	|| fail "View Cart: helper must run only after a confirmed successful Woo mutation, not on dispatch"
 grep -qF '.gloskin-ui1 a.added_to_cart.wc-forward{' "$core_css" || fail "View Cart: secondary-action styling missing"
 
@@ -419,7 +419,21 @@ fi
 grep -qF "function render_wishlist_toggle()" "$adapter" || fail "PDP simplify: render_wishlist_toggle() itself must remain (header/product-card Wishlist stays untouched, only the PDP hook is removed)"
 grep -qF "add_action( 'woocommerce_single_product_summary', array( \$this, 'render_product_facts' ), 21 );" "$adapter" || fail "PDP simplify: product facts must be rehooked directly into the primary summary (no longer depend on the removed meta wrapper)"
 grep -qF 'return array();' "$description_boundary" || fail "PDP simplify: all Woo product tabs (Description/Additional Information/Reviews) must be removed"
-grep -qF "add_filter( 'woocommerce_short_description', 'gloskin_ui1_format_product_description' );" "$description_boundary" || fail "PDP simplify: the short description (now the one primary PDP body field) must reuse the existing safety-formatting pipeline"
+grep -qF "add_filter( 'woocommerce_short_description', 'gloskin_ui1_render_primary_pdp_description' );" "$description_boundary" || fail "PDP simplify: the short description (now the one primary PDP body field) must reuse the existing safety-formatting pipeline"
+
+# Live description merge: the display-time equivalent of the one-time
+# admin consolidation action, reusing the exact same pure helper (never a
+# second/divergent merge implementation).
+grep -qF 'function gloskin_ui1_render_primary_pdp_description(' "$description_boundary" || fail "live description merge owner missing"
+grep -qF 'Gloskin_Site_Core_WooCommerce_Adapter::consolidate_description_content(' "$description_boundary" || fail "live description merge must reuse the existing pure consolidate_description_content() helper, never a second implementation"
+grep -qF 'return gloskin_ui1_format_product_description( $content );' "$description_boundary" || fail "live description merge must still route through the existing safety-formatting pipeline"
+
+# "Cara Penggunaan" (usage) removed from the PDP facts display per client
+# request; BPOM/Komposisi remain.
+if grep -qF "'Cara Penggunaan'" "$adapter"; then
+	fail "PDP facts: 'Cara Penggunaan' (usage) must no longer be rendered"
+fi
+grep -qF "'BPOM'" "$adapter" && grep -qF "'Komposisi'" "$adapter" || fail "PDP facts: BPOM/Komposisi must remain"
 
 # Exactly one native form.cart is still wrapped (purchase dock unchanged)
 # and no second cart-mutation owner was introduced by any of the above.
@@ -427,5 +441,36 @@ grep -qF "add_action( 'woocommerce_before_add_to_cart_form', array( \$this, 'ope
 if grep -RInE "wp_ajax_(nopriv_)?gloskin_(add_to_cart|cart|checkout)" "$adapter" "$core_js"; then
 	fail "PDP simplify: a second cart-mutation owner was introduced"
 fi
+
+# -----------------------------------------------------------------------
+# Purchase dock spacing + Buy Now: settled-dock top spacing, action-area
+# gap, and a Buy Now control that only ever triggers the SAME real submit
+# button (never a second form/mutation owner), redirecting to the cart
+# page on confirmed success.
+# -----------------------------------------------------------------------
+purchase_dock_js="$plugin_root/assets/js/gloskin-ui1-purchase-dock.js"
+
+grep -qF 'body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home{grid-column:1/-1;width:100%;min-width:0;margin-top:24px}' "$geometry" \
+	|| fail "purchase dock: settled-state top spacing missing"
+grep -qF 'gloskin-ui1-purchase-dock__action{display:flex;align-items:center;justify-content:flex-end;gap:12px' "$geometry" \
+	|| fail "purchase dock: quantity/Add-to-cart action area must have breathing room (gap)"
+
+grep -qF "buyNowBefore = document.createElement('button');" "$purchase_dock_js" || fail "Buy Now: control creation missing"
+grep -qF "buyNowBefore.type = 'button';" "$purchase_dock_js" || fail "Buy Now: must be type=button, never a second real form submit control"
+grep -qF "actionRegion.appendChild(buyNowBefore);" "$purchase_dock_js" || fail "Buy Now: must be appended into the existing action region, not a duplicate structure"
+grep -qF "submitBefore.setAttribute('data-gloskin-buy-now-redirect', '1');" "$purchase_dock_js" || fail "Buy Now: must flag the real submit button before triggering it"
+grep -qF 'submitBefore.click();' "$purchase_dock_js" || fail "Buy Now: must trigger the SAME real native submit button's own click, never open a second mutation path"
+if grep -RInE "wp_ajax_(nopriv_)?gloskin_(add_to_cart|cart|checkout)" "$purchase_dock_js"; then
+	fail "Buy Now: a second cart-mutation owner was introduced"
+fi
+grep -qF 'buyNowBefore.disabled = !!submitBefore.disabled;' "$purchase_dock_js" || fail "Buy Now: enabled state must stay mirrored to the real submit button's own disabled state"
+
+grep -qF 'function handleSingleProductAddToCartSuccess(submitter)' "$core_js" || fail "Buy Now: single-product success handler missing"
+grep -qF "submitter.hasAttribute('data-gloskin-buy-now-redirect')" "$core_js" || fail "Buy Now: success handler must check the one-shot redirect flag"
+grep -qF 'window.location.href = cartUrl;' "$core_js" || fail "Buy Now: confirmed success must redirect to the existing canonical cart URL"
+grep -qF 'renderSingleProductViewCartLink(submitter);' "$core_js" || fail "Buy Now: the normal Add to Cart path (View Cart link) must remain fully intact"
+
+grep -qF -- '.gloskin-ui1-purchase-dock__buy-now{display:inline-flex' "$geometry" || fail "Buy Now: button styling missing"
+grep -qF -- 'border-radius:var(--gloskin-action-radius)' "$geometry" || fail "Buy Now: must share the one Action Kit radius token, not a bespoke pill"
 
 echo "single-product commerce contract passed"

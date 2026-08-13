@@ -124,7 +124,7 @@ grep -qF "window.clearTimeout(safetyReveal);" "$dock_js" || fail "successful ini
 
 # Enhanced presentation is one deliberate accent command bar. Core CSS stays
 # the base/no-JS owner; this geometry file is the sole enhanced composition owner.
-grep -qF '>.gloskin-ui1-purchase-dock-home{grid-column:1/-1;width:100%;min-width:0}' "$geometry" || fail "full-width dock-home owner missing"
+grep -qF '>.gloskin-ui1-purchase-dock-home{grid-column:1/-1;width:100%;min-width:0;margin-top:24px}' "$geometry" || fail "full-width dock-home owner missing"
 grep -qF '>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{position:static;grid-column:1/-1;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:12px clamp(18px,2vw,28px);border:0;border-radius:var(--gloskin-radius-sm);background:var(--gloskin-accent);color:var(--gloskin-inverse)' "$geometry" || fail "enhanced accent purchase surface missing"
 grep -qF '.gloskin-ui1-purchase-dock__form{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:clamp(20px,3vw,48px)' "$geometry" || fail "desktop one-row command-bar grid missing"
 grep -qF '.gloskin-ui1-purchase-dock__product{display:flex;align-items:center' "$geometry" || fail "left product/variant region missing"

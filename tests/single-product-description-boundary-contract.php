@@ -21,6 +21,7 @@ function add_filter($tag, $callback, $priority = 10, $accepted_args = 1) {
 function is_product() { return $GLOBALS['gl_is_product']; }
 function __($text, $domain = null) { return $text; }
 function esc_html($text) { return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8'); }
+function wp_strip_all_tags($text) { return trim(strip_tags((string) $text)); }
 function apply_filters($tag, $value) {
     if ('the_content' === $tag) {
         $GLOBALS['gl_the_content_calls']++;
@@ -55,6 +56,7 @@ function ok($condition, $message) {
     }
 }
 
+require dirname(__DIR__) . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php';
 require dirname(__DIR__) . '/plugin/gloskin-site-core/templates/parts/product-description-boundary.php';
 
 gloskin_ui1_register_product_description_boundary();
@@ -106,5 +108,42 @@ $formatted_short_description = gloskin_ui1_format_product_description($risky_sho
 ok(strpos($formatted_short_description, 'Ringkasan.') !== false, 'Short description own content must still render');
 ok(strpos($formatted_short_description, 'single-product') === false, 'Short description must never render a nested product_page embed');
 ok(strpos($formatted_short_description, 'BLOCK PRODUCT') === false, 'Short description must never render a nested single-product block');
+
+// -----------------------------------------------------------------------
+// gloskin_ui1_render_primary_pdp_description(): the live display-time
+// equivalent of the one-time admin consolidation action, for products
+// that have not been consolidated yet -- reported live on staging: a
+// product's Short Description was still just its brief teaser (the long
+// description was never migrated into it), so the PDP showed only that
+// teaser instead of the real full content.
+// -----------------------------------------------------------------------
+class GL_Test_Product_With_Long_Description {
+    public function get_description() {
+        return '<p>Teaser.</p><p>Extra body content only in the long description.</p>';
+    }
+}
+$GLOBALS['product'] = new GL_Test_Product_With_Long_Description();
+$live_merged = gloskin_ui1_render_primary_pdp_description('Teaser.');
+ok(strpos($live_merged, 'Teaser.') !== false, 'the existing short description must still render');
+ok(strpos($live_merged, 'Extra body content only in the long description.') !== false, 'un-consolidated long-description content missing from the short description must render live too, without needing the one-time admin action to have run first');
+
+// Once a product IS fully consolidated (short description already
+// contains everything), the live merge must be a real no-op -- never
+// duplicating content on every single request.
+$already_consolidated = 'Teaser. Extra body content only in the long description.';
+$no_op_merged = gloskin_ui1_render_primary_pdp_description($already_consolidated);
+ok(substr_count($no_op_merged, 'Extra body content only in the long description.') === 1, 'an already-consolidated short description must never be duplicated by the live merge');
+
+// The live merge must reuse the SAME safety pipeline (self-referencing
+// embed guard), never a second/divergent formatter.
+class GL_Test_Product_With_Risky_Description {
+    public function get_description() {
+        return '<p>Extra.</p>[product_page id="777"]<!-- wp:woocommerce/single-product {"productId":777} --><div>BLOCK PRODUCT</div><!-- /wp:woocommerce/single-product -->';
+    }
+}
+$GLOBALS['product'] = new GL_Test_Product_With_Risky_Description();
+$live_merged_risky = gloskin_ui1_render_primary_pdp_description('Teaser.');
+ok(strpos($live_merged_risky, 'single-product') === false, 'the live merge must never render a nested product_page embed pulled in from the long description');
+ok(strpos($live_merged_risky, 'BLOCK PRODUCT') === false, 'the live merge must never render a nested single-product block pulled in from the long description');
 
 echo "single-product-description-boundary: OK\n";

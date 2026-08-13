@@ -36,7 +36,33 @@ function gloskin_ui1_register_product_description_boundary() {
 		return;
 	}
 	add_filter( 'woocommerce_product_tabs', 'gloskin_ui1_product_tabs_description_boundary', PHP_INT_MAX );
-	add_filter( 'woocommerce_short_description', 'gloskin_ui1_format_product_description' );
+	add_filter( 'woocommerce_short_description', 'gloskin_ui1_render_primary_pdp_description' );
+}
+
+/**
+ * Live display-time equivalent of the one-time admin "Consolidate Product
+ * Descriptions" action, for products that have not been consolidated yet:
+ * reuses the exact same pure
+ * Gloskin_Site_Core_WooCommerce_Adapter::consolidate_description_content()
+ * helper (never a second/divergent merge implementation) to fold any
+ * long-description content missing from the Short Description into what
+ * is actually rendered here -- this never writes to post_excerpt, it only
+ * affects what this one request displays. Once the admin action has
+ * actually run for a product, its stored Short Description already
+ * contains everything, so this is then a real no-op merge every time.
+ *
+ * @param string $content Woo's own short-description value for the current product.
+ * @return string
+ */
+function gloskin_ui1_render_primary_pdp_description( $content ) {
+	global $product;
+	if ( is_object( $product ) && method_exists( $product, 'get_description' )
+		&& class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' )
+		&& method_exists( 'Gloskin_Site_Core_WooCommerce_Adapter', 'consolidate_description_content' ) ) {
+		$merge   = Gloskin_Site_Core_WooCommerce_Adapter::consolidate_description_content( (string) $content, (string) $product->get_description() );
+		$content = $merge['result'];
+	}
+	return gloskin_ui1_format_product_description( $content );
 }
 
 /**

@@ -1346,9 +1346,11 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		}
 
 		$facts = array(
-			'BPOM'        => $this->first_product_value( $product, array( 'bpom', 'pa_bpom' ), array( 'bpom' ) ),
-			'Komposisi'   => $this->first_product_value( $product, array( 'composition', 'pa_composition' ), array( 'composition' ) ),
-			'Cara Penggunaan' => $this->first_product_value( $product, array( 'usage', 'usage-instructions', 'pa_usage' ), array( 'usage', 'usage_instructions' ) ),
+			'BPOM'      => $this->first_product_value( $product, array( 'bpom', 'pa_bpom' ), array( 'bpom' ) ),
+			'Komposisi' => $this->first_product_value( $product, array( 'composition', 'pa_composition' ), array( 'composition' ) ),
+			/* "Cara Penggunaan" (usage instructions) removed from the PDP
+			 * facts display per client request -- usage guidance now lives
+			 * only inside the primary description content itself. */
 		);
 
 		$facts = apply_filters( 'gloskin_site_core_product_facts', $facts, $product );

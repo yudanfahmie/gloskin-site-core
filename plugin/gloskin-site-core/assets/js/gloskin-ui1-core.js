@@ -1137,11 +1137,35 @@
 			}
 			event.preventDefault();
 			if (!ajaxAddToCart(form, submitter, {
-				onSuccess: function () { renderSingleProductViewCartLink(submitter); }
+				onSuccess: function () { handleSingleProductAddToCartSuccess(submitter); }
 			})) {
 				nativeFallbackSubmit(form, submitter);
 			}
 		});
+	}
+
+	/**
+	 * Success presentation for the single-product purchase dock: Buy Now
+	 * (gloskin-ui1-purchase-dock.js) flags the SAME real submitter with a
+	 * one-shot data-gloskin-buy-now-redirect attribute right before
+	 * triggering its click, since it never submits a second form/opens a
+	 * new mutation owner -- only the presentation branches here, after a
+	 * confirmed successful Woo mutation. The normal Add to Cart path is
+	 * completely unchanged (still just the existing View Cart link).
+	 *
+	 * @param {Element} submitter The real submit button that triggered this mutation.
+	 * @return {void}
+	 */
+	function handleSingleProductAddToCartSuccess(submitter) {
+		if (submitter && submitter.hasAttribute('data-gloskin-buy-now-redirect')) {
+			submitter.removeAttribute('data-gloskin-buy-now-redirect');
+			var cartUrl = (window.gloskinData || {}).cartUrl;
+			if (cartUrl) {
+				window.location.href = cartUrl;
+				return;
+			}
+		}
+		renderSingleProductViewCartLink(submitter);
 	}
 
 	/* -----------------------------------------------------------------
