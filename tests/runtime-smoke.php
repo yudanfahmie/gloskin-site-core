@@ -309,7 +309,8 @@ function get_posts( $args = array() ) {
 	} ) );
 	usort( $posts, static fn( $a, $b ) => strcasecmp( $a->post_title, $b->post_title ) );
 	$limit = isset( $args['posts_per_page'] ) ? (int) $args['posts_per_page'] : ( isset( $args['numberposts'] ) ? (int) $args['numberposts'] : 5 );
-	return $limit < 0 ? $posts : array_slice( $posts, 0, $limit );
+	$posts = $limit < 0 ? $posts : array_slice( $posts, 0, $limit );
+	return 'ids' === ( $args['fields'] ?? '' ) ? array_map( static fn( $post ) => $post->ID, $posts ) : $posts;
 }
 function wp_count_posts( $post_type ) {
 	$count = 0;

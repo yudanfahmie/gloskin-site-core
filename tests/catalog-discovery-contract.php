@@ -111,7 +111,9 @@ function wc_get_products( $args ) {
 	return $results;
 }
 
-/** WordPress get_posts simulation used by live product search. */
+/** WordPress get_posts simulation used by live product search and the
+ *  unfiltered shop catalog projection (real get_posts() honors 'fields' =>
+ *  'ids' by returning plain integer IDs instead of post objects). */
 function get_posts( $args ) {
 	$GLOBALS['gl_last_get_posts_args'] = $args;
 	$excluded_terms = excluded_visibility_terms( $args );
@@ -126,14 +128,15 @@ function get_posts( $args ) {
 			if ( product_has_visibility_term( $product, $term_id ) ) { $excluded = true; break; }
 		}
 		if ( $excluded ) { continue; }
-		$posts[] = (object) array(
+		$posts[] = 'ids' === ( $args['fields'] ?? '' ) ? $product->id : (object) array(
 			'ID'           => $product->id,
 			'post_title'   => $product->name,
 			'post_content' => 'Deskripsi ' . $product->name,
 			'post_excerpt' => '',
 		);
 	}
-	return array_slice( $posts, 0, max( 1, (int) ( $args['posts_per_page'] ?? 5 ) ) );
+	$limit = (int) ( $args['posts_per_page'] ?? 5 );
+	return $limit < 0 ? $posts : array_slice( $posts, 0, max( 1, $limit ) );
 }
 
 function wc_get_product( $id ) { return $GLOBALS['gl_catalog'][ (int) $id ] ?? null; }

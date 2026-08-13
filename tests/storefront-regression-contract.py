@@ -70,18 +70,24 @@ require('[data-gloskin-wishlist-count][hidden]{display:none}' in css, 'wishlist-
 require('!important' not in css.split('[data-gloskin-wishlist-count][hidden]')[1][:40], 'wishlist hidden-badge rule must not use !important')
 require(css.count('[data-gloskin-wishlist-count][hidden]') == 1, 'wishlist hidden-badge rule must not duplicate/generalize to Cart badge')
 
-# Live staging proof (2026-08-13): wc_get_products() with no 'category' key
-# at all -- the only shape the unfiltered "Semua Produk" REST projection
-# used -- fatals specifically through rest_shop_catalog(); every mapped
-# category (which always sets 'category') already proved safe there. The
-# unfiltered branch must reuse that same proven query shape instead of the
-# broken omitted-argument one, via the existing products_paginated() owner.
-require('private function published_category_slugs()' in woo, 'products_paginated() unfiltered branch must have a published-category-slug source')
-require("'taxonomy'   => 'product_cat'" in woo, 'published_category_slugs() must read Woo\'s own product_cat taxonomy')
-require('$catalog_categories = $this->published_category_slugs();' in woo and "$args['category'] = $catalog_categories;" in woo, 'unfiltered products_paginated() must set an explicit category arg instead of omitting it')
+# Live staging proof (2026-08-13): wc_get_products( array( 'paginate' => true,
+# ... ) ) with no 'category' arg -- the only shape the unfiltered "Semua
+# Produk" REST projection used -- fatals deterministically and uncatchably
+# through rest_shop_catalog() (a try/catch boundary around the identical
+# call never even triggered); every mapped category (which always sets
+# 'category') already proved safe. The unfiltered branch must sidestep the
+# broken bulk-paginate query entirely via the existing products_paginated()
+# owner, using the same get_posts()-based approach already proven safe by
+# WordPress's own unfiltered /wp-json/wp/v2/product projection, then
+# hydrate each page's few IDs with the same wc_get_product() every other
+# single-product lookup in this class already uses.
+require('private function products_paginated_unfiltered(' in woo, 'products_paginated() must keep a dedicated unfiltered-branch owner')
+require("'post_type'      => 'product'" in woo and "'fields'         => 'ids'" in woo, 'unfiltered branch must resolve IDs via get_posts(), not the broken wc_get_products() paginate path')
+require('wc_get_product( $id )' in woo, 'unfiltered branch must hydrate each page slice with the existing single-product Woo lookup')
+require("return $this->products_paginated_unfiltered( $page, $per_page );" in woo, 'products_paginated() must delegate the empty-category case to the dedicated safe owner')
 
 header_version = re.search(r'\* Version:\s*([0-9.]+)', plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == '0.7.49', 'production version must be synchronized at 0.7.49')
+require(header_version == kernel_version == '0.7.50', 'production version must be synchronized at 0.7.50')
 
 print('storefront regression contract: OK')

@@ -846,38 +846,23 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 			return $empty;
 		}
 
-		$args = array(
-			'status'    => 'publish',
-			'limit'     => max( 1, min( 48, absint( $per_page ) ) ),
-			'page'      => max( 1, absint( $page ) ),
-			'paginate'  => true,
-			'orderby'   => 'date',
-			'order'     => 'DESC',
-			'tax_query' => $this->catalog_visibility_tax_query(), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Woo's own supported wc_get_products() extension point, not hand-rolled SQL.
-		);
-		if ( '' !== $category_slug ) {
-			$args['category'] = array( $category_slug );
-			$args['orderby']  = 'menu_order';
-			$args['order']    = 'ASC';
-		} else {
-			/* Live staging proof (2026-08-13): wc_get_products() with no
-			 * 'category' key at all -- the only shape "Semua Produk" used --
-			 * fatals specifically when dispatched through the REST route
-			 * (rest_shop_catalog()); every single mapped category, which
-			 * always sets 'category', already proved safe there, and the
-			 * identical unfiltered args succeed through the SSR shop_context()
-			 * call to this same method. Passing every published product_cat
-			 * slug reuses that already-proven query shape instead of the
-			 * broken omitted-argument one, while still returning the full
-			 * unfiltered catalog (every real product carries at least one
-			 * category, Woo's own "Uncategorized" included). */
-			$catalog_categories = $this->published_category_slugs();
-			if ( ! empty( $catalog_categories ) ) {
-				$args['category'] = $catalog_categories;
-			}
+		$per_page = max( 1, min( 48, absint( $per_page ) ) );
+		$page     = max( 1, absint( $page ) );
+
+		if ( '' === $category_slug ) {
+			return $this->products_paginated_unfiltered( $page, $per_page );
 		}
 
-		$result = wc_get_products( $args );
+		$result = wc_get_products( array(
+			'status'    => 'publish',
+			'limit'     => $per_page,
+			'page'      => $page,
+			'paginate'  => true,
+			'orderby'   => 'menu_order',
+			'order'     => 'ASC',
+			'category'  => array( $category_slug ),
+			'tax_query' => $this->catalog_visibility_tax_query(), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Woo's own supported wc_get_products() extension point, not hand-rolled SQL.
+		) );
 		if ( ! is_object( $result ) || ! isset( $result->products ) ) {
 			return $empty;
 		}
@@ -885,29 +870,70 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		return array(
 			'products'  => $this->normalize_products( $result->products ),
 			'total'     => absint( $result->total ),
-			'page'      => max( 1, absint( $page ) ),
+			'page'      => $page,
 			'max_pages' => max( 1, absint( $result->max_num_pages ) ),
 		);
 	}
 
 	/**
-	 * All published Woo product category slugs. Read-only, existing
-	 * `product_cat` taxonomy owner (WooCommerce) only -- used solely so
-	 * products_paginated()'s unfiltered branch can give wc_get_products()
-	 * an explicit 'category' argument instead of omitting it.
+	 * Unfiltered ("Semua Produk") branch of products_paginated(). Live
+	 * staging proof (2026-08-13): wc_get_products( array( 'paginate' => true,
+	 * ... ) ) with no 'category' arg -- the only shape "Semua Produk" used --
+	 * fatals specifically when dispatched through the REST route
+	 * (rest_shop_catalog()), deterministically and uncatchably (a try/catch
+	 * boundary around the exact same call never even triggered), while every
+	 * single mapped category (which always sets 'category') already proved
+	 * safe there, and WordPress's own unfiltered `/wp-json/wp/v2/product`
+	 * projection (get_posts()-based, not wc_get_products()) also proved safe.
+	 * This sidesteps the broken bulk-paginate query entirely: get_posts()
+	 * resolves the small (whole-catalog) ID list once, this method paginates
+	 * that plain PHP array itself, and each page's few IDs are hydrated
+	 * individually via the same wc_get_product() every other Woo-owned
+	 * single-product lookup in this class already uses.
 	 *
-	 * @return array<int,string>
+	 * @param int $page Current 1-based page.
+	 * @param int $per_page Products per page.
+	 * @return array{products:array<int,array<string,mixed>>,total:int,page:int,max_pages:int}
 	 */
-	private function published_category_slugs() {
-		if ( ! function_exists( 'get_terms' ) ) {
-			return array();
+	private function products_paginated_unfiltered( $page, $per_page ) {
+		$empty = array( 'products' => array(), 'total' => 0, 'page' => 1, 'max_pages' => 1 );
+		if ( ! function_exists( 'get_posts' ) || ! function_exists( 'wc_get_product' ) ) {
+			return $empty;
 		}
-		$terms = get_terms( array(
-			'taxonomy'   => 'product_cat',
-			'hide_empty' => true,
-			'fields'     => 'slugs',
+
+		$ids = get_posts( array(
+			'post_type'      => 'product',
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+			'tax_query'      => $this->catalog_visibility_tax_query(), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- same Woo-native visibility guard as the filtered branch, applied through core get_posts() instead.
 		) );
-		return is_array( $terms ) ? array_values( array_filter( array_map( 'sanitize_title', $terms ) ) ) : array();
+		$ids   = is_array( $ids ) ? $ids : array();
+		$total = count( $ids );
+		if ( ! $total ) {
+			return $empty;
+		}
+
+		$max_pages = max( 1, (int) ceil( $total / $per_page ) );
+		$page      = min( $page, $max_pages );
+		$page_ids  = array_slice( $ids, ( $page - 1 ) * $per_page, $per_page );
+
+		$products = array();
+		foreach ( $page_ids as $id ) {
+			$product = wc_get_product( $id );
+			if ( $product ) {
+				$products[] = $product;
+			}
+		}
+
+		return array(
+			'products'  => $this->normalize_products( $products ),
+			'total'     => $total,
+			'page'      => $page,
+			'max_pages' => $max_pages,
+		);
 	}
 
 	/**
