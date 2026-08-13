@@ -600,17 +600,31 @@ final class Gloskin_Site_Core_Template_Service {
 			}
 		}
 
-		$catalog = $this->woocommerce->products_paginated( $page, 12, $category );
-		$results = array(
-			'products'       => $catalog['products'],
-			'total'          => $catalog['total'],
-			'page'           => $catalog['page'],
-			'max_pages'      => $catalog['max_pages'],
-			'category'       => $category,
-			'category_label' => is_array( $mapping ) && isset( $mapping['label'] ) ? (string) $mapping['label'] : '',
-			'woo_ready'      => $this->woocommerce->available(),
-		);
-		$html = $this->render_shop_results( $results );
+		/* Temporary diagnostic boundary (removed once the live-staging-only
+		 * "Semua Produk" fatal is root-caused): every other branch of this
+		 * REST route is already proven safe, so a genuinely uncaught
+		 * \Throwable here is surfaced instead of falling through to WP's
+		 * generic fatal-error HTML page, which leaks nothing actionable. */
+		try {
+			$catalog = $this->woocommerce->products_paginated( $page, 12, $category );
+			$results = array(
+				'products'       => $catalog['products'],
+				'total'          => $catalog['total'],
+				'page'           => $catalog['page'],
+				'max_pages'      => $catalog['max_pages'],
+				'category'       => $category,
+				'category_label' => is_array( $mapping ) && isset( $mapping['label'] ) ? (string) $mapping['label'] : '',
+				'woo_ready'      => $this->woocommerce->available(),
+			);
+			$html = $this->render_shop_results( $results );
+		} catch ( \Throwable $e ) {
+			return new WP_Error( 'gloskin_shop_catalog_diag', $e->getMessage(), array(
+				'status' => 500,
+				'exception_class' => get_class( $e ),
+				'file' => $e->getFile() . ':' . $e->getLine(),
+				'trace' => $e->getTraceAsString(),
+			) );
+		}
 		if ( '' === $html ) {
 			return new WP_Error( 'gloskin_shop_render', __( 'Katalog belum dapat dirender.', 'gloskin-site-core' ), array( 'status' => 500 ) );
 		}
