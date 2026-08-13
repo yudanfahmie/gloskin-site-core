@@ -23,11 +23,16 @@
 				return document.querySelector('[data-gloskin-admin-panel="' + tab.getAttribute('data-gloskin-admin-tab') + '"]');
 			});
 
+			/* Standard WAI-ARIA tabs roving-tabindex pattern: exactly one tab
+			 * is ever in the Tab order (tabIndex 0); the rest are -1 and
+			 * reachable only via arrow/Home/End once a tab already has
+			 * focus. Focus always follows activation. */
 			function activate(index) {
 				tabs.forEach(function (tab, i) {
 					var active = i === index;
 					tab.classList.toggle('is-active', active);
 					tab.setAttribute('aria-selected', active ? 'true' : 'false');
+					tab.tabIndex = active ? 0 : -1;
 					if (panels[i]) { panels[i].hidden = !active; }
 				});
 				tabs[index].focus();
@@ -36,9 +41,13 @@
 			tabs.forEach(function (tab, index) {
 				tab.addEventListener('click', function () { activate(index); });
 				tab.addEventListener('keydown', function (event) {
-					if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') { return; }
+					var next = null;
+					if (event.key === 'ArrowRight') { next = (index + 1) % tabs.length; }
+					else if (event.key === 'ArrowLeft') { next = (index - 1 + tabs.length) % tabs.length; }
+					else if (event.key === 'Home') { next = 0; }
+					else if (event.key === 'End') { next = tabs.length - 1; }
+					if (next === null) { return; }
 					event.preventDefault();
-					var next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : (index - 1 + tabs.length) % tabs.length;
 					activate(next);
 				});
 			});
@@ -47,6 +56,10 @@
 			tabs.forEach(function (tab, i) {
 				if (tab.classList.contains('is-active')) { activeIndex = i; }
 			});
+			/* Sync tabIndex/panel visibility to whichever tab the server marked
+			 * active, without calling activate() -- that would also steal
+			 * focus on ordinary page load, which no tab should do unasked. */
+			tabs.forEach(function (tab, i) { tab.tabIndex = i === activeIndex ? 0 : -1; });
 			panels.forEach(function (panel, i) {
 				if (panel) { panel.hidden = i !== activeIndex; }
 			});

@@ -213,7 +213,7 @@ final class Gloskin_Site_Core_Admin_Service {
 					<?php settings_fields( 'gloskin_site_core' ); ?>
 					<div class="gloskin-admin-tabs" role="tablist" aria-label="<?php echo esc_attr__( 'Bagian pengaturan Gloskin', 'gloskin-site-core' ); ?>" data-gloskin-admin-tabs>
 						<?php foreach ( $tabs as $tab_key => $tab_label ) : ?>
-							<button type="button" class="gloskin-admin-tabs__tab<?php echo 'brand' === $tab_key ? ' is-active' : ''; ?>" id="gloskin-admin-tab-<?php echo esc_attr( $tab_key ); ?>" role="tab" aria-selected="<?php echo 'brand' === $tab_key ? 'true' : 'false'; ?>" aria-controls="gloskin-admin-panel-<?php echo esc_attr( $tab_key ); ?>" data-gloskin-admin-tab="<?php echo esc_attr( $tab_key ); ?>"><?php echo esc_html( $tab_label ); ?></button>
+							<button type="button" class="gloskin-admin-tabs__tab<?php echo 'brand' === $tab_key ? ' is-active' : ''; ?>" id="gloskin-admin-tab-<?php echo esc_attr( $tab_key ); ?>" role="tab" aria-selected="<?php echo 'brand' === $tab_key ? 'true' : 'false'; ?>" aria-controls="gloskin-admin-panel-<?php echo esc_attr( $tab_key ); ?>" tabindex="<?php echo 'brand' === $tab_key ? '0' : '-1'; ?>" data-gloskin-admin-tab="<?php echo esc_attr( $tab_key ); ?>"><?php echo esc_html( $tab_label ); ?></button>
 						<?php endforeach; ?>
 					</div>
 					<div class="gloskin-admin-canvas">

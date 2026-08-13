@@ -96,4 +96,22 @@ require("MGA" not in plugin_php_and_css_and_js, "must not adopt the Morgen MGA n
 require("function init()" in admin_js, "admin tab-switching script present")
 require("localStorage" not in admin_js and "fetch(" not in admin_js and "XMLHttpRequest" not in admin_js, "admin shell JS must own no state/network -- presentation-only tab switching")
 
+# --- ARIA tabs: complete roving-tabindex pattern (server + JS), Home/End,
+# progressive enhancement (no JS => every panel stays visible/submittable). ---
+require('tabindex="<?php echo \'brand\' === $tab_key ? \'0\' : \'-1\'; ?>"' in admin, "server must render tabindex=0 for the active tab and -1 for the rest")
+require("tab.tabIndex = active ? 0 : -1;" in admin_js, "activate() must keep the roving tabindex in sync with which tab is active")
+require("tab.tabIndex = i === activeIndex ? 0 : -1;" in admin_js, "initial sync must also set roving tabindex to match the server-rendered active tab")
+for key in ("ArrowRight", "ArrowLeft", "Home", "End"):
+    require(f"event.key === '{key}'" in admin_js, f"tab keyboard navigation must support {key}")
+require("tabs[index].focus();" in admin_js, "activation must move focus to the newly active tab")
+require('hidden>' not in re.sub(r'data-gloskin-admin-panel="[a-z]+"', '', admin), "every settings panel must render visible by default (progressive enhancement without JS)")
+
+# --- Preview card keyboard focus: distinct from selected state, scoped,
+# reactive (never a stuck/permanent treatment), native radio stays canonical. ---
+require(".gloskin-admin-header-card:focus-within{box-shadow:" in admin_css, "Header Type card must project keyboard focus via :focus-within onto the whole card")
+require(admin_css.count("gloskin-admin-header-card:focus-within") == 1, "focus-within projection must be defined in exactly one place")
+focus_within_rule = admin_css[admin_css.index(".gloskin-admin-header-card:focus-within"):admin_css.index(".gloskin-admin-header-card:focus-within") + 200]
+require("border-color" not in focus_within_rule, "focus ring must be visually distinct from the selected-state border-color treatment")
+require("!important" not in focus_within_rule, "focus-within projection must not use !important")
+
 print("header-admin-contract: OK")
