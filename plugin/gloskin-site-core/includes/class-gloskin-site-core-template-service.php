@@ -532,6 +532,46 @@ final class Gloskin_Site_Core_Template_Service {
 				),
 			),
 		) );
+		// TEMPORARY diagnostic (staging-only isolation aid, removed before the
+		// final commit of this task): identical args schema to /shop/catalog
+		// above, trivial callback. Proves/disproves whether the args schema
+		// itself is the fatal trigger, independent of rest_shop_catalog()'s
+		// own body -- a prior session already proved the fatal is unaffected
+		// by that body's content (even a bare `return` there still fatals).
+		register_rest_route( 'gloskin/v1', '/diag-args-echo', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'rest_diag_args_echo' ),
+			'permission_callback' => '__return_true',
+			'args'                => array(
+				'page' => array(
+					'required'          => false,
+					'type'              => 'integer',
+					'default'           => 1,
+					'sanitize_callback' => 'absint',
+				),
+				'category' => array(
+					'required'          => false,
+					'type'              => 'string',
+					'default'           => '',
+					'sanitize_callback' => 'sanitize_title',
+				),
+			),
+		) );
+	}
+
+	/**
+	 * TEMPORARY diagnostic callback -- removed before this task's final
+	 * commit. See register_rest_routes() above.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function rest_diag_args_echo( $request ) {
+		return rest_ensure_response( array(
+			'ok'       => true,
+			'page'     => $request->get_param( 'page' ),
+			'category' => $request->get_param( 'category' ),
+		) );
 	}
 
 	/**
