@@ -368,3 +368,107 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
    gloskin-ui1-core.css; this only tunes weight/letter-spacing to match the
    rest of the Mulish body-copy hierarchy (nav links, eyebrow) above. */
 .gloskin-ui1-form label,.gloskin-ui1 .woocommerce form label,.gloskin-ui1-auth-forms label{font-weight:600;letter-spacing:.01em}
+
+/* Cart item presentation. The WooCommerce Cart block remains the sole
+   markup/state/mutation owner -- same native quantity input, same native
+   remove control, no second cart owner, no custom AJAX flow. This only
+   re-skins the existing wc-block-cart-item__* structure WC already
+   renders, and reuses Gloskin tokens in place of WC Blocks' own default
+   (unthemed) border/spacing values. */
+.wc-block-cart-items__row,
+.wc-block-cart-items thead{border-bottom-color:var(--gloskin-border)}
+.wc-block-cart-item__image img{
+	border-radius:var(--gloskin-radius-sm);
+	object-fit:cover;
+	background:var(--gloskin-surface-strong);
+}
+
+/* Quantity stepper: the same visual language as the PDP purchase dock's
+   own stepper (.gloskin-ui1-purchase-dock__qty-control in
+   gloskin-ui1-single-product-geometry.css), adapted to the Cart block's
+   own selectors via scoped classes only -- no separate UI system, same
+   native Store API quantity input. */
+.wc-block-components-quantity-selector{
+	min-height:40px;
+	border:1px solid var(--gloskin-border);
+	border-radius:var(--gloskin-radius-sm);
+	overflow:hidden;
+	background:var(--gloskin-bg);
+}
+.wc-block-components-quantity-selector__input{
+	min-height:38px;
+	padding:0;
+	border:0;
+	border-radius:0;
+	background:transparent;
+	color:var(--gloskin-text);
+	font:inherit;
+	text-align:center;
+}
+.wc-block-components-quantity-selector__button{
+	min-height:38px;
+	padding:0 11px;
+	border:0;
+	border-radius:0;
+	background:transparent;
+	color:var(--gloskin-text);
+	font-weight:700;
+	transition:background-color 140ms ease;
+}
+.wc-block-components-quantity-selector__button--minus{border-right:1px solid var(--gloskin-border)}
+.wc-block-components-quantity-selector__button--plus{border-left:1px solid var(--gloskin-border)}
+.wc-block-components-quantity-selector__button:hover{background:var(--gloskin-surface)}
+.wc-block-components-quantity-selector__button:disabled{opacity:.4;cursor:not-allowed}
+
+/* Remove action: calm, touch-safe (36px, up from WC's default 24px icon-
+   only target), grouped with the stepper by WC's own existing
+   wc-block-cart-item__quantity flex row -- no wrapper markup added. */
+.wc-block-cart-item__remove-link{
+	display:inline-flex;
+	align-items:center;
+	justify-content:center;
+	width:36px;
+	height:36px;
+	border-radius:var(--gloskin-radius-sm);
+	color:var(--gloskin-muted);
+	transition:background-color 140ms ease,color 140ms ease;
+}
+.wc-block-cart-item__remove-link:hover{background:var(--gloskin-surface);color:var(--gloskin-accent-strong)}
+.wc-block-cart-item__remove-link svg{width:18px;height:18px}
+
+/* Mobile row contract. WC's own Cart block already switches each row from
+   table-row to a bare CSS grid at its own <=768px breakpoint (matched
+   here), but leaves the subtotal column at native width -- it overflows
+   the row on narrow phones -- and stretches the image/product cells to
+   match the row's tallest cell, opening a large empty gap before the
+   stepper. Re-owning grid-template-areas keeps every existing WC node
+   (image/product/total) exactly where it is in the DOM -- no markup
+   rebuild, one scoped wrapper strategy instead of ad hoc per-node nudges
+   -- while giving each one a stable, non-overlapping slot: the image
+   top-left, product meta beside it, and the item's own subtotal as a
+   distinct right-aligned line underneath instead of a clipped side
+   column. */
+@media (max-width:768px){
+	.wc-block-cart-items__row{
+		display:grid;
+		grid-template-columns:76px 1fr;
+		grid-template-areas:
+			"image product"
+			"image total";
+		column-gap:14px;
+		row-gap:10px;
+		align-items:start;
+		padding:18px 0;
+	}
+	.wc-block-cart-item__image{grid-area:image;align-self:start}
+	.wc-block-cart-item__image img{width:76px;height:76px}
+	.wc-block-cart-item__product{grid-area:product;min-width:0}
+	.wc-block-cart-item__total{
+		grid-area:total;
+		display:flex;
+		align-items:center;
+		justify-content:flex-end;
+		padding-top:10px;
+		border-top:1px solid var(--gloskin-border);
+	}
+}
