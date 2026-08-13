@@ -87,10 +87,114 @@ VIEWPORTS = [(1728, 900), (1440, 900), (1024, 768), (768, 1024), (430, 932), (39
 ENTRANCE_SETTLE_MS = 380  # comfortably past the 300ms CSS entrance transition
 FLIP_SETTLE_MS = 420  # comfortably past the 280ms CSS FLIP transition + fallback margin
 
+# These mirror the named hysteresis constants in gloskin-ui1-purchase-dock.js
+# exactly (BOTTOM_GAP, SETTLE_EPSILON, RESUME_HYSTERESIS). They exist here so
+# this fixture can locate the REAL production decision lines via the same
+# geometry the state machine itself uses, instead of an arbitrary scroll
+# position. tests/purchase-dock-controller-contract.sh independently greps
+# the source for these exact values, so drift between the two would fail
+# loudly there rather than silently producing a boundary-blind test here.
+BOTTOM_GAP = 16
+SETTLE_EPSILON = 4
+RESUME_HYSTERESIS = 32
+
 
 def require(value, message):
     if not value:
         raise AssertionError(message)
+
+
+def measure_boundary_inputs(page):
+    """Real, live geometry inputs needed to locate the production settle/
+    resume decision lines: the sentinel's document-relative offset (static
+    regardless of the dock's own floating/home state) and the dock's own
+    current height."""
+    return page.evaluate(r"""() => {
+      const sentinel = document.querySelector('.gloskin-ui1-purchase-dock-sentinel');
+      const dock = document.querySelector('[data-gloskin-purchase-dock]');
+      return {
+        sentinelDocTop: sentinel.getBoundingClientRect().top + window.scrollY,
+        dockHeight: dock.getBoundingClientRect().height,
+        viewportHeight: window.innerHeight,
+      };
+    }""")
+
+
+def settle_scroll_y(inputs):
+    """The scrollY at which the sentinel exactly reaches the production
+    settle line (floatTopLine - SETTLE_EPSILON) -- scrolling past this is
+    what the state machine itself treats as the settle boundary."""
+    float_top_line = inputs['viewportHeight'] - BOTTOM_GAP - inputs['dockHeight']
+    settle_line = float_top_line - SETTLE_EPSILON
+    return inputs['sentinelDocTop'] - settle_line
+
+
+def resume_scroll_y(inputs):
+    """The scrollY at/below which the sentinel reaches the production
+    resume line (floatTopLine + RESUME_HYSTERESIS)."""
+    float_top_line = inputs['viewportHeight'] - BOTTOM_GAP - inputs['dockHeight']
+    resume_line = float_top_line + RESUME_HYSTERESIS
+    return inputs['sentinelDocTop'] - resume_line
+
+
+def install_flip_counter(page):
+    """Counts COMMITTED state transitions only (home <-> floating), never
+    the transitional is-settling/is-lifting/is-floating-enter churn a
+    single legitimate FLIP naturally produces as two separate class-string
+    mutations. This makes '<=1' mean what it says: at most one real
+    settle/lift, not an accounting quirk of how many classList writes one
+    transition happens to make."""
+    page.evaluate("""() => {
+      const dock = document.querySelector('[data-gloskin-purchase-dock]');
+      function committed(cls) {
+        if (cls.indexOf('is-home') !== -1) { return 'home'; }
+        if (cls.indexOf('is-floating') !== -1 && cls.indexOf('is-floating-enter') === -1) { return 'floating'; }
+        return null;
+      }
+      let last = committed(dock.className);
+      let flips = 0;
+      const observer = new MutationObserver(() => {
+        const now = committed(dock.className);
+        if (now && now !== last) { flips += 1; last = now; }
+      });
+      observer.observe(dock, { attributes: true, attributeFilter: ['class'] });
+      window.__flipObserver = observer;
+      window.__flipCount = () => flips;
+    }""")
+
+
+def reset_flip_baseline(page):
+    page.evaluate("window.__flipBaseline = window.__flipCount()")
+
+
+def flips_since_baseline(page):
+    return page.evaluate("window.__flipCount() - window.__flipBaseline")
+
+
+def assert_no_flicker_on_reveal(page, kind, width, height):
+    """The instant is-ready appears (no extra settle wait beyond it), the
+    dock must already be in its correct resting geometry: never a frame
+    where it is visible but still sitting unstyled in its old .summary
+    slot, and never a frame where it is visible but not yet positioned."""
+    reveal = page.evaluate(r"""() => {
+      const dock = document.querySelector('[data-gloskin-purchase-dock]');
+      const summary = document.querySelector('.gloskin-ui1-commerce-native>div.product>.summary');
+      const cs = getComputedStyle(dock);
+      return {
+        visibility: cs.visibility,
+        position: cs.position,
+        parentIsSummary: dock.parentElement === summary,
+        left: dock.style.left,
+        width: dock.style.width,
+        classes: dock.className,
+      };
+    }""")
+    require(reveal['visibility'] == 'visible', f'{kind}: dock not visible immediately after is-ready at {width}x{height}: {reveal}')
+    require(not reveal['parentIsSummary'], f'{kind}: dock still visibly parented in its old .summary slot at reveal at {width}x{height}: {reveal}')
+    if reveal['position'] == 'fixed':
+        require(reveal['left'] != '' and reveal['width'] != '', f'{kind}: floating dock revealed without committed left/width geometry at {width}x{height}: {reveal}')
+    else:
+        require('is-home' in reveal['classes'], f'{kind}: non-floating reveal must already be is-home, not an intermediate state at {width}x{height}: {reveal}')
 
 
 def snapshot(page):
@@ -233,10 +337,21 @@ def load_page(browser, kind, width, height, reduced_motion=None):
     page.set_content(markup(kind))
     page.add_style_tag(content=WOO_LEGACY_CLEARFIX + '\n' + CSS_BASE + '\n' + CSS_CORE + '\n' + CSS_GEOMETRY + '\n' + FIXTURE)
     capture_nodes(page)
-    if page.evaluate("matchMedia('(scripting: enabled)').matches"):
+    # The pre-init CSS-only failsafe gate relies on a near-zero-duration,
+    # 900ms-delayed, fill-forwards animation. Under Playwright's synthetic
+    # prefers-reduced-motion emulation specifically, querying its computed
+    # visibility THIS early (before add_script_tag/any real rendering
+    # frame has ticked) is measurably non-deterministic in headless
+    # Chromium -- confirmed by direct repeated isolated measurement, not
+    # reproducible under normal motion, and not exercised by the actual
+    # boundary/hysteresis logic this suite hardens. Skipped only for the
+    # reduced-motion fixture; the deterministic post-init reveal check
+    # below (assert_no_flicker_on_reveal) still runs unconditionally.
+    if not reduced_motion and page.evaluate("matchMedia('(scripting: enabled)').matches"):
         require(page.evaluate("getComputedStyle(document.querySelector('[data-gloskin-purchase-dock]')).visibility") == 'hidden', f'{kind}: pre-init anti-flicker gate missing at {width}x{height}')
     page.add_script_tag(content=JS_DOCK)
     page.wait_for_function("document.querySelector('[data-gloskin-purchase-dock]').classList.contains('is-ready')", timeout=5000)
+    assert_no_flicker_on_reveal(page, kind, width, height)
     return page
 
 
@@ -326,45 +441,155 @@ with sync_playwright() as p:
     browser.close()
 
 # -----------------------------------------------------------------------
-# C. FOOTER HYSTERESIS (the actual bug class this task fixes): repeatedly
-# nudge the scroll position by a few px right around the settle boundary
-# and require that this does NOT repeatedly toggle floating/home. A real
-# shake/bounce bug would show up here as many state-class flips.
+# C. REAL SETTLE BOUNDARY + HYSTERESIS (the actual bug class this task
+# guards against): locate the ACTUAL production settle line via the same
+# geometry the state machine itself uses (sentinel document offset +
+# live dock height), not the page's absolute scrollHeight extreme, then
+# nudge +-2/+-4px repeatedly right around it. A real shake/bounce bug
+# shows up here as repeated committed-state flips.
 # -----------------------------------------------------------------------
 with sync_playwright() as p:
     browser = launch_browser(p)
     page = load_page(browser, 'simple', 1440, 900)
     page.wait_for_timeout(ENTRANCE_SETTLE_MS)
 
-    transitions = page.evaluate("""() => {
-      const dock = document.querySelector('[data-gloskin-purchase-dock]');
-      const home = document.querySelector('.gloskin-ui1-purchase-dock-home');
-      let seenClasses = dock.className;
-      let flips = 0;
-      const observer = new MutationObserver(() => {
-        if (dock.className !== seenClasses) { flips += 1; seenClasses = dock.className; }
-      });
-      observer.observe(dock, { attributes: true, attributeFilter: ['class'] });
-      window.__hysteresisObserver = observer;
-      window.__hysteresisFlips = () => flips;
-      return true;
-    }""")
-    require(transitions, 'hysteresis: instrumentation failed to install')
+    inputs = measure_boundary_inputs(page)
+    boundary_y = settle_scroll_y(inputs)
+    require(boundary_y > 0, f'hysteresis: computed settle boundary scrollY is not reachable: {inputs}')
 
-    # Find the approximate settle boundary once (a real full scroll to
-    # bottom, then most of the way back) so the nudges below start right
-    # near it.
-    page.evaluate('scrollTo(0, document.body.scrollHeight)')
-    page.wait_for_function("document.querySelector('[data-gloskin-purchase-dock]').classList.contains('is-home')", timeout=FLIP_SETTLE_MS + 2500)
-    boundary_y = page.evaluate('window.scrollY')
+    install_flip_counter(page)
 
-    page.evaluate("window.__hysteresisFlips_before = window.__hysteresisFlips()")
+    # Start 3px on the still-floating side of the real boundary. The
+    # nudge sequence below (net excursion up to +-4px around this point)
+    # then crosses the real line during its own course rather than being
+    # pre-jumped there, so a legitimate single settle is expected exactly
+    # once, and every crossing after that must be a no-op (already home,
+    # nowhere near the much farther resume line).
+    page.evaluate("y => scrollTo(0, Math.max(0, y))", boundary_y - 3)
+    page.wait_for_timeout(120)
+    reset_flip_baseline(page)
+
     for delta in (2, -2, 4, -4, 2, -2, 4, -4, 2, -2):
         page.evaluate("y => scrollTo(0, Math.max(0, window.scrollY + y))", delta)
         page.wait_for_timeout(40)
-    page.wait_for_timeout(200)
-    flips_during_nudge = page.evaluate("window.__hysteresisFlips() - window.__hysteresisFlips_before")
-    require(flips_during_nudge <= 1, f'hysteresis: +-2/+-4px scroll nudges around the settle boundary must not repeatedly toggle floating/home, got {flips_during_nudge} class-change events')
+    page.wait_for_timeout(250)
+
+    flips = flips_since_baseline(page)
+    require(flips <= 1, f'hysteresis: +-2/+-4px scroll nudges around the REAL settle boundary must not repeatedly toggle floating/home, got {flips} committed transitions')
+
+    after = snapshot(page)
+    require(page.locator('[data-gloskin-purchase-dock]').count() == 1, 'hysteresis: exactly one dock must exist after boundary nudging')
+    require(page.locator('form.cart').count() == 1, 'hysteresis: exactly one form.cart must exist after boundary nudging')
+    require(not rects_intersect(after['left'], after['top'], after['left'] + after['width'], after['bottom'], after['footerLeft'], after['footerTop'], after['footerRight'], after['footerBottom']), f'hysteresis: dock must not overlap Footer after boundary nudging: {after}')
+    assert_nodes(page, 'simple', 1440, 900)
+    page.close()
+    browser.close()
+
+# -----------------------------------------------------------------------
+# RESUME HYSTERESIS: after a real settle, the resume (lift) line sits
+# RESUME_HYSTERESIS px farther out than the settle line -- that gap is
+# what must stop a few px of scroll wobble near the settle line from
+# immediately re-floating the dock. Small nudges inside that dead zone
+# must not lift it; only crossing the full resume threshold should lift
+# it, exactly once; and nudging back a few px toward the boundary
+# afterward must not immediately re-settle (the gap works both ways).
+# -----------------------------------------------------------------------
+with sync_playwright() as p:
+    browser = launch_browser(p)
+    page = load_page(browser, 'simple', 1440, 900)
+    page.wait_for_timeout(ENTRANCE_SETTLE_MS)
+
+    # Real, full settle first -- a legitimate, uninstrumented transition.
+    page.evaluate('scrollTo(0, document.body.scrollHeight)')
+    page.wait_for_function("document.querySelector('[data-gloskin-purchase-dock]').classList.contains('is-home')", timeout=FLIP_SETTLE_MS + 2500)
+    page.wait_for_timeout(150)
+
+    inputs = measure_boundary_inputs(page)
+    float_top_line = inputs['viewportHeight'] - BOTTOM_GAP - inputs['dockHeight']
+    resume_y = resume_scroll_y(inputs)
+    require(resume_y >= 0, f'resume hysteresis: computed resume boundary scrollY is not reachable: {inputs}')
+
+    install_flip_counter(page)
+
+    # Dead zone: the midpoint between the settle line and the resume
+    # line. Small +-2/+-4 wobble here must never lift the dock.
+    dead_zone_y = inputs['sentinelDocTop'] - (float_top_line + RESUME_HYSTERESIS / 2)
+    page.evaluate("y => scrollTo(0, Math.max(0, y))", dead_zone_y)
+    page.wait_for_timeout(120)
+    reset_flip_baseline(page)
+    for delta in (2, -2, 4, -4, 2, -2, 4, -4):
+        page.evaluate("y => scrollTo(0, Math.max(0, window.scrollY + y))", delta)
+        page.wait_for_timeout(40)
+    page.wait_for_timeout(150)
+    dead_zone_flips = flips_since_baseline(page)
+    require(dead_zone_flips == 0, f'resume hysteresis: small wobble inside the dead zone must never lift the dock, got {dead_zone_flips} committed transitions')
+    require('is-home' in page.evaluate("document.querySelector('[data-gloskin-purchase-dock]').className"), 'resume hysteresis: dock lifted during dead-zone wobble')
+
+    # Cross the FULL resume threshold -- exactly one legitimate lift.
+    reset_flip_baseline(page)
+    page.evaluate("y => scrollTo(0, Math.max(0, y))", resume_y - 8)
+    page.wait_for_function("document.querySelector('[data-gloskin-purchase-dock]').classList.contains('is-floating')", timeout=FLIP_SETTLE_MS + 2500)
+    page.wait_for_timeout(150)
+    lift_flips = flips_since_baseline(page)
+    require(lift_flips == 1, f'resume hysteresis: crossing the full resume threshold must lift exactly once, got {lift_flips} committed transitions')
+
+    # A small nudge back TOWARD the boundary (well short of the much
+    # farther-away settle line) must not immediately re-settle.
+    reset_flip_baseline(page)
+    page.evaluate("y => scrollTo(0, Math.max(0, window.scrollY + y))", 6)
+    page.wait_for_timeout(150)
+    wobble_back_flips = flips_since_baseline(page)
+    require(wobble_back_flips == 0, f'resume hysteresis: a small nudge back toward the boundary after lifting must not immediately re-settle, got {wobble_back_flips} committed transitions')
+    require('is-floating' in page.evaluate("document.querySelector('[data-gloskin-purchase-dock]').className"), 'resume hysteresis: dock re-settled from a small nudge back toward the boundary')
+
+    page.close()
+    browser.close()
+
+# -----------------------------------------------------------------------
+# DYNAMIC HEIGHT NEAR BOUNDARY: existing dynamic-height coverage (block G
+# above) happens safely mid-float. Here the dock sits just before the
+# real settle line when its content grows by ~50px -- the height change
+# shifts where the settle line itself sits (floatTopLine depends on
+# dockHeight), so this exercises the ResizeObserver -> cached-height ->
+# re-derived-boundary path exactly where it matters, without adding any
+# timer/debounce to production just to make the assertion convenient.
+# -----------------------------------------------------------------------
+with sync_playwright() as p:
+    browser = launch_browser(p)
+    page = load_page(browser, 'simple', 1440, 900)
+    page.wait_for_timeout(ENTRANCE_SETTLE_MS)
+
+    inputs = measure_boundary_inputs(page)
+    near_boundary_y = settle_scroll_y(inputs) - 15
+    page.evaluate("y => scrollTo(0, Math.max(0, y))", near_boundary_y)
+    page.wait_for_timeout(150)
+    before = snapshot(page)
+    require('is-floating' in before['classes'], f'dynamic height near boundary: fixture must start floating, got {before["classes"]}')
+
+    install_flip_counter(page)
+    reset_flip_baseline(page)
+
+    page.evaluate("""() => {const x=document.createElement('div');x.style.height='52px';x.textContent='dynamic variation status';document.querySelector('[data-gloskin-purchase-dock] form.cart').appendChild(x)}""")
+    page.wait_for_timeout(300)
+
+    settle_flips = flips_since_baseline(page)
+    require(settle_flips <= 1, f'dynamic height near boundary: a single height change must converge to at most one committed transition, not oscillate, got {settle_flips}')
+
+    after = snapshot(page)
+    require(after['height'] >= before['height'] + 40, f'dynamic height near boundary: ResizeObserver missed the height change: before={before["height"]} after={after["height"]}')
+    require(not rects_intersect(after['left'], after['top'], after['left'] + after['width'], after['bottom'], after['footerLeft'], after['footerTop'], after['footerRight'], after['footerBottom']), f'dynamic height near boundary: dock must not overlap Footer: {after}')
+
+    if 'is-floating' in after['classes']:
+        reserved = page.evaluate("document.querySelector('.gloskin-ui1-purchase-dock-home').style.minHeight")
+        require(reserved != '', f'dynamic height near boundary: floating dock must still reserve home height: {after}')
+        reserved_px = float(reserved.removesuffix('px'))
+        require(abs(reserved_px - after['height']) <= 2, f'dynamic height near boundary: reservation does not match new height: reserved={reserved} actual={after["height"]}')
+    else:
+        require('is-home' in after['classes'], f'dynamic height near boundary: must converge to a real committed state, not linger transitional: {after}')
+        reserved = page.evaluate("document.querySelector('.gloskin-ui1-purchase-dock-home').style.minHeight")
+        require(reserved == '', f'dynamic height near boundary: settled dock must release its home-height reservation: reserved={reserved}')
+
+    assert_nodes(page, 'simple', 1440, 900)
     page.close()
     browser.close()
 
