@@ -3,7 +3,7 @@
 **Status:** implementation-ready owner brief  
 **Repository:** `yudanfahmie/gloskin-site-core`  
 **Branch policy:** `main` only  
-**Baseline when this task was written:** `1901ae3d42c22afe5a51c848459609bc57256014`, plugin `0.7.60`  
+**Baseline when this task was written:** `d5f459f4013fe7ad22846cae7ee2fba4fc586edd`, plugin `0.7.61`  
 **Implementation rule:** always pull the actual latest `main` before editing; the baseline above is informational, not a pinned implementation target.
 
 ## 1. Why this task exists
