@@ -388,18 +388,29 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 
 /* Quantity stepper: the same visual language as the PDP purchase dock's
    own stepper (.gloskin-ui1-purchase-dock__qty-control in
-   gloskin-ui1-single-product-geometry.css), adapted to the Cart block's
-   own selectors via scoped classes only -- no separate UI system, same
-   native Store API quantity input. */
-.wc-block-components-quantity-selector{
-	min-height:40px;
+   gloskin-ui1-single-product-geometry.css: 46px outer / 44px input / 34px
+   buttons), adapted to the Cart block's own selectors via scoped classes
+   only -- no separate UI system, same native Store API quantity input.
+   Every selector is scoped under .wp-block-woocommerce-cart, the stable
+   top-level Cart block wrapper -- .wc-block-components-quantity-selector
+   and its children are generic Woo Blocks component classes shared with
+   Mini Cart and any future block using the same component, so a bare
+   rule would leak Cart-only presentation onto those. WC's own layout
+   gives the stepper's children flex-grow/shrink, which silently
+   overrides a plain width declaration (computes to a squeezed ~41px
+   instead of 44px); flex:0 0 Npx pins the intended width the same way
+   min-height already pins the intended heights below. */
+.wp-block-woocommerce-cart .wc-block-components-quantity-selector{
+	min-height:46px;
+	width:auto;
 	border:1px solid var(--gloskin-border);
 	border-radius:var(--gloskin-radius-sm);
 	overflow:hidden;
 	background:var(--gloskin-bg);
 }
-.wc-block-components-quantity-selector__input{
-	min-height:38px;
+.wp-block-woocommerce-cart .wc-block-components-quantity-selector__input{
+	min-height:44px;
+	flex:0 0 44px;
 	padding:0;
 	border:0;
 	border-radius:0;
@@ -408,9 +419,10 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 	font:inherit;
 	text-align:center;
 }
-.wc-block-components-quantity-selector__button{
-	min-height:38px;
-	padding:0 11px;
+.wp-block-woocommerce-cart .wc-block-components-quantity-selector__button{
+	min-height:44px;
+	flex:0 0 34px;
+	padding:0;
 	border:0;
 	border-radius:0;
 	background:transparent;
@@ -418,10 +430,10 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 	font-weight:700;
 	transition:background-color 140ms ease;
 }
-.wc-block-components-quantity-selector__button--minus{border-right:1px solid var(--gloskin-border)}
-.wc-block-components-quantity-selector__button--plus{border-left:1px solid var(--gloskin-border)}
-.wc-block-components-quantity-selector__button:hover{background:var(--gloskin-surface)}
-.wc-block-components-quantity-selector__button:disabled{opacity:.4;cursor:not-allowed}
+.wp-block-woocommerce-cart .wc-block-components-quantity-selector__button--minus{border-right:1px solid var(--gloskin-border)}
+.wp-block-woocommerce-cart .wc-block-components-quantity-selector__button--plus{border-left:1px solid var(--gloskin-border)}
+.wp-block-woocommerce-cart .wc-block-components-quantity-selector__button:hover{background:var(--gloskin-surface)}
+.wp-block-woocommerce-cart .wc-block-components-quantity-selector__button:disabled{opacity:.4;cursor:not-allowed}
 
 /* Remove action: calm, grouped with the stepper by WC's own existing
    wc-block-cart-item__quantity flex row (no wrapper markup added). WC's
@@ -468,7 +480,25 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 @media (max-width:768px){
 	.wc-block-cart-items__row{
 		grid-auto-columns:0px 80px;
+		column-gap:12px;
 		align-items:start;
 	}
 	.wc-block-cart-item__image img{width:76px;height:76px}
 }
+@media (max-width:359px){
+	.wc-block-cart-items__row{grid-auto-columns:0px 52px;column-gap:8px}
+	.wc-block-cart-item__total{font-size:.8rem;overflow-wrap:anywhere;text-align:right}
+}
+
+/* Checkout CTA vs. the site-wide floating contact bubble (.talkdock-widget,
+   position:fixed, 56px, right:20px/bottom:20px, z-index:9999 -- confirmed
+   from the live widget itself, not guessed). The bubble is anchored to the
+   viewport, not page content, so it only ever visually reaches the Proceed
+   to Checkout button on genuinely short viewports (confirmed on real
+   staging: no overlap at 812px height, real overlap at 568px). This is a
+   Cart-page-only reservation of that same right-edge width on the submit
+   button's own container -- not a change to the widget (untouched, no new
+   selector for it) and not JS collision detection, just static clearance
+   so the button's actionable area is never covered regardless of viewport
+   height. */
+body.woocommerce-cart .wc-block-cart__submit-container{padding-right:76px}
