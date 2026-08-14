@@ -46,7 +46,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		// canonical source hooks; errors/info and every unrelated Woo success
 		// continue through Woo unchanged.
 		add_filter( 'wc_add_to_cart_message_html', array( $this, 'suppress_add_to_cart_success_message' ), 10, 3 );
-		add_filter( 'woocommerce_cart_item_removed_notice_type', array( $this, 'arm_cart_item_removed_success_suppression' ), 999 );
+		add_filter( 'woocommerce_cart_item_removed_notice_type', array( $this, 'arm_cart_item_removed_success_suppression' ), PHP_INT_MAX );
 		add_filter( 'woocommerce_add_message', array( $this, 'suppress_armed_cart_item_removed_success_message' ) );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
 		add_action( 'gloskin_site_core_shell_footer', array( $this, 'render_quick_auth_overlay' ), 10 );
