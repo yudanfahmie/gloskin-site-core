@@ -476,7 +476,17 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
    second exactly enough width for the subtotal, positioned directly
    after the product column with no overlap -- a plain, common inline
    price-beside-title mobile cart pattern, verified with a real
-   screenshot at 375/390px before shipping. */
+   screenshot at 375/390px before shipping.
+   The title's own padding-right below is a second, independent layer of
+   the same fix, added after real staging (not the local fixture, whose
+   fallback fonts wrap text differently than the real Gloskin webfont)
+   showed the title's rendered glyphs still reaching into the subtotal's
+   reserved column for some product-name lengths, even though the two
+   boxes/columns themselves never overlap. Reserving space directly on
+   the title makes the guarantee independent of exact glyph metrics --
+   it wraps a little earlier instead of ever reaching the subtotal,
+   confirmed on real staging via the title's actual text-node
+   getClientRects(), not just its own box. */
 @media (max-width:768px){
 	.wc-block-cart-items__row{
 		grid-auto-columns:0px 80px;
@@ -484,6 +494,7 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 		align-items:start;
 	}
 	.wc-block-cart-item__image img{width:76px;height:76px}
+	.wc-block-components-product-name{padding-right:88px}
 }
 @media (max-width:359px){
 	.wc-block-cart-items__row{grid-auto-columns:0px 52px;column-gap:8px}
