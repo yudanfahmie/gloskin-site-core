@@ -313,6 +313,59 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1 .wc-block-components-text-input input,.gloskin-ui1 .wc-block-components-textarea textarea,.gloskin-ui1 .wc-block-components-combobox input{min-height:var(--gloskin-field-height);border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-field-bg)}
 .gloskin-ui1 .wc-block-components-checkbox svg{fill:var(--gloskin-accent)}
 
+/* Checkout Block Country/Region + Province select (.wc-blocks-components-
+   select -- the same component renders both, confirmed in the real
+   hydrated DOM, so one rule set covers both automatically): WC's own
+   stylesheet keeps the floating label at a fixed top offset inside a
+   52px-tall field regardless of whether it is populated, with no
+   reserved clearance -- the label sits right where a native <select>'s
+   own selected-value text renders, reported as a visible collision on
+   real staging with a real selected value ("Indonesia"/"DKI Jakarta").
+   WC's own select rule has enough specificity that a bare
+   .wc-blocks-components-select__select rule loses the cascade to it
+   (proven on real staging); this codebase does not use !important to
+   force it, so the fix wins on ordinary specificity instead, scoped
+   under .wp-block-woocommerce-checkout, the stable top-level Checkout
+   block wrapper -- narrower than a bare .wc-blocks-components-select
+   rule and narrower than any global input/select rule. Growing the
+   field to 60px and reserving
+   a fixed top band for the label, confirmed on real staging, leaves a
+   genuine 6px gap between the label and the selected value at every
+   state (empty, populated, focused) since the label's own position
+   never depends on populated/empty state to begin with -- there is
+   nothing to fight per-state, only the shared static geometry. */
+.wp-block-woocommerce-checkout .wc-blocks-components-select .wc-blocks-components-select__select{
+	min-height:60px;
+	height:60px;
+	padding:29px 40px 8px 16px;
+	border-radius:var(--gloskin-field-radius);
+}
+.wp-block-woocommerce-checkout .wc-blocks-components-select .wc-blocks-components-select__label{
+	top:7px;
+	left:16px;
+	font-size:.75rem;
+}
+.wp-block-woocommerce-checkout .wc-blocks-components-select .wc-blocks-components-select__expand{
+	top:50%;
+	margin-top:-12px;
+}
+
+/* "Add a note to your order" checkbox: WC's own label wrapper has no
+   gap at all between the checkbox and its text (confirmed on real
+   staging: 0px, the mark and the first letter touch directly) and is
+   not flex, so the two are only coincidentally close in vertical
+   position via normal inline flow rather than deliberately centered.
+   The native checkbox input/label are kept exactly as WC renders them
+   -- no custom checkbox state, no replacement markup, just spacing and
+   a comfortable, fully-clickable label area. */
+.wp-block-woocommerce-checkout .wc-block-checkout__add-note .wc-block-components-checkbox label{
+	display:flex;
+	align-items:center;
+	gap:10px;
+	min-height:44px;
+	cursor:pointer;
+}
+
 @media (max-width:760px){.gloskin-ui1 .woocommerce .quantity .qty,.gloskin-ui1-form .quantity .qty{width:84px}.gloskin-ui1 .select2-results__option{padding:11px 14px}}
 
 /* Gloskin Commerce Interaction Bridge v1 -- small presentation feedback for
@@ -739,6 +792,15 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.ca
 .gloskin-ui1 .wc-block-components-checkout-place-order-button,
 .gloskin-ui1 .wc-block-cart__submit-button,
 .gloskin-ui1 .wc-block-components-button:not(.is-link):not(.wc-block-components-button--outlined){background:var(--gloskin-accent);border-color:var(--gloskin-accent);color:var(--gloskin-inverse)}
+/* Typography parity specifically for the two transactional CTAs (Proceed
+   to Checkout / Place Order): confirmed via computed style on real
+   staging that "Place Order" inherited a smaller 13px/400 from its own
+   Checkout Block context while "Proceed to Checkout" rendered 16px/400 --
+   different sizes, and neither actually bold despite looking like a
+   primary action. Pinned explicitly so both read as the same primary
+   Gloskin CTA regardless of which block context renders them. */
+.gloskin-ui1 .wc-block-components-checkout-place-order-button,
+.gloskin-ui1 .wc-block-cart__submit-button{font-size:1rem;font-weight:700;line-height:1.2;min-height:48px}
 .gloskin-ui1 .wc-block-components-checkout-place-order-button:hover,
 .gloskin-ui1 .wc-block-cart__submit-button:hover,
 .gloskin-ui1 .wc-block-components-button:not(.is-link):not(.wc-block-components-button--outlined):hover{background:var(--gloskin-accent-strong);border-color:var(--gloskin-accent-strong)}

@@ -506,10 +506,17 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
    from the live widget itself, not guessed). The bubble is anchored to the
    viewport, not page content, so it only ever visually reaches the Proceed
    to Checkout button on genuinely short viewports (confirmed on real
-   staging: no overlap at 812px height, real overlap at 568px). This is a
-   Cart-page-only reservation of that same right-edge width on the submit
-   button's own container -- not a change to the widget (untouched, no new
-   selector for it) and not JS collision detection, just static clearance
-   so the button's actionable area is never covered regardless of viewport
-   height. */
-body.woocommerce-cart .wc-block-cart__submit-container{padding-right:76px}
+   staging: no overlap at 812px height, real overlap at 568px) -- the
+   max-height query below scopes the reservation to that same short-
+   viewport case only. An earlier version of this rule had no such
+   scoping and applied everywhere, which shrank the button and left an
+   awkward dead gap on completely normal desktop/tablet viewports where
+   there is no actual collision risk; caught from a real screenshot and
+   corrected here. Cart-page-only reservation of that same right-edge
+   width on the submit button's own container -- not a change to the
+   widget (untouched, no new selector for it) and not JS collision
+   detection, just static clearance so the button's actionable area is
+   never covered on viewports short enough for the risk to be real. */
+@media (max-height:700px){
+	body.woocommerce-cart .wc-block-cart__submit-container{padding-right:76px}
+}
