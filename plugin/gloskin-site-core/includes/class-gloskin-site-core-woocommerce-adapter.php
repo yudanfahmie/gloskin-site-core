@@ -830,6 +830,75 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	}
 
 	/**
+	 * Treatment Consultation product source (docs/task-treatment-
+	 * consultation-commerce-discovery.md section 9): every Woo product
+	 * explicitly classified gloskin_product_family:treatment, in the SAME
+	 * normalized shape products()/products_for_category() already use so
+	 * gloskin_ui1_render_product_card() and the existing Add-to-Cart
+	 * runtime need zero special-casing for consultation results. Each
+	 * item also carries its own gloskin_concern term IDs -- read once
+	 * here via native taxonomy relationships (the sole canonical mapping
+	 * store) so the frontend controller can score client-side without a
+	 * second request. Deliberately does NOT apply the catalog-visibility
+	 * "exclude-from-catalog" filter products()/products_for_category()
+	 * use: the demo importer may set treatment products hidden from the
+	 * regular Shop precisely so they only surface here and on their own
+	 * PDP, per section 9's explicit "catalog_visibility=hidden" allowance.
+	 *
+	 * @param int $limit Maximum records.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function treatment_products_with_concerns( $limit = 60 ) {
+		if ( ! $this->is_available() || ! class_exists( 'Gloskin_Site_Core_Content_Service' ) ) {
+			return array();
+		}
+		if ( ! taxonomy_exists( Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY ) ) {
+			return array();
+		}
+
+		$products = wc_get_products(
+			array(
+				'status'   => 'publish',
+				'limit'    => max( 1, min( 100, absint( $limit ) ) ),
+				'orderby'  => 'menu_order',
+				'order'    => 'ASC',
+				'tax_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Woo's own supported wc_get_products() extension point, not hand-rolled SQL.
+					array(
+						'taxonomy' => Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY,
+						'field'    => 'slug',
+						'terms'    => array( Gloskin_Site_Core_Content_Service::FAMILY_TREATMENT ),
+					),
+				),
+			)
+		);
+
+		$normalized = $this->normalize_products( $products );
+		foreach ( $normalized as $index => $item ) {
+			$concern_ids = wp_get_post_terms( $item['id'], Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY, array( 'fields' => 'ids' ) );
+			$normalized[ $index ]['concern_ids'] = is_wp_error( $concern_ids ) ? array() : array_map( 'absint', $concern_ids );
+		}
+		return $normalized;
+	}
+
+	/**
+	 * Admin readiness (Konsultasi Perawatan -> Ringkasan): count of Treatment
+	 * Products that have zero gloskin_concern relationships -- these can
+	 * never be recommended, so admins should see this before the client
+	 * does. Read-only, no auto-repair.
+	 *
+	 * @return int
+	 */
+	public function unmapped_treatment_product_count() {
+		$unmapped = 0;
+		foreach ( $this->treatment_products_with_concerns() as $item ) {
+			if ( empty( $item['concern_ids'] ) ) {
+				$unmapped++;
+			}
+		}
+		return $unmapped;
+	}
+
+	/**
 	 * @param string $category_slug Woo product category slug.
 	 * @param int    $limit Maximum records.
 	 * @return array<int, array<string, mixed>>

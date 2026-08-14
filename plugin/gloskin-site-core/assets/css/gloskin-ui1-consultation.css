@@ -1,0 +1,145 @@
+/*
+ * Treatment Consultation discovery block (docs/task-treatment-
+ * consultation-commerce-discovery.md sections 6-10). Conditionally
+ * enqueued only on the Treatments Hub -- see
+ * AssetService::maybe_enqueue_treatment_consultation(). Reuses existing
+ * design tokens from gloskin-ui1-core-base.css; introduces no new colors.
+ */
+.gloskin-ui1-consultation{display:grid;gap:clamp(28px,4vw,44px)}
+
+/* Path selector: soft circular presentation, real buttons. */
+.gloskin-ui1-consultation__paths{
+	display:grid;
+	grid-template-columns:repeat(4,minmax(0,1fr));
+	gap:clamp(16px,3vw,28px);
+}
+.gloskin-ui1-consultation__path{
+	display:grid;
+	justify-items:center;
+	gap:14px;
+	padding:clamp(18px,2.4vw,26px) 12px;
+	border:1px solid transparent;
+	border-radius:var(--gloskin-radius-lg);
+	background:transparent;
+	color:inherit;
+	cursor:pointer;
+	transition:background-color 160ms ease,border-color 160ms ease,transform 160ms ease;
+}
+.gloskin-ui1-consultation__path:hover{transform:translateY(-2px)}
+.gloskin-ui1-consultation__path.is-active{
+	border-color:var(--gloskin-border);
+	background:var(--gloskin-surface);
+}
+.gloskin-ui1-consultation__path-media{
+	display:grid;
+	overflow:hidden;
+	width:clamp(84px,10vw,116px);
+	height:clamp(84px,10vw,116px);
+	border-radius:999px;
+	background:var(--gloskin-surface-strong);
+	place-items:center;
+	box-shadow:0 8px 24px color-mix(in srgb,var(--gloskin-text) 8%,transparent);
+}
+.gloskin-ui1-consultation__path.is-active .gloskin-ui1-consultation__path-media{
+	box-shadow:0 0 0 3px var(--gloskin-accent-soft),0 8px 24px color-mix(in srgb,var(--gloskin-text) 8%,transparent);
+}
+.gloskin-ui1-consultation__path-image{width:100%;height:100%;object-fit:cover}
+.gloskin-ui1-consultation__path-initial{
+	font-family:var(--gloskin-font-heading);
+	font-size:1.6rem;
+	color:var(--gloskin-accent-readable);
+}
+.gloskin-ui1-consultation__path-label{font-weight:700;text-align:center}
+
+/* Questionnaire: one question at a time. */
+.gloskin-ui1-consultation__questionnaire{
+	display:grid;
+	gap:18px;
+	max-width:var(--gloskin-reading);
+	margin-inline:auto;
+	padding:clamp(24px,4vw,36px);
+	border:1px solid var(--gloskin-border);
+	border-radius:var(--gloskin-radius-lg);
+	background:var(--gloskin-bg);
+	box-shadow:var(--gloskin-shadow);
+}
+.gloskin-ui1-consultation__questionnaire[hidden]{display:none}
+.gloskin-ui1-consultation__progress{
+	margin:0;
+	color:var(--gloskin-muted);
+	font-size:.85rem;
+	font-weight:700;
+	letter-spacing:.06em;
+	text-transform:uppercase;
+}
+.gloskin-ui1-consultation__question-text{margin:0}
+.gloskin-ui1-consultation__answers{display:grid;gap:10px}
+.gloskin-ui1-consultation__answer{
+	display:block;
+	width:100%;
+	padding:14px 18px;
+	border:1px solid var(--gloskin-border);
+	border-radius:var(--gloskin-radius-sm);
+	background:var(--gloskin-surface);
+	color:var(--gloskin-text);
+	font:inherit;
+	font-weight:600;
+	text-align:left;
+	cursor:pointer;
+	transition:border-color 140ms ease,background-color 140ms ease;
+}
+.gloskin-ui1-consultation__answer:hover{
+	border-color:var(--gloskin-accent);
+	background:var(--gloskin-accent-soft);
+}
+.gloskin-ui1-consultation__controls{
+	display:flex;
+	flex-wrap:wrap;
+	align-items:center;
+	justify-content:space-between;
+	gap:12px;
+	margin-top:4px;
+}
+.gloskin-ui1-consultation__restart{margin-left:auto}
+.gloskin-ui1-consultation__complete{margin:0;font-weight:700}
+
+.gloskin-ui1-consultation__disclaimer{
+	max-width:var(--gloskin-reading);
+	margin:0 auto;
+	color:var(--gloskin-muted);
+	font-size:.88rem;
+	text-align:center;
+}
+
+/* Results: existing product-card markup only, this file never styles a
+ * second card -- .gloskin-ui1-card/.gloskin-ui1-grid--cards rules already
+ * live in gloskin-ui1-core.css and gloskin-ui1-production.css. */
+.gloskin-ui1-consultation__results[hidden]{display:none}
+.gloskin-ui1-consultation__results-heading{margin-bottom:20px;text-align:center}
+.gloskin-ui1-consultation__result[hidden]{display:none}
+.gloskin-ui1-consultation__empty{
+	max-width:var(--gloskin-reading);
+	margin:0 auto;
+	padding:22px 24px;
+	border:1px dashed var(--gloskin-border);
+	border-radius:var(--gloskin-radius-md);
+	background:var(--gloskin-surface);
+	color:var(--gloskin-muted);
+	text-align:center;
+}
+.gloskin-ui1-consultation__empty[hidden]{display:none}
+
+@media (max-width:1040px){
+	.gloskin-ui1-consultation__paths{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+	.gloskin-ui1-consultation__path-media{width:76px;height:76px}
+}
+@media (max-width:640px){
+	.gloskin-ui1-consultation__paths{grid-template-columns:repeat(2,minmax(0,1fr))}
+	.gloskin-ui1-consultation__controls{flex-direction:column;align-items:stretch}
+	.gloskin-ui1-consultation__restart{margin-left:0;text-align:center}
+}
+
+@media (prefers-reduced-motion:reduce){
+	.gloskin-ui1-consultation__path{transition:none}
+	.gloskin-ui1-consultation__path:hover{transform:none}
+}

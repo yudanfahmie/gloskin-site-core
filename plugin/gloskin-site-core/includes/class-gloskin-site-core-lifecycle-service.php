@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Lifecycle_Service {
-	const SCHEMA_VERSION = '0.2.1';
+	const SCHEMA_VERSION = '0.2.2';
 	const VERSION_OPTION = 'gloskin_site_core_schema_version';
 
 	/**
@@ -46,6 +46,11 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 	 */
 	public function activate() {
 		Gloskin_Site_Core_Content_Service::register_content_types();
+		/* register_content_types() only registers post types. The family
+		 * taxonomy ensure_family_terms() depends on below must also be
+		 * registered here explicitly -- the normal init hook has not
+		 * fired yet on this static register_activation_hook path. */
+		Gloskin_Site_Core_Content_Service::register_taxonomies();
 		$this->provision_approved_structure();
 		update_option( self::VERSION_OPTION, self::SCHEMA_VERSION, false );
 		flush_rewrite_rules( false );
@@ -95,6 +100,12 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 		foreach ( Gloskin_Site_Core_Content_Service::clinic_definitions() as $slug => $title ) {
 			$this->ensure_post( Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE, $slug, $title );
 		}
+
+		/* Structural only: ensures the two stable gloskin_product_family
+		 * terms (skincare, treatment) exist. Never seeds consultation
+		 * paths/concerns/questions/demo products -- that stays owned by
+		 * the explicit, staging-only demo importer. */
+		Gloskin_Site_Core_Content_Service::ensure_family_terms();
 	}
 
 	/**

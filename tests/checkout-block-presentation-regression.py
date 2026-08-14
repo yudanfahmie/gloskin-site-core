@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Real-Chromium regression for the WooCommerce Checkout block's Country/
-Region + Province select geometry and the shared Cart/Checkout primary CTA
+Region + Province select geometry, single-chevron rendering, the Cart
+primary CTA's width behavior, and the shared Cart/Checkout primary CTA
 typography (gloskin-ui1-core.css's "WooCommerce Blocks cart/checkout"
-section). Embeds a minimal, faithful reproduction of WC's own !important
-select/checkbox constraints (reverse-engineered from real staging this
-session via getComputedStyle probing) alongside the real, unmodified
-Gloskin CSS files, so a future change here is checked locally against the
-same cascade that produced the original label/value collision, before
-staging is ever touched again."""
+section). Embeds a minimal, faithful reproduction of WC Blocks' own
+select/checkbox/CTA markup and baseline rules (reverse-engineered from real
+staging this session via getComputedStyle probing -- proven NOT to carry
+!important, see the WC_CHECKOUT_BASELINE comment below) alongside the real,
+unmodified Gloskin CSS files, so a future change here is checked locally
+against the same cascade that produced the original label/value collision,
+before staging is ever touched again."""
 from pathlib import Path
 
 try:
@@ -132,7 +134,11 @@ def cart_cta_markup():
 <body class="woocommerce-cart woocommerce-page gloskin-ui1">
 <div class="woocommerce gloskin-ui1-commerce-native">
 <div class="wp-block-woocommerce-cart alignwide">
+<div class="wc-block-cart__sidebar">
+<div class="wc-block-cart__submit-container">
 <a class="wc-block-components-button wp-element-button wc-block-cart__submit-button contained" href="#">Proceed to Checkout</a>
+</div>
+</div>
 </div>
 </div>
 </body></html>"""
@@ -257,6 +263,48 @@ with sync_playwright() as p:
     require(proceed['fontWeight'] >= 700, f'Proceed to Checkout font-weight below 700: {proceed}')
     require(proceed['fontSize'] == place_order['fontSize'] and proceed['fontWeight'] == place_order['fontWeight'], f'Cart/Checkout primary CTA typography does not match: proceed={proceed} place_order={place_order}')
     page.close()
+
+    # D. Single chevron: the Checkout Block's Country/Region + Province
+    # selects must show WC Blocks' own .wc-blocks-components-select__expand
+    # SVG as the ONLY indicator -- Gloskin's sitewide select background-
+    # image chevron (.gloskin-ui1 .woocommerce select in gloskin-ui1-core.css)
+    # must be turned off for exactly this select (see the "fix checkout
+    # select double chevron" commit). Guards against that scoping ever
+    # silently regressing.
+    page = browser.new_page(viewport={'width': 1024, 'height': 900})
+    page.set_content(checkout_markup("ID", "Indonesia", "JK", "DKI Jakarta"))
+    page.add_style_tag(content=CSS_BASE + '\n' + CSS_CORE + '\n' + WC_CHECKOUT_BASELINE + '\n' + CSS_PRODUCTION + '\n' + FIXTURE_LAYOUT)
+    page.wait_for_timeout(30)
+    chevrons = page.evaluate(
+        """() => {
+            const containers = document.querySelectorAll('.wc-blocks-components-select__container');
+            return Array.from(containers).map((container) => ({
+                backgroundImage: getComputedStyle(container.querySelector('.wc-blocks-components-select__select')).backgroundImage,
+                expandSvgCount: container.querySelectorAll('.wc-blocks-components-select__expand').length,
+            }));
+        }"""
+    )
+    for index, entry in enumerate(chevrons):
+        require(entry['backgroundImage'] == 'none', f'select #{index}: sitewide chevron background-image not disabled: {entry}')
+        require(entry['expandSvgCount'] == 1, f'select #{index}: expected exactly one WC expand SVG, found {entry["expandSvgCount"]}')
+    page.close()
+
+    # E. Cart CTA width vs. the floating contact bubble reservation
+    # (gloskin-ui1-production.css's "Checkout CTA vs. the site-wide
+    # floating contact bubble" section): at a normal viewport height no
+    # clearance is reserved (full available column width); at a short
+    # viewport height where the fixed bubble can genuinely reach the
+    # button, the 76px clearance is active.
+    for height, expect_padding, label in ((900, 0, 'normal height'), (600, 76, 'short height')):
+        page = browser.new_page(viewport={'width': 1024, 'height': height})
+        page.set_content(cart_cta_markup())
+        page.add_style_tag(content=CSS_BASE + '\n' + CSS_CORE + '\n' + WC_CHECKOUT_BASELINE + '\n' + CSS_PRODUCTION + '\n' + FIXTURE_LAYOUT)
+        page.wait_for_timeout(30)
+        padding_right = page.evaluate(
+            """() => parseFloat(getComputedStyle(document.querySelector('.wc-block-cart__submit-container')).paddingRight)"""
+        )
+        require(abs(padding_right - expect_padding) < 0.5, f'Cart CTA clearance at {label} ({height}px): expected padding-right {expect_padding}px, got {padding_right}px')
+        page.close()
 
     browser.close()
 

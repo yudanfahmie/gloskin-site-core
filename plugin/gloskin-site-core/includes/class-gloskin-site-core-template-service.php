@@ -254,6 +254,16 @@ final class Gloskin_Site_Core_Template_Service {
 		 * hero_context() call is untouched, never gaining a video slot. */
 		$hero = $this->hero_context( $page, __( 'Perawatan kulit, anti-aging, dan rambut yang dimulai dari konsultasi.', 'gloskin-site-core' ), __( 'Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengutamakan pemeriksaan bersama dokter sebelum menentukan langkah perawatan untuk kulit Anda.', 'gloskin-site-core' ), __( 'Cari Klinik Terdekat', 'gloskin-site-core' ), home_url( '/clinics/' ) );
 		$hero = array_merge( $hero, $this->hero_video() );
+		/* Final client requirement: Home's hero becomes a pure full-width
+		 * video hero -- no eyebrow/heading/copy/CTA/split column. One
+		 * explicit presentation mode on the SAME existing hero renderer
+		 * (gloskin_ui1_render_hero()); every other hero_context() caller
+		 * above is untouched and keeps rendering 'standard'. Unconditional
+		 * for Home: the renderer's existing media fallback chain (video ->
+		 * attachment image -> editorial placeholder) still decides what
+		 * actually fills the media slot, this mode only removes the text/
+		 * CTA column and stretches the media full-width. */
+		$hero['mode'] = 'video-only';
 		return array(
 			'page' => $page,
 			'hero' => $hero,
@@ -296,6 +306,89 @@ final class Gloskin_Site_Core_Template_Service {
 			'treatments' => $remaining,
 			'doctors' => $this->post_cards( Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE, 3 ),
 			'target' => Gloskin_Site_Core_Content_Service::TREATMENT_TARGET_COUNT,
+			/* Consultation discovery layer (docs/task-treatment-
+			 * consultation-commerce-discovery.md section 6): additive to
+			 * the eight informational gloskin_treatment records above,
+			 * never replacing them. */
+			'consultation' => $this->consultation_context(),
+		);
+	}
+
+	/**
+	 * Consultation discovery context for the Treatments Hub. Fails
+	 * gracefully (empty 'paths') when fewer than 4 valid consultation
+	 * paths exist -- the existing informational treatment content remains
+	 * fully usable regardless (section 4.3).
+	 *
+	 * @return array{paths:array<int,array<string,mixed>>,questions:array<int,array<string,mixed>>,products:array<int,array<string,mixed>>,disclaimer:string}
+	 */
+	private function consultation_context() {
+		$empty = array( 'paths' => array(), 'questions' => array(), 'products' => array(), 'disclaimer' => '' );
+		if ( ! taxonomy_exists( Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY )
+			|| ! post_type_exists( Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE ) ) {
+			return $empty;
+		}
+
+		$path_terms = get_terms( array( 'taxonomy' => Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY, 'hide_empty' => false ) );
+		$path_terms = is_wp_error( $path_terms ) ? array() : $path_terms;
+		if ( count( $path_terms ) < Gloskin_Site_Core_Content_Service::PATH_MIN_VALID ) {
+			return $empty;
+		}
+		usort( $path_terms, static function ( $a, $b ) {
+			return absint( get_term_meta( $a->term_id, Gloskin_Site_Core_Content_Service::PATH_META_ORDER, true ) ) <=> absint( get_term_meta( $b->term_id, Gloskin_Site_Core_Content_Service::PATH_META_ORDER, true ) );
+		} );
+
+		$paths = array();
+		foreach ( array_slice( $path_terms, 0, 4 ) as $term ) {
+			$paths[] = array(
+				'id'       => (int) $term->term_id,
+				'label'    => $term->name,
+				'image_id' => absint( get_term_meta( $term->term_id, Gloskin_Site_Core_Content_Service::PATH_META_IMAGE_ID, true ) ),
+				'baseline_concerns' => array_map( 'absint', (array) get_term_meta( $term->term_id, Gloskin_Site_Core_Content_Service::PATH_META_BASELINE, true ) ),
+			);
+		}
+
+		$question_posts = get_posts(
+			array(
+				'post_type'      => Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE,
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'orderby'        => 'ID',
+				'order'          => 'ASC',
+			)
+		);
+		$questions = array();
+		foreach ( $question_posts as $question_post ) {
+			$answers_raw = get_post_meta( $question_post->ID, Gloskin_Site_Core_Content_Service::ANSWER_META_KEY, true );
+			$answers_raw = is_array( $answers_raw ) ? $answers_raw : array();
+			if ( ! $answers_raw ) {
+				continue; // Readiness rule: a published question with zero valid answers never reaches the frontend.
+			}
+			$path_ids = wp_get_post_terms( $question_post->ID, Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY, array( 'fields' => 'ids' ) );
+			$questions[] = array(
+				'id'       => (int) $question_post->ID,
+				'text'     => get_the_title( $question_post ),
+				'path_ids' => is_wp_error( $path_ids ) ? array() : array_map( 'absint', $path_ids ),
+				'answers'  => array_values( array_map( static function ( $answer ) {
+					return array(
+						'label'      => (string) $answer['label'],
+						'concern_id' => (int) $answer['concern_id'],
+						'weight'     => (int) $answer['weight'],
+					);
+				}, $answers_raw ) ),
+			);
+		}
+		if ( count( $questions ) < Gloskin_Site_Core_Content_Service::QUESTION_MIN_PUBLISHED ) {
+			return $empty;
+		}
+
+		$products = $this->woocommerce->treatment_products_with_concerns();
+
+		return array(
+			'paths'      => $paths,
+			'questions'  => $questions,
+			'products'   => $products,
+			'disclaimer' => __( 'Hasil ini membantu eksplorasi pilihan dan bukan diagnosis medis.', 'gloskin-site-core' ),
 		);
 	}
 

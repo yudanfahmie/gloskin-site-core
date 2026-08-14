@@ -70,6 +70,8 @@ class Gloskin_Site_Core_Content_Service {
 	public static function skincare_definitions() { return array(); }
 	public static function clinic_definitions() { return array(); }
 	public static function register_content_types() {}
+	public static function register_taxonomies() {}
+	public static function ensure_family_terms() {}
 }
 
 require dirname( __DIR__ ) . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-lifecycle-service.php';

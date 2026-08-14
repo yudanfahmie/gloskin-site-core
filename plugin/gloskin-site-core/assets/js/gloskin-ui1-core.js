@@ -1854,6 +1854,27 @@
 		}
 	}
 
+	/* Home video-only hero's one scroll cue (docs/task-treatment-
+	 * consultation-commerce-discovery.md section 14): a single semantic
+	 * <button>, click scrolls the hero's own next real sibling section
+	 * into view -- never an arbitrary pixel offset, never a second
+	 * animation framework. prefers-reduced-motion swaps 'smooth' for an
+	 * instant jump instead of skipping the action entirely. */
+	function initHeroScrollCue() {
+		var buttons = document.querySelectorAll('[data-gloskin-hero-scroll-cue]');
+		for (var i = 0; i < buttons.length; i++) {
+			(function (button) {
+				button.addEventListener('click', function () {
+					var hero = button.closest('.gloskin-ui1-hero');
+					var target = hero ? hero.nextElementSibling : null;
+					if (!target) { return; }
+					var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+					target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+				});
+			}(buttons[i]));
+		}
+	}
+
 	/* -----------------------------------------------------------------
 	 * Utility
 	 * ----------------------------------------------------------------- */
@@ -1883,6 +1904,7 @@
 		initShopCatalog();
 		initWishlist();
 		initHeroVideo();
+		initHeroScrollCue();
 	}
 
 	if (typeof document !== 'undefined') {

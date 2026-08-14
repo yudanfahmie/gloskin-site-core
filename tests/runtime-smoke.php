@@ -169,6 +169,44 @@ function register_deactivation_hook( $file, $callback ) { $GLOBALS['gl_deactivat
 function is_admin() { return (bool) $GLOBALS['gl_is_admin']; }
 function register_post_type( $type, $args ) { $GLOBALS['gl_post_types'][ $type ] = $args; }
 function register_post_meta( $type, $key, $args ) { $GLOBALS['gl_registered_meta'][ $type ][ $key ] = $args; }
+/* Treatment Consultation taxonomy/term-meta registration stubs (docs/task-
+ * treatment-consultation-commerce-discovery.md). 'product' is WooCommerce's
+ * own post type, simulated here the same way the rest of this harness
+ * already simulates Woo presence (see $GLOBALS['gl_woo'], get_term_by()
+ * above). */
+function post_type_exists( $type ) { return isset( $GLOBALS['gl_post_types'][ $type ] ) || ( 'product' === $type && $GLOBALS['gl_woo'] ); }
+function register_taxonomy( $taxonomy, $object_type, $args = array() ) { $GLOBALS['gl_taxonomies'][ $taxonomy ] = $args; }
+function taxonomy_exists( $taxonomy ) { return isset( $GLOBALS['gl_taxonomies'][ $taxonomy ] ); }
+function register_term_meta( $taxonomy, $key, $args ) { $GLOBALS['gl_registered_term_meta'][ $taxonomy ][ $key ] = $args; }
+function term_exists( $term, $taxonomy = '', $parent = null ) {
+	unset( $parent );
+	foreach ( (array) ( $GLOBALS['gl_terms'][ $taxonomy ] ?? array() ) as $existing ) {
+		if ( $existing['term_id'] === $term || $existing['slug'] === $term ) { return $existing; }
+	}
+	return null;
+}
+function wp_insert_term( $name, $taxonomy, $args = array() ) {
+	$id = $GLOBALS['gl_next_id']++;
+	$term = array( 'term_id' => $id, 'name' => $name, 'slug' => $args['slug'] ?? sanitize_title( $name ) );
+	$GLOBALS['gl_terms'][ $taxonomy ][] = $term;
+	return array( 'term_id' => $id, 'term_taxonomy_id' => $id );
+}
+function get_terms( $args = array() ) {
+	$taxonomy = $args['taxonomy'] ?? '';
+	$terms = array();
+	foreach ( (array) ( $GLOBALS['gl_terms'][ $taxonomy ] ?? array() ) as $term ) {
+		$terms[] = (object) array( 'term_id' => $term['term_id'], 'name' => $term['name'], 'slug' => $term['slug'], 'count' => 0 );
+	}
+	return $terms;
+}
+function get_term_meta( $term_id, $key = '', $single = false ) {
+	unset( $term_id, $key );
+	return $single ? '' : array();
+}
+function wp_get_post_terms( $post_id, $taxonomy, $args = array() ) {
+	unset( $post_id, $taxonomy, $args );
+	return array();
+}
 function register_nav_menus( $menus ) {}
 function has_nav_menu( $location ) { return false; }
 function get_nav_menu_locations() { return array(); }

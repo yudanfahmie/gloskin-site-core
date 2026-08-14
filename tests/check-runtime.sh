@@ -20,6 +20,7 @@ php tests/single-product-guard-contract.php
 php tests/single-product-description-boundary-contract.php
 node tests/single-product-ajax-payload.test.js
 node tests/hero-video.test.js
+node tests/consultation.test.js
 php tests/shop-catalog-contract.php
 node tests/shop-catalog-controller.test.js
 python tests/storefront-regression-contract.py

@@ -520,3 +520,35 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 @media (max-height:700px){
 	body.woocommerce-cart .wc-block-cart__submit-container{padding-right:76px}
 }
+
+/* Home hero video-only mode (docs/task-treatment-consultation-commerce-
+   discovery.md sections 11-14): the final client requirement, a pure
+   full-width media hero with no text/CTA column. Reuses the exact same
+   .gloskin-ui1-hero-video/__image chain and gloskin_ui1_render_hero_video()
+   poster/facade the standard hero already uses (gloskin-ui1-core-base.css)
+   -- only the surrounding geometry differs here; no second Hero/video
+   system. */
+.gloskin-ui1-hero--video-only{position:relative;min-height:0;background:var(--gloskin-brand-charcoal)}
+.gloskin-ui1-hero__media--full{position:relative;width:100%;height:clamp(480px,86vh,960px);overflow:hidden}
+.gloskin-ui1-hero__media--full .gloskin-ui1-hero-video,
+.gloskin-ui1-hero__media--full .gloskin-ui1-hero__image{width:100%;height:100%;aspect-ratio:auto;object-fit:cover;border-radius:0;box-shadow:none}
+
+/* Bottom gradient: transparent -> the next section's own surface token,
+   so the video dissolves naturally into the first Home content section
+   instead of a hard edge. A plain absolutely-positioned, aria-hidden,
+   presentation-only layer (not a layout-height trick, not a hard band). */
+.gloskin-ui1-hero__fade{position:absolute;left:0;right:0;bottom:0;height:clamp(80px,14vh,180px);background:linear-gradient(to bottom,transparent,var(--gloskin-bg));pointer-events:none}
+
+/* One lower-center semantic scroll indicator: small pulsing bubble +
+   downward chevron, a real focusable <button>. */
+.gloskin-ui1-hero__scroll-cue{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);z-index:1;display:grid;justify-items:center;gap:6px;border:0;background:transparent;color:var(--gloskin-inverse);cursor:pointer;padding:8px}
+.gloskin-ui1-hero__scroll-cue-dot{width:8px;height:8px;border-radius:999px;background:currentColor;opacity:.85;animation:gloskin-hero-scroll-cue-pulse 1.8s ease-in-out infinite}
+.gloskin-ui1-hero__scroll-cue-chevron{animation:gloskin-hero-scroll-cue-bounce 1.8s ease-in-out infinite}
+@keyframes gloskin-hero-scroll-cue-pulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
+@keyframes gloskin-hero-scroll-cue-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+@media (prefers-reduced-motion:reduce){
+	.gloskin-ui1-hero__scroll-cue-dot,.gloskin-ui1-hero__scroll-cue-chevron{animation:none}
+}
+@media (max-width:760px){
+	.gloskin-ui1-hero__media--full{height:clamp(420px,72vh,760px)}
+}

@@ -50,6 +50,15 @@ final class Gloskin_Site_Core_Asset_Service {
 	/**
 	 * @return void
 	 */
+	/**
+	 * Registry handles that are always registered but only conditionally
+	 * enqueued below (never part of the unconditional loop every other
+	 * Gloskin frontend request gets) -- see enqueue_treatment_consultation().
+	 *
+	 * @var array<int,string>
+	 */
+	const CONDITIONAL_HANDLES = array( 'gloskin-ui1-consultation' );
+
 	public function enqueue_frontend() {
 		if ( ! $this->should_enqueue_frontend() ) {
 			return;
@@ -65,6 +74,9 @@ final class Gloskin_Site_Core_Asset_Service {
 				$deps = array_merge( $deps, $this->registered_woo_style_deps() );
 			}
 			wp_register_style( $handle, $src, $deps, $this->version, $asset['media'] );
+			if ( in_array( $handle, self::CONDITIONAL_HANDLES, true ) ) {
+				continue;
+			}
 			wp_enqueue_style( $handle );
 		}
 		foreach ( $registry['scripts'] as $handle => $asset ) {
@@ -72,10 +84,32 @@ final class Gloskin_Site_Core_Asset_Service {
 				? (string) $asset['src']
 				: plugins_url( $asset['src'], $this->plugin_file );
 			wp_register_script( $handle, $src, $asset['deps'], $this->version, $asset['in_footer'] );
+			if ( in_array( $handle, self::CONDITIONAL_HANDLES, true ) ) {
+				continue;
+			}
 			wp_enqueue_script( $handle );
 		}
 
 		$this->enqueue_native_commerce_scripts();
+		$this->maybe_enqueue_treatment_consultation();
+	}
+
+	/**
+	 * Treatment Consultation runtime (docs/task-treatment-consultation-
+	 * commerce-discovery.md section 10): "Treatment consultation JS only on
+	 * Treatments Hub" -- both handles are already registered above (so
+	 * their dependency graph is known), just conditionally enqueued here
+	 * rather than unconditionally on every Gloskin frontend request.
+	 *
+	 * @return void
+	 */
+	private function maybe_enqueue_treatment_consultation() {
+		$context = function_exists( 'get_query_var' ) ? get_query_var( 'gloskin_context', array() ) : array();
+		if ( ! is_array( $context ) || 'treatments' !== ( isset( $context['view'] ) ? $context['view'] : '' ) ) {
+			return;
+		}
+		wp_enqueue_style( 'gloskin-ui1-consultation' );
+		wp_enqueue_script( 'gloskin-ui1-consultation' );
 	}
 
 	/**
@@ -305,6 +339,23 @@ final class Gloskin_Site_Core_Asset_Service {
 			$asset = $registry['admin_scripts']['gloskin-admin'];
 			wp_register_script( 'gloskin-admin', plugins_url( $asset['src'], $this->plugin_file ), $asset['deps'], $this->version, true );
 			wp_enqueue_script( 'gloskin-admin' );
+		}
+	}
+
+	/**
+	 * The Konsultasi Perawatan mapping matrix's own small drag-and-drop
+	 * progressive-enhancement script. Gloskin_Site_Core_Admin_Service
+	 * already gates the call to this method to that exact screen's hook --
+	 * this method only registers/enqueues.
+	 *
+	 * @return void
+	 */
+	public function enqueue_consultation_admin() {
+		$registry = $this->registry();
+		if ( ! empty( $registry['admin_scripts']['gloskin-ui1-consultation-admin'] ) ) {
+			$asset = $registry['admin_scripts']['gloskin-ui1-consultation-admin'];
+			wp_register_script( 'gloskin-ui1-consultation-admin', plugins_url( $asset['src'], $this->plugin_file ), $asset['deps'], $this->version, true );
+			wp_enqueue_script( 'gloskin-ui1-consultation-admin' );
 		}
 	}
 

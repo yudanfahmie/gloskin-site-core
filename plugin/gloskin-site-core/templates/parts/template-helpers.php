@@ -153,16 +153,62 @@ if ( ! function_exists( 'gloskin_ui1_render_editorial_media' ) ) {
 
 if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 	/**
+	 * One hero renderer, one explicit presentation mode flag -- 'standard'
+	 * (default, every existing consumer: About/Clinics/Contact/Doctors/
+	 * Shop/Skincare/Treatments/Insights, and Home itself when no mode is
+	 * set) or 'video-only' (Home's final requirement: a pure full-width
+	 * media hero, no eyebrow/heading/copy/CTA/split column). No second
+	 * Hero service, no second video settings system, no duplicate
+	 * YouTube runtime -- the exact same media fallback chain (video ->
+	 * attachment image -> editorial placeholder) and the exact same
+	 * gloskin_ui1_render_hero_video() poster/facade below serve both
+	 * modes; video-only only changes the surrounding markup/CSS.
+	 *
 	 * @param array<string,mixed> $hero Hero context.
 	 * @return void
 	 */
 	function gloskin_ui1_render_hero( $hero ) {
-		$heading  = isset( $hero['heading'] ) ? (string) $hero['heading'] : '';
-		$copy     = isset( $hero['copy'] ) ? (string) $hero['copy'] : '';
-		$label    = isset( $hero['cta_label'] ) ? (string) $hero['cta_label'] : '';
-		$url      = isset( $hero['cta_url'] ) ? (string) $hero['cta_url'] : '';
-		$media    = isset( $hero['media_id'] ) ? absint( $hero['media_id'] ) : 0;
-		$video_id = ! empty( $hero['video_enabled'] ) && ! empty( $hero['video_id'] ) ? (string) $hero['video_id'] : '';
+		$heading    = isset( $hero['heading'] ) ? (string) $hero['heading'] : '';
+		$copy       = isset( $hero['copy'] ) ? (string) $hero['copy'] : '';
+		$label      = isset( $hero['cta_label'] ) ? (string) $hero['cta_label'] : '';
+		$url        = isset( $hero['cta_url'] ) ? (string) $hero['cta_url'] : '';
+		$media      = isset( $hero['media_id'] ) ? absint( $hero['media_id'] ) : 0;
+		$video_id   = ! empty( $hero['video_enabled'] ) && ! empty( $hero['video_id'] ) ? (string) $hero['video_id'] : '';
+		$video_only = isset( $hero['mode'] ) && 'video-only' === $hero['mode'];
+
+		if ( $video_only ) {
+			?>
+			<section class="gloskin-ui1-hero gloskin-ui1-hero--video-only">
+				<div class="gloskin-ui1-hero__media gloskin-ui1-hero__media--full">
+					<?php if ( '' !== $video_id ) : ?>
+						<?php gloskin_ui1_render_hero_video( $video_id, $heading ); ?>
+					<?php elseif ( $media ) : ?>
+						<?php
+						echo wp_get_attachment_image(
+							$media,
+							'full',
+							false,
+							array(
+								'class'         => 'gloskin-ui1-hero__image',
+								'fetchpriority' => 'high',
+								'decoding'      => 'async',
+							)
+						);
+						?>
+					<?php else : ?>
+						<?php gloskin_ui1_render_editorial_media( 'hero', $heading, 'gloskin-ui1-hero__image gloskin-ui1-hero__image--editorial', true ); ?>
+					<?php endif; ?>
+					<?php if ( '' !== $heading ) : ?><h1 class="screen-reader-text"><?php echo esc_html( $heading ); ?></h1><?php endif; ?>
+				</div>
+				<div class="gloskin-ui1-hero__fade" aria-hidden="true"></div>
+				<button type="button" class="gloskin-ui1-hero__scroll-cue" data-gloskin-hero-scroll-cue aria-label="<?php echo esc_attr__( 'Gulir ke konten berikutnya', 'gloskin-site-core' ); ?>">
+					<span class="gloskin-ui1-hero__scroll-cue-dot" aria-hidden="true"></span>
+					<svg class="gloskin-ui1-hero__scroll-cue-chevron" width="18" height="10" viewBox="0 0 18 10" fill="none" aria-hidden="true" focusable="false"><path d="M1 1L9 8.5L17 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+				</button>
+			</section>
+			<?php
+			return;
+		}
 		?>
 		<section class="gloskin-ui1-hero">
 			<div class="gloskin-ui1-container gloskin-ui1-hero__grid">
