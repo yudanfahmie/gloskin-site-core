@@ -222,7 +222,7 @@ The homepage requires editable/renderable data for:
 
 Avoid a huge all-in-one serialized option if native Page content, block data or small registered meta fields are simpler. If plugin-owned structured settings are used, version and sanitize them explicitly.
 
-The current Home presentation intentionally uses the existing shared hero/video owner in video-only mode: no visible eyebrow/heading/copy/CTA, media first with the configured poster/video behavior, bottom gradient, one SVG scroll cue to the actual following section, and reduced-motion handling. Do not create a second Home hero/video service.
+The current Home presentation intentionally uses the existing shared hero/video owner in video-only mode: no visible eyebrow/heading/copy/CTA, a native background `<video>` sourced from a WordPress Media Library attachment (muted, autoplay, loop, playsinline, true `object-fit:cover`), a pure-white preparing state with a small non-interactive loader until real playback readiness is proven, bottom gradient, one SVG scroll cue to the actual following section, and reduced-motion handling (established/paused static frame, no repeated loader motion). No YouTube iframe or poster/facade chrome renders on this surface. Do not create a second Home hero/video service.
 
 ## Contact and booking contract
 

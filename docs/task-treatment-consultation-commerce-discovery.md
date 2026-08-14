@@ -582,10 +582,9 @@ Place the demo import card/button inside:
 Only show it when:
 
 - user can `manage_woocommerce`;
-- environment is `local`, `development`, or `staging` (`wp_get_environment_type()` where available);
 - the demo bundle has not been successfully consumed.
 
-On `production`, do not expose/run synthetic sample import.
+Demo import is an explicit privileged admin workflow, not an environment gate: it does not depend on `wp_get_environment_type()`/`WP_ENVIRONMENT_TYPE`, hostname guessing, `WP_DEBUG`, or any other deployment-target signal. Access control is capability (`manage_woocommerce`) + nonce, plus one required, server-verified confirmation checkbox ("Saya memahami bahwa data demo sintetis akan dibuat pada situs ini.") that the owner must explicitly check before any synthetic data is created. Once consumed, no re-import control is offered; the admin instead links straight to Pemetaan Produk and Semua Produk Perawatan.
 
 ### 12.2 Implementation form
 
@@ -771,7 +770,7 @@ Add/extend focused automated contracts for at least:
 - mapping save uses canonical taxonomy relationship only;
 - no duplicate product-ID mapping option/meta;
 - only one custom Consultation submenu added by this feature;
-- demo importer refuses production environment;
+- demo importer refuses to run without the explicit server-verified confirmation, independent of any deployment environment;
 - demo import is deterministic/idempotent and creates expected minimum counts;
 - recommendation grid reuses current Woo Add-to-Cart/product-card path;
 - Treatments Hub still renders/retains the existing informational treatment data path;

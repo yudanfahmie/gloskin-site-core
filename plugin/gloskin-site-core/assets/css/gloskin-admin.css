@@ -88,6 +88,11 @@
 .gloskin-admin-header-card__title{font-size:13px}
 .gloskin-admin-header-card__desc{color:var(--gloskin-admin-muted);font-size:12px}
 
+/* Background video Media Library field (Hero tab). */
+.gloskin-admin-media-field{padding:var(--gloskin-admin-space-3) var(--gloskin-admin-space-4);border:1px solid var(--gloskin-admin-border);border-radius:var(--gloskin-admin-radius);background:var(--gloskin-admin-surface-muted);margin-bottom:var(--gloskin-admin-space-4)}
+.gloskin-admin-media-field__filename{margin:0 0 var(--gloskin-admin-space-2);color:var(--gloskin-admin-text);font-weight:600;word-break:break-all}
+.gloskin-admin-media-field p:last-child{margin-bottom:0}
+
 @media (max-width:900px){
 	.gloskin-admin-shell{grid-template-columns:1fr}
 	.gloskin-admin-shell__sidebar{position:static}

@@ -254,15 +254,21 @@ final class Gloskin_Site_Core_Template_Service {
 		 * hero_context() call is untouched, never gaining a video slot. */
 		$hero = $this->hero_context( $page, __( 'Perawatan kulit, anti-aging, dan rambut yang dimulai dari konsultasi.', 'gloskin-site-core' ), __( 'Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengutamakan pemeriksaan bersama dokter sebelum menentukan langkah perawatan untuk kulit Anda.', 'gloskin-site-core' ), __( 'Cari Klinik Terdekat', 'gloskin-site-core' ), home_url( '/clinics/' ) );
 		$hero = array_merge( $hero, $this->hero_video() );
+		/* Home video-only mode's own native background video (task K/L):
+		 * a real Media Library attachment, resolved independently of the
+		 * legacy YouTube hero_video() above -- see hero_background_video().
+		 * gloskin_ui1_render_hero()'s video-only branch prefers this native
+		 * source and never falls back to the YouTube facade/iframe. */
+		$hero = array_merge( $hero, $this->hero_background_video() );
 		/* Final client requirement: Home's hero becomes a pure full-width
 		 * video hero -- no eyebrow/heading/copy/CTA/split column. One
 		 * explicit presentation mode on the SAME existing hero renderer
 		 * (gloskin_ui1_render_hero()); every other hero_context() caller
 		 * above is untouched and keeps rendering 'standard'. Unconditional
-		 * for Home: the renderer's existing media fallback chain (video ->
-		 * attachment image -> editorial placeholder) still decides what
-		 * actually fills the media slot, this mode only removes the text/
-		 * CTA column and stretches the media full-width. */
+		 * for Home: the renderer's existing media fallback chain (native
+		 * video -> attachment image -> editorial placeholder) still decides
+		 * what actually fills the media slot, this mode only removes the
+		 * text/CTA column and stretches the media full-width. */
 		$hero['mode'] = 'video-only';
 		return array(
 			'page' => $page,
@@ -1028,5 +1034,35 @@ final class Gloskin_Site_Core_Template_Service {
 		$url = (string) $settings['hero_video_url'];
 		$video_id = class_exists( 'Gloskin_Site_Core_Admin_Service' ) ? Gloskin_Site_Core_Admin_Service::resolve_youtube_video_id( $url ) : '';
 		return array( 'video_enabled' => '' !== $video_id, 'video_id' => $video_id );
+	}
+
+	/**
+	 * Home video-only mode's native background video (task J/K/L): resolves
+	 * the same shared settings option's hero_video_media_id key to a real
+	 * WordPress Media Library attachment -- never a remote YouTube
+	 * download, never a second settings option. Only a genuine video/*
+	 * mime attachment resolves to a source; anything else (unset,
+	 * deleted, non-video) returns an empty sources array and
+	 * gloskin_ui1_render_hero()'s existing media fallback chain (attachment
+	 * image -> editorial placeholder) takes over exactly as it already does.
+	 *
+	 * @return array{sources:array<int,array{src:string,type:string}>}
+	 */
+	private function hero_background_video() {
+		if ( ! class_exists( 'Gloskin_Site_Core_Admin_Service' ) ) {
+			require_once __DIR__ . '/class-gloskin-site-core-admin-service.php';
+		}
+		$defaults = class_exists( 'Gloskin_Site_Core_Admin_Service' ) ? Gloskin_Site_Core_Admin_Service::settings_defaults() : array( 'hero_video_media_id' => 0 );
+		$settings = array_merge( $defaults, get_option( Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION, $defaults ) );
+		$media_id = isset( $settings['hero_video_media_id'] ) ? absint( $settings['hero_video_media_id'] ) : 0;
+		if ( ! $media_id ) {
+			return array( 'sources' => array() );
+		}
+		$url  = function_exists( 'wp_get_attachment_url' ) ? wp_get_attachment_url( $media_id ) : false;
+		$mime = function_exists( 'get_post_mime_type' ) ? get_post_mime_type( $media_id ) : '';
+		if ( ! $url || 0 !== strpos( (string) $mime, 'video/' ) ) {
+			return array( 'sources' => array() );
+		}
+		return array( 'sources' => array( array( 'src' => $url, 'type' => (string) $mime ) ) );
 	}
 }

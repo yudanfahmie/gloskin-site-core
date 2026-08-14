@@ -66,9 +66,77 @@
 		});
 	}
 
+	/*
+	 * Hero tab: "Background video" Media Library picker (native WordPress
+	 * media modal, scoped to a video library). AssetService::enqueue_admin_
+	 * settings() calls wp_enqueue_media() only on this exact Settings
+	 * screen, so `wp.media` is only ever available here. Persists nothing
+	 * beyond the existing hidden gloskin_site_core_settings[hero_video_
+	 * media_id] input -- the surrounding <form action="options.php"> still
+	 * owns the real save, submitted natively regardless of which tab is
+	 * visible.
+	 */
+	function initHeroVideoPicker() {
+		var chooseButtons = document.querySelectorAll('[data-gloskin-video-picker]');
+		Array.prototype.forEach.call(chooseButtons, function (button) {
+			button.addEventListener('click', function (event) {
+				if (!window.wp || !wp.media) { return; }
+				event.preventDefault();
+				var target = document.querySelector(button.getAttribute('data-target'));
+				var field = button.closest('[data-gloskin-hero-video-field]');
+				if (!target || !field) { return; }
+
+				var frame = wp.media({
+					title: button.getAttribute('data-title') || 'Choose video',
+					button: { text: button.getAttribute('data-button') || 'Use video' },
+					library: { type: 'video' },
+					multiple: false
+				});
+
+				frame.on('select', function () {
+					var attachment = frame.state().get('selection').first().toJSON();
+					target.value = attachment.id;
+					target.dispatchEvent(new Event('change', { bubbles: true }));
+
+					var filename = field.querySelector('[data-gloskin-hero-video-filename]');
+					if (filename) { filename.textContent = attachment.filename || attachment.title || ''; }
+					button.textContent = button.getAttribute('data-label-replace') || 'Replace Video';
+
+					var removeButton = field.querySelector('[data-gloskin-video-remove]');
+					if (removeButton) { removeButton.hidden = false; }
+				});
+
+				frame.open();
+			});
+		});
+
+		var removeButtons = document.querySelectorAll('[data-gloskin-video-remove]');
+		Array.prototype.forEach.call(removeButtons, function (button) {
+			button.addEventListener('click', function () {
+				var target = document.querySelector(button.getAttribute('data-target'));
+				if (target) {
+					target.value = '';
+					target.dispatchEvent(new Event('change', { bubbles: true }));
+				}
+				var field = button.closest('[data-gloskin-hero-video-field]');
+				if (field) {
+					var filename = field.querySelector('[data-gloskin-hero-video-filename]');
+					if (filename) { filename.textContent = field.getAttribute('data-empty-label') || 'Belum ada video dipilih.'; }
+					var chooseButton = field.querySelector('[data-gloskin-video-picker]');
+					if (chooseButton) { chooseButton.textContent = chooseButton.getAttribute('data-label-choose') || 'Choose Video'; }
+				}
+				button.hidden = true;
+			});
+		});
+	}
+
 	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', init);
+		document.addEventListener('DOMContentLoaded', function () {
+			init();
+			initHeroVideoPicker();
+		});
 	} else {
 		init();
+		initHeroVideoPicker();
 	}
 })();

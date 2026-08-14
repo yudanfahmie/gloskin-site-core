@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 define( 'ABSPATH', __DIR__ . '/' );
 
-$GLOBALS['gl_environment'] = 'production';
-function wp_get_environment_type() { return $GLOBALS['gl_environment']; }
 function get_option( $key, $default = false ) { return $default; }
 
 final class Gloskin_Site_Core_Content_Service {
@@ -29,13 +27,18 @@ function private_static( $method ) {
 	return $reflection->invoke( null );
 }
 
-assert_contract( false === Gloskin_Site_Core_Consultation_Demo_Importer::is_environment_allowed(), 'Production must refuse consultation demo import' );
-$GLOBALS['gl_environment'] = 'staging';
-assert_contract( true === Gloskin_Site_Core_Consultation_Demo_Importer::is_environment_allowed(), 'Staging must allow consultation demo import' );
-$GLOBALS['gl_environment'] = 'development';
-assert_contract( true === Gloskin_Site_Core_Consultation_Demo_Importer::is_environment_allowed(), 'Development must allow consultation demo import' );
-$GLOBALS['gl_environment'] = 'local';
-assert_contract( true === Gloskin_Site_Core_Consultation_Demo_Importer::is_environment_allowed(), 'Local must allow consultation demo import' );
+// Demo import is an explicit privileged admin workflow, not an environment
+// gate: run() must refuse cleanly without the explicit confirmation, and
+// the class must carry zero WP_ENVIRONMENT_TYPE/wp_get_environment_type()/
+// is_environment_allowed() dependency (or any replacement environment
+// signal -- hostname guessing, WP_DEBUG, a second environment constant).
+try {
+	Gloskin_Site_Core_Consultation_Demo_Importer::run( false );
+	fail_contract( 'run( false ) must refuse without the explicit synthetic-data confirmation' );
+} catch ( RuntimeException $error ) {
+	assert_contract( false !== stripos( $error->getMessage(), 'konfirmasi' ), 'refusal message must explain the missing confirmation' );
+}
+assert_contract( ! method_exists( 'Gloskin_Site_Core_Consultation_Demo_Importer', 'is_environment_allowed' ), 'is_environment_allowed() must be removed entirely, not merely bypassed' );
 
 $paths = private_static( 'path_definitions' );
 $concerns = private_static( 'concern_definitions' );
@@ -74,5 +77,23 @@ assert_contract( false !== strpos( $source, 'wc_get_product_id_by_sku' ), 'Woo p
 assert_contract( false !== strpos( $source, "'meta_key'       => 'gloskin_demo_source'" ), 'Question upsert must resolve its stable source identity before create' );
 assert_contract( false === strpos( $source, '$wpdb' ), 'Demo importer must not use a custom table' );
 assert_contract( false !== strpos( $source, 'wp_set_object_terms' ), 'Demo mapping must remain native taxonomy relationships' );
+
+// Explicit privileged confirmation replaces the environment gate entirely --
+// no WP_ENVIRONMENT_TYPE, wp_get_environment_type(), hostname guessing,
+// WP_DEBUG check, or a second environment constant may reappear.
+foreach ( array( 'wp_get_environment_type', 'WP_ENVIRONMENT_TYPE', 'WP_DEBUG', 'gethostname', '$_SERVER[\'HTTP_HOST\'' ) as $forbidden ) {
+	assert_contract( false === strpos( $source, $forbidden ), "Demo importer must not depend on: {$forbidden}" );
+}
+assert_contract( false !== strpos( $source, 'function run( $confirmed = false )' ), 'run() must take an explicit confirmed parameter' );
+assert_contract( false !== strpos( $source, 'if ( ! $confirmed )' ), 'run() must refuse without the explicit confirmation' );
+
+$admin_source = file_get_contents( dirname( __DIR__ ) . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-admin-service.php' );
+if ( false === $admin_source ) { fail_contract( 'Unable to read AdminService source' ); }
+assert_contract( false !== strpos( $admin_source, "'confirm_demo_import'" ), 'Server must independently re-verify confirm_demo_import, never trust the HTML checkbox alone' );
+assert_contract( false !== strpos( $admin_source, "'1' === sanitize_text_field( wp_unslash( \$_POST['confirm_demo_import'] ) )" ), 'confirm_demo_import must be verified server-side against an exact value' );
+assert_contract( false !== strpos( $admin_source, 'Consultation_Demo_Importer::run( $confirmed )' ), 'handle_demo_import() must pass the server-verified confirmation into run()' );
+assert_contract( false !== strpos( $admin_source, 'name="confirm_demo_import" value="1" required' ), 'the demo import form must render the required confirmation checkbox' );
+assert_contract( false !== strpos( $admin_source, 'Saya memahami bahwa data demo sintetis akan dibuat pada situs ini.' ), 'the confirmation label must state the exact required copy' );
+assert_contract( false === strpos( $admin_source, 'is_environment_allowed' ), 'AdminService must no longer reference the removed environment gate' );
 
 echo "consultation-demo-importer-contract.php: OK\n";

@@ -94,3 +94,116 @@
 @media (max-width:782px){
 	.gloskin-admin-mapping-enhanced{grid-template-columns:minmax(0,1fr)}
 }
+
+/* Konsultasi Perawatan workspace shell: semantic pill navigation (replaces
+   native nav-tab-wrapper/nav-tab chrome) plus Ringkasan's title/pill-nav/
+   metric-grid/path-cards/Data & Import presentation. Scoped beneath the one
+   workspace root so this never leaks into unrelated wp-admin screens; this
+   file stays the one presentation owner for the whole workspace. */
+[data-gloskin-consultation-workspace] .gloskin-consultation-tabs{
+	display:flex;
+	flex-wrap:wrap;
+	gap:4px;
+	margin:18px 0 24px;
+	padding:5px;
+	border:1px solid #dcdcde;
+	border-radius:12px;
+	background:#f0f0f1;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-tabs__item{
+	display:inline-flex;
+	align-items:center;
+	padding:8px 16px;
+	border-radius:8px;
+	color:#3c434a;
+	font-size:13px;
+	font-weight:600;
+	line-height:1.2;
+	text-decoration:none;
+	white-space:nowrap;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-tabs__item:hover{
+	color:#1d2327;
+	background:rgba(255,255,255,.6);
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-tabs__item.is-active{
+	border:1px solid #dcdcde;
+	background:#fff;
+	color:#1d2327;
+	box-shadow:0 1px 2px rgba(0,0,0,.06);
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-tabs__item:focus-visible{
+	outline:2px solid #2271b1;
+	outline-offset:2px;
+}
+
+[data-gloskin-consultation-workspace] .gloskin-consultation-section-title{
+	margin:28px 0 14px;
+	font-size:16px;
+}
+
+[data-gloskin-consultation-workspace] .gloskin-consultation-metrics{
+	display:grid;
+	grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+	gap:14px;
+	margin:18px 0;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-metric-card{
+	padding:14px 16px;
+	border:1px solid #dcdcde;
+	border-left-width:4px;
+	border-left-style:solid;
+	border-radius:10px;
+	background:#fff;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-metric-card.is-ready{border-left-color:#46b450}
+[data-gloskin-consultation-workspace] .gloskin-consultation-metric-card.is-warning{border-left-color:var(--gloskin-accent-strong,#961F24)}
+[data-gloskin-consultation-workspace] .gloskin-consultation-metric-card__label{
+	margin:0;
+	color:#646970;
+	font-size:11px;
+	font-weight:600;
+	letter-spacing:.06em;
+	text-transform:uppercase;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-metric-card__value{
+	margin:6px 0 0;
+	font-size:24px;
+	font-weight:600;
+	color:#1d2327;
+}
+
+[data-gloskin-consultation-workspace] .gloskin-consultation-path-cards{
+	display:flex;
+	flex-wrap:wrap;
+	gap:12px;
+	margin-bottom:8px;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-path-card{
+	min-width:180px;
+	padding:14px 16px;
+	border:1px solid #dcdcde;
+	border-radius:10px;
+	background:#fff;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-path-card h3{margin:0 0 4px;font-size:14px}
+[data-gloskin-consultation-workspace] .gloskin-consultation-path-card p{margin:0;color:#646970;font-size:12px}
+
+[data-gloskin-consultation-workspace] .gloskin-consultation-import-cards{
+	display:grid;
+	grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+	gap:16px;
+	margin-bottom:12px;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-import-card{
+	padding:16px 18px;
+	border:1px solid #dcdcde;
+	border-radius:10px;
+	background:#fff;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-import-card h3{margin:0 0 8px;font-size:14px}
+[data-gloskin-consultation-workspace] .gloskin-consultation-import-card__status{font-weight:600}
+[data-gloskin-consultation-workspace] .gloskin-consultation-import-card__status.is-done{color:#00450c}
+[data-gloskin-consultation-workspace] .gloskin-consultation-import-card__links{display:flex;flex-wrap:wrap;gap:8px}
+[data-gloskin-consultation-workspace] .gloskin-consultation-confirm-field{font-size:13px}
+[data-gloskin-consultation-workspace] .gloskin-consultation-confirm-field label{display:flex;align-items:flex-start;gap:8px}

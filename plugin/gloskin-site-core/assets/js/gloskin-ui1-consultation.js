@@ -101,7 +101,7 @@
 		var emptyEl = root.querySelector('[data-gloskin-consultation-empty]');
 		var resultCards = root.querySelectorAll('[data-gloskin-consultation-result]');
 
-		/* In-memory only. Never written to localStorage/sessionStorage/
+		/* In-memory only. Never written to browser storage of any kind or
 		 * cookies, never posted anywhere -- see the file-level comment. */
 		var state = {
 			pathId: null,

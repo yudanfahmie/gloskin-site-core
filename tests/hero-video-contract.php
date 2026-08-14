@@ -24,6 +24,7 @@ function esc_url_raw( $url ) { return str_replace( array( '<', '>', '"', "'" ), 
 function esc_attr( $value ) { return htmlspecialchars( (string) $value, ENT_QUOTES ); }
 function esc_html( $value ) { return htmlspecialchars( (string) $value, ENT_QUOTES ); }
 function esc_html__( $text, $domain = 'default' ) { return $text; }
+function esc_attr__( $text, $domain = 'default' ) { return $text; }
 function __( $text, $domain = 'default' ) { return $text; }
 function absint( $value ) { return abs( (int) $value ); }
 function sanitize_html_class( $value, $fallback = '' ) {
@@ -174,5 +175,80 @@ ok( strpos( $core_js, 'youtube-nocookie.com' ) !== false, 'JS embed must use the
 ok( strpos( $core_js, "'youtube.com/embed" ) === false, 'JS must never build a tracking youtube.com/embed URL' );
 ok( strpos( $core_js, 'setInterval' ) === false || strpos( substr( $core_js, strpos( $core_js, 'Hero Video' ) ), 'setInterval' ) === false, 'Hero Video section must never use setInterval/polling' );
 ok( strpos( $core_js, 'IntersectionObserver' ) !== false, 'must use IntersectionObserver for visibility-based enhancement, not scroll polling' );
+
+// -----------------------------------------------------------------------
+// 9. Home video-only mode: native <video> background, never the YouTube
+// facade/iframe, never poster/play/controls chrome.
+// -----------------------------------------------------------------------
+ob_start();
+gloskin_ui1_render_hero( array(
+	'heading' => 'Perawatan kulit',
+	'mode' => 'video-only',
+	'media_id' => 0,
+	'sources' => array( array( 'src' => 'https://example.test/hero.mp4', 'type' => 'video/mp4' ) ),
+) );
+$bg_video_html = (string) ob_get_clean();
+ok( substr_count( $bg_video_html, '<section class="gloskin-ui1-hero gloskin-ui1-hero--video-only is-video-preparing"' ) === 1, 'video-only mode must render exactly one preparing-state hero section' );
+ok( strpos( $bg_video_html, 'data-gloskin-hero-bg-video-wrap' ) !== false, 'native background video wrapper must be present' );
+ok( strpos( $bg_video_html, '<video class="gloskin-ui1-hero-bg-video__media" data-gloskin-hero-bg-video' ) !== false, 'must render a real native <video> element' );
+ok( strpos( $bg_video_html, ' muted' ) !== false, 'native video must be muted' );
+ok( strpos( $bg_video_html, ' autoplay' ) !== false, 'native video must be autoplay' );
+ok( strpos( $bg_video_html, ' loop' ) !== false, 'native video must loop' );
+ok( strpos( $bg_video_html, ' playsinline' ) !== false, 'native video must be playsinline' );
+ok( strpos( $bg_video_html, 'preload="auto"' ) !== false, 'native video must preload' );
+ok( strpos( $bg_video_html, ' tabindex="-1"' ) !== false, 'native video must be removed from the tab order (presentation only)' );
+ok( strpos( $bg_video_html, '<source src="https://example.test/hero.mp4" type="video/mp4"' ) !== false, 'must render the resolved media attachment as a real <source>' );
+ok( strpos( $bg_video_html, 'gloskin-ui1-hero-bg-video__loader' ) !== false, 'must render the non-interactive loader' );
+ok( strpos( $bg_video_html, '<iframe' ) === false, 'video-only mode must never render an iframe' );
+ok( strpos( $bg_video_html, 'youtube' ) === false, 'video-only mode must never reference YouTube at all' );
+ok( strpos( $bg_video_html, 'gloskin-ui1-hero-video__poster' ) === false, 'video-only mode must never render the legacy YouTube poster' );
+ok( strpos( $bg_video_html, 'gloskin-ui1-hero-video__play' ) === false, 'video-only mode must never render a Play button' );
+ok( strpos( $bg_video_html, ' controls' ) === false, 'native video must never carry a controls attribute' );
+ok( substr_count( $bg_video_html, 'data-gloskin-hero-scroll-cue' ) === 1, 'video-only mode must still render exactly one scroll cue' );
+ok( strpos( $bg_video_html, 'gloskin-ui1-hero__fade' ) !== false, 'video-only mode must still render the bottom blend gradient' );
+ok( strpos( $bg_video_html, '<h1 class="screen-reader-text">Perawatan kulit</h1>' ) !== false, 'video-only mode must keep one screen-reader-only H1' );
+
+// Without a resolved native source, video-only mode must fall back cleanly
+// to the existing attachment-image chain -- never a broken/empty facade,
+// never the preparing state without a real video to prepare.
+ob_start();
+gloskin_ui1_render_hero( array( 'heading' => 'H', 'mode' => 'video-only', 'media_id' => 0, 'sources' => array() ) );
+$bg_fallback_html = (string) ob_get_clean();
+ok( strpos( $bg_fallback_html, 'is-video-preparing' ) === false, 'must never enter the preparing state without a real resolved video source' );
+ok( strpos( $bg_fallback_html, 'data-gloskin-hero-bg-video-wrap' ) === false, 'must never render the video wrapper without a real resolved video source' );
+ok( strpos( $bg_fallback_html, 'gloskin-ui1-editorial-image' ) !== false, 'must fall back to the existing editorial-media placeholder' );
+
+// -----------------------------------------------------------------------
+// 10. CSS contract: true cover (never contain/letterbox), white preparing
+// state, ready/failed states, reduced-motion.
+// -----------------------------------------------------------------------
+$production_css = file_get_contents( dirname( __DIR__ ) . '/plugin/gloskin-site-core/assets/css/gloskin-ui1-production.css' );
+ok( strpos( $production_css, '.gloskin-ui1-hero--video-only{position:relative;overflow:hidden' ) !== false, 'video-only hero must be the positioned containing block' );
+ok( strpos( $production_css, 'background:#fff' ) !== false, 'video-only hero must start pure white, never black' );
+ok( strpos( $production_css, 'object-fit:cover' ) !== false, 'native background video must use object-fit:cover' );
+ok( strpos( $production_css, 'object-fit:contain' ) === false, 'native background video must never use object-fit:contain (letterbox)' );
+ok( strpos( $production_css, '.gloskin-ui1-hero-bg-video__media{opacity:0' ) !== false, 'native video must start hidden (opacity:0) until proven ready' );
+ok( strpos( $production_css, '.is-video-ready .gloskin-ui1-hero-bg-video__media{opacity:1}' ) !== false, 'is-video-ready must reveal the video' );
+ok( strpos( $production_css, 'is-video-failed' ) !== false, 'a clean failure state must exist' );
+ok( strpos( $production_css, 'gloskin-hero-bg-video-spin' ) !== false, 'a loader animation must exist' );
+ok( preg_match( '/prefers-reduced-motion:reduce\)\{[^}]*gloskin-ui1-hero-bg-video__loader-dot\{animation:none\}/', $production_css ) === 1, 'reduced-motion must disable the loader animation' );
+
+// -----------------------------------------------------------------------
+// 11. JS contract: native background-video controller exists, uses
+// loadeddata/playing + play() Promise + requestAnimationFrame, never
+// setInterval/polling, exactly one bounded safety timeout.
+// -----------------------------------------------------------------------
+ok( strpos( $core_js, 'function initHeroBackgroundVideo()' ) !== false, 'must define the native background-video initializer' );
+ok( strpos( $core_js, 'initHeroBackgroundVideo();' ) !== false, 'initHeroBackgroundVideo() must be called from the one existing init() bootstrap' );
+ok( strpos( $core_js, "querySelectorAll('[data-gloskin-hero-bg-video-wrap]')" ) !== false, 'must discover every native background-video wrapper via the documented data attribute' );
+ok( strpos( $core_js, "addEventListener('loadeddata'" ) !== false, 'must wait for the real loadeddata event' );
+ok( strpos( $core_js, "addEventListener('playing'" ) !== false, 'must also listen for the real playing event' );
+ok( strpos( $core_js, 'video.play()' ) !== false, 'must call the native play() and honor its Promise' );
+ok( strpos( $core_js, 'requestAnimationFrame' ) !== false, 'must reveal inside a requestAnimationFrame, never merely on node creation' );
+ok( strpos( $core_js, "prefers-reduced-motion: reduce" ) !== false, 'must gate autoplay motion on prefers-reduced-motion' );
+$bg_section = substr( $core_js, strpos( $core_js, 'Hero Background Video' ) );
+$bg_section = substr( $bg_section, 0, strpos( $bg_section, 'Home video-only hero\'s one scroll cue' ) );
+ok( strpos( $bg_section, 'setInterval' ) === false, 'native background-video controller must never poll with setInterval' );
+ok( substr_count( $bg_section, 'setTimeout' ) === 1, 'native background-video controller must use exactly one bounded safety timeout' );
 
 echo "hero-video-contract: OK\n";

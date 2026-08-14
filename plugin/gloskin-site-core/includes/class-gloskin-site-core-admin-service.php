@@ -109,7 +109,7 @@ final class Gloskin_Site_Core_Admin_Service {
 	 * Single source of truth for this one settings option's shape/defaults,
 	 * reused by both the registration default and every read fallback below.
 	 *
-	 * @return array{design_variant:string,form_shortcode:string,header_variant:string,hero_video_enabled:bool,hero_video_url:string}
+	 * @return array{design_variant:string,form_shortcode:string,header_variant:string,hero_video_enabled:bool,hero_video_url:string,hero_video_media_id:int}
 	 */
 	public static function settings_defaults() {
 		return array(
@@ -118,6 +118,13 @@ final class Gloskin_Site_Core_Admin_Service {
 			'header_variant' => 'header-1',
 			'hero_video_enabled' => true,
 			'hero_video_url' => 'https://www.youtube.com/watch?v=otej7WLdPh0&pp=ygUPc2tpbmNhcmUgdGVhc2Vy',
+			/* Home video-only mode's native background video (task K/L):
+			 * a WordPress Media Library attachment ID, resolved by
+			 * Template_Service::hero_background_video(). Unset (0) is the
+			 * normal/default state -- the existing media fallback chain
+			 * (attachment image -> editorial placeholder) then takes over,
+			 * exactly as before this field existed. */
+			'hero_video_media_id' => 0,
 		);
 	}
 
@@ -184,6 +191,11 @@ final class Gloskin_Site_Core_Admin_Service {
 			 * non-video hero media, never break the save itself. */
 			'hero_video_enabled' => ! empty( $value['hero_video_enabled'] ),
 			'hero_video_url' => isset( $value['hero_video_url'] ) ? esc_url_raw( trim( (string) $value['hero_video_url'] ) ) : '',
+			/* Plain attachment ID only; Template_Service::hero_background_video()
+			 * re-resolves and mime-checks it at render time, so an ID that no
+			 * longer points at a real video attachment can never do worse than
+			 * fall back to the existing non-video hero media. */
+			'hero_video_media_id' => isset( $value['hero_video_media_id'] ) ? absint( $value['hero_video_media_id'] ) : 0,
 		);
 	}
 
@@ -295,6 +307,12 @@ final class Gloskin_Site_Core_Admin_Service {
 		$header_variant    = isset( $settings['header_variant'] ) ? $settings['header_variant'] : 'header-1';
 		$hero_video_on     = ! empty( $settings['hero_video_enabled'] );
 		$hero_video_url    = isset( $settings['hero_video_url'] ) ? (string) $settings['hero_video_url'] : '';
+		$hero_video_media_id = isset( $settings['hero_video_media_id'] ) ? absint( $settings['hero_video_media_id'] ) : 0;
+		$hero_video_filename = '';
+		if ( $hero_video_media_id ) {
+			$attached_file = get_attached_file( $hero_video_media_id );
+			$hero_video_filename = $attached_file ? basename( $attached_file ) : '';
+		}
 		$previews          = $this->header_variant_previews();
 		$tabs              = array(
 			'brand'   => __( 'Brand', 'gloskin-site-core' ),
@@ -338,11 +356,21 @@ final class Gloskin_Site_Core_Admin_Service {
 						</section>
 						<section class="gloskin-admin-card" id="gloskin-admin-panel-hero" role="tabpanel" aria-labelledby="gloskin-admin-tab-hero" data-gloskin-admin-panel="hero">
 							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Home hero video', 'gloskin-site-core' ); ?></h2>
-							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Video ditampilkan di dalam slot media hero yang sudah ada di halaman Home.', 'gloskin-site-core' ); ?></p>
-							<p><label class="gloskin-admin-field-label" for="gloskin-hero-video-enabled"><input type="checkbox" id="gloskin-hero-video-enabled" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[hero_video_enabled]" value="1" <?php checked( $hero_video_on ); ?> /> <?php echo esc_html__( 'Enable hero video', 'gloskin-site-core' ); ?></label></p>
+							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Video latar Home diputar otomatis tanpa suara dan memenuhi area hero.', 'gloskin-site-core' ); ?></p>
+							<p><label class="gloskin-admin-field-label" for="gloskin-hero-video-media-filename-label"><?php echo esc_html__( 'Background video', 'gloskin-site-core' ); ?></label></p>
+							<div class="gloskin-admin-media-field" data-gloskin-hero-video-field data-empty-label="<?php echo esc_attr__( 'Belum ada video dipilih.', 'gloskin-site-core' ); ?>">
+								<input type="hidden" id="gloskin-hero-video-media-id" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[hero_video_media_id]" value="<?php echo esc_attr( $hero_video_media_id ? (string) $hero_video_media_id : '' ); ?>" />
+								<p class="gloskin-admin-media-field__filename" id="gloskin-hero-video-media-filename-label" data-gloskin-hero-video-filename><?php echo esc_html( '' !== $hero_video_filename ? $hero_video_filename : __( 'Belum ada video dipilih.', 'gloskin-site-core' ) ); ?></p>
+								<p>
+									<button type="button" class="button" data-gloskin-video-picker data-target="#gloskin-hero-video-media-id" data-title="<?php echo esc_attr__( 'Pilih video latar Home', 'gloskin-site-core' ); ?>" data-button="<?php echo esc_attr__( 'Gunakan video ini', 'gloskin-site-core' ); ?>" data-label-choose="<?php echo esc_attr__( 'Choose Video', 'gloskin-site-core' ); ?>" data-label-replace="<?php echo esc_attr__( 'Replace Video', 'gloskin-site-core' ); ?>"><?php echo esc_html( $hero_video_media_id ? __( 'Replace Video', 'gloskin-site-core' ) : __( 'Choose Video', 'gloskin-site-core' ) ); ?></button>
+									<button type="button" class="button button-link-delete" data-gloskin-video-remove data-target="#gloskin-hero-video-media-id" <?php echo $hero_video_media_id ? '' : 'hidden'; ?>><?php echo esc_html__( 'Remove Video', 'gloskin-site-core' ); ?></button>
+								</p>
+							</div>
+							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Format yang didukung: MP4 dan/atau WebM dari Media Library.', 'gloskin-site-core' ); ?></p>
+							<p><label class="gloskin-admin-field-label" for="gloskin-hero-video-enabled"><input type="checkbox" id="gloskin-hero-video-enabled" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[hero_video_enabled]" value="1" <?php checked( $hero_video_on ); ?> /> <?php echo esc_html__( 'Enable legacy YouTube hero video (non-Home surfaces)', 'gloskin-site-core' ); ?></label></p>
 							<p><label class="gloskin-admin-field-label" for="gloskin-hero-video-url"><?php echo esc_html__( 'YouTube video URL', 'gloskin-site-core' ); ?></label><br />
 							<input class="regular-text" type="url" id="gloskin-hero-video-url" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[hero_video_url]" value="<?php echo esc_attr( $hero_video_url ); ?>" placeholder="https://www.youtube.com/watch?v=..." /></p>
-							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Supports standard YouTube and youtu.be URLs. Video is rendered using a performance-first poster/facade.', 'gloskin-site-core' ); ?></p>
+							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Supports standard YouTube and youtu.be URLs, kept for backward compatibility. Home always prefers the native background video above.', 'gloskin-site-core' ); ?></p>
 						</section>
 						<section class="gloskin-admin-card" id="gloskin-admin-panel-booking" role="tabpanel" aria-labelledby="gloskin-admin-tab-booking" data-gloskin-admin-panel="booking">
 							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Booking & Social', 'gloskin-site-core' ); ?></h2>
@@ -917,11 +945,11 @@ final class Gloskin_Site_Core_Admin_Service {
 			<?php if ( isset( $_GET['gloskin_error'] ) ) : ?>
 				<div class="notice notice-error is-dismissible"><p><?php echo esc_html( sanitize_text_field( wp_unslash( $_GET['gloskin_error'] ) ) ); ?></p></div>
 			<?php endif; ?>
-			<h2 class="nav-tab-wrapper">
+			<nav class="gloskin-consultation-tabs" aria-label="<?php echo esc_attr__( 'Bagian Konsultasi Perawatan', 'gloskin-site-core' ); ?>">
 				<?php foreach ( $tabs as $key => $label ) : ?>
-					<a href="<?php echo esc_url( add_query_arg( 'tab', $key, $base_url ) ); ?>" class="nav-tab<?php echo $active === $key ? ' nav-tab-active' : ''; ?>"><?php echo esc_html( $label ); ?></a>
+					<a href="<?php echo esc_url( add_query_arg( 'tab', $key, $base_url ) ); ?>" class="gloskin-consultation-tabs__item<?php echo $active === $key ? ' is-active' : ''; ?>"<?php echo $active === $key ? ' aria-current="page"' : ''; ?>><?php echo esc_html( $label ); ?></a>
 				<?php endforeach; ?>
-			</h2>
+			</nav>
 			<div class="gloskin-admin-consultation-panel">
 				<?php
 				switch ( $active ) {
@@ -989,7 +1017,7 @@ final class Gloskin_Site_Core_Admin_Service {
 
 		$orphan_answers = $this->count_orphan_answer_mappings();
 
-		echo '<div class="gloskin-admin-consultation-cards" style="display:flex;flex-wrap:wrap;gap:16px;margin:20px 0">';
+		echo '<div class="gloskin-consultation-metrics">';
 		$this->render_readiness_card( __( 'Jalur Konsultasi', 'gloskin-site-core' ), count( $paths ) . ' / ' . Gloskin_Site_Core_Content_Service::PATH_MIN_VALID, count( $paths ) < Gloskin_Site_Core_Content_Service::PATH_MIN_VALID );
 		$this->render_readiness_card( __( 'Produk Perawatan', 'gloskin-site-core' ), (string) $treatment_count, 0 === $treatment_count );
 		$this->render_readiness_card( __( 'Keluhan', 'gloskin-site-core' ), (string) $concern_count, 0 === $concern_count );
@@ -999,14 +1027,18 @@ final class Gloskin_Site_Core_Admin_Service {
 		echo '</div>';
 
 		if ( count( $paths ) ) {
-			echo '<h2>' . esc_html__( 'Jalur Konsultasi', 'gloskin-site-core' ) . '</h2><div style="display:flex;flex-wrap:wrap;gap:12px">';
+			echo '<h2 class="gloskin-consultation-section-title">' . esc_html__( 'Jalur Konsultasi', 'gloskin-site-core' ) . '</h2><div class="gloskin-consultation-path-cards">';
 			foreach ( $paths as $path ) {
-				echo '<div class="card" style="min-width:200px"><h3>' . esc_html( $path->name ) . '</h3><p>' . esc_html( $path->slug ) . '</p></div>';
+				echo '<div class="gloskin-consultation-path-card"><h3>' . esc_html( $path->name ) . '</h3><p>' . esc_html( $path->slug ) . '</p></div>';
 			}
 			echo '</div>';
 		}
 
+		echo '<h2 class="gloskin-consultation-section-title">' . esc_html__( 'Data & Import', 'gloskin-site-core' ) . '</h2>';
+		echo '<div class="gloskin-consultation-import-cards">';
 		$this->render_demo_import_card();
+		$this->render_sample_import_card();
+		echo '</div>';
 	}
 
 	/**
@@ -1016,8 +1048,8 @@ final class Gloskin_Site_Core_Admin_Service {
 	 * @return void
 	 */
 	private function render_readiness_card( $label, $value, $warn ) {
-		$style = $warn ? 'border-left:4px solid var(--gloskin-accent-strong,#961F24)' : 'border-left:4px solid #46b450';
-		echo '<div class="card" style="min-width:180px;padding:12px 16px;' . esc_attr( $style ) . '"><p style="margin:0;color:#646970;font-size:12px;text-transform:uppercase;letter-spacing:.04em">' . esc_html( $label ) . '</p><p style="margin:4px 0 0;font-size:22px;font-weight:600">' . esc_html( $value ) . '</p></div>';
+		$class = 'gloskin-consultation-metric-card' . ( $warn ? ' is-warning' : ' is-ready' );
+		echo '<div class="' . esc_attr( $class ) . '"><p class="gloskin-consultation-metric-card__label">' . esc_html( $label ) . '</p><p class="gloskin-consultation-metric-card__value">' . esc_html( $value ) . '</p></div>';
 	}
 
 	/**
@@ -1047,44 +1079,100 @@ final class Gloskin_Site_Core_Admin_Service {
 	}
 
 	/**
-	 * Demo import card, section 12.1: shown only while capable, on a
-	 * local/development/staging environment, and while the bundle has not
-	 * already been consumed. Never exposed/runs on production.
+	 * Demo import card (Data & Import): an explicit privileged admin
+	 * workflow, not an environment gate -- capability + nonce + the
+	 * explicit synthetic-data confirmation checkbox below are the entire
+	 * access control. Once consumed, no re-import control is offered; the
+	 * owner is instead handed straight to the two real destinations the
+	 * imported data feeds.
 	 *
 	 * @return void
 	 */
 	private function render_demo_import_card() {
 		require_once __DIR__ . '/class-gloskin-site-core-consultation-demo-importer.php';
 		$state = Gloskin_Site_Core_Consultation_Demo_Importer::state();
-		echo '<h2>' . esc_html__( 'Data Demo Konsultasi', 'gloskin-site-core' ) . '</h2>';
-		if ( ! Gloskin_Site_Core_Consultation_Demo_Importer::is_environment_allowed() ) {
-			echo '<p>' . esc_html__( 'Import demo hanya tersedia pada lingkungan local/development/staging.', 'gloskin-site-core' ) . '</p>';
-			return;
-		}
+		echo '<div class="gloskin-consultation-import-card">';
+		echo '<h3>' . esc_html__( 'Data Demo Konsultasi', 'gloskin-site-core' ) . '</h3>';
 		if ( 'consumed' === $state['status'] ) {
-			echo '<p>' . esc_html__( 'Bundle demo sudah diimpor dan dikonsumsi.', 'gloskin-site-core' ) . ' ';
+			echo '<p class="gloskin-consultation-import-card__status is-done">' . esc_html__( '✓ Import selesai', 'gloskin-site-core' ) . '</p>';
 			printf(
-				/* translators: %1$d: paths; %2$d: concerns; %3$d: questions; %4$d: products. */
-				esc_html__( '(%1$d jalur, %2$d keluhan, %3$d pertanyaan, %4$d produk perawatan)', 'gloskin-site-core' ),
-				(int) $state['paths'],
-				(int) $state['concerns'],
-				(int) $state['questions'],
-				(int) $state['products']
+				'<p>%s</p>',
+				esc_html(
+					sprintf(
+						/* translators: %1$d: paths; %2$d: concerns; %3$d: questions; %4$d: products. */
+						__( '%1$d jalur, %2$d+ keluhan, %3$d+ pertanyaan, %4$d produk perawatan', 'gloskin-site-core' ),
+						(int) $state['paths'],
+						(int) $state['concerns'],
+						(int) $state['questions'],
+						(int) $state['products']
+					)
+				)
 			);
+			$mapping_url = add_query_arg( array( 'tab' => 'pemetaan' ), admin_url( 'edit.php?post_type=product&page=' . self::CONSULTATION_SLUG ) );
+			echo '<p class="gloskin-consultation-import-card__links">';
+			echo '<a class="button button-secondary" href="' . esc_url( $mapping_url ) . '">' . esc_html__( 'Pemetaan Produk', 'gloskin-site-core' ) . '</a> ';
+			echo '<a class="button button-secondary" href="' . esc_url( admin_url( 'edit.php?post_type=product' ) ) . '">' . esc_html__( 'Semua Produk Perawatan', 'gloskin-site-core' ) . '</a>';
 			echo '</p>';
+			echo '</div>';
 			return;
 		}
 		if ( ! empty( $state['last_error'] ) ) {
 			echo '<div class="notice notice-error inline"><p>' . esc_html( $state['last_error'] ) . '</p></div>';
 		}
 		?>
+		<p><?php echo esc_html__( 'Impor 4 jalur konsultasi, 10+ keluhan, 13+ pertanyaan, dan 8 produk perawatan sintetis.', 'gloskin-site-core' ); ?></p>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<?php wp_nonce_field( self::DEMO_IMPORT_NONCE ); ?>
 			<input type="hidden" name="action" value="<?php echo esc_attr( self::DEMO_IMPORT_ACTION ); ?>" />
-			<p><?php echo esc_html__( 'Impor 4 jalur konsultasi, 10+ keluhan, 13+ pertanyaan, dan 8 produk perawatan sintetis untuk demo staging.', 'gloskin-site-core' ); ?></p>
+			<p class="gloskin-consultation-confirm-field">
+				<label>
+					<input type="checkbox" name="confirm_demo_import" value="1" required />
+					<?php echo esc_html__( 'Saya memahami bahwa data demo sintetis akan dibuat pada situs ini.', 'gloskin-site-core' ); ?>
+				</label>
+			</p>
 			<button type="submit" class="button button-primary"><?php echo esc_html( 'pending' === $state['status'] && $state['processed'] > 0 ? __( 'Lanjutkan Import Demo', 'gloskin-site-core' ) : __( 'Import Data Demo', 'gloskin-site-core' ) ); ?></button>
 		</form>
 		<?php
+		echo '</div>';
+	}
+
+	/**
+	 * Sample Product Catalog card (Data & Import): a thin discoverability
+	 * shortcut only -- reads the existing
+	 * Gloskin_Site_Core_Sample_Product_Importer::get_summary() and links to
+	 * its existing dedicated screen/workflow. No second importer, no
+	 * duplicated import logic.
+	 *
+	 * @return void
+	 */
+	private function render_sample_import_card() {
+		echo '<div class="gloskin-consultation-import-card">';
+		echo '<h3>' . esc_html__( 'Sample Product Catalog', 'gloskin-site-core' ) . '</h3>';
+		if ( ! current_user_can( self::MIGRATION_CAPABILITY ) || '' === $this->plugin_file ) {
+			echo '<p>' . esc_html__( 'Import sample product tidak tersedia untuk akun ini.', 'gloskin-site-core' ) . '</p></div>';
+			return;
+		}
+		$summary   = $this->sample_importer()->get_summary();
+		$detection = isset( $summary['detection'] ) ? (string) $summary['detection'] : 'none';
+		if ( 'consumed' === $detection ) {
+			echo '<p class="gloskin-consultation-import-card__status is-done">' . esc_html__( 'Import selesai', 'gloskin-site-core' ) . '</p>';
+		} elseif ( in_array( $detection, array( 'pending', 'failed', 'running', 'verifying' ), true ) ) {
+			$processed = isset( $summary['processed_products'] ) ? (int) $summary['processed_products'] : 0;
+			$expected  = isset( $summary['expected_products'] ) ? (int) $summary['expected_products'] : 13;
+			echo '<p class="gloskin-consultation-import-card__status">' . esc_html(
+				sprintf(
+					/* translators: %1$s: status key (pending/failed/running/verifying); %2$d: processed products; %3$d: expected products. */
+					__( 'Status: %1$s (%2$d/%3$d produk)', 'gloskin-site-core' ),
+					$detection,
+					$processed,
+					$expected
+				)
+			) . '</p>';
+			echo '<p><a class="button button-primary" href="' . esc_url( admin_url( 'admin.php?page=' . self::MIGRATION_SLUG ) ) . '">' . esc_html__( 'Buka Import Sample Products', 'gloskin-site-core' ) . '</a></p>';
+		} else {
+			echo '<p>' . esc_html__( 'Bundle sample product tidak tersedia.', 'gloskin-site-core' ) . '</p>';
+		}
+		echo '</div>';
 	}
 
 	/**
@@ -1349,9 +1437,13 @@ final class Gloskin_Site_Core_Admin_Service {
 	}
 
 	/**
-	 * Staging-only, capability/nonce-protected, one-shot demo import
-	 * trigger (section 12.1). All environment/production-refusal/
-	 * idempotency logic lives in the importer itself.
+	 * Capability/nonce-protected, one-shot demo import trigger. Explicit
+	 * privileged confirmation replaces the former environment gate: the
+	 * server independently re-verifies confirm_demo_import=1 was actually
+	 * posted (never trusting the HTML checkbox's `required` attribute
+	 * alone) before the importer is allowed to create any synthetic data.
+	 * All idempotency/collision/verification logic still lives in the
+	 * importer itself.
 	 *
 	 * @return void
 	 */
@@ -1361,8 +1453,9 @@ final class Gloskin_Site_Core_Admin_Service {
 		}
 		check_admin_referer( self::DEMO_IMPORT_NONCE );
 		require_once __DIR__ . '/class-gloskin-site-core-consultation-demo-importer.php';
+		$confirmed = isset( $_POST['confirm_demo_import'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['confirm_demo_import'] ) );
 		try {
-			Gloskin_Site_Core_Consultation_Demo_Importer::run();
+			Gloskin_Site_Core_Consultation_Demo_Importer::run( $confirmed );
 			$this->redirect_to_consultation_tab( 'ringkasan', 'demo-imported' );
 		} catch ( Throwable $error ) {
 			wp_safe_redirect( add_query_arg( array( 'tab' => 'ringkasan', 'gloskin_error' => rawurlencode( $error->getMessage() ) ), admin_url( 'edit.php?post_type=product&page=' . self::CONSULTATION_SLUG ) ) );

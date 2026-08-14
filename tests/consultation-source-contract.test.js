@@ -100,4 +100,25 @@ expect(adminGateStart >= 0 && adminGateEnd > adminGateStart, 'Consultation admin
 const adminGate = adminService.slice(adminGateStart, adminGateEnd);
 expect(adminGate.includes('self::CONSULTATION_SLUG') && adminGate.includes("$this->assets->enqueue_consultation_admin();"), 'Consultation assets must remain scoped through the existing Konsultasi Perawatan screen gate');
 
+// Consultation Perawatan admin polish: semantic pill navigation replaces
+// native nav-tab chrome, and Ringkasan's Data & Import section exists and
+// is CSS-owned (not generated inline style strings).
+for (const forbidden of ['nav-tab-wrapper', 'nav-tab-active', 'class="nav-tab']) {
+  expect(!adminService.includes(forbidden), `Consultation workspace must render zero native WP tab chrome: ${forbidden}`);
+}
+expect(adminService.includes('class="gloskin-consultation-tabs"'), 'Consultation workspace must render the semantic pill navigation root');
+expect(adminService.includes("aria-label=\"<?php echo esc_attr__( 'Bagian Konsultasi Perawatan'"), 'Pill navigation must carry the documented aria-label');
+expect(adminService.includes('gloskin-consultation-tabs__item'), 'Pill navigation items must use the documented item class');
+expect(adminService.includes('aria-current="page"'), 'The active pill navigation item must carry aria-current="page"');
+expect(!adminService.includes('role="tab"') || adminService.indexOf('role="tab"') < adminService.indexOf('gloskin-consultation-tabs'), 'Ordinary page navigation must not (re)use role=tab inside the consultation workspace pill nav');
+expect(adminService.includes("esc_html__( 'Data & Import'"), 'Ringkasan must render a Data & Import section');
+expect(adminService.includes('gloskin-consultation-import-cards'), 'Data & Import must render its two-card layout container');
+expect(adminService.includes('gloskin-consultation-metrics') && adminService.includes('gloskin-consultation-metric-card'), 'Ringkasan metrics must use semantic CSS classes, not generated style strings');
+expect(!/style="[^"]*display:flex;flex-wrap:wrap;gap:\d+px;margin/.test(adminService), 'Ringkasan must no longer generate inline flex/grid style strings for its cards');
+
+expect(adminCss.includes('[data-gloskin-consultation-workspace] .gloskin-consultation-tabs{'), 'Pill navigation presentation must be scoped beneath the one workspace root');
+expect(adminCss.includes('.gloskin-consultation-tabs__item.is-active{'), 'Pill navigation must style an active-pill state');
+expect(adminCss.includes('.gloskin-consultation-metrics{') && adminCss.includes('grid-template-columns:repeat(auto-fit,minmax(180px,1fr))'), 'Metric grid must be a responsive auto-fit CSS grid');
+expect(adminCss.includes('.gloskin-consultation-import-cards{'), 'Data & Import cards must have CSS-owned grid layout');
+
 console.log('consultation-source-contract.test.js: OK');

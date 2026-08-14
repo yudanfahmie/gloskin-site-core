@@ -326,9 +326,16 @@ final class Gloskin_Site_Core_Asset_Service {
 	 * method only registers/enqueues, keeping AssetService the sole asset
 	 * registry/enqueue owner. No global wp-admin CSS leakage.
 	 *
+	 * wp_enqueue_media() is called here (never globally in wp-admin) so the
+	 * Hero tab's "Background video" field can open the native WordPress
+	 * Media Library modal, scoped to a video library -- see the
+	 * data-gloskin-video-picker/data-gloskin-video-remove wiring in
+	 * assets/js/gloskin-admin.js.
+	 *
 	 * @return void
 	 */
 	public function enqueue_admin_settings() {
+		wp_enqueue_media();
 		$registry = $this->registry();
 		if ( ! empty( $registry['admin_styles']['gloskin-admin'] ) ) {
 			$asset = $registry['admin_styles']['gloskin-admin'];

@@ -1854,6 +1854,92 @@
 		}
 	}
 
+	/* -----------------------------------------------------------------
+	 * Hero Background Video (native <video>, Home video-only mode only)
+	 * -----------------------------------------------------------------
+	 * Home's pure background-video surface (gloskin_ui1_render_hero()'s
+	 * 'video-only' branch): a real native <video>, never a YouTube iframe.
+	 * PREPARING -> READY state machine -- the video is only ever revealed
+	 * once it has genuinely reached usable playback, never merely because
+	 * the DOM node exists:
+	 *
+	 *   1. markup starts is-video-preparing, video opacity:0 (CSS);
+	 *   2. wait for the browser's own loadeddata event;
+	 *   3. reduced-motion: establish the first frame, then pause and
+	 *      reveal -- no repeated loader/motion for those users;
+	 *   4. otherwise call video.play() and wait for its own Promise plus
+	 *      the 'playing' event;
+	 *   5. reveal inside one requestAnimationFrame (is-video-preparing ->
+	 *      is-video-ready), which CSS fades in over ~360ms;
+	 *   6. any failure (error event, rejected play() Promise) releases the
+	 *      loader into a clean is-video-failed state -- white hero,
+	 *      working scroll cue, page continues normally, never a broken
+	 *      media icon or indefinite block.
+	 *
+	 * No repeating-interval polling anywhere in this section. One bounded
+	 * one-shot timeout only guards against a video that never becomes
+	 * usable at all, releasing it into the same clean failure state -- it
+	 * never pretends readiness on its own.
+	 */
+	var HERO_BG_VIDEO_SAFETY_TIMEOUT_MS = 4000;
+
+	function setupHeroBackgroundVideo(hero, wrap) {
+		var video = wrap.querySelector('[data-gloskin-hero-bg-video]');
+		if (!video) { return; }
+		var settled = false;
+
+		function reveal() {
+			if (settled) { return; }
+			settled = true;
+			if (typeof window.requestAnimationFrame === 'function') {
+				window.requestAnimationFrame(function () {
+					hero.classList.remove('is-video-preparing');
+					hero.classList.add('is-video-ready');
+				});
+			} else {
+				hero.classList.remove('is-video-preparing');
+				hero.classList.add('is-video-ready');
+			}
+		}
+
+		function fail() {
+			if (settled) { return; }
+			settled = true;
+			hero.classList.remove('is-video-preparing');
+			hero.classList.add('is-video-failed');
+		}
+
+		var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+		video.addEventListener('loadeddata', function onLoadedData() {
+			video.removeEventListener('loadeddata', onLoadedData);
+			if (reduceMotion) {
+				/* Establish the frame safely, then keep it paused/static --
+				 * no repeated motion for reduced-motion users. */
+				try { video.pause(); } catch (error) { /* no-op: already static */ }
+				reveal();
+				return;
+			}
+			var playPromise = video.play();
+			if (playPromise && typeof playPromise.then === 'function') {
+				playPromise.then(reveal).catch(fail);
+			}
+		});
+		video.addEventListener('playing', reveal);
+		video.addEventListener('error', fail);
+
+		/* One bounded safety timeout only -- never a repeating poll. */
+		window.setTimeout(function () { fail(); }, HERO_BG_VIDEO_SAFETY_TIMEOUT_MS);
+	}
+
+	function initHeroBackgroundVideo() {
+		var wraps = document.querySelectorAll('[data-gloskin-hero-bg-video-wrap]');
+		for (var i = 0; i < wraps.length; i++) {
+			var hero = wraps[i].closest('.gloskin-ui1-hero');
+			if (hero) { setupHeroBackgroundVideo(hero, wraps[i]); }
+		}
+	}
+
 	/* Home video-only hero's one scroll cue (docs/task-treatment-
 	 * consultation-commerce-discovery.md section 14): a single semantic
 	 * <button>, click scrolls the hero's own next real sibling section
@@ -1904,6 +1990,7 @@
 		initShopCatalog();
 		initWishlist();
 		initHeroVideo();
+		initHeroBackgroundVideo();
 		initHeroScrollCue();
 	}
 
@@ -1933,7 +2020,9 @@
 			shouldAutoEnhanceHeroVideo: shouldAutoEnhanceHeroVideo,
 			buildHeroVideoEmbedUrl: buildHeroVideoEmbedUrl,
 			enhanceHeroVideo: enhanceHeroVideo,
-			initHeroVideo: initHeroVideo
+			initHeroVideo: initHeroVideo,
+			setupHeroBackgroundVideo: setupHeroBackgroundVideo,
+			initHeroBackgroundVideo: initHeroBackgroundVideo
 		};
 	}
 }());

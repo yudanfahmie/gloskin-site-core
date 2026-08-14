@@ -158,11 +158,17 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 	 * Shop/Skincare/Treatments/Insights, and Home itself when no mode is
 	 * set) or 'video-only' (Home's final requirement: a pure full-width
 	 * media hero, no eyebrow/heading/copy/CTA/split column). No second
-	 * Hero service, no second video settings system, no duplicate
-	 * YouTube runtime -- the exact same media fallback chain (video ->
-	 * attachment image -> editorial placeholder) and the exact same
-	 * gloskin_ui1_render_hero_video() poster/facade below serve both
-	 * modes; video-only only changes the surrounding markup/CSS.
+	 * Hero service, no second video settings system.
+	 *
+	 * 'standard' keeps the existing media fallback chain (YouTube facade ->
+	 * attachment image -> editorial placeholder) via
+	 * gloskin_ui1_render_hero_video() below, for backward compatibility.
+	 *
+	 * 'video-only' is Home's pure background-video surface: it prefers a
+	 * native <video> sourced from a real WordPress Media Library
+	 * attachment (see Template_Service::hero_background_video()) and never
+	 * renders the YouTube facade/iframe at all -- only native video ->
+	 * attachment image -> editorial placeholder.
 	 *
 	 * @param array<string,mixed> $hero Hero context.
 	 * @return void
@@ -177,12 +183,22 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 		$video_only = isset( $hero['mode'] ) && 'video-only' === $hero['mode'];
 
 		if ( $video_only ) {
+			$bg_sources = isset( $hero['sources'] ) && is_array( $hero['sources'] ) ? $hero['sources'] : array();
+			$has_bg_video = array() !== $bg_sources;
 			?>
-			<section class="gloskin-ui1-hero gloskin-ui1-hero--video-only">
-				<div class="gloskin-ui1-hero__media gloskin-ui1-hero__media--full">
-					<?php if ( '' !== $video_id ) : ?>
-						<?php gloskin_ui1_render_hero_video( $video_id, $heading ); ?>
-					<?php elseif ( $media ) : ?>
+			<section class="gloskin-ui1-hero gloskin-ui1-hero--video-only<?php echo $has_bg_video ? ' is-video-preparing' : ''; ?>"<?php echo $has_bg_video ? ' data-gloskin-hero-bg-video-root' : ''; ?>>
+				<?php if ( '' !== $heading ) : ?><h1 class="screen-reader-text"><?php echo esc_html( $heading ); ?></h1><?php endif; ?>
+				<?php if ( $has_bg_video ) : ?>
+					<div class="gloskin-ui1-hero-bg-video" data-gloskin-hero-bg-video-wrap>
+						<video class="gloskin-ui1-hero-bg-video__media" data-gloskin-hero-bg-video muted autoplay loop playsinline preload="auto" aria-hidden="true" tabindex="-1">
+							<?php foreach ( $bg_sources as $source ) : ?>
+								<source src="<?php echo esc_url( (string) $source['src'] ); ?>" type="<?php echo esc_attr( (string) $source['type'] ); ?>" />
+							<?php endforeach; ?>
+						</video>
+						<div class="gloskin-ui1-hero-bg-video__loader" aria-hidden="true"><span class="gloskin-ui1-hero-bg-video__loader-dot"></span></div>
+					</div>
+				<?php elseif ( $media ) : ?>
+					<div class="gloskin-ui1-hero__media gloskin-ui1-hero__media--full">
 						<?php
 						echo wp_get_attachment_image(
 							$media,
@@ -195,11 +211,12 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 							)
 						);
 						?>
-					<?php else : ?>
+					</div>
+				<?php else : ?>
+					<div class="gloskin-ui1-hero__media gloskin-ui1-hero__media--full">
 						<?php gloskin_ui1_render_editorial_media( 'hero', $heading, 'gloskin-ui1-hero__image gloskin-ui1-hero__image--editorial', true ); ?>
-					<?php endif; ?>
-					<?php if ( '' !== $heading ) : ?><h1 class="screen-reader-text"><?php echo esc_html( $heading ); ?></h1><?php endif; ?>
-				</div>
+					</div>
+				<?php endif; ?>
 				<div class="gloskin-ui1-hero__fade" aria-hidden="true"></div>
 				<button type="button" class="gloskin-ui1-hero__scroll-cue" data-gloskin-hero-scroll-cue aria-label="<?php echo esc_attr__( 'Gulir ke konten berikutnya', 'gloskin-site-core' ); ?>">
 					<span class="gloskin-ui1-hero__scroll-cue-dot" aria-hidden="true"></span>

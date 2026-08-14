@@ -39,25 +39,25 @@ final class Gloskin_Site_Core_Consultation_Demo_Importer {
 	}
 
 	/**
-	 * wp_get_environment_type() defaults to 'production' whenever the host
-	 * has not explicitly configured WP_ENVIRONMENT_TYPE -- the safe default
-	 * refuses import unless an environment has been explicitly declared
-	 * local/development/staging (section 12.1's hard requirement).
+	 * Demo import is an explicit privileged admin workflow, not a runtime
+	 * deployment-target gate: this class carries no dependency on where or
+	 * how the site declares itself to be running (no config constant read,
+	 * no debug-flag read, no hostname guess). Access control is entirely
+	 * capability + nonce (enforced by
+	 * Gloskin_Site_Core_Admin_Service::handle_demo_import()) plus the
+	 * explicit synthetic-data confirmation checkbox re-verified here.
 	 *
-	 * @return bool
-	 */
-	public static function is_environment_allowed() {
-		$type = function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : 'production';
-		return in_array( $type, array( 'local', 'development', 'staging' ), true );
-	}
-
-	/**
+	 * @param bool $confirmed Whether the owner explicitly checked and the
+	 *                         server independently re-verified the
+	 *                         "synthetic demo data will be created"
+	 *                         confirmation (never trust the HTML
+	 *                         `required` attribute alone).
 	 * @return void
-	 * @throws RuntimeException On environment refusal or a real data error.
+	 * @throws RuntimeException On missing confirmation or a real data error.
 	 */
-	public static function run() {
-		if ( ! self::is_environment_allowed() ) {
-			throw new RuntimeException( 'Import demo konsultasi ditolak: environment ini bukan local/development/staging.' );
+	public static function run( $confirmed = false ) {
+		if ( ! $confirmed ) {
+			throw new RuntimeException( 'Import demo konsultasi ditolak: konfirmasi eksplisit diperlukan sebelum data demo sintetis dibuat.' );
 		}
 		$state = self::state();
 		if ( 'consumed' === $state['status'] ) {

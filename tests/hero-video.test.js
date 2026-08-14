@@ -8,7 +8,9 @@ const {
   shouldAutoEnhanceHeroVideo,
   buildHeroVideoEmbedUrl,
   enhanceHeroVideo,
-  initHeroVideo
+  initHeroVideo,
+  setupHeroBackgroundVideo,
+  initHeroBackgroundVideo
 } = require(corePath);
 
 /* -----------------------------------------------------------------------
@@ -243,6 +245,150 @@ withGlobals({}, fakeDocument, {}, () => {
     capturedCallback([{ isIntersecting: true }]);
     assert.strictEqual(container.children.length, 1, 'a second intersection callback must never create a second iframe (idempotency)');
   });
+})();
+
+/* -----------------------------------------------------------------------
+ * Hero Background Video (native <video>, Home video-only mode):
+ * PREPARING -> READY/FAILED state machine. Fake synchronous thenables
+ * (matching this file's existing hand-rolled-DOM style, no real Promise
+ * microtask/timer scheduling needed) drive the play() Promise branch
+ * deterministically.
+ * ------------------------------------------------------------------- */
+
+function fakeResolvedPromise() {
+  return { then: function (onFulfilled) { onFulfilled(); return { catch: function () {} }; } };
+}
+function fakeRejectedPromise() {
+  return { then: function () { return { catch: function (onRejected) { onRejected(); } }; } };
+}
+
+function makeClassList() {
+  var set = new Set();
+  return {
+    add: function (name) { set.add(name); },
+    remove: function (name) { set.delete(name); },
+    contains: function (name) { return set.has(name); }
+  };
+}
+
+function makeHeroBgFixture(options) {
+  options = options || {};
+  var listeners = {};
+  var video = {
+    listeners: listeners,
+    paused: false,
+    addEventListener(type, handler) {
+      listeners[type] = listeners[type] || [];
+      listeners[type].push(handler);
+    },
+    removeEventListener(type, handler) {
+      if (!listeners[type]) { return; }
+      listeners[type] = listeners[type].filter((h) => h !== handler);
+    },
+    dispatch(type) {
+      (listeners[type] || []).slice().forEach((h) => h.call(video));
+    },
+    pause() { video.paused = true; },
+    play() {
+      video.playCalled = (video.playCalled || 0) + 1;
+      return options.playReturn ? options.playReturn() : undefined;
+    }
+  };
+  var hero = { classList: makeClassList() };
+  var wrap = {
+    querySelector: (selector) => (selector === '[data-gloskin-hero-bg-video]' ? video : null),
+    closest: () => hero
+  };
+  return { video, hero, wrap };
+}
+
+// Normal (non reduced-motion) path: loadeddata -> play() -> resolved Promise
+// -> revealed inside requestAnimationFrame.
+(function () {
+  var fixture = makeHeroBgFixture({ playReturn: fakeResolvedPromise });
+  fixture.hero.classList.add('is-video-preparing');
+  var win = { matchMedia: () => ({ matches: false }), requestAnimationFrame: (cb) => cb(), setTimeout: () => {} };
+  withGlobals(win, fakeDocument, {}, () => {
+    setupHeroBackgroundVideo(fixture.hero, fixture.wrap);
+    fixture.video.dispatch('loadeddata');
+  });
+  assert.strictEqual(fixture.video.playCalled, 1, 'must call video.play() once loadeddata fires (non reduced-motion)');
+  assert.ok(fixture.hero.classList.contains('is-video-ready'), 'must add is-video-ready once play() resolves');
+  assert.ok(!fixture.hero.classList.contains('is-video-preparing'), 'must remove is-video-preparing once ready');
+})();
+
+// Reduced motion: must never call play(), must pause to stay static, but
+// still reveals the established first frame (no indefinite white hero).
+(function () {
+  var fixture = makeHeroBgFixture({});
+  fixture.hero.classList.add('is-video-preparing');
+  var win = { matchMedia: () => ({ matches: true }), requestAnimationFrame: (cb) => cb(), setTimeout: () => {} };
+  withGlobals(win, fakeDocument, {}, () => {
+    setupHeroBackgroundVideo(fixture.hero, fixture.wrap);
+    fixture.video.dispatch('loadeddata');
+  });
+  assert.strictEqual(fixture.video.playCalled, undefined, 'reduced motion must never call video.play()');
+  assert.ok(fixture.video.paused, 'reduced motion must leave the video paused/static');
+  assert.ok(fixture.hero.classList.contains('is-video-ready'), 'reduced motion must still reveal the established static frame');
+})();
+
+// A rejected play() Promise must release a clean failure state, never a
+// false is-video-ready.
+(function () {
+  var fixture = makeHeroBgFixture({ playReturn: fakeRejectedPromise });
+  fixture.hero.classList.add('is-video-preparing');
+  var win = { matchMedia: () => ({ matches: false }), requestAnimationFrame: (cb) => cb(), setTimeout: () => {} };
+  withGlobals(win, fakeDocument, {}, () => {
+    setupHeroBackgroundVideo(fixture.hero, fixture.wrap);
+    fixture.video.dispatch('loadeddata');
+  });
+  assert.ok(fixture.hero.classList.contains('is-video-failed'), 'a rejected play() Promise must release a clean failure state');
+  assert.ok(!fixture.hero.classList.contains('is-video-ready'), 'a failed video must never be marked ready');
+})();
+
+// A native error event (before loadeddata ever fires) must also release
+// the clean failure state.
+(function () {
+  var fixture = makeHeroBgFixture({});
+  fixture.hero.classList.add('is-video-preparing');
+  var win = { matchMedia: () => ({ matches: false }), setTimeout: () => {} };
+  withGlobals(win, fakeDocument, {}, () => {
+    setupHeroBackgroundVideo(fixture.hero, fixture.wrap);
+    fixture.video.dispatch('error');
+  });
+  assert.ok(fixture.hero.classList.contains('is-video-failed'), 'a native error event must release a clean failure state');
+})();
+
+// Settled state is sticky: a late error after the video already became
+// ready must never flip it back to failed (idempotency guard).
+(function () {
+  var fixture = makeHeroBgFixture({ playReturn: fakeResolvedPromise });
+  var win = { matchMedia: () => ({ matches: false }), requestAnimationFrame: (cb) => cb(), setTimeout: () => {} };
+  withGlobals(win, fakeDocument, {}, () => {
+    setupHeroBackgroundVideo(fixture.hero, fixture.wrap);
+    fixture.video.dispatch('loadeddata');
+    fixture.video.dispatch('error');
+  });
+  assert.ok(fixture.hero.classList.contains('is-video-ready'), 'settled state must be sticky');
+  assert.ok(!fixture.hero.classList.contains('is-video-failed'), 'a late error after ready must never flip it back to failed');
+})();
+
+// initHeroBackgroundVideo(): discovers every [data-gloskin-hero-bg-video-wrap]
+// via document.querySelectorAll and wires it up through its closest hero.
+(function () {
+  var fixture = makeHeroBgFixture({ playReturn: fakeResolvedPromise });
+  var doc = Object.assign({}, fakeDocument, {
+    querySelectorAll(selector) {
+      assert.strictEqual(selector, '[data-gloskin-hero-bg-video-wrap]', 'must query the documented wrapper data attribute');
+      return [fixture.wrap];
+    }
+  });
+  var win = { matchMedia: () => ({ matches: false }), requestAnimationFrame: (cb) => cb(), setTimeout: () => {} };
+  withGlobals(win, doc, {}, () => {
+    initHeroBackgroundVideo();
+    fixture.video.dispatch('loadeddata');
+  });
+  assert.ok(fixture.hero.classList.contains('is-video-ready'), 'initHeroBackgroundVideo() must wire up discovered wrappers');
 })();
 
 console.log('hero-video.test.js: OK');
