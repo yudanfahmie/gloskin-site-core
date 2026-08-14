@@ -68,6 +68,13 @@ expect(!frontendCss.includes('!important'), 'Finder CSS must contain no !importa
 expect(frontendCss.includes('width:clamp(150px,15vw,176px)') && frontendCss.includes('border-radius:50%'), 'Desktop paths must use circular 150-180px photo controls');
 expect(frontendCss.includes('@media (hover:none),(pointer:coarse)') && frontendCss.includes('position:static;opacity:1'), 'Touch devices must keep the detail action visible');
 expect(frontendCss.includes('@media (prefers-reduced-motion:reduce)'), 'Finder motion must respect reduced-motion preference');
+const invalidFlexTypo = 'dis' + ':flex';
+expect(!frontendCss.includes(invalidFlexTypo), 'Consultation CSS must contain zero invalid abbreviated display declarations');
+expect(/\.gloskin-ui1-consultation-card__footer\{\s*display:flex;[\s\S]*?justify-content:flex-end;[\s\S]*?\}/.test(frontendCss), 'Desktop consultation footer must remain a flex price strip aligned to the end');
+const coarseStart = frontendCss.indexOf('@media (hover:none),(pointer:coarse)');
+const coarseEnd = frontendCss.indexOf('@media (max-width:900px)', coarseStart);
+const coarseCss = frontendCss.slice(coarseStart, coarseEnd);
+expect(coarseStart >= 0 && coarseEnd > coarseStart && coarseCss.includes('.gloskin-ui1-consultation-card__footer{justify-content:space-between}'), 'Coarse-pointer footer must let the persistent detail action and price share the row');
 
 for (const forbidden of ['localStorage', 'sessionStorage', 'document.cookie', 'fetch(', 'XMLHttpRequest']) {
   expect(!admin.includes(forbidden), `Admin mapping enhancement must not create browser persistence/network state: ${forbidden}`);

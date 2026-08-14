@@ -145,7 +145,7 @@
 	-webkit-line-clamp:3;
 }
 .gloskin-ui1-consultation-card__footer{
-	dis:flex;
+	display:flex;
 	min-height:72px;
 	align-items:center;
 	justify-content:flex-end;
