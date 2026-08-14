@@ -86,6 +86,14 @@ return array(
 			'deps'  => array(),
 			'media' => 'all',
 		),
+		/* Konsultasi Perawatan -> Pemetaan Produk presentation only.
+		 * AssetService enqueues it together with the matching controller on
+		 * that one screen; it is never part of global wp-admin styling. */
+		'gloskin-ui1-consultation-admin' => array(
+			'src'   => 'assets/css/gloskin-ui1-consultation-admin.css',
+			'deps'  => array(),
+			'media' => 'all',
+		),
 	),
 	'admin_scripts' => array(
 		'gloskin-ui1-admin' => array(

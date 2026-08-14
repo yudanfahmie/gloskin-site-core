@@ -1,0 +1,96 @@
+/* Konsultasi Perawatan admin mapping progressive-enhancement presentation. */
+.gloskin-admin-mapping-enhanced{
+	display:grid;
+	grid-template-columns:minmax(220px,.75fr) minmax(0,1.6fr);
+	gap:20px;
+	align-items:start;
+	min-width:0;
+}
+.gloskin-admin-mapping-enhanced>*{min-width:0}
+.gloskin-admin-mapping-pool{
+	min-width:0;
+	padding:14px;
+	border:1px solid #dcdcde;
+	border-radius:6px;
+	background:#fff;
+}
+.gloskin-admin-mapping-pool h3,
+.gloskin-admin-mapping-concerns h3{margin-top:0}
+.gloskin-admin-mapping-product-pool,
+.gloskin-admin-mapping-chip-list{
+	margin:0;
+	padding:0;
+	list-style:none;
+}
+.gloskin-admin-mapping-product-pool{margin-top:12px}
+.gloskin-admin-mapping-pool-item{
+	min-width:0;
+	margin-bottom:8px;
+	padding:9px 10px;
+	border:1px solid #dcdcde;
+	border-radius:5px;
+	cursor:grab;
+	overflow-wrap:anywhere;
+}
+.gloskin-admin-mapping-pool-item:last-child{margin-bottom:0}
+.gloskin-admin-mapping-pool-item .description{
+	display:block;
+	margin-top:2px;
+}
+.gloskin-admin-mapping-pool-item.is-dragging{
+	opacity:.58;
+	cursor:grabbing;
+}
+.gloskin-admin-mapping-concerns{min-width:0}
+.gloskin-admin-mapping-buckets{
+	display:grid;
+	grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));
+	gap:12px;
+	min-width:0;
+}
+.gloskin-admin-mapping-bucket-enhanced{
+	min-width:0;
+	padding:12px;
+	border:1px solid #dcdcde;
+	border-radius:6px;
+	background:#fff;
+}
+.gloskin-admin-mapping-bucket-enhanced legend{font-weight:600}
+.gloskin-admin-mapping-bucket-enhanced.is-drop-target{
+	border-color:#2271b1;
+	box-shadow:0 0 0 1px #2271b1;
+}
+.gloskin-admin-mapping-add{
+	display:flex;
+	flex-wrap:wrap;
+	gap:6px;
+	min-width:0;
+	margin-bottom:10px;
+}
+.gloskin-admin-mapping-add select{
+	flex:1 1 180px;
+	min-width:0;
+	max-width:100%;
+}
+.gloskin-admin-mapping-add .button{flex:0 0 auto}
+.gloskin-admin-mapping-chip{
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	gap:8px;
+	min-width:0;
+	max-width:100%;
+	margin-bottom:6px;
+	padding:6px 8px;
+	border-radius:999px;
+	background:#f0f6fc;
+}
+.gloskin-admin-mapping-chip:last-child{margin-bottom:0}
+.gloskin-admin-mapping-chip>span{
+	min-width:0;
+	overflow-wrap:anywhere;
+}
+.gloskin-admin-mapping-chip .button-link-delete{flex:0 0 auto}
+@media (max-width:782px){
+	.gloskin-admin-mapping-enhanced{grid-template-columns:minmax(0,1fr)}
+}

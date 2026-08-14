@@ -77,10 +77,6 @@
 		var search = form.querySelector('[data-gloskin-mapping-search]');
 		var workspace = createEl('div', 'gloskin-admin-mapping-enhanced');
 		workspace.setAttribute('data-gloskin-mapping-enhanced', '');
-		workspace.style.display = 'grid';
-		workspace.style.gridTemplateColumns = 'minmax(260px, .8fr) minmax(360px, 1.6fr)';
-		workspace.style.gap = '20px';
-		workspace.style.alignItems = 'start';
 
 		var status = createEl('p', 'screen-reader-text');
 		status.setAttribute('aria-live', 'polite');
@@ -89,20 +85,12 @@
 
 		var poolPanel = createEl('section', 'gloskin-admin-mapping-pool');
 		poolPanel.setAttribute('aria-labelledby', 'gloskin-treatment-product-pool-title');
-		poolPanel.style.border = '1px solid #dcdcde';
-		poolPanel.style.borderRadius = '6px';
-		poolPanel.style.padding = '14px';
-		poolPanel.style.background = '#fff';
 		var poolTitle = createEl('h3', '', 'Treatment Product');
 		poolTitle.id = 'gloskin-treatment-product-pool-title';
-		poolTitle.style.marginTop = '0';
 		poolPanel.appendChild(poolTitle);
 		poolPanel.appendChild(createEl('p', 'description', 'Cari lalu seret produk ke keluhan. Produk tetap tersedia agar dapat dipetakan ke beberapa keluhan.'));
 		var pool = createEl('ul', 'gloskin-admin-mapping-product-pool');
 		pool.setAttribute('data-gloskin-product-pool', '');
-		pool.style.listStyle = 'none';
-		pool.style.margin = '12px 0 0';
-		pool.style.padding = '0';
 
 		function mappedCount(productId) {
 			var count = 0;
@@ -126,17 +114,9 @@
 				item.setAttribute('data-gloskin-pool-product', product.id);
 				item.setAttribute('data-product-name', product.name.toLowerCase());
 				item.setAttribute('draggable', 'true');
-				item.tabIndex = 0;
-				item.style.border = '1px solid #dcdcde';
-				item.style.borderRadius = '5px';
-				item.style.padding = '9px 10px';
-				item.style.marginBottom = '8px';
-				item.style.cursor = 'grab';
 				item.appendChild(createEl('strong', '', product.name));
 				var meta = createEl('span', 'description');
 				meta.setAttribute('data-gloskin-pool-meta', product.id);
-				meta.style.display = 'block';
-				meta.style.marginTop = '2px';
 				item.appendChild(meta);
 				item.addEventListener('dragstart', function (event) {
 					if (!event.dataTransfer) { return; }
@@ -146,7 +126,7 @@
 				});
 				item.addEventListener('dragend', function () { item.classList.remove('is-dragging'); });
 				pool.appendChild(item);
-				window.setTimeout(function () { updatePoolMeta(product.id); }, 0);
+				updatePoolMeta(product.id);
 			}(model.products[model.productOrder[p]]));
 		}
 		poolPanel.appendChild(pool);
@@ -156,12 +136,8 @@
 		bucketsPanel.setAttribute('aria-labelledby', 'gloskin-concern-buckets-title');
 		var bucketsTitle = createEl('h3', '', 'Keluhan');
 		bucketsTitle.id = 'gloskin-concern-buckets-title';
-		bucketsTitle.style.marginTop = '0';
 		bucketsPanel.appendChild(bucketsTitle);
 		var bucketsGrid = createEl('div', 'gloskin-admin-mapping-buckets');
-		bucketsGrid.style.display = 'grid';
-		bucketsGrid.style.gridTemplateColumns = 'repeat(auto-fit,minmax(260px,1fr))';
-		bucketsGrid.style.gap = '12px';
 		bucketsPanel.appendChild(bucketsGrid);
 
 		function setRelationship(concern, productId, checked) {
@@ -183,14 +159,6 @@
 				(function (product, targetCheckbox) {
 					var chip = createEl('li', 'gloskin-admin-mapping-chip');
 					chip.setAttribute('data-gloskin-mapped-chip', product.id);
-					chip.style.display = 'flex';
-					chip.style.alignItems = 'center';
-					chip.style.justifyContent = 'space-between';
-					chip.style.gap = '8px';
-					chip.style.padding = '6px 8px';
-					chip.style.marginBottom = '6px';
-					chip.style.borderRadius = '999px';
-					chip.style.background = '#f0f6fc';
 					chip.appendChild(createEl('span', '', product.name));
 					var remove = createEl('button', 'button-link-delete', 'Hapus');
 					remove.type = 'button';
@@ -216,21 +184,12 @@
 			(function (concern) {
 				var bucket = createEl('fieldset', 'gloskin-admin-mapping-bucket-enhanced');
 				bucket.setAttribute('data-gloskin-concern-bucket', concern.id);
-				bucket.style.border = '1px solid #dcdcde';
-				bucket.style.borderRadius = '6px';
-				bucket.style.padding = '12px';
-				bucket.style.background = '#fff';
 				var legend = createEl('legend', '', concern.name);
-				legend.style.fontWeight = '600';
 				bucket.appendChild(legend);
 
 				var controls = createEl('div', 'gloskin-admin-mapping-add');
-				controls.style.display = 'flex';
-				controls.style.gap = '6px';
-				controls.style.marginBottom = '10px';
 				var select = document.createElement('select');
 				select.setAttribute('aria-label', 'Pilih Treatment Product untuk ' + concern.name);
-				select.style.maxWidth = '100%';
 				var placeholder = document.createElement('option');
 				placeholder.value = '';
 				placeholder.textContent = 'Pilih produk…';
@@ -257,27 +216,21 @@
 				bucket.appendChild(controls);
 
 				var chipList = createEl('ul', 'gloskin-admin-mapping-chip-list');
-				chipList.style.listStyle = 'none';
-				chipList.style.margin = '0';
-				chipList.style.padding = '0';
 				bucket.appendChild(chipList);
 
 				bucket.addEventListener('dragover', function (event) {
 					event.preventDefault();
 					if (event.dataTransfer) { event.dataTransfer.dropEffect = 'copy'; }
 					bucket.classList.add('is-drop-target');
-					bucket.style.borderColor = '#2271b1';
 				});
 				bucket.addEventListener('dragleave', function (event) {
 					if (!bucket.contains(event.relatedTarget)) {
 						bucket.classList.remove('is-drop-target');
-						bucket.style.borderColor = '';
 					}
 				});
 				bucket.addEventListener('drop', function (event) {
 					event.preventDefault();
 					bucket.classList.remove('is-drop-target');
-					bucket.style.borderColor = '';
 					var productId = event.dataTransfer ? event.dataTransfer.getData('text/plain') : '';
 					if (!productId || !model.products[productId]) { return; }
 					if (setRelationship(concern, productId, true)) {

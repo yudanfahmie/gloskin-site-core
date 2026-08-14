@@ -343,15 +343,20 @@ final class Gloskin_Site_Core_Asset_Service {
 	}
 
 	/**
-	 * The Konsultasi Perawatan mapping matrix's own small drag-and-drop
-	 * progressive-enhancement script. Gloskin_Site_Core_Admin_Service
-	 * already gates the call to this method to that exact screen's hook --
-	 * this method only registers/enqueues.
+	 * The Konsultasi Perawatan mapping matrix's scoped presentation assets.
+	 * Gloskin_Site_Core_Admin_Service already gates the call to this method
+	 * to that exact screen's hook; this method only registers/enqueues the
+	 * feature CSS and JS through the one canonical AssetService owner.
 	 *
 	 * @return void
 	 */
 	public function enqueue_consultation_admin() {
 		$registry = $this->registry();
+		if ( ! empty( $registry['admin_styles']['gloskin-ui1-consultation-admin'] ) ) {
+			$asset = $registry['admin_styles']['gloskin-ui1-consultation-admin'];
+			wp_register_style( 'gloskin-ui1-consultation-admin', plugins_url( $asset['src'], $this->plugin_file ), $asset['deps'], $this->version, $asset['media'] );
+			wp_enqueue_style( 'gloskin-ui1-consultation-admin' );
+		}
 		if ( ! empty( $registry['admin_scripts']['gloskin-ui1-consultation-admin'] ) ) {
 			$asset = $registry['admin_scripts']['gloskin-ui1-consultation-admin'];
 			wp_register_script( 'gloskin-ui1-consultation-admin', plugins_url( $asset['src'], $this->plugin_file ), $asset['deps'], $this->version, true );
