@@ -70,6 +70,7 @@ $GLOBALS['gl_route'] = array( 'front' => false, 'page' => false, 'singular' => '
 $GLOBALS['gl_is_admin'] = getenv( 'GL_TEST_ADMIN' ) === '1';
 $GLOBALS['gl_woo_late'] = getenv( 'GL_TEST_WOO_LATE' ) === '1';
 $GLOBALS['gl_woo'] = getenv( 'GL_TEST_WOO' ) === '1' || $GLOBALS['gl_woo_late'];
+$GLOBALS['gl_product_post_type_registered'] = $GLOBALS['gl_woo'] && ! $GLOBALS['gl_woo_late'];
 $GLOBALS['gl_shortcodes'] = array();
 $GLOBALS['gl_loop_consumed'] = false;
 
@@ -78,11 +79,14 @@ $GLOBALS['gl_loop_consumed'] = false;
  * regression test below can define them either before or after the plugin
  * boots -- proving Gloskin_Site_Core_WooCommerce_Adapter::is_available()
  * resolves correctly regardless of when WooCommerce actually finished
- * loading relative to Gloskin's own plugin-load pass.
+ * loading relative to Gloskin's own plugin-load pass. Under GL_TEST_WOO_LATE
+ * this also marks the simulated product CPT registered only when Woo's own
+ * late registration phase actually occurs.
  *
  * @return void
  */
 function gl_define_woo_stubs() {
+	$GLOBALS['gl_product_post_type_registered'] = true;
 	class WooCommerce {}
 	class GL_Test_Cart {
 		public function get_cart_contents_count() { return 2; }
@@ -170,11 +174,10 @@ function is_admin() { return (bool) $GLOBALS['gl_is_admin']; }
 function register_post_type( $type, $args ) { $GLOBALS['gl_post_types'][ $type ] = $args; }
 function register_post_meta( $type, $key, $args ) { $GLOBALS['gl_registered_meta'][ $type ][ $key ] = $args; }
 /* Treatment Consultation taxonomy/term-meta registration stubs (docs/task-
- * treatment-consultation-commerce-discovery.md). 'product' is WooCommerce's
- * own post type, simulated here the same way the rest of this harness
- * already simulates Woo presence (see $GLOBALS['gl_woo'], get_term_by()
- * above). */
-function post_type_exists( $type ) { return isset( $GLOBALS['gl_post_types'][ $type ] ) || ( 'product' === $type && $GLOBALS['gl_woo'] ); }
+ * treatment-consultation-commerce-discovery.md). Product CPT existence is
+ * intentionally independent from "Woo will become available": under
+ * GL_TEST_WOO_LATE it stays false until gl_define_woo_stubs() executes. */
+function post_type_exists( $type ) { return isset( $GLOBALS['gl_post_types'][ $type ] ) || ( 'product' === $type && $GLOBALS['gl_product_post_type_registered'] ); }
 function register_taxonomy( $taxonomy, $object_type, $args = array() ) { $GLOBALS['gl_taxonomies'][ $taxonomy ] = $args; }
 function taxonomy_exists( $taxonomy ) { return isset( $GLOBALS['gl_taxonomies'][ $taxonomy ] ); }
 function register_term_meta( $taxonomy, $key, $args ) { $GLOBALS['gl_registered_term_meta'][ $taxonomy ][ $key ] = $args; }
@@ -418,6 +421,19 @@ do_action( 'init' );
 if ( ! isset( $GLOBALS['gl_post_types']['gloskin_treatment'], $GLOBALS['gl_post_types']['gloskin_clinic'], $GLOBALS['gl_post_types']['gloskin_doctor'] ) ) {
 	fwrite( STDERR, "CPT registration failed\n" );
 	exit( 1 );
+}
+
+if ( $GLOBALS['gl_woo_late'] ) {
+	if ( post_type_exists( 'product' ) ) {
+		fwrite( STDERR, "Late-Woo fixture invalid: product CPT exists before Woo registration\n" );
+		exit( 1 );
+	}
+	foreach ( array( Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY, Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY ) as $taxonomy ) {
+		if ( ! taxonomy_exists( $taxonomy ) ) {
+			fwrite( STDERR, "Late-Woo taxonomy registration failed before product CPT: {$taxonomy}\n" );
+			exit( 1 );
+		}
+	}
 }
 
 if ( $GLOBALS['gl_is_admin'] ) {

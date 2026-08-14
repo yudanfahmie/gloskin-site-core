@@ -153,9 +153,15 @@ Recommended structure:
 - CPT `gloskin_clinic`: nine clinic records
 - CPT `gloskin_doctor`: thirteen doctor records
 - native Posts: Insights articles
-- WooCommerce Products: skincare products
+- WooCommerce Products: skincare products and any purchasable Treatment Products
+- private taxonomy `gloskin_product_family`: product classification (`skincare`, `treatment`)
+- private taxonomy `gloskin_concern`: Treatment Product recommendation vocabulary
+- private taxonomy `gloskin_consultation_path`: questionnaire path vocabulary
+- private CPT `gloskin_question`: questionnaire questions only; never a public route or purchasable entity
 
-If a future developer can implement a simpler equivalent with native Pages instead of one of the three CPTs, that is acceptable only if URL behavior, editing capability, relationships and templates remain equivalent. Do not add a custom database table for these content types without a demonstrated technical need.
+For Treatment Consultation, WooCommerce `product` is the sole purchasable entity. The existing eight `gloskin_treatment` records remain an informational directory and must not be converted into products. Product↔concern taxonomy relationships are the sole recommendation mapping source; visitor questionnaire answers/scores/history are frontend runtime state only and must not be persisted.
+
+If a future developer can implement a simpler equivalent with native Pages instead of one of the three public CPTs, that is acceptable only if URL behavior, editing capability, relationships and templates remain equivalent. Do not add a custom database table for these content types without a demonstrated technical need.
 
 ## 7. Navigation and information architecture
 
@@ -198,6 +204,8 @@ The page must not contain industrial specification UI, technical-document cards,
 
 If hero media is not yet supplied, render a deliberate non-broken fallback. Do not ship fake client imagery as production content.
 
+Current production Home intentionally specializes the existing shared hero renderer into `video-only` mode. It keeps the same admin-configurable hero-video owner and must render no visible eyebrow/heading/copy/CTA; a screen-reader structural heading is acceptable. The media remains full-width with poster/facade first, existing YouTube-nocookie enhancement/fallback behavior, bottom transparent-to-surface gradient, exactly one SVG scroll cue targeting the actual next sibling section, and reduced-motion behavior. Do not build a second Home hero/video service.
+
 ### 8.2 About
 
 Support:
@@ -221,7 +229,10 @@ Support:
 - exactly eight approved treatment category cards/entries;
 - optional featured treatment area driven by content, not hard-coded template assumptions;
 - related clinic/doctor discovery where data exists;
-- booking CTA.
+- booking CTA;
+- additive Treatment Consultation flow when its private data contract is ready.
+
+Treatment Consultation path/question scoring is client-side presentation over canonical WordPress/Woo data. It must reuse the canonical Woo product-card/add-to-cart runtime, cap recommendations at eight cards, and leave the informational treatment directory below it.
 
 ### 8.4 Treatment category
 
@@ -420,6 +431,8 @@ The raw material is internally mixed: one area mentions WooCommerce catalog mode
 
 Midtrans/Xendit business configuration and gateway logic are not implemented here; the plugin must avoid breaking WooCommerce gateways.
 
+Gloskin's cart overlay already owns successful Add-to-Cart/cart-sheet mutation feedback. Redundant page-level Woo success messages for those exact operations may be suppressed only at Woo's narrow operation hooks before session queue/render. Woo errors, info notices, account/profile/password success, coupon feedback, checkout validation, shipping/payment notices and order/payment failures remain Woo-owned and must not be globally cleared or hidden. Never use global `.woocommerce-message` hiding, global `wc_clear_notices()`, DOM polling, or notice-cleanup observers.
+
 ## 9. Content and relationship contracts
 
 Detailed field contracts are in `docs/content-data-contracts.md`.
@@ -431,7 +444,10 @@ Required relationships are conceptually:
 - doctor ↔ treatment: many-to-many when used;
 - skincare landing → WooCommerce product category: one configured mapping;
 - clinic → branch WhatsApp/map/contact data;
-- product data remains entirely WooCommerce-owned.
+- product data remains entirely WooCommerce-owned;
+- Woo Treatment Product ↔ `gloskin_concern`: native taxonomy relationship and sole recommendation mapping source;
+- `gloskin_question` → `gloskin_consultation_path`: native taxonomy relationship;
+- question answer options: bounded registered question meta; visitor answer/history state is not persisted.
 
 Prefer WordPress-native post meta/registered meta/taxonomy relationships and IDs over custom tables. Do not add ACF or another framework solely to model these fields unless explicitly approved.
 
@@ -498,6 +514,7 @@ No arbitrary numeric performance score is invented here. Optimize for a lean pro
 
 - No PHP fatal if optional content is missing.
 - Non-commerce pages should not fatal when WooCommerce is temporarily inactive; commerce sections should fail safely or expose an admin-facing dependency warning.
+- Consultation taxonomy registration must not depend on WooCommerce's product CPT having registered first; canonical object-type slugs are sufficient and preserve either plugin load order.
 - Missing form integration should produce an intentional fallback, not broken shortcode text.
 - Missing branch media/map/optional doctor SIP should not break layout.
 - A missing related-content relationship should simply omit that section or show an appropriate empty state.
@@ -596,8 +613,12 @@ Required editing capabilities should cover:
 - doctors;
 - relationships between them;
 - skincare-to-Woo category mappings;
+- Treatment Consultation paths, concerns and private questions;
+- Treatment Product↔concern taxonomy mapping through one `Konsultasi Perawatan` submenu;
 - branch contact/map/WhatsApp fields;
 - minimal presentation settings such as hero media only if those values are genuinely plugin-owned.
+
+The mapping UI may progressively enhance the canonical native checkbox matrix into one searchable Treatment Product pool and concern buckets with removable chips. Products remain available in the pool because one product may map to multiple concerns. JavaScript must only synchronize those same form relationships; if JavaScript fails, the native checkbox matrix remains a complete save path. Do not add another persistence layer.
 
 Avoid rebuilding a broad Morgen admin shell. Native WordPress edit screens, registered meta and small purpose-built metaboxes/settings are preferred when sufficient.
 
@@ -640,6 +661,9 @@ Unless the owner later changes scope, do not implement:
 - custom Midtrans/Xendit payment logic;
 - WooCommerce backend replacement;
 - custom product manager/catalog database;
+- duplicate Treatment Product/recommendation mapping store;
+- questionnaire-answer persistence;
+- second cart mutation/notice framework;
 - Morgen Technical Library/Documents/PDF/secure-download stack;
 - Morgen Applications/Hammer/Quality Testing domains;
 - Morgen production incident migrations/repair/reconciliation history;
@@ -662,6 +686,8 @@ The future implementation is complete only when all applicable points are true:
 - thirteen doctor records/templates are supported;
 - WooCommerce remains the sole product/commerce authority;
 - Shop, product, cart and checkout presentation do not replace Woo logic;
+- Treatment Consultation uses private WordPress taxonomy/question structures without a second purchasable entity or custom table;
+- product↔concern mapping has one native taxonomy source and questionnaire answers remain runtime-only;
 - Contact delegates submission/mail to the configured form layer;
 - branch-specific WhatsApp and map/contact fields are supported;
 - desktop/mobile navigation is accessible;

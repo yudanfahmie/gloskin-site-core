@@ -170,6 +170,31 @@ The project framework references a uniform twelve-field product template but doe
 - make the product presentation extensible enough to render approved Woo attributes/meta later;
 - preserve standard WooCommerce hooks where possible so gateway/product extensions remain compatible.
 
+## Treatment Consultation data contract
+
+Treatment Consultation is additive to the existing informational `gloskin_treatment` directory. It does not replace or repurpose those eight records.
+
+Canonical ownership is:
+
+| Entity | Canonical owner/purpose |
+| --- | --- |
+| purchasable treatment | WooCommerce `product` only |
+| `gloskin_product_family` | private classification vocabulary; stable terms include `skincare` and `treatment` |
+| `gloskin_concern` | private recommendation-mapping vocabulary |
+| `gloskin_consultation_path` | private questionnaire-path vocabulary |
+| `gloskin_question` | private/non-public questionnaire entity; native admin edit capability only |
+| product ↔ concern | native taxonomy relationship via `wp_set_object_terms()`; sole recommendation mapping source |
+| question answers | registered bounded question meta defining label + concern ID + weight 1..3 |
+| visitor answers/scores/history | frontend runtime memory only |
+
+The three consultation taxonomies are registered against their canonical object-type slugs without requiring WooCommerce's `product` post type to have registered first. This is intentional: WordPress taxonomy registration can precede the corresponding object-type registration, and the schema must remain deterministic regardless of plugin load order.
+
+The admin Pemetaan Produk screen may progressively enhance the native checkbox matrix into a searchable Treatment Product pool plus concern buckets/chips. That JavaScript is presentation/state synchronization only: the same native checkboxes remain the submitted canonical relationships and the no-JS fallback. Do not add JSON mapping options, product-meta mapping arrays, custom tables, browser persistence, or another recommendation store.
+
+The questionnaire runtime may shuffle eligible questions once per consultation run and score concerns client-side. Answers, score history, and path progress must not be written to localStorage, sessionStorage, cookies, options, post meta, custom tables, or another server-side store. Restart clears the run; Back reverses the prior answer's score contribution. Recommendation output reuses the existing canonical Woo product-card/add-to-cart runtime and is capped at eight cards.
+
+The optional demo importer is staging/development/local only. It uses deterministic path/concern slugs, question source IDs, and treatment-product SKUs so every upsert phase converges after a partial rerun. Production must refuse the import. The demo target is at least four paths, ten concerns, thirteen questions, and exactly eight Woo Treatment Products; demo products remain distinct from the existing eight informational `gloskin_treatment` records.
+
 ## About content contract
 
 The About page must be able to render:
@@ -196,6 +221,8 @@ The homepage requires editable/renderable data for:
 - booking/contact CTA.
 
 Avoid a huge all-in-one serialized option if native Page content, block data or small registered meta fields are simpler. If plugin-owned structured settings are used, version and sanitize them explicitly.
+
+The current Home presentation intentionally uses the existing shared hero/video owner in video-only mode: no visible eyebrow/heading/copy/CTA, media first with the configured poster/video behavior, bottom gradient, one SVG scroll cue to the actual following section, and reduced-motion handling. Do not create a second Home hero/video service.
 
 ## Contact and booking contract
 

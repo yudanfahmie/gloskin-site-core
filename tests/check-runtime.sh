@@ -21,6 +21,11 @@ php tests/single-product-description-boundary-contract.php
 node tests/single-product-ajax-payload.test.js
 node tests/hero-video.test.js
 node tests/consultation.test.js
+node tests/consultation-source-contract.test.js
+php tests/consultation-contract.php
+php tests/consultation-demo-importer-contract.php
+php tests/woo-cart-notice-contract.php
+php tests/release-version-contract.php
 php tests/shop-catalog-contract.php
 node tests/shop-catalog-controller.test.js
 python tests/storefront-regression-contract.py

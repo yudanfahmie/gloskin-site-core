@@ -15,6 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_WooCommerce_Adapter {
+	/** @var bool Request-local one-shot for the exact classic cart-remove success. */
+	private $suppress_next_cart_item_removed_success = false;
+
 	/**
 	 * Register Woo presentation hooks.
 	 *
@@ -38,6 +41,13 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		add_action( 'woocommerce_single_product_summary', array( $this, 'render_product_facts' ), 21 );
 		add_filter( 'body_class', array( $this, 'body_classes' ) );
 		add_filter( 'woocommerce_add_to_cart_fragments', array( $this, 'cart_fragments' ) );
+		// The Gloskin cart overlay already owns successful cart-mutation
+		// feedback. Suppress only Woo's redundant success messages at their
+		// canonical source hooks; errors/info and every unrelated Woo success
+		// continue through Woo unchanged.
+		add_filter( 'wc_add_to_cart_message_html', array( $this, 'suppress_add_to_cart_success_message' ), 10, 3 );
+		add_filter( 'woocommerce_cart_item_removed_notice_type', array( $this, 'arm_cart_item_removed_success_suppression' ), 999 );
+		add_filter( 'woocommerce_add_message', array( $this, 'suppress_armed_cart_item_removed_success_message' ) );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
 		add_action( 'gloskin_site_core_shell_footer', array( $this, 'render_quick_auth_overlay' ), 10 );
 		// Priority 1: run before core's do_blocks (9)/do_shortcode (11) so a
@@ -61,6 +71,55 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		// calls always run after Woo's wc-template-hooks.php has registered
 		// its defaults, regardless of Gloskin/WooCommerce plugin load order.
 		add_action( 'woocommerce_before_single_product', array( $this, 'simplify_single_product_summary' ) );
+	}
+
+	/**
+	 * Woo's wc_add_to_cart_message_html hook exists only for the successful
+	 * add-to-cart confirmation that would otherwise be queued as a normal
+	 * page-level success notice. Gloskin already reports the same successful
+	 * mutation through the canonical added_to_cart -> cart overlay flow, so
+	 * the redundant message is stopped before wc_add_notice() can queue it.
+	 *
+	 * @param string $message  Woo add-to-cart success HTML.
+	 * @param array  $products Product IDs/quantities included by Woo.
+	 * @param bool   $show_qty Whether Woo would display quantity.
+	 * @return string
+	 */
+	public function suppress_add_to_cart_success_message( $message, $products, $show_qty ) {
+		unset( $message, $products, $show_qty );
+		return '';
+	}
+
+	/**
+	 * Woo 11.x queues the classic "cart item removed" confirmation by first
+	 * filtering only its notice type, then immediately calling wc_add_notice().
+	 * Arm a request-local one-shot only when that final effective type is
+	 * still success. Returning the type byte-for-byte preserves every plugin
+	 * that intentionally converts this operation into info/error feedback.
+	 *
+	 * @param string $notice_type Woo notice type.
+	 * @return string
+	 */
+	public function arm_cart_item_removed_success_suppression( $notice_type ) {
+		$this->suppress_next_cart_item_removed_success = ( 'success' === $notice_type );
+		return $notice_type;
+	}
+
+	/**
+	 * wc_add_notice() passes successful messages through woocommerce_add_message
+	 * before session queueing. Consume the remove-only flag immediately; all
+	 * other Woo successes (account/profile/password/coupon/etc.) are returned
+	 * byte-identical and errors/info never enter this filter at all.
+	 *
+	 * @param string $message Woo success message.
+	 * @return string
+	 */
+	public function suppress_armed_cart_item_removed_success_message( $message ) {
+		if ( ! $this->suppress_next_cart_item_removed_success ) {
+			return $message;
+		}
+		$this->suppress_next_cart_item_removed_success = false;
+		return '';
 	}
 
 	/**

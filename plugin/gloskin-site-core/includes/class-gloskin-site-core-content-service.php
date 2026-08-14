@@ -114,12 +114,16 @@ final class Gloskin_Site_Core_Content_Service {
 	 * taxonomy submenu -- classification only, never Woo product_cat
 	 * (which already owns merchandising IA and must stay independent).
 	 *
+	 * Object-type slugs are canonical registration keys in WordPress; they
+	 * do not require the post type to have been registered first. Registering
+	 * these relationships unconditionally keeps the schema deterministic when
+	 * Gloskin's init callback runs before WooCommerce registers `product`.
+	 * Never snapshot Woo availability here: the adapter resolves that only at
+	 * point of use, while this schema must exist for the entire request.
+	 *
 	 * @return void
 	 */
 	public static function register_taxonomies() {
-		if ( ! post_type_exists( 'product' ) ) {
-			return;
-		}
 		register_taxonomy(
 			self::FAMILY_TAXONOMY,
 			'product',
