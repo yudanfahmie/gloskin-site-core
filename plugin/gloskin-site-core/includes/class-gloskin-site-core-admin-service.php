@@ -116,12 +116,10 @@ final class Gloskin_Site_Core_Admin_Service {
 			'design_variant' => 'medical',
 			'form_shortcode' => '',
 			'header_variant' => 'header-1',
-			/* Home video-only mode's native background video (task K/L):
+			/* Home video-only mode's native background video:
 			 * a WordPress Media Library attachment ID, resolved by
 			 * Template_Service::hero_background_video(). Unset (0) is the
-			 * normal/default state -- the existing media fallback chain
-			 * (attachment image -> editorial placeholder) then takes over,
-			 * exactly as before this field existed. */
+			 * normal/default state and renders a clean white Home hero. */
 			'hero_video_media_id' => 0,
 		);
 	}
@@ -184,8 +182,7 @@ final class Gloskin_Site_Core_Admin_Service {
 			'header_variant' => in_array( $header_variant, array( 'header-1', 'header-2' ), true ) ? $header_variant : 'header-1',
 			/* Plain attachment ID only; Template_Service::hero_background_video()
 			 * re-resolves and mime-checks it at render time, so an ID that no
-			 * longer points at a real video attachment can never do worse than
-			 * fall back to the existing non-video hero media. */
+			 * longer points at an MP4/WebM safely yields a white Home hero. */
 			'hero_video_media_id' => isset( $value['hero_video_media_id'] ) ? absint( $value['hero_video_media_id'] ) : 0,
 		);
 	}
@@ -265,9 +262,16 @@ final class Gloskin_Site_Core_Admin_Service {
 		$header_variant    = isset( $settings['header_variant'] ) ? $settings['header_variant'] : 'header-1';
 		$hero_video_media_id = isset( $settings['hero_video_media_id'] ) ? absint( $settings['hero_video_media_id'] ) : 0;
 		$hero_video_filename = '';
+		$hero_video_warning  = '';
 		if ( $hero_video_media_id ) {
 			$attached_file = get_attached_file( $hero_video_media_id );
 			$hero_video_filename = $attached_file ? basename( $attached_file ) : '';
+			$hero_video_mime = get_post_mime_type( $hero_video_media_id );
+			if ( ! in_array( (string) $hero_video_mime, array( 'video/mp4', 'video/webm' ), true ) ) {
+				$hero_video_warning = __( 'File yang dipilih bukan MP4/WebM. Home akan tetap menggunakan latar putih.', 'gloskin-site-core' );
+			} elseif ( '' === $hero_video_filename ) {
+				$hero_video_warning = __( 'Attachment video tidak dapat ditemukan. Home akan tetap menggunakan latar putih.', 'gloskin-site-core' );
+			}
 		}
 		$previews          = $this->header_variant_previews();
 		$tabs              = array(
@@ -314,9 +318,10 @@ final class Gloskin_Site_Core_Admin_Service {
 							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Home hero video', 'gloskin-site-core' ); ?></h2>
 							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Video latar Home diputar otomatis tanpa suara dan memenuhi area hero.', 'gloskin-site-core' ); ?></p>
 							<p class="gloskin-admin-field-label"><?php echo esc_html__( 'Background video', 'gloskin-site-core' ); ?></p>
-							<div class="gloskin-admin-media-field" data-gloskin-hero-video-field data-empty-label="<?php echo esc_attr__( 'Belum ada video dipilih.', 'gloskin-site-core' ); ?>">
+							<div class="gloskin-admin-media-field" data-gloskin-hero-video-field data-empty-label="<?php echo esc_attr__( 'Belum ada video dipilih. Home akan menggunakan latar putih sampai video MP4/WebM dipilih.', 'gloskin-site-core' ); ?>" data-unsupported-label="<?php echo esc_attr__( 'File yang dipilih bukan MP4/WebM. Home akan tetap menggunakan latar putih.', 'gloskin-site-core' ); ?>">
 								<input type="hidden" id="gloskin-hero-video-media-id" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[hero_video_media_id]" value="<?php echo esc_attr( $hero_video_media_id ? (string) $hero_video_media_id : '' ); ?>" />
-								<p class="gloskin-admin-media-field__filename" id="gloskin-hero-video-media-filename-label" data-gloskin-hero-video-filename><?php echo esc_html( '' !== $hero_video_filename ? $hero_video_filename : __( 'Belum ada video dipilih.', 'gloskin-site-core' ) ); ?></p>
+								<p class="gloskin-admin-media-field__filename" id="gloskin-hero-video-media-filename-label" data-gloskin-hero-video-filename><?php echo esc_html( '' !== $hero_video_filename ? $hero_video_filename : __( 'Belum ada video dipilih. Home akan menggunakan latar putih sampai video MP4/WebM dipilih.', 'gloskin-site-core' ) ); ?></p>
+								<p class="gloskin-admin-media-field__warning" data-gloskin-hero-video-warning<?php echo '' === $hero_video_warning ? ' hidden' : ''; ?>><?php echo esc_html( $hero_video_warning ); ?></p>
 								<p>
 									<button type="button" class="button" data-gloskin-video-picker data-target="#gloskin-hero-video-media-id" data-title="<?php echo esc_attr__( 'Pilih video latar Home', 'gloskin-site-core' ); ?>" data-button="<?php echo esc_attr__( 'Gunakan video ini', 'gloskin-site-core' ); ?>" data-label-choose="<?php echo esc_attr__( 'Choose Video', 'gloskin-site-core' ); ?>" data-label-replace="<?php echo esc_attr__( 'Replace Video', 'gloskin-site-core' ); ?>"><?php echo esc_html( $hero_video_media_id ? __( 'Replace Video', 'gloskin-site-core' ) : __( 'Choose Video', 'gloskin-site-core' ) ); ?></button>
 									<button type="button" class="button button-link-delete" data-gloskin-video-remove data-target="#gloskin-hero-video-media-id" <?php echo $hero_video_media_id ? '' : 'hidden'; ?>><?php echo esc_html__( 'Remove Video', 'gloskin-site-core' ); ?></button>

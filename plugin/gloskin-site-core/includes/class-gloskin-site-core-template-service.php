@@ -254,16 +254,15 @@ final class Gloskin_Site_Core_Template_Service {
 		/* Home's one video owner resolves a Media Library attachment through
 		 * the existing settings option and shared hero renderer. */
 		$hero = array_merge( $hero, $this->hero_background_video() );
-		/* Final client requirement: Home's hero becomes a pure full-width
+		/* Home's hero is a strict full-width native-video surface: no
 		 * video hero -- no eyebrow/heading/copy/CTA/split column. One
 		 * explicit presentation mode on the SAME existing hero renderer
 		 * (gloskin_ui1_render_hero()); every other hero_context() caller
-		 * above is untouched and keeps rendering 'standard'. Unconditional
-		 * for Home: the renderer's existing media fallback chain (native
-		 * video -> attachment image -> editorial placeholder) still decides
-		 * what actually fills the media slot, this mode only removes the
-		 * text/CTA column and stretches the media full-width. */
+		 * above is untouched and keeps rendering 'standard'. Home never
+		 * passes its featured/page image into the video-only fallback path;
+		 * an absent/invalid native source produces the clean white state. */
 		$hero['mode'] = 'video-only';
+		$hero['media_id'] = 0;
 		return array(
 			'page' => $page,
 			'hero' => $hero,
@@ -971,9 +970,9 @@ final class Gloskin_Site_Core_Template_Service {
 	 * the same shared settings option's hero_video_media_id key to a real
 	 * WordPress Media Library attachment -- never a remote video
 	 * download, never a second settings option. Only MP4 and WebM Media
-	 * Library attachments resolve; anything else returns an empty sources array and
-	 * gloskin_ui1_render_hero()'s existing media fallback chain (attachment
-	 * image -> editorial placeholder) takes over exactly as it already does.
+	 * Library attachments resolve; anything else returns an empty sources
+	 * array and gloskin_ui1_render_hero() renders the clean white unavailable
+	 * state without an image/editorial fallback.
 	 *
 	 * @return array{sources:array<int,array{src:string,type:string}>}
 	 */

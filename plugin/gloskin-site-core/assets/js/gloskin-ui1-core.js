@@ -1862,6 +1862,11 @@
 			}
 		} else if (!state.playAttempted) {
 			state.playAttempted = true;
+			video.muted = true;
+			video.defaultMuted = true;
+			video.autoplay = true;
+			video.loop = true;
+			video.playsInline = true;
 			var playPromise;
 			try {
 				playPromise = video.play();

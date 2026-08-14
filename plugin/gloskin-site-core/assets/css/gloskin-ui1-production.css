@@ -521,19 +521,16 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 	body.woocommerce-cart .wc-block-cart__submit-container{padding-right:76px}
 }
 
-/* Home hero video-only mode (docs/task-treatment-consultation-commerce-
-   discovery.md sections 11-14, final polish): a pure full-width native
-   background video, no text/CTA column, no player chrome. The section
-   itself owns the fold-height geometry; the video/loader and the image/
-   editorial fallback (gloskin-ui1-hero__media--full, used only when no
-   native video is configured) both fill it via position:absolute + inset:0
-   + object-fit:cover -- a true CSS-background crop, never letterboxed,
-   never a fixed internal aspect-ratio box. No second Hero/video system. */
+/* Home strict video-only mode: a pure full-width native background video,
+   no text/CTA column, player chrome, poster or image/editorial fallback.
+   The section owns stable fold-height geometry; its native video fills the
+   surface through absolute inset cover. Missing/failed sources remain white.
+   No second Hero/video system. */
 .gloskin-ui1-hero--video-only{position:relative;overflow:hidden;width:100%;height:clamp(560px,88svh,980px);background:#fff}
-.gloskin-ui1-hero-bg-video,
-.gloskin-ui1-hero__media--full{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;border-radius:0;box-shadow:none;background:transparent}
-.gloskin-ui1-hero-bg-video__media,
-.gloskin-ui1-hero__media--full .gloskin-ui1-hero__image{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto;object-fit:cover;object-position:center center;border-radius:0;box-shadow:none;pointer-events:none}
+.gloskin-ui1-hero--video-only.is-video-unavailable,
+.gloskin-ui1-hero--video-only.is-video-failed{background:#fff}
+.gloskin-ui1-hero-bg-video{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;border-radius:0;box-shadow:none;background:transparent}
+.gloskin-ui1-hero-bg-video__media{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto;object-fit:cover;object-position:center center;border-radius:0;box-shadow:none;pointer-events:none}
 .gloskin-ui1-hero-bg-video,
 .gloskin-ui1-hero-bg-video__media,
 .gloskin-ui1-hero-bg-video__loader{pointer-events:none}

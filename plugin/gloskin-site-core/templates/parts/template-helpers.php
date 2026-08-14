@@ -160,11 +160,11 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 	 * media hero, no eyebrow/heading/copy/CTA/split column). No second
 	 * Hero service, no second video settings system.
 	 *
-	 * 'video-only' is Home's pure background-video surface: it prefers a
+	 * 'video-only' is Home's strict background-video surface: it accepts a
 	 * native <video> sourced from a real WordPress Media Library
 	 * attachment (see Template_Service::hero_background_video()) and never
-	 * renders remote video/player chrome -- only native video ->
-	 * attachment image -> editorial placeholder.
+	 * renders remote video/player chrome or static fallback media. Its only
+	 * outcomes are native video or a clean white unavailable state.
 	 *
 	 * @param array<string,mixed> $hero Hero context.
 	 * @return void
@@ -178,10 +178,15 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 		$video_only = isset( $hero['mode'] ) && 'video-only' === $hero['mode'];
 
 		if ( $video_only ) {
-			$bg_sources = isset( $hero['sources'] ) && is_array( $hero['sources'] ) ? $hero['sources'] : array();
+			$bg_sources = isset( $hero['sources'] ) && is_array( $hero['sources'] ) ? array_values( array_filter( $hero['sources'], static function ( $source ) {
+				return is_array( $source )
+					&& ! empty( $source['src'] )
+					&& isset( $source['type'] )
+					&& in_array( (string) $source['type'], array( 'video/mp4', 'video/webm' ), true );
+			} ) ) : array();
 			$has_bg_video = array() !== $bg_sources;
 			?>
-			<section class="gloskin-ui1-hero gloskin-ui1-hero--video-only<?php echo $has_bg_video ? ' is-video-preparing' : ''; ?>"<?php echo $has_bg_video ? ' data-gloskin-hero-bg-video-root' : ''; ?>>
+			<section class="gloskin-ui1-hero gloskin-ui1-hero--video-only <?php echo $has_bg_video ? 'is-video-preparing' : 'is-video-unavailable'; ?>"<?php echo $has_bg_video ? ' data-gloskin-hero-bg-video-root' : ''; ?>>
 				<?php if ( '' !== $heading ) : ?><h1 class="screen-reader-text"><?php echo esc_html( $heading ); ?></h1><?php endif; ?>
 				<?php if ( $has_bg_video ) : ?>
 					<div class="gloskin-ui1-hero-bg-video" data-gloskin-hero-bg-video-wrap>
@@ -191,25 +196,6 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 							<?php endforeach; ?>
 						</video>
 						<div class="gloskin-ui1-hero-bg-video__loader" aria-hidden="true"><span class="gloskin-ui1-hero-bg-video__loader-dot"></span></div>
-					</div>
-				<?php elseif ( $media ) : ?>
-					<div class="gloskin-ui1-hero__media gloskin-ui1-hero__media--full">
-						<?php
-						echo wp_get_attachment_image(
-							$media,
-							'full',
-							false,
-							array(
-								'class'         => 'gloskin-ui1-hero__image',
-								'fetchpriority' => 'high',
-								'decoding'      => 'async',
-							)
-						);
-						?>
-					</div>
-				<?php else : ?>
-					<div class="gloskin-ui1-hero__media gloskin-ui1-hero__media--full">
-						<?php gloskin_ui1_render_editorial_media( 'hero', $heading, 'gloskin-ui1-hero__image gloskin-ui1-hero__image--editorial', true ); ?>
 					</div>
 				<?php endif; ?>
 				<div class="gloskin-ui1-hero__fade" aria-hidden="true"></div>

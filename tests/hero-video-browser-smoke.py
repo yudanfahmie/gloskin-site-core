@@ -31,6 +31,15 @@ MARKUP = """<!doctype html><html><head><meta charset="utf-8"></head><body class=
   </section>
   <section id="next" style="height:600px">Next</section>
 </main></body></html>"""
+MARKUP_UNAVAILABLE = """<!doctype html><html><head><meta charset="utf-8"></head><body class="gloskin-ui1">
+<main class="gloskin-ui1-main">
+  <section class="gloskin-ui1-hero gloskin-ui1-hero--video-only is-video-unavailable">
+    <h1 class="screen-reader-text">Perawatan kulit</h1>
+    <div class="gloskin-ui1-hero__fade" aria-hidden="true"></div>
+    <button type="button" class="gloskin-ui1-hero__scroll-cue" data-gloskin-hero-scroll-cue aria-label="Gulir ke konten berikutnya"><span class="gloskin-ui1-hero__scroll-cue-dot"></span></button>
+  </section>
+  <section id="next" style="height:600px">Next</section>
+</main></body></html>"""
 
 
 def require(condition, message):
@@ -76,7 +85,9 @@ with sync_playwright() as playwright:
     loader = page.locator(".gloskin-ui1-hero-bg-video__loader")
 
     require(page.locator("video[data-gloskin-hero-bg-video]").count() == 1, "exactly one native video must render")
+    require(page.locator("img").count() == 0, "strict video-only Home must render no image fallback")
     require(page.locator("iframe").count() == 0, "Home must render no iframe")
+    require(page.locator("video[poster], video[controls]").count() == 0, "Home video must render no poster or controls")
     require(page.locator("[data-gloskin-hero-scroll-cue]").count() == 1, "exactly one scroll cue must render")
     require(page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), "hero must not cause horizontal overflow")
     require(hero.evaluate("el => getComputedStyle(el).backgroundColor") == "rgb(255, 255, 255)", "preparing surface must be white")
@@ -100,6 +111,23 @@ with sync_playwright() as playwright:
     page.locator("[data-gloskin-hero-scroll-cue]").click()
     require(page.evaluate("document.querySelector('#next').getBoundingClientRect().top < window.innerHeight"), "scroll cue must reach the next section")
     page.close()
+
+    failed = browser.new_page(viewport={"width": 390, "height": 844})
+    install_fixture(failed)
+    failed.evaluate("document.querySelector('[data-gloskin-hero-bg-video]').dispatchEvent(new Event('error'))")
+    failed.wait_for_function("document.querySelector('.gloskin-ui1-hero').classList.contains('is-video-failed')")
+    require(failed.locator(".gloskin-ui1-hero--video-only").evaluate("el => getComputedStyle(el).backgroundColor") == "rgb(255, 255, 255)", "native error state must stay white")
+    require(failed.locator(".gloskin-ui1-hero-bg-video__media").evaluate("el => getComputedStyle(el).opacity") == "0", "failed video must remain hidden")
+    require(failed.locator(".gloskin-ui1-hero-bg-video__loader").evaluate("el => getComputedStyle(el).opacity") == "0", "native error must release the loader")
+    require(failed.locator("img, iframe, video[poster], video[controls]").count() == 0, "failure state must not reveal fallback/player chrome")
+    failed.close()
+
+    unavailable = browser.new_page(viewport={"width": 390, "height": 844})
+    unavailable.set_content(MARKUP_UNAVAILABLE)
+    unavailable.add_style_tag(content=CSS)
+    require(unavailable.locator(".gloskin-ui1-hero--video-only").evaluate("el => getComputedStyle(el).backgroundColor") == "rgb(255, 255, 255)", "no-source state must stay white")
+    require(unavailable.locator("video, img, iframe, .gloskin-ui1-hero-bg-video__loader").count() == 0, "no-source state must render no media or indefinite loader")
+    unavailable.close()
 
     reduced = browser.new_page(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
     install_fixture(reduced, ready_state=2, paused=True)

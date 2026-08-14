@@ -103,6 +103,9 @@ function isReady(value) {
   run({}, () => {
     setupHeroBackgroundVideo(value.hero, value.wrap);
     assert.strictEqual(value.playCalls, 1);
+    for (const property of ['muted', 'defaultMuted', 'autoplay', 'loop', 'playsInline']) {
+      assert.strictEqual(value.video[property], true, `controller must enforce ${property} before playback`);
+    }
     assert.strictEqual(isReady(value), false);
     value.video.dispatch('playing');
     assert.strictEqual(isReady(value), true);
@@ -249,5 +252,8 @@ const controllerSource = fs.readFileSync(path.join(__dirname, '../plugin/gloskin
 const section = controllerSource.slice(controllerSource.indexOf('Hero Background Video'), controllerSource.indexOf("Home video-only hero's one scroll cue"));
 assert.strictEqual(section.includes('setInterval'), false, 'controller must not poll');
 assert.strictEqual((section.match(/video\.play\(\)/g) || []).length, 1, 'controller source must contain one play call');
+for (const assignment of ['video.muted = true', 'video.defaultMuted = true', 'video.autoplay = true', 'video.loop = true', 'video.playsInline = true']) {
+  assert.ok(section.indexOf(assignment) >= 0 && section.indexOf(assignment) < section.indexOf('video.play()'), `${assignment} must precede the one play call`);
+}
 
 console.log('hero-video.test.js: OK');

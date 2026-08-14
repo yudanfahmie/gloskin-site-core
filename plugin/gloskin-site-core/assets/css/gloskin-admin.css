@@ -91,6 +91,7 @@
 /* Background video Media Library field (Hero tab). */
 .gloskin-admin-media-field{padding:var(--gloskin-admin-space-3) var(--gloskin-admin-space-4);border:1px solid var(--gloskin-admin-border);border-radius:var(--gloskin-admin-radius);background:var(--gloskin-admin-surface-muted);margin-bottom:var(--gloskin-admin-space-4)}
 .gloskin-admin-media-field__filename{margin:0 0 var(--gloskin-admin-space-2);color:var(--gloskin-admin-text);font-weight:600;word-break:break-all}
+.gloskin-admin-media-field__warning{margin:0 0 var(--gloskin-admin-space-2);padding:8px 10px;border-left:3px solid var(--gloskin-admin-accent);border-radius:4px;background:var(--gloskin-admin-accent-soft);color:var(--gloskin-admin-text);font-size:12px}
 .gloskin-admin-media-field p:last-child{margin-bottom:0}
 
 @media (max-width:900px){

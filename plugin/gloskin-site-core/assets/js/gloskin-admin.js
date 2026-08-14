@@ -100,6 +100,12 @@
 
 					var filename = field.querySelector('[data-gloskin-hero-video-filename]');
 					if (filename) { filename.textContent = attachment.filename || attachment.title || ''; }
+					var warning = field.querySelector('[data-gloskin-hero-video-warning]');
+					var supported = attachment.mime === 'video/mp4' || attachment.mime === 'video/webm';
+					if (warning) {
+						warning.textContent = supported ? '' : (field.getAttribute('data-unsupported-label') || 'Select an MP4 or WebM video.');
+						warning.hidden = supported;
+					}
 					button.textContent = button.getAttribute('data-label-replace') || 'Replace Video';
 
 					var removeButton = field.querySelector('[data-gloskin-video-remove]');
@@ -124,6 +130,8 @@
 					if (filename) { filename.textContent = field.getAttribute('data-empty-label') || 'Belum ada video dipilih.'; }
 					var chooseButton = field.querySelector('[data-gloskin-video-picker]');
 					if (chooseButton) { chooseButton.textContent = chooseButton.getAttribute('data-label-choose') || 'Choose Video'; }
+					var warning = field.querySelector('[data-gloskin-hero-video-warning]');
+					if (warning) { warning.textContent = ''; warning.hidden = true; }
 				}
 				button.hidden = true;
 			});
