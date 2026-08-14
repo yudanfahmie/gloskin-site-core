@@ -201,6 +201,26 @@ for expected in \
   grep -Fq -- "$expected" "$core_css" || { echo "premium header refinement missing: $expected" >&2; exit 1; }
 done
 
+# Home-only header entrance: CSS-only, opacity/filter only (never transform,
+# which sticky hide/reveal already owns), scoped to body.gloskin-ui1--home so
+# standard pages are untouched, and fully disabled under reduced motion.
+if ! grep -Eq -- '@keyframes gloskin-ui1-header-intro\{from\{opacity:0;filter:blur\([1-4]px\)\}to\{opacity:1;filter:blur\(0\)\}\}' "$core_base_css"; then
+  echo "Home header intro keyframes missing or exceed the 4px blur ceiling" >&2
+  exit 1
+fi
+grep -qF -- 'body.gloskin-ui1--home .gloskin-ui1-header{animation:gloskin-ui1-header-intro' "$core_base_css" \
+  || { echo "Home header intro is not scoped to body.gloskin-ui1--home .gloskin-ui1-header" >&2; exit 1; }
+grep -qF -- 'body.gloskin-ui1--home .gloskin-ui1-header{animation:none;opacity:1;filter:none}' "$core_base_css" \
+  || { echo "Home header intro reduced-motion override missing" >&2; exit 1; }
+if grep -Eq -- '@keyframes gloskin-ui1-header-intro\{[^}]*transform' "$core_base_css"; then
+  echo "Home header intro must never animate transform (already sticky-hide owned)" >&2
+  exit 1
+fi
+if grep -RIn 'gloskin-ui1--home\|gloskin-ui1-header-intro' "$plugin_root/assets/js" --include='*.js' >/dev/null 2>&1; then
+  echo "Home header intro must stay CSS-only; no JS controller/timer may reference it" >&2
+  exit 1
+fi
+
 if [[ ! -f "$production_css" ]] \
   || ! grep -q -- '--gloskin-font-body:"Mulish"' "$production_css" \
   || ! grep -q -- '--gloskin-font-heading:"Marcellus"' "$production_css"; then

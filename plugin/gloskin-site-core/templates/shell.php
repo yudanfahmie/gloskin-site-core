@@ -24,6 +24,13 @@ require __DIR__ . '/parts/template-helpers.php';
 require __DIR__ . '/parts/readiness-helpers.php';
 require __DIR__ . '/parts/composition-helpers.php';
 require __DIR__ . '/parts/product-description-boundary.php';
+$gloskin_body_classes = array( 'gloskin-ui1', 'gloskin-ui1--' . $gloskin_variant );
+if ( 'home' === $gloskin_view ) {
+	/* Home-only header entrance owner (see gloskin-ui1-core-base.css). No
+	 * second view/body-class owner is introduced -- $gloskin_view is the
+	 * same canonical value gloskin_ui1_render_breadcrumbs() already reads. */
+	$gloskin_body_classes[] = 'gloskin-ui1--home';
+}
 ?><!doctype html>
 <html lang="id">
 <head>
@@ -31,7 +38,7 @@ require __DIR__ . '/parts/product-description-boundary.php';
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<?php wp_head(); ?>
 </head>
-<body <?php body_class( array( 'gloskin-ui1', 'gloskin-ui1--' . $gloskin_variant ) ); ?>>
+<body <?php body_class( $gloskin_body_classes ); ?>>
 <?php wp_body_open(); ?>
 <?php require __DIR__ . '/parts/header.php'; ?>
 <main id="gloskin-main" class="gloskin-ui1-main">

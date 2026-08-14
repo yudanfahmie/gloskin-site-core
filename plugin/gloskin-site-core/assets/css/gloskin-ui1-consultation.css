@@ -119,9 +119,19 @@
 .gloskin-ui1-consultation__chip input:focus-visible+span{outline:3px solid var(--gloskin-accent-readable);outline-offset:3px}
 .gloskin-ui1-consultation__actions{display:flex;justify-content:center}
 .gloskin-ui1-consultation__submit:disabled{opacity:.48;cursor:not-allowed;transform:none}
-.gloskin-ui1-consultation__disclaimer{
-	max-width:var(--gloskin-reading);
-	margin:0 auto;
+/* Scoped under its panel owner (two classes) so this wins over the base
+ * `.gloskin-ui1 p{margin:0 0 1em}` rule's own margin:0 shorthand on
+ * specificity alone, with no priority-escalation declaration required.
+ * justify-self is the grid-item-level centering owner (the panel is
+ * display:grid); width/margin-inline/text-align are the redundant
+ * belt-and-suspenders centering that also holds if this is ever read
+ * outside a grid context. */
+.gloskin-ui1-consultation__panel .gloskin-ui1-consultation__disclaimer{
+	justify-self:center;
+	width:fit-content;
+	max-width:min(100%,52ch);
+	margin-block:0;
+	margin-inline:auto;
 	color:var(--gloskin-muted);
 	font-size:.88rem;
 	text-align:center;

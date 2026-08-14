@@ -68,6 +68,14 @@ for (const forbidden of ['wishlist', 'add_to_cart', 'ajax_add_to_cart', 'quickad
   expect(!variant.toLowerCase().includes(forbidden.toLowerCase()), `Consultation variant must be detail-only: ${forbidden}`);
 }
 
+expect(treatmentTemplate.includes('gloskin-ui1-consultation__disclaimer'), 'Public finder disclaimer canonical class must remain');
+expect(templateService.includes('Hasil ini membantu eksplorasi pilihan dan bukan diagnosis medis.'), 'Public finder disclaimer copy must remain');
+expect(/\.gloskin-ui1-consultation__panel \.gloskin-ui1-consultation__disclaimer\{[\s\S]*?margin-inline:auto;[\s\S]*?text-align:center;[\s\S]*?\}/.test(frontendCss), 'Disclaimer must be centered via margin-inline:auto and text-align:center under its canonical panel-scoped owner');
+expect(/\.gloskin-ui1-consultation__disclaimer\{[^}]*max-width:min\(100%,52ch\)/.test(frontendCss), 'Disclaimer must keep a bounded max-width');
+for (const hack of ['gloskin-ui1-consultation__disclaimer{position:absolute', 'gloskin-ui1-consultation__disclaimer{left:', 'translateX']) {
+  expect(!frontendCss.includes(hack), `Disclaimer centering must contain zero absolute/translate hack: ${hack}`);
+}
+
 expect(frontendCss.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), 'Desktop result grid must use two columns');
 expect(frontendCss.includes('@media (max-width:720px)') && frontendCss.includes('grid-template-columns:minmax(0,1fr)'), 'Mobile result grid must stack to one column');
 expect(frontendCss.includes('-webkit-line-clamp:3'), 'Result copy must clamp without an internal scrollbar');

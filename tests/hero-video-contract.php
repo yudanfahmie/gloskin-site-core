@@ -128,6 +128,10 @@ foreach ( array( 'video.muted = true', 'video.defaultMuted = true', 'video.autop
 }
 ok( 1 === substr_count( $controller, 'video.play()' ), 'controller must attempt play at most once' );
 ok( false === strpos( $js, 'setInterval' ), 'hero controller must not poll' );
+foreach ( array( "addEventListener('ended'", 'addEventListener("ended"' ) as $ended_listener ) {
+	ok( false === strpos( $controller, $ended_listener ), 'hero controller must own zero ended-based replay listener -- native loop is the sole looping owner' );
+}
+ok( false !== strpos( $controller, 'video.loop = true' ), 'controller must retain native loop=true; it never owns looping itself' );
 
 $video_branch_start = strpos( $helpers, 'if ( $video_only ) {' );
 $video_branch_end = strpos( $helpers, '<section class="gloskin-ui1-hero">', $video_branch_start );
