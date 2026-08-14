@@ -493,6 +493,8 @@ Historical references in Markdown/audit comments are allowed.
 
 ## 18. Decision rule for adding infrastructure
 
+Treatment Finder closure stays within the existing owners: ContentService retains the private path/concern/question schema, TemplateService projects valid paths/concerns and mapped SSR Woo products, the existing WooCommerceAdapter remains the sole product-query boundary, and the conditionally loaded consultation asset owns request-local interaction only. It adds no service, custom table, public endpoint, fetch/AJAX path, browser persistence or duplicate commerce controller; private questions remain admin data rather than a public readiness dependency.
+
 Before adding a new framework/service/hardening layer, the developer must be able to answer:
 
 1. Which current Gloskin requirement needs it?

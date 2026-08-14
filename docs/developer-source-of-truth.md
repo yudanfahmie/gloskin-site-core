@@ -156,10 +156,10 @@ Recommended structure:
 - WooCommerce Products: skincare products and any purchasable Treatment Products
 - private taxonomy `gloskin_product_family`: product classification (`skincare`, `treatment`)
 - private taxonomy `gloskin_concern`: Treatment Product recommendation vocabulary
-- private taxonomy `gloskin_consultation_path`: questionnaire path vocabulary
-- private CPT `gloskin_question`: questionnaire questions only; never a public route or purchasable entity
+- private taxonomy `gloskin_consultation_path`: Treatment Finder focus-path vocabulary
+- private CPT `gloskin_question`: admin/private question records retained for content operations; never projected publicly, a public route or a purchasable entity
 
-For Treatment Consultation, WooCommerce `product` is the sole purchasable entity. The existing eight `gloskin_treatment` records remain an informational directory and must not be converted into products. Product↔concern taxonomy relationships are the sole recommendation mapping source; visitor questionnaire answers/scores/history are frontend runtime state only and must not be persisted.
+For Treatment Consultation, WooCommerce `product` is the sole purchasable entity. The existing eight `gloskin_treatment` records remain an informational directory and must not be converted into products. Product↔concern taxonomy relationships are the sole recommendation mapping source; the visitor's current path and multi-selected concern IDs are frontend runtime state only and must not be persisted.
 
 If a future developer can implement a simpler equivalent with native Pages instead of one of the three public CPTs, that is acceptable only if URL behavior, editing capability, relationships and templates remain equivalent. Do not add a custom database table for these content types without a demonstrated technical need.
 
@@ -227,12 +227,11 @@ Support:
 
 - hub hero/introduction;
 - exactly eight approved treatment category cards/entries;
-- optional featured treatment area driven by content, not hard-coded template assumptions;
-- related clinic/doctor discovery where data exists;
-- booking CTA;
-- additive Treatment Consultation flow when its private data contract is ready.
+- a four-photo Treatment Finder with canonical baseline concern chips and an explicit search CTA when its private path/concern/product data is ready;
+- all eight informational treatment entries below the finder;
+- one final consultation/booking CTA.
 
-Treatment Consultation path/question scoring is client-side presentation over canonical WordPress/Woo data. It must reuse the canonical Woo product-card/add-to-cart runtime, cap recommendations at eight cards, and leave the informational treatment directory below it.
+Treatment Finder scoring is client-side presentation over server-rendered canonical WordPress/Woo data. Each product scores by the count of selected concern IDs it shares, positive matches are ranked descending with stable Woo order for ties, and output is capped at eight. Results use the shared detail-only consultation product-card variant: one PDP link, factual Woo image/title/description/price, and no wishlist, add-to-cart or Quick Add controls. Private questions are not a public readiness dependency or payload.
 
 ### 8.4 Treatment category
 
@@ -686,8 +685,8 @@ The future implementation is complete only when all applicable points are true:
 - thirteen doctor records/templates are supported;
 - WooCommerce remains the sole product/commerce authority;
 - Shop, product, cart and checkout presentation do not replace Woo logic;
-- Treatment Consultation uses private WordPress taxonomy/question structures without a second purchasable entity or custom table;
-- product↔concern mapping has one native taxonomy source and questionnaire answers remain runtime-only;
+- Treatment Consultation retains private WordPress taxonomy/question structures without a second purchasable entity or custom table; private questions remain admin data and do not gate the public finder;
+- product↔concern mapping has one native taxonomy source and visitor path/concern selections remain runtime-only;
 - Contact delegates submission/mail to the configured form layer;
 - branch-specific WhatsApp and map/contact fields are supported;
 - desktop/mobile navigation is accessible;

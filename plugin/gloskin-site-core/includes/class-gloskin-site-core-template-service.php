@@ -295,16 +295,10 @@ final class Gloskin_Site_Core_Template_Service {
 	private function treatments_context() {
 		$page = $this->content_page( 'treatments' );
 		$cards = $this->post_cards( Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 8 );
-		$featured = $this->featured_factual_card( $cards );
-		$remaining = $featured ? array_values( array_filter( $cards, static function ( $card ) use ( $featured ) {
-			return (int) $card['id'] !== (int) $featured['id'];
-		} ) ) : $cards;
 		return array(
 			'page' => $page,
 			'hero' => $this->hero_context( $page, __( 'Perawatan', 'gloskin-site-core' ), __( 'Pelajari informasi perawatan Gloskin sebelum menentukan langkah konsultasi.', 'gloskin-site-core' ) ),
-			'featured_treatment' => $featured,
-			'treatments' => $remaining,
-			'doctors' => $this->post_cards( Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE, 3 ),
+			'treatments' => $cards,
 			'target' => Gloskin_Site_Core_Content_Service::TREATMENT_TARGET_COUNT,
 			/* Consultation discovery layer (docs/task-treatment-
 			 * consultation-commerce-discovery.md section 6): additive to
@@ -320,12 +314,15 @@ final class Gloskin_Site_Core_Template_Service {
 	 * paths exist -- the existing informational treatment content remains
 	 * fully usable regardless (section 4.3).
 	 *
-	 * @return array{paths:array<int,array<string,mixed>>,questions:array<int,array<string,mixed>>,products:array<int,array<string,mixed>>,disclaimer:string}
+	 * Questions remain private/admin-managed data but are deliberately not
+	 * projected into this simple public finder.
+	 *
+	 * @return array{paths:array<int,array<string,mixed>>,products:array<int,array<string,mixed>>,disclaimer:string}
 	 */
 	private function consultation_context() {
-		$empty = array( 'paths' => array(), 'questions' => array(), 'products' => array(), 'disclaimer' => '' );
+		$empty = array( 'paths' => array(), 'products' => array(), 'disclaimer' => '' );
 		if ( ! taxonomy_exists( Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY )
-			|| ! post_type_exists( Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE ) ) {
+			|| ! taxonomy_exists( Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY ) ) {
 			return $empty;
 		}
 
@@ -338,55 +335,48 @@ final class Gloskin_Site_Core_Template_Service {
 			return absint( get_term_meta( $a->term_id, Gloskin_Site_Core_Content_Service::PATH_META_ORDER, true ) ) <=> absint( get_term_meta( $b->term_id, Gloskin_Site_Core_Content_Service::PATH_META_ORDER, true ) );
 		} );
 
+		$concern_terms = get_terms( array( 'taxonomy' => Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY, 'hide_empty' => false ) );
+		$concern_terms = is_wp_error( $concern_terms ) ? array() : $concern_terms;
+		$concerns_by_id = array();
+		foreach ( $concern_terms as $concern_term ) {
+			$concerns_by_id[ (int) $concern_term->term_id ] = (string) $concern_term->name;
+		}
+
 		$paths = array();
-		foreach ( array_slice( $path_terms, 0, 4 ) as $term ) {
+		foreach ( $path_terms as $term ) {
+			$baseline_ids = array_values( array_unique( array_filter( array_map( 'absint', (array) get_term_meta( $term->term_id, Gloskin_Site_Core_Content_Service::PATH_META_BASELINE, true ) ) ) ) );
+			$path_concerns = array();
+			foreach ( $baseline_ids as $concern_id ) {
+				if ( isset( $concerns_by_id[ $concern_id ] ) ) {
+					$path_concerns[] = array( 'id' => $concern_id, 'label' => $concerns_by_id[ $concern_id ] );
+				}
+			}
+			if ( ! $path_concerns ) {
+				continue;
+			}
 			$paths[] = array(
 				'id'       => (int) $term->term_id,
 				'label'    => $term->name,
 				'image_id' => absint( get_term_meta( $term->term_id, Gloskin_Site_Core_Content_Service::PATH_META_IMAGE_ID, true ) ),
-				'baseline_concerns' => array_map( 'absint', (array) get_term_meta( $term->term_id, Gloskin_Site_Core_Content_Service::PATH_META_BASELINE, true ) ),
+				'concerns'  => $path_concerns,
 			);
-		}
-
-		$question_posts = get_posts(
-			array(
-				'post_type'      => Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE,
-				'post_status'    => 'publish',
-				'posts_per_page' => -1,
-				'orderby'        => 'ID',
-				'order'          => 'ASC',
-			)
-		);
-		$questions = array();
-		foreach ( $question_posts as $question_post ) {
-			$answers_raw = get_post_meta( $question_post->ID, Gloskin_Site_Core_Content_Service::ANSWER_META_KEY, true );
-			$answers_raw = is_array( $answers_raw ) ? $answers_raw : array();
-			if ( ! $answers_raw ) {
-				continue; // Readiness rule: a published question with zero valid answers never reaches the frontend.
+			if ( 4 === count( $paths ) ) {
+				break;
 			}
-			$path_ids = wp_get_post_terms( $question_post->ID, Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY, array( 'fields' => 'ids' ) );
-			$questions[] = array(
-				'id'       => (int) $question_post->ID,
-				'text'     => get_the_title( $question_post ),
-				'path_ids' => is_wp_error( $path_ids ) ? array() : array_map( 'absint', $path_ids ),
-				'answers'  => array_values( array_map( static function ( $answer ) {
-					return array(
-						'label'      => (string) $answer['label'],
-						'concern_id' => (int) $answer['concern_id'],
-						'weight'     => (int) $answer['weight'],
-					);
-				}, $answers_raw ) ),
-			);
 		}
-		if ( count( $questions ) < Gloskin_Site_Core_Content_Service::QUESTION_MIN_PUBLISHED ) {
+		if ( 4 !== count( $paths ) ) {
 			return $empty;
 		}
 
-		$products = $this->woocommerce->treatment_products_with_concerns();
+		$products = array_values( array_filter( $this->woocommerce->treatment_products_with_concerns(), static function ( $product ) {
+			return ! empty( $product['concern_ids'] );
+		} ) );
+		if ( ! $products ) {
+			return $empty;
+		}
 
 		return array(
 			'paths'      => $paths,
-			'questions'  => $questions,
 			'products'   => $products,
 			'disclaimer' => __( 'Hasil ini membantu eksplorasi pilihan dan bukan diagnosis medis.', 'gloskin-site-core' ),
 		);

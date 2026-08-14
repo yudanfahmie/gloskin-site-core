@@ -353,13 +353,43 @@ if ( ! function_exists( 'gloskin_ui1_render_wishlist_toggle' ) ) {
 if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
 	/**
 	 * @param array<string,mixed> $product Product data.
+	 * @param string              $variant Presentation variant; catalog remains the default.
 	 * @return void
 	 */
-	function gloskin_ui1_render_product_card( $product ) {
+	function gloskin_ui1_render_product_card( $product, $variant = 'catalog' ) {
 		$name     = isset( $product['name'] ) ? (string) $product['name'] : '';
 		$url      = isset( $product['url'] ) ? (string) $product['url'] : '';
 		$image_id = isset( $product['image_id'] ) ? absint( $product['image_id'] ) : 0;
 		$id       = isset( $product['id'] ) ? absint( $product['id'] ) : 0;
+		if ( 'consultation' === $variant ) {
+			$description = ! empty( $product['short_description'] ) ? wp_trim_words( wp_strip_all_tags( (string) $product['short_description'] ), 42 ) : '';
+			/* translators: %s: Treatment Product name. */
+			$detail_label = sprintf( __( 'Lihat detail %s', 'gloskin-site-core' ), $name );
+			?>
+			<article class="gloskin-ui1-card gloskin-ui1-card--product gloskin-ui1-card--consultation">
+				<a class="gloskin-ui1-consultation-card" href="<?php echo esc_url( $url ); ?>" aria-label="<?php echo esc_attr( $detail_label ); ?>">
+					<span class="gloskin-ui1-consultation-card__main">
+						<span class="gloskin-ui1-consultation-card__media">
+							<?php if ( $image_id ) : ?>
+								<?php echo wp_get_attachment_image( $image_id, 'woocommerce_thumbnail', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-consultation-card__image' ) ); ?>
+							<?php else : ?>
+								<?php gloskin_ui1_render_editorial_media( 'treatment', $name, 'gloskin-ui1-consultation-card__image gloskin-ui1-consultation-card__image--decorative' ); ?>
+							<?php endif; ?>
+						</span>
+						<span class="gloskin-ui1-consultation-card__content">
+							<span class="gloskin-ui1-consultation-card__title"><?php echo esc_html( $name ); ?></span>
+							<?php if ( '' !== $description ) : ?><span class="gloskin-ui1-consultation-card__copy"><?php echo esc_html( $description ); ?></span><?php endif; ?>
+						</span>
+					</span>
+					<span class="gloskin-ui1-consultation-card__footer">
+						<?php if ( ! empty( $product['price_html'] ) ) : ?><span class="gloskin-ui1-consultation-card__price"><?php echo wp_kses_post( (string) $product['price_html'] ); ?></span><?php endif; ?>
+					</span>
+					<span class="gloskin-ui1-consultation-card__action" aria-hidden="true"><?php echo esc_html__( 'Lihat Detail', 'gloskin-site-core' ); ?></span>
+				</a>
+			</article>
+			<?php
+			return;
+		}
 		$type     = isset( $product['type'] ) ? (string) $product['type'] : '';
 		$is_variable = 'variable' === $type;
 		$can_purchase = ! empty( $product['purchasable'] ) && ! empty( $product['in_stock'] );

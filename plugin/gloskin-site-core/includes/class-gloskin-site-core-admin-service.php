@@ -973,7 +973,7 @@ final class Gloskin_Site_Core_Admin_Service {
 		$this->render_readiness_card( __( 'Jalur Konsultasi', 'gloskin-site-core' ), count( $paths ) . ' / ' . Gloskin_Site_Core_Content_Service::PATH_MIN_VALID, count( $paths ) < Gloskin_Site_Core_Content_Service::PATH_MIN_VALID );
 		$this->render_readiness_card( __( 'Produk Perawatan', 'gloskin-site-core' ), (string) $treatment_count, 0 === $treatment_count );
 		$this->render_readiness_card( __( 'Keluhan', 'gloskin-site-core' ), (string) $concern_count, 0 === $concern_count );
-		$this->render_readiness_card( __( 'Pertanyaan Terpublikasi', 'gloskin-site-core' ), $published_questions . ' / ' . Gloskin_Site_Core_Content_Service::QUESTION_MIN_PUBLISHED, $published_questions < Gloskin_Site_Core_Content_Service::QUESTION_MIN_PUBLISHED );
+		$this->render_readiness_card( __( 'Pertanyaan Terpublikasi (data admin)', 'gloskin-site-core' ), $published_questions . ' / ' . Gloskin_Site_Core_Content_Service::QUESTION_MIN_PUBLISHED, false, true );
 		$this->render_readiness_card( __( 'Produk Belum Dipetakan', 'gloskin-site-core' ), (string) $unmapped_count, $unmapped_count > 0 );
 		$this->render_readiness_card( __( 'Jawaban Tidak Valid/Orphan', 'gloskin-site-core' ), (string) $orphan_answers, $orphan_answers > 0 );
 		echo '</div>';
@@ -999,8 +999,8 @@ final class Gloskin_Site_Core_Admin_Service {
 	 * @param bool   $warn Whether to visually flag this as needing attention.
 	 * @return void
 	 */
-	private function render_readiness_card( $label, $value, $warn ) {
-		$class = 'gloskin-consultation-metric-card' . ( $warn ? ' is-warning' : ' is-ready' );
+	private function render_readiness_card( $label, $value, $warn, $informational = false ) {
+		$class = 'gloskin-consultation-metric-card' . ( $informational ? ' is-info' : ( $warn ? ' is-warning' : ' is-ready' ) );
 		echo '<div class="' . esc_attr( $class ) . '"><p class="gloskin-consultation-metric-card__label">' . esc_html( $label ) . '</p><p class="gloskin-consultation-metric-card__value">' . esc_html( $value ) . '</p></div>';
 	}
 

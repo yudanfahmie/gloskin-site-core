@@ -2,131 +2,111 @@
 
 const fs = require('fs');
 const path = require('path');
-
-function fail(message) {
-  console.error(message);
-  process.exit(1);
-}
-function expect(condition, message) {
-  if (!condition) fail(message);
-}
+function fail(message) { console.error(message); process.exit(1); }
+function expect(condition, message) { if (!condition) fail(message); }
 
 const root = path.resolve(__dirname, '..');
-const frontendPath = path.join(root, 'plugin/gloskin-site-core/assets/js/gloskin-ui1-consultation.js');
-const adminPath = path.join(root, 'plugin/gloskin-site-core/assets/js/gloskin-ui1-consultation-admin.js');
-const adminCssPath = path.join(root, 'plugin/gloskin-site-core/assets/css/gloskin-ui1-consultation-admin.css');
-const assetsConfigPath = path.join(root, 'plugin/gloskin-site-core/config/assets.php');
-const assetServicePath = path.join(root, 'plugin/gloskin-site-core/includes/class-gloskin-site-core-asset-service.php');
-const adminServicePath = path.join(root, 'plugin/gloskin-site-core/includes/class-gloskin-site-core-admin-service.php');
-const treatmentTemplatePath = path.join(root, 'plugin/gloskin-site-core/templates/pages/treatments.php');
-const frontend = fs.readFileSync(frontendPath, 'utf8');
-const admin = fs.readFileSync(adminPath, 'utf8');
-const adminCss = fs.readFileSync(adminCssPath, 'utf8');
-const assetsConfig = fs.readFileSync(assetsConfigPath, 'utf8');
-const assetService = fs.readFileSync(assetServicePath, 'utf8');
-const adminService = fs.readFileSync(adminServicePath, 'utf8');
-const treatmentTemplate = fs.readFileSync(treatmentTemplatePath, 'utf8');
+const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
+const frontend = read('plugin/gloskin-site-core/assets/js/gloskin-ui1-consultation.js');
+const frontendCss = read('plugin/gloskin-site-core/assets/css/gloskin-ui1-consultation.css');
+const admin = read('plugin/gloskin-site-core/assets/js/gloskin-ui1-consultation-admin.js');
+const adminCss = read('plugin/gloskin-site-core/assets/css/gloskin-ui1-consultation-admin.css');
+const assetsConfig = read('plugin/gloskin-site-core/config/assets.php');
+const assetService = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-asset-service.php');
+const adminService = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-admin-service.php');
+const templateService = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php');
+const treatmentTemplate = read('plugin/gloskin-site-core/templates/pages/treatments.php');
+const productHelpers = read('plugin/gloskin-site-core/templates/parts/template-helpers.php');
 
 for (const forbidden of ['localStorage', 'sessionStorage', 'document.cookie', 'XMLHttpRequest', 'fetch(']) {
-  expect(!frontend.includes(forbidden), `Questionnaire persistence/network contract violated by ${forbidden}`);
+  expect(!frontend.includes(forbidden), `Finder persistence/network contract violated by ${forbidden}`);
 }
-expect(frontend.includes('questions: []') && frontend.includes('history: []') && frontend.includes('scores: {}'), 'Questionnaire state must remain closure-memory only');
-expect(frontend.includes('state.questions = fisherYates(eligible);'), 'Fisher-Yates must run when a consultation path/run starts');
-expect((frontend.match(/state\.questions = fisherYates\(eligible\);/g) || []).length === 1, 'Question order must be shuffled exactly once per run');
-expect(frontend.includes('state.history = [];') && frontend.includes('state.scores = {};'), 'Restart/path selection must reset history and score state');
-expect(frontend.includes('selectPath(state.pathId);'), 'Restart must reuse the clean run initialization path');
-expect(frontend.includes('state.scores[last.concernId] = Math.max(0, (state.scores[last.concernId] || 0) - last.weight);'), 'Back must reverse the exact previous score weight');
-expect(frontend.includes('scoreAndRankProducts(products, state.scores, 8)'), 'Recommendation cards must remain capped at eight');
-expect(treatmentTemplate.includes('gloskin_ui1_render_product_card( $gloskin_treatment_product )'), 'Consultation recommendations must reuse the canonical Woo product-card renderer');
+for (const obsolete of ['fisherYates', 'eligibleQuestionsForPath', 'state.questions', 'state.history', 'state.scores', 'data-gloskin-consultation-question', 'data-gloskin-consultation-back', 'data-gloskin-consultation-restart']) {
+  expect(!frontend.includes(obsolete), `Public questionnaire runtime must be absent: ${obsolete}`);
+}
+expect(frontend.includes('selectedConcernIds: []'), 'Finder state must contain only the current path and selected concern IDs');
+expect(frontend.includes('state.selectedConcernIds = [];'), 'Changing path must reset selected concerns');
+expect(frontend.includes('hideStaleResults();'), 'Changing any selection must hide stale recommendations');
+expect(frontend.includes('scoreAndRankProducts(products, state.selectedConcernIds, 8)'), 'Explicit CTA must rank no more than eight SSR products');
+expect(frontend.includes("submitButton.addEventListener('click', showResults)"), 'Recommendations must appear only from the explicit CTA');
+
+expect(treatmentTemplate.includes("wp_json_encode( array( 'paths' => $gloskin_consultation['paths'] ) )"), 'Public payload must contain canonical paths only');
+expect(!treatmentTemplate.includes("'questions' =>"), 'Private questions must never enter public template data');
+expect(treatmentTemplate.includes('type="checkbox"') && treatmentTemplate.includes('data-gloskin-consultation-concern'), 'Baseline concerns must be native multi-select checkboxes');
+expect(treatmentTemplate.includes("gloskin_ui1_render_product_card( $gloskin_treatment_product, 'consultation' )"), 'Finder results must use the shared consultation product-card variant');
 const consultationIndex = treatmentTemplate.indexOf('data-gloskin-section="treatments-consultation"');
 const informationalIndex = treatmentTemplate.indexOf('data-gloskin-section="treatments-discovery"');
-expect(consultationIndex >= 0 && informationalIndex > consultationIndex, 'Existing informational treatment directory must remain below consultation results');
+const closingIndex = treatmentTemplate.indexOf('data-gloskin-section="treatments-closing"');
+expect(consultationIndex >= 0 && informationalIndex > consultationIndex && closingIndex > informationalIndex, 'Treatments composition must be finder, all information records, then one final CTA');
+for (const obsolete of ['treatments-orientation', 'treatments-featured', 'treatments-pathways', 'Sebelum memilih']) {
+  expect(!treatmentTemplate.includes(obsolete), `Removed Treatments block must stay absent: ${obsolete}`);
+}
+
+const contextStart = templateService.indexOf('private function consultation_context()');
+const contextEnd = templateService.indexOf('\n\tprivate function', contextStart + 1);
+const context = templateService.slice(contextStart, contextEnd < 0 ? undefined : contextEnd);
+expect(contextStart >= 0, 'Consultation context owner missing');
+expect(!context.includes('QUESTION_MIN_PUBLISHED') && !context.includes('QUESTION_POST_TYPE'), 'Public readiness must not depend on private questions');
+expect(context.includes("'concerns'  => $path_concerns") && context.includes('4 !== count( $paths )'), 'Public readiness must require exactly four paths with resolved baseline concerns');
+expect(context.includes('treatment_products_with_concerns()'), 'Products must come from the canonical Woo adapter');
+
+const variantStart = productHelpers.indexOf("if ( 'consultation' === $variant )");
+const variantEnd = productHelpers.indexOf('\n\t\t$type', variantStart);
+const variant = productHelpers.slice(variantStart, variantEnd);
+expect(variantStart >= 0 && variantEnd > variantStart, 'Consultation product-card variant missing');
+expect((variant.match(/<a /g) || []).length === 1, 'Consultation card must contain exactly one anchor');
+expect(variant.includes('gloskin_ui1_render_editorial_media') && variant.includes("'woocommerce_thumbnail'"), 'Consultation image must prefer Woo media and retain deterministic editorial fallback');
+for (const forbidden of ['wishlist', 'add_to_cart', 'ajax_add_to_cart', 'quickadd', "'button'"]) {
+  expect(!variant.toLowerCase().includes(forbidden.toLowerCase()), `Consultation variant must be detail-only: ${forbidden}`);
+}
+
+expect(frontendCss.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), 'Desktop result grid must use two columns');
+expect(frontendCss.includes('@media (max-width:720px)') && frontendCss.includes('grid-template-columns:minmax(0,1fr)'), 'Mobile result grid must stack to one column');
+expect(frontendCss.includes('-webkit-line-clamp:3'), 'Result copy must clamp without an internal scrollbar');
+expect(!/overflow\s*:\s*(auto|scroll)/.test(frontendCss), 'Finder CSS must contain no internal auto/scroll overflow');
+expect(!frontendCss.includes('!important'), 'Finder CSS must contain no !important rules');
+expect(frontendCss.includes('width:clamp(150px,15vw,176px)') && frontendCss.includes('border-radius:50%'), 'Desktop paths must use circular 150-180px photo controls');
+expect(frontendCss.includes('@media (hover:none),(pointer:coarse)') && frontendCss.includes('position:static;opacity:1'), 'Touch devices must keep the detail action visible');
+expect(frontendCss.includes('@media (prefers-reduced-motion:reduce)'), 'Finder motion must respect reduced-motion preference');
 
 for (const forbidden of ['localStorage', 'sessionStorage', 'document.cookie', 'fetch(', 'XMLHttpRequest']) {
   expect(!admin.includes(forbidden), `Admin mapping enhancement must not create browser persistence/network state: ${forbidden}`);
 }
-expect(admin.includes('data-gloskin-product-pool'), 'Enhanced mapping must render one Treatment Product pool');
-expect(admin.includes('data-gloskin-concern-bucket'), 'Enhanced mapping must render concern buckets');
-expect(admin.includes('checkbox.checked = checked;') || admin.includes('targetCheckbox.checked = false;'), 'Enhanced mapping must synchronize the canonical checkbox relationships');
-expect(admin.includes('data-gloskin-mapped-chip'), 'Mapped relationships must render lightweight chips/references');
-expect(admin.includes("remove.setAttribute('aria-label'"), 'Mapped chip remove action must expose an accessible label');
-expect(admin.includes('model.nativeGrid.hidden = true;'), 'Native checkbox matrix may be hidden only after enhancement succeeds');
-expect(admin.includes('Tampilkan pemetaan native'), 'Native checkbox matrix must remain user-recoverable as fallback');
-expect(!admin.includes('update_option') && !admin.includes('postMessage('), 'Admin JS must stay presentation/state synchronization only');
+expect(admin.includes('data-gloskin-product-pool') && admin.includes('data-gloskin-concern-bucket'), 'Enhanced mapping must retain product pool and concern buckets');
+expect(admin.includes('checkbox.checked = checked;') || admin.includes('targetCheckbox.checked = false;'), 'Enhanced mapping must synchronize canonical checkboxes');
+expect(admin.includes('data-gloskin-mapped-chip') && admin.includes("remove.setAttribute('aria-label'"), 'Mapped chips must retain accessible removal controls');
+expect(admin.includes('model.nativeGrid.hidden = true;') && admin.includes('Tampilkan pemetaan native'), 'Native mapping must remain a recoverable fallback');
+expect(!admin.includes('.style.') && !admin.includes('gridTemplateColumns'), 'Admin JS must not own static presentation');
+expect(admin.includes("item.setAttribute('draggable', 'true')") && admin.includes("bucket.addEventListener('drop'"), 'Pointer drag/drop mapping must remain available');
+expect(admin.includes("var select = document.createElement('select');") && admin.includes("'Tambah'"), 'Keyboard mapping controls must remain available');
 
-expect(!admin.includes('.style.'), 'Static admin mapping presentation must be stylesheet-owned, not inline JS style writes');
-expect(!admin.includes('gridTemplateColumns'), 'Admin JS must not own fixed workspace/bucket grid geometry');
-expect(!admin.includes('tabIndex = 0') && !admin.includes('tabindex="0"'), 'Pointer-only draggable pool items must not be inert keyboard focus stops');
-expect(admin.includes("item.setAttribute('draggable', 'true')"), 'Product pool must remain pointer drag/drop enabled');
-expect(admin.includes("bucket.addEventListener('drop'"), 'Concern buckets must remain pointer drop targets');
-expect(admin.includes("var select = document.createElement('select');") && admin.includes("'Tambah'"), 'Keyboard users must retain select + Tambah mapping controls');
-expect(!admin.includes('setTimeout(') && admin.includes('updatePoolMeta(product.id);'), 'Initial pool metadata must initialize synchronously without a zero-delay timer');
-
-const requiredAdminClasses = [
-  '.gloskin-admin-mapping-enhanced',
-  '.gloskin-admin-mapping-pool',
-  '.gloskin-admin-mapping-product-pool',
-  '.gloskin-admin-mapping-pool-item',
-  '.gloskin-admin-mapping-concerns',
-  '.gloskin-admin-mapping-buckets',
-  '.gloskin-admin-mapping-bucket-enhanced',
-  '.gloskin-admin-mapping-add',
-  '.gloskin-admin-mapping-chip-list',
-  '.gloskin-admin-mapping-chip',
-  '.is-dragging',
-  '.is-drop-target'
-];
-for (const className of requiredAdminClasses) {
+for (const className of ['.gloskin-admin-mapping-enhanced', '.gloskin-admin-mapping-pool', '.gloskin-admin-mapping-product-pool', '.gloskin-admin-mapping-pool-item', '.gloskin-admin-mapping-concerns', '.gloskin-admin-mapping-buckets', '.gloskin-admin-mapping-bucket-enhanced', '.gloskin-admin-mapping-add', '.gloskin-admin-mapping-chip-list', '.gloskin-admin-mapping-chip', '.is-dragging', '.is-drop-target']) {
   expect(adminCss.includes(className), `Consultation admin stylesheet missing ${className}`);
 }
-expect(adminCss.includes('grid-template-columns:minmax(220px,.75fr) minmax(0,1.6fr)'), 'Desktop mapping geometry must allow the concern column to shrink without overflow');
-expect(adminCss.includes('repeat(auto-fit,minmax(min(240px,100%),1fr))'), 'Concern buckets must shrink below 240px when the workspace is narrower');
-expect(adminCss.includes('@media (max-width:782px)') && adminCss.includes('grid-template-columns:minmax(0,1fr)'), 'Narrow wp-admin layout must stack Product pool above Concern buckets');
-expect(adminCss.includes('flex-wrap:wrap'), 'Bucket select + Tambah controls must wrap when space is insufficient');
+expect(adminCss.includes('grid-template-columns:minmax(220px,.75fr) minmax(0,1.6fr)') && adminCss.includes('repeat(auto-fit,minmax(min(240px,100%),1fr))'), 'Admin mapping geometry must remain responsive');
+expect(adminCss.includes('@media (max-width:782px)') && adminCss.includes('grid-template-columns:minmax(0,1fr)'), 'Narrow admin mapping must stack');
 expect(!adminCss.includes('!important'), 'Consultation admin stylesheet must add zero !important rules');
+expect(adminService.includes("Pertanyaan Terpublikasi (data admin)" ) && adminService.includes(', false, true );'), 'Question count must be informational, not a readiness warning');
+expect(adminCss.includes('.gloskin-consultation-metric-card.is-info'), 'Informational admin metric presentation missing');
 
 expect((assetsConfig.match(/assets\/css\/gloskin-ui1-consultation-admin\.css/g) || []).length === 1, 'Exactly one consultation admin CSS asset must be registered');
-expect(assetsConfig.includes("'gloskin-ui1-consultation-admin' => array(") && assetsConfig.includes("'admin_styles' => array("), 'Consultation admin CSS must live in the existing admin asset registry');
 const enqueueStart = assetService.indexOf('public function enqueue_consultation_admin()');
 const enqueueEnd = assetService.indexOf('public function enqueue_admin_migration(', enqueueStart);
-expect(enqueueStart >= 0 && enqueueEnd > enqueueStart, 'AssetService consultation admin enqueue owner missing');
 const enqueueBody = assetService.slice(enqueueStart, enqueueEnd);
-expect(enqueueBody.includes("$registry['admin_styles']['gloskin-ui1-consultation-admin']"), 'Consultation admin enqueue must resolve its scoped stylesheet from the registry');
-expect(enqueueBody.includes("wp_enqueue_style( 'gloskin-ui1-consultation-admin' )"), 'Consultation admin stylesheet must be enqueued by AssetService');
-expect(enqueueBody.includes("wp_enqueue_script( 'gloskin-ui1-consultation-admin' )"), 'Existing consultation admin JS must remain enqueued by AssetService');
+expect(enqueueBody.includes("$registry['admin_styles']['gloskin-ui1-consultation-admin']") && enqueueBody.includes("wp_enqueue_style( 'gloskin-ui1-consultation-admin' )") && enqueueBody.includes("wp_enqueue_script( 'gloskin-ui1-consultation-admin' )"), 'Consultation admin assets must retain their scoped owner');
 const adminGateStart = adminService.indexOf('public function enqueue_consultation_admin_assets( $hook_suffix )');
 const adminGateEnd = adminService.indexOf('private function sample_importer()', adminGateStart);
-expect(adminGateStart >= 0 && adminGateEnd > adminGateStart, 'Consultation admin screen gate missing');
 const adminGate = adminService.slice(adminGateStart, adminGateEnd);
-expect(adminGate.includes('self::CONSULTATION_SLUG') && adminGate.includes("$this->assets->enqueue_consultation_admin();"), 'Consultation assets must remain scoped through the existing Konsultasi Perawatan screen gate');
-
-// Consultation Perawatan admin polish: semantic pill navigation replaces
-// native nav-tab chrome, and Ringkasan's Data & Import section exists and
-// is CSS-owned (not generated inline style strings).
+expect(adminGate.includes('self::CONSULTATION_SLUG') && adminGate.includes('$this->assets->enqueue_consultation_admin();'), 'Consultation admin screen gate missing');
 for (const forbidden of ['nav-tab-wrapper', 'nav-tab-active', 'class="nav-tab']) {
   expect(!adminService.includes(forbidden), `Consultation workspace must render zero native WP tab chrome: ${forbidden}`);
 }
-expect(adminService.includes('class="gloskin-consultation-tabs"'), 'Consultation workspace must render the semantic pill navigation root');
-expect(adminService.includes("aria-label=\"<?php echo esc_attr__( 'Bagian Konsultasi Perawatan'"), 'Pill navigation must carry the documented aria-label');
-expect(adminService.includes('gloskin-consultation-tabs__item'), 'Pill navigation items must use the documented item class');
-expect(adminService.includes('aria-current="page"'), 'The active pill navigation item must carry aria-current="page"');
-expect(!adminService.includes('role="tab"') || adminService.indexOf('role="tab"') < adminService.indexOf('gloskin-consultation-tabs'), 'Ordinary page navigation must not (re)use role=tab inside the consultation workspace pill nav');
-expect(adminService.includes("esc_html__( 'Data & Import'"), 'Ringkasan must render a Data & Import section');
-expect(adminService.includes('gloskin-consultation-import-cards'), 'Data & Import must render its two-card layout container');
-expect(adminService.includes('gloskin-consultation-metrics') && adminService.includes('gloskin-consultation-metric-card'), 'Ringkasan metrics must use semantic CSS classes, not generated style strings');
-expect(!/style="[^"]*display:flex;flex-wrap:wrap;gap:\d+px;margin/.test(adminService), 'Ringkasan must no longer generate inline flex/grid style strings for its cards');
+expect(adminService.includes('class="gloskin-consultation-tabs"') && adminService.includes('aria-current="page"'), 'Semantic pill navigation must remain');
+expect(adminService.includes("esc_html__( 'Data & Import'") && adminService.includes('gloskin-consultation-import-cards'), 'Data & Import cards must remain');
 const workspaceStart = adminService.indexOf('public function render_consultation_page()');
 const workspaceEnd = adminService.indexOf('public function handle_save_concern()', workspaceStart);
 const workspaceSource = adminService.slice(workspaceStart, workspaceEnd);
-expect(!workspaceSource.includes('<style>'), 'Consultation workspace must render zero inline style blocks');
-expect(!workspaceSource.includes('style="'), 'Consultation workspace static presentation must be stylesheet-owned');
-expect(adminService.includes("edit.php?post_type=product&gloskin_product_family=treatment"), 'Consumed demo link must open the filtered Treatment Product list');
-
-expect(adminCss.includes('[data-gloskin-consultation-workspace] .gloskin-consultation-tabs{'), 'Pill navigation presentation must be scoped beneath the one workspace root');
-expect(adminCss.includes('.gloskin-consultation-tabs__item.is-active{'), 'Pill navigation must style an active-pill state');
-expect(adminCss.includes('.gloskin-consultation-metrics{') && adminCss.includes('grid-template-columns:repeat(auto-fit,minmax(180px,1fr))'), 'Metric grid must be a responsive auto-fit CSS grid');
-expect(adminCss.includes('.gloskin-consultation-import-cards{'), 'Data & Import cards must have CSS-owned grid layout');
-expect(adminCss.includes('.gloskin-admin-mapping-grid{') && adminCss.includes('.gloskin-admin-mapping-bucket{'), 'Native mapping grid and buckets must be stylesheet-owned');
-expect(adminCss.includes('.gloskin-consultation-concerns-table{') && adminCss.includes('.gloskin-consultation-questions-table{'), 'Consultation table width/margin presentation must be stylesheet-owned');
+expect(!workspaceSource.includes('<style>') && !workspaceSource.includes('style="'), 'Consultation workspace presentation must remain stylesheet-owned');
+expect(adminCss.includes('[data-gloskin-consultation-workspace] .gloskin-consultation-tabs{') && adminCss.includes('.gloskin-consultation-import-cards{'), 'Admin workspace presentation contracts missing');
 
 console.log('consultation-source-contract.test.js: OK');

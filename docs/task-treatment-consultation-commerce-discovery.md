@@ -11,13 +11,13 @@
 Client direction for the Treatments experience has evolved beyond a static directory:
 
 1. `/treatments/` should present **four visually soft circular entry cards**.
-2. Selecting one entry starts an **inline treatment consultation/questionnaire**.
-3. Questionnaire answers represent user-reported cosmetic **concerns**.
-4. As concerns are selected/scored, matching **purchasable treatment products** appear below in a responsive WooCommerce product grid.
+2. Selecting one entry reveals its canonical baseline **concern chips**.
+3. Visitors may select more than one cosmetic concern and explicitly request results.
+4. Matching **purchasable treatment products** then appear below in a responsive, detail-only WooCommerce product grid.
 5. Those treatment products must remain normal WooCommerce products so price, purchasability, cart, checkout, orders, payments and account behavior remain native WooCommerce.
 6. Admin must not be forced to manage Skincare and Treatment products in separate databases or confusing duplicate CRUD systems.
 7. Concern-to-treatment-product mapping must be friendly enough for non-technical admins, preferably drag-and-drop, while persistence remains precise and WordPress-native.
-8. A deterministic **demo/sample dataset** is required so the complete experience is visible immediately during staging/client review, including **at least 13 questionnaire questions whose display order is randomized once per page load/consultation initialization**.
+8. The deterministic **demo/sample dataset** remains available to admins. Its question records are private operational data and are not part of the public finder payload/readiness gate.
 
 This task is a new owner requirement. It supplements the current canonical documentation. When implemented, update the canonical docs listed in section 18 in the same coherent implementation commit.
 
@@ -30,7 +30,7 @@ This task is a new owner requirement. It supplements the current canonical docum
 Do not overload the word “treatment.” There are three different objects:
 
 1. **`gloskin_treatment` CPT** — existing informational treatment/category records and routes under `/treatments/{slug}/`. The repository currently requires eight approved records. **Do not replace, reduce, or repurpose these eight records.**
-2. **Consultation Path** — the four circular discovery entries on `/treatments/`. They are lightweight questionnaire entry points, not purchasable products and not replacements for the eight informational treatment records.
+2. **Consultation Path** — the four circular discovery entries on `/treatments/`. They expose baseline concern chips, are not purchasable products and do not replace the eight informational treatment records.
 3. **WooCommerce Treatment Product** — a normal Woo `product` classified internally as family `treatment`. This is what can be added to cart and checked out.
 
 The Treatments Hub therefore becomes:
@@ -38,13 +38,13 @@ The Treatments Hub therefore becomes:
 ```text
 Hero / intro
   ↓
-4 Consultation Path circles
-  ↓ click
-Inline questionnaire
-  ↓ answers update score
-Recommended Treatment Product grid (Woo)
-  ↓
-Native Add to Cart / PDP / Checkout
+4 Consultation Path photo circles
+  ↓ select
+Canonical multi-select concern chips
+  ↓ explicit CTA
+Recommended Treatment Product grid (Woo, max 8)
+  ↓ detail-only card
+Native PDP
   ↓
 Existing informational treatment sections / 8 treatment records remain available
 ```
@@ -301,21 +301,17 @@ This is the high-impact management surface described in section 8.
 
 ## 6. Public Treatments Hub UX
 
-Do not replace the current `/treatments/` page architecture wholesale.
-
-Add one new consultation/discovery block near the top of `templates/pages/treatments.php`, after the page intro/orientation area and before the long informational treatment directory where it fits naturally.
-
-The existing eight informational `gloskin_treatment` records continue to render lower on the page.
+The public composition is deliberately simple: hero, Treatment Finder/results, all eight informational `gloskin_treatment` records, and one final consultation CTA. The former “Sebelum memilih”, featured-treatment and pathway blocks are not part of this composition.
 
 ### 6.1 Initial state
 
-Render four circular path cards in one responsive group.
+Render exactly four circular photo path controls in one responsive group when readiness is satisfied. Each valid path must resolve at least one real baseline concern; the finder also requires mapped Treatment Products.
 
 Each card is a real `<button type="button">` (or an equally accessible control), not a clickable `<div>`.
 
 Desired presentation:
 
-- soft circular media/surface;
+- 150–180px circular photos on desktop, using Media Library content first and deterministic decorative editorial fallback;
 - concise label below/inside;
 - restrained hover/focus lift;
 - no giant pill buttons;
@@ -326,45 +322,23 @@ Desired presentation:
 On click:
 
 - select/highlight the path;
-- reveal the inline questionnaire below the circles;
+- reveal that path's canonical baseline concern chips below the circles;
+- clear concern selections and stale results from the previous path;
 - keep focus behavior understandable;
 - scroll only if needed and do not hard-jump the page unnecessarily;
 - use a short CSS transition, with `prefers-reduced-motion` respected.
 
 No modal is required. Inline is simpler, easier to access, and lets recommendations appear naturally below.
 
-### 6.3 Questionnaire interaction
+### 6.3 Concern and CTA interaction
 
-Default interaction: one question at a time.
+The selected path exposes native checkbox chips for its resolved baseline concerns. Multiple concerns may be selected. The CTA stays disabled until a path and at least one concern are selected; results never update implicitly on chip changes. Clicking the explicit `Cari Perawatan yang Tepat` CTA scores and reveals the already server-rendered result cards.
 
-Recommended elements:
+Do **not** project private questions into HTML/JSON or use them as a public readiness gate. Do not persist the path, concern selections or results to WordPress, browser storage, cookies or logs. Do not fetch, reload or introduce an AJAX/REST recommendation endpoint.
 
-- progress (`1 / 13` etc.);
-- question text;
-- answer options as buttons/cards;
-- Back;
-- Restart/Change focus.
+### 6.4 Private questions
 
-Selecting an answer:
-
-1. records the answer only in frontend memory;
-2. adds the mapped concern weight to the current score;
-3. updates the recommendations below;
-4. advances smoothly to the next question.
-
-Do **not** persist answers to WordPress/database/cookies/server logs as part of this feature. They are potentially health-adjacent preference data and are not required for commerce. This version is intentionally stateless/private.
-
-### 6.4 Random question order
-
-The demo/current requirement is **minimum 13 published questions**.
-
-Randomize the eligible question array **once per page load / consultation controller initialization** using a normal client-side Fisher–Yates shuffle.
-
-Do not use database `ORDER BY RAND()`.
-
-Do not reshuffle after every answer; the user’s active run must remain stable.
-
-If fewer than 13 published valid questions exist in production, render what is valid and show an admin readiness warning; never fabricate medical/cosmetic questions in PHP.
+`gloskin_question`, its answer meta, importer and native admin editing remain intact for operational compatibility. Published-question count is informational in the admin overview, not a red/blocking public-readiness metric. No public shuffle, question history, progress, Back or Restart controller exists.
 
 ---
 
@@ -372,18 +346,16 @@ If fewer than 13 published valid questions exist in production, render what is v
 
 No AI/recommendation service is required.
 
-Use deterministic concern scoring:
+Use deterministic concern matching:
 
-1. selecting a consultation path may add a small baseline score to the path’s configured baseline concerns;
-2. each selected questionnaire answer adds `weight` to one concern;
-3. each Treatment Product is related to zero or more `gloskin_concern` terms;
-4. product score = sum of the current concern scores for concerns assigned to that product;
-5. include products with score > 0;
-6. sort by score descending, then a stable Woo fallback (`menu_order`, then title/ID);
-7. de-duplicate product IDs;
-8. render a reasonable first result set (for the current small catalog, up to 6–8 is enough).
+1. the visitor selects one path and one or more of its canonical baseline concern IDs;
+2. each Treatment Product is related to one or more `gloskin_concern` terms;
+3. product score = count of distinct selected concern IDs assigned to that product;
+4. include products with score greater than zero;
+5. sort score descending and preserve the server/Woo order for ties;
+6. de-duplicate concern matches per product and render at most eight results.
 
-This is why **mapping order does not need to be persisted**. Ranking comes from questionnaire score, not from a second ordered product-ID array. This preserves one canonical taxonomy relationship and avoids dual-write state.
+Mapping order does not need persistence. Ranking derives from one canonical taxonomy relationship plus request-local selections, avoiding dual-write state.
 
 If no mapped products match, show a deliberate empty state and keep consultation/contact pathways available.
 
@@ -440,16 +412,16 @@ On save:
 
 ## 9. Treatment product grid and commerce behavior
 
-The consultation result grid must reuse existing Gloskin/Woo product-card conventions rather than inventing a new commerce card.
+The consultation result grid must reuse `gloskin_ui1_render_product_card()` through its scoped `consultation` variant. The default catalog variant and every native Woo commerce surface remain unchanged.
 
 Required:
 
-- canonical Woo product title/image/price;
-- simple-product Add to Cart uses existing native/AJAX path;
-- variable/non-directly-purchasable product follows the existing product-card/PDP/Quick-Add rules rather than creating a second variation controller;
-- current custom Add-to-Cart loader remains the only presentation owner;
-- cart fragments/count/success remain Woo-owned;
-- unavailable/non-purchasable products show the existing native-safe state.
+- one anchor for the whole card, pointing to the canonical PDP;
+- canonical Woo featured image first, with deterministic decorative treatment-photo fallback;
+- factual Woo title, short description and price only;
+- no wishlist, native `.button`, Add to Cart, AJAX cart or Quick Add markup;
+- two result columns on desktop and one on mobile, with natural card height, clamped copy and no internal scrolling;
+- a soft crimson hover/focus overlay; the detail CTA remains persistently visible on touch/coarse-pointer devices.
 
 Treatment products may be Woo `virtual` products where appropriate, but Gloskin does not invent booking/scheduling fulfillment in this task.
 
@@ -639,7 +611,7 @@ Surface compact counts/warnings for:
 - published questions with zero valid answers;
 - question answers referencing deleted/missing concern IDs;
 - fewer than 4 valid consultation paths;
-- fewer than 13 published questions;
+- published-question count as informational admin data only (never a public-readiness warning);
 - Treatment Product IDs that are no longer purchasable/available.
 
 Do not auto-repair these states by inventing mappings. Admin should see and fix them.
@@ -650,14 +622,14 @@ Deleting a concern/path while referenced should be blocked or require explicit c
 
 ## 14. Privacy, medical-content and safety boundary
 
-This questionnaire is **discovery/merchandising guidance**, not diagnosis.
+This finder is **discovery/merchandising guidance**, not diagnosis.
 
 Required:
 
 - no medical diagnosis claim;
 - no “you have X disease” output;
-- no user name/email/phone collection inside questionnaire;
-- no questionnaire answer persistence in this task;
+- no user name/email/phone collection inside the finder;
+- no path/concern selection persistence in this task;
 - no automatic treatment prescription language;
 - include a concise presentation disclaimer such as “Hasil ini membantu eksplorasi pilihan dan bukan diagnosis medis.”;
 - existing clinic/contact consultation path remains available.
@@ -671,9 +643,9 @@ Do not hard-code efficacy, contraindication, doctor recommendation or other fact
 Minimum code contract:
 
 - consultation path cards are keyboard-operable native controls;
-- questionnaire answer choices are native buttons/radios, not div click targets;
+- concern choices are native checkboxes with label chips, not div click targets;
 - clear focus-visible state;
-- progress is understandable to assistive tech;
+- the path pressed state, disabled CTA and result update are understandable to assistive tech;
 - result updates use a restrained `aria-live` announcement where useful, not noisy repeated announcements;
 - DnD mapping has a checkbox/multi-select fallback and is not mouse-only;
 - `prefers-reduced-motion` removes/shortens transition-only effects;
@@ -688,13 +660,13 @@ Low-effort/high-impact decisions for v1:
 - no custom DB table;
 - no AI model;
 - no REST recommendation API yet;
-- no server-stored session/questionnaire state;
+- no server-stored finder state;
 - no per-relationship ranking table;
 - no `ORDER BY RAND()`;
 - no global product dataset on unrelated pages;
 - only Treatments Hub queries treatment-consultation data;
 - only explicit Treatment Products participate;
-- recommendation ranking derives from concern scores, avoiding stored mapping order;
+- recommendation ranking derives from selected-concern matches, avoiding stored mapping order;
 - current small catalog can be rendered once and filtered client-side.
 
 Future scale trigger: only if Treatment Product count/payload becomes measurably large should recommendations move to a read-only paginated endpoint owned by `WooCommerceAdapter`.
@@ -721,9 +693,9 @@ Future scale trigger: only if Treatment Product count/payload becomes measurably
    - staging-only demo import card/action.
 6. Add narrow demo bundle/importer.
 7. Extend WooCommerceAdapter with treatment-family product retrieval/presentation helper only as needed.
-8. Extend Treatments page context/template with the consultation block while retaining eight informational treatments.
+8. Extend Treatments page context/template with the four-path concern finder while retaining all eight informational treatments.
 9. Add one small feature JS controller and corresponding presentation CSS through AssetService.
-10. Reuse existing product-card/Add-to-Cart owner for recommendation results.
+10. Add the shared detail-only `consultation` variant to the existing product-card renderer without changing its catalog behavior.
 11. Update canonical docs named below.
 12. Run repository checks available locally; review diff; patch-version bump because production PHP/CSS/JS behavior changes; commit coherently; push directly to `main`; verify remote HEAD.
 
@@ -765,14 +737,14 @@ Add/extend focused automated contracts for at least:
 - three private schema objects + private question CPT registered by ContentService;
 - family stable terms and legacy-unclassified-as-skincare semantics;
 - question answer sanitizer accepts only valid concern IDs / bounded weights;
-- randomizer runs client-side once, no `ORDER BY RAND()`;
-- questionnaire state is not persisted/server-posted;
+- private questions are absent from the public payload/readiness gate and question count is informational in admin;
+- path/concern state is not persisted/server-posted and the runtime performs no network/reload;
 - mapping save uses canonical taxonomy relationship only;
 - no duplicate product-ID mapping option/meta;
 - only one custom Consultation submenu added by this feature;
 - demo importer refuses to run without the explicit server-verified confirmation, independent of any deployment environment;
 - demo import is deterministic/idempotent and creates expected minimum counts;
-- recommendation grid reuses current Woo Add-to-Cart/product-card path;
+- recommendation grid uses the shared detail-only product-card variant and excludes every commerce control;
 - Treatments Hub still renders/retains the existing informational treatment data path;
 - zero new public `wp_ajax_nopriv_*`;
 - no new `!important` unless an already-documented unavoidable owner exception exists (default expectation: zero new).
@@ -816,11 +788,11 @@ Implementation is complete when all of the following are true at code level:
 - Woo products remain the only purchasable product model.
 - Product family cleanly distinguishes Treatment Products without duplicating CRUD.
 - Existing/unclassified Woo products remain safely usable as Skincare.
-- `/treatments/` retains its existing eight informational-treatment capability and gains a separate four-path consultation layer.
-- Consultation has 13+ demo questions, shuffled once per load/run.
-- Answers deterministically score concerns.
+- `/treatments/` renders hero, a separate four-path concern finder, all eight informational-treatment records, and one final CTA.
+- Private demo questions remain editable/importable but are absent from the public finder and readiness gate.
+- Multi-selected canonical concerns deterministically rank positive product matches, capped at eight.
 - Concern taxonomy relationships are the only product-mapping persistence.
-- Treatment Product recommendations reuse canonical Woo product cards/Add-to-Cart.
+- Treatment Product recommendations use the shared consultation card variant with one PDP link and no wishlist/cart/Quick Add controls.
 - Admin adds one compact `Konsultasi Perawatan` workspace rather than multiple sidebar entities.
 - Mapping is friendly DnD when JS is available and remains a precise checkbox/form relationship editor underneath.
 - Unmapped/orphan states are visible to admins instead of silently guessed.

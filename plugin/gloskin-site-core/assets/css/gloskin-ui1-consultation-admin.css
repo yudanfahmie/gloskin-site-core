@@ -176,6 +176,7 @@
 }
 [data-gloskin-consultation-workspace] .gloskin-consultation-metric-card.is-ready{border-left-color:#46b450}
 [data-gloskin-consultation-workspace] .gloskin-consultation-metric-card.is-warning{border-left-color:var(--gloskin-accent-strong,#961F24)}
+[data-gloskin-consultation-workspace] .gloskin-consultation-metric-card.is-info{border-left-color:#72aee6}
 [data-gloskin-consultation-workspace] .gloskin-consultation-metric-card__label{
 	margin:0;
 	color:#646970;

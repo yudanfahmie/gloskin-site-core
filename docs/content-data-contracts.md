@@ -181,17 +181,17 @@ Canonical ownership is:
 | purchasable treatment | WooCommerce `product` only |
 | `gloskin_product_family` | private classification vocabulary; stable terms include `skincare` and `treatment` |
 | `gloskin_concern` | private recommendation-mapping vocabulary |
-| `gloskin_consultation_path` | private questionnaire-path vocabulary |
-| `gloskin_question` | private/non-public questionnaire entity; native admin edit capability only |
+| `gloskin_consultation_path` | private Treatment Finder focus-path vocabulary, including image/order/baseline concern IDs |
+| `gloskin_question` | retained private/non-public admin entity; never projected into the public finder |
 | product ↔ concern | native taxonomy relationship via `wp_set_object_terms()`; sole recommendation mapping source |
 | question answers | registered bounded question meta defining label + concern ID + weight 1..3 |
-| visitor answers/scores/history | frontend runtime memory only |
+| visitor path/selected concern IDs | frontend runtime memory only |
 
 The three consultation taxonomies are registered against their canonical object-type slugs without requiring WooCommerce's `product` post type to have registered first. This is intentional: WordPress taxonomy registration can precede the corresponding object-type registration, and the schema must remain deterministic regardless of plugin load order.
 
 The admin Pemetaan Produk screen may progressively enhance the native checkbox matrix into a searchable Treatment Product pool plus concern buckets/chips. That JavaScript is presentation/state synchronization only: the same native checkboxes remain the submitted canonical relationships and the no-JS fallback. Do not add JSON mapping options, product-meta mapping arrays, custom tables, browser persistence, or another recommendation store.
 
-The questionnaire runtime may shuffle eligible questions once per consultation run and score concerns client-side. Answers, score history, and path progress must not be written to localStorage, sessionStorage, cookies, options, post meta, custom tables, or another server-side store. Restart clears the run; Back reverses the prior answer's score contribution. Recommendation output reuses the existing canonical Woo product-card/add-to-cart runtime and is capped at eight cards.
+The public finder projects exactly four valid paths and each path's resolved baseline concerns. Selecting a path resets the multi-select concern state; only the explicit CTA ranks already server-rendered mapped Woo Treatment Products by shared selected-concern count, with stable Woo order for ties and an eight-card maximum. This runtime must not use network calls, reloads, localStorage, sessionStorage, cookies, options, post meta, custom tables, or another server-side store. Results use the shared detail-only consultation product-card variant (one PDP link and no wishlist, cart or Quick Add controls). Private question records remain available to admins but do not gate public readiness.
 
 The optional demo importer is staging/development/local only. It uses deterministic path/concern slugs, question source IDs, and treatment-product SKUs so every upsert phase converges after a partial rerun. Production must refuse the import. The demo target is at least four paths, ten concerns, thirteen questions, and exactly eight Woo Treatment Products; demo products remain distinct from the existing eight informational `gloskin_treatment` records.
 
