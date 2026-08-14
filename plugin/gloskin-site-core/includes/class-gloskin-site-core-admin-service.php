@@ -109,15 +109,13 @@ final class Gloskin_Site_Core_Admin_Service {
 	 * Single source of truth for this one settings option's shape/defaults,
 	 * reused by both the registration default and every read fallback below.
 	 *
-	 * @return array{design_variant:string,form_shortcode:string,header_variant:string,hero_video_enabled:bool,hero_video_url:string,hero_video_media_id:int}
+	 * @return array{design_variant:string,form_shortcode:string,header_variant:string,hero_video_media_id:int}
 	 */
 	public static function settings_defaults() {
 		return array(
 			'design_variant' => 'medical',
 			'form_shortcode' => '',
 			'header_variant' => 'header-1',
-			'hero_video_enabled' => true,
-			'hero_video_url' => 'https://www.youtube.com/watch?v=otej7WLdPh0&pp=ygUPc2tpbmNhcmUgdGVhc2Vy',
 			/* Home video-only mode's native background video (task K/L):
 			 * a WordPress Media Library attachment ID, resolved by
 			 * Template_Service::hero_background_video(). Unset (0) is the
@@ -184,52 +182,12 @@ final class Gloskin_Site_Core_Admin_Service {
 			 * tampered value) always falls back to the default production
 			 * header, never a partial/unknown composition. */
 			'header_variant' => in_array( $header_variant, array( 'header-1', 'header-2' ), true ) ? $header_variant : 'header-1',
-			/* Stored as plain sanitized URL text, never trusted HTML -- the
-			 * strict YouTube-ID pattern check happens at render time via
-			 * resolve_youtube_video_id() below, so an invalid/garbled URL
-			 * here can never do worse than fall back to the existing
-			 * non-video hero media, never break the save itself. */
-			'hero_video_enabled' => ! empty( $value['hero_video_enabled'] ),
-			'hero_video_url' => isset( $value['hero_video_url'] ) ? esc_url_raw( trim( (string) $value['hero_video_url'] ) ) : '',
 			/* Plain attachment ID only; Template_Service::hero_background_video()
 			 * re-resolves and mime-checks it at render time, so an ID that no
 			 * longer points at a real video attachment can never do worse than
 			 * fall back to the existing non-video hero media. */
 			'hero_video_media_id' => isset( $value['hero_video_media_id'] ) ? absint( $value['hero_video_media_id'] ) : 0,
 		);
-	}
-
-	/**
-	 * The one pure helper that resolves a valid YouTube video ID from a
-	 * user-supplied URL, or '' when the URL is empty/malformed/non-YouTube.
-	 * Never trusts/echoes arbitrary HTML -- the return value is always
-	 * either an 11-character YouTube ID matching YouTube's own safe ID
-	 * pattern, or an empty string. Supports exactly the four documented
-	 * shapes: watch?v=, youtu.be/, /embed/, /shorts/.
-	 *
-	 * @param string $url Raw (already-sanitized-as-a-URL) hero video URL.
-	 * @return string 11-char YouTube video ID, or '' if unresolvable.
-	 */
-	public static function resolve_youtube_video_id( $url ) {
-		$url = trim( (string) $url );
-		if ( '' === $url ) {
-			return '';
-		}
-		$pattern = '~^(?:https?:)?//(?:www\.)?(?:'
-			. 'youtube\.com/watch\?(?:[^\s#]*&)?v=(?<id1>[A-Za-z0-9_-]{11})'
-			. '|youtu\.be/(?<id2>[A-Za-z0-9_-]{11})'
-			. '|youtube\.com/embed/(?<id3>[A-Za-z0-9_-]{11})'
-			. '|youtube\.com/shorts/(?<id4>[A-Za-z0-9_-]{11})'
-			. ')(?:[/?&#].*)?$~i';
-		if ( ! preg_match( $pattern, $url, $matches ) ) {
-			return '';
-		}
-		foreach ( array( 'id1', 'id2', 'id3', 'id4' ) as $key ) {
-			if ( ! empty( $matches[ $key ] ) ) {
-				return $matches[ $key ];
-			}
-		}
-		return '';
 	}
 
 	/**
@@ -305,8 +263,6 @@ final class Gloskin_Site_Core_Admin_Service {
 		$variant           = isset( $settings['design_variant'] ) ? $settings['design_variant'] : 'medical';
 		$shortcode         = isset( $settings['form_shortcode'] ) ? $settings['form_shortcode'] : '';
 		$header_variant    = isset( $settings['header_variant'] ) ? $settings['header_variant'] : 'header-1';
-		$hero_video_on     = ! empty( $settings['hero_video_enabled'] );
-		$hero_video_url    = isset( $settings['hero_video_url'] ) ? (string) $settings['hero_video_url'] : '';
 		$hero_video_media_id = isset( $settings['hero_video_media_id'] ) ? absint( $settings['hero_video_media_id'] ) : 0;
 		$hero_video_filename = '';
 		if ( $hero_video_media_id ) {
@@ -357,7 +313,7 @@ final class Gloskin_Site_Core_Admin_Service {
 						<section class="gloskin-admin-card" id="gloskin-admin-panel-hero" role="tabpanel" aria-labelledby="gloskin-admin-tab-hero" data-gloskin-admin-panel="hero">
 							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Home hero video', 'gloskin-site-core' ); ?></h2>
 							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Video latar Home diputar otomatis tanpa suara dan memenuhi area hero.', 'gloskin-site-core' ); ?></p>
-							<p><label class="gloskin-admin-field-label" for="gloskin-hero-video-media-filename-label"><?php echo esc_html__( 'Background video', 'gloskin-site-core' ); ?></label></p>
+							<p class="gloskin-admin-field-label"><?php echo esc_html__( 'Background video', 'gloskin-site-core' ); ?></p>
 							<div class="gloskin-admin-media-field" data-gloskin-hero-video-field data-empty-label="<?php echo esc_attr__( 'Belum ada video dipilih.', 'gloskin-site-core' ); ?>">
 								<input type="hidden" id="gloskin-hero-video-media-id" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[hero_video_media_id]" value="<?php echo esc_attr( $hero_video_media_id ? (string) $hero_video_media_id : '' ); ?>" />
 								<p class="gloskin-admin-media-field__filename" id="gloskin-hero-video-media-filename-label" data-gloskin-hero-video-filename><?php echo esc_html( '' !== $hero_video_filename ? $hero_video_filename : __( 'Belum ada video dipilih.', 'gloskin-site-core' ) ); ?></p>
@@ -367,10 +323,6 @@ final class Gloskin_Site_Core_Admin_Service {
 								</p>
 							</div>
 							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Format yang didukung: MP4 dan/atau WebM dari Media Library.', 'gloskin-site-core' ); ?></p>
-							<p><label class="gloskin-admin-field-label" for="gloskin-hero-video-enabled"><input type="checkbox" id="gloskin-hero-video-enabled" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[hero_video_enabled]" value="1" <?php checked( $hero_video_on ); ?> /> <?php echo esc_html__( 'Enable legacy YouTube hero video (non-Home surfaces)', 'gloskin-site-core' ); ?></label></p>
-							<p><label class="gloskin-admin-field-label" for="gloskin-hero-video-url"><?php echo esc_html__( 'YouTube video URL', 'gloskin-site-core' ); ?></label><br />
-							<input class="regular-text" type="url" id="gloskin-hero-video-url" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[hero_video_url]" value="<?php echo esc_attr( $hero_video_url ); ?>" placeholder="https://www.youtube.com/watch?v=..." /></p>
-							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Supports standard YouTube and youtu.be URLs, kept for backward compatibility. Home always prefers the native background video above.', 'gloskin-site-core' ); ?></p>
 						</section>
 						<section class="gloskin-admin-card" id="gloskin-admin-panel-booking" role="tabpanel" aria-labelledby="gloskin-admin-tab-booking" data-gloskin-admin-panel="booking">
 							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Booking & Social', 'gloskin-site-core' ); ?></h2>
@@ -1111,7 +1063,7 @@ final class Gloskin_Site_Core_Admin_Service {
 			$mapping_url = add_query_arg( array( 'tab' => 'pemetaan' ), admin_url( 'edit.php?post_type=product&page=' . self::CONSULTATION_SLUG ) );
 			echo '<p class="gloskin-consultation-import-card__links">';
 			echo '<a class="button button-secondary" href="' . esc_url( $mapping_url ) . '">' . esc_html__( 'Pemetaan Produk', 'gloskin-site-core' ) . '</a> ';
-			echo '<a class="button button-secondary" href="' . esc_url( admin_url( 'edit.php?post_type=product' ) ) . '">' . esc_html__( 'Semua Produk Perawatan', 'gloskin-site-core' ) . '</a>';
+			echo '<a class="button button-secondary" href="' . esc_url( admin_url( 'edit.php?post_type=product&gloskin_product_family=treatment' ) ) . '">' . esc_html__( 'Semua Produk Perawatan', 'gloskin-site-core' ) . '</a>';
 			echo '</p>';
 			echo '</div>';
 			return;
@@ -1193,7 +1145,7 @@ final class Gloskin_Site_Core_Admin_Service {
 			<input type="text" name="concern_name" placeholder="<?php echo esc_attr__( 'Nama keluhan, mis. Jerawat Aktif', 'gloskin-site-core' ); ?>" required />
 			<button type="submit" class="button button-secondary"><?php echo esc_html__( 'Tambah', 'gloskin-site-core' ); ?></button>
 		</form>
-		<table class="widefat striped" style="margin-top:16px;max-width:900px">
+		<table class="widefat striped gloskin-consultation-concerns-table">
 			<thead><tr>
 				<th><?php echo esc_html__( 'Nama', 'gloskin-site-core' ); ?></th>
 				<th><?php echo esc_html__( 'Slug', 'gloskin-site-core' ); ?></th>
@@ -1208,7 +1160,7 @@ final class Gloskin_Site_Core_Admin_Service {
 				?>
 				<tr>
 					<td>
-						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:flex;gap:6px">
+						<form class="gloskin-consultation-inline-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 							<?php wp_nonce_field( self::CONCERN_NONCE ); ?>
 							<input type="hidden" name="action" value="<?php echo esc_attr( self::CONCERN_ACTION ); ?>" />
 							<input type="hidden" name="concern_id" value="<?php echo esc_attr( (string) $concern->term_id ); ?>" />
@@ -1301,7 +1253,7 @@ final class Gloskin_Site_Core_Admin_Service {
 		$questions = get_posts( array( 'post_type' => Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE, 'post_status' => array( 'publish', 'draft' ), 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
 		?>
 		<p><a class="button button-primary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE ) ); ?>"><?php echo esc_html__( 'Tambah Pertanyaan', 'gloskin-site-core' ); ?></a></p>
-		<table class="widefat striped" style="max-width:1100px">
+		<table class="widefat striped gloskin-consultation-questions-table">
 			<thead><tr>
 				<th><?php echo esc_html__( 'Pertanyaan', 'gloskin-site-core' ); ?></th>
 				<th><?php echo esc_html__( 'Status', 'gloskin-site-core' ); ?></th>
@@ -1355,25 +1307,20 @@ final class Gloskin_Site_Core_Admin_Service {
 			return;
 		}
 		?>
-		<style>
-			[data-gloskin-mapping-item].is-dragging{opacity:.4}
-			[data-gloskin-mapping-bucket].is-drop-target{border-color:#2271b1;background:#f0f6fc}
-			[data-gloskin-mapping-item].is-recently-mapped{background:#edfaef}
-		</style>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" data-gloskin-mapping-form>
 			<?php wp_nonce_field( self::MAPPING_NONCE ); ?>
 			<input type="hidden" name="action" value="<?php echo esc_attr( self::MAPPING_ACTION ); ?>" />
 			<p>
 				<input type="search" data-gloskin-mapping-search placeholder="<?php echo esc_attr__( 'Cari produk perawatan…', 'gloskin-site-core' ); ?>" />
 			</p>
-			<div class="gloskin-admin-mapping-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+			<div class="gloskin-admin-mapping-grid">
 				<?php foreach ( $concerns as $concern ) : ?>
-					<fieldset class="gloskin-admin-mapping-bucket" data-gloskin-mapping-bucket style="border:1px solid #dcdcde;border-radius:6px;padding:12px">
-						<legend style="font-weight:600"><?php echo esc_html( $concern->name ); ?></legend>
+					<fieldset class="gloskin-admin-mapping-bucket" data-gloskin-mapping-bucket>
+						<legend><?php echo esc_html( $concern->name ); ?></legend>
 						<?php foreach ( $products as $product ) :
 							$checked = in_array( (int) $concern->term_id, (array) $product['concern_ids'], true );
 							?>
-							<label class="gloskin-admin-mapping-item" data-gloskin-mapping-item data-product-name="<?php echo esc_attr( strtolower( $product['name'] ) ); ?>" style="display:block;padding:4px 0">
+							<label class="gloskin-admin-mapping-item" data-gloskin-mapping-item data-product-name="<?php echo esc_attr( strtolower( $product['name'] ) ); ?>">
 								<input type="checkbox" name="mapping[<?php echo esc_attr( (string) $concern->term_id ); ?>][]" value="<?php echo esc_attr( (string) $product['id'] ); ?>" <?php checked( $checked ); ?> />
 								<?php echo esc_html( $product['name'] ); ?>
 							</label>

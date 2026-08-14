@@ -44,7 +44,6 @@ final class Gloskin_Site_Core_Asset_Service {
 		 * print_font_preload() re-checks the same eligible-frontend gate
 		 * enqueue_frontend() uses, so this is inert everywhere it should be. */
 		add_action( 'wp_head', array( $this, 'print_font_preload' ), 1 );
-		add_action( 'wp_head', array( $this, 'print_hero_video_preconnect' ), 1 );
 	}
 
 	/**
@@ -237,38 +236,6 @@ final class Gloskin_Site_Core_Asset_Service {
 			$url = plugins_url( (string) $relative, $this->plugin_file );
 			echo '<link rel="preload" href="' . esc_url( $url ) . '" as="font" type="font/woff2" crossorigin>' . "\n";
 		}
-	}
-
-	/**
-	 * Home hero video performance: prime the DNS/TLS handshake to the two
-	 * origins the poster/facade will actually need (the YouTube thumbnail
-	 * host, and the privacy-enhanced embed host used once the video is
-	 * progressively enhanced) -- so when gloskin-ui1-core.js's
-	 * initHeroVideo() later creates the iframe, that connection is already
-	 * warm. Scoped to the Home view only, and only while the setting is
-	 * actually enabled -- never a blanket preconnect on every page. Reads
-	 * the same one shared settings option every other frontend read
-	 * already uses (Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION).
-	 *
-	 * @return void
-	 */
-	public function print_hero_video_preconnect() {
-		if ( ! $this->should_enqueue_frontend() ) {
-			return;
-		}
-		$context = function_exists( 'get_query_var' ) ? get_query_var( 'gloskin_context', array() ) : array();
-		if ( ! is_array( $context ) || 'home' !== ( isset( $context['view'] ) ? $context['view'] : '' ) ) {
-			return;
-		}
-		if ( ! class_exists( 'Gloskin_Site_Core_Form_Adapter' ) ) {
-			return;
-		}
-		$settings = get_option( Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION, array() );
-		if ( empty( $settings['hero_video_enabled'] ) ) {
-			return;
-		}
-		echo '<link rel="preconnect" href="https://i.ytimg.com">' . "\n";
-		echo '<link rel="preconnect" href="https://www.youtube-nocookie.com">' . "\n";
 	}
 
 	/**

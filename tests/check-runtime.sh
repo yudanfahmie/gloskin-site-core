@@ -68,6 +68,8 @@ if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/nu
   python tests/header-variant-browser-smoke.py
   python tests/admin-shell-browser-smoke.py
   python tests/hero-video-browser-smoke.py
+  python tests/cart-block-mobile-regression.py
+  python tests/checkout-block-presentation-regression.py
 else
   echo "browser smoke skipped: Chromium/Playwright unavailable"
 fi

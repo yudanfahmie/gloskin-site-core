@@ -1,4 +1,22 @@
 /* Konsultasi Perawatan admin mapping progressive-enhancement presentation. */
+.gloskin-admin-mapping-grid{
+	display:grid;
+	grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+	gap:16px;
+}
+.gloskin-admin-mapping-bucket{
+	padding:12px;
+	border:1px solid #dcdcde;
+	border-radius:6px;
+}
+.gloskin-admin-mapping-bucket legend{font-weight:600}
+.gloskin-admin-mapping-item{display:block;padding:4px 0}
+[data-gloskin-mapping-item].is-dragging{opacity:.4}
+[data-gloskin-mapping-bucket].is-drop-target{border-color:#2271b1;background:#f0f6fc}
+[data-gloskin-mapping-item].is-recently-mapped{background:#edfaef}
+.gloskin-consultation-concerns-table{max-width:900px;margin-top:16px}
+.gloskin-consultation-questions-table{max-width:1100px}
+.gloskin-consultation-inline-form{display:flex;gap:6px}
 .gloskin-admin-mapping-enhanced{
 	display:grid;
 	grid-template-columns:minmax(220px,.75fr) minmax(0,1.6fr);

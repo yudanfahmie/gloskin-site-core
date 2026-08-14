@@ -533,8 +533,10 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 .gloskin-ui1-hero-bg-video,
 .gloskin-ui1-hero__media--full{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;border-radius:0;box-shadow:none;background:transparent}
 .gloskin-ui1-hero-bg-video__media,
-.gloskin-ui1-hero__media--full .gloskin-ui1-hero-video,
 .gloskin-ui1-hero__media--full .gloskin-ui1-hero__image{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto;object-fit:cover;object-position:center center;border-radius:0;box-shadow:none;pointer-events:none}
+.gloskin-ui1-hero-bg-video,
+.gloskin-ui1-hero-bg-video__media,
+.gloskin-ui1-hero-bg-video__loader{pointer-events:none}
 
 /* White preparing state: the video stays invisible (opacity:0) until JS
    (initHeroBackgroundVideo() in gloskin-ui1-core.js) proves real playback

@@ -115,10 +115,18 @@ expect(adminService.includes("esc_html__( 'Data & Import'"), 'Ringkasan must ren
 expect(adminService.includes('gloskin-consultation-import-cards'), 'Data & Import must render its two-card layout container');
 expect(adminService.includes('gloskin-consultation-metrics') && adminService.includes('gloskin-consultation-metric-card'), 'Ringkasan metrics must use semantic CSS classes, not generated style strings');
 expect(!/style="[^"]*display:flex;flex-wrap:wrap;gap:\d+px;margin/.test(adminService), 'Ringkasan must no longer generate inline flex/grid style strings for its cards');
+const workspaceStart = adminService.indexOf('public function render_consultation_page()');
+const workspaceEnd = adminService.indexOf('public function handle_save_concern()', workspaceStart);
+const workspaceSource = adminService.slice(workspaceStart, workspaceEnd);
+expect(!workspaceSource.includes('<style>'), 'Consultation workspace must render zero inline style blocks');
+expect(!workspaceSource.includes('style="'), 'Consultation workspace static presentation must be stylesheet-owned');
+expect(adminService.includes("edit.php?post_type=product&gloskin_product_family=treatment"), 'Consumed demo link must open the filtered Treatment Product list');
 
 expect(adminCss.includes('[data-gloskin-consultation-workspace] .gloskin-consultation-tabs{'), 'Pill navigation presentation must be scoped beneath the one workspace root');
 expect(adminCss.includes('.gloskin-consultation-tabs__item.is-active{'), 'Pill navigation must style an active-pill state');
 expect(adminCss.includes('.gloskin-consultation-metrics{') && adminCss.includes('grid-template-columns:repeat(auto-fit,minmax(180px,1fr))'), 'Metric grid must be a responsive auto-fit CSS grid');
 expect(adminCss.includes('.gloskin-consultation-import-cards{'), 'Data & Import cards must have CSS-owned grid layout');
+expect(adminCss.includes('.gloskin-admin-mapping-grid{') && adminCss.includes('.gloskin-admin-mapping-bucket{'), 'Native mapping grid and buckets must be stylesheet-owned');
+expect(adminCss.includes('.gloskin-consultation-concerns-table{') && adminCss.includes('.gloskin-consultation-questions-table{'), 'Consultation table width/margin presentation must be stylesheet-owned');
 
 console.log('consultation-source-contract.test.js: OK');

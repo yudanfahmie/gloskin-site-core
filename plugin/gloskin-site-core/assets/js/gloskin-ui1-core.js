@@ -1752,113 +1752,10 @@
 	}
 
 	/* -----------------------------------------------------------------
-	 * Hero Video (performance-first poster/facade, progressive enhancement)
-	 * ----------------------------------------------------------------- */
-
-	/* Pure, testable: never auto-instantiate/autoplay when the user/device
-	 * has asked for less motion or less data. The poster/Play facade always
-	 * still works either way -- this only gates the automatic enhancement. */
-	function shouldAutoEnhanceHeroVideo() {
-		if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-			return false;
-		}
-		var connection = navigator.connection || navigator.webkitConnection || navigator.mozConnection;
-		if (connection && connection.saveData) {
-			return false;
-		}
-		return true;
-	}
-
-	/* Pure, testable: privacy-enhanced domain only, muted/inline/looping
-	 * background-style autoplay, own playlist=id trick for native looping. */
-	function buildHeroVideoEmbedUrl(videoId) {
-		var encoded = encodeURIComponent(videoId);
-		return 'https://www.youtube-nocookie.com/embed/' + encoded
-			+ '?autoplay=1&mute=1&playsinline=1&loop=1&playlist=' + encoded + '&controls=0';
-	}
-
-	function scheduleHeroVideoIdle(callback) {
-		if (typeof window.requestIdleCallback === 'function') {
-			window.requestIdleCallback(callback, { timeout: 2000 });
-		} else {
-			/* One-shot fallback, never a repeating/polling timer. */
-			window.setTimeout(callback, 200);
-		}
-	}
-
-	function enhanceHeroVideo(container) {
-		var videoId = container.getAttribute('data-video-id') || '';
-		if (!videoId) { return; }
-		var loaded = false;
-
-		function loadVideo() {
-			/* Idempotent guard: only one iframe may ever be created,
-			 * regardless of how many times loadVideo() is invoked (auto
-			 * intersection/idle enhancement racing with an explicit Play
-			 * click, or a duplicate Play activation). */
-			if (loaded) { return; }
-			loaded = true;
-			var iframe = document.createElement('iframe');
-			iframe.className = 'gloskin-ui1-hero-video__iframe';
-			iframe.src = buildHeroVideoEmbedUrl(videoId);
-			iframe.title = container.getAttribute('data-video-title') || 'Gloskin hero video';
-			iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
-			iframe.setAttribute('loading', 'lazy');
-			iframe.setAttribute('frameborder', '0');
-			container.appendChild(iframe);
-			container.classList.add('is-loaded');
-		}
-
-		var poster = container.querySelector('.gloskin-ui1-hero-video__poster');
-		if (poster) {
-			poster.addEventListener('error', function onPosterError() {
-				var fallback = poster.getAttribute('data-gloskin-hero-video-fallback');
-				if (fallback && poster.src !== fallback) { poster.src = fallback; }
-				poster.removeEventListener('error', onPosterError);
-			});
-		}
-
-		var playButton = container.querySelector('[data-gloskin-hero-video-play]');
-		if (playButton) {
-			playButton.addEventListener('click', function () { loadVideo(); });
-		}
-
-		if (!shouldAutoEnhanceHeroVideo()) {
-			/* Reduced motion / data saver: poster + explicit Play only. */
-			return;
-		}
-		if (typeof window.IntersectionObserver !== 'function') {
-			/* No IntersectionObserver support: poster + explicit Play only,
-			 * never a scroll-polling fallback. */
-			return;
-		}
-
-		var observer = new window.IntersectionObserver(function (entries) {
-			for (var i = 0; i < entries.length; i++) {
-				if (entries[i].isIntersecting) {
-					observer.disconnect();
-					scheduleHeroVideoIdle(loadVideo);
-					return;
-				}
-			}
-		}, { threshold: 0.5 });
-		observer.observe(container);
-	}
-
-	/* One canonical Hero Video initializer -- see init() below, called
-	 * exactly once per page load. */
-	function initHeroVideo() {
-		var containers = document.querySelectorAll('[data-gloskin-hero-video]');
-		for (var i = 0; i < containers.length; i++) {
-			enhanceHeroVideo(containers[i]);
-		}
-	}
-
-	/* -----------------------------------------------------------------
 	 * Hero Background Video (native <video>, Home video-only mode only)
 	 * -----------------------------------------------------------------
 	 * Home's pure background-video surface (gloskin_ui1_render_hero()'s
-	 * 'video-only' branch): a real native <video>, never a YouTube iframe.
+	 * 'video-only' branch): one native <video>, never a remote player.
 	 * PREPARING -> READY state machine -- the video is only ever revealed
 	 * once it has genuinely reached usable playback, never merely because
 	 * the DOM node exists:
@@ -1867,7 +1764,7 @@
 	 *   2. wait for the browser's own loadeddata event;
 	 *   3. reduced-motion: establish the first frame, then pause and
 	 *      reveal -- no repeated loader/motion for those users;
-	 *   4. otherwise call video.play() and wait for its own Promise plus
+	 *   4. otherwise make the single play attempt and wait for its Promise plus
 	 *      the 'playing' event;
 	 *   5. reveal inside one requestAnimationFrame (is-video-preparing ->
 	 *      is-video-ready), which CSS fades in over ~360ms;
@@ -1886,50 +1783,105 @@
 	function setupHeroBackgroundVideo(hero, wrap) {
 		var video = wrap.querySelector('[data-gloskin-hero-bg-video]');
 		if (!video) { return; }
-		var settled = false;
+		var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		var state = {
+			dataReady: false,
+			playAttempted: false,
+			playResolved: false,
+			playingSeen: false,
+			readyCommitted: false,
+			terminalError: false,
+			timeoutReleased: false
+		};
+		var timeoutHandle = null;
 
-		function reveal() {
-			if (settled) { return; }
-			settled = true;
-			if (typeof window.requestAnimationFrame === 'function') {
-				window.requestAnimationFrame(function () {
-					hero.classList.remove('is-video-preparing');
-					hero.classList.add('is-video-ready');
-				});
-			} else {
+		function clearSafetyTimeout() {
+			if (timeoutHandle !== null && typeof window.clearTimeout === 'function') {
+				window.clearTimeout(timeoutHandle);
+			}
+			timeoutHandle = null;
+		}
+
+		function commitReady() {
+			if (state.readyCommitted || state.terminalError) { return; }
+			if (!state.dataReady || (!reduceMotion && (!state.playResolved || !state.playingSeen))) { return; }
+			state.readyCommitted = true;
+			clearSafetyTimeout();
+			function reveal() {
 				hero.classList.remove('is-video-preparing');
+				hero.classList.remove('is-video-failed');
 				hero.classList.add('is-video-ready');
+			}
+			if (typeof window.requestAnimationFrame === 'function') {
+				window.requestAnimationFrame(reveal);
+			} else {
+				reveal();
 			}
 		}
 
-		function fail() {
-			if (settled) { return; }
-			settled = true;
+		function releaseLoader() {
+			if (state.readyCommitted) { return; }
+			state.timeoutReleased = true;
 			hero.classList.remove('is-video-preparing');
 			hero.classList.add('is-video-failed');
 		}
 
-		var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		function terminalFailure() {
+			if (state.readyCommitted || state.terminalError) { return; }
+			state.terminalError = true;
+			clearSafetyTimeout();
+			releaseLoader();
+		}
 
-		video.addEventListener('loadeddata', function onLoadedData() {
-			video.removeEventListener('loadeddata', onLoadedData);
+		function onLoadedData() {
+			state.dataReady = true;
 			if (reduceMotion) {
-				/* Establish the frame safely, then keep it paused/static --
-				 * no repeated motion for reduced-motion users. */
 				try { video.pause(); } catch (error) { /* no-op: already static */ }
-				reveal();
-				return;
 			}
-			var playPromise = video.play();
-			if (playPromise && typeof playPromise.then === 'function') {
-				playPromise.then(reveal).catch(fail);
-			}
-		});
-		video.addEventListener('playing', reveal);
-		video.addEventListener('error', fail);
+			commitReady();
+		}
 
-		/* One bounded safety timeout only -- never a repeating poll. */
-		window.setTimeout(function () { fail(); }, HERO_BG_VIDEO_SAFETY_TIMEOUT_MS);
+		function onPlaying() {
+			state.playingSeen = true;
+			commitReady();
+		}
+
+		/* Listener installation must precede all current-state reads and the
+		 * single play attempt, so server-autoplay events cannot be missed. */
+		video.addEventListener('loadeddata', onLoadedData);
+		video.addEventListener('playing', onPlaying);
+		video.addEventListener('error', terminalFailure);
+
+		if (video.readyState >= 2) { state.dataReady = true; }
+		if (!video.paused && video.readyState >= 2) { state.playingSeen = true; }
+
+		if (reduceMotion) {
+			if (state.dataReady) {
+				try { video.pause(); } catch (error) { /* no-op: already static */ }
+				commitReady();
+			}
+		} else if (!state.playAttempted) {
+			state.playAttempted = true;
+			var playPromise;
+			try {
+				playPromise = video.play();
+			} catch (error) {
+				terminalFailure();
+			}
+			if (playPromise && typeof playPromise.then === 'function') {
+				playPromise.then(function () {
+					state.playResolved = true;
+					commitReady();
+				}).catch(terminalFailure);
+			} else if (!state.terminalError) {
+				state.playResolved = true;
+				commitReady();
+			}
+		}
+
+		if (!state.readyCommitted && !state.terminalError) {
+			timeoutHandle = window.setTimeout(releaseLoader, HERO_BG_VIDEO_SAFETY_TIMEOUT_MS);
+		}
 	}
 
 	function initHeroBackgroundVideo() {
@@ -1989,7 +1941,6 @@
 		initQuickAdd();
 		initShopCatalog();
 		initWishlist();
-		initHeroVideo();
 		initHeroBackgroundVideo();
 		initHeroScrollCue();
 	}
@@ -2017,10 +1968,6 @@
 			successFeedback: successFeedback,
 			parseShopCatalogHash: parseShopCatalogHash,
 			buildShopCatalogHash: buildShopCatalogHash,
-			shouldAutoEnhanceHeroVideo: shouldAutoEnhanceHeroVideo,
-			buildHeroVideoEmbedUrl: buildHeroVideoEmbedUrl,
-			enhanceHeroVideo: enhanceHeroVideo,
-			initHeroVideo: initHeroVideo,
 			setupHeroBackgroundVideo: setupHeroBackgroundVideo,
 			initHeroBackgroundVideo: initHeroBackgroundVideo
 		};

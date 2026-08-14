@@ -160,14 +160,10 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 	 * media hero, no eyebrow/heading/copy/CTA/split column). No second
 	 * Hero service, no second video settings system.
 	 *
-	 * 'standard' keeps the existing media fallback chain (YouTube facade ->
-	 * attachment image -> editorial placeholder) via
-	 * gloskin_ui1_render_hero_video() below, for backward compatibility.
-	 *
 	 * 'video-only' is Home's pure background-video surface: it prefers a
 	 * native <video> sourced from a real WordPress Media Library
 	 * attachment (see Template_Service::hero_background_video()) and never
-	 * renders the YouTube facade/iframe at all -- only native video ->
+	 * renders remote video/player chrome -- only native video ->
 	 * attachment image -> editorial placeholder.
 	 *
 	 * @param array<string,mixed> $hero Hero context.
@@ -179,7 +175,6 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 		$label      = isset( $hero['cta_label'] ) ? (string) $hero['cta_label'] : '';
 		$url        = isset( $hero['cta_url'] ) ? (string) $hero['cta_url'] : '';
 		$media      = isset( $hero['media_id'] ) ? absint( $hero['media_id'] ) : 0;
-		$video_id   = ! empty( $hero['video_enabled'] ) && ! empty( $hero['video_id'] ) ? (string) $hero['video_id'] : '';
 		$video_only = isset( $hero['mode'] ) && 'video-only' === $hero['mode'];
 
 		if ( $video_only ) {
@@ -244,9 +239,7 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 					<?php endif; ?>
 				</div>
 				<div class="gloskin-ui1-hero__media">
-					<?php if ( '' !== $video_id ) : ?>
-						<?php gloskin_ui1_render_hero_video( $video_id, $heading ); ?>
-					<?php elseif ( $media ) : ?>
+					<?php if ( $media ) : ?>
 						<?php
 						echo wp_get_attachment_image(
 							$media,
@@ -265,44 +258,6 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 				</div>
 			</div>
 		</section>
-		<?php
-	}
-}
-
-if ( ! function_exists( 'gloskin_ui1_render_hero_video' ) ) {
-	/**
-	 * Performance-first poster/facade for the Home hero video: NO iframe in
-	 * the initial server-rendered HTML, only a stable aspect-ratio box, the
-	 * YouTube thumbnail as a real <img> (so it can become the LCP candidate
-	 * instead of a full YouTube player boot), and one real accessible
-	 * <button>. gloskin-ui1-core.js progressively enhances this into a
-	 * youtube-nocookie.com iframe -- see initHeroVideo(). $video_id is
-	 * always already validated (11-char YouTube ID pattern) by
-	 * Gloskin_Site_Core_Admin_Service::resolve_youtube_video_id() before
-	 * this ever runs; never raw admin input.
-	 *
-	 * @param string $video_id Validated 11-character YouTube video ID.
-	 * @param string $heading Hero heading, reused for the poster's accessible fallback context.
-	 * @return void
-	 */
-	function gloskin_ui1_render_hero_video( $video_id, $heading = '' ) {
-		if ( '' === trim( (string) $video_id ) ) {
-			return;
-		}
-		$maxres     = 'https://i.ytimg.com/vi/' . rawurlencode( $video_id ) . '/maxresdefault.jpg';
-		$hq         = 'https://i.ytimg.com/vi/' . rawurlencode( $video_id ) . '/hqdefault.jpg';
-		$play_label = __( 'Play hero video', 'gloskin-site-core' );
-		/* Meaningful iframe title once the video becomes interactive (see
-		 * initHeroVideo() in gloskin-ui1-core.js), reusing the hero heading
-		 * when one exists rather than a generic placeholder. */
-		$video_title = '' !== trim( $heading ) ? $heading : __( 'Gloskin hero video', 'gloskin-site-core' );
-		?>
-		<div class="gloskin-ui1-hero-video gloskin-ui1-hero__image" data-gloskin-hero-video data-video-id="<?php echo esc_attr( $video_id ); ?>" data-video-title="<?php echo esc_attr( $video_title ); ?>">
-			<img class="gloskin-ui1-hero-video__poster" src="<?php echo esc_url( $maxres ); ?>" data-gloskin-hero-video-fallback="<?php echo esc_url( $hq ); ?>" alt="" width="1280" height="720" fetchpriority="high" decoding="async" />
-			<button type="button" class="gloskin-ui1-hero-video__play" data-gloskin-hero-video-play aria-label="<?php echo esc_attr( $play_label ); ?>">
-				<svg width="22" height="22" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M6.5 4.5v11l9-5.5-9-5.5z" fill="currentColor"/></svg>
-			</button>
-		</div>
 		<?php
 	}
 }

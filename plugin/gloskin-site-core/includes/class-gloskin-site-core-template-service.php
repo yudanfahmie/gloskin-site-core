@@ -250,15 +250,9 @@ final class Gloskin_Site_Core_Template_Service {
 	/** @return array<string,mixed> */
 	private function home_context() {
 		$page = $this->content_page( 'home' );
-		/* Hero video applies only to the Home hero -- every other page's
-		 * hero_context() call is untouched, never gaining a video slot. */
 		$hero = $this->hero_context( $page, __( 'Perawatan kulit, anti-aging, dan rambut yang dimulai dari konsultasi.', 'gloskin-site-core' ), __( 'Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengutamakan pemeriksaan bersama dokter sebelum menentukan langkah perawatan untuk kulit Anda.', 'gloskin-site-core' ), __( 'Cari Klinik Terdekat', 'gloskin-site-core' ), home_url( '/clinics/' ) );
-		$hero = array_merge( $hero, $this->hero_video() );
-		/* Home video-only mode's own native background video (task K/L):
-		 * a real Media Library attachment, resolved independently of the
-		 * legacy YouTube hero_video() above -- see hero_background_video().
-		 * gloskin_ui1_render_hero()'s video-only branch prefers this native
-		 * source and never falls back to the YouTube facade/iframe. */
+		/* Home's one video owner resolves a Media Library attachment through
+		 * the existing settings option and shared hero renderer. */
 		$hero = array_merge( $hero, $this->hero_background_video() );
 		/* Final client requirement: Home's hero becomes a pure full-width
 		 * video hero -- no eyebrow/heading/copy/CTA/split column. One
@@ -991,58 +985,11 @@ final class Gloskin_Site_Core_Template_Service {
 	}
 
 	/**
-	 * Home hero video: same one settings option as design_variant()/
-	 * header_variant() above, resolved through Admin_Service's one pure
-	 * resolve_youtube_video_id() helper. The frontend request bootstrap
-	 * (Kernel::boot()) never loads class-gloskin-site-core-admin-service.php
-	 * -- only the is_admin() bootstrap path does -- so it is explicitly
-	 * required here, matching the same fix already applied to the
-	 * description-consolidation admin-post path. No second Admin Service is
-	 * registered/instantiated; only this one static helper is used.
-	 *
-	 * An invalid/unresolvable URL (or the feature being disabled) always
-	 * resolves to an empty video_id, which the existing hero renderer
-	 * treats as "no video" and falls back to its current non-video media
-	 * behavior -- the hero can never break.
-	 *
-	 * Real staging proof: this one shared settings option already existed
-	 * (design_variant/header_variant were saved by earlier tasks) before
-	 * hero_video_enabled/hero_video_url were added to its schema --
-	 * get_option()'s own $default argument is only used when the option
-	 * row is entirely absent, never merged key-by-key into an existing
-	 * stored value. A plain isset()/empty() read therefore treats an
-	 * existing site's option (genuinely missing these two new keys) as
-	 * "disabled", contradicting the documented recommended default of
-	 * enabled=true. Missing keys are merged against
-	 * Admin_Service::settings_defaults() here instead, so an existing
-	 * site gets the real recommended defaults on the very first frontend
-	 * read, with no admin action required, while an admin's own explicit
-	 * saved choice (always written as a real bool/string by
-	 * sanitize_settings()) is still fully respected either way.
-	 *
-	 * @return array{video_enabled:bool,video_id:string}
-	 */
-	private function hero_video() {
-		if ( ! class_exists( 'Gloskin_Site_Core_Admin_Service' ) ) {
-			require_once __DIR__ . '/class-gloskin-site-core-admin-service.php';
-		}
-		$defaults = class_exists( 'Gloskin_Site_Core_Admin_Service' ) ? Gloskin_Site_Core_Admin_Service::settings_defaults() : array( 'hero_video_enabled' => true, 'hero_video_url' => '' );
-		$settings = array_merge( $defaults, get_option( Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION, $defaults ) );
-		if ( empty( $settings['hero_video_enabled'] ) ) {
-			return array( 'video_enabled' => false, 'video_id' => '' );
-		}
-		$url = (string) $settings['hero_video_url'];
-		$video_id = class_exists( 'Gloskin_Site_Core_Admin_Service' ) ? Gloskin_Site_Core_Admin_Service::resolve_youtube_video_id( $url ) : '';
-		return array( 'video_enabled' => '' !== $video_id, 'video_id' => $video_id );
-	}
-
-	/**
 	 * Home video-only mode's native background video (task J/K/L): resolves
 	 * the same shared settings option's hero_video_media_id key to a real
-	 * WordPress Media Library attachment -- never a remote YouTube
-	 * download, never a second settings option. Only a genuine video/*
-	 * mime attachment resolves to a source; anything else (unset,
-	 * deleted, non-video) returns an empty sources array and
+	 * WordPress Media Library attachment -- never a remote video
+	 * download, never a second settings option. Only MP4 and WebM Media
+	 * Library attachments resolve; anything else returns an empty sources array and
 	 * gloskin_ui1_render_hero()'s existing media fallback chain (attachment
 	 * image -> editorial placeholder) takes over exactly as it already does.
 	 *
@@ -1060,7 +1007,7 @@ final class Gloskin_Site_Core_Template_Service {
 		}
 		$url  = function_exists( 'wp_get_attachment_url' ) ? wp_get_attachment_url( $media_id ) : false;
 		$mime = function_exists( 'get_post_mime_type' ) ? get_post_mime_type( $media_id ) : '';
-		if ( ! $url || 0 !== strpos( (string) $mime, 'video/' ) ) {
+		if ( ! $url || ! in_array( (string) $mime, array( 'video/mp4', 'video/webm' ), true ) ) {
 			return array( 'sources' => array() );
 		}
 		return array( 'sources' => array( array( 'src' => $url, 'type' => (string) $mime ) ) );
