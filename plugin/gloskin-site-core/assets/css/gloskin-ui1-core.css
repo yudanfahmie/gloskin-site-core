@@ -339,6 +339,14 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 	height:60px;
 	padding:29px 40px 8px 16px;
 	border-radius:var(--gloskin-field-radius);
+	/* This <select> also matches the existing sitewide
+	   .gloskin-ui1 .woocommerce select rule (further up this file), which
+	   paints its own chevron as a background-image -- reported and
+	   confirmed on real staging as a visible double chevron stacked with
+	   WC's own .wc-blocks-components-select__expand SVG below. WC's own
+	   icon is kept as the single indicator here; the sitewide background
+	   is turned off only for this Checkout Block select, not globally. */
+	background-image:none;
 }
 .wp-block-woocommerce-checkout .wc-blocks-components-select .wc-blocks-components-select__label{
 	top:7px;
