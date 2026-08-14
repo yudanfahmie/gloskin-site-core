@@ -226,10 +226,10 @@ The source material expected a substantial company description and referenced In
 Support:
 
 - hub hero/introduction;
-- exactly eight approved treatment category cards/entries;
 - a four-photo Treatment Finder with canonical baseline concern chips and an explicit search CTA when its private path/concern/product data is ready;
-- all eight informational treatment entries below the finder;
 - one final consultation/booking CTA.
+
+The eight informational `gloskin_treatment` records and their singular routes remain active for Home previews, treatment details and related-treatment logic, but the Treatments Hub no longer projects their directory or its empty state.
 
 Treatment Finder scoring is client-side presentation over server-rendered canonical WordPress/Woo data. Each product scores by the count of selected concern IDs it shares, positive matches are ranked descending with stable Woo order for ties, and output is capped at eight. Results use the shared detail-only consultation product-card variant: one PDP link, factual Woo image/title/description/price, and no wishlist, add-to-cart or Quick Add controls. Private questions are not a public readiness dependency or payload.
 

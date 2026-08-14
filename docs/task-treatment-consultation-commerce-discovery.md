@@ -46,7 +46,7 @@ Recommended Treatment Product grid (Woo, max 8)
   ↓ detail-only card
 Native PDP
   ↓
-Existing informational treatment sections / 8 treatment records remain available
+One closing consultation CTA on the Treatments Hub
 ```
 
 ### 2.2 WooCommerce remains sole commerce authority
@@ -151,7 +151,7 @@ A path term may have small presentation/recommendation term meta:
 
 The four paths are **discovery entry points**, not the eight `gloskin_treatment` records.
 
-If fewer than four valid path terms exist, the consultation feature must fail gracefully and the existing Treatments Hub content remains usable. Do not invent production path names automatically outside the explicit demo importer.
+If fewer than four valid path terms exist, the consultation feature must fail gracefully and the closing Treatments Hub CTA remains usable. Do not invent production path names automatically outside the explicit demo importer.
 
 ### 4.4 Questionnaire question — private CPT
 
@@ -301,7 +301,7 @@ This is the high-impact management surface described in section 8.
 
 ## 6. Public Treatments Hub UX
 
-The public composition is deliberately simple: hero, Treatment Finder/results, all eight informational `gloskin_treatment` records, and one final consultation CTA. The former “Sebelum memilih”, featured-treatment and pathway blocks are not part of this composition.
+The public composition is deliberately simple: hero, Treatment Finder/results, and one final consultation CTA. The former “Sebelum memilih”, featured-treatment, informational directory/empty state and pathway blocks are not part of this composition. The eight informational `gloskin_treatment` records remain intact for their other active consumers.
 
 ### 6.1 Initial state
 
@@ -693,7 +693,7 @@ Future scale trigger: only if Treatment Product count/payload becomes measurably
    - staging-only demo import card/action.
 6. Add narrow demo bundle/importer.
 7. Extend WooCommerceAdapter with treatment-family product retrieval/presentation helper only as needed.
-8. Extend Treatments page context/template with the four-path concern finder while retaining all eight informational treatments.
+8. Extend Treatments page context/template with the four-path concern finder; do not query the informational-treatment directory in this page context.
 9. Add one small feature JS controller and corresponding presentation CSS through AssetService.
 10. Add the shared detail-only `consultation` variant to the existing product-card renderer without changing its catalog behavior.
 11. Update canonical docs named below.
@@ -745,7 +745,7 @@ Add/extend focused automated contracts for at least:
 - demo importer refuses to run without the explicit server-verified confirmation, independent of any deployment environment;
 - demo import is deterministic/idempotent and creates expected minimum counts;
 - recommendation grid uses the shared detail-only product-card variant and excludes every commerce control;
-- Treatments Hub still renders/retains the existing informational treatment data path;
+- Treatments Hub contains no informational-treatment directory/empty-state projection while the CPT and its other consumers remain intact;
 - zero new public `wp_ajax_nopriv_*`;
 - no new `!important` unless an already-documented unavoidable owner exception exists (default expectation: zero new).
 
@@ -788,7 +788,7 @@ Implementation is complete when all of the following are true at code level:
 - Woo products remain the only purchasable product model.
 - Product family cleanly distinguishes Treatment Products without duplicating CRUD.
 - Existing/unclassified Woo products remain safely usable as Skincare.
-- `/treatments/` renders hero, a separate four-path concern finder, all eight informational-treatment records, and one final CTA.
+- `/treatments/` renders hero, a separate four-path concern finder/results, and one final CTA.
 - Private demo questions remain editable/importable but are absent from the public finder and readiness gate.
 - Multi-selected canonical concerns deterministically rank positive product matches, capped at eight.
 - Concern taxonomy relationships are the only product-mapping persistence.

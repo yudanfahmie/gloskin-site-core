@@ -51,8 +51,42 @@
 .gloskin-ui1-consultation__path-image{width:100%;height:100%;object-fit:cover}
 .gloskin-ui1-consultation__path-media>.gloskin-ui1-media{height:100%;border:0;border-radius:50%}
 .gloskin-ui1-consultation__path-label{font-weight:700;text-align:center}
-.gloskin-ui1-consultation__concerns{display:grid;gap:18px}
+.gloskin-ui1-consultation__concerns{
+	display:grid;
+	gap:18px;
+	animation:gloskin-consultation-concerns-in 180ms ease-out both;
+}
 .gloskin-ui1-consultation__concerns[hidden]{display:none}
+.gloskin-ui1-consultation__helper{
+	display:inline-flex;
+	min-height:34px;
+	align-items:center;
+	justify-self:center;
+	gap:8px;
+	margin:0;
+	padding:6px 12px;
+	border-radius:999px;
+	background:var(--gloskin-accent-soft);
+	color:var(--gloskin-muted);
+	font-size:.88rem;
+	text-align:center;
+}
+.gloskin-ui1-consultation__helper-icon{
+	display:grid;
+	width:18px;
+	height:18px;
+	border-radius:50%;
+	background:var(--gloskin-accent);
+	color:var(--gloskin-inverse);
+	font-size:.82rem;
+	font-weight:700;
+	line-height:1;
+	place-items:center;
+}
+@keyframes gloskin-consultation-concerns-in{
+	from{opacity:0;transform:translateY(5px)}
+	to{opacity:1;transform:none}
+}
 .gloskin-ui1-consultation__concern-group{min-width:0;margin:0;padding:0;border:0}
 .gloskin-ui1-consultation__concern-group[hidden]{display:none}
 .gloskin-ui1-consultation__chips{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
@@ -205,6 +239,7 @@
 	.gloskin-ui1-consultation-card__media{width:92px}
 }
 @media (prefers-reduced-motion:reduce){
+	.gloskin-ui1-consultation__concerns{animation:none}
 	.gloskin-ui1-consultation__path-media,
 	.gloskin-ui1-consultation__chip span,
 	.gloskin-ui1-consultation-card::before,

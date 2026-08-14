@@ -31,6 +31,7 @@ if ( ! empty( $gloskin_consultation['paths'] ) ) :
 
 					<div class="gloskin-ui1-consultation__concerns" data-gloskin-consultation-concerns hidden>
 						<h3 class="gloskin-ui1-consultation__concerns-heading"><?php echo esc_html__( 'Apa yang paling ingin Anda perbaiki?', 'gloskin-site-core' ); ?></h3>
+						<p class="gloskin-ui1-consultation__helper"><span class="gloskin-ui1-consultation__helper-icon" aria-hidden="true">+</span><?php echo esc_html__( 'Anda dapat memilih lebih dari satu keluhan.', 'gloskin-site-core' ); ?></p>
 						<?php foreach ( $gloskin_consultation['paths'] as $gloskin_path ) : ?>
 							<fieldset class="gloskin-ui1-consultation__concern-group" data-gloskin-consultation-concern-group="<?php echo esc_attr( (string) $gloskin_path['id'] ); ?>" hidden>
 								<legend class="screen-reader-text"><?php echo esc_html( $gloskin_path['label'] ); ?></legend>
@@ -69,14 +70,5 @@ if ( ! empty( $gloskin_consultation['paths'] ) ) :
 		</div>
 	</section>
 <?php endif; ?>
-
-<section class="gloskin-ui1-section" data-gloskin-section="treatments-discovery"><div class="gloskin-ui1-container">
-	<?php gloskin_ui1_render_section_heading( __( 'Informasi Perawatan', 'gloskin-site-core' ), __( 'Buka setiap halaman untuk membaca informasi yang tersedia.', 'gloskin-site-core' ) ); ?>
-	<?php if ( $gloskin_context['treatments'] ) : ?>
-		<?php gloskin_ui1_render_card_grid( $gloskin_context['treatments'], 'treatment' ); ?>
-	<?php else : ?>
-		<?php gloskin_ui1_render_empty_state( 'treatment', __( 'Belum ada perawatan yang tersedia', 'gloskin-site-core' ), __( 'Informasi perawatan akan tampil di sini setelah dipublikasikan.', 'gloskin-site-core' ), __( 'Hubungi Gloskin', 'gloskin-site-core' ), home_url( '/contact/' ) ); ?>
-	<?php endif; ?>
-</div></section>
 
 <section class="gloskin-ui1-section gloskin-ui1-section--cta" data-gloskin-section="treatments-closing"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_closing_cta( __( 'Konsultasi', 'gloskin-site-core' ), __( 'Informasi di situs membantu menyiapkan pertanyaan sebelum konsultasi.', 'gloskin-site-core' ), __( 'Pilih klinik atau gunakan halaman kontak untuk melanjutkan melalui kanal yang tersedia.', 'gloskin-site-core' ), __( 'Pilih Klinik', 'gloskin-site-core' ), home_url( '/clinics/' ), __( 'Hubungi Gloskin', 'gloskin-site-core' ), home_url( '/contact/' ) ); ?></div></section>

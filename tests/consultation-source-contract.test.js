@@ -33,13 +33,21 @@ expect(frontend.includes("submitButton.addEventListener('click', showResults)"),
 expect(treatmentTemplate.includes("wp_json_encode( array( 'paths' => $gloskin_consultation['paths'] ) )"), 'Public payload must contain canonical paths only');
 expect(!treatmentTemplate.includes("'questions' =>"), 'Private questions must never enter public template data');
 expect(treatmentTemplate.includes('type="checkbox"') && treatmentTemplate.includes('data-gloskin-consultation-concern'), 'Baseline concerns must be native multi-select checkboxes');
+expect(treatmentTemplate.includes('gloskin-ui1-consultation__helper') && treatmentTemplate.includes('Anda dapat memilih lebih dari satu keluhan.'), 'Finder must explain that multiple concerns may be selected');
 expect(treatmentTemplate.includes("gloskin_ui1_render_product_card( $gloskin_treatment_product, 'consultation' )"), 'Finder results must use the shared consultation product-card variant');
 const consultationIndex = treatmentTemplate.indexOf('data-gloskin-section="treatments-consultation"');
-const informationalIndex = treatmentTemplate.indexOf('data-gloskin-section="treatments-discovery"');
 const closingIndex = treatmentTemplate.indexOf('data-gloskin-section="treatments-closing"');
-expect(consultationIndex >= 0 && informationalIndex > consultationIndex && closingIndex > informationalIndex, 'Treatments composition must be finder, all information records, then one final CTA');
-for (const obsolete of ['treatments-orientation', 'treatments-featured', 'treatments-pathways', 'Sebelum memilih']) {
+expect(consultationIndex >= 0 && closingIndex > consultationIndex, 'Treatments composition must be finder/results followed by one final CTA');
+for (const obsolete of ['treatments-orientation', 'treatments-featured', 'treatments-pathways', 'treatments-discovery', 'Sebelum memilih', 'Informasi Perawatan', 'Belum ada perawatan yang tersedia']) {
   expect(!treatmentTemplate.includes(obsolete), `Removed Treatments block must stay absent: ${obsolete}`);
+}
+
+const treatmentsContextStart = templateService.indexOf('private function treatments_context()');
+const treatmentsContextEnd = templateService.indexOf('\n\tprivate function consultation_context()', treatmentsContextStart);
+const treatmentsContext = templateService.slice(treatmentsContextStart, treatmentsContextEnd);
+expect(treatmentsContextStart >= 0 && treatmentsContextEnd > treatmentsContextStart, 'Treatments page context owner missing');
+for (const staleProjection of ['post_cards(', 'TREATMENT_POST_TYPE', "'treatments' =>", "'target' =>"]) {
+  expect(!treatmentsContext.includes(staleProjection), `Treatments page context must not retain informational directory projection: ${staleProjection}`);
 }
 
 const contextStart = templateService.indexOf('private function consultation_context()');
@@ -68,6 +76,9 @@ expect(!frontendCss.includes('!important'), 'Finder CSS must contain no !importa
 expect(frontendCss.includes('width:clamp(150px,15vw,176px)') && frontendCss.includes('border-radius:50%'), 'Desktop paths must use circular 150-180px photo controls');
 expect(frontendCss.includes('@media (hover:none),(pointer:coarse)') && frontendCss.includes('position:static;opacity:1'), 'Touch devices must keep the detail action visible');
 expect(frontendCss.includes('@media (prefers-reduced-motion:reduce)'), 'Finder motion must respect reduced-motion preference');
+expect(frontendCss.includes('@keyframes gloskin-consultation-concerns-in') && frontendCss.includes('transform:translateY(5px)'), 'Concern helper area must use only the subtle CSS entrance');
+expect(/\.gloskin-ui1-consultation__helper\{[\s\S]*?display:inline-flex;[\s\S]*?background:var\(--gloskin-accent-soft\);[\s\S]*?\}/.test(frontendCss), 'Multi-select helper must use the compact accent-soft presentation');
+expect(/@media \(prefers-reduced-motion:reduce\)[\s\S]*?\.gloskin-ui1-consultation__concerns\{animation:none\}/.test(frontendCss), 'Reduced motion must disable the concern helper entrance');
 const invalidFlexTypo = 'dis' + ':flex';
 expect(!frontendCss.includes(invalidFlexTypo), 'Consultation CSS must contain zero invalid abbreviated display declarations');
 expect(/\.gloskin-ui1-consultation-card__footer\{\s*display:flex;[\s\S]*?justify-content:flex-end;[\s\S]*?\}/.test(frontendCss), 'Desktop consultation footer must remain a flex price strip aligned to the end');
@@ -86,6 +97,10 @@ expect(admin.includes('model.nativeGrid.hidden = true;') && admin.includes('Tamp
 expect(!admin.includes('.style.') && !admin.includes('gridTemplateColumns'), 'Admin JS must not own static presentation');
 expect(admin.includes("item.setAttribute('draggable', 'true')") && admin.includes("bucket.addEventListener('drop'"), 'Pointer drag/drop mapping must remain available');
 expect(admin.includes("var select = document.createElement('select');") && admin.includes("'Tambah'"), 'Keyboard mapping controls must remain available');
+for (const nativeClass of ['button button-primary', 'button button-secondary', 'button-small', 'button-link-delete', 'button button-link']) {
+  expect(!admin.includes(nativeClass), `JS-generated controls must not use native WordPress button chrome: ${nativeClass}`);
+}
+expect(admin.includes('gloskin-consultation-action--secondary') && admin.includes('gloskin-consultation-action--danger') && admin.includes('gloskin-consultation-action--quiet'), 'JS-generated mapping actions must use the Gloskin action kit');
 
 for (const className of ['.gloskin-admin-mapping-enhanced', '.gloskin-admin-mapping-pool', '.gloskin-admin-mapping-product-pool', '.gloskin-admin-mapping-pool-item', '.gloskin-admin-mapping-concerns', '.gloskin-admin-mapping-buckets', '.gloskin-admin-mapping-bucket-enhanced', '.gloskin-admin-mapping-add', '.gloskin-admin-mapping-chip-list', '.gloskin-admin-mapping-chip', '.is-dragging', '.is-drop-target']) {
   expect(adminCss.includes(className), `Consultation admin stylesheet missing ${className}`);
@@ -93,6 +108,11 @@ for (const className of ['.gloskin-admin-mapping-enhanced', '.gloskin-admin-mapp
 expect(adminCss.includes('grid-template-columns:minmax(220px,.75fr) minmax(0,1.6fr)') && adminCss.includes('repeat(auto-fit,minmax(min(240px,100%),1fr))'), 'Admin mapping geometry must remain responsive');
 expect(adminCss.includes('@media (max-width:782px)') && adminCss.includes('grid-template-columns:minmax(0,1fr)'), 'Narrow admin mapping must stack');
 expect(!adminCss.includes('!important'), 'Consultation admin stylesheet must add zero !important rules');
+for (const actionClass of ['.gloskin-consultation-action--primary', '.gloskin-consultation-action--secondary', '.gloskin-consultation-action--quiet', '.gloskin-consultation-action--danger']) {
+  expect(adminCss.includes(actionClass), `Consultation admin action kit missing ${actionClass}`);
+}
+expect(adminCss.includes('.gloskin-consultation-action:focus-visible') && adminCss.includes('.gloskin-consultation-action:disabled'), 'Consultation admin actions must expose focus-visible and disabled states');
+expect(adminCss.includes('input[type="search"]') && adminCss.includes('select{'), 'Consultation workspace native fields must share scoped Gloskin presentation');
 expect(adminService.includes("Pertanyaan Terpublikasi (data admin)" ) && adminService.includes(', false, true );'), 'Question count must be informational, not a readiness warning');
 expect(adminCss.includes('.gloskin-consultation-metric-card.is-info'), 'Informational admin metric presentation missing');
 
@@ -110,10 +130,15 @@ for (const forbidden of ['nav-tab-wrapper', 'nav-tab-active', 'class="nav-tab'])
 }
 expect(adminService.includes('class="gloskin-consultation-tabs"') && adminService.includes('aria-current="page"'), 'Semantic pill navigation must remain');
 expect(adminService.includes("esc_html__( 'Data & Import'") && adminService.includes('gloskin-consultation-import-cards'), 'Data & Import cards must remain');
-const workspaceStart = adminService.indexOf('public function render_consultation_page()');
-const workspaceEnd = adminService.indexOf('public function handle_save_concern()', workspaceStart);
+const workspaceStart = adminService.indexOf('public function render_consultation_workspace()');
+const workspaceEnd = adminService.indexOf('public function handle_save_mapping()', workspaceStart);
 const workspaceSource = adminService.slice(workspaceStart, workspaceEnd);
+expect(workspaceStart >= 0 && workspaceEnd > workspaceStart, 'Consultation workspace source boundary missing');
 expect(!workspaceSource.includes('<style>') && !workspaceSource.includes('style="'), 'Consultation workspace presentation must remain stylesheet-owned');
+for (const nativeClass of ['class="button button-primary"', 'class="button button-secondary"', 'button-small', 'button-link-delete']) {
+  expect(!workspaceSource.includes(nativeClass), `Custom Consultation workspace must not depend on native WordPress button chrome: ${nativeClass}`);
+}
+expect(workspaceSource.includes('gloskin-consultation-action--primary') && workspaceSource.includes('gloskin-consultation-action--danger'), 'PHP-rendered Consultation actions must use the scoped Gloskin action kit');
 expect(adminCss.includes('[data-gloskin-consultation-workspace] .gloskin-consultation-tabs{') && adminCss.includes('.gloskin-consultation-import-cards{'), 'Admin workspace presentation contracts missing');
 
 console.log('consultation-source-contract.test.js: OK');

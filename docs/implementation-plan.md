@@ -273,10 +273,11 @@ Suggested commit message: `build core pages`
 
 - hub plus exactly eight configurable detail records;
 - description, benefits, contraindications, media and relationships;
-- public hub composition is hero → four-photo Treatment Finder → all eight informational records → one final CTA;
+- public hub composition is hero → four-photo Treatment Finder/results → one final CTA;
 - finder uses canonical path baseline-concern chips, an explicit CTA, local positive-match scoring and at most eight SSR Woo Treatment Product cards;
 - private question content remains admin-only and does not gate or enter the public finder;
 - consultation results use the shared detail-only product-card variant, leaving the catalog/cart/Quick Add owner unchanged;
+- the eight informational treatment records remain available to Home, singular routes and related-treatment consumers without a directory projection on the hub;
 - no speculative grouping of the fifteen draft service labels.
 
 ### Clinics

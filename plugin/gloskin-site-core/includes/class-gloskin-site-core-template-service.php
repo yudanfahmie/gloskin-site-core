@@ -294,16 +294,9 @@ final class Gloskin_Site_Core_Template_Service {
 	/** @return array<string,mixed> */
 	private function treatments_context() {
 		$page = $this->content_page( 'treatments' );
-		$cards = $this->post_cards( Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 8 );
 		return array(
 			'page' => $page,
 			'hero' => $this->hero_context( $page, __( 'Perawatan', 'gloskin-site-core' ), __( 'Pelajari informasi perawatan Gloskin sebelum menentukan langkah konsultasi.', 'gloskin-site-core' ) ),
-			'treatments' => $cards,
-			'target' => Gloskin_Site_Core_Content_Service::TREATMENT_TARGET_COUNT,
-			/* Consultation discovery layer (docs/task-treatment-
-			 * consultation-commerce-discovery.md section 6): additive to
-			 * the eight informational gloskin_treatment records above,
-			 * never replacing them. */
 			'consultation' => $this->consultation_context(),
 		);
 	}
@@ -311,8 +304,7 @@ final class Gloskin_Site_Core_Template_Service {
 	/**
 	 * Consultation discovery context for the Treatments Hub. Fails
 	 * gracefully (empty 'paths') when fewer than 4 valid consultation
-	 * paths exist -- the existing informational treatment content remains
-	 * fully usable regardless (section 4.3).
+	 * paths exist. The closing consultation CTA remains available regardless.
 	 *
 	 * Questions remain private/admin-managed data but are deliberately not
 	 * projected into this simple public finder.

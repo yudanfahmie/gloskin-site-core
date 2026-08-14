@@ -1062,8 +1062,8 @@ final class Gloskin_Site_Core_Admin_Service {
 			);
 			$mapping_url = add_query_arg( array( 'tab' => 'pemetaan' ), admin_url( 'edit.php?post_type=product&page=' . self::CONSULTATION_SLUG ) );
 			echo '<p class="gloskin-consultation-import-card__links">';
-			echo '<a class="button button-secondary" href="' . esc_url( $mapping_url ) . '">' . esc_html__( 'Pemetaan Produk', 'gloskin-site-core' ) . '</a> ';
-			echo '<a class="button button-secondary" href="' . esc_url( admin_url( 'edit.php?post_type=product&gloskin_product_family=treatment' ) ) . '">' . esc_html__( 'Semua Produk Perawatan', 'gloskin-site-core' ) . '</a>';
+			echo '<a class="gloskin-consultation-action gloskin-consultation-action--secondary" href="' . esc_url( $mapping_url ) . '">' . esc_html__( 'Pemetaan Produk', 'gloskin-site-core' ) . '</a> ';
+			echo '<a class="gloskin-consultation-action gloskin-consultation-action--secondary" href="' . esc_url( admin_url( 'edit.php?post_type=product&gloskin_product_family=treatment' ) ) . '">' . esc_html__( 'Semua Produk Perawatan', 'gloskin-site-core' ) . '</a>';
 			echo '</p>';
 			echo '</div>';
 			return;
@@ -1082,7 +1082,7 @@ final class Gloskin_Site_Core_Admin_Service {
 					<?php echo esc_html__( 'Saya memahami bahwa data demo sintetis akan dibuat pada situs ini.', 'gloskin-site-core' ); ?>
 				</label>
 			</p>
-			<button type="submit" class="button button-primary"><?php echo esc_html( 'pending' === $state['status'] && $state['processed'] > 0 ? __( 'Lanjutkan Import Demo', 'gloskin-site-core' ) : __( 'Import Data Demo', 'gloskin-site-core' ) ); ?></button>
+			<button type="submit" class="gloskin-consultation-action gloskin-consultation-action--primary"><?php echo esc_html( 'pending' === $state['status'] && $state['processed'] > 0 ? __( 'Lanjutkan Import Demo', 'gloskin-site-core' ) : __( 'Import Data Demo', 'gloskin-site-core' ) ); ?></button>
 		</form>
 		<?php
 		echo '</div>';
@@ -1120,7 +1120,7 @@ final class Gloskin_Site_Core_Admin_Service {
 					$expected
 				)
 			) . '</p>';
-			echo '<p><a class="button button-primary" href="' . esc_url( admin_url( 'admin.php?page=' . self::MIGRATION_SLUG ) ) . '">' . esc_html__( 'Buka Import Sample Products', 'gloskin-site-core' ) . '</a></p>';
+			echo '<p><a class="gloskin-consultation-action gloskin-consultation-action--primary" href="' . esc_url( admin_url( 'admin.php?page=' . self::MIGRATION_SLUG ) ) . '">' . esc_html__( 'Buka Import Sample Products', 'gloskin-site-core' ) . '</a></p>';
 		} else {
 			echo '<p>' . esc_html__( 'Bundle sample product tidak tersedia.', 'gloskin-site-core' ) . '</p>';
 		}
@@ -1143,7 +1143,7 @@ final class Gloskin_Site_Core_Admin_Service {
 			<?php wp_nonce_field( self::CONCERN_NONCE ); ?>
 			<input type="hidden" name="action" value="<?php echo esc_attr( self::CONCERN_ACTION ); ?>" />
 			<input type="text" name="concern_name" placeholder="<?php echo esc_attr__( 'Nama keluhan, mis. Jerawat Aktif', 'gloskin-site-core' ); ?>" required />
-			<button type="submit" class="button button-secondary"><?php echo esc_html__( 'Tambah', 'gloskin-site-core' ); ?></button>
+			<button type="submit" class="gloskin-consultation-action gloskin-consultation-action--secondary"><?php echo esc_html__( 'Tambah', 'gloskin-site-core' ); ?></button>
 		</form>
 		<table class="widefat striped gloskin-consultation-concerns-table">
 			<thead><tr>
@@ -1165,7 +1165,7 @@ final class Gloskin_Site_Core_Admin_Service {
 							<input type="hidden" name="action" value="<?php echo esc_attr( self::CONCERN_ACTION ); ?>" />
 							<input type="hidden" name="concern_id" value="<?php echo esc_attr( (string) $concern->term_id ); ?>" />
 							<input type="text" name="concern_name" value="<?php echo esc_attr( $concern->name ); ?>" />
-							<button type="submit" class="button button-small"><?php echo esc_html__( 'Simpan', 'gloskin-site-core' ); ?></button>
+							<button type="submit" class="gloskin-consultation-action gloskin-consultation-action--primary gloskin-consultation-action--small"><?php echo esc_html__( 'Simpan', 'gloskin-site-core' ); ?></button>
 						</form>
 					</td>
 					<td><?php echo esc_html( $concern->slug ); ?></td>
@@ -1173,7 +1173,7 @@ final class Gloskin_Site_Core_Admin_Service {
 					<td><?php echo esc_html( (string) $answer_refs ); ?></td>
 					<td>
 						<?php if ( 0 === $mapped && 0 === $answer_refs ) : ?>
-							<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=' . self::CONCERN_DELETE_ACTION . '&concern_id=' . $concern->term_id ), self::CONCERN_DELETE_NONCE ) ); ?>" class="button button-link-delete" onclick="return confirm('<?php echo esc_js( __( 'Hapus keluhan ini?', 'gloskin-site-core' ) ); ?>')"><?php echo esc_html__( 'Hapus', 'gloskin-site-core' ); ?></a>
+							<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=' . self::CONCERN_DELETE_ACTION . '&concern_id=' . $concern->term_id ), self::CONCERN_DELETE_NONCE ) ); ?>" class="gloskin-consultation-action gloskin-consultation-action--danger gloskin-consultation-action--small" onclick="return confirm('<?php echo esc_js( __( 'Hapus keluhan ini?', 'gloskin-site-core' ) ); ?>')"><?php echo esc_html__( 'Hapus', 'gloskin-site-core' ); ?></a>
 						<?php else : ?>
 							<span class="description"><?php echo esc_html__( 'Masih direferensikan', 'gloskin-site-core' ); ?></span>
 						<?php endif; ?>
@@ -1252,7 +1252,7 @@ final class Gloskin_Site_Core_Admin_Service {
 	private function render_consultation_pertanyaan() {
 		$questions = get_posts( array( 'post_type' => Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE, 'post_status' => array( 'publish', 'draft' ), 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
 		?>
-		<p><a class="button button-primary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE ) ); ?>"><?php echo esc_html__( 'Tambah Pertanyaan', 'gloskin-site-core' ); ?></a></p>
+		<p><a class="gloskin-consultation-action gloskin-consultation-action--primary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE ) ); ?>"><?php echo esc_html__( 'Tambah Pertanyaan', 'gloskin-site-core' ); ?></a></p>
 		<table class="widefat striped gloskin-consultation-questions-table">
 			<thead><tr>
 				<th><?php echo esc_html__( 'Pertanyaan', 'gloskin-site-core' ); ?></th>
@@ -1276,7 +1276,7 @@ final class Gloskin_Site_Core_Admin_Service {
 					<td><?php echo esc_html( $path_names ); ?></td>
 					<td><?php echo esc_html( (string) count( $answers ) ); ?></td>
 					<td><?php echo $ready ? '✅' : '⚠️'; ?></td>
-					<td><a href="<?php echo esc_url( get_edit_post_link( $question->ID ) ); ?>"><?php echo esc_html__( 'Edit', 'gloskin-site-core' ); ?></a></td>
+					<td><a class="gloskin-consultation-action gloskin-consultation-action--quiet gloskin-consultation-action--small" href="<?php echo esc_url( get_edit_post_link( $question->ID ) ); ?>"><?php echo esc_html__( 'Edit', 'gloskin-site-core' ); ?></a></td>
 				</tr>
 			<?php endforeach; ?>
 			<?php if ( ! $questions ) : ?><tr><td colspan="6"><?php echo esc_html__( 'Belum ada pertanyaan.', 'gloskin-site-core' ); ?></td></tr><?php endif; ?>
@@ -1328,7 +1328,7 @@ final class Gloskin_Site_Core_Admin_Service {
 					</fieldset>
 				<?php endforeach; ?>
 			</div>
-			<p><button type="submit" class="button button-primary"><?php echo esc_html__( 'Simpan Pemetaan', 'gloskin-site-core' ); ?></button></p>
+			<p><button type="submit" class="gloskin-consultation-action gloskin-consultation-action--primary"><?php echo esc_html__( 'Simpan Pemetaan', 'gloskin-site-core' ); ?></button></p>
 		</form>
 		<?php
 	}

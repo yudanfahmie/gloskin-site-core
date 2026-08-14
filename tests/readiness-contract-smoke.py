@@ -74,13 +74,13 @@ for rel in (
 ):
     require("gloskin_ui1_real_cards" in read(rel), f"{rel} must not present synthetic clinic placeholders as records")
 for rel in (
-    "plugin/gloskin-site-core/templates/pages/treatments.php",
     "plugin/gloskin-site-core/templates/pages/clinics.php",
     "plugin/gloskin-site-core/templates/pages/doctors.php",
     "plugin/gloskin-site-core/templates/pages/insights.php",
     "plugin/gloskin-site-core/templates/pages/skincare-category.php",
 ):
     require("gloskin_ui1_render_empty_state" in read(rel), f"meaningful zero state missing in {rel}")
+require('data-gloskin-section="treatments-closing"' in read("plugin/gloskin-site-core/templates/pages/treatments.php"), "Treatments must retain its closing consultation path when finder data is unavailable")
 require("gloskin_ui1_render_empty_state" in read("plugin/gloskin-site-core/templates/parts/shop-results.php"), "meaningful Shop zero state must live in the shared SSR/AJAX renderer")
 
 # Native Woo My Account/auth ownership and real shell lifecycle.
@@ -139,6 +139,6 @@ for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "read
 require("gloskin_ui1_render_commerce_page_heading" in shell, "cart/checkout/account H1 owner missing")
 header_version = re.search(r"\* Version:\s*([0-9.]+)", main_plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == "0.7.77", "plugin/kernel version mismatch")
+require(header_version == kernel_version == "0.7.78", "plugin/kernel version mismatch")
 
 print("readiness-contract-smoke: OK")

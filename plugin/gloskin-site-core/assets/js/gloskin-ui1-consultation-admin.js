@@ -160,7 +160,7 @@
 					var chip = createEl('li', 'gloskin-admin-mapping-chip');
 					chip.setAttribute('data-gloskin-mapped-chip', product.id);
 					chip.appendChild(createEl('span', '', product.name));
-					var remove = createEl('button', 'button-link-delete', 'Hapus');
+					var remove = createEl('button', 'gloskin-consultation-action gloskin-consultation-action--danger gloskin-consultation-action--small', 'Hapus');
 					remove.type = 'button';
 					remove.setAttribute('aria-label', 'Hapus ' + product.name + ' dari keluhan ' + concern.name);
 					remove.addEventListener('click', function () {
@@ -201,7 +201,7 @@
 					option.textContent = product.name;
 					select.appendChild(option);
 				}
-				var add = createEl('button', 'button button-secondary', 'Tambah');
+				var add = createEl('button', 'gloskin-consultation-action gloskin-consultation-action--secondary gloskin-consultation-action--small', 'Tambah');
 				add.type = 'button';
 				add.addEventListener('click', function () {
 					var productId = select.value;
@@ -265,7 +265,7 @@
 		}
 
 		var fallbackControls = createEl('p', 'gloskin-admin-mapping-fallback');
-		var toggle = createEl('button', 'button button-link', 'Tampilkan pemetaan native');
+		var toggle = createEl('button', 'gloskin-consultation-action gloskin-consultation-action--quiet gloskin-consultation-action--small', 'Tampilkan pemetaan native');
 		toggle.type = 'button';
 		toggle.setAttribute('aria-expanded', 'false');
 		toggle.addEventListener('click', function () {

@@ -17,7 +17,7 @@ viewports = [390, 760, 782, 1024, 1440, 1920, 2560]
 required_sections = {
     'home': ['home-orientation', 'home-clinics', 'home-skincare', 'home-closing'],
     'about': ['about-story', 'about-clinics', 'about-closing'],
-    'treatments': ['treatments-orientation', 'treatments-discovery', 'treatments-pathways', 'treatments-closing'],
+    'treatments': ['treatments-closing'],
     'treatment': ['treatment-orientation', 'treatment-closing'],
     'skincare': ['skincare-intro', 'skincare-categories', 'skincare-pathways'],
     'skincare-category': ['skincare-category-intro', 'skincare-category-products', 'skincare-category-closing'],
