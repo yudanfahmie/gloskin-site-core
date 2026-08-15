@@ -54,6 +54,15 @@
 	var lastSuccessSoundAt = 0;
 	var SUCCESS_SOUND_COOLDOWN_MS = 280;
 
+	/* Variation-required feedback follows the same safe, embedded-audio
+	 * pattern as successFeedback(): one short data URI, lazy Audio instance,
+	 * bounded cooldown, no network/media file and no mutation ownership. */
+	var NOTICE_SOUND_URI = 'data:audio/wav;base64,UklGRpQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YXADAACAgICBgYCAfn18fH1/gYOFhIOAfXp4eXt+g4aIiIaBfHd1dXh9g4mMjImCe3VxcXV8hIuPkIyEe3NubXJ6g42TlI+GfHNta3B4goySk5CHfXRtbG93gYuRk5CIf3VubG92gImQk5CJgHZvbG51f4iQk5GKgXdwbW50fYePkpGLgnlxbW50fIaOkpGMg3pybW5ze4WNkZGMhHtzbm5yeoOMkZGNhXx0b25yeYKLkJGNhn11b25xeIGKj5GOh352cG5xd4CIjpGOiIB3cW9xd3+HjpCOiYF4cm9wdn6GjZCPiYJ5c29wdX2FjI+PioN6c3BwdXyEi4+Pi4N7dHBwdHuDio6Pi4R8dXFwdHqCiY6Pi4V9dnJxc3qBiI2OjIZ+d3Jxc3mAh4yOjId/eHNxc3h/hoyOjIeAeXRxc3h+houNjIiBenRyc3d+hYqNjIiCe3Vyc3d9hImNjImDfHZzc3Z8g4mMjImDfXdzc3Z7goiMjImEfnh0c3Z7gYeLjIqFfnh0c3V6gIaKjIqFf3l1c3V6f4WKi4qGgHp2dHV5f4WJi4qGgXt2dHV5foSIi4qHgXx3dHV4fYOIioqHgnx4dXV4fYKHioqHgn14dXV4fIKGiYqHg355dnV4fIGGiYqIg356dnZ3e4CFiImIhH96d3Z3e4CEiImIhIB7eHZ3e3+Eh4mIhYB8eHZ3en+Dh4iIhYF8eXd3en6ChoiIhYF9eXd3en6ChYiHhYJ9enh4en2BhYeHhYJ+enh4eX2BhIeHhoJ/e3l4eXyAhIaHhoN/fHl4eXyAg4aHhoOAfHp5eXx/g4WGhoOAfXp5enx/goWGhYOAfXp5enx/goSGhYOBfnt6ent+gYSFhYSBfnt6ent+gYOFhYSBfnx6ent+gIOEhYSBf3x7ent9gIKEhISCf317e3x9gIKEhIOCf318e3x9f4KDhIOCgH58e3x9f4GDhIOCgH58fHx9f4GCg4OCgH59fHx9f4GCg4OCgH99fHx9f4CCg4OCgH99fX19f4CBgoKCgH9+fX19foCBgoKCgX9+fX1+foCBgoKBgX9+fn1+fn+AgYGBgIB/fn5+f3+AgYGBgIB/fn5+f3+AgYGBgIB/f35+f3+AgIGAgIB/f39/f3+AgICAgIB/f39/f3+AgICAgIB/f39/f3+AgICAgIB/';
+	var noticeAudio = null;
+	var lastNoticeSoundAt = 0;
+	var NOTICE_SOUND_COOLDOWN_MS = 600;
+	var noticeTimer = 0;
+
 	function feedbackReducedMotion(root) {
 		return !!(root && root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
 	}
@@ -100,6 +109,51 @@
 			if (playback && typeof playback.catch === 'function') { playback.catch(function () {}); }
 		} catch (e) {}
 		return true;
+	}
+
+	function playNoticeSound(runtime) {
+		var root = runtimeWindow(runtime);
+		if (!root || !root.document || root.document.visibilityState !== 'visible' || typeof root.Audio !== 'function') { return false; }
+		var now = Date.now();
+		if (now - lastNoticeSoundAt < NOTICE_SOUND_COOLDOWN_MS) { return true; }
+		try {
+			if (!noticeAudio) {
+				noticeAudio = new root.Audio(NOTICE_SOUND_URI);
+				noticeAudio.preload = 'auto';
+				noticeAudio.volume = 0.12;
+				noticeAudio.loop = false;
+			}
+			lastNoticeSoundAt = now;
+			noticeAudio.currentTime = 0;
+			var playback = noticeAudio.play();
+			if (playback && typeof playback.catch === 'function') { playback.catch(function () {}); }
+			return true;
+		} catch (e) {
+			return false;
+		}
+	}
+
+	function showTransientNotice(message, options) {
+		var root = runtimeWindow();
+		if (!root || !root.document || !root.document.body || !message) { return null; }
+		var region = root.document.querySelector('.gloskin-ui1-toast-region');
+		if (!region) {
+			region = root.document.createElement('div');
+			region.className = 'gloskin-ui1-toast-region';
+			region.setAttribute('role', 'status');
+			region.setAttribute('aria-live', 'polite');
+			region.setAttribute('aria-atomic', 'true');
+			root.document.body.appendChild(region);
+		}
+		region.textContent = message;
+		region.classList.add('is-visible');
+		if (noticeTimer) { root.clearTimeout(noticeTimer); }
+		noticeTimer = root.setTimeout(function () {
+			region.classList.remove('is-visible');
+			noticeTimer = 0;
+		}, 2200);
+		if (options && options.tone) { playNoticeSound(root); }
+		return region;
 	}
 
 	function emptyStateIcon(kind) {
@@ -399,15 +453,6 @@
 
 	/* -----------------------------------------------------------------
 	 * Smart sticky navigation row
-	 *
-	 * One state owner, two possible target surfaces depending on which
-	 * Header Type server-rendered: Header 1's separate sticky
-	 * .gloskin-ui1-header__nav-row (below the non-sticky brand/utilities
-	 * row), or Header 2's single self-contained sticky
-	 * [data-gloskin-header="header-2"] row, which has no separate row to
-	 * target -- it is its own surface. resolveSmartHeaderSurface() is the
-	 * one place that decides which; everything below reads `surface`
-	 * generically and never re-branches on the header variant itself.
 	 * ----------------------------------------------------------------- */
 
 	function resolveSmartHeaderSurface() {
@@ -433,22 +478,8 @@
 		var downDistance = 0;
 		var scheduled = false;
 		var hideThreshold = 10;
-		/* Captured once, before any is-compact-sticky state exists. Header
-		 * 2's compact state shrinks its own row height (see updateCompact()
-		 * below); reading surface.offsetHeight live here instead would make
-		 * topGuard() collapse the instant compact-sticky engages, giving it
-		 * no stable "still effectively at the top" window at all and
-		 * triggering hide on the very next tick. Header 1's navRow height
-		 * never changes between its own compact/non-compact state, so this
-		 * is a no-op difference for it. */
 		var naturalSurfaceHeight = surface.offsetHeight;
 
-		/* Header 1: must scroll past the non-sticky brand row *and* the nav
-		 * row's own height before hide/reveal engages, otherwise it would
-		 * hide while still naturally in view at the top of the page. Header
-		 * 2 has no separate brand row -- it is sticky from y=0 -- so only
-		 * its own natural height guards the same "still effectively at the
-		 * top" case. */
 		function topGuard() {
 			return selfContained ? naturalSurfaceHeight : Math.max(header.offsetHeight + surface.offsetHeight, 0);
 		}
@@ -467,10 +498,6 @@
 		}
 		function hideNav() { surface.classList.add('is-hidden'); }
 
-		/* Header 2 owns its compact-sticky state here too (same rAF-scheduled
-		 * scroll tick, no second listener) since it has no separate row for
-		 * initCompactSticky()'s IntersectionObserver to watch scroll past --
-		 * see that function below, which stays exclusively Header 1's. */
 		function updateCompact(currentY) {
 			if (!selfContained) { return; }
 			surface.classList.toggle('is-compact-sticky', currentY > naturalSurfaceHeight);
@@ -501,14 +528,7 @@
 	}
 
 	/* -----------------------------------------------------------------
-	 * Compact branded sticky-nav state -- Header 1 only. Once the full
-	 * brand/utilities row has fully scrolled out of view, the nav row
-	 * grows a small logo + compact utility cluster alongside the still-
-	 * centered nav. Reuses the exact same search/account/wishlist/cart
-	 * triggers and overlay system (no duplicated Woo state or overlay
-	 * handlers). Header 2 has no separate row for this IntersectionObserver
-	 * to watch scroll past -- its own compact-sticky state is owned by
-	 * initSmartHeader() above instead, on the same scroll tick.
+	 * Compact branded sticky-nav state -- Header 1 only.
 	 * ----------------------------------------------------------------- */
 
 	function initCompactSticky() {
@@ -520,9 +540,6 @@
 
 		function setCompact(active) {
 			navRow.classList.toggle('is-compact-sticky', active);
-			/* inert keeps the collapsed (opacity:0, zero max-width) copy out of
-			 * tab order and away from screen readers until it is actually the
-			 * visible one -- mirrors the CSS visibility state exactly. */
 			if (compactBrand) { compactBrand.inert = !active; }
 			if (compactZone) { compactZone.inert = !active; }
 		}
@@ -550,7 +567,6 @@
 				overlay.close();
 			}
 		});
-		/* Focus trap for active overlay */
 		document.addEventListener('keydown', function (e) {
 			var id = overlay.active();
 			if (!id) { return; }
@@ -613,7 +629,6 @@
 			debounceTimer = setTimeout(function () { doSearch(query); }, 220);
 		});
 
-		/* Native form fallback */
 		input.addEventListener('keydown', function (e) {
 			if (e.key === 'Enter') {
 				e.preventDefault();
@@ -692,11 +707,6 @@
 	function initAuth() {
 		var auth = document.querySelector('[data-gloskin-overlay="auth"]');
 		if (!auth) { return; }
-		/* Server rendering already marks the Account trigger(s) with
-		 * data-gloskin-auth-open (see Gloskin_Site_Core_WooCommerce_Adapter::
-		 * should_render_quick_auth() and header.php) whenever this overlay
-		 * exists, so binding reads that canonical intent instead of
-		 * re-discovering and mutating every Account anchor on the page. */
 		var triggers = document.querySelectorAll('[data-gloskin-auth-open]');
 		var forms = auth.querySelector('[data-gloskin-auth-forms]');
 		var tabs = auth.querySelectorAll('[data-gloskin-auth-tab]');
@@ -752,13 +762,6 @@
 			trigger.addEventListener('click', function () { overlay.open('cart'); });
 		});
 
-		/* Busy presentation only -- WooCommerce's own wc-add-to-cart.js owns
-		 * the actual AJAX request/cart mutation. This just mirrors it as
-		 * aria-busy for screen readers; the safety-net timeout guarantees the
-		 * button never stays stuck busy if Woo's own request errors out
-		 * (Woo has no dedicated body-level "add to cart failed" event to
-		 * listen for, but its own `complete` handler always clears the
-		 * `loading` class it applies, success or failure). */
 		document.body.addEventListener('click', function (event) {
 			var button = event.target.closest && event.target.closest('.ajax_add_to_cart');
 			if (!button) { return; }
@@ -768,10 +771,6 @@
 			}, 12000);
 		}, true);
 
-		/* Woo's confirmed added_to_cart lifecycle remains the only success
-		 * signal. Fragments/state listeners run on this event first; the rAF
-		 * queues decorative feedback after that real-state reflection without
-		 * ever fabricating a cart count. */
 		if (window.jQuery) {
 			window.jQuery(document.body).on('added_to_cart', function (event, fragments, cartHash, $button) {
 				if ($button && $button.length) { $button.attr('aria-busy', 'false'); }
@@ -780,18 +779,6 @@
 			});
 		}
 
-		/* Cart-row pending presentation only -- WooCommerce's own
-		 * wc-add-to-cart.js (add-to-cart.js) owns the actual delegated
-		 * .remove_from_cart_button AJAX request/mutation; this never
-		 * intercepts or duplicates it. Marking the row before Woo's own
-		 * handler resolves gives an immediate skeleton/pending row instead
-		 * of a dead click. Woo's own fragment replacement (which swaps out
-		 * .gloskin-ui1-cart-sheet__body entirely on a confirmed
-		 * removed_from_cart) naturally clears this row along with it; the
-		 * removed_from_cart listener below is only a defensive cleanup for
-		 * any row fragments did not happen to replace. On a real AJAX/
-		 * network failure Woo's own fallback navigates to the remove link's
-		 * href, so no recovery timeout is needed here either. */
 		document.body.addEventListener('click', function (event) {
 			var removeButton = event.target.closest && event.target.closest('.remove_from_cart_button');
 			if (!removeButton) { return; }
@@ -814,21 +801,6 @@
 
 	/* -----------------------------------------------------------------
 	 * SP-003/SP-004 -- Woo-owned AJAX add-to-cart bridge.
-	 *
-	 * WooCommerce remains the sole cart/session/validation authority.
-	 * This submits to Woo's own documented wc-ajax=add_to_cart endpoint
-	 * (URL supplied server-side by WooCommerce_Adapter::add_to_cart_ajax_url(),
-	 * WC_AJAX::get_endpoint('add_to_cart')) using the browser's native
-	 * FormData(form) successful-control serialization. Gloskin appends only
-	 * the activated submitter (which FormData(form) intentionally omits) and
-	 * normalizes Woo's required product_id. No custom cart mutation endpoint,
-	 * fragment parser, or variation resolver exists here.
-	 *
-	 * AJAX is progressive enhancement only. It runs only while Woo's native
-	 * jQuery `added_to_cart` + cart-fragment bridge is available; otherwise
-	 * the real Woo form/link proceeds natively without interception. Once a
-	 * mutation POST is dispatched, failures never replay that mutation: Woo's
-	 * fragment runtime may only reconcile visible cart state non-destructively.
 	 * ----------------------------------------------------------------- */
 
 	function runtimeWindow(runtime) {
@@ -860,9 +832,6 @@
 		);
 	}
 
-	/* Woo localizes wc_add_to_cart_params with its native add-to-cart
-	 * runtime. When it is present, added_to_cart already hands Woo the
-	 * response fragments, so Gloskin must not force a second refresh. */
 	function hasWooNativeAddToCartRuntime(runtime) {
 		var root = runtimeWindow(runtime);
 		return !!(
@@ -935,21 +904,11 @@
 		return dispatchWooAddedToCart(response, submitter, root);
 	}
 
-	/**
-	 * Resolve the control that actually triggered this submit. Prefer the
-	 * browser's own SubmitEvent.submitter; fall back to Woo's canonical
-	 * single_add_to_cart_button only for implicit/older submissions.
-	 */
 	function resolveWooSubmitter(form, event) {
 		if (event && event.submitter) { return event.submitter; }
 		return form.querySelector('.single_add_to_cart_button[type="submit"]') || form.querySelector('.single_add_to_cart_button');
 	}
 
-	/**
-	 * Only Woo simple and variable single-product forms are supported by
-	 * this enhancement. Stable Woo root classes own the type decision; no
-	 * Gloskin product-type registry is introduced.
-	 */
 	function isSupportedSingleProductAjaxForm(form) {
 		if (!form || typeof form.closest !== 'function') { return false; }
 		var productRoot = form.closest('div.product');
@@ -963,10 +922,6 @@
 		return false;
 	}
 
-	/**
-	 * Shared control/variation eligibility gate for the supported single
-	 * product form and Quick Add's known variable form.
-	 */
 	function shouldInterceptWooSubmit(form, submitter) {
 		if (!submitter || submitter.disabled || submitter.classList.contains('disabled')) {
 			return false;
@@ -979,12 +934,6 @@
 		return true;
 	}
 
-	/**
-	 * Normalize only fields WC_AJAX::add_to_cart() needs beyond the browser's
-	 * native FormData(form) result. The activated submitter is appended because
-	 * FormData(form) does not include it. A Woo-selected variation becomes the
-	 * request product_id while variation_id itself remains untouched.
-	 */
 	function normalizeAddToCartPayload(formData, submitter) {
 		if (submitter && submitter.name) {
 			formData.append(submitter.name, submitter.value);
@@ -1004,12 +953,6 @@
 		return normalizeAddToCartPayload(new FormData(form), submitter);
 	}
 
-	/**
-	 * Native fallback: re-dispatch a genuine browser submission carrying
-	 * the real submitter, so Woo's own form action/method, validation and
-	 * listeners remain authoritative. It is only legal before any mutation
-	 * request has been dispatched.
-	 */
 	function nativeFallbackSubmit(form, submitter) {
 		if (typeof form.requestSubmit === 'function') {
 			form.setAttribute('data-gloskin-ajax-bypass', '1');
@@ -1078,22 +1021,9 @@
 	}
 
 	/* -----------------------------------------------------------------
-	 * SP-003 -- Single product page: progressive AJAX add-to-cart for
-	 * simple products and Woo-selected variable products only.
+	 * SP-003 -- Single product page: progressive AJAX add-to-cart.
 	 * ----------------------------------------------------------------- */
 
-	/**
-	 * Post-success View Cart, single-product page only. WooCommerce's own
-	 * wc-add-to-cart.js inserts a Woo-native `a.added_to_cart.wc-forward`
-	 * link next to the button it bound -- but only for catalog-loop
-	 * `.ajax_add_to_cart` buttons; it never binds to a single-product
-	 * form.cart submit at all, so nothing creates that link here natively.
-	 * This is the smallest idempotent equivalent: same class contract,
-	 * canonical cart URL, inserted only after a confirmed successful Woo
-	 * mutation (never on dispatch alone), and reusing/updating the same
-	 * node on every repeat add rather than ever inserting a second one.
-	 * No cart mutation logic lives here -- purely a success presentation.
-	 */
 	function renderSingleProductViewCartLink(submitter) {
 		var config = window.gloskinData || {};
 		var cartUrl = config.cartUrl;
@@ -1110,15 +1040,6 @@
 
 	function initSingleProductAjax() {
 		if (!document.body.classList.contains('single-product')) { return; }
-		/* Scoped to the canonical purchase form only: [data-gloskin-purchase-dock]
-		 * is server-rendered by WooCommerce_Adapter::open_purchase_dock()/
-		 * close_purchase_dock(), which only ever wrap the page's own primary
-		 * product's form.cart (is_primary_single_product_context() -- see the
-		 * adapter). A plain 'div.product form.cart' query would also match a
-		 * legitimate different-product [product_page] embed's own form.cart if
-		 * one ever preceded the primary form in document order; anchoring on
-		 * the dock removes that ambiguity entirely rather than relying on
-		 * incidental DOM order. */
 		var form = document.querySelector('[data-gloskin-purchase-dock] form.cart');
 		if (!form || !isSupportedSingleProductAjaxForm(form)) { return; }
 
@@ -1144,18 +1065,6 @@
 		});
 	}
 
-	/**
-	 * Success presentation for the single-product purchase dock: Buy Now
-	 * (gloskin-ui1-purchase-dock.js) flags the SAME real submitter with a
-	 * one-shot data-gloskin-buy-now-redirect attribute right before
-	 * triggering its click, since it never submits a second form/opens a
-	 * new mutation owner -- only the presentation branches here, after a
-	 * confirmed successful Woo mutation. The normal Add to Cart path is
-	 * completely unchanged (still just the existing View Cart link).
-	 *
-	 * @param {Element} submitter The real submit button that triggered this mutation.
-	 * @return {void}
-	 */
 	function handleSingleProductAddToCartSuccess(submitter) {
 		if (submitter && submitter.hasAttribute('data-gloskin-buy-now-redirect')) {
 			submitter.removeAttribute('data-gloskin-buy-now-redirect');
@@ -1169,7 +1078,7 @@
 	}
 
 	/* -----------------------------------------------------------------
-	 * SP-004 -- Gloskin Quick Add modal for variable catalog cards.
+	 * SP-004 -- one reusable Variable Product Modal for catalog + PDP.
 	 * ----------------------------------------------------------------- */
 
 	function initQuickAdd() {
@@ -1182,9 +1091,55 @@
 		var cache = {};
 		var currentId = null;
 		var currentUrl = '';
+		var currentMode = '';
+		var currentForm = null;
+		var labelSequence = 0;
 
 		function canOpenQuickAdd() {
 			return hasWooVariationRuntime() && typeof fetch === 'function';
+		}
+
+		function attributeSelects(form) {
+			return form ? Array.prototype.slice.call(form.querySelectorAll('select[name^="attribute_"]')) : [];
+		}
+
+		function getNativeSubmit(form) {
+			return form ? form.querySelector('.single_add_to_cart_button') : null;
+		}
+
+		function getNativeQuantityInput(form) {
+			return form ? form.querySelector('.quantity input.qty') : null;
+		}
+
+		function getNativeQuantity(form) {
+			var input = getNativeQuantityInput(form);
+			return input ? input.closest('.quantity') : null;
+		}
+
+		function selectLabel(select) {
+			if (!select) { return null; }
+			var row = select.closest('tr');
+			var label = row ? row.querySelector('label') : null;
+			if (!label && select.id) { label = document.querySelector('label[for="' + select.id + '"]'); }
+			if (label && !label.id) {
+				labelSequence += 1;
+				label.id = 'gloskin-variable-label-' + labelSequence;
+			}
+			return label;
+		}
+
+		function ensureSelectKey(select, index) {
+			if (!select.dataset.gloskinVariableKey) {
+				select.dataset.gloskinVariableKey = String(index + 1);
+			}
+			return select.dataset.gloskinVariableKey;
+		}
+
+		function optionForValue(select, value) {
+			for (var i = 0; i < select.options.length; i += 1) {
+				if (select.options[i].value === value) { return select.options[i]; }
+			}
+			return null;
 		}
 
 		function recoveryMarkup(message, productUrl) {
@@ -1216,15 +1171,6 @@
 			status.innerHTML = recoveryMarkup('Produk belum berhasil ditambahkan. Pilihan Anda tetap tersedia; silakan coba lagi atau buka halaman produk.', productUrl);
 		}
 
-		/* Compact minus/plus steppers around the SAME native input.qty --
-		 * never a clone, never a second quantity state (same contract as the
-		 * Purchase Dock stepper this geometry benchmarks against, see
-		 * gloskin-ui1-purchase-dock.js -- none of that dock's floating/
-		 * reparenting logic is imported here, only this one small,
-		 * idempotent enhancement). Idempotent via a data flag, though
-		 * render() below always rebuilds body.innerHTML from scratch on
-		 * every open/re-render, so a stale enhanced node is never reused in
-		 * practice; the flag still guards any future call path safely. */
 		function enhanceQuantityControls(quantity) {
 			if (!quantity || quantity.dataset.gloskinQtyEnhanced === '1') { return; }
 			var input = quantity.querySelector('input.qty');
@@ -1245,16 +1191,6 @@
 			quantity.dataset.gloskinQtyEnhanced = '1';
 		}
 
-		/* Native stepUp()/stepDown() first -- the browser already honors the
-		 * input's own step/min/max there. Fallback arithmetic (same shape as
-		 * the Purchase Dock stepper) only runs if the native method throws
-		 * (e.g. step="any") or is unavailable, and still clamps to min/max
-		 * itself. Either path is followed by the SAME input+change dispatch,
-		 * but only when the value genuinely moved -- the value is captured
-		 * before stepping and compared after, so a step already pinned at
-		 * min/max (a real, common case: repeated clicks at either boundary)
-		 * fires nothing, exactly like the browser's own native spinner does
-		 * nothing observable when it is already at a boundary. */
 		function stepQuantityInput(input, direction) {
 			if (!input || input.disabled || input.readOnly) { return; }
 			var before = input.value;
@@ -1285,24 +1221,130 @@
 			input.dispatchEvent(new Event('change', { bubbles: true }));
 		}
 
-		/* One delegated listener on the modal body, bound once here -- never
-		 * per-render -- resolves the current .qty-control/input at click
-		 * time, so repeated render() calls (which rebuild body.innerHTML
-		 * from scratch) can never accumulate duplicate listeners. */
-		body.addEventListener('click', function (event) {
-			var minusButton = event.target.closest ? event.target.closest('.gloskin-ui1-quickadd__qty-minus') : null;
-			var plusButton = event.target.closest ? event.target.closest('.gloskin-ui1-quickadd__qty-plus') : null;
-			if (!minusButton && !plusButton) { return; }
-			var control = (minusButton || plusButton).closest('.gloskin-ui1-quickadd__qty-control');
-			var input = control ? control.querySelector('input.qty') : null;
-			if (!input) { return; }
-			event.preventDefault();
-			stepQuantityInput(input, minusButton ? -1 : 1);
-		});
+		function createChipGroup(select, index, host, includeHeading) {
+			var label = selectLabel(select);
+			var key = ensureSelectKey(select, index);
+			var options = Array.prototype.filter.call(select.options, function (option) {
+				return '' !== option.value;
+			});
+			if (!options.length) { return null; }
+
+			if (includeHeading) {
+				var heading = document.createElement('span');
+				heading.className = 'gloskin-ui1-variable-field__label';
+				heading.textContent = label ? label.textContent.trim() : select.name.replace(/^attribute_/, '').replace(/[_-]+/g, ' ');
+				host.appendChild(heading);
+			}
+
+			var group = document.createElement('div');
+			group.className = 'gloskin-ui1-variable-chips';
+			group.setAttribute('role', 'group');
+			group.setAttribute('tabindex', '-1');
+			group.setAttribute('data-gloskin-variable-select-key', key);
+			if (label && label.id) { group.setAttribute('aria-labelledby', label.id); }
+
+			options.forEach(function (option) {
+				var chip = document.createElement('button');
+				chip.type = 'button';
+				chip.className = 'gloskin-ui1-variable-chip';
+				chip.textContent = option.textContent.trim();
+				chip.setAttribute('data-gloskin-variable-chip', option.value);
+				chip.setAttribute('aria-pressed', option.selected ? 'true' : 'false');
+				chip.disabled = !!option.disabled;
+				group.appendChild(chip);
+			});
+
+			host.appendChild(group);
+			select.classList.add('gloskin-ui1-variable-select--enhanced');
+			return group;
+		}
+
+		function syncChipPresentation(form) {
+			attributeSelects(form).forEach(function (select, index) {
+				var key = ensureSelectKey(select, index);
+				var groups = body.querySelectorAll('[data-gloskin-variable-select-key="' + key + '"]');
+				Array.prototype.forEach.call(groups, function (group) {
+					Array.prototype.forEach.call(group.querySelectorAll('[data-gloskin-variable-chip]'), function (chip) {
+						var value = chip.getAttribute('data-gloskin-variable-chip') || '';
+						var option = optionForValue(select, value);
+						chip.setAttribute('aria-pressed', select.value === value ? 'true' : 'false');
+						chip.disabled = !option || !!option.disabled;
+					});
+				});
+			});
+		}
+
+		function quantityHiddenByWoo(form) {
+			var quantity = getNativeQuantity(form);
+			return !quantity || quantity.hidden || 'none' === quantity.style.display;
+		}
+
+		function selectedSummary(form) {
+			var selects = attributeSelects(form);
+			if (!selects.length) { return ''; }
+			var values = [];
+			for (var i = 0; i < selects.length; i += 1) {
+				if (!selects[i].value) { return ''; }
+				var option = optionForValue(selects[i], selects[i].value);
+				values.push(option ? option.textContent.trim() : selects[i].value);
+			}
+			var submit = getNativeSubmit(form);
+			var variation = form.querySelector('input.variation_id, input[name="variation_id"]');
+			if (!submit || submit.disabled || submit.classList.contains('disabled') || !variation || !(parseInt(variation.value, 10) > 0)) { return ''; }
+			if (1 === values.length) {
+				var label = selectLabel(selects[0]);
+				return (label ? label.textContent.trim() + ': ' : '') + values[0] + ' · Ubah Varian';
+			}
+			return values.join(' · ') + ' · Ubah Varian';
+		}
+
+		function syncPdpTrigger(form) {
+			var dock = form ? form.closest('[data-gloskin-purchase-dock]') : null;
+			var trigger = dock ? dock.querySelector('[data-gloskin-variable-pdp-trigger]') : null;
+			if (trigger) { trigger.textContent = selectedSummary(form) || 'Pilih Varian'; }
+		}
+
+		function syncModalPresentation(form) {
+			if (!form) { return; }
+			syncChipPresentation(form);
+			syncPdpTrigger(form);
+			var catalogAction = form.querySelector('.woocommerce-variation-add-to-cart.variations_button');
+			if (catalogAction) { catalogAction.classList.toggle('is-quantity-hidden', quantityHiddenByWoo(form)); }
+			if ('pdp' === currentMode && currentForm === form) {
+				var actions = body.querySelector('[data-gloskin-variable-actions]');
+				if (actions) { actions.classList.toggle('is-quantity-hidden', quantityHiddenByWoo(form)); }
+				var qtyValue = body.querySelector('[data-gloskin-variable-qty-value]');
+				var input = getNativeQuantityInput(form);
+				if (qtyValue && input) { qtyValue.textContent = input.value; }
+				var state = body.querySelector('[data-gloskin-variable-state]');
+				var nativeState = form.querySelector('.woocommerce-variation.single_variation');
+				if (state && nativeState) { state.innerHTML = nativeState.innerHTML; }
+			}
+		}
+
+		function bindSelectionSync(form) {
+			if (!form || '1' === form.dataset.gloskinVariableSync) { return; }
+			form.dataset.gloskinVariableSync = '1';
+			form.addEventListener('change', function (event) {
+				if (event.target && event.target.matches && (event.target.matches('select[name^="attribute_"]') || event.target.matches('input.qty'))) {
+					syncModalPresentation(form);
+				}
+			});
+			form.addEventListener('input', function (event) {
+				if (event.target && event.target.matches && event.target.matches('input.qty')) { syncModalPresentation(form); }
+			});
+			if (window.jQuery) {
+				window.jQuery(form).on('woocommerce_update_variation_values.gloskinVariableModal reset_data.gloskinVariableModal found_variation.gloskinVariableModal', function () {
+					syncModalPresentation(form);
+				});
+			}
+		}
 
 		function bindForm(form) {
 			if (!form.classList.contains('variations_form') || !hasWooVariationRuntime()) { return; }
 			window.jQuery(form).wc_variation_form();
+			if ('1' === form.dataset.gloskinQuickaddSubmit) { return; }
+			form.dataset.gloskinQuickaddSubmit = '1';
 			form.addEventListener('submit', function (event) {
 				if (form.getAttribute('data-gloskin-ajax-bypass') === '1') {
 					form.removeAttribute('data-gloskin-ajax-bypass');
@@ -1316,9 +1358,6 @@
 				if (!shouldInterceptWooSubmit(form, submitter) || !hasWooAjaxBridge()) { return; }
 				event.preventDefault();
 				clearMutationStatus();
-				/* Dispatch is not success. Keep Quick Add open until Woo emits
-				 * added_to_cart; initCart then switches through the one existing
-				 * overlay controller so Quick Add and Cart can never overlap. */
 				if (!ajaxAddToCart(form, submitter, {
 					redirectOnError: false,
 					onFailure: function (response) { renderMutationError(response); }
@@ -1328,7 +1367,68 @@
 			});
 		}
 
+		function unresolvedSelect(form) {
+			var selects = attributeSelects(form);
+			for (var i = 0; i < selects.length; i += 1) {
+				if (!selects[i].value) { return selects[i]; }
+			}
+			return null;
+		}
+
+		function focusSelectGroup(select) {
+			if (!select) { return; }
+			var key = select.dataset.gloskinVariableKey;
+			var group = key ? body.querySelector('[data-gloskin-variable-select-key="' + key + '"]') : null;
+			if (group && typeof group.focus === 'function') { group.focus(); }
+		}
+
+		function handleProxySubmit(form) {
+			if (!form) { return; }
+			var unresolved = unresolvedSelect(form);
+			if (unresolved) {
+				showTransientNotice('Pilih varian terlebih dahulu.', { tone: true });
+				focusSelectGroup(unresolved);
+				return;
+			}
+			var submit = getNativeSubmit(form);
+			if (!submit || submit.disabled || submit.classList.contains('disabled')) {
+				showTransientNotice('Varian yang dipilih belum tersedia.', { tone: true });
+				return;
+			}
+			submit.click();
+		}
+
+		function addCatalogPresentation(form) {
+			var selects = attributeSelects(form);
+			if (!selects.length) { return false; }
+			var made = 0;
+			selects.forEach(function (select, index) {
+				var host = select.closest('td') || select.parentNode;
+				if (host && createChipGroup(select, index, host, false)) { made += 1; }
+			});
+			if (made !== selects.length) { return false; }
+			var submit = getNativeSubmit(form);
+			if (!submit) { return false; }
+			submit.textContent = 'Tambahkan ke keranjang';
+			submit.classList.add('gloskin-ui1-variable-native-submit--enhanced');
+			var action = submit.closest('.woocommerce-variation-add-to-cart.variations_button') || submit.parentNode;
+			if (action && !action.querySelector('[data-gloskin-variable-submit-proxy]')) {
+				var proxy = document.createElement('button');
+				proxy.type = 'button';
+				proxy.className = 'gloskin-ui1-variable-modal__cta';
+				proxy.setAttribute('data-gloskin-variable-submit-proxy', '');
+				proxy.textContent = 'Tambahkan ke keranjang';
+				action.appendChild(proxy);
+			}
+			enhanceQuantityControls(form.querySelector('.quantity'));
+			bindSelectionSync(form);
+			syncModalPresentation(form);
+			return true;
+		}
+
 		function render(data) {
+			currentMode = 'catalog';
+			currentForm = null;
 			currentUrl = data.url || currentUrl;
 			var html = '<div class="gloskin-ui1-quickadd__product">';
 			html += data.image_html || '';
@@ -1340,16 +1440,16 @@
 			body.innerHTML = html;
 			var form = body.querySelector('form.cart');
 			if (form) {
-				var addToCartButton = form.querySelector('.single_add_to_cart_button');
-				if (addToCartButton) { addToCartButton.textContent = 'Tambahkan ke keranjang'; }
-				enhanceQuantityControls(form.querySelector('.quantity'));
+				currentForm = form;
 				bindForm(form);
+				addCatalogPresentation(form);
 			}
 		}
 
 		function open(productId, productUrl) {
 			currentId = productId;
 			currentUrl = productUrl || '';
+			currentMode = 'catalog';
 			overlay.open('quickadd');
 			if (cache[productId]) { render(cache[productId]); return; }
 			renderLoading();
@@ -1368,6 +1468,128 @@
 					if (currentId === productId) { renderLoadError(); }
 				});
 		}
+
+		function preparePdp(form, dock) {
+			if (!form || !dock || !form.classList.contains('variations_form') || 1 !== dock.querySelectorAll('form.cart').length || dock.querySelector('form.cart') !== form) { return false; }
+			var action = dock.querySelector('[data-gloskin-purchase-action]');
+			if (!action) { return false; }
+			var trigger = action.querySelector('[data-gloskin-variable-pdp-trigger]');
+			if (!trigger) {
+				trigger = document.createElement('button');
+				trigger.type = 'button';
+				trigger.className = 'gloskin-ui1-variable-pdp-trigger';
+				trigger.setAttribute('data-gloskin-variable-pdp-trigger', '');
+				trigger.textContent = 'Pilih Varian';
+				action.insertBefore(trigger, action.firstChild);
+				trigger.addEventListener('click', function () {
+					renderPdp(form, dock);
+					overlay.open('quickadd');
+				});
+			}
+			attributeSelects(form).forEach(function (select, index) {
+				ensureSelectKey(select, index);
+				selectLabel(select);
+			});
+			bindSelectionSync(form);
+			form.classList.add('gloskin-ui1-variable-pdp-enhanced');
+			syncPdpTrigger(form);
+			return true;
+		}
+
+		function renderPdp(form, dock) {
+			if (!preparePdp(form, dock)) { return; }
+			currentMode = 'pdp';
+			currentForm = form;
+			currentId = null;
+			currentUrl = '';
+			var identity = dock.querySelector('[data-gloskin-purchase-identity]');
+			body.innerHTML = '<div class="gloskin-ui1-variable-modal__pdp">' +
+				'<div class="gloskin-ui1-variable-modal__identity">' + (identity ? identity.innerHTML : '') + '</div>' +
+				'<div class="gloskin-ui1-variable-modal__fields" data-gloskin-variable-fields></div>' +
+				'<div class="gloskin-ui1-variable-modal__variation-state" data-gloskin-variable-state></div>' +
+				'<div class="gloskin-ui1-variable-modal__actions" data-gloskin-variable-actions></div>' +
+				'</div>';
+
+			var fields = body.querySelector('[data-gloskin-variable-fields]');
+			attributeSelects(form).forEach(function (select, index) {
+				var field = document.createElement('div');
+				field.className = 'gloskin-ui1-variable-field';
+				fields.appendChild(field);
+				createChipGroup(select, index, field, true);
+			});
+
+			var actions = body.querySelector('[data-gloskin-variable-actions]');
+			if (getNativeQuantityInput(form)) {
+				var qty = document.createElement('div');
+				qty.className = 'gloskin-ui1-variable-modal__qty-proxy';
+				qty.innerHTML = '<button type="button" data-gloskin-variable-qty-minus aria-label="Kurangi jumlah">−</button>' +
+					'<span class="gloskin-ui1-variable-modal__qty-value" data-gloskin-variable-qty-value></span>' +
+					'<button type="button" data-gloskin-variable-qty-plus aria-label="Tambah jumlah">+</button>';
+				actions.appendChild(qty);
+			}
+			var proxy = document.createElement('button');
+			proxy.type = 'button';
+			proxy.className = 'gloskin-ui1-variable-modal__cta';
+			proxy.setAttribute('data-gloskin-variable-submit-proxy', '');
+			proxy.textContent = 'Tambahkan ke keranjang';
+			actions.appendChild(proxy);
+			syncModalPresentation(form);
+		}
+
+		function notifyPdpRequirement(form) {
+			var unresolved = unresolvedSelect(form);
+			if (unresolved) {
+				showTransientNotice('Pilih varian terlebih dahulu.', { tone: true });
+				focusSelectGroup(unresolved);
+				return;
+			}
+			showTransientNotice('Varian yang dipilih belum tersedia.', { tone: true });
+		}
+
+		body.addEventListener('click', function (event) {
+			var chip = event.target.closest ? event.target.closest('[data-gloskin-variable-chip]') : null;
+			if (chip && currentForm) {
+				var group = chip.closest('[data-gloskin-variable-select-key]');
+				var key = group ? group.getAttribute('data-gloskin-variable-select-key') : '';
+				var select = null;
+				attributeSelects(currentForm).some(function (candidate, index) {
+					if (ensureSelectKey(candidate, index) === key) { select = candidate; return true; }
+					return false;
+				});
+				if (select && !chip.disabled) {
+					event.preventDefault();
+					select.value = chip.getAttribute('data-gloskin-variable-chip') || '';
+					select.dispatchEvent(new Event('change', { bubbles: true }));
+				}
+				return;
+			}
+
+			var minusButton = event.target.closest ? event.target.closest('.gloskin-ui1-quickadd__qty-minus') : null;
+			var plusButton = event.target.closest ? event.target.closest('.gloskin-ui1-quickadd__qty-plus') : null;
+			if (minusButton || plusButton) {
+				var control = (minusButton || plusButton).closest('.gloskin-ui1-quickadd__qty-control');
+				var input = control ? control.querySelector('input.qty') : null;
+				if (!input) { return; }
+				event.preventDefault();
+				stepQuantityInput(input, minusButton ? -1 : 1);
+				return;
+			}
+
+			var pdpMinus = event.target.closest ? event.target.closest('[data-gloskin-variable-qty-minus]') : null;
+			var pdpPlus = event.target.closest ? event.target.closest('[data-gloskin-variable-qty-plus]') : null;
+			if ((pdpMinus || pdpPlus) && 'pdp' === currentMode && currentForm) {
+				event.preventDefault();
+				stepQuantityInput(getNativeQuantityInput(currentForm), pdpMinus ? -1 : 1);
+				syncModalPresentation(currentForm);
+				return;
+			}
+
+			var proxy = event.target.closest ? event.target.closest('[data-gloskin-variable-submit-proxy]') : null;
+			if (proxy) {
+				event.preventDefault();
+				handleProxySubmit(proxy.closest('form.cart') || currentForm);
+			}
+		});
 
 		document.addEventListener('click', function (event) {
 			var trigger = event.target.closest && event.target.closest('[data-gloskin-quickadd-open]');
@@ -1388,6 +1610,23 @@
 			event.preventDefault();
 			open(relatedProductId, relatedTrigger.getAttribute('href') || '');
 		});
+
+		document.addEventListener('gloskin:purchase-dock-ready', function (event) {
+			var detail = event.detail || {};
+			preparePdp(detail.form, detail.dock);
+		});
+
+		document.addEventListener('gloskin:variable-product-modal-request', function (event) {
+			var detail = event.detail || {};
+			if (!preparePdp(detail.form, detail.dock)) { return; }
+			renderPdp(detail.form, detail.dock);
+			overlay.open('quickadd');
+			notifyPdpRequirement(detail.form);
+		});
+
+		var existingDock = document.querySelector('[data-gloskin-purchase-dock][data-gloskin-purchase-composed="true"]');
+		var existingForm = existingDock ? existingDock.querySelector('form.variations_form') : null;
+		if (existingDock && existingForm) { preparePdp(existingForm, existingDock); }
 	}
 
 	/* -----------------------------------------------------------------
@@ -1492,14 +1731,6 @@
 			return '<div class="gloskin-ui1-shop-skeleton" data-gloskin-shop-skeleton aria-hidden="true"><div class="gloskin-ui1-shop-skeleton__grid">' + cards + '</div></div>';
 		}
 
-		/* Extends the existing aria-busy/is-loading presentation state -- no
-		 * second loading controller. The skeleton is an overlay appended
-		 * inside results, never a replacement of it: the previous grid stays
-		 * in the DOM underneath (results.innerHTML is only ever reassigned by
-		 * the existing success path in requestCatalog()), so on failure
-		 * removing the skeleton simply reveals that same previous grid again.
-		 * Height is locked before the skeleton is inserted so neither
-		 * inserting nor removing it can shift the page. */
 		function setBusy(busy) {
 			results.setAttribute('aria-busy', busy ? 'true' : 'false');
 			root.classList.toggle('is-loading', !!busy);
@@ -1711,12 +1942,6 @@
 			);
 		}
 
-		/* Removing from inside the already-open sheet must never refetch/
-		 * rebuild the whole body (that full-sheet loading-spinner rebuild is
-		 * the real "reload" this replaces) -- only the closest list item is
-		 * collapsed/removed in place. localStorage mutation itself has no
-		 * meaningful wait, so this is a short opacity/transform transition,
-		 * not a skeleton. */
 		function removeSheetItem(item, btn) {
 			var list = item.parentElement;
 			var next = item.nextElementSibling;
@@ -1842,31 +2067,7 @@
 
 	/* -----------------------------------------------------------------
 	 * Hero Background Video (native <video>, Home video-only mode only)
-	 * -----------------------------------------------------------------
-	 * Home's pure background-video surface (gloskin_ui1_render_hero()'s
-	 * 'video-only' branch): one native <video>, never a remote player.
-	 * PREPARING -> READY state machine -- the video is only ever revealed
-	 * once it has genuinely reached usable playback, never merely because
-	 * the DOM node exists:
-	 *
-	 *   1. markup starts is-video-preparing, video opacity:0 (CSS);
-	 *   2. wait for the browser's own loadeddata event;
-	 *   3. reduced-motion: establish the first frame, then pause and
-	 *      reveal -- no repeated loader/motion for those users;
-	 *   4. otherwise make the single play attempt and wait for its Promise plus
-	 *      the 'playing' event;
-	 *   5. reveal inside one requestAnimationFrame (is-video-preparing ->
-	 *      is-video-ready), which CSS fades in over ~360ms;
-	 *   6. any failure (error event, rejected play() Promise) releases the
-	 *      loader into a clean is-video-failed state -- white hero,
-	 *      working scroll cue, page continues normally, never a broken
-	 *      media icon or indefinite block.
-	 *
-	 * No repeating-interval polling anywhere in this section. One bounded
-	 * one-shot timeout only guards against a video that never becomes
-	 * usable at all, releasing it into the same clean failure state -- it
-	 * never pretends readiness on its own.
-	 */
+	 * ----------------------------------------------------------------- */
 	var HERO_BG_VIDEO_SAFETY_TIMEOUT_MS = 4000;
 
 	function setupHeroBackgroundVideo(hero, wrap) {
@@ -1935,8 +2136,6 @@
 			commitReady();
 		}
 
-		/* Listener installation must precede all current-state reads and the
-		 * single play attempt, so server-autoplay events cannot be missed. */
 		video.addEventListener('loadeddata', onLoadedData);
 		video.addEventListener('playing', onPlaying);
 		video.addEventListener('error', terminalFailure);
@@ -1986,12 +2185,6 @@
 		}
 	}
 
-	/* Home video-only hero's one scroll cue (docs/task-treatment-
-	 * consultation-commerce-discovery.md section 14): a single semantic
-	 * <button>, click scrolls the hero's own next real sibling section
-	 * into view -- never an arbitrary pixel offset, never a second
-	 * animation framework. prefers-reduced-motion swaps 'smooth' for an
-	 * instant jump instead of skipping the action entirely. */
 	function initHeroScrollCue() {
 		var buttons = document.querySelectorAll('[data-gloskin-hero-scroll-cue]');
 		for (var i = 0; i < buttons.length; i++) {
@@ -2060,6 +2253,8 @@
 			handleWooAddToCartResponse: handleWooAddToCartResponse,
 			isWooSubmitBusy: isWooSubmitBusy,
 			successFeedback: successFeedback,
+			showTransientNotice: showTransientNotice,
+			playNoticeSound: playNoticeSound,
 			parseShopCatalogHash: parseShopCatalogHash,
 			buildShopCatalogHash: buildShopCatalogHash,
 			setupHeroBackgroundVideo: setupHeroBackgroundVideo,

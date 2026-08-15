@@ -138,13 +138,15 @@
 			 * existing single-product success handler recognizes the
 			 * one-shot data-gloskin-buy-now-redirect flag set right before
 			 * that click and redirects to the cart page instead of
-			 * rendering the normal View Cart link. */
+			 * rendering the normal View Cart link. Variable products keep this
+			 * presentation trigger clickable before selection so the canonical
+			 * variable modal can explain/resolve the missing choice. */
 			buyNowBefore = document.createElement('button');
 			buyNowBefore.type = 'button';
 			buyNowBefore.className = 'gloskin-ui1-purchase-dock__buy-now';
 			buyNowBefore.setAttribute('data-gloskin-buy-now', '');
 			buyNowBefore.textContent = 'Beli Sekarang';
-			buyNowBefore.disabled = !!submitBefore.disabled;
+			buyNowBefore.disabled = formBefore.classList.contains('variations_form') ? false : !!submitBefore.disabled;
 			actionRegion.appendChild(buyNowBefore);
 
 			formBefore.appendChild(productRegion);
@@ -223,7 +225,15 @@
 			var buyNowButton = event.target.closest ? event.target.closest('[data-gloskin-buy-now]') : null;
 			if (buyNowButton) {
 				event.preventDefault();
-				if (!submitBefore || submitBefore.disabled) { return; }
+				if (!submitBefore) { return; }
+				if (submitBefore.disabled) {
+					if (formBefore.classList.contains('variations_form')) {
+						document.dispatchEvent(new CustomEvent('gloskin:variable-product-modal-request', {
+							detail: { dock: dock, form: formBefore, source: 'buy-now' }
+						}));
+					}
+					return;
+				}
 				/* One-shot flag, consumed and removed by gloskin-ui1-core.js's
 				 * existing single-product AJAX success handler. Triggering the
 				 * REAL submit button's own click reuses every existing
@@ -234,16 +244,6 @@
 				submitBefore.click();
 			}
 		});
-
-		/* Keep Buy Now's enabled state mirrored to the real submit button's
-		 * own disabled state (Woo's variation-form JS toggles this as the
-		 * shopper picks a variation) -- observed, never polled. */
-		if (buyNowBefore && submitBefore && window.MutationObserver) {
-			var buyNowSync = new MutationObserver(function () {
-				buyNowBefore.disabled = !!submitBefore.disabled;
-			});
-			buyNowSync.observe(submitBefore, { attributes: true, attributeFilter: ['disabled'] });
-		}
 
 		/* Section 17: a viewport-height change (mobile keyboard opening)
 		 * while focus is inside the dock must never itself start a
@@ -304,6 +304,15 @@
 
 		/* Reparent the SAME node once. Never cloneNode/innerHTML-rebuild. */
 		home.appendChild(dock);
+
+		/* Core owns the reusable variable modal. This readiness signal carries
+		 * direct references to the SAME composed dock/form so Core can attach
+		 * presentation only; no query loop, observer or duplicate form owner. */
+		if (formBefore.classList.contains('variations_form')) {
+			document.dispatchEvent(new CustomEvent('gloskin:purchase-dock-ready', {
+				detail: { dock: dock, form: formBefore }
+			}));
+		}
 
 		product.style.setProperty('--gloskin-purchase-dock-bottom', 'max(16px, env(safe-area-inset-bottom))');
 

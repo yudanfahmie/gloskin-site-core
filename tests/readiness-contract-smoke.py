@@ -139,6 +139,6 @@ for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "read
 require("gloskin_ui1_render_commerce_page_heading" in shell, "cart/checkout/account H1 owner missing")
 header_version = re.search(r"\* Version:\s*([0-9.]+)", main_plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == "0.7.91", "plugin/kernel version mismatch")
+require(header_version == kernel_version == "0.7.92", "plugin/kernel version mismatch")
 
 print("readiness-contract-smoke: OK")
