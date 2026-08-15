@@ -732,27 +732,98 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.ca
 .gloskin-ui1-quickadd__product{grid-template-columns:96px minmax(0,1fr);min-width:0}
 .gloskin-ui1-quickadd__product>div{min-width:0;overflow-wrap:anywhere}
 .gloskin-ui1-quickadd__form,.gloskin-ui1-quickadd__form form.cart,.gloskin-ui1-quickadd__form .single_variation_wrap{min-width:0}
-.gloskin-ui1-quickadd__form form.cart{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch;margin:0}
-.gloskin-ui1-quickadd__form table.variations{width:100%;max-width:100%;margin:0;table-layout:fixed;border:0}
-.gloskin-ui1-quickadd__form table.variations th,.gloskin-ui1-quickadd__form table.variations td{display:block;width:100%;padding:0 0 8px;border:0;text-align:left}
+/* Mobile-first/base: natural Woo stacking order (table.variations ->
+   .woocommerce-variation price/availability state -> .quantity -> the
+   submit button), exactly what section 11's mobile stack wants -- no
+   grid trickery needed here at all, it falls out of native DOM order for
+   free. Only the structural form-card background this file's "no
+   boxed-everything" cart guidance already established elsewhere is
+   neutralized, plus the quantity control itself: width:fit-content keeps
+   it compact rather than stretching into a giant full-width number
+   field. The SELECT itself is untouched -- it stays a real Gloskin Form
+   Kit field (border/background/focus ring/chevron/height), only the
+   structural wrappers around it lose their card look. */
+.gloskin-ui1-quickadd__form,
+.gloskin-ui1-quickadd__form table.variations,
+.gloskin-ui1-quickadd__form table.variations tbody,
+.gloskin-ui1-quickadd__form table.variations tr,
+.gloskin-ui1-quickadd__form table.variations th,
+.gloskin-ui1-quickadd__form table.variations td,
+.gloskin-ui1-quickadd__form .single_variation_wrap,
+.gloskin-ui1-quickadd__form .woocommerce-variation,
+.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart{
+	margin:0;
+	padding:0;
+	border:0;
+	border-radius:0;
+	background:transparent;
+	box-shadow:none;
+}
+.gloskin-ui1-quickadd__form form.cart{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:stretch}
+.gloskin-ui1-quickadd__form table.variations{width:100%;max-width:100%;table-layout:fixed}
+.gloskin-ui1-quickadd__form table.variations th,.gloskin-ui1-quickadd__form table.variations td{display:block;width:100%;padding:0 0 8px;text-align:left}
 .gloskin-ui1-quickadd__form table.variations select{width:100%;max-width:100%;min-width:0}
 .gloskin-ui1-quickadd__form .single_variation_wrap{display:grid;gap:12px}
-.gloskin-ui1-quickadd__form .woocommerce-variation{margin:0;min-width:0}
-.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;min-width:0}
-.gloskin-ui1-quickadd__form .quantity{margin:0}
-.gloskin-ui1-quickadd__form .single_add_to_cart_button{width:100%;max-width:100%;min-width:0}
+.gloskin-ui1-quickadd__form .woocommerce-variation{min-width:0}
+.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart{display:grid;gap:12px;min-width:0}
+.gloskin-ui1-quickadd__form .single_add_to_cart_button{width:100%;max-width:100%;min-width:0;min-height:48px}
+/* Quick Add quantity stepper: SAME native input.qty, never cloned/
+   replaced (enhanced once by initQuickAdd() in gloskin-ui1-core.js).
+   Benchmark geometry matches the Purchase Dock stepper exactly (46px
+   outer / 44px input / 34px buttons, one outer border, one separator
+   each side of the value) -- none of that dock's floating/reparenting
+   logic, just the same compact pill visual language. width:fit-content
+   keeps the pill its own natural size at every breakpoint, matching the
+   mobile "not a giant full-width number field" requirement above without
+   needing a separate mobile override. */
+.gloskin-ui1-quickadd__qty-control{display:flex;width:fit-content;align-items:stretch;min-height:46px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);overflow:hidden;background:var(--gloskin-bg)}
+.gloskin-ui1-quickadd__form .gloskin-ui1-quickadd__qty-control input.qty{width:44px;min-width:0;min-height:44px;padding:0;border:0;border-radius:0;background:transparent;text-align:center;-moz-appearance:textfield}
+.gloskin-ui1-quickadd__qty-control input.qty::-webkit-inner-spin-button,
+.gloskin-ui1-quickadd__qty-control input.qty::-webkit-outer-spin-button{margin:0;-webkit-appearance:none}
+.gloskin-ui1-quickadd__qty-minus,
+.gloskin-ui1-quickadd__qty-plus{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:34px;min-height:44px;padding:0;border:0;background:transparent;color:var(--gloskin-text);font:inherit;font-size:1.05rem;font-weight:700;line-height:1;cursor:pointer;transition:background-color 140ms ease}
+.gloskin-ui1-quickadd__qty-minus{border-right:1px solid var(--gloskin-border)}
+.gloskin-ui1-quickadd__qty-plus{border-left:1px solid var(--gloskin-border)}
+.gloskin-ui1-quickadd__qty-minus:hover,
+.gloskin-ui1-quickadd__qty-plus:hover{background:var(--gloskin-surface)}
+.gloskin-ui1-quickadd__qty-minus:disabled,
+.gloskin-ui1-quickadd__qty-plus:disabled{opacity:.4;cursor:not-allowed;background:transparent}
 .gloskin-ui1-quickadd__loading{min-height:220px}
 .gloskin-ui1-quickadd__status:empty{display:none}
 .gloskin-ui1-quickadd__error{display:grid;gap:12px;align-content:center;min-height:120px}
 .gloskin-ui1-quickadd__error p{margin:0}
 .gloskin-ui1-quickadd__error .gloskin-ui1-button{justify-self:start}
+/* Desktop: variant selector(s) + quantity share one command row, the
+   selected-variation price/availability state (when Woo populates it)
+   gets its own row, and the same single_add_to_cart_button becomes the
+   one full-width final row. .single_variation_wrap and .woocommerce-
+   variation-add-to-cart are purely presentational, non-semantic wrapper
+   <div>s (no ARIA role, no commerce meaning of their own) -- display:
+   contents flattens them into this grid's own item list so table.
+   variations/.quantity/.woocommerce-variation/.single_add_to_cart_button
+   (and the untouched hidden product_id/variation_id inputs) can be
+   placed independently, without moving a single node in the actual DOM
+   tree or touching Woo's variation runtime. This is deliberately NOT
+   Purchase Dock's own technique (which physically reparents the same
+   table node into a different DOM position via JS) -- these stay exactly
+   where Woo rendered them, only their CSS box generation changes. Woo's
+   own variation-found/reset toggling operates on .single_variation and
+   the submit button's own disabled state, not on either wrapper div's
+   own display property, so this is not expected to fight any Woo JS. */
+@media (min-width:601px){
+	.gloskin-ui1-quickadd__form form.cart{grid-template-columns:minmax(0,1fr) auto}
+	.gloskin-ui1-quickadd__form table.variations{grid-column:1;grid-row:1}
+	.gloskin-ui1-quickadd__form .single_variation_wrap,
+	.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart{display:contents}
+	.gloskin-ui1-quickadd__form .quantity{grid-column:2;grid-row:1;align-self:end}
+	.gloskin-ui1-quickadd__form .woocommerce-variation{grid-column:1 / -1;grid-row:2}
+	.gloskin-ui1-quickadd__form .single_add_to_cart_button{grid-column:1 / -1;grid-row:3}
+}
 @media (max-width:600px){
 	.gloskin-ui1-quickadd__panel{padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
 	.gloskin-ui1-quickadd__body{min-height:200px}
 	.gloskin-ui1-quickadd__product{grid-template-columns:72px minmax(0,1fr);gap:12px}
 	.gloskin-ui1-quickadd__image{width:72px;height:72px}
-	.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart{grid-template-columns:minmax(0,1fr);align-items:stretch}
-	.gloskin-ui1-quickadd__form .quantity .qty{width:96px;max-width:100%}
 	.gloskin-ui1-quickadd__error .gloskin-ui1-button{width:100%;justify-self:stretch}
 }
 

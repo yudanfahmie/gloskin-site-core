@@ -1216,6 +1216,86 @@
 			status.innerHTML = recoveryMarkup('Produk belum berhasil ditambahkan. Pilihan Anda tetap tersedia; silakan coba lagi atau buka halaman produk.', productUrl);
 		}
 
+		/* Compact minus/plus steppers around the SAME native input.qty --
+		 * never a clone, never a second quantity state (same contract as the
+		 * Purchase Dock stepper this geometry benchmarks against, see
+		 * gloskin-ui1-purchase-dock.js -- none of that dock's floating/
+		 * reparenting logic is imported here, only this one small,
+		 * idempotent enhancement). Idempotent via a data flag, though
+		 * render() below always rebuilds body.innerHTML from scratch on
+		 * every open/re-render, so a stale enhanced node is never reused in
+		 * practice; the flag still guards any future call path safely. */
+		function enhanceQuantityControls(quantity) {
+			if (!quantity || quantity.dataset.gloskinQtyEnhanced === '1') { return; }
+			var input = quantity.querySelector('input.qty');
+			if (!input) { return; }
+			quantity.classList.add('gloskin-ui1-quickadd__qty-control');
+			var minus = document.createElement('button');
+			minus.type = 'button';
+			minus.className = 'gloskin-ui1-quickadd__qty-minus';
+			minus.setAttribute('aria-label', 'Kurangi jumlah');
+			minus.textContent = '−';
+			var plus = document.createElement('button');
+			plus.type = 'button';
+			plus.className = 'gloskin-ui1-quickadd__qty-plus';
+			plus.setAttribute('aria-label', 'Tambah jumlah');
+			plus.textContent = '+';
+			input.insertAdjacentElement('beforebegin', minus);
+			input.insertAdjacentElement('afterend', plus);
+			quantity.dataset.gloskinQtyEnhanced = '1';
+		}
+
+		/* Native stepUp()/stepDown() first -- the browser already honors the
+		 * input's own step/min/max there. Fallback arithmetic (same shape as
+		 * the Purchase Dock stepper) only runs if the native method throws
+		 * (e.g. step="any") or is unavailable, and still clamps to min/max
+		 * itself. Either path ends in the same input+change dispatch so
+		 * Woo's own variation/quantity listeners react exactly as if the
+		 * browser's native spinner had been used. */
+		function stepQuantityInput(input, direction) {
+			if (!input || input.disabled || input.readOnly) { return; }
+			var stepped = false;
+			if (typeof input.stepUp === 'function' && typeof input.stepDown === 'function') {
+				try {
+					if (direction > 0) { input.stepUp(); } else { input.stepDown(); }
+					stepped = true;
+				} catch (error) { stepped = false; }
+			}
+			if (!stepped) {
+				var step = parseFloat(input.step);
+				if (!isFinite(step) || step <= 0) { step = 1; }
+				var min = input.min !== '' && input.min != null ? parseFloat(input.min) : -Infinity;
+				var max = input.max !== '' && input.max != null ? parseFloat(input.max) : Infinity;
+				if (!isFinite(min)) { min = -Infinity; }
+				if (!isFinite(max)) { max = Infinity; }
+				var current = parseFloat(input.value);
+				if (isNaN(current)) { current = isFinite(min) ? min : 0; }
+				var next = current + (direction * step);
+				if (next < min) { next = min; }
+				if (next > max) { next = max; }
+				next = Math.round(next * 1e6) / 1e6;
+				if (next === current) { return; }
+				input.value = next;
+			}
+			input.dispatchEvent(new Event('input', { bubbles: true }));
+			input.dispatchEvent(new Event('change', { bubbles: true }));
+		}
+
+		/* One delegated listener on the modal body, bound once here -- never
+		 * per-render -- resolves the current .qty-control/input at click
+		 * time, so repeated render() calls (which rebuild body.innerHTML
+		 * from scratch) can never accumulate duplicate listeners. */
+		body.addEventListener('click', function (event) {
+			var minusButton = event.target.closest ? event.target.closest('.gloskin-ui1-quickadd__qty-minus') : null;
+			var plusButton = event.target.closest ? event.target.closest('.gloskin-ui1-quickadd__qty-plus') : null;
+			if (!minusButton && !plusButton) { return; }
+			var control = (minusButton || plusButton).closest('.gloskin-ui1-quickadd__qty-control');
+			var input = control ? control.querySelector('input.qty') : null;
+			if (!input) { return; }
+			event.preventDefault();
+			stepQuantityInput(input, minusButton ? -1 : 1);
+		});
+
 		function bindForm(form) {
 			if (!form.classList.contains('variations_form') || !hasWooVariationRuntime()) { return; }
 			window.jQuery(form).wc_variation_form();
@@ -1255,7 +1335,10 @@
 			html += '<div class="gloskin-ui1-quickadd__status" data-gloskin-quickadd-status aria-live="polite"></div>';
 			body.innerHTML = html;
 			var form = body.querySelector('form.cart');
-			if (form) { bindForm(form); }
+			if (form) {
+				enhanceQuantityControls(form.querySelector('.quantity'));
+				bindForm(form);
+			}
 		}
 
 		function open(productId, productUrl) {
