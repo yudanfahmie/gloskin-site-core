@@ -806,15 +806,31 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.ca
    tree or touching Woo's variation runtime. This is deliberately NOT
    Purchase Dock's own technique (which physically reparents the same
    table node into a different DOM position via JS) -- these stay exactly
-   where Woo rendered them, only their CSS box generation changes. Woo's
-   own variation-found/reset toggling operates on .single_variation and
-   the submit button's own disabled state, not on either wrapper div's
-   own display property, so this is not expected to fight any Woo JS. */
+   where Woo rendered them, only their CSS box generation changes.
+   Real Woo variation-found/reset toggling operates on .single_variation
+   and the submit button's own disabled state in the common case, but
+   some WC/theme combinations are known to jQuery .slideDown()/.slideUp()
+   .single_variation_wrap itself, which sets that element's own inline
+   style.display -- an inline style always wins over this external
+   display:contents at any specificity, and this codebase does not
+   escalate priority to fight it, so the wrapper can revert to a real box.
+   grid-column:1/-1 on .single_variation_wrap is inert while display:
+   contents is winning (a display:contents element ignores its own grid
+   placement, per spec) and only activates the moment display reverts to
+   a real value, since grid-column is a separate property untouched by
+   that inline override -- a zero-cost fallback keeping the wrapper (and
+   everything Woo renders inside it: price/availability, quantity, the
+   submit button, all falling back to normal stacked flow at that point)
+   spanning the full row width rather than being squeezed into column 1,
+   so the composition degrades to "still coherent, full-width, nothing
+   broken" instead of narrow/overlapping if that ever happens on this
+   site's actual runtime (unconfirmed either way without live staging). */
 @media (min-width:601px){
 	.gloskin-ui1-quickadd__form form.cart{grid-template-columns:minmax(0,1fr) auto}
 	.gloskin-ui1-quickadd__form table.variations{grid-column:1;grid-row:1}
 	.gloskin-ui1-quickadd__form .single_variation_wrap,
 	.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart{display:contents}
+	.gloskin-ui1-quickadd__form .single_variation_wrap{grid-column:1 / -1}
 	.gloskin-ui1-quickadd__form .quantity{grid-column:2;grid-row:1;align-self:end}
 	.gloskin-ui1-quickadd__form .woocommerce-variation{grid-column:1 / -1;grid-row:2}
 	.gloskin-ui1-quickadd__form .single_add_to_cart_button{grid-column:1 / -1;grid-row:3}

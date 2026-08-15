@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Focused browser fixture for product-card + variable Quick Add interaction."""
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,6 +36,21 @@ require('nativeFallbackSubmit(form, submitter)' in quickadd_js, 'existing native
 require('single_add_to_cart_button.disabled =' not in quickadd_js and 'single_add_to_cart_button"].disabled =' not in quickadd_js, 'ZERO custom disabled-state toggling: Add to Cart disabled state must stay Woo-driven, not JS-forced')
 require('register_rest_route' not in quickadd_js and 'wp_ajax_' not in quickadd_js, 'ZERO Quick Add custom cart endpoint in the frontend controller (REST projection route lives server-side and is read-only)')
 
+# stepQuantityInput() must capture the value BEFORE stepping and only
+# dispatch input/change AFTER confirming it actually changed -- not
+# unconditionally dispatch after every native stepUp()/stepDown() call
+# regardless of whether the value moved (the previous, imprecise contract).
+step_fn_start = quickadd_js.index('function stepQuantityInput(input, direction)')
+step_fn_end = quickadd_js.index('\n\t\t}', step_fn_start)
+step_fn = quickadd_js[step_fn_start:step_fn_end]
+before_idx = step_fn.find('var before = input.value;')
+stepup_idx = step_fn.find('input.stepUp()')
+dispatch_idx = step_fn.find("dispatchEvent(new Event('input'")
+guard_idx = step_fn.find('if (input.value === before) { return; }')
+require(before_idx >= 0, 'NO-CHANGE EVENT SUPPRESSION: value must be captured before stepping')
+require(before_idx < stepup_idx, 'value must be captured before the native stepUp()/stepDown() call, not after')
+require(0 <= guard_idx < dispatch_idx, 'NO-CHANGE EVENT SUPPRESSION: the before/after comparison guard must run before the input/change dispatch')
+
 quickadd_css_start = CSS_CORE_SOURCE.index('/* Quick Add release hardening.')
 quickadd_css_end = CSS_CORE_SOURCE.index('Shop catalog enhancement:', quickadd_css_start)
 quickadd_css = CSS_CORE_SOURCE[quickadd_css_start:quickadd_css_end]
@@ -45,6 +61,7 @@ for benchmark in ('min-height:46px', 'width:44px', 'width:34px'):
     require(benchmark in quickadd_css, f'quantity stepper must match the Purchase Dock geometry benchmark: {benchmark}')
 require(quickadd_css.count('border-right:1px solid var(--gloskin-border)') >= 1 and quickadd_css.count('border-left:1px solid var(--gloskin-border)') >= 1, 'stepper must keep exactly one separator each side of the numeric value')
 require('display:contents' in quickadd_css, 'desktop composition must use the sanctioned display:contents technique on non-semantic Woo wrapper divs')
+require('.single_variation_wrap{grid-column:1 / -1}' in quickadd_css, 'single_variation_wrap must carry a zero-cost grid-column fallback in case real Woo variation toggling ever forces it out of display:contents via an inline style')
 print('quick-add-source-contract: OK (static, no browser required)')
 
 # -----------------------------------------------------------------------
@@ -101,24 +118,62 @@ HTML = r"""
 # output for a variable product: table.variations -> single_variation_wrap >
 # (woocommerce-variation.single_variation price/availability state +
 # woocommerce-variation-add-to-cart.variations_button > quantity + submit +
-# hidden product_id/variation_id). input.qty carries min/max/step so the
-# stepper's respect for all three is genuinely exercised.
+# hidden product_id/variation_id). input.qty starts with a static min/max/step
+# so the pure stepping mechanics below (plus/minus/boundary arithmetic) can be
+# exercised immediately without depending on a variation being selected
+# first; the separate realistic-lifecycle section further down selects real
+# variations carrying a DIFFERENT min/max (data-product_variations, wired
+# through wireVariationForm() below) specifically to prove Woo's own
+# variation-found handling can override these static starting values, not
+# just coincidentally match them. data-product_variations is WooCommerce's
+# own real data attribute name/shape (variation_id, attributes keyed by the
+# same attribute_* select name, is_in_stock/is_purchasable/
+# variation_is_active, is_sold_individually, min_qty/max_qty, price_html,
+# availability_html) -- the submit button starts disabled and
+# single_variation_wrap starts with no inline style (matching Woo's actual
+# server-rendered markup before any JS has run), exactly like the real
+# fixture the Purchase Dock/mobile-cart tests in this suite are built from.
+PRODUCT_VARIATIONS = [
+    {
+        'variation_id': 205,
+        'attributes': {'attribute_pa_size': '30ml'},
+        'is_in_stock': True,
+        'is_purchasable': True,
+        'variation_is_active': True,
+        'is_sold_individually': 'no',
+        'min_qty': 1,
+        'max_qty': 3,
+        'price_html': '<span class="price">Rp250.000</span>',
+        'availability_html': '<p class="stock in-stock">Tersedia</p>',
+    },
+    {
+        'variation_id': 206,
+        'attributes': {'attribute_pa_size': '50ml'},
+        'is_in_stock': True,
+        'is_purchasable': True,
+        'variation_is_active': True,
+        'is_sold_individually': 'yes',
+        'min_qty': 1,
+        'max_qty': 1,
+        'price_html': '<span class="price">Rp400.000</span>',
+        'availability_html': '<p class="stock in-stock">Tersedia (satuan)</p>',
+    },
+]
+
 FORM_HTML = (
-    '<form class="variations_form cart" action="/product/hydrating-serum/" method="post">'
+    '<form class="variations_form cart" action="/product/hydrating-serum/" method="post" data-product_id="202" data-product_variations=\'PRODUCT_VARIATIONS_JSON\'>'
     '<table class="variations"><tbody><tr><th><label for="pa_size">Ukuran</label></th>'
-    '<td><select id="pa_size" name="attribute_pa_size"><option value="">Pilih</option><option value="30ml">30 ml</option></select></td></tr></tbody></table>'
+    '<td><select id="pa_size" name="attribute_pa_size"><option value="">Pilih</option><option value="30ml">30 ml</option><option value="50ml">50 ml</option></select></td></tr></tbody></table>'
     '<div class="single_variation_wrap">'
-    '<div class="woocommerce-variation single_variation">'
-    '<div class="woocommerce-variation-price">Rp250.000</div>'
-    '<div class="woocommerce-variation-availability">Tersedia</div>'
-    '</div>'
+    '<div class="woocommerce-variation single_variation"></div>'
     '<div class="woocommerce-variation-add-to-cart variations_button">'
     '<div class="quantity"><input class="input-text qty text" type="number" name="quantity" value="1" min="1" max="5" step="1"></div>'
-    '<button type="submit" class="single_add_to_cart_button button alt" name="add-to-cart" value="202">Tambah ke keranjang</button>'
+    '<button type="submit" class="single_add_to_cart_button button alt wc-variation-selection-needed" disabled name="add-to-cart" value="202">Tambah ke keranjang</button>'
     '<input type="hidden" name="product_id" value="202">'
-    '<input type="hidden" class="variation_id" name="variation_id" value="205">'
+    '<input type="hidden" class="variation_id" name="variation_id" value="0">'
     '</div></div></form>'
 )
+FORM_HTML = FORM_HTML.replace('PRODUCT_VARIATIONS_JSON', json.dumps(PRODUCT_VARIATIONS))
 
 RUNTIME = (
     r"""
@@ -131,6 +186,84 @@ window.gloskinData = {
 window.wc_cart_fragments_params = {};
 window.wc_add_to_cart_params = {};
 (function () {
+  /* Focused, Woo-compatible re-implementation of just the variation-
+     matching/UI-toggling contract Quick Add actually depends on (real
+     data-product_variations shape/attribute-name matching, price/
+     availability population, submit disabled/enabled, quantity min/max/
+     sold-individually) -- not a copy of WooCommerce's whole add-to-cart-
+     variation.js runtime. Driven by real <select> change events, same as
+     the genuine wc_variation_form jQuery plugin. */
+  function wireVariationForm(form) {
+    var raw = form.getAttribute('data-product_variations');
+    var variations = raw ? JSON.parse(raw) : [];
+    var selects = Array.prototype.slice.call(form.querySelectorAll('table.variations select'));
+    var wrap = form.querySelector('.single_variation_wrap');
+    var singleVariation = form.querySelector('.woocommerce-variation.single_variation');
+    var quantity = form.querySelector('.quantity');
+    var qtyInput = quantity ? quantity.querySelector('input.qty') : null;
+    var submitButton = form.querySelector('.single_add_to_cart_button');
+    var variationIdInput = form.querySelector('input.variation_id');
+
+    function currentSelection() {
+      var values = {};
+      var complete = true;
+      selects.forEach(function (select) {
+        values[select.name] = select.value;
+        if (!select.value) { complete = false; }
+      });
+      return { values: values, complete: complete };
+    }
+
+    function findMatch(values) {
+      return variations.filter(function (variation) {
+        return Object.keys(values).every(function (name) {
+          var want = variation.attributes[name];
+          return !want || want === values[name];
+        });
+      })[0] || null;
+    }
+
+    function resetData() {
+      if (singleVariation) { singleVariation.innerHTML = ''; }
+      if (submitButton) { submitButton.disabled = true; }
+      if (variationIdInput) { variationIdInput.value = '0'; }
+      if (quantity) { quantity.style.display = ''; }
+      if (wrap) { wrap.style.display = ''; }
+    }
+
+    function foundVariation(variation) {
+      if (variationIdInput) { variationIdInput.value = String(variation.variation_id); }
+      if (singleVariation) { singleVariation.innerHTML = (variation.price_html || '') + (variation.availability_html || ''); }
+      var purchasable = variation.is_in_stock !== false && variation.is_purchasable !== false && variation.variation_is_active !== false;
+      if (submitButton) { submitButton.disabled = !purchasable; }
+      if (quantity && qtyInput) {
+        if (variation.is_sold_individually === 'yes') {
+          quantity.style.display = 'none';
+          qtyInput.value = '1';
+        } else {
+          quantity.style.display = '';
+          qtyInput.min = String(variation.min_qty || 1);
+          if (variation.max_qty) { qtyInput.max = String(variation.max_qty); } else { qtyInput.removeAttribute('max'); }
+          var current = parseFloat(qtyInput.value);
+          var min = parseFloat(qtyInput.min);
+          if (isNaN(current) || current < min) { qtyInput.value = String(min); }
+        }
+      }
+      if (wrap) { wrap.style.display = ''; }
+    }
+
+    function refresh() {
+      var state = currentSelection();
+      if (!state.complete) { resetData(); return; }
+      var match = findMatch(state.values);
+      if (!match) { resetData(); return; }
+      foundVariation(match);
+    }
+
+    selects.forEach(function (select) { select.addEventListener('change', refresh); });
+    resetData();
+  }
+
   const handlers = {};
   function jq(target) {
     return {
@@ -138,7 +271,7 @@ window.wc_add_to_cart_params = {};
       on(name, handler) { handlers[name] = handler; return this; },
       trigger(name, args) { if (handlers[name]) { handlers[name].apply(target, [null].concat(args || [])); } return this; },
       attr(name, value) { if (target && target.setAttribute && value !== undefined) { target.setAttribute(name, value); } return this; },
-      wc_variation_form() { return this; }
+      wc_variation_form() { if (target) { wireVariationForm(target); } return this; }
     };
   }
   jq.fn = { wc_variation_form: function () {} };
@@ -225,6 +358,72 @@ with sync_playwright() as p:
     require(page.locator('[data-gloskin-overlay="quickadd"]').get_attribute('hidden') is None, 'rapid reopen must not be clobbered to hidden')
 
     # ---------------------------------------------------------------
+    # Realistic Woo variation lifecycle -- wireVariationForm() (RUNTIME
+    # above) exercises the real select/data-product_variations matching
+    # contract, not a no-op stub, so this drives Add to Cart disabled/
+    # enabled, price/availability show/hide, dynamic input.qty min/max
+    # updates, sold-individually hiding the SAME quantity control, and
+    # restoring it -- through genuine <select> change events.
+    # ---------------------------------------------------------------
+    variation_select = page.locator('[data-gloskin-quickadd-body] table.variations select')
+    submit_button = page.locator('[data-gloskin-quickadd-body] .single_add_to_cart_button')
+    single_variation = page.locator('[data-gloskin-quickadd-body] .woocommerce-variation.single_variation')
+    lifecycle_qty = page.locator('[data-gloskin-quickadd-body] .quantity')
+    lifecycle_qty_input = page.locator('[data-gloskin-quickadd-body] input.qty')
+
+    require(submit_button.get_attribute('disabled') is not None, 'Add to Cart must start disabled before any variation is selected')
+    require((single_variation.inner_text() or '').strip() == '', 'no price/availability state before a variation is selected')
+
+    variation_select.select_option('30ml')
+    page.wait_for_function("document.querySelector('[data-gloskin-quickadd-body] .single_add_to_cart_button').disabled === false")
+    require(submit_button.get_attribute('disabled') is None, 'Add to Cart must become enabled once a purchasable variation is selected')
+    require('Rp250.000' in (single_variation.inner_text() or ''), 'variation price must show once selected')
+    require('Tersedia' in (single_variation.inner_text() or ''), 'variation availability must show once selected')
+    require(lifecycle_qty_input.get_attribute('min') == '1' and lifecycle_qty_input.get_attribute('max') == '3', 'variation selection must dynamically update input.qty min/max (30ml carries max_qty=3, overriding the fixture-static max=5)')
+    require(lifecycle_qty.is_visible(), 'quantity control must be visible for a non-sold-individually variation')
+
+    # Desktop composition must still hold after real Woo variation-found
+    # toggling has touched .single_variation_wrap/.woocommerce-variation --
+    # not just on the untouched initial render.
+    lifecycle_table_box = page.locator('[data-gloskin-quickadd-body] table.variations').bounding_box()
+    lifecycle_qty_box = page.locator('[data-gloskin-quickadd-body] .gloskin-ui1-quickadd__qty-control').bounding_box()
+    lifecycle_submit_box = submit_button.bounding_box()
+    require(lifecycle_table_box and lifecycle_qty_box, 'selector and quantity control must both remain visible after variation selection')
+    require(lifecycle_qty_box['x'] > lifecycle_table_box['x'] + lifecycle_table_box['width'] - 1, 'quantity must still sit to the right of the variant selector after a real variation-found event')
+    lifecycle_row_overlap = min(lifecycle_table_box['y'] + lifecycle_table_box['height'], lifecycle_qty_box['y'] + lifecycle_qty_box['height']) - max(lifecycle_table_box['y'], lifecycle_qty_box['y'])
+    require(lifecycle_row_overlap > 0, 'variant selector and quantity must still visually share one row after a real variation-found event')
+    require(lifecycle_submit_box and lifecycle_submit_box['width'] >= lifecycle_table_box['width'] + lifecycle_qty_box['width'] - 2, 'Add to Cart must still span the full-width final row after a real variation-found event')
+
+    # Sold-individually hides the SAME quantity control (never removes/
+    # replaces it -- .quantity/input.qty are still the same nodes, just
+    # display:none while this variation is active).
+    variation_select.select_option('50ml')
+    page.wait_for_function("document.querySelector('[data-gloskin-quickadd-body] .quantity').style.display === 'none'")
+    require(not lifecycle_qty.is_visible(), 'sold-individually variation must hide the quantity control')
+    require(page.locator('[data-gloskin-quickadd-body] input.qty').count() == 1, 'sold-individually must hide, never remove, the same native input.qty')
+    require(lifecycle_qty_input.input_value() == '1', 'sold-individually must force quantity to 1')
+    require(submit_button.get_attribute('disabled') is None, 'Add to Cart must remain enabled for a purchasable sold-individually variation')
+
+    # Switching back to a normal variation restores the SAME control.
+    variation_select.select_option('30ml')
+    page.wait_for_function("document.querySelector('[data-gloskin-quickadd-body] .quantity').style.display !== 'none'")
+    require(lifecycle_qty.is_visible(), 'switching back to a normal variation must restore the quantity control')
+    require(lifecycle_qty_input.get_attribute('max') == '3', "switching back must re-apply that variation's own min/max")
+
+    # Unselecting resets to the disabled/empty state.
+    variation_select.select_option('')
+    page.wait_for_function("document.querySelector('[data-gloskin-quickadd-body] .single_add_to_cart_button').disabled === true")
+    require(submit_button.get_attribute('disabled') is not None, 'unselecting the variation must disable Add to Cart again')
+    require((single_variation.inner_text() or '').strip() == '', 'unselecting the variation must clear the price/availability state')
+
+    # This lifecycle section deliberately changed the live form's variation
+    # state (min/max, visibility); reopen fresh so the pure quantity-
+    # stepper mechanics below exercise the original, untouched fixture
+    # markup exactly as before, with no cross-section coupling.
+    page.keyboard.press('Escape')
+    open_quickadd(page)
+
+    # ---------------------------------------------------------------
     # Quantity stepper: native input.qty, exactly one control, no clones.
     # ---------------------------------------------------------------
     require(page.locator('[data-gloskin-quickadd-body] input.qty').count() == 1, 'exactly ONE input.qty must exist')
@@ -258,13 +457,20 @@ with sync_playwright() as p:
     # min respected: step down to the floor and past it.
     page.locator('.gloskin-ui1-quickadd__qty-minus').click()
     require(qty_input.input_value() == '1', 'minus must land on min')
+    at_min_count = len(page.evaluate('window.__gloskinQtyEvents'))
     page.locator('.gloskin-ui1-quickadd__qty-minus').click()
     require(qty_input.input_value() == '1', 'minus must never go below min')
+    require(len(page.evaluate('window.__gloskinQtyEvents')) == at_min_count, 'NO-CHANGE EVENT SUPPRESSION: clicking minus while already at min must dispatch zero new input/change events')
 
     # max respected: step up to the ceiling (max="5") and past it.
-    for _ in range(6):
+    for _ in range(4):
         page.locator('.gloskin-ui1-quickadd__qty-plus').click()
+    require(qty_input.input_value() == '5', 'plus must reach max')
+    at_max_count = len(page.evaluate('window.__gloskinQtyEvents'))
+    page.locator('.gloskin-ui1-quickadd__qty-plus').click()
+    page.locator('.gloskin-ui1-quickadd__qty-plus').click()
     require(qty_input.input_value() == '5', 'plus must never exceed max')
+    require(len(page.evaluate('window.__gloskinQtyEvents')) == at_max_count, 'NO-CHANGE EVENT SUPPRESSION: clicking plus while already at max must dispatch zero new input/change events')
 
     # step respected: value always lands on a whole step from min.
     final_value = float(qty_input.input_value())

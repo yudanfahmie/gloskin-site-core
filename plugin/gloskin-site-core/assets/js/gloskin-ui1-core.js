@@ -1249,11 +1249,15 @@
 		 * input's own step/min/max there. Fallback arithmetic (same shape as
 		 * the Purchase Dock stepper) only runs if the native method throws
 		 * (e.g. step="any") or is unavailable, and still clamps to min/max
-		 * itself. Either path ends in the same input+change dispatch so
-		 * Woo's own variation/quantity listeners react exactly as if the
-		 * browser's native spinner had been used. */
+		 * itself. Either path is followed by the SAME input+change dispatch,
+		 * but only when the value genuinely moved -- the value is captured
+		 * before stepping and compared after, so a step already pinned at
+		 * min/max (a real, common case: repeated clicks at either boundary)
+		 * fires nothing, exactly like the browser's own native spinner does
+		 * nothing observable when it is already at a boundary. */
 		function stepQuantityInput(input, direction) {
 			if (!input || input.disabled || input.readOnly) { return; }
+			var before = input.value;
 			var stepped = false;
 			if (typeof input.stepUp === 'function' && typeof input.stepDown === 'function') {
 				try {
@@ -1274,9 +1278,9 @@
 				if (next < min) { next = min; }
 				if (next > max) { next = max; }
 				next = Math.round(next * 1e6) / 1e6;
-				if (next === current) { return; }
 				input.value = next;
 			}
+			if (input.value === before) { return; }
 			input.dispatchEvent(new Event('input', { bubbles: true }));
 			input.dispatchEvent(new Event('change', { bubbles: true }));
 		}
