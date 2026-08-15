@@ -652,11 +652,22 @@ body.woocommerce-cart .wp-block-woocommerce-empty-cart-block{
 /* The looping icon is a self-contained animated SVG (its own <style>/
    @keyframes, including its own prefers-reduced-motion query -- a data:
    image is an isolated document, so the parent page's reduced-motion CSS
-   cannot reach inside it) swapped in for WC's own emoji ::before content;
-   a gentle float + a softly pulsing accent dot, both stopped entirely
-   under reduced motion. Same line-weight/palette as the canonical
-   cart-icon glyph in readiness-helpers.php's gloskin_ui1_empty_state_icon()
-   for visual consistency with the mini-cart's own empty state. */
+   cannot reach inside it), rendered via ::after rather than fighting WC's
+   own ::before content/background-image on the SAME box: WC's Cart Block
+   stylesheet is !important-heavy (already documented above this file's
+   quantity-stepper/mobile-grid rules), and its icon proved to be one of
+   the properties it defends that way -- a non-important override on the
+   same ::before content/background-image lost the cascade regardless of
+   selector specificity (confirmed on real staging, not guessed). Rather
+   than escalate to !important (this codebase adds none, see
+   CONTRIBUTING.md), WC's own ::before is starved via display:none
+   instead -- unlikely to be the one property it protects on a purely
+   decorative icon -- and the real icon is drawn on an independent
+   pseudo-element WC has no rule for at all, so there is nothing left to
+   out-cascade; order:-1 places it visually first, ahead of the title
+   text. Same line-weight/palette as the canonical cart-icon glyph in
+   readiness-helpers.php's gloskin_ui1_empty_state_icon() for visual
+   consistency with the mini-cart's own empty state. */
 body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon{
 	display:grid;
 	justify-items:center;
@@ -674,8 +685,10 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon{
 	line-height:1.3;
 	animation:gloskin-empty-settle 220ms ease-out both;
 }
-body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::before{
+body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::before{display:none}
+body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::after{
 	content:"";
+	order:-1;
 	display:block;
 	width:72px;
 	height:72px;
@@ -707,8 +720,22 @@ body.woocommerce-cart .wp-block-woocommerce-empty-cart-block .wp-block-heading:n
    friends) -- only per-tile presentation is re-skinned here, into the
    same bordered/radiused card language as .gloskin-ui1-card elsewhere on
    the site, so this reads as one consistent product-card system rather
-   than a second, more "native" one living inside the empty-cart state. */
+   than a second, more "native" one living inside the empty-cart state.
+   Each <li> is exactly three stacked children (image+title link, price,
+   add-to-cart) with no shared height/alignment contract by default, so a
+   two-line title on one tile (a real, common case here -- product names
+   vary in length) pushed that one tile's price/button down while its
+   row-mates stayed put, an inconsistent row. flex-column + height:100%
+   (stretching each tile to the row's own tallest tile, which WC's own
+   grid/flex row already establishes by default) + margin-top:auto on the
+   add-to-cart wrapper anchors every button to the same bottom edge
+   regardless of title length; text-align:left is set explicitly on both
+   title and price since WC's own default centers the price but not the
+   title, which is what actually produced the crooked-looking row. */
 body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product{
+	display:flex;
+	flex-direction:column;
+	height:100%;
 	overflow:hidden;
 	border:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);
 	border-radius:var(--gloskin-radius-md);
@@ -721,18 +748,20 @@ body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__produc
 body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-image img{display:block;width:100%;aspect-ratio:4 / 3;object-fit:cover;transition:transform 250ms ease}
 body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product:hover .wc-block-grid__product-image img{transform:scale(1.025)}
 body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-title{
-	padding:14px 16px 4px;
+	padding:16px 18px 4px;
 	color:var(--gloskin-text);
 	font-size:.92rem;
 	font-weight:600;
 	line-height:1.35;
+	text-align:left;
 }
 body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-price{
-	padding:0 16px 14px;
+	padding:0 18px 16px;
 	color:var(--gloskin-accent-readable);
 	font-weight:700;
+	text-align:left;
 }
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-add-to-cart{padding:0 16px 16px}
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-add-to-cart{margin-top:auto;padding:0 18px 18px}
 body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-add-to-cart .wp-block-button__link{
 	display:flex;
 	min-height:40px;
