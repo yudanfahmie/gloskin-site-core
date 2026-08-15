@@ -1142,6 +1142,24 @@
 			return null;
 		}
 
+		function chipOptions(select) {
+			return select ? Array.prototype.filter.call(select.options, function (option) {
+				return '' !== option.value;
+			}) : [];
+		}
+
+		function selectCanEnhance(select) {
+			return !!(select && chipOptions(select).length);
+		}
+
+		function allSelectsCanEnhance(selects) {
+			if (!selects.length) { return false; }
+			for (var i = 0; i < selects.length; i += 1) {
+				if (!selectCanEnhance(selects[i])) { return false; }
+			}
+			return true;
+		}
+
 		function recoveryMarkup(message, productUrl) {
 			var html = '<div class="gloskin-ui1-quickadd__error" role="status">';
 			html += '<p>' + escapeHtml(message) + '</p>';
@@ -1222,12 +1240,11 @@
 		}
 
 		function createChipGroup(select, index, host, includeHeading) {
+			if (!select || !host) { return null; }
+			var options = chipOptions(select);
+			if (!options.length) { return null; }
 			var label = selectLabel(select);
 			var key = ensureSelectKey(select, index);
-			var options = Array.prototype.filter.call(select.options, function (option) {
-				return '' !== option.value;
-			});
-			if (!options.length) { return null; }
 
 			if (includeHeading) {
 				var heading = document.createElement('span');
@@ -1255,7 +1272,6 @@
 			});
 
 			host.appendChild(group);
-			select.classList.add('gloskin-ui1-variable-select--enhanced');
 			return group;
 		}
 
@@ -1400,26 +1416,40 @@
 
 		function addCatalogPresentation(form) {
 			var selects = attributeSelects(form);
-			if (!selects.length) { return false; }
-			var made = 0;
-			selects.forEach(function (select, index) {
-				var host = select.closest('td') || select.parentNode;
-				if (host && createChipGroup(select, index, host, false)) { made += 1; }
-			});
-			if (made !== selects.length) { return false; }
 			var submit = getNativeSubmit(form);
-			if (!submit) { return false; }
-			submit.textContent = 'Tambahkan ke keranjang';
-			submit.classList.add('gloskin-ui1-variable-native-submit--enhanced');
-			var action = submit.closest('.woocommerce-variation-add-to-cart.variations_button') || submit.parentNode;
-			if (action && !action.querySelector('[data-gloskin-variable-submit-proxy]')) {
-				var proxy = document.createElement('button');
+			var action = submit ? (submit.closest('.woocommerce-variation-add-to-cart.variations_button') || submit.parentNode) : null;
+			if (!allSelectsCanEnhance(selects) || !submit || !action) { return false; }
+
+			var plan = [];
+			for (var i = 0; i < selects.length; i += 1) {
+				var host = selects[i].closest('td') || selects[i].parentNode;
+				if (!host) { return false; }
+				plan.push({ select: selects[i], index: i, host: host });
+			}
+
+			var groups = [];
+			for (var j = 0; j < plan.length; j += 1) {
+				var group = createChipGroup(plan[j].select, plan[j].index, plan[j].host, false);
+				if (!group) {
+					groups.forEach(function (created) { created.remove(); });
+					return false;
+				}
+				groups.push(group);
+			}
+
+			var proxy = action.querySelector('[data-gloskin-variable-submit-proxy]');
+			if (!proxy) {
+				proxy = document.createElement('button');
 				proxy.type = 'button';
 				proxy.className = 'gloskin-ui1-variable-modal__cta';
 				proxy.setAttribute('data-gloskin-variable-submit-proxy', '');
 				proxy.textContent = 'Tambahkan ke keranjang';
 				action.appendChild(proxy);
 			}
+
+			selects.forEach(function (select) { select.classList.add('gloskin-ui1-variable-select--enhanced'); });
+			submit.textContent = 'Tambahkan ke keranjang';
+			submit.classList.add('gloskin-ui1-variable-native-submit--enhanced');
 			enhanceQuantityControls(form.querySelector('.quantity'));
 			bindSelectionSync(form);
 			syncModalPresentation(form);
@@ -1469,10 +1499,28 @@
 				});
 		}
 
+		function failOpenPdp(form, dock) {
+			if (form) { form.classList.remove('gloskin-ui1-variable-pdp-enhanced'); }
+			var trigger = dock ? dock.querySelector('[data-gloskin-variable-pdp-trigger]') : null;
+			if (trigger) { trigger.remove(); }
+			if ('pdp' === currentMode && currentForm === form) {
+				currentMode = '';
+				currentForm = null;
+			}
+			return false;
+		}
+
 		function preparePdp(form, dock) {
 			if (!form || !dock || !form.classList.contains('variations_form') || 1 !== dock.querySelectorAll('form.cart').length || dock.querySelector('form.cart') !== form) { return false; }
 			var action = dock.querySelector('[data-gloskin-purchase-action]');
-			if (!action) { return false; }
+			var selects = attributeSelects(form);
+			if (!action || !getNativeSubmit(form) || !allSelectsCanEnhance(selects)) { return failOpenPdp(form, dock); }
+
+			selects.forEach(function (select, index) {
+				ensureSelectKey(select, index);
+				selectLabel(select);
+			});
+
 			var trigger = action.querySelector('[data-gloskin-variable-pdp-trigger]');
 			if (!trigger) {
 				trigger = document.createElement('button');
@@ -1482,14 +1530,10 @@
 				trigger.textContent = 'Pilih Varian';
 				action.insertBefore(trigger, action.firstChild);
 				trigger.addEventListener('click', function () {
-					renderPdp(form, dock);
-					overlay.open('quickadd');
+					if (renderPdp(form, dock)) { overlay.open('quickadd'); }
 				});
 			}
-			attributeSelects(form).forEach(function (select, index) {
-				ensureSelectKey(select, index);
-				selectLabel(select);
-			});
+
 			bindSelectionSync(form);
 			form.classList.add('gloskin-ui1-variable-pdp-enhanced');
 			syncPdpTrigger(form);
@@ -1497,7 +1541,7 @@
 		}
 
 		function renderPdp(form, dock) {
-			if (!preparePdp(form, dock)) { return; }
+			if (!preparePdp(form, dock)) { return false; }
 			currentMode = 'pdp';
 			currentForm = form;
 			currentId = null;
@@ -1511,14 +1555,26 @@
 				'</div>';
 
 			var fields = body.querySelector('[data-gloskin-variable-fields]');
-			attributeSelects(form).forEach(function (select, index) {
-				var field = document.createElement('div');
-				field.className = 'gloskin-ui1-variable-field';
-				fields.appendChild(field);
-				createChipGroup(select, index, field, true);
-			});
+			var selects = attributeSelects(form);
+			var made = 0;
+			if (fields) {
+				selects.forEach(function (select, index) {
+					var field = document.createElement('div');
+					field.className = 'gloskin-ui1-variable-field';
+					fields.appendChild(field);
+					if (createChipGroup(select, index, field, true)) { made += 1; }
+				});
+			}
+			if (!fields || made !== selects.length) {
+				body.innerHTML = '';
+				return failOpenPdp(form, dock);
+			}
 
 			var actions = body.querySelector('[data-gloskin-variable-actions]');
+			if (!actions) {
+				body.innerHTML = '';
+				return failOpenPdp(form, dock);
+			}
 			if (getNativeQuantityInput(form)) {
 				var qty = document.createElement('div');
 				qty.className = 'gloskin-ui1-variable-modal__qty-proxy';
@@ -1534,6 +1590,7 @@
 			proxy.textContent = 'Tambahkan ke keranjang';
 			actions.appendChild(proxy);
 			syncModalPresentation(form);
+			return true;
 		}
 
 		function notifyPdpRequirement(form) {
@@ -1618,8 +1675,7 @@
 
 		document.addEventListener('gloskin:variable-product-modal-request', function (event) {
 			var detail = event.detail || {};
-			if (!preparePdp(detail.form, detail.dock)) { return; }
-			renderPdp(detail.form, detail.dock);
+			if (!renderPdp(detail.form, detail.dock)) { return; }
 			overlay.open('quickadd');
 			notifyPdpRequirement(detail.form);
 		});

@@ -196,8 +196,11 @@
 .gloskin-ui1-variable-modal__actions.is-quantity-hidden{
 	grid-template-columns:minmax(0,1fr);
 }
+.gloskin-ui1-variable-modal__actions.is-quantity-hidden .gloskin-ui1-variable-modal__qty-proxy{
+	display:none;
+}
 .gloskin-ui1-variable-modal__actions.is-quantity-hidden .gloskin-ui1-variable-modal__cta{
-	grid-column:1;
+	grid-column:1 / -1;
 }
 .gloskin-ui1-variable-modal__qty-proxy{
 	display:grid;
