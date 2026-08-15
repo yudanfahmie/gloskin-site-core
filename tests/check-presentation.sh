@@ -201,25 +201,83 @@ for expected in \
   grep -Fq -- "$expected" "$core_css" || { echo "premium header refinement missing: $expected" >&2; exit 1; }
 done
 
-# Home-only header entrance: CSS-only, opacity/filter only (never transform,
-# which sticky hide/reveal already owns), scoped to body.gloskin-ui1--home so
-# standard pages are untouched, and fully disabled under reduced motion.
-if ! grep -Eq -- '@keyframes gloskin-ui1-header-intro\{from\{opacity:0;filter:blur\([1-4]px\)\}to\{opacity:1;filter:blur\(0\)\}\}' "$core_base_css"; then
-  echo "Home header intro keyframes missing or exceed the 4px blur ceiling" >&2
+# Home + Header Type 2 glass overlay over the native video hero. Retired
+# entirely: the prior filter:blur() header-content "intro" animation.
+if grep -Eq -- 'gloskin-ui1-header-intro|filter:blur\([0-9]+px\)\}to\{opacity:1' "$core_base_css" "$core_css"; then
+  echo "retired filter:blur() header-content animation must not return" >&2
   exit 1
 fi
-grep -qF -- 'body.gloskin-ui1--home .gloskin-ui1-header{animation:gloskin-ui1-header-intro' "$core_base_css" \
-  || { echo "Home header intro is not scoped to body.gloskin-ui1--home .gloskin-ui1-header" >&2; exit 1; }
-grep -qF -- 'body.gloskin-ui1--home .gloskin-ui1-header{animation:none;opacity:1;filter:none}' "$core_base_css" \
-  || { echo "Home header intro reduced-motion override missing" >&2; exit 1; }
-if grep -Eq -- '@keyframes gloskin-ui1-header-intro\{[^}]*transform' "$core_base_css"; then
-  echo "Home header intro must never animate transform (already sticky-hide owned)" >&2
+# Zero new scroll listener / JS glass controller: the glass overlay and its
+# reveal stay CSS-only, reusing initSmartHeader()'s existing is-compact-sticky
+# / is-hidden classes rather than any new JS owner.
+if grep -RIn 'gloskin-ui1--home\|gloskin-home-header-reveal' "$plugin_root/assets/js" --include='*.js' >/dev/null 2>&1; then
+  echo "Home header glass overlay must stay CSS-only; no JS controller/timer may reference it" >&2
   exit 1
 fi
-if grep -RIn 'gloskin-ui1--home\|gloskin-ui1-header-intro' "$plugin_root/assets/js" --include='*.js' >/dev/null 2>&1; then
-  echo "Home header intro must stay CSS-only; no JS controller/timer may reference it" >&2
-  exit 1
-fi
+# Standard (non-home) Header Type 2 positioning/surface must remain byte-for-
+# byte the original sticky-in-flow rule -- the glass rewrite lives entirely
+# in an additional, more specific body.gloskin-ui1--home selector.
+grep -qF -- '[data-gloskin-header="header-2"]{position:sticky;z-index:1000;top:var(--gloskin-ui1-nav-sticky-top);border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);background:color-mix(in srgb,var(--gloskin-bg) 92%,transparent);-webkit-backdrop-filter:saturate(120%) blur(14px);backdrop-filter:saturate(120%) blur(14px);' "$core_css" \
+  || { echo "standard-page Header Type 2 sticky/surface rule regressed" >&2; exit 1; }
+grep -qF -- '[data-gloskin-header="header-2"].is-hidden{transform:translateY(calc(-100% - var(--gloskin-ui1-nav-sticky-top)))}' "$core_css" \
+  || { echo "Header Type 2 hide/reveal transform (is-hidden) regressed" >&2; exit 1; }
+
+python - "$core_css" <<'PYGLASS'
+import re
+import sys
+from pathlib import Path
+
+css = Path(sys.argv[1]).read_text()
+
+
+def block(selector):
+    match = re.search(re.escape(selector) + r'\{([^}]*)\}', css)
+    if not match:
+        raise SystemExit(f'Home Header Type 2 glass block missing: {selector}')
+    return match.group(1)
+
+
+top = block('body.gloskin-ui1--home [data-gloskin-header="header-2"]')
+for required in ('position:fixed', 'inset-inline:0', 'top:var(--gloskin-ui1-nav-sticky-top)'):
+    if required not in top:
+        raise SystemExit(f'Home Header Type 2 overlay/positioning missing: {required}')
+if 'animation:gloskin-home-header-reveal' not in top:
+    raise SystemExit('Home Header Type 2 opacity reveal animation missing')
+if 'filter:blur' in top.replace('backdrop-filter', '').replace('-webkit-backdrop-filter', ''):
+    raise SystemExit('Home Header Type 2 top state must not animate/set content filter:blur()')
+
+bg_match = re.search(r'background:color-mix\(in srgb,var\(--gloskin-bg\) (\d+)%,transparent\)', top)
+if not bg_match or not (55 <= int(bg_match.group(1)) <= 70):
+    raise SystemExit('Home Header Type 2 top surface must be a translucent <=70% base-surface mix')
+
+blur_match = re.search(r'(?<!-)backdrop-filter:saturate\(\d+%\) blur\((\d+)px\)', top)
+if not blur_match or not (14 <= int(blur_match.group(1)) <= 20):
+    raise SystemExit('Home Header Type 2 top backdrop blur must be 14px-20px')
+
+reveal = block('@keyframes gloskin-home-header-reveal')
+for forbidden in ('transform', 'position', 'height', 'backdrop-filter', 'filter:blur'):
+    if forbidden in reveal:
+        raise SystemExit(f'Home header reveal keyframes must animate opacity only, found: {forbidden}')
+if 'opacity' not in reveal:
+    raise SystemExit('Home header reveal keyframes must animate opacity')
+
+compact = block('body.gloskin-ui1--home [data-gloskin-header="header-2"].is-compact-sticky')
+compact_bg = re.search(r'background:color-mix\(in srgb,var\(--gloskin-bg\) (\d+)%,transparent\)', compact)
+if not compact_bg or not (88 <= int(compact_bg.group(1)) <= 96):
+    raise SystemExit('Home Header Type 2 compact-sticky surface must land in the 88-96% range')
+compact_blur = re.search(r'(?<!-)backdrop-filter:saturate\(\d+%\) blur\((\d+)px\)', compact)
+if not compact_blur or not (12 <= int(compact_blur.group(1)) <= 16):
+    raise SystemExit('Home Header Type 2 compact-sticky backdrop blur must be 12px-16px')
+
+if 'body.gloskin-ui1--home [data-gloskin-header="header-2"]{animation:none;opacity:1}' not in css:
+    raise SystemExit('Home Header Type 2 reduced-motion override (reveal disabled) missing')
+reduced_block_text = css[css.index('body.gloskin-ui1--home [data-gloskin-header="header-2"]{animation:none;opacity:1}') :]
+reduced_rule = reduced_block_text[: reduced_block_text.index('}') + 1]
+if 'background' in reduced_rule or 'backdrop-filter' in reduced_rule:
+    raise SystemExit('reduced-motion override must not force the header opaque; the glass backdrop must remain')
+
+print('home header glass overlay contract: OK')
+PYGLASS
 
 if [[ ! -f "$production_css" ]] \
   || ! grep -q -- '--gloskin-font-body:"Mulish"' "$production_css" \

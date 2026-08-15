@@ -63,6 +63,38 @@ img.gloskin-ui1-brand__image--compact{height:clamp(32px,3vw,45px)}
    Header Type 1 above is completely unaffected. */
 [data-gloskin-header="header-2"]{position:sticky;z-index:1000;top:var(--gloskin-ui1-nav-sticky-top);border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);background:color-mix(in srgb,var(--gloskin-bg) 92%,transparent);-webkit-backdrop-filter:saturate(120%) blur(14px);backdrop-filter:saturate(120%) blur(14px);box-shadow:0 1px 0 color-mix(in srgb,var(--gloskin-bg) 34%,transparent),0 8px 24px color-mix(in srgb,var(--gloskin-text) 3%,transparent);transition:transform 220ms cubic-bezier(.22,1,.36,1);will-change:transform}
 [data-gloskin-header="header-2"].is-hidden{transform:translateY(calc(-100% - var(--gloskin-ui1-nav-sticky-top)))}
+/* Home + Header Type 2: glass overlay over the native video hero. Taken out
+   of flow (position:fixed) so the hero begins at y=0 physically behind it --
+   no spacer, no hero padding compensation. inset-inline:0 restores the
+   full-bleed width position:fixed drops. top keeps the existing admin-bar
+   token; z-index, dimensions, .is-hidden transform and the compact-sticky
+   controller below are untouched/reused as-is. Standard pages and Header
+   Type 1 (a separate, non-sticky, non-overlapping brand row -- see
+   gloskin-ui1-core-base.css) never receive body.gloskin-ui1--home and are
+   unaffected. transition keeps the existing transform timing for
+   initSmartHeader()'s hide/reveal and adds background/border/box-shadow
+   easing for the compact-sticky handoff below; backdrop-filter itself is
+   left untransitioned (compositor cost), it swaps instantly with the class. */
+body.gloskin-ui1--home [data-gloskin-header="header-2"]{
+	position:fixed;
+	inset-inline:0;
+	top:var(--gloskin-ui1-nav-sticky-top);
+	background:color-mix(in srgb,var(--gloskin-bg) 64%,transparent);
+	-webkit-backdrop-filter:saturate(120%) blur(18px);
+	backdrop-filter:saturate(120%) blur(18px);
+	border-bottom-color:color-mix(in srgb,var(--gloskin-inverse) 40%,transparent);
+	transition:transform 220ms cubic-bezier(.22,1,.36,1),background-color 200ms ease,border-color 200ms ease,box-shadow 200ms ease;
+	animation:gloskin-home-header-reveal 340ms cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes gloskin-home-header-reveal{from{opacity:.72}to{opacity:1}}
+/* Scrolled/compact: hand off to the calmer, more opaque reading surface --
+   same target range as the standard Header Type 2 sticky state. */
+body.gloskin-ui1--home [data-gloskin-header="header-2"].is-compact-sticky{
+	background:color-mix(in srgb,var(--gloskin-bg) 92%,transparent);
+	-webkit-backdrop-filter:saturate(120%) blur(14px);
+	backdrop-filter:saturate(120%) blur(14px);
+	border-bottom-color:color-mix(in srgb,var(--gloskin-border) 72%,transparent);
+}
 [data-gloskin-header="header-2"] .gloskin-ui1-header__inner{grid-template-columns:auto minmax(0,1fr) auto;transition:min-height 220ms cubic-bezier(.22,1,.36,1)}
 [data-gloskin-header="header-2"] .gloskin-ui1-brand{grid-column:1;justify-self:start}
 /* Compact-sticky state (same node as the full-size logo above -- no clone):
@@ -107,7 +139,9 @@ img.gloskin-ui1-brand__image--compact{height:clamp(32px,3vw,45px)}
 @media (max-width:782px){body.admin-bar.gloskin-ui1{--gloskin-ui1-admin-bar-height:46px}}
 @media (max-width:760px){.gloskin-ui1-header__inner{min-height:64px}}
 @media (max-width:600px){body.admin-bar.gloskin-ui1{--gloskin-ui1-admin-bar-height:0px}}
-@media (prefers-reduced-motion:reduce){.gloskin-ui1-header__nav-row,.gloskin-ui1-nav__chevron,.gloskin-ui1-nav__link,.gloskin-ui1-nav__toggle,.gloskin-ui1-compact-brand,.gloskin-ui1-header__zone--compact,.gloskin-ui1-drawer-toggle__dot,.gloskin-ui1-nav__bubble,[data-gloskin-header="header-2"],[data-gloskin-header="header-2"] .gloskin-ui1-header__inner,[data-gloskin-header="header-2"] img.gloskin-ui1-brand__image{transition:none !important}.gloskin-ui1-utility-btn.is-success-pulse,.gloskin-ui1-utility-btn.is-success-pulse>.gloskin-ui1-badge,.gloskin-ui1-drawer__utility-link.is-success-pulse>svg{animation:none}}
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-header__nav-row,.gloskin-ui1-nav__chevron,.gloskin-ui1-nav__link,.gloskin-ui1-nav__toggle,.gloskin-ui1-compact-brand,.gloskin-ui1-header__zone--compact,.gloskin-ui1-drawer-toggle__dot,.gloskin-ui1-nav__bubble,[data-gloskin-header="header-2"],[data-gloskin-header="header-2"] .gloskin-ui1-header__inner,[data-gloskin-header="header-2"] img.gloskin-ui1-brand__image{transition:none !important}.gloskin-ui1-utility-btn.is-success-pulse,.gloskin-ui1-utility-btn.is-success-pulse>.gloskin-ui1-badge,.gloskin-ui1-drawer__utility-link.is-success-pulse>svg{animation:none}
+/* Reveal only -- the glass backdrop itself is not motion, so it stays. */
+body.gloskin-ui1--home [data-gloskin-header="header-2"]{animation:none;opacity:1}}
 
 /* Overlay scroll lock */
 html.gloskin-ui1-overlay-open{overflow:hidden}
