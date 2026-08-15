@@ -743,8 +743,22 @@ body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__produc
 }
 body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product:hover{box-shadow:0 8px 28px color-mix(in srgb,var(--gloskin-text) 5%,transparent)}
 body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-link{display:block;text-decoration:none;color:inherit}
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-image{overflow:hidden;background:var(--gloskin-surface-strong)}
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-image img{display:block;width:100%;aspect-ratio:4 / 3;object-fit:cover;transition:transform 250ms ease}
+/* WC ships this image with real width/height HTML attributes (300x375,
+   an intrinsic 4:5 ratio) that the browser uses as a sizing hint
+   independent of this CSS; setting aspect-ratio:4/3 on the <img> itself
+   fought that intrinsic ratio and, on real staging, produced an <img>
+   taller than its own wrapper -- the overflow visibly overlapped the
+   product title directly below it in normal flow. Pinning the box on the
+   WRAPPER instead (aspect-ratio + position:relative) and absolutely
+   filling it with the image (inset:0, its own intrinsic size now
+   irrelevant) removes that conflict entirely. */
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-image{
+	position:relative;
+	overflow:hidden;
+	aspect-ratio:4 / 3;
+	background:var(--gloskin-surface-strong);
+}
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-image img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;transition:transform 250ms ease}
 body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product:hover .wc-block-grid__product-image img{transform:scale(1.025)}
 body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-title{
 	padding:16px 18px 4px;
@@ -760,18 +774,32 @@ body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__produc
 	font-weight:700;
 	text-align:left;
 }
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-add-to-cart{margin-top:auto;padding:0 18px 18px}
+/* .wp-block-button/.wp-block-button__link are generic WP-core block
+   classes with their own sizing rules elsewhere on the platform (the
+   same "!important-heavy" caution documented above for WC's own Cart
+   Block styles applies here too); width:100% on the link alone did not
+   reliably fill the card on real staging -- "Select options" (longer
+   than "Add to cart") wrapped onto a second line at some column widths,
+   breaking the shared row-bottom the margin-top:auto/flex-column rules
+   above establish. flex:1 1 auto on a flex WRAPPER is a more robust way
+   to force full width than a plain width declaration on the link itself,
+   since the flex algorithm determines the child's final size rather than
+   a single competable property; white-space:nowrap is the explicit,
+   unconditional guarantee against wrapping regardless of column width. */
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-add-to-cart{display:flex;margin-top:auto;padding:0 18px 18px}
 body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-add-to-cart .wp-block-button__link{
 	display:flex;
+	flex:1 1 auto;
 	min-height:40px;
 	align-items:center;
 	justify-content:center;
-	width:100%;
 	padding:0 14px;
 	border-radius:var(--gloskin-action-radius);
 	background:var(--gloskin-accent);
 	color:var(--gloskin-inverse);
+	font-size:.86rem;
 	font-weight:700;
+	white-space:nowrap;
 	text-decoration:none;
 	transition:background-color 160ms ease;
 }
