@@ -634,12 +634,11 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
    default emoji icon and raw Products-New grid ship completely unstyled;
    this re-skins them in place, CSS-only, same as every other Cart Block
    rule above -- no template override, no PHP content filter, no second
-   empty-state markup owner. The icon/title card intentionally mirrors
-   .gloskin-ui1-empty-state's own recipe (gloskin-ui1-readiness.css) for
-   one consistent empty-state visual language across mini-cart and full
-   Cart page; the "New in store" heading/grid sit un-boxed below it on the
-   plain page surface rather than nested inside a second card, matching
-   this codebase's existing "no boxed-everything UI" cart guidance. Both
+   empty-state markup owner. The icon/title, the dots separator, and the
+   "New in store" heading all sit un-boxed on the plain page surface (no
+   card/border/background on any of them) -- only the individual product
+   tiles below get their own bordered card treatment, matching this
+   codebase's existing "no boxed-everything UI" cart guidance. Both
    "Your cart is currently empty!" and "New in store" are WooCommerce's
    own editorial block content (stored on the Cart page itself, not this
    plugin), so their English copy is outside this repo's reach -- only
@@ -675,9 +674,6 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon{
 	max-width:480px;
 	margin:0 auto;
 	padding:clamp(36px,5vw,54px) clamp(24px,4vw,36px);
-	border:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);
-	border-radius:var(--gloskin-radius-md);
-	background:color-mix(in srgb,var(--gloskin-surface) 78%,var(--gloskin-bg));
 	color:var(--gloskin-text);
 	font-family:var(--gloskin-font-heading);
 	font-size:clamp(1.2rem,2vw,1.5rem);
@@ -717,21 +713,24 @@ body.woocommerce-cart .wp-block-woocommerce-empty-cart-block .wp-block-heading:n
 /* Products-New grid: WC's own legacy Blocks-Grid v1 markup, completely
    unstyled by default (bare links/text, no card surface). Column count/
    responsive collapse stays entirely Woo's own (has-4-columns and
-   friends) -- only per-tile presentation is re-skinned here, into the
-   same bordered/radiused card language as .gloskin-ui1-card elsewhere on
-   the site, so this reads as one consistent product-card system rather
-   than a second, more "native" one living inside the empty-cart state.
-   Each <li> is exactly three stacked children (image+title link, price,
-   add-to-cart) with no shared height/alignment contract by default, so a
-   two-line title on one tile (a real, common case here -- product names
-   vary in length) pushed that one tile's price/button down while its
-   row-mates stayed put, an inconsistent row. flex-column + height:100%
-   (stretching each tile to the row's own tallest tile, which WC's own
-   grid/flex row already establishes by default) + margin-top:auto on the
-   add-to-cart wrapper anchors every button to the same bottom edge
-   regardless of title length; text-align:left is set explicitly on both
-   title and price since WC's own default centers the price but not the
-   title, which is what actually produced the crooked-looking row. */
+   friends) -- gap is the one grid-level property intentionally widened
+   for more breathing room between tiles; only per-tile presentation is
+   re-skinned otherwise, into the same bordered/radiused card language as
+   .gloskin-ui1-card elsewhere on the site, so this reads as one
+   consistent product-card system rather than a second, more "native" one
+   living inside the empty-cart state. Each <li> is exactly three stacked
+   children (image+title link, price, add-to-cart) with no shared height/
+   alignment contract by default, so a two-line title on one tile (a
+   real, common case here -- product names vary in length) pushed that
+   one tile's price/button down while its row-mates stayed put, an
+   inconsistent row. flex-column + height:100% (stretching each tile to
+   the row's own tallest tile, which WC's own grid/flex row already
+   establishes by default) + margin-top:auto on the add-to-cart wrapper
+   anchors every button to the same bottom edge regardless of title
+   length; text-align:left is set explicitly on both title and price
+   since WC's own default centers the price but not the title, which is
+   what actually produced the crooked-looking row. */
+body.woocommerce-cart .wc-block-grid__products{gap:30px}
 body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product{
 	display:flex;
 	flex-direction:column;
