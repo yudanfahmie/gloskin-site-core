@@ -47,6 +47,7 @@ GL_TEST_LOGGED_IN=1 php tests/rendered-shell-auth-smoke.php
 php tests/asset-loading-smoke.php
 python tests/quick-add-polish-contract.py
 python tests/variable-quantity-presentation-contract.py
+python tests/variable-chip-buy-now-contract.py
 php tests/product-card-commerce-contract.php
 php tests/catalog-discovery-contract.php
 php tests/navigation-fallback-contract.php

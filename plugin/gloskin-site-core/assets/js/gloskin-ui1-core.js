@@ -62,6 +62,14 @@
 	var lastNoticeSoundAt = 0;
 	var NOTICE_SOUND_COOLDOWN_MS = 600;
 	var noticeTimer = 0;
+	var ACTION_SPOTLIGHT_DURATION_MS = 2200;
+	var actionSpotlight = {
+		target: null,
+		dock: null,
+		backdrop: null,
+		timer: 0,
+		escapeHandler: null
+	};
 
 	function feedbackReducedMotion(root) {
 		return !!(root && root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -154,6 +162,50 @@
 		}, 2200);
 		if (options && options.tone) { playNoticeSound(root); }
 		return region;
+	}
+
+	function dismissActionSpotlight() {
+		var root = runtimeWindow();
+		if (!root || !root.document) { return; }
+		if (actionSpotlight.timer) { root.clearTimeout(actionSpotlight.timer); }
+		if (actionSpotlight.target) { actionSpotlight.target.classList.remove('is-action-spotlight-target'); }
+		if (actionSpotlight.dock) { actionSpotlight.dock.classList.remove('is-action-spotlight'); }
+		if (actionSpotlight.backdrop && actionSpotlight.backdrop.parentNode) {
+			actionSpotlight.backdrop.parentNode.removeChild(actionSpotlight.backdrop);
+		}
+		if (actionSpotlight.escapeHandler) {
+			root.document.removeEventListener('keydown', actionSpotlight.escapeHandler);
+		}
+		actionSpotlight = { target: null, dock: null, backdrop: null, timer: 0, escapeHandler: null };
+	}
+
+	function focusWithoutScroll(target) {
+		if (!target || typeof target.focus !== 'function') { return; }
+		try { target.focus({ preventScroll: true }); }
+		catch (e) { target.focus(); }
+	}
+
+	function showActionSpotlight(target) {
+		var root = runtimeWindow();
+		if (!root || !root.document || !root.document.body || !target) { return false; }
+		dismissActionSpotlight();
+		var backdrop = root.document.createElement('div');
+		backdrop.className = 'gloskin-ui1-action-spotlight__backdrop';
+		backdrop.setAttribute('aria-hidden', 'true');
+		root.document.body.appendChild(backdrop);
+		var dock = target.closest ? target.closest('[data-gloskin-purchase-dock]') : null;
+		target.classList.add('is-action-spotlight-target');
+		if (dock) { dock.classList.add('is-action-spotlight'); }
+		actionSpotlight.target = target;
+		actionSpotlight.dock = dock;
+		actionSpotlight.backdrop = backdrop;
+		actionSpotlight.escapeHandler = function (event) {
+			if (event.key === 'Escape') { dismissActionSpotlight(); }
+		};
+		root.document.addEventListener('keydown', actionSpotlight.escapeHandler);
+		focusWithoutScroll(target);
+		actionSpotlight.timer = root.setTimeout(dismissActionSpotlight, ACTION_SPOTLIGHT_DURATION_MS);
+		return true;
 	}
 
 	function emptyStateIcon(kind) {
@@ -1317,7 +1369,9 @@
 		function syncPdpTrigger(form) {
 			var dock = form ? form.closest('[data-gloskin-purchase-dock]') : null;
 			var trigger = dock ? dock.querySelector('[data-gloskin-variable-pdp-trigger]') : null;
-			if (trigger) { trigger.textContent = selectedSummary(form) || 'Pilih Varian'; }
+			var summary = selectedSummary(form);
+			if (trigger) { trigger.textContent = summary || 'Pilih Varian'; }
+			if (summary) { dismissActionSpotlight(); }
 		}
 
 		function syncModalPresentation(form) {
@@ -1453,6 +1507,7 @@
 			enhanceQuantityControls(form.querySelector('.quantity'));
 			bindSelectionSync(form);
 			syncModalPresentation(form);
+			form.classList.add('gloskin-ui1-variable-catalog-enhanced');
 			return true;
 		}
 
@@ -1530,6 +1585,7 @@
 				trigger.textContent = 'Pilih Varian';
 				action.insertBefore(trigger, action.firstChild);
 				trigger.addEventListener('click', function () {
+					dismissActionSpotlight();
 					if (renderPdp(form, dock)) { overlay.open('quickadd'); }
 				});
 			}
@@ -1541,6 +1597,7 @@
 		}
 
 		function renderPdp(form, dock) {
+			dismissActionSpotlight();
 			if (!preparePdp(form, dock)) { return false; }
 			currentMode = 'pdp';
 			currentForm = form;
@@ -1675,6 +1732,14 @@
 
 		document.addEventListener('gloskin:variable-product-modal-request', function (event) {
 			var detail = event.detail || {};
+			if ('buy-now' === detail.source) {
+				if (!preparePdp(detail.form, detail.dock)) { return; }
+				var trigger = detail.dock ? detail.dock.querySelector('[data-gloskin-variable-pdp-trigger]') : null;
+				if (!trigger) { return; }
+				showTransientNotice('Pilih varian terlebih dahulu.', { tone: true });
+				showActionSpotlight(trigger);
+				return;
+			}
 			if (!renderPdp(detail.form, detail.dock)) { return; }
 			overlay.open('quickadd');
 			notifyPdpRequirement(detail.form);
