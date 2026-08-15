@@ -630,23 +630,27 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 /* Empty Cart: WC's own woocommerce/empty-cart-block (Cart Block, not the
    classic-cart hook gloskin_ui1_render_native_cart_empty_state() -- that
    fires on the shortcode cart's own action, which the live Cart Block
-   route never triggers, so this is the actual visible empty state). Its
-   default emoji icon and raw Products-New grid ship completely unstyled;
-   this re-skins them in place, CSS-only, same as every other Cart Block
-   rule above -- no template override, no PHP content filter, no second
-   empty-state markup owner. The icon/title, the dots separator, and the
-   "New in store" heading all sit un-boxed on the plain page surface (no
-   card/border/background on any of them) -- only the individual product
-   tiles below get their own bordered card treatment, matching this
-   codebase's existing "no boxed-everything UI" cart guidance. Both
-   "Your cart is currently empty!" and "New in store" are WooCommerce's
-   own editorial block content (stored on the Cart page itself, not this
-   plugin), so their English copy is outside this repo's reach -- only
-   presentation is fixed here. */
+   route never triggers, so this is the actual visible empty state). Only
+   the icon+title is kept and re-skinned in place, CSS-only (no template
+   override, no PHP content filter, no second empty-state markup owner);
+   the dots separator, the "New in store" heading, and the raw Products-
+   New grid below it are dropped entirely -- display:none is the only
+   available way to remove them without touching WordPress content, since
+   all three are WooCommerce's own editorial block content stored on the
+   Cart page itself (not a template this repo owns, and not something a
+   PHP hook can filter for the Cart BLOCK the way the classic-cart hook
+   above does for the shortcode cart). "Your cart is currently empty!" is
+   the one piece of that same editorial content that remains, so its
+   English copy stays outside this repo's reach -- only presentation is
+   fixed here. */
 body.woocommerce-cart .wp-block-woocommerce-empty-cart-block{
 	display:grid;
-	gap:clamp(28px,5vw,44px);
 	text-align:center;
+}
+body.woocommerce-cart .wp-block-woocommerce-empty-cart-block hr.wp-block-separator,
+body.woocommerce-cart .wp-block-woocommerce-empty-cart-block .wp-block-heading:not(.wc-block-cart__empty-cart__title),
+body.woocommerce-cart .wc-block-grid.wp-block-product-new{
+	display:none;
 }
 /* The looping icon is a self-contained animated SVG (its own <style>/
    @keyframes, including its own prefers-reduced-motion query -- a data:
@@ -693,117 +697,6 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::af
 	background-position:center;
 	background-size:contain;
 }
-/* WP core's own dots separator -- recolored to the Gloskin border token
-   and its own default vertical margin dropped so the grid gap above stays
-   the single spacing owner between it and its neighbors. */
-body.woocommerce-cart .wp-block-woocommerce-empty-cart-block hr.wp-block-separator{
-	margin:0;
-	color:color-mix(in srgb,var(--gloskin-border) 70%,transparent);
-}
-/* "New in store" -- the only other heading in this block (:not() excludes
-   the empty-cart title above, which shares the same base .wp-block-heading
-   class). */
-body.woocommerce-cart .wp-block-woocommerce-empty-cart-block .wp-block-heading:not(.wc-block-cart__empty-cart__title){
-	margin:0;
-	color:var(--gloskin-text);
-	font-family:var(--gloskin-font-heading);
-	font-size:clamp(1.4rem,2.4vw,1.9rem);
-	font-weight:600;
-}
-/* Products-New grid: WC's own legacy Blocks-Grid v1 markup, completely
-   unstyled by default (bare links/text, no card surface). Column count/
-   responsive collapse stays entirely Woo's own (has-4-columns and
-   friends) -- gap is the one grid-level property intentionally widened
-   for more breathing room between tiles; only per-tile presentation is
-   re-skinned otherwise, into the same bordered/radiused card language as
-   .gloskin-ui1-card elsewhere on the site, so this reads as one
-   consistent product-card system rather than a second, more "native" one
-   living inside the empty-cart state. Each <li> is exactly three stacked
-   children (image+title link, price, add-to-cart) with no shared height/
-   alignment contract by default, so a two-line title on one tile (a
-   real, common case here -- product names vary in length) pushed that
-   one tile's price/button down while its row-mates stayed put, an
-   inconsistent row. flex-column + height:100% (stretching each tile to
-   the row's own tallest tile, which WC's own grid/flex row already
-   establishes by default) + margin-top:auto on the add-to-cart wrapper
-   anchors every button to the same bottom edge regardless of title
-   length; text-align:left is set explicitly on both title and price
-   since WC's own default centers the price but not the title, which is
-   what actually produced the crooked-looking row. */
-body.woocommerce-cart .wc-block-grid__products{gap:30px}
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product{
-	display:flex;
-	flex-direction:column;
-	height:100%;
-	overflow:hidden;
-	border:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);
-	border-radius:var(--gloskin-radius-md);
-	background:var(--gloskin-bg);
-	transition:box-shadow 200ms ease;
-}
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product:hover{box-shadow:0 8px 28px color-mix(in srgb,var(--gloskin-text) 5%,transparent)}
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-link{display:block;text-decoration:none;color:inherit}
-/* WC ships this image with real width/height HTML attributes (300x375,
-   an intrinsic 4:5 ratio) that the browser uses as a sizing hint
-   independent of this CSS; setting aspect-ratio:4/3 on the <img> itself
-   fought that intrinsic ratio and, on real staging, produced an <img>
-   taller than its own wrapper -- the overflow visibly overlapped the
-   product title directly below it in normal flow. Pinning the box on the
-   WRAPPER instead (aspect-ratio + position:relative) and absolutely
-   filling it with the image (inset:0, its own intrinsic size now
-   irrelevant) removes that conflict entirely. */
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-image{
-	position:relative;
-	overflow:hidden;
-	aspect-ratio:4 / 3;
-	background:var(--gloskin-surface-strong);
-}
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-image img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;transition:transform 250ms ease}
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product:hover .wc-block-grid__product-image img{transform:scale(1.025)}
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-title{
-	padding:16px 18px 4px;
-	color:var(--gloskin-text);
-	font-size:.92rem;
-	font-weight:600;
-	line-height:1.35;
-	text-align:left;
-}
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-price{
-	padding:0 18px 16px;
-	color:var(--gloskin-accent-readable);
-	font-weight:700;
-	text-align:left;
-}
-/* .wp-block-button/.wp-block-button__link are generic WP-core block
-   classes with their own sizing rules elsewhere on the platform (the
-   same "!important-heavy" caution documented above for WC's own Cart
-   Block styles applies here too); width:100% on the link alone did not
-   reliably fill the card on real staging -- "Select options" (longer
-   than "Add to cart") wrapped onto a second line at some column widths,
-   breaking the shared row-bottom the margin-top:auto/flex-column rules
-   above establish. flex:1 1 auto on a flex WRAPPER is a more robust way
-   to force full width than a plain width declaration on the link itself,
-   since the flex algorithm determines the child's final size rather than
-   a single competable property; white-space:nowrap is the explicit,
-   unconditional guarantee against wrapping regardless of column width. */
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-add-to-cart{display:flex;margin-top:auto;padding:0 18px 18px}
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-add-to-cart .wp-block-button__link{
-	display:flex;
-	flex:1 1 auto;
-	min-height:40px;
-	align-items:center;
-	justify-content:center;
-	padding:0 14px;
-	border-radius:var(--gloskin-action-radius);
-	background:var(--gloskin-accent);
-	color:var(--gloskin-inverse);
-	font-size:.86rem;
-	font-weight:700;
-	white-space:nowrap;
-	text-decoration:none;
-	transition:background-color 160ms ease;
-}
-body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-add-to-cart .wp-block-button__link:hover{background:var(--gloskin-accent-strong)}
 @media (prefers-reduced-motion:reduce){
 	body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon{animation:none}
 }
