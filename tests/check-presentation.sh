@@ -591,4 +591,92 @@ fi
 grep -qF 'align_woo_shop_page' "$lifecycle" || { echo "Woo Shop page alignment owner missing from LifecycleService" >&2; exit 1; }
 grep -qF "update_option( 'woocommerce_shop_page_id'" "$lifecycle" || { echo "Woo Shop page association missing" >&2; exit 1; }
 
+# Desktop Cart table: one deliberate separator + surface strategy (see the
+# CSS comment in gloskin-ui1-production.css for the full rationale). Static
+# source contract -- always runs, no browser required; the existing
+# tests/cart-block-mobile-regression.py real-Chromium fixture remains the
+# separate, preserved, honestly-skippable check for the <=768px grid layout.
+if grep -RIn 'wc-block-cart' "$plugin_root/assets/js" --include='*.js' >/dev/null 2>&1; then
+  echo "Cart table polish must stay CSS-only; a JS file now references cart block markup" >&2
+  exit 1
+fi
+python - "$production_css" <<'PYCART'
+import re
+import sys
+from pathlib import Path
+
+css = Path(sys.argv[1]).read_text()
+
+desktop_start = css.index('Desktop Cart table: ONE deliberate separator')
+desktop_end = css.index('Mobile row contract.', desktop_start)
+desktop = css[desktop_start:desktop_end]
+
+if '!important' in desktop:
+    raise SystemExit('Desktop Cart table polish must add zero !important')
+if '@media (min-width:769px)' not in desktop:
+    raise SystemExit('Desktop Cart table polish must stay scoped to >=769px')
+
+for forbidden in ('grid-auto-columns', 'grid-template-columns', '.wc-block-cart-items__row{\n\t\tgrid', 'padding-right:88px'):
+    if forbidden in desktop:
+        raise SystemExit(f'Desktop Cart table polish must not touch the tested mobile grid rules: {forbidden}')
+
+
+def block(selector):
+    match = re.search(re.escape(selector) + r'\{([^}]*)\}', desktop)
+    if not match:
+        raise SystemExit(f'Desktop Cart table rule missing: {selector}')
+    return match.group(1)
+
+
+cells = block('body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items th,\n\tbody.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items td')
+if 'border:0' not in cells.replace(' ', '').replace('\n', '').replace('\t', ''):
+    raise SystemExit('Desktop Cart table cells must reset border to 0 -- no per-cell left/right/top borders')
+
+thead = block('body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items thead')
+if 'border-bottom:1px solid' not in thead:
+    raise SystemExit('Desktop Cart table header must own exactly one bottom divider')
+
+row = block('body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row')
+if 'border-bottom:1px solid' not in row:
+    raise SystemExit('Desktop Cart table row must own exactly one bottom divider')
+if 'body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row:last-child{border-bottom:0}' not in desktop:
+    raise SystemExit('Desktop Cart table last row must not have a redundant bottom divider')
+
+total = block('body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-item__total')
+if 'border:0' not in total or 'box-shadow:none' not in total:
+    raise SystemExit('Desktop Cart total cell must not carry its own independent border/shadow')
+
+name = block('body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-components-product-name')
+if 'text-decoration:none' not in name:
+    raise SystemExit('Desktop Cart product link must not underline at rest')
+if 'text-decoration:underline' in desktop:
+    raise SystemExit('Desktop Cart table polish must not add a new underline anywhere')
+
+print('desktop cart presentation contract: OK')
+PYCART
+
+# Quantity/remove architecture is untouched by this task -- current PDP-
+# parity geometry (46px outer / 44px input / 34px buttons), one outer
+# border, and exactly one internal separator each side of the numeric
+# value, never a border around the individual minus/plus buttons.
+for expected in \
+  '.wc-block-components-quantity-selector{
+	min-height:46px;
+	width:auto;
+	border:1px solid var(--gloskin-border);' \
+  '.wc-block-components-quantity-selector__input{
+	min-height:44px;
+	flex:0 0 44px;
+	padding:0;
+	border:0;' \
+  '.wc-block-components-quantity-selector__button{
+	min-height:44px;
+	flex:0 0 34px;
+	padding:0;
+	border:0;' \
+  '.wc-block-components-quantity-selector__button--minus{border-right:1px solid var(--gloskin-border)}' \
+  '.wc-block-components-quantity-selector__button--plus{border-left:1px solid var(--gloskin-border)}'; do
+  grep -qF -- "$expected" "$production_css" || { echo "Cart quantity stepper geometry regressed: $expected" >&2; exit 1; }
+done
+
 echo "presentation safety checks passed (${#required_views[@]} public views, contrast/header/copy polish guarded)"

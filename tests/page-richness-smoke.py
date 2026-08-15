@@ -20,7 +20,7 @@ required_sections = {
     'treatments': ['treatments-closing'],
     'treatment': ['treatment-orientation', 'treatment-closing'],
     'skincare': ['skincare-intro', 'skincare-categories', 'skincare-pathways'],
-    'skincare-category': ['skincare-category-intro', 'skincare-category-products', 'skincare-category-closing'],
+    'skincare-category': ['skincare-category-products', 'skincare-category-closing'],
     'clinics': ['clinics-orientation', 'clinics-grid', 'clinics-closing'],
     'clinic': ['clinic-closing'],
     'doctors': ['doctors-intro', 'doctors-grid', 'doctors-pathways', 'doctors-closing'],
