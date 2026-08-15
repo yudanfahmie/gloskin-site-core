@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Variable chip parity and Buy Now prerequisite presentation contract."""
+"""Variable chip parity and Buy Now prerequisite/Woo-state contract."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -107,7 +107,7 @@ require(".gloskin-ui1-action-spotlight__backdrop" in css and "z-index:9996" in c
 require("[data-gloskin-purchase-dock].is-action-spotlight" in css and "z-index:9997" in css, "Purchase Dock spotlight foreground stacking contract missing")
 
 # Invalid Buy Now uses the existing prerequisite event but does not render/open
-# the modal. Valid Buy Now remains entirely owned by the unchanged dock path.
+# the modal. Valid Buy Now remains entirely owned by the existing dock path.
 event_marker = "document.addEventListener('gloskin:variable-product-modal-request', function (event) {"
 event_start = quick.index(event_marker)
 event_end = quick.index("var existingDock", event_start)
@@ -120,10 +120,30 @@ require("showActionSpotlight(trigger);" in invalid_branch, "invalid Buy Now must
 require("return;" in invalid_branch, "invalid Buy Now must stop before modal rendering/mutation")
 require("renderPdp(" not in invalid_branch and "overlay.open(" not in invalid_branch, "invalid Buy Now must not auto-open the modal")
 
+# Purchase Dock must gate the native click with every canonical classic-Woo
+# unavailable state, not only the HTML disabled property.
+helper_marker = "function isNativeSubmitUnavailable(button) {"
+require(helper_marker in dock, "Purchase Dock canonical Woo submit-state helper missing")
+helper_start = dock.index(helper_marker)
+helper_end = dock.index("\n\t\t}", helper_start) + len("\n\t\t}")
+helper = dock[helper_start:helper_end]
+for required in (
+    "!button",
+    "button.disabled",
+    "button.classList.contains('disabled')",
+    "button.classList.contains('wc-variation-selection-needed')",
+    "button.classList.contains('wc-variation-is-unavailable')",
+):
+    require(required in helper, f"native submit availability helper missing Woo state: {required}")
+require("buyNowBefore.disabled = formBefore.classList.contains('variations_form') ? false : isNativeSubmitUnavailable(submitBefore);" in dock, "simple Buy Now must reuse the same defensive native-state helper")
+require("if (isNativeSubmitUnavailable(submitBefore)) {" in dock, "Buy Now must gate native click with canonical Woo state helper")
+require("if (submitBefore.disabled) {" not in dock, "disabled-property-only Buy Now gate must be removed")
 require("source: 'buy-now'" in dock, "Purchase Dock must retain the existing Buy Now prerequisite event")
 require("submitBefore.setAttribute('data-gloskin-buy-now-redirect', '1');" in dock, "valid Buy Now redirect marker path changed")
 require("submitBefore.click();" in dock, "valid Buy Now must retain the same native submit click path")
 require("window.confirm" not in core + dock and "window.alert" not in core + dock, "native confirm/alert must not be introduced")
+require("MutationObserver" not in dock and "setInterval(" not in dock, "Purchase Dock hardening must not add observer/polling ownership")
+require("submitBefore.disabled = false" not in dock and "removeAttribute('disabled')" not in dock, "Purchase Dock must never manually enable native submit")
 require(core.count("function ajaxAddToCart(") == 1, "a second cart mutation owner was introduced")
 require("variable-chip-buy-now-contract.py" in runner, "focused chip/Buy Now contract must run through tests/check-runtime.sh")
 

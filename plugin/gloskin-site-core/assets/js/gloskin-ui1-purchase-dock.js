@@ -48,6 +48,14 @@
 			return true;
 		}
 
+		function isNativeSubmitUnavailable(button) {
+			return !button
+				|| button.disabled
+				|| button.classList.contains('disabled')
+				|| button.classList.contains('wc-variation-selection-needed')
+				|| button.classList.contains('wc-variation-is-unavailable');
+		}
+
 		/* Compact minus/plus steppers around the SAME native input.qty --
 		 * never a clone, never a second quantity state. Idempotent: checks
 		 * a data flag before ever inserting, so it is safe to call again
@@ -146,7 +154,7 @@
 			buyNowBefore.className = 'gloskin-ui1-purchase-dock__buy-now';
 			buyNowBefore.setAttribute('data-gloskin-buy-now', '');
 			buyNowBefore.textContent = 'Beli Sekarang';
-			buyNowBefore.disabled = formBefore.classList.contains('variations_form') ? false : !!submitBefore.disabled;
+			buyNowBefore.disabled = formBefore.classList.contains('variations_form') ? false : isNativeSubmitUnavailable(submitBefore);
 			actionRegion.appendChild(buyNowBefore);
 
 			formBefore.appendChild(productRegion);
@@ -225,8 +233,7 @@
 			var buyNowButton = event.target.closest ? event.target.closest('[data-gloskin-buy-now]') : null;
 			if (buyNowButton) {
 				event.preventDefault();
-				if (!submitBefore) { return; }
-				if (submitBefore.disabled) {
+				if (isNativeSubmitUnavailable(submitBefore)) {
 					if (formBefore.classList.contains('variations_form')) {
 						document.dispatchEvent(new CustomEvent('gloskin:variable-product-modal-request', {
 							detail: { dock: dock, form: formBefore, source: 'buy-now' }

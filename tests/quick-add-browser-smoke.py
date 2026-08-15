@@ -39,6 +39,11 @@ require(".gloskin-ui1 .gloskin-ui1-variable-catalog-enhanced .reset_variations" 
 require("!important" not in CSS_POLISH_SOURCE, "variable modal CSS must add zero !important")
 require("grid-template-columns:auto minmax(0,1fr)" in CSS_POLISH_SOURCE, "bottom row must be quantity + flexible CTA")
 require(".gloskin-ui1-variable-modal__actions.is-quantity-hidden .gloskin-ui1-variable-modal__qty-proxy" in CSS_POLISH_SOURCE and "display:none" in CSS_POLISH_SOURCE, "sold-individually PDP qty proxy hide rule missing")
+require("function isNativeSubmitUnavailable(button)" in PURCHASE_DOCK_JS_SOURCE, "Purchase Dock Woo-state helper missing")
+for state in ("button.disabled", "classList.contains('disabled')", "classList.contains('wc-variation-selection-needed')", "classList.contains('wc-variation-is-unavailable')"):
+    require(state in PURCHASE_DOCK_JS_SOURCE, f"Purchase Dock Woo-state helper missing: {state}")
+require("if (isNativeSubmitUnavailable(submitBefore))" in PURCHASE_DOCK_JS_SOURCE, "Buy Now must gate native click through canonical Woo state helper")
+require("if (submitBefore.disabled)" not in PURCHASE_DOCK_JS_SOURCE, "disabled-property-only Buy Now gate must be removed")
 require("new MutationObserver" not in PURCHASE_DOCK_JS_SOURCE and "setInterval(" not in PURCHASE_DOCK_JS_SOURCE, "Purchase Dock must keep zero new mutation observer/polling")
 require("window.confirm" not in JS_CORE_SOURCE + PURCHASE_DOCK_JS_SOURCE and "window.alert" not in JS_CORE_SOURCE + PURCHASE_DOCK_JS_SOURCE, "native confirm/alert must not be introduced")
 print('quick-add-source-contract: OK (static, no browser required)')
@@ -65,14 +70,14 @@ PRODUCT_VARIATIONS = [
     {
         'variation_id': 206,
         'attributes': {'attribute_pa_size': '30ml', 'attribute_pa_finish': 'rose'},
-        'is_in_stock': True,
+        'is_in_stock': False,
         'is_purchasable': True,
         'variation_is_active': True,
         'is_sold_individually': 'no',
         'min_qty': 1,
         'max_qty': 2,
         'price_html': '<span class="price">Rp265.000</span>',
-        'availability_html': '<p class="stock in-stock">Tersedia</p>',
+        'availability_html': '<p class="stock out-of-stock">Tidak tersedia</p>',
     },
     {
         'variation_id': 207,
@@ -101,7 +106,7 @@ FORM_HTML = (
     '<div class="woocommerce-variation single_variation"></div>'
     '<div class="woocommerce-variation-add-to-cart variations_button">'
     '<div class="quantity"><input class="input-text qty text" type="number" name="quantity" value="1" min="1" max="5" step="1"></div>'
-    '<button type="submit" class="single_add_to_cart_button button alt wc-variation-selection-needed disabled" disabled name="add-to-cart" value="202">Add to cart</button>'
+    '<button type="submit" class="single_add_to_cart_button button alt wc-variation-selection-needed disabled" name="add-to-cart" value="202">Add to cart</button>'
     '<input type="hidden" name="product_id" value="202">'
     '<input type="hidden" class="variation_id" name="variation_id" value="0">'
     '</div></div></form>'
@@ -211,6 +216,13 @@ window.Audio = function (src) {
 document.addEventListener('click', function (event) {
   if (event.target && event.target.classList && event.target.classList.contains('single_add_to_cart_button')) {
     window.__nativeSubmitClicks += 1;
+    if (
+      event.target.classList.contains('disabled') ||
+      event.target.classList.contains('wc-variation-selection-needed') ||
+      event.target.classList.contains('wc-variation-is-unavailable')
+    ) {
+      window.alert('Woo fixture: choose a valid variation');
+    }
   }
 }, true);
 
@@ -239,11 +251,21 @@ document.addEventListener('click', function (event) {
 
     function reset() {
       variationId.value = '0';
-      submit.disabled = true;
-      submit.classList.add('disabled');
+      submit.disabled = false;
+      submit.classList.add('disabled', 'wc-variation-selection-needed');
+      submit.classList.remove('wc-variation-is-unavailable');
       state.innerHTML = '';
       if (quantity) { quantity.style.display = ''; }
       if (qty) { qty.min = '1'; qty.max = '5'; qty.step = '1'; qty.value = '1'; }
+      emit(form, 'reset_data');
+    }
+    function unavailable(match) {
+      variationId.value = '0';
+      submit.disabled = false;
+      submit.classList.add('disabled', 'wc-variation-is-unavailable');
+      submit.classList.remove('wc-variation-selection-needed');
+      state.innerHTML = match ? (match.price_html + match.availability_html) : '<p class="stock out-of-stock">Tidak tersedia</p>';
+      if (quantity) { quantity.style.display = ''; }
       emit(form, 'reset_data');
     }
     function refresh() {
@@ -263,10 +285,10 @@ document.addEventListener('click', function (event) {
       const match = variations.find(function (variation) {
         return Object.keys(values).every(function (name) { return variation.attributes[name] === values[name]; });
       });
-      if (!match || !match.is_in_stock || !match.is_purchasable || !match.variation_is_active) { reset(); return; }
+      if (!match || !match.is_in_stock || !match.is_purchasable || !match.variation_is_active) { unavailable(match); return; }
       variationId.value = String(match.variation_id);
       submit.disabled = false;
-      submit.classList.remove('disabled', 'wc-variation-selection-needed');
+      submit.classList.remove('disabled', 'wc-variation-selection-needed', 'wc-variation-is-unavailable');
       if (qty) { qty.min = String(match.min_qty); qty.max = String(match.max_qty); qty.value = '1'; }
       if (quantity) { quantity.style.display = match.is_sold_individually === 'yes' ? 'none' : ''; }
       state.innerHTML = match.price_html + match.availability_html;
@@ -418,7 +440,8 @@ with sync_playwright() as p:
     proxy = page.locator('[data-gloskin-variable-submit-proxy]')
     native_submit = page.locator('.single_add_to_cart_button')
     require(proxy.is_enabled(), 'visible CTA proxy must be active before selection')
-    require(native_submit.get_attribute('disabled') is not None, 'native Woo submit must remain disabled before valid variation')
+    require(native_submit.get_attribute('disabled') is None, 'fixture invalid state must be class-only, not disabled property')
+    require('disabled' in (native_submit.get_attribute('class') or '') and 'wc-variation-selection-needed' in (native_submit.get_attribute('class') or ''), 'fixture invalid state must use classic Woo classes')
 
     proxy.click()
     require(page.evaluate('window.__mutationCount') == 0, 'incomplete proxy click must dispatch ZERO mutation')
@@ -436,7 +459,7 @@ with sync_playwright() as p:
     page.wait_for_function("document.querySelector('input.variation_id').value === '205'")
     require(page.locator('[name="attribute_pa_finish"]').input_value() == 'natural', 'finish chip must update SAME native Woo select')
     require(page.get_by_role('button', name='30 ml').get_attribute('aria-pressed') == 'true', 'selected chip must synchronize from native select')
-    require(native_submit.get_attribute('disabled') is None, 'Woo runtime must enable native submit after valid selection')
+    require('disabled' not in (native_submit.get_attribute('class') or '') and 'wc-variation-selection-needed' not in (native_submit.get_attribute('class') or ''), 'Woo runtime must clear invalid classes after valid selection')
     require('Rp250.000' in page.locator('.woocommerce-variation.single_variation').inner_text(), 'Woo variation price must remain visible')
     catalog_selected_style = chip_style(page.get_by_role('button', name='30 ml'))
     catalog_cta_bg = proxy.evaluate("node => getComputedStyle(node).backgroundColor")
@@ -464,7 +487,8 @@ with sync_playwright() as p:
       select.dispatchEvent(new Event('change', {bubbles:true}));
     }""")
     require(page.get_by_role('button', name='50 ml').get_attribute('aria-pressed') == 'false', 'Woo reset must clear selected chip')
-    require(native_submit.get_attribute('disabled') is not None, 'Woo reset must disable native submit again')
+    require(native_submit.get_attribute('disabled') is None, 'Woo reset fixture must remain class-only')
+    require('disabled' in (native_submit.get_attribute('class') or '') and 'wc-variation-selection-needed' in (native_submit.get_attribute('class') or ''), 'Woo reset must restore canonical invalid classes')
 
     wrapper_style = page.evaluate("""() => {
       const cs = getComputedStyle(document.querySelector('.table-container'));
@@ -508,6 +532,7 @@ with sync_playwright() as p:
     assert_pdp_native_identity(pdp, 'after Purchase Dock ready handoff')
     require(pdp.locator('[data-gloskin-variable-pdp-trigger]').inner_text() == 'Pilih Varian', 'PDP handoff must render one Pilih Varian trigger')
     require(pdp.locator('[data-gloskin-variable-pdp-trigger]').count() == 1, 'PDP must have exactly one variation trigger')
+    require(pdp.evaluate("window.__pdpNodes.submit.disabled === false && window.__pdpNodes.submit.classList.contains('disabled') && window.__pdpNodes.submit.classList.contains('wc-variation-selection-needed')"), 'PDP initial invalid state must model Woo class-only unavailability')
     require(pdp.evaluate("window.__pdpNodes.dock.parentElement.classList.contains('gloskin-ui1-purchase-dock-home')"), 'Purchase Dock FSM must keep the SAME dock in its canonical home')
     require(pdp.locator('.reset_variations').count() == 1 and not pdp.locator('.reset_variations').is_visible(), 'PDP must expose no stray visible native Clear after enhancement')
 
@@ -574,14 +599,14 @@ with sync_playwright() as p:
     require('is-quantity-hidden' not in (actions.get_attribute('class') or ''), 'switching back must restore two-column actions state')
     require(pdp.evaluate("window.__pdpNodes.qty.closest('.quantity').style.display !== 'none'"), 'Woo native quantity must be restored by Woo fixture')
 
-    # Invalid Buy Now: zero mutation and no modal auto-open; guide the user to the existing trigger.
+    # Class-only invalid Buy Now: zero native click/mutation and no Woo alert; Gloskin guides prerequisite instead.
     pdp.locator('.gloskin-ui1-quickadd__close').click()
     pdp.wait_for_function("document.querySelector('[data-gloskin-overlay=\"quickadd\"]').getAttribute('aria-hidden') === 'true'")
     pdp.evaluate("""() => {
       window.__pdpNodes.selects[0].value = '';
       window.__pdpNodes.selects[0].dispatchEvent(new Event('change', {bubbles:true}));
     }""")
-    pdp.wait_for_function("window.__pdpNodes.submit.disabled === true")
+    pdp.wait_for_function("window.__pdpNodes.submit.disabled === false && window.__pdpNodes.submit.classList.contains('disabled') && window.__pdpNodes.submit.classList.contains('wc-variation-selection-needed')")
     pdp.wait_for_timeout(650)
     fetch_before_buy_now = pdp.evaluate('window.__fetchCalls.length')
     mutation_before_buy_now = pdp.evaluate('window.__mutationCount')
@@ -590,14 +615,14 @@ with sync_playwright() as p:
     confirm_before_buy_now = pdp.evaluate('window.__confirmCount')
     alert_before_buy_now = pdp.evaluate('window.__alertCount')
     pdp.locator('[data-gloskin-buy-now]').click()
-    require(pdp.locator('[data-gloskin-overlay="quickadd"]').get_attribute('aria-hidden') == 'true', 'invalid Buy Now must NOT auto-open variable modal')
-    require(pdp.evaluate('window.__fetchCalls.length') == fetch_before_buy_now, 'invalid Buy Now must dispatch ZERO fetch')
-    require(pdp.evaluate('window.__mutationCount') == mutation_before_buy_now, 'invalid Buy Now must dispatch ZERO mutation')
-    require(pdp.evaluate('window.__nativeSubmitClicks') == native_before_buy_now, 'invalid Buy Now must not click native Woo submit')
-    require(pdp.evaluate('window.__confirmCount') == confirm_before_buy_now and pdp.evaluate('window.__alertCount') == alert_before_buy_now, 'invalid Buy Now must use ZERO native confirm/alert')
-    require(pdp.locator('.gloskin-ui1-toast-region').inner_text() == 'Pilih varian terlebih dahulu.', 'invalid Buy Now must use same required-selection toast')
-    require(pdp.evaluate('window.__audioPlayCount') == audio_before_buy_now + 1, 'invalid Buy Now must use same attention tone')
-    require(pdp.locator('.gloskin-ui1-action-spotlight__backdrop').count() == 1, 'invalid Buy Now must create exactly one spotlight backdrop')
+    require(pdp.locator('[data-gloskin-overlay="quickadd"]').get_attribute('aria-hidden') == 'true', 'class-only invalid Buy Now must NOT auto-open variable modal')
+    require(pdp.evaluate('window.__fetchCalls.length') == fetch_before_buy_now, 'class-only invalid Buy Now must dispatch ZERO fetch')
+    require(pdp.evaluate('window.__mutationCount') == mutation_before_buy_now, 'class-only invalid Buy Now must dispatch ZERO mutation')
+    require(pdp.evaluate('window.__nativeSubmitClicks') == native_before_buy_now, 'class-only invalid Buy Now must not click native Woo submit')
+    require(pdp.evaluate('window.__confirmCount') == confirm_before_buy_now and pdp.evaluate('window.__alertCount') == alert_before_buy_now, 'class-only invalid Buy Now must use ZERO native confirm/alert')
+    require(pdp.locator('.gloskin-ui1-toast-region').inner_text() == 'Pilih varian terlebih dahulu.', 'class-only invalid Buy Now must use same required-selection toast')
+    require(pdp.evaluate('window.__audioPlayCount') == audio_before_buy_now + 1, 'class-only invalid Buy Now must use same attention tone')
+    require(pdp.locator('.gloskin-ui1-action-spotlight__backdrop').count() == 1, 'class-only invalid Buy Now must create exactly one spotlight backdrop')
     require(pdp.locator('.gloskin-ui1-action-spotlight__backdrop').get_attribute('aria-hidden') == 'true', 'spotlight backdrop must be aria-hidden')
     require('is-action-spotlight-target' in (pdp.locator('[data-gloskin-variable-pdp-trigger]').get_attribute('class') or ''), 'Pilih Varian trigger must receive spotlight target state')
     require(pdp.evaluate("document.activeElement === document.querySelector('[data-gloskin-variable-pdp-trigger]')"), 'Pilih Varian trigger must receive keyboard focus')
@@ -614,9 +639,32 @@ with sync_playwright() as p:
     require(pdp.locator('.gloskin-ui1-action-spotlight__backdrop').count() == 0, 'trigger click must dismiss spotlight before modal open')
     require(pdp.evaluate('window.__fetchCalls.length') == fetch_before_buy_now, 'highlighted trigger must open SAME PDP modal without fetch')
     require(pdp.locator('[data-gloskin-quickadd-body] form').count() == 0, 'Buy Now prerequisite modal path must still have ZERO second form')
-    assert_pdp_native_identity(pdp, 'after user-opened Buy Now prerequisite modal')
+    assert_pdp_native_identity(pdp, 'after user-opened class-only Buy Now prerequisite modal')
 
+    # Real Woo unavailable class state must also be intercepted before native click/alert.
     pdp.get_by_role('button', name='30 ml').click()
+    pdp.get_by_role('button', name='Rose').click()
+    pdp.wait_for_function("window.__pdpNodes.submit.disabled === false && window.__pdpNodes.submit.classList.contains('disabled') && window.__pdpNodes.submit.classList.contains('wc-variation-is-unavailable')")
+    pdp.locator('.gloskin-ui1-quickadd__close').click()
+    pdp.wait_for_function("document.querySelector('[data-gloskin-overlay=\"quickadd\"]').getAttribute('aria-hidden') === 'true'")
+    pdp.wait_for_timeout(650)
+    unavailable_mutations = pdp.evaluate('window.__mutationCount')
+    unavailable_native_clicks = pdp.evaluate('window.__nativeSubmitClicks')
+    unavailable_alerts = pdp.evaluate('window.__alertCount')
+    unavailable_confirms = pdp.evaluate('window.__confirmCount')
+    unavailable_audio = pdp.evaluate('window.__audioPlayCount')
+    pdp.locator('[data-gloskin-buy-now]').click()
+    require(pdp.locator('[data-gloskin-overlay="quickadd"]').get_attribute('aria-hidden') == 'true', 'unavailable Buy Now must keep modal closed initially')
+    require(pdp.evaluate('window.__mutationCount') == unavailable_mutations, 'unavailable Buy Now must dispatch ZERO mutation')
+    require(pdp.evaluate('window.__nativeSubmitClicks') == unavailable_native_clicks, 'unavailable Buy Now must not click native Woo submit')
+    require(pdp.evaluate('window.__alertCount') == unavailable_alerts and pdp.evaluate('window.__confirmCount') == unavailable_confirms, 'unavailable Buy Now must use ZERO native alert/confirm')
+    require(pdp.locator('.gloskin-ui1-toast-region').inner_text() == 'Pilih varian terlebih dahulu.', 'unavailable Buy Now must reuse prerequisite toast')
+    require(pdp.evaluate('window.__audioPlayCount') == unavailable_audio + 1, 'unavailable Buy Now must reuse attention tone')
+    require(pdp.locator('.gloskin-ui1-action-spotlight__backdrop').count() == 1, 'unavailable Buy Now must spotlight Pilih Varian')
+    require(pdp.evaluate("document.activeElement === document.querySelector('[data-gloskin-variable-pdp-trigger]')"), 'unavailable Buy Now must focus Pilih Varian')
+
+    pdp.locator('[data-gloskin-variable-pdp-trigger]').click()
+    pdp.wait_for_selector('[data-gloskin-overlay="quickadd"][aria-hidden="false"]')
     pdp.get_by_role('button', name='Natural').click()
     pdp.wait_for_function("document.querySelector('input.variation_id').value === '205'")
     require(pdp.locator('.gloskin-ui1-action-spotlight__backdrop').count() == 0, 'valid variation must leave spotlight absent')
@@ -631,16 +679,41 @@ with sync_playwright() as p:
     require(pdp.evaluate('window.__mutationCount') == mutations_before + 1, 'valid PDP proxy must produce exactly one Woo mutation')
     assert_pdp_native_identity(pdp, 'after valid PDP submit')
 
-    # Valid Buy Now remains unchanged: same native submit -> same one mutation -> redirect behavior.
+    # Disabled property remains supported defensively even without Woo invalid classes.
     pdp.locator('.gloskin-ui1-quickadd__close').click()
     pdp.wait_for_function("document.querySelector('[data-gloskin-overlay=\"quickadd\"]').getAttribute('aria-hidden') === 'true'")
+    pdp.evaluate("""() => {
+      window.__pdpNodes.submit.classList.remove('disabled', 'wc-variation-selection-needed', 'wc-variation-is-unavailable');
+      window.__pdpNodes.submit.disabled = true;
+    }""")
+    pdp.wait_for_timeout(650)
+    property_mutations = pdp.evaluate('window.__mutationCount')
+    property_native_clicks = pdp.evaluate('window.__nativeSubmitClicks')
+    property_alerts = pdp.evaluate('window.__alertCount')
+    property_confirms = pdp.evaluate('window.__confirmCount')
+    pdp.locator('[data-gloskin-buy-now]').click()
+    require(pdp.evaluate('window.__mutationCount') == property_mutations, 'property-disabled Buy Now must dispatch ZERO mutation')
+    require(pdp.evaluate('window.__nativeSubmitClicks') == property_native_clicks, 'property-disabled Buy Now must not click native Woo submit')
+    require(pdp.evaluate('window.__alertCount') == property_alerts and pdp.evaluate('window.__confirmCount') == property_confirms, 'property-disabled Buy Now must use ZERO native alert/confirm')
+    require(pdp.locator('.gloskin-ui1-action-spotlight__backdrop').count() == 1, 'property-disabled Buy Now must still use prerequisite spotlight')
+    pdp.press('body', 'Escape')
+    pdp.wait_for_function("document.querySelector('.gloskin-ui1-action-spotlight__backdrop') === null")
+    pdp.evaluate("""() => {
+      window.__pdpNodes.submit.disabled = false;
+      window.__pdpNodes.selects[0].dispatchEvent(new Event('change', {bubbles:true}));
+    }""")
+    pdp.wait_for_function("document.querySelector('input.variation_id').value === '205'")
+
+    # Valid Buy Now remains unchanged: same native submit -> same one mutation -> redirect behavior.
     pdp.evaluate("window.gloskinData.cartUrl = '#cart'")
     native_clicks_before_buy_now = pdp.evaluate('window.__nativeSubmitClicks')
     mutations_before_valid_buy_now = pdp.evaluate('window.__mutationCount')
+    alerts_before_valid_buy_now = pdp.evaluate('window.__alertCount')
     pdp.locator('[data-gloskin-buy-now]').click()
     pdp.wait_for_function(f'window.__mutationCount === {mutations_before_valid_buy_now + 1}')
     require(pdp.evaluate('window.__nativeSubmitClicks') == native_clicks_before_buy_now + 1, 'valid Buy Now must click SAME native submit exactly once')
     require(pdp.evaluate('window.__mutationCount') == mutations_before_valid_buy_now + 1, 'valid Buy Now must produce exactly one existing Woo mutation')
+    require(pdp.evaluate('window.__alertCount') == alerts_before_valid_buy_now, 'valid Buy Now must not produce native variation alert')
     pdp.wait_for_function("window.location.hash === '#cart'")
     require(pdp.locator('.gloskin-ui1-action-spotlight__backdrop').count() == 0, 'valid Buy Now must not activate prerequisite spotlight')
     assert_pdp_native_identity(pdp, 'after valid Buy Now')
