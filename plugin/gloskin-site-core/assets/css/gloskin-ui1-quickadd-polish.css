@@ -202,36 +202,123 @@
 .gloskin-ui1-variable-modal__actions.is-quantity-hidden .gloskin-ui1-variable-modal__cta{
 	grid-column:1 / -1;
 }
-.gloskin-ui1-variable-modal__qty-proxy{
+
+/* ONE active Gloskin quantity-stepper visual owner. Legacy surface classes
+ * remain stable DOM/behavior hooks, while this final-loaded component owns
+ * the rendered 34 / 44 / 34 x 46 geometry on all three surfaces. */
+.gloskin-ui1 .gloskin-ui1-qty-stepper,
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control,
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-proxy,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control{
 	display:grid;
-	grid-template-columns:34px minmax(32px,44px) 34px;
+	grid-template-columns:34px 44px 34px;
+	width:fit-content;
 	min-height:46px;
+	align-items:stretch;
 	border:1px solid var(--gloskin-border);
-	border-radius:var(--gloskin-radius-control,10px);
-	background:#fff;
+	border-radius:var(--gloskin-radius-sm);
+	background:var(--gloskin-bg);
+	color:var(--gloskin-text);
 	overflow:hidden;
 }
-.gloskin-ui1-variable-modal__qty-proxy button{
-	appearance:none;
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control input.qty,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control input.qty,
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-value,
+.gloskin-ui1 .gloskin-ui1-qty-stepper__value{
+	width:44px;
+	min-width:44px;
+	max-width:44px;
+	min-height:44px;
+	padding:0;
 	border:0;
+	border-radius:0;
 	background:transparent;
-	color:var(--gloskin-ink);
+	color:var(--gloskin-text);
 	font:inherit;
-	font-size:1.05rem;
-	cursor:pointer;
-}
-.gloskin-ui1-variable-modal__qty-proxy button:first-child{
-	border-right:1px solid var(--gloskin-border);
-}
-.gloskin-ui1-variable-modal__qty-proxy button:last-child{
-	border-left:1px solid var(--gloskin-border);
-}
-.gloskin-ui1-variable-modal__qty-value{
-	display:grid;
-	place-items:center;
-	min-width:0;
 	font-size:.9rem;
 	font-weight:700;
+	line-height:1;
+	text-align:center;
+}
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-value,
+.gloskin-ui1 .gloskin-ui1-qty-stepper__value:not(input){
+	display:grid;
+	place-items:center;
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control input.qty,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control input.qty,
+.gloskin-ui1 input.gloskin-ui1-qty-stepper__value{
+	-moz-appearance:textfield;
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control input.qty::-webkit-inner-spin-button,
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control input.qty::-webkit-outer-spin-button,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control input.qty::-webkit-inner-spin-button,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control input.qty::-webkit-outer-spin-button,
+.gloskin-ui1 input.gloskin-ui1-qty-stepper__value::-webkit-inner-spin-button,
+.gloskin-ui1 input.gloskin-ui1-qty-stepper__value::-webkit-outer-spin-button{
+	margin:0;
+	-webkit-appearance:none;
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-minus,
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-plus,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-minus,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-plus,
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-proxy button,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__minus,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__plus{
+	appearance:none;
+	display:grid;
+	width:34px;
+	min-width:34px;
+	min-height:44px;
+	padding:0;
+	border:0;
+	border-radius:0;
+	background:transparent;
+	color:var(--gloskin-text);
+	font:inherit;
+	font-size:1.05rem;
+	font-weight:700;
+	line-height:1;
+	cursor:pointer;
+	place-items:center;
+	transition:background-color 140ms ease,color 140ms ease;
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-minus,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-minus,
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-proxy button:first-child,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__minus{
+	border-right:1px solid var(--gloskin-border);
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-plus,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-plus,
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-proxy button:last-child,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__plus{
+	border-left:1px solid var(--gloskin-border);
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-minus:hover,
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-plus:hover,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-minus:hover,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-plus:hover,
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-proxy button:hover,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__minus:hover,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__plus:hover,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__minus:focus-visible,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__plus:focus-visible{
+	background:var(--gloskin-surface);
+	color:var(--gloskin-text);
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-minus:disabled,
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-plus:disabled,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-minus:disabled,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-plus:disabled,
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-proxy button:disabled,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__minus:disabled,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__plus:disabled{
+	opacity:.4;
+	cursor:not-allowed;
+	background:transparent;
+	color:var(--gloskin-muted);
 }
 
 body.single-product [data-gloskin-purchase-dock] form.variations_form.gloskin-ui1-variable-pdp-enhanced .gloskin-ui1-purchase-dock__variants,
@@ -247,24 +334,27 @@ body.single-product [data-gloskin-purchase-dock] form.variations_form.gloskin-ui
 	white-space:nowrap;
 	visibility:hidden;
 }
-.gloskin-ui1-variable-pdp-trigger{
+[data-gloskin-purchase-dock] .gloskin-ui1-variable-pdp-trigger{
 	appearance:none;
 	min-height:46px;
 	width:100%;
 	min-width:0;
 	padding:10px 14px;
-	border:1px solid var(--gloskin-accent);
-	border-radius:var(--gloskin-radius-control,10px);
-	background:color-mix(in srgb,var(--gloskin-accent) 7%,#fff);
-	color:var(--gloskin-ink);
+	border:1px solid var(--gloskin-inverse);
+	border-radius:var(--gloskin-action-radius);
+	background:var(--gloskin-inverse);
+	color:var(--gloskin-accent-strong);
 	font:inherit;
-	font-weight:750;
+	font-weight:700;
 	line-height:1.25;
 	cursor:pointer;
+	transition:background-color 140ms ease,border-color 140ms ease,color 140ms ease;
 }
-.gloskin-ui1-variable-pdp-trigger:hover,
-.gloskin-ui1-variable-pdp-trigger:focus-visible{
-	background:color-mix(in srgb,var(--gloskin-accent) 12%,#fff);
+[data-gloskin-purchase-dock] .gloskin-ui1-variable-pdp-trigger:hover,
+[data-gloskin-purchase-dock] .gloskin-ui1-variable-pdp-trigger:focus-visible{
+	border-color:var(--gloskin-inverse);
+	background:color-mix(in srgb,var(--gloskin-inverse) 92%,var(--gloskin-accent-soft));
+	color:var(--gloskin-accent-strong);
 }
 
 .gloskin-ui1-toast-region{
