@@ -1340,6 +1340,8 @@
 			body.innerHTML = html;
 			var form = body.querySelector('form.cart');
 			if (form) {
+				var addToCartButton = form.querySelector('.single_add_to_cart_button');
+				if (addToCartButton) { addToCartButton.textContent = 'Tambahkan ke keranjang'; }
 				enhanceQuantityControls(form.querySelector('.quantity'));
 				bindForm(form);
 			}

@@ -68,13 +68,6 @@ return array(
 			'deps'      => array(),
 			'in_footer' => true,
 		),
-		/* Presentation-only copy normalization for the same native Woo CTA
-		 * inserted by Core Quick Add. It no-ops when the modal body is absent. */
-		'gloskin-ui1-quickadd-polish' => array(
-			'src'       => 'assets/js/gloskin-ui1-quickadd-polish.js',
-			'deps'      => array( 'gloskin-ui1-core' ),
-			'in_footer' => true,
-		),
 		/* Core is already the broad interaction owner. Keep the bounded PDP
 		 * viewport controller separate and tiny so its observer/measurement
 		 * lifecycle cannot inflate that cross-site module; AssetService still

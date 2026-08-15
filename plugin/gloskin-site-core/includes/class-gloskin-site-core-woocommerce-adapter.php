@@ -41,6 +41,10 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		add_action( 'woocommerce_single_product_summary', array( $this, 'render_product_facts' ), 21 );
 		add_filter( 'body_class', array( $this, 'body_classes' ) );
 		add_filter( 'woocommerce_add_to_cart_fragments', array( $this, 'cart_fragments' ) );
+		// Storefront wording only: normalize native Woo direct-add labels while
+		// leaving product-type-specific actions (select/view/buy) untouched.
+		add_filter( 'woocommerce_product_single_add_to_cart_text', array( $this, 'storefront_single_add_to_cart_text' ), 10, 2 );
+		add_filter( 'woocommerce_product_add_to_cart_text', array( $this, 'storefront_loop_add_to_cart_text' ), 10, 2 );
 		// The Gloskin cart overlay already owns successful cart-mutation
 		// feedback. Suppress only Woo's redundant success messages at their
 		// canonical source hooks; errors/info and every unrelated Woo success
@@ -71,6 +75,47 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		// calls always run after Woo's wc-template-hooks.php has registered
 		// its defaults, regardless of Gloskin/WooCommerce plugin load order.
 		add_action( 'woocommerce_before_single_product', array( $this, 'simplify_single_product_summary' ) );
+	}
+
+	/**
+	 * Normalize the native single-product CTA only when it semantically means
+	 * a direct cart mutation. External/custom product actions keep their own
+	 * product-type-specific wording. The adapter is frontend-only because the
+	 * Kernel never constructs it in wp-admin.
+	 *
+	 * @param string $text Woo's native single-product CTA text.
+	 * @param mixed  $product Woo product object when supplied by the filter.
+	 * @return string
+	 */
+	public function storefront_single_add_to_cart_text( $text, $product = null ) {
+		if ( ! is_object( $product ) || ! method_exists( $product, 'is_type' ) ) {
+			return $text;
+		}
+		if ( ! $product->is_type( array( 'simple', 'variable', 'grouped' ) ) ) {
+			return $text;
+		}
+		return __( 'Tambahkan ke keranjang', 'gloskin-site-core' );
+	}
+
+	/**
+	 * Normalize only directly purchasable simple-product loop CTAs. Variable,
+	 * grouped, external and custom product types retain Woo/plugin semantics
+	 * such as selecting options or viewing details instead of being mislabeled
+	 * as an immediate cart mutation.
+	 *
+	 * @param string $text Woo's native loop CTA text.
+	 * @param mixed  $product Woo product object when supplied by the filter.
+	 * @return string
+	 */
+	public function storefront_loop_add_to_cart_text( $text, $product = null ) {
+		if ( ! is_object( $product ) || ! method_exists( $product, 'is_type' ) || ! $product->is_type( 'simple' ) ) {
+			return $text;
+		}
+		if ( ! method_exists( $product, 'is_purchasable' ) || ! method_exists( $product, 'is_in_stock' )
+			|| ! $product->is_purchasable() || ! $product->is_in_stock() ) {
+			return $text;
+		}
+		return __( 'Tambahkan ke keranjang', 'gloskin-site-core' );
 	}
 
 	/**
@@ -1241,7 +1286,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 				'sku'                     => (string) $product->get_sku(),
 				'type'                    => method_exists( $product, 'get_type' ) ? (string) $product->get_type() : 'simple',
 				'add_to_cart_url'         => (string) $product->add_to_cart_url(),
-				'add_to_cart_text'        => __( 'Tambah ke keranjang', 'gloskin-site-core' ),
+				'add_to_cart_text'        => __( 'Tambahkan ke keranjang', 'gloskin-site-core' ),
 				'add_to_cart_description' => method_exists( $product, 'add_to_cart_description' ) ? wp_strip_all_tags( (string) $product->add_to_cart_description() ) : '',
 				'purchasable'             => $purchasable,
 				'in_stock'                => $in_stock,
