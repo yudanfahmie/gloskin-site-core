@@ -627,6 +627,131 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 	body.woocommerce-cart .wc-block-cart__submit-container{padding-right:76px}
 }
 
+/* Empty Cart: WC's own woocommerce/empty-cart-block (Cart Block, not the
+   classic-cart hook gloskin_ui1_render_native_cart_empty_state() -- that
+   fires on the shortcode cart's own action, which the live Cart Block
+   route never triggers, so this is the actual visible empty state). Its
+   default emoji icon and raw Products-New grid ship completely unstyled;
+   this re-skins them in place, CSS-only, same as every other Cart Block
+   rule above -- no template override, no PHP content filter, no second
+   empty-state markup owner. The icon/title card intentionally mirrors
+   .gloskin-ui1-empty-state's own recipe (gloskin-ui1-readiness.css) for
+   one consistent empty-state visual language across mini-cart and full
+   Cart page; the "New in store" heading/grid sit un-boxed below it on the
+   plain page surface rather than nested inside a second card, matching
+   this codebase's existing "no boxed-everything UI" cart guidance. Both
+   "Your cart is currently empty!" and "New in store" are WooCommerce's
+   own editorial block content (stored on the Cart page itself, not this
+   plugin), so their English copy is outside this repo's reach -- only
+   presentation is fixed here. */
+body.woocommerce-cart .wp-block-woocommerce-empty-cart-block{
+	display:grid;
+	gap:clamp(28px,5vw,44px);
+	text-align:center;
+}
+/* The looping icon is a self-contained animated SVG (its own <style>/
+   @keyframes, including its own prefers-reduced-motion query -- a data:
+   image is an isolated document, so the parent page's reduced-motion CSS
+   cannot reach inside it) swapped in for WC's own emoji ::before content;
+   a gentle float + a softly pulsing accent dot, both stopped entirely
+   under reduced motion. Same line-weight/palette as the canonical
+   cart-icon glyph in readiness-helpers.php's gloskin_ui1_empty_state_icon()
+   for visual consistency with the mini-cart's own empty state. */
+body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon{
+	display:grid;
+	justify-items:center;
+	gap:14px;
+	max-width:480px;
+	margin:0 auto;
+	padding:clamp(36px,5vw,54px) clamp(24px,4vw,36px);
+	border:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);
+	border-radius:var(--gloskin-radius-md);
+	background:color-mix(in srgb,var(--gloskin-surface) 78%,var(--gloskin-bg));
+	color:var(--gloskin-text);
+	font-family:var(--gloskin-font-heading);
+	font-size:clamp(1.2rem,2vw,1.5rem);
+	font-weight:600;
+	line-height:1.3;
+	animation:gloskin-empty-settle 220ms ease-out both;
+}
+body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::before{
+	content:"";
+	display:block;
+	width:72px;
+	height:72px;
+	background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cstyle%3E.gloskin-empty-cart-bag%7Banimation:gloskinEmptyCartFloat 3200ms ease-in-out infinite%7D.gloskin-empty-cart-dot%7Banimation:gloskinEmptyCartPulse 3200ms ease-in-out infinite%7D%40keyframes gloskinEmptyCartFloat%7B0%25,100%25%7Btransform:translateY(0)%7D50%25%7Btransform:translateY(-4px)%7D%7D%40keyframes gloskinEmptyCartPulse%7B0%25,100%25%7Bopacity:.35%7D50%25%7Bopacity:1%7D%7D%40media (prefers-reduced-motion:reduce)%7B.gloskin-empty-cart-bag,.gloskin-empty-cart-dot%7Banimation:none%7D%7D%3C/style%3E%3Cg class='gloskin-empty-cart-bag' fill='none' stroke='%236F6667' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 20h24l2 24H14l2-24Z'/%3E%3Cpath d='M21 20v-3a7 7 0 0 1 14 0v3'/%3E%3C/g%3E%3Ccircle class='gloskin-empty-cart-dot' cx='44' cy='13' r='3' fill='%23B12E2F'/%3E%3C/svg%3E");
+	background-repeat:no-repeat;
+	background-position:center;
+	background-size:contain;
+}
+/* WP core's own dots separator -- recolored to the Gloskin border token
+   and its own default vertical margin dropped so the grid gap above stays
+   the single spacing owner between it and its neighbors. */
+body.woocommerce-cart .wp-block-woocommerce-empty-cart-block hr.wp-block-separator{
+	margin:0;
+	color:color-mix(in srgb,var(--gloskin-border) 70%,transparent);
+}
+/* "New in store" -- the only other heading in this block (:not() excludes
+   the empty-cart title above, which shares the same base .wp-block-heading
+   class). */
+body.woocommerce-cart .wp-block-woocommerce-empty-cart-block .wp-block-heading:not(.wc-block-cart__empty-cart__title){
+	margin:0;
+	color:var(--gloskin-text);
+	font-family:var(--gloskin-font-heading);
+	font-size:clamp(1.4rem,2.4vw,1.9rem);
+	font-weight:600;
+}
+/* Products-New grid: WC's own legacy Blocks-Grid v1 markup, completely
+   unstyled by default (bare links/text, no card surface). Column count/
+   responsive collapse stays entirely Woo's own (has-4-columns and
+   friends) -- only per-tile presentation is re-skinned here, into the
+   same bordered/radiused card language as .gloskin-ui1-card elsewhere on
+   the site, so this reads as one consistent product-card system rather
+   than a second, more "native" one living inside the empty-cart state. */
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product{
+	overflow:hidden;
+	border:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);
+	border-radius:var(--gloskin-radius-md);
+	background:var(--gloskin-bg);
+	transition:box-shadow 200ms ease;
+}
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product:hover{box-shadow:0 8px 28px color-mix(in srgb,var(--gloskin-text) 5%,transparent)}
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-link{display:block;text-decoration:none;color:inherit}
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-image{overflow:hidden;background:var(--gloskin-surface-strong)}
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-image img{display:block;width:100%;aspect-ratio:4 / 3;object-fit:cover;transition:transform 250ms ease}
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product:hover .wc-block-grid__product-image img{transform:scale(1.025)}
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-title{
+	padding:14px 16px 4px;
+	color:var(--gloskin-text);
+	font-size:.92rem;
+	font-weight:600;
+	line-height:1.35;
+}
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-price{
+	padding:0 16px 14px;
+	color:var(--gloskin-accent-readable);
+	font-weight:700;
+}
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-add-to-cart{padding:0 16px 16px}
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-add-to-cart .wp-block-button__link{
+	display:flex;
+	min-height:40px;
+	align-items:center;
+	justify-content:center;
+	width:100%;
+	padding:0 14px;
+	border-radius:var(--gloskin-action-radius);
+	background:var(--gloskin-accent);
+	color:var(--gloskin-inverse);
+	font-weight:700;
+	text-decoration:none;
+	transition:background-color 160ms ease;
+}
+body.woocommerce-cart .wc-block-grid.wp-block-product-new .wc-block-grid__product-add-to-cart .wp-block-button__link:hover{background:var(--gloskin-accent-strong)}
+@media (prefers-reduced-motion:reduce){
+	body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon{animation:none}
+}
+
 /* Home strict video-only mode: a pure full-width native background video,
    no text/CTA column, player chrome, poster or image/editorial fallback.
    The section owns stable fold-height geometry; its native video fills the
