@@ -1,0 +1,61 @@
+/* Quick Add variant-modal polish only. WooCommerce keeps sole ownership of
+ * variation state, price/availability, quantity constraints and submission;
+ * these rules flatten presentation wrappers and stabilize layout geometry. */
+.gloskin-ui1-quickadd__form .table-container{
+	width:100%;
+	max-width:100%;
+	min-width:0;
+	margin:0;
+	padding:0;
+	border:0;
+	border-radius:0;
+	background:transparent;
+	box-shadow:none;
+}
+
+/* Keep the label tidy but remove the trailing cell padding that made the
+ * visible select finish above the compact quantity control. */
+.gloskin-ui1-quickadd__form table.variations th,
+.gloskin-ui1-quickadd__form table.variations td{
+	padding:0;
+}
+.gloskin-ui1-quickadd__form table.variations th{
+	padding-bottom:6px;
+}
+.gloskin-ui1-quickadd__form table.variations tr+tr th{
+	padding-top:10px;
+}
+
+@media (min-width:601px){
+	.gloskin-ui1-quickadd__form form.cart{
+		grid-template-columns:minmax(0,1fr) auto;
+		align-items:end;
+	}
+	/* Theme/shared responsive-table wrappers, when present, are the actual
+	 * grid item. Handle both wrapped and native-unwrapped Woo markup without
+	 * moving or cloning the variation table. */
+	.gloskin-ui1-quickadd__form .table-container,
+	.gloskin-ui1-quickadd__form form.cart>table.variations{
+		grid-column:1;
+		grid-row:1;
+		align-self:end;
+		min-width:0;
+	}
+	.gloskin-ui1-quickadd__form .quantity{
+		grid-column:2;
+		grid-row:1;
+		align-self:end;
+		justify-self:end;
+		margin:0;
+	}
+	.gloskin-ui1-quickadd__form .single_add_to_cart_button{
+		grid-column:1 / -1;
+		width:100%;
+	}
+}
+
+@media (max-width:600px){
+	.gloskin-ui1-quickadd__form .table-container{
+		grid-column:1;
+	}
+}

@@ -45,6 +45,13 @@ return array(
 			'deps'  => array( 'gloskin-ui1-readiness' ),
 			'media' => 'all',
 		),
+		/* Bounded Quick Add presentation refinement. Every selector is rooted
+		 * in the existing Quick Add form; no Woo markup/state owner is added. */
+		'gloskin-ui1-quickadd-polish' => array(
+			'src'   => 'assets/css/gloskin-ui1-quickadd-polish.css',
+			'deps'  => array( 'gloskin-ui1-production' ),
+			'media' => 'all',
+		),
 		/* Treatment Consultation discovery (docs/task-treatment-
 		 * consultation-commerce-discovery.md section 10): conditionally
 		 * enqueued only on the Treatments Hub -- see
@@ -59,6 +66,13 @@ return array(
 		'gloskin-ui1-core' => array(
 			'src'       => 'assets/js/gloskin-ui1-core.js',
 			'deps'      => array(),
+			'in_footer' => true,
+		),
+		/* Presentation-only copy normalization for the same native Woo CTA
+		 * inserted by Core Quick Add. It no-ops when the modal body is absent. */
+		'gloskin-ui1-quickadd-polish' => array(
+			'src'       => 'assets/js/gloskin-ui1-quickadd-polish.js',
+			'deps'      => array( 'gloskin-ui1-core' ),
 			'in_footer' => true,
 		),
 		/* Core is already the broad interaction owner. Keep the bounded PDP
