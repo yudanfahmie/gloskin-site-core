@@ -71,9 +71,18 @@ return array(
 		),
 	),
 	'scripts' => array(
+		/* Shared confirmed-success Cart/Wishlist motion helper. Presentation
+		 * only: captures action geometry, animates one decorative orb, and
+		 * impacts the visible header badge after success. Core remains the
+		 * success-boundary owner and Woo/Wishlist retain all state writes. */
+		'gloskin-ui1-commerce-motion' => array(
+			'src'       => 'assets/js/gloskin-ui1-commerce-motion.js',
+			'deps'      => array(),
+			'in_footer' => true,
+		),
 		'gloskin-ui1-core' => array(
 			'src'       => 'assets/js/gloskin-ui1-core.js',
-			'deps'      => array(),
+			'deps'      => array( 'gloskin-ui1-commerce-motion' ),
 			'in_footer' => true,
 		),
 		/* Cart <-> Checkout perceptual handoff. Head-loaded only on those

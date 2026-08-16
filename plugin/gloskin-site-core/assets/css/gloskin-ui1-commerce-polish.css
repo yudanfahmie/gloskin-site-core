@@ -16,15 +16,92 @@
 	color:var(--gloskin-inverse);
 }
 
+/* Mini-cart remove: one final, narrowly scoped owner wins over Woo's native
+   .woocommerce a.remove geometry without removing the native class/lifecycle.
+   The shared mask remains one primitive; only its paint color is decoupled
+   from Woo's currentColor ownership. */
+.gloskin-ui1-icon-remove{background-color:var(--gloskin-remove-icon-color,currentColor)}
+body.gloskin-ui1 .woocommerce a.gloskin-ui1-cart-sheet__item-remove{
+	--gloskin-remove-icon-color:var(--gloskin-inverse);
+	display:grid;
+	box-sizing:border-box;
+	flex:0 0 auto;
+	width:38px;
+	height:38px;
+	font-size:0;
+	line-height:1;
+	padding:0;
+	border:1px solid var(--gloskin-accent);
+	border-radius:999px;
+	background:var(--gloskin-accent);
+	color:var(--gloskin-inverse);
+	text-decoration:none;
+	place-items:center;
+}
+body.gloskin-ui1 .woocommerce a.gloskin-ui1-cart-sheet__item-remove:hover,
+body.gloskin-ui1 .woocommerce a.gloskin-ui1-cart-sheet__item-remove:focus-visible{
+	--gloskin-remove-icon-color:var(--gloskin-inverse);
+	width:38px;
+	height:38px;
+	border-color:var(--gloskin-accent-strong);
+	background:var(--gloskin-accent-strong);
+	color:var(--gloskin-inverse);
+}
+
+/* Confirmed-success travel is one temporary fixed decorative orb. JS sets
+   its start point once, then Web Animations moves only transform/opacity.
+   Cart currently opens its native Gloskin sheet immediately on Woo's same
+   added_to_cart event. During the sub-second flight only, lift the existing
+   header destination and orb above that sheet; no drawer timing/state owner
+   is introduced here. */
+html.gloskin-ui1-commerce-fly-active--cart .gloskin-ui1-header,
+html.gloskin-ui1-commerce-fly-active--wishlist .gloskin-ui1-header,
+html.gloskin-ui1-commerce-fly-active--cart .gloskin-ui1-header__nav-row,
+html.gloskin-ui1-commerce-fly-active--wishlist .gloskin-ui1-header__nav-row,
+html.gloskin-ui1-commerce-fly-active--cart [data-gloskin-header="header-2"],
+html.gloskin-ui1-commerce-fly-active--wishlist [data-gloskin-header="header-2"]{
+	z-index:10010;
+}
+.gloskin-ui1-commerce-fly-target{
+	position:fixed;
+	z-index:10020;
+	width:14px;
+	height:14px;
+	margin:-7px 0 0 -7px;
+	border-radius:999px;
+	background:var(--gloskin-accent);
+	box-shadow:0 0 0 6px color-mix(in srgb,var(--gloskin-accent) 16%,transparent);
+	pointer-events:none;
+	transform-origin:center;
+	will-change:transform,opacity;
+}
+.gloskin-ui1-commerce-fly-target::after{
+	position:absolute;
+	inset:-5px;
+	border:1px solid color-mix(in srgb,var(--gloskin-accent) 34%,transparent);
+	border-radius:inherit;
+	content:"";
+}
+
 [data-gloskin-cart-count].is-commerce-badge-added,
 [data-gloskin-wishlist-count].is-commerce-badge-added{
 	transform-origin:center;
-	animation:gloskin-ui1-commerce-badge-added 270ms cubic-bezier(.22,1,.36,1) both;
+	animation:gloskin-ui1-commerce-badge-added 240ms cubic-bezier(.22,1,.36,1) both;
+}
+/* Core's already-established badge helper still receives the canonical
+   success event. Suppress only its early visual pulse while this matching
+   fly is in flight; the motion helper removes the active class at landing
+   and then reuses this SAME impact class once, so there is one visible final
+   impact owner rather than approach + competing pulse. */
+html.gloskin-ui1-commerce-fly-active--cart [data-gloskin-cart-count].is-commerce-badge-added,
+html.gloskin-ui1-commerce-fly-active--wishlist [data-gloskin-wishlist-count].is-commerce-badge-added{
+	animation:none;
+	transform:none;
 }
 @keyframes gloskin-ui1-commerce-badge-added{
-	0%{opacity:.25;transform:translateY(4px) scale(.86)}
-	72%{opacity:1;transform:translateY(0) scale(1.06)}
-	100%{opacity:1;transform:translateY(0) scale(1)}
+	0%{opacity:1;transform:scale(1)}
+	58%{opacity:1;transform:scale(1.08)}
+	100%{opacity:1;transform:scale(1)}
 }
 
 /* Cart <-> Checkout editorial journey heading. Woo remains the sole route,
