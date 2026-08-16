@@ -60,6 +60,14 @@ return array(
 			'deps'  => array( 'gloskin-ui1-quickadd-polish' ),
 			'media' => 'all',
 		),
+		/* Shared goo-loader + semantic remove-control convergence. Loaded last
+		 * across Gloskin frontend surfaces so Home/Shop/modal/commerce states
+		 * consume one presentation primitive without changing their state owners. */
+		'gloskin-ui1-loader-system' => array(
+			'src'   => 'assets/css/gloskin-ui1-loader-system.css',
+			'deps'  => array( 'gloskin-ui1-commerce-polish' ),
+			'media' => 'all',
+		),
 		/* Treatment Consultation discovery (docs/task-treatment-
 		 * consultation-commerce-discovery.md section 10): conditionally
 		 * enqueued only on the Treatments Hub -- see

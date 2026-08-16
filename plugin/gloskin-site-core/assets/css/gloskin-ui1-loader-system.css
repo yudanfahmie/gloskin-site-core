@@ -1,0 +1,228 @@
+/* Shared Gloskin goo-loader system and stable commerce remove controls.
+   Presentation only: existing Woo/hero/Quick Add controllers remain state owners. */
+
+/* Final semantic remove owner. Component classes, not page wrappers or JS-applied
+   utility classes, define geometry so Home/Shop and fragment refreshes converge. */
+.gloskin-ui1-icon-remove{
+	background-color:var(--gloskin-remove-icon-color,currentColor);
+}
+body.gloskin-ui1 a.gloskin-ui1-cart-sheet__item-remove.remove_from_cart_button,
+body.gloskin-ui1 button.gloskin-ui1-wishlist-sheet__item-remove[data-gloskin-wishlist-toggle]{
+	--gloskin-remove-icon-color:var(--gloskin-accent-strong);
+	appearance:none;
+	display:grid;
+	box-sizing:border-box;
+	flex:0 0 28px;
+	width:28px;
+	min-width:28px;
+	max-width:28px;
+	height:28px;
+	min-height:28px;
+	max-height:28px;
+	margin:0;
+	padding:0;
+	border:0;
+	border-radius:999px;
+	background:var(--gloskin-surface-strong);
+	color:var(--gloskin-accent-strong);
+	font-size:0;
+	line-height:0;
+	text-decoration:none;
+	cursor:pointer;
+	place-items:center;
+	align-self:center;
+	transition:background-color 140ms ease,box-shadow 140ms ease;
+}
+body.gloskin-ui1 a.gloskin-ui1-cart-sheet__item-remove.remove_from_cart_button:hover,
+body.gloskin-ui1 a.gloskin-ui1-cart-sheet__item-remove.remove_from_cart_button:focus-visible,
+body.gloskin-ui1 button.gloskin-ui1-wishlist-sheet__item-remove[data-gloskin-wishlist-toggle]:hover,
+body.gloskin-ui1 button.gloskin-ui1-wishlist-sheet__item-remove[data-gloskin-wishlist-toggle]:focus-visible{
+	--gloskin-remove-icon-color:var(--gloskin-inverse);
+	background:var(--gloskin-accent-strong);
+	color:var(--gloskin-inverse);
+}
+body.gloskin-ui1 a.gloskin-ui1-cart-sheet__item-remove.remove_from_cart_button:focus-visible,
+body.gloskin-ui1 button.gloskin-ui1-wishlist-sheet__item-remove[data-gloskin-wishlist-toggle]:focus-visible{
+	outline:3px solid var(--gloskin-accent-readable);
+	outline-offset:2px;
+}
+
+/* One shared goo motion owner. Surfaces provide only footprint/travel sizing. */
+.gloskin-ui1-goo-loader-defs{
+	position:absolute;
+	width:0;
+	height:0;
+	overflow:hidden;
+	pointer-events:none;
+}
+@keyframes gloskin-ui1-goo-loader-dance{
+	0%,100%{transform:translate(-50%,-50%) scale(1)}
+	25%{transform:translate(calc(-50% + var(--gloskin-goo-loader-travel)),calc(-50% - var(--gloskin-goo-loader-travel))) scale(.8)}
+	50%{transform:translate(calc(-50% - var(--gloskin-goo-loader-travel)),calc(-50% + var(--gloskin-goo-loader-travel))) scale(1.1)}
+	75%{transform:translate(calc(-50% + var(--gloskin-goo-loader-travel)),calc(-50% + var(--gloskin-goo-loader-travel))) scale(.9)}
+}
+
+/* Cart <-> Checkout keeps its established host/state lifecycle; only the
+   animation name is redirected to the shared primitive. */
+.gloskin-ui1-commerce-handoff{
+	--gloskin-goo-loader-travel:var(--gloskin-commerce-handoff-travel);
+}
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob{
+	animation-name:gloskin-ui1-goo-loader-dance;
+}
+
+/* Home hero: reuse its existing preparing/ready/failed state machine. The
+   existing loader node becomes a compact goo field; no new JS state exists. */
+.gloskin-ui1-hero-bg-video__loader{
+	--gloskin-goo-loader-size:clamp(96px,8vw,112px);
+	--gloskin-goo-loader-blob:clamp(31px,2.8vw,38px);
+	--gloskin-goo-loader-hero-blob:clamp(38px,3.4vw,46px);
+	--gloskin-goo-loader-travel:clamp(26px,2.5vw,32px);
+	position:absolute;
+	inset:auto;
+	top:50%;
+	left:50%;
+	display:block;
+	width:var(--gloskin-goo-loader-size);
+	height:var(--gloskin-goo-loader-size);
+	opacity:1;
+	pointer-events:none;
+	transform:translate(-50%,-50%);
+	filter:url("#gloskin-ui1-commerce-handoff-goo");
+}
+.gloskin-ui1-hero-bg-video__loader-dot{
+	position:absolute;
+	inset:0;
+	width:100%;
+	height:100%;
+	border:0;
+	border-radius:0;
+	background:transparent;
+	animation:none;
+}
+.gloskin-ui1-hero-bg-video__loader::before,
+.gloskin-ui1-hero-bg-video__loader::after,
+.gloskin-ui1-hero-bg-video__loader-dot::before,
+.gloskin-ui1-hero-bg-video__loader-dot::after{
+	position:absolute;
+	top:50%;
+	left:50%;
+	width:var(--gloskin-goo-loader-blob);
+	height:var(--gloskin-goo-loader-blob);
+	border:0;
+	border-radius:50%;
+	background:var(--gloskin-accent);
+	content:"";
+	pointer-events:none;
+	transform:translate(-50%,-50%) scale(1);
+	transform-origin:center;
+}
+.gloskin-ui1-hero-bg-video__loader-dot::after{
+	width:var(--gloskin-goo-loader-hero-blob);
+	height:var(--gloskin-goo-loader-hero-blob);
+	background:var(--gloskin-accent-strong);
+	box-shadow:0 0 20px color-mix(in srgb,var(--gloskin-accent) 38%,transparent);
+}
+.gloskin-ui1-hero--video-only.is-video-preparing .gloskin-ui1-hero-bg-video__loader::before,
+.gloskin-ui1-hero--video-only.is-video-preparing .gloskin-ui1-hero-bg-video__loader::after,
+.gloskin-ui1-hero--video-only.is-video-preparing .gloskin-ui1-hero-bg-video__loader-dot::before,
+.gloskin-ui1-hero--video-only.is-video-preparing .gloskin-ui1-hero-bg-video__loader-dot::after{
+	animation:gloskin-ui1-goo-loader-dance 3.5s infinite ease-in-out;
+	will-change:transform;
+}
+.gloskin-ui1-hero--video-only.is-video-preparing .gloskin-ui1-hero-bg-video__loader::before{animation-delay:0s}
+.gloskin-ui1-hero--video-only.is-video-preparing .gloskin-ui1-hero-bg-video__loader::after{animation-delay:-.8s}
+.gloskin-ui1-hero--video-only.is-video-preparing .gloskin-ui1-hero-bg-video__loader-dot::before{animation-delay:-1.6s}
+.gloskin-ui1-hero--video-only.is-video-preparing .gloskin-ui1-hero-bg-video__loader-dot::after{animation-delay:-2.4s}
+
+/* Quick Add: its existing loading div remains the lifecycle owner and is
+   replaced by the existing renderer when the product projection resolves. */
+.gloskin-ui1-quickadd__loading{
+	--gloskin-goo-loader-size:clamp(72px,7vw,88px);
+	--gloskin-goo-loader-blob:clamp(24px,2.3vw,29px);
+	--gloskin-goo-loader-hero-blob:clamp(30px,2.8vw,35px);
+	--gloskin-goo-loader-travel:clamp(19px,2vw,23px);
+	position:relative;
+	display:block;
+	width:var(--gloskin-goo-loader-size);
+	height:var(--gloskin-goo-loader-size);
+	margin:18px auto;
+	color:transparent;
+	filter:url("#gloskin-ui1-commerce-handoff-goo");
+}
+.gloskin-ui1-quickadd__loading>span{
+	position:absolute;
+	inset:0;
+	display:block;
+	width:100%;
+	height:100%;
+	font-size:0;
+	line-height:0;
+	color:transparent;
+}
+.gloskin-ui1-quickadd__loading::before,
+.gloskin-ui1-quickadd__loading::after,
+.gloskin-ui1-quickadd__loading>span::before,
+.gloskin-ui1-quickadd__loading>span::after{
+	position:absolute;
+	top:50%;
+	left:50%;
+	width:var(--gloskin-goo-loader-blob);
+	height:var(--gloskin-goo-loader-blob);
+	flex:none;
+	border:0;
+	border-radius:50%;
+	background:var(--gloskin-accent);
+	content:"";
+	pointer-events:none;
+	transform:translate(-50%,-50%) scale(1);
+	transform-origin:center;
+	will-change:transform;
+	animation:gloskin-ui1-goo-loader-dance 3.5s infinite ease-in-out;
+}
+.gloskin-ui1-quickadd__loading>span::after{
+	width:var(--gloskin-goo-loader-hero-blob);
+	height:var(--gloskin-goo-loader-hero-blob);
+	background:var(--gloskin-accent-strong);
+	box-shadow:0 0 16px color-mix(in srgb,var(--gloskin-accent) 34%,transparent);
+}
+.gloskin-ui1-quickadd__loading::before{animation-delay:0s}
+.gloskin-ui1-quickadd__loading::after{animation-delay:-.8s}
+.gloskin-ui1-quickadd__loading>span::before{animation-delay:-1.6s}
+.gloskin-ui1-quickadd__loading>span::after{animation-delay:-2.4s}
+
+@media (max-width:760px){
+	.gloskin-ui1-hero-bg-video__loader{
+		--gloskin-goo-loader-size:clamp(82px,23vw,96px);
+		--gloskin-goo-loader-blob:clamp(28px,8vw,32px);
+		--gloskin-goo-loader-hero-blob:clamp(34px,10vw,40px);
+		--gloskin-goo-loader-travel:clamp(22px,6.4vw,27px);
+	}
+	.gloskin-ui1-quickadd__loading{
+		--gloskin-goo-loader-size:clamp(68px,20vw,80px);
+		--gloskin-goo-loader-blob:clamp(22px,6.8vw,27px);
+		--gloskin-goo-loader-hero-blob:clamp(28px,8.5vw,33px);
+		--gloskin-goo-loader-travel:clamp(18px,5.5vw,21px);
+	}
+}
+
+@media (prefers-reduced-motion:reduce){
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob,
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob,
+	.gloskin-ui1-hero--video-only.is-video-preparing .gloskin-ui1-hero-bg-video__loader::before,
+	.gloskin-ui1-hero--video-only.is-video-preparing .gloskin-ui1-hero-bg-video__loader::after,
+	.gloskin-ui1-hero--video-only.is-video-preparing .gloskin-ui1-hero-bg-video__loader-dot::before,
+	.gloskin-ui1-hero--video-only.is-video-preparing .gloskin-ui1-hero-bg-video__loader-dot::after,
+	.gloskin-ui1-quickadd__loading::before,
+	.gloskin-ui1-quickadd__loading::after,
+	.gloskin-ui1-quickadd__loading>span::before,
+	.gloskin-ui1-quickadd__loading>span::after{
+		animation:none;
+		will-change:auto;
+	}
+}
