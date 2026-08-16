@@ -52,6 +52,14 @@ return array(
 			'deps'  => array( 'gloskin-ui1-production' ),
 			'media' => 'all',
 		),
+		/* Shared destructive commerce action skin + header badge delta motion.
+		 * This is presentation only and deliberately loads after the existing
+		 * modal/action kit so the danger modifier can reuse its exact geometry. */
+		'gloskin-ui1-commerce-polish' => array(
+			'src'   => 'assets/css/gloskin-ui1-commerce-polish.css',
+			'deps'  => array( 'gloskin-ui1-quickadd-polish' ),
+			'media' => 'all',
+		),
 		/* Treatment Consultation discovery (docs/task-treatment-
 		 * consultation-commerce-discovery.md section 10): conditionally
 		 * enqueued only on the Treatments Hub -- see

@@ -53,10 +53,90 @@
 		return config.cartCtaLabel || 'Keranjang';
 	}
 
+	/* Presentation-only commerce badge memory. The canonical cart count still
+	 * comes from Woo fragments and the canonical wishlist count still comes
+	 * from updateBadges(); this cache only remembers what the DOM last rendered
+	 * so a confirmed success can decide whether there is a visual delta. */
+	var commerceBadgeLastRendered = { cart: null, wishlist: null };
+	var COMMERCE_BADGE_ANIMATION_CLASS = 'is-commerce-badge-added';
+
+	function commerceBadgeSelector(type) {
+		if (type === 'cart') { return '[data-gloskin-cart-count]'; }
+		if (type === 'wishlist') { return '[data-gloskin-wishlist-count]'; }
+		return '';
+	}
+
+	function readCommerceBadgeCount(type, root) {
+		var selector = commerceBadgeSelector(type);
+		if (!selector || !root || !root.document) { return null; }
+		var badge = root.document.querySelector(selector);
+		if (!badge) { return null; }
+		var count = parseInt(String(badge.textContent || '').trim(), 10);
+		return isNaN(count) ? 0 : count;
+	}
+
+	function initializeCommerceBadgeCounts(runtime) {
+		var root = runtimeWindow(runtime);
+		if (!root || !root.document) { return false; }
+		['cart', 'wishlist'].forEach(function (type) {
+			var count = readCommerceBadgeCount(type, root);
+			if (count !== null) { commerceBadgeLastRendered[type] = count; }
+		});
+		return true;
+	}
+
+	function animateCommerceBadgeDelta(type, runtime) {
+		var root = runtimeWindow(runtime);
+		var selector = commerceBadgeSelector(type);
+		if (!root || !root.document || !selector) { return false; }
+		var badges = root.document.querySelectorAll(selector);
+		if (!badges.length) { return false; }
+		var current = readCommerceBadgeCount(type, root);
+		var previous = commerceBadgeLastRendered[type];
+		commerceBadgeLastRendered[type] = current;
+
+		/* Added-in motion is intentionally increase-only. Decreases still pass
+		 * through this helper to keep the presentation cache synchronized, but
+		 * cart/wishlist removals never inherit an "added" celebration. */
+		if (current === null || previous === null || current <= previous) { return false; }
+		if (feedbackReducedMotion(root)) {
+			Array.prototype.forEach.call(badges, function (badge) {
+				badge.classList.remove(COMMERCE_BADGE_ANIMATION_CLASS);
+			});
+			return false;
+		}
+
+		Array.prototype.forEach.call(badges, function (badge) {
+			badge.classList.remove(COMMERCE_BADGE_ANIMATION_CLASS);
+			void badge.offsetWidth;
+			badge.classList.add(COMMERCE_BADGE_ANIMATION_CLASS);
+			if (typeof root.setTimeout === 'function') {
+				root.setTimeout(function () { badge.classList.remove(COMMERCE_BADGE_ANIMATION_CLASS); }, 320);
+			}
+		});
+		return true;
+	}
+
+	/* Woo owns the remove link and click lifecycle. This helper only attaches
+	 * reusable presentation classes to the already-rendered native link; no
+	 * listener, endpoint, href or Woo data attribute is created or replaced. */
+	function applyCommerceRemovePresentation(rootDocument) {
+		var doc = rootDocument && typeof rootDocument.querySelectorAll === 'function'
+			? rootDocument
+			: (typeof document !== 'undefined' ? document : null);
+		if (!doc) { return 0; }
+		var removes = doc.querySelectorAll('.gloskin-ui1-cart-sheet__item-remove.remove_from_cart_button');
+		Array.prototype.forEach.call(removes, function (remove) {
+			remove.classList.add('gloskin-ui1-action-icon');
+			remove.classList.add('gloskin-ui1-action-icon--danger');
+		});
+		return removes.length;
+	}
+
 	/* -----------------------------------------------------------------
-	 * Shared confirmed-success feedback. Presentation only: callers invoke
-	 * this after their existing state owner has completed a real mutation
-	 * and reflected that state. No cart/wishlist count is written here.
+	 * Shared confirmed-success feedback. Badge motion is owned above; this
+	 * helper keeps the existing short success sound only, so cart/wishlist
+	 * successes have one visually dominant motion owner.
 	 * ----------------------------------------------------------------- */
 
 	var SUCCESS_SOUND_URI = 'data:audio/wav;base64,UklGRuQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YcADAACAgICAgIB/f35+f3+AgIGAgICAf39+fn5+f4GCg4OCf317ent+goWGhYJ/fHp6fH6Bg4ODgoGAf359fHt7fYGEh4iGgXt2dHZ7gYiLi4eBenZ1d3yBhIaGhIOBf358enh4e3+FioyKhX11cHF2f4iOj4uEfHVzdHl/hIaHhoSCgH59e3l4en2DiIyLh4B3cnB0e4SMj42Hf3dzc3d9goaHhoSCgH99e3l4eXyBhouMiYN6c3ByeIGKjo6Jgnp0c3V7gIWHh4WDgYB+fHp4eHp/hIqMi4V9dnFxdX6HjY+MhXx2c3R5foOGh4aEgoB/fXt5eHl9goiMjIiAeHJwc3uEi4+NiH94dHN3fIKFh4aEgoF/fXt5eHl7gIaLjIqDe3RwcXeAiY6PioJ6dXN1eoCEh4eFg4GAfnx6eXh6foSJjIuGfnZxcHV9ho2PjIV9dnN0eH6DhoeGhIKAf317eXh5fYKHi4yIgXlycHN6g4uPjoiAeXRzdnyBhYeGhYOBf358enh5e4CFioyKhHx0cHF3f4iOj4uDe3VzdXp/hIaHhYOBgH58enl4en6DiYyLhn93cXB0fIWMj42GfndzdHh9goaHhoSCgH99e3l4eXyBh4uMiYJ6c3ByeYKKj46JgXl0c3Z7gYWHhoWDgX9+fHp4eHt/hYqMioV9dXBxdn+Ijo+LhHx1c3R5f4SGh4aEgoB+fXt5eHp9g4iMi4eAd3JwdHuEjI+Nh393c3N3fYKGh4aEgoB/fXt5eHl8gYaLjImDenNwcniBio6OiYJ6dHN1e4CFh4eFg4GAfnx6eHh6f4SKjIuFfXZxcXV+h42PjIV8dnN0eX6DhoeGhIKAf317eXh5fYKIjIyIgHhycHN7hIuPjYh/eHRzd3yChYeGhIKBf317eXh5e4CGioyJg3t0cHJ4gImOjoqCe3V0dnqAhIaGhYOBgH59e3l5e36DiIqJhX54c3N3fYWKjIqEfnh2dnp+goWFhIOBgH9+fHt6e32BhYiIhoF7dnR2e4KHiomFgHt4d3l9gYOEhIOBgH9+fXx7e32Ag4aHhoJ9eXd3en+EiIiGgn16eXp8f4KDg4OBgIB/fn18fH1/gYSFhYN/fHl5en6ChYaFgn98ent8f4GCgoKBgIB/f359fX1+gIKDhIOAfnt6e32Ag4SEgoB+fHx9foCBgYGBgIB/f39+fn5+f4GCgoKBf319fX5/gYKCgYB/fn5+f3+AgICAgICAf39/f39/f4CAgYCAgH9/f39/gICAgIB/f39/f3+AgIA=';
@@ -85,32 +165,9 @@
 		return !!(root && root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
 	}
 
-	function visibleFeedbackTargets(type, root) {
-		var selector = type === 'cart'
-			? '[data-gloskin-cart-open]'
-			: '[data-gloskin-wishlist-open], [data-gloskin-wishlist-open-from-drawer]';
-		return Array.prototype.filter.call(root.document.querySelectorAll(selector), function (node) {
-			var rect = typeof node.getBoundingClientRect === 'function' ? node.getBoundingClientRect() : { width: 0, height: 0 };
-			if (!rect.width || !rect.height) { return false; }
-			if (!root.getComputedStyle) { return true; }
-			var style = root.getComputedStyle(node);
-			return style.display !== 'none' && style.visibility !== 'hidden';
-		});
-	}
-
 	function successFeedback(type, runtime) {
 		var root = runtimeWindow(runtime);
 		if ((type !== 'cart' && type !== 'wishlist') || !root || !root.document) { return false; }
-
-		if (!feedbackReducedMotion(root)) {
-			visibleFeedbackTargets(type, root).forEach(function (node) {
-				node.classList.remove('is-success-pulse');
-				void node.offsetWidth;
-				node.classList.add('is-success-pulse');
-				root.setTimeout(function () { node.classList.remove('is-success-pulse'); }, 460);
-			});
-		}
-
 		if (root.document.visibilityState !== 'visible' || typeof root.Audio !== 'function') { return true; }
 		var now = Date.now();
 		if (now - lastSuccessSoundAt < SUCCESS_SOUND_COOLDOWN_MS) { return true; }
@@ -279,18 +336,10 @@
 			if (current) { close(); }
 			var el = find(id);
 			if (!el) { return; }
-			/* A previous close() on this same overlay may still have a
-			 * pending finalize (transitionend/timeout) queued; cancel it so
-			 * a rapid close -> open doesn't get its hidden state clobbered
-			 * out from under the reopened overlay. */
 			cancelPending(id);
 			previousFocus = document.activeElement;
 			current = id;
 			el.hidden = false;
-			/* Force a layout so the browser commits the closed (opacity:0)
-			 * frame before flipping to the open state on the next frame --
-			 * otherwise both attribute changes collapse into a single frame
-			 * and the CSS transition never runs. */
 			void el.offsetWidth;
 			window.requestAnimationFrame(function () {
 				el.setAttribute('aria-hidden', 'false');
@@ -298,8 +347,6 @@
 			document.documentElement.classList.add('gloskin-ui1-overlay-open');
 			holdStickyNav();
 			setTriggersExpanded(id, true);
-			/* Focus only meaningful dialog controls. Backdrops are intentionally
-			 * outside role=dialog and must never win initial keyboard focus. */
 			var panel = el.querySelector('[role="dialog"]');
 			var nodes = focusable(panel || el);
 			if (nodes.length) { nodes[0].focus(); }
@@ -394,7 +441,6 @@
 			if (dialog) { trapFocus(dialog, event); }
 		});
 
-		/* Logged-out Account reuses the same overlay state owner as Search/Cart/Wishlist. */
 		var authFromDrawer = drawer.querySelector('[data-gloskin-auth-open-from-drawer]');
 		if (authFromDrawer) {
 			authFromDrawer.addEventListener('click', function (event) {
@@ -404,7 +450,6 @@
 			});
 		}
 
-		/* Wishlist trigger from within drawer — close drawer, then open wishlist */
 		var wishlistFromDrawer = drawer.querySelector('[data-gloskin-wishlist-open-from-drawer]');
 		if (wishlistFromDrawer) {
 			wishlistFromDrawer.addEventListener('click', function () {
@@ -434,10 +479,7 @@
 	}
 
 	/* -----------------------------------------------------------------
-	 * Top-level desktop nav bubble. Geometry snaps while invisible to the
-	 * hovered/focused link's final box; the only visible entrance/exit is a
-	 * center-origin scale + opacity transition. No translate/left/top/size
-	 * property is animated, so there is no directional or diagonal travel.
+	 * Top-level desktop nav bubble.
 	 * ----------------------------------------------------------------- */
 
 	function initNavBubble() {
@@ -589,10 +631,6 @@
 		document.addEventListener('gloskin:sticky-nav-hold', showNav);
 	}
 
-	/* -----------------------------------------------------------------
-	 * Compact branded sticky-nav state -- Header 1 only.
-	 * ----------------------------------------------------------------- */
-
 	function initCompactSticky() {
 		var header = document.querySelector('.gloskin-ui1-header');
 		var navRow = document.querySelector('.gloskin-ui1-header__nav-row');
@@ -612,10 +650,6 @@
 		}, { threshold: 0 });
 		observer.observe(header);
 	}
-
-	/* -----------------------------------------------------------------
-	 * Overlay close wiring (shared for all overlays)
-	 * ----------------------------------------------------------------- */
 
 	function initOverlayCloseButtons() {
 		document.addEventListener('click', function (e) {
@@ -638,10 +672,6 @@
 			trapFocus(panel, e);
 		});
 	}
-
-	/* -----------------------------------------------------------------
-	 * Search overlay
-	 * ----------------------------------------------------------------- */
 
 	function initSearch() {
 		var triggers = document.querySelectorAll('[data-gloskin-search-open]');
@@ -762,10 +792,6 @@
 		}
 	}
 
-	/* -----------------------------------------------------------------
-	 * Quick Account auth overlay — native Woo forms, normal POST handling
-	 * ----------------------------------------------------------------- */
-
 	function initAuth() {
 		var auth = document.querySelector('[data-gloskin-overlay="auth"]');
 		if (!auth) { return; }
@@ -818,6 +844,7 @@
 	function initCart() {
 		var config = window.gloskinData || {};
 		if (!config.woo) { return; }
+		applyCommerceRemovePresentation(document);
 
 		var triggers = document.querySelectorAll('[data-gloskin-cart-open]');
 		Array.prototype.forEach.call(triggers, function (trigger) {
@@ -837,7 +864,11 @@
 			window.jQuery(document.body).on('added_to_cart', function (event, fragments, cartHash, $button) {
 				if ($button && $button.length) { $button.attr('aria-busy', 'false'); }
 				overlay.open('cart');
-				window.requestAnimationFrame(function () { successFeedback('cart'); });
+				window.requestAnimationFrame(function () {
+					applyCommerceRemovePresentation(document);
+					animateCommerceBadgeDelta('cart');
+					successFeedback('cart');
+				});
 			});
 		}
 
@@ -856,6 +887,10 @@
 				Array.prototype.forEach.call(pending, function (row) {
 					row.classList.remove('is-removing');
 					row.removeAttribute('aria-busy');
+				});
+				window.requestAnimationFrame(function () {
+					applyCommerceRemovePresentation(document);
+					animateCommerceBadgeDelta('cart');
 				});
 			});
 		}
@@ -1086,10 +1121,6 @@
 		return true;
 	}
 
-	/* One canonical ownership bridge for every Gloskin-owned native cart
-	 * form. Different forms remain independent, while repeat click/Enter/
-	 * proxy/requestSubmit cannot start a second POST until the first request
-	 * deterministically settles. */
 	var wooAjaxInFlightForms = typeof WeakSet === 'function' ? new WeakSet() : null;
 	var wooAjaxBoundForms = typeof WeakSet === 'function' ? new WeakSet() : null;
 
@@ -1126,9 +1157,6 @@
 			return false;
 		}
 
-		/* From this point this submit belongs to the canonical Gloskin AJAX
-		 * owner. Stop the SAME event before any delegated Woo/plugin mutation
-		 * handler can see it. */
 		event.preventDefault();
 		event.stopImmediatePropagation();
 
@@ -1149,9 +1177,6 @@
 			}
 		});
 
-		/* ajaxAddToCart() returns false only before POST dispatch. Once it has
-		 * returned true, every later failure stays on the AJAX lifecycle and is
-		 * never replayed through native submission. */
 		if (!claimed) {
 			setWooAjaxFormInFlight(form, false);
 			nativeFallbackSubmit(form, submitter);
@@ -1178,10 +1203,6 @@
 		});
 		return true;
 	}
-
-	/* -----------------------------------------------------------------
-	 * SP-003 -- Single product page: progressive AJAX add-to-cart.
-	 * ----------------------------------------------------------------- */
 
 	function initSingleProductAjax() {
 		if (!document.body.classList.contains('single-product')) { return; }
@@ -1548,10 +1569,6 @@
 		function handleProxySubmit(form) {
 			if (!form) { return; }
 			var submit = getNativeSubmit(form);
-			/* The native submit already owns busy state once Core has claimed
-			 * it; a repeat proxy click while that claim is in flight must not
-			 * dispatch a second submit -- only re-affirm the SAME visible
-			 * busy/loading presentation the proxy already carries. */
 			if (submit && (submit.getAttribute('aria-busy') === 'true' || isWooAjaxFormInFlight(form))) { return; }
 			var unresolved = unresolvedSelect(form);
 			if (unresolved) {
@@ -1602,16 +1619,6 @@
 				nativeState.insertAdjacentElement('afterend', stateTarget);
 			}
 
-			/* NATIVE WOO FORM = state engine only. table.variations, the matched-
-			 * variation block and Clear/reset move inside ONE Gloskin-owned
-			 * ancestor host instead of relying on hiding each native descendant
-			 * individually. Woo's own found_variation/reset_data handlers only
-			 * ever toggle *their own* elements' inline style -- never a wrapper
-			 * they don't know exists -- so a later Woo-owned inline-style
-			 * mutation on any node now inside `host` cannot reopen it the way it
-			 * could reopen an individually-hidden native descendant. The
-			 * existing per-element hidden/enhanced markers below stay as
-			 * defense-in-depth, not the primary guard. */
 			var host = document.createElement('div');
 			host.setAttribute('data-gloskin-variable-native-host', '');
 			nativeFields.parentNode.insertBefore(host, nativeFields);
@@ -1706,19 +1713,7 @@
 			return { image: galleryImage || null, name: title ? title.textContent.trim() : '', priceHtml: price ? price.innerHTML : '' };
 		}
 
-		/* Converges the PDP quick-add modal's identity block from raw dock-
-		 * identity markup to the SAME richer presentation the catalog Quick
-		 * Add already uses, sourced from existing PDP gallery/summary DOM
-		 * only -- no second identity data owner. Deferred one microtask past
-		 * the trigger click that opened/rendered the modal so it upgrades the
-		 * just-rendered basic identity rather than racing it. */
 		function renderPdpIdentityLikeCatalog() {
-			/* overlay.open() flips `hidden` off synchronously but defers the
-			 * aria-hidden="false" flip to the next animation frame (so the
-			 * CSS transition has a closed frame to start from) -- checking
-			 * aria-hidden here would race that deferral and always read
-			 * "true" one microtask later. `hidden` is the reliable
-			 * synchronous open/closed signal. */
 			if (modal.hidden) { return; }
 			var pdp = body.querySelector('.gloskin-ui1-variable-modal__pdp');
 			var oldIdentity = pdp ? pdp.querySelector('.gloskin-ui1-variable-modal__identity') : null;
@@ -1938,11 +1933,6 @@
 			notifyPdpRequirement(detail.form);
 		});
 
-		/* The visible proxy is a synthetic button, distinct from the native
-		 * submit it delegates to, so it owns no busy state of its own until
-		 * mirrored here. Both a confirmed success and a known failure route
-		 * through Woo's own fragment-refresh lifecycle, so clearing on either
-		 * event always settles the proxy correctly. */
 		if (window.jQuery && document.body) {
 			window.jQuery(document.body).on('added_to_cart.gloskinVariableModal wc_fragment_refresh.gloskinVariableModal', function () {
 				setSubmitProxyBusy(false);
@@ -2307,6 +2297,7 @@
 				applyState(btn, active);
 			}
 			updateBadges();
+			animateCommerceBadgeDelta('wishlist');
 			if (!wasActive && active) { successFeedback('wishlist'); }
 		});
 
@@ -2368,12 +2359,13 @@
 						html += '<span class="gloskin-ui1-wishlist-sheet__item-name">' + escapeHtml(p.name) + '</span>';
 						if (p.price_html) { html += '<span class="gloskin-ui1-wishlist-sheet__item-price">' + p.price_html + '</span>'; }
 						html += '</a>';
-						html += '<button class="gloskin-ui1-wishlist-sheet__item-remove" type="button" data-gloskin-wishlist-toggle="' + p.id + '" aria-label="Hapus ' + escapeHtml(p.name) + '"><span class="gloskin-ui1-icon-remove" aria-hidden="true"></span></button>';
+						html += '<button class="gloskin-ui1-wishlist-sheet__item-remove gloskin-ui1-action-icon gloskin-ui1-action-icon--danger" type="button" data-gloskin-wishlist-toggle="' + p.id + '" aria-label="Hapus ' + escapeHtml(p.name) + '"><span class="gloskin-ui1-icon-remove" aria-hidden="true"></span></button>';
 						html += '</li>';
 					}
 					html += '</ul>';
 					body.innerHTML = html;
 					updateBadges();
+					animateCommerceBadgeDelta('wishlist');
 				})
 				.catch(function () {
 					body.innerHTML = emptyStateMarkup(
@@ -2388,6 +2380,7 @@
 
 		document.addEventListener('gloskin:catalog-updated', syncToggles);
 		syncToggles();
+		commerceBadgeLastRendered.wishlist = readCommerceBadgeCount('wishlist', window);
 	}
 
 	/* -----------------------------------------------------------------
@@ -2525,21 +2518,14 @@
 		}
 	}
 
-	/* -----------------------------------------------------------------
-	 * Utility
-	 * ----------------------------------------------------------------- */
-
 	function escapeHtml(str) {
 		var div = document.createElement('div');
 		div.appendChild(document.createTextNode(str || ''));
 		return div.innerHTML;
 	}
 
-	/* -----------------------------------------------------------------
-	 * Init
-	 * ----------------------------------------------------------------- */
-
 	function init() {
+		initializeCommerceBadgeCounts();
 		initOverlayCloseButtons();
 		initDrawer();
 		initDisclosures();
@@ -2580,6 +2566,9 @@
 			isWooAjaxFormInFlight: isWooAjaxFormInFlight,
 			claimWooAjaxSubmit: claimWooAjaxSubmit,
 			successFeedback: successFeedback,
+			initializeCommerceBadgeCounts: initializeCommerceBadgeCounts,
+			animateCommerceBadgeDelta: animateCommerceBadgeDelta,
+			applyCommerceRemovePresentation: applyCommerceRemovePresentation,
 			showTransientNotice: showTransientNotice,
 			playNoticeSound: playNoticeSound,
 			parseShopCatalogHash: parseShopCatalogHash,

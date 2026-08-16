@@ -1,0 +1,36 @@
+/* Final commerce microinteraction polish. Presentation only: native Woo/localStorage state owners remain unchanged. */
+.gloskin-ui1-action-icon--danger{
+	display:grid;
+	width:38px;
+	height:38px;
+	padding:0;
+	border:1px solid var(--gloskin-accent);
+	border-radius:999px;
+	background:var(--gloskin-accent);
+	color:var(--gloskin-inverse);
+	place-items:center;
+}
+.gloskin-ui1-action-icon--danger:hover{
+	border-color:var(--gloskin-accent-strong);
+	background:var(--gloskin-accent-strong);
+	color:var(--gloskin-inverse);
+}
+
+[data-gloskin-cart-count].is-commerce-badge-added,
+[data-gloskin-wishlist-count].is-commerce-badge-added{
+	transform-origin:center;
+	animation:gloskin-ui1-commerce-badge-added 270ms cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes gloskin-ui1-commerce-badge-added{
+	0%{opacity:.25;transform:translateY(4px) scale(.86)}
+	72%{opacity:1;transform:translateY(0) scale(1.06)}
+	100%{opacity:1;transform:translateY(0) scale(1)}
+}
+
+@media (prefers-reduced-motion:reduce){
+	[data-gloskin-cart-count].is-commerce-badge-added,
+	[data-gloskin-wishlist-count].is-commerce-badge-added{
+		animation:none;
+		transform:none;
+	}
+}
