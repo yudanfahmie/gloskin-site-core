@@ -987,16 +987,20 @@
 	}
 
 	function normalizeAddToCartPayload(formData, submitter) {
-		if (submitter && submitter.name) {
-			formData.append(submitter.name, submitter.value);
-		}
-
 		var variationId = parseInt(formData.get('variation_id'), 10) || 0;
+		var existingProductId = formData.get('product_id');
+		var simpleProductId = !existingProductId && submitter && submitter.name === 'add-to-cart' && submitter.value ? submitter.value : '';
+
+		/* The native Woo button keeps name="add-to-cart" for untouched
+		 * fallback submission. The wc-ajax projection must never carry that
+		 * field, otherwise WC_Form_Handler and WC_AJAX can both mutate the
+		 * cart during the same HTTP request. */
+		formData.delete('add-to-cart');
+
 		if (variationId > 0) {
 			formData.set('product_id', String(variationId));
-		} else if (!formData.get('product_id')) {
-			var simpleProductId = submitter && submitter.name === 'add-to-cart' && submitter.value ? submitter.value : '';
-			if (simpleProductId) { formData.set('product_id', simpleProductId); }
+		} else if (!existingProductId && simpleProductId) {
+			formData.set('product_id', simpleProductId);
 		}
 		return formData;
 	}
@@ -1389,6 +1393,25 @@
 			return group;
 		}
 
+		function renderVariableFields(form, host) {
+			if (!form || !host) { return false; }
+			var selects = attributeSelects(form);
+			if (!allSelectsCanEnhance(selects)) { return false; }
+			var fields = [];
+			for (var i = 0; i < selects.length; i += 1) {
+				var field = document.createElement('div');
+				field.className = 'gloskin-ui1-variable-field';
+				host.appendChild(field);
+				if (!createChipGroup(selects[i], i, field, true)) {
+					fields.forEach(function (created) { created.remove(); });
+					field.remove();
+					return false;
+				}
+				fields.push(field);
+			}
+			return true;
+		}
+
 		function syncChipPresentation(form) {
 			attributeSelects(form).forEach(function (select, index) {
 				var key = ensureSelectKey(select, index);
@@ -1539,23 +1562,16 @@
 			var submit = getNativeSubmit(form);
 			var action = submit ? (submit.closest('.woocommerce-variation-add-to-cart.variations_button') || submit.parentNode) : null;
 			var nativeState = form.querySelector('.woocommerce-variation.single_variation');
-			if (!allSelectsCanEnhance(selects) || !submit || !action || !nativeState || !nativeState.parentNode) { return false; }
+			var nativeFields = form.querySelector('table.variations');
+			if (!allSelectsCanEnhance(selects) || !submit || !action || !nativeState || !nativeState.parentNode || !nativeFields || !nativeFields.parentNode) { return false; }
 
-			var plan = [];
-			for (var i = 0; i < selects.length; i += 1) {
-				var host = selects[i].closest('td') || selects[i].parentNode;
-				if (!host) { return false; }
-				plan.push({ select: selects[i], index: i, host: host });
-			}
-
-			var groups = [];
-			for (var j = 0; j < plan.length; j += 1) {
-				var group = createChipGroup(plan[j].select, plan[j].index, plan[j].host, false);
-				if (!group) {
-					groups.forEach(function (created) { created.remove(); });
-					return false;
-				}
-				groups.push(group);
+			var fields = document.createElement('div');
+			fields.className = 'gloskin-ui1-variable-modal__fields';
+			fields.setAttribute('data-gloskin-variable-fields', '');
+			nativeFields.parentNode.insertBefore(fields, nativeFields);
+			if (!renderVariableFields(form, fields)) {
+				fields.remove();
+				return false;
 			}
 
 			var proxy = action.querySelector('[data-gloskin-variable-submit-proxy]');
@@ -1581,6 +1597,8 @@
 			submit.classList.add('gloskin-ui1-variable-native-submit--enhanced');
 			nativeState.classList.add('gloskin-ui1-variable-native-state--enhanced');
 			nativeState.hidden = true;
+			nativeFields.classList.add('gloskin-ui1-variable-native-fields--enhanced');
+			nativeFields.hidden = true;
 			enhanceQuantityControls(form.querySelector('.quantity'));
 			bindSelectionSync(form);
 			form.classList.add('gloskin-ui1-variable-catalog-enhanced');
@@ -1768,17 +1786,7 @@
 				'</div>';
 
 			var fields = body.querySelector('[data-gloskin-variable-fields]');
-			var selects = attributeSelects(form);
-			var made = 0;
-			if (fields) {
-				selects.forEach(function (select, index) {
-					var field = document.createElement('div');
-					field.className = 'gloskin-ui1-variable-field';
-					fields.appendChild(field);
-					if (createChipGroup(select, index, field, true)) { made += 1; }
-				});
-			}
-			if (!fields || made !== selects.length) {
+			if (!fields || !renderVariableFields(form, fields)) {
 				body.innerHTML = '';
 				return failOpenPdp(form, dock);
 			}
