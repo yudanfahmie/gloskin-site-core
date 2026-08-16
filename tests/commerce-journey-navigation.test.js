@@ -191,9 +191,9 @@ assert.strictEqual(journey.bindJourneyLinks(makeRoot('https://example.test/check
 var source = fs.readFileSync(path.join(__dirname, '../plugin/gloskin-site-core/assets/js/gloskin-ui1-commerce-journey.js'), 'utf8');
 var css = fs.readFileSync(path.join(__dirname, '../plugin/gloskin-site-core/assets/css/gloskin-ui1-commerce-polish.css'), 'utf8');
 assert(source.indexOf("querySelectorAll('[data-gloskin-commerce-progress] a[href]')") !== -1, 'source is explicitly journey-scoped');
-assert(source.indexOf("root.addEventListener('pageshow'") !== -1, 'BFCache recovery is the only new journey-owned global lifecycle listener');
+assert(source.indexOf("root.addEventListener('pageshow'") !== -1, 'BFCache recovery is the only journey-owned global lifecycle listener');
 assert(source.indexOf("event.persisted !== true") !== -1, 'pageshow recovery is gated to genuine BFCache restores');
-assert(source.indexOf('OUTGOING_FAIL_OPEN_MS') !== -1, 'outgoing navigation has a named bounded fail-open boundary');
+assert(source.indexOf('OUTGOING_FAIL_OPEN_MS') !== -1, 'outgoing navigation retains the named bounded fail-open boundary');
 assert(source.indexOf("document.addEventListener('click'") === -1, 'no global anchor interception');
 ['fetch(', 'XMLHttpRequest', 'DOMParser', '.innerHTML', 'history.pushState', 'history.replaceState', 'MutationObserver', 'ResizeObserver', 'setInterval(', 'requestAnimationFrame(', '@view-transition', 'view-transition-name'].forEach(function (forbidden) {
 	assert.strictEqual(source.indexOf(forbidden), -1, 'forbidden fake-SPA/polling/retired transition mechanism absent: ' + forbidden);
@@ -201,21 +201,36 @@ assert(source.indexOf("document.addEventListener('click'") === -1, 'no global an
 assert.strictEqual(source.indexOf('/cart/'), -1, 'Cart route is never hard-coded in production journey JS');
 assert.strictEqual(source.indexOf('/checkout/'), -1, 'Checkout route is never hard-coded in production journey JS');
 
-assert(css.indexOf('body.woocommerce-cart .gloskin-ui1-commerce-native{\n\tposition:relative;') !== -1 || css.indexOf('body.woocommerce-cart .gloskin-ui1-commerce-native,\nbody.woocommerce-checkout .gloskin-ui1-commerce-native{\n\tposition:relative;') !== -1, 'native Woo parent is retained as a geometry-stable commerce stage');
+assert(css.indexOf('body.woocommerce-cart .gloskin-ui1-commerce-native,\nbody.woocommerce-checkout .gloskin-ui1-commerce-native{\n\t--gloskin-commerce-handoff-size:clamp(96px,8vw,116px);') !== -1, 'native Woo parent remains the geometry-stable stage and owns a large responsive loader size');
 assert(css.indexOf('.gloskin-ui1-commerce-native > *') !== -1, 'journey masks rendered Woo child content rather than the parent stage');
 assert(css.indexOf('.gloskin-ui1-commerce-native{\n\topacity:0;') === -1, 'parent commerce stage is never opacity-zero');
-assert(css.indexOf('background:url("../images/favicon-32x32.png")') !== -1, 'handoff reuses the existing lightweight Gloskin favicon asset');
-assert(css.indexOf('gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-native::after') !== -1, 'loader appears for leaving state');
-assert(css.indexOf('gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-native::after') !== -1, 'loader appears for arriving state');
-assert(css.indexOf('opacity:.38;\n\tanimation:gloskin-ui1-commerce-handoff-breathe 920ms ease-in-out infinite;') !== -1, 'loader breathes without ever fully disappearing');
-assert(css.indexOf('50%{opacity:1;transform:translate(-50%,-50%) scale(1.02)}') !== -1, 'breathing loop uses only opacity and transform');
-assert(css.indexOf('transition:opacity 170ms cubic-bezier(.22,1,.36,1);') !== -1, 'Woo content crossfades at the stage boundary');
-assert(css.indexOf('transition:opacity 170ms ease-in-out,transform 170ms ease-in-out;') !== -1, 'favicon crossfades with content instead of flashing on/off');
+assert.strictEqual(css.indexOf('favicon-32x32.png'), -1, 'old favicon is no longer a handoff loader dependency');
+assert.strictEqual(css.indexOf('gloskin-ui1-commerce-handoff-breathe'), -1, 'old favicon breathing choreography is retired');
+assert.strictEqual(css.toLowerCase().indexOf('codepen.io'), -1, 'CodePen is not embedded or loaded at runtime');
+assert.strictEqual(css.indexOf('MYJJrVL'), -1, 'reference identifier is not a runtime dependency');
+assert(css.indexOf('body.woocommerce-cart .gloskin-ui1-commerce-native::before') !== -1 && css.indexOf('body.woocommerce-cart .gloskin-ui1-commerce-native::after') !== -1, 'loader uses only the existing stage pseudo-elements');
+assert(css.indexOf('position:fixed;\n\ttop:50%;\n\tleft:50%;') !== -1, 'loader is fixed and viewport-centered');
+assert(css.indexOf('--gloskin-commerce-handoff-size:clamp(96px,8vw,116px);') !== -1, 'desktop loader footprint is substantially larger than 32px');
+assert(css.indexOf('--gloskin-commerce-handoff-size:clamp(78px,22vw,92px);') !== -1, 'mobile loader footprint stays substantial and responsive');
+['var(--gloskin-accent)', 'var(--gloskin-accent-strong)', 'var(--gloskin-text)', 'var(--gloskin-border)', 'var(--gloskin-inverse)'].forEach(function (token) {
+	assert(css.indexOf(token) !== -1, 'loader stays in the Gloskin token palette: ' + token);
+});
+assert(css.indexOf('gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-native::before') !== -1, 'outer loader appears for leaving state');
+assert(css.indexOf('gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-native::before') !== -1, 'outer loader appears for arriving state');
+assert(css.indexOf('gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-native::after') !== -1, 'core loader appears for leaving state');
+assert(css.indexOf('gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-native::after') !== -1, 'core loader appears for arriving state');
+assert(css.indexOf('animation:gloskin-ui1-commerce-handoff-bloom-outer 1480ms cubic-bezier(.45,0,.25,1) infinite;') !== -1, 'outer bloom loops only while journey state is active');
+assert(css.indexOf('animation:gloskin-ui1-commerce-handoff-bloom-core 1480ms cubic-bezier(.45,0,.25,1) infinite;') !== -1, 'inner bloom loops only while journey state is active');
+assert(css.indexOf('0%,100%{opacity:.34;transform:translate(-50%,-50%) scale(.72)}') !== -1 && css.indexOf('0%,100%{opacity:.92;transform:translate(-50%,-50%) scale(1)}') !== -1, 'active bloom layers never share a zero-opacity frame');
+assert(css.indexOf('opacity:0;\n\tpointer-events:none;\n\ttransform:translate(-50%,-50%) scale(.72);') !== -1, 'loader disappears automatically when journey classes clear');
+assert(css.indexOf('opacity:0;\n\tpointer-events:none;\n}') !== -1, 'Woo content remains masked while active loader is visible');
+assert(css.indexOf('transition:opacity 170ms cubic-bezier(.22,1,.36,1);') !== -1, 'Woo content crossfade remains short and unchanged');
 var reducedCss = css.slice(css.indexOf('@media (prefers-reduced-motion:reduce)'));
-assert(reducedCss.indexOf('animation:none;') !== -1, 'reduced motion disables favicon breathing');
-assert.strictEqual(reducedCss.indexOf('infinite'), -1, 'reduced-motion block contains no infinite animation');
+assert(reducedCss.indexOf('animation:none;') !== -1, 'reduced motion uses static loader frames');
+assert.strictEqual(reducedCss.indexOf('infinite'), -1, 'reduced-motion block contains no repeating loader choreography');
 ['@view-transition', 'view-transition-name'].forEach(function (forbiddenCss) {
 	assert.strictEqual(css.indexOf(forbiddenCss), -1, 'retired View Transition ownership remains absent from CSS: ' + forbiddenCss);
 });
+assert.strictEqual((css.match(/!important/g) || []).length, 0, 'commerce polish adds no !important');
 
 console.log('commerce journey navigation contract passed');
