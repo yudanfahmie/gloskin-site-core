@@ -130,7 +130,7 @@
 	}
 
 	function badgeSelector(type) {
-		return type === 'cart' ? '[data-gloskin-cart-count]' : '[data-glosin-wishlist-count]';
+		return type === 'cart' ? '[data-gloskin-cart-count]' : '[data-gloskin-wishlist-count]';
 	}
 
 	function resolveVisibleTarget(type, runtime) {

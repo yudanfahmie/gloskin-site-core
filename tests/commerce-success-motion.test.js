@@ -48,9 +48,11 @@ function rootFixture(options) {
 	});
 	var hiddenAncestor = { hidden: false, inert: false, parentElement: null, _opacityZero: true };
 	var hiddenCart = node({ left: 800, top: 10, right: 844, bottom: 54, width: 44, height: 44 }, { parentElement: hiddenAncestor });
-	var wishBadge = node({ left: 874, top: 24, right: 892, bottom: 42, width: 18, height: 18 });
+	var wishBadge = node({ left: 874, top: 24, right: 892, bottom: 42, width: 18, height: 18 }, { hidden: !!options.hiddenWishBadge });
+	var wishQuery = {};
+	if (!options.missingWishBadge) { wishQuery['[data-gloskin-wishlist-count]'] = wishBadge; }
 	var wishTrigger = node({ left: 856, top: 10, right: 900, bottom: 54, width: 44, height: 44 }, {
-		query: { '[data-gloskin-wishlist-count]': wishBadge }
+		query: wishQuery
 	});
 	var created = [];
 	var doc = {
@@ -98,7 +100,8 @@ function rootFixture(options) {
 		created: created,
 		bodyChildren: bodyChildren,
 		cartBadge: cartBadge,
-		wishBadge: wishBadge
+		wishBadge: wishBadge,
+		wishTrigger: wishTrigger
 	};
 	return root;
 }
@@ -108,6 +111,20 @@ var visibleRoot = rootFixture({ hiddenFirst: true });
 var target = motion.resolveVisibleTarget('cart', visibleRoot);
 assert(target, 'visible cart target resolved');
 assert.strictEqual(target.node, visibleRoot.cartBadge, 'visible badge is the destination, hidden duplicate ignored');
+
+var wishlistTarget = motion.resolveVisibleTarget('wishlist', visibleRoot);
+assert(wishlistTarget, 'visible wishlist target resolved');
+assert.strictEqual(wishlistTarget.node, visibleRoot.wishBadge, 'visible Wishlist badge is the exact destination');
+
+var missingWishlistRoot = rootFixture({ missingWishBadge: true });
+var missingWishlistTarget = motion.resolveVisibleTarget('wishlist', missingWishlistRoot);
+assert(missingWishlistTarget, 'Wishlist trigger resolves when badge is absent');
+assert.strictEqual(missingWishlistTarget.node, missingWishlistRoot.wishTrigger, 'missing Wishlist badge falls back to visible Wishlist trigger');
+
+var hiddenWishlistRoot = rootFixture({ hiddenWishBadge: true });
+var hiddenWishlistTarget = motion.resolveVisibleTarget('wishlist', hiddenWishlistRoot);
+assert(hiddenWishlistTarget, 'Wishlist trigger resolves when badge is hidden');
+assert.strictEqual(hiddenWishlistTarget.node, hiddenWishlistRoot.wishTrigger, 'hidden Wishlist badge falls back to visible Wishlist trigger');
 
 // Dynamic source/target geometry + decorative transient node + cleanup.
 var source = node({ left: 120, top: 520, right: 164, bottom: 564, width: 44, height: 44 });
@@ -165,6 +182,8 @@ assert(sourceText.indexOf('getBoundingClientRect') !== -1, 'source/target geomet
 assert(sourceText.indexOf('position:fixed') === -1, 'layout styling stays in CSS, not duplicated in JS');
 assert(sourceText.indexOf('added_to_cart.gloskinCommerceMotion') !== -1, 'Cart travel binds only to confirmed Woo added_to_cart');
 assert(sourceText.indexOf("confirmedSuccess('wishlist'") !== -1 && sourceText.indexOf("getAttribute('aria-pressed') === 'true'") !== -1, 'Wishlist travel verifies post-owner active state before confirmed success');
+assert(sourceText.indexOf("'[data-gloskin-wishlist-count]'") !== -1, 'motion source uses the canonical Wishlist badge selector');
+assert.strictEqual(sourceText.indexOf('[data-glosin-wishlist-count]'), -1, 'misspelled Wishlist badge selector cannot recur silently');
 assert.strictEqual(sourceText.indexOf('preventDefault('), -1, 'motion module never intercepts commerce clicks');
 
 var cssText = fs.readFileSync(path.join(__dirname, '../plugin/gloskin-site-core/assets/css/gloskin-ui1-commerce-polish.css'), 'utf8');
