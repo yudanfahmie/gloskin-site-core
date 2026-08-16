@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Static Cart/Checkout heading presentation/responsive smoke.
+
+This intentionally uses page.set_content(); it validates geometry, focus,
+reduced-motion, and absence of View Transition ownership only. It is not a
+document-navigation, Woo hydration, network-delay, or production UAT test.
+"""
 from pathlib import Path
 import base64
 from playwright.sync_api import sync_playwright
@@ -34,6 +40,12 @@ with sync_playwright() as p:
     page = browser.new_page(viewport={'width': 1440, 'height': 900})
     page.set_content(html, wait_until='load')
     page.evaluate('document.fonts && document.fonts.ready')
+    transition_owners = page.evaluate('''() => ({
+      heading:getComputedStyle(document.querySelector('.gloskin-ui1-commerce-progress')).viewTransitionName,
+      commerce:getComputedStyle(document.querySelector('.gloskin-ui1-commerce-native')).viewTransitionName
+    })''')
+    assert transition_owners['heading'] in ('none', ''), transition_owners
+    assert transition_owners['commerce'] in ('none', ''), transition_owners
     desktop_size = None
     mobile_size = None
     for width in widths:
@@ -74,4 +86,4 @@ with sync_playwright() as p:
     reduced.close()
     browser.close()
 
-print('commerce progress heading browser smoke passed')
+print('commerce progress heading presentation/responsive smoke passed')

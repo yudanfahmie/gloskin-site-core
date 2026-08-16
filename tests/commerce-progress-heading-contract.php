@@ -90,9 +90,6 @@ $required_css = array(
 	'font-size:clamp(1.75rem,8.2vw,2.8rem)',
 	'@media (max-width:430px)',
 	'font-size:clamp(1.4rem,7.3vw,2rem)',
-	'view-transition-name:gloskin-commerce-progress',
-	'view-transition-name:gloskin-commerce-content',
-	'::view-transition-old(root),::view-transition-new(root){animation:none}',
 	'@media (prefers-reduced-motion:reduce)',
 );
 foreach ( $required_css as $needle ) {
@@ -105,18 +102,27 @@ if ( preg_match( '/gloskin-ui1-commerce-progress__connector\{[^}]*width:\s*[0-9]
 	fail_contract( 'connector width must not be hard-coded in pixels' );
 }
 if ( false !== strpos( $css, '!important' ) ) { fail_contract( 'new commerce polish !important is forbidden' ); }
-if ( preg_match( '/::view-transition-(?:old|new)\(gloskin-commerce-content\)[^}]*animation:[^;}]*(?:width|height)/s', $css ) ) {
-	fail_contract( 'view transition must not animate layout geometry' );
+foreach ( array(
+	'view-transition-name:',
+	'::view-transition-old(',
+	'::view-transition-new(',
+	'gloskin-commerce-content',
+	'gloskin-commerce-progress-out',
+	'gloskin-commerce-progress-in',
+) as $forbidden_transition ) {
+	if ( false !== strpos( $css, $forbidden_transition ) ) {
+		fail_contract( "cross-document transition ownership must be absent: {$forbidden_transition}" );
+	}
 }
-
-if ( false === strpos( $css, 'body.woocommerce-cart .gloskin-ui1-commerce-native' ) || false === strpos( $css, 'body.woocommerce-checkout .gloskin-ui1-commerce-native' ) ) {
-	fail_contract( 'commerce content transition owner must stay scoped to Cart/Checkout' );
+if ( false !== strpos( $css, '.gloskin-ui1-commerce-native' ) ) {
+	fail_contract( 'dynamic Woo commerce area must not be a journey transition owner' );
 }
 
 $asset = (string) file_get_contents( $asset_path );
-if ( 1 !== substr_count( $asset, '@view-transition{navigation:auto;}' ) ) { fail_contract( 'expected one native cross-document opt-in' ); }
-if ( false === strpos( $asset, "function_exists( 'is_cart' ) && is_cart()" ) || false === strpos( $asset, "function_exists( 'is_checkout' ) && is_checkout()" ) ) {
-	fail_contract( 'view-transition opt-in must be scoped to Cart/Checkout' );
+foreach ( array( '@view-transition', 'maybe_enable_commerce_journey_view_transition', 'wp_add_inline_style' ) as $forbidden_transition ) {
+	if ( false !== strpos( $asset, $forbidden_transition ) ) {
+		fail_contract( "native cross-document View Transition opt-in must be absent: {$forbidden_transition}" );
+	}
 }
 foreach ( array( 'pushState', 'MutationObserver', 'ResizeObserver', 'setInterval(', 'fetch(' ) as $forbidden ) {
 	if ( false !== strpos( $source . $css . $asset, $forbidden ) ) {

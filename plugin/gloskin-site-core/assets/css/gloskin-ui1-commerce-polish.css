@@ -39,7 +39,6 @@
 	align-items:center;
 	gap:clamp(14px,2vw,28px);
 	width:100%;
-	view-transition-name:gloskin-commerce-progress;
 }
 .gloskin-ui1-commerce-progress__step{
 	min-width:0;
@@ -99,18 +98,10 @@
 	transform-origin:left center;
 }
 .gloskin-ui1-commerce-progress--checkout .gloskin-ui1-commerce-progress__connector-progress{transform:scaleX(1)}
-body.woocommerce-cart .gloskin-ui1-commerce-native,
-body.woocommerce-checkout .gloskin-ui1-commerce-native{view-transition-name:gloskin-commerce-content}
-
-::view-transition-old(root),::view-transition-new(root){animation:none}
-::view-transition-old(gloskin-commerce-progress){animation:gloskin-commerce-progress-out 280ms cubic-bezier(.22,1,.36,1) both}
-::view-transition-new(gloskin-commerce-progress){animation:gloskin-commerce-progress-in 280ms cubic-bezier(.22,1,.36,1) both}
-::view-transition-old(gloskin-commerce-content){animation:gloskin-commerce-content-out 320ms cubic-bezier(.22,1,.36,1) both}
-::view-transition-new(gloskin-commerce-content){animation:gloskin-commerce-content-in 320ms cubic-bezier(.22,1,.36,1) both}
-@keyframes gloskin-commerce-progress-out{to{opacity:.84}}
-@keyframes gloskin-commerce-progress-in{from{opacity:.84}}
-@keyframes gloskin-commerce-content-out{to{opacity:0;transform:translateX(-18px)}}
-@keyframes gloskin-commerce-content-in{from{opacity:0;transform:translateX(18px)}}
+/* Cross-document View Transition ownership is intentionally absent here.
+   Cart/Checkout continue through native Woo document navigation, so neither
+   the large journey text nor Woo Blocks' dynamic application area is ever
+   snapshotted by this presentation layer. */
 
 @media (max-width:760px){
 	.gloskin-ui1-commerce-heading--journey{padding:clamp(30px,6vw,46px) 0 24px}
@@ -137,8 +128,4 @@ body.woocommerce-checkout .gloskin-ui1-commerce-native{view-transition-name:glos
 	.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step{
 		transition:none;
 	}
-	::view-transition-old(gloskin-commerce-progress),
-	::view-transition-new(gloskin-commerce-progress),
-	::view-transition-old(gloskin-commerce-content),
-	::view-transition-new(gloskin-commerce-content){animation:none}
 }

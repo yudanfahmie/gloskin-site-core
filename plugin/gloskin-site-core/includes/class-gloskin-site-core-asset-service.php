@@ -90,26 +90,7 @@ final class Gloskin_Site_Core_Asset_Service {
 		}
 
 		$this->enqueue_native_commerce_scripts();
-		$this->maybe_enable_commerce_journey_view_transition();
 		$this->maybe_enqueue_treatment_consultation();
-	}
-
-	/**
-	 * Progressive enhancement for the Cart <-> Checkout editorial journey.
-	 * Both documents must opt in for native cross-document View Transitions;
-	 * keeping the rule conditional here prevents unrelated site navigation
-	 * from inheriting a document-level transition merely because the shared
-	 * commerce polish stylesheet also serves header badge/remove surfaces.
-	 *
-	 * @return void
-	 */
-	private function maybe_enable_commerce_journey_view_transition() {
-		$is_cart     = function_exists( 'is_cart' ) && is_cart();
-		$is_checkout = function_exists( 'is_checkout' ) && is_checkout();
-		if ( ( ! $is_cart && ! $is_checkout ) || ! function_exists( 'wp_add_inline_style' ) ) {
-			return;
-		}
-		wp_add_inline_style( 'gloskin-ui1-commerce-polish', '@view-transition{navigation:auto;}' );
 	}
 
 	/**
