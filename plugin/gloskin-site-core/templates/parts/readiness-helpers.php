@@ -222,21 +222,61 @@ if ( ! function_exists( 'gloskin_ui1_render_breadcrumbs' ) ) {
 	}
 }
 
+if ( ! function_exists( 'gloskin_ui1_render_commerce_progress_heading' ) ) {
+	/**
+	 * Render the shared Cart <-> Checkout editorial heading/navigation.
+	 * WooCommerce owns both canonical destinations and every commerce state;
+	 * this helper only decides which semantic title is the current page.
+	 *
+	 * @param string $active Active journey step: cart or checkout.
+	 * @return void
+	 */
+	function gloskin_ui1_render_commerce_progress_heading( $active ) {
+		$active = sanitize_key( (string) $active );
+		if ( ! in_array( $active, array( 'cart', 'checkout' ), true )
+			|| ! function_exists( 'wc_get_cart_url' )
+			|| ! function_exists( 'wc_get_checkout_url' ) ) {
+			return;
+		}
+
+		$cart_url     = (string) wc_get_cart_url();
+		$checkout_url = (string) wc_get_checkout_url();
+		if ( '' === $cart_url || '' === $checkout_url ) {
+			return;
+		}
+
+		echo '<header class="gloskin-ui1-commerce-heading gloskin-ui1-commerce-heading--journey"><div class="gloskin-ui1-container">';
+		echo '<nav class="gloskin-ui1-commerce-progress gloskin-ui1-commerce-progress--' . esc_attr( $active ) . '" aria-label="' . esc_attr__( 'Tahapan belanja', 'gloskin-site-core' ) . '" data-gloskin-commerce-progress>';
+		if ( 'cart' === $active ) {
+			echo '<h1 class="gloskin-ui1-commerce-progress__step gloskin-ui1-commerce-progress__step--cart is-active" aria-current="page">' . esc_html__( 'Keranjang', 'gloskin-site-core' ) . '</h1>';
+		} else {
+			echo '<a class="gloskin-ui1-commerce-progress__step gloskin-ui1-commerce-progress__step--cart" href="' . esc_url( $cart_url ) . '">' . esc_html__( 'Keranjang', 'gloskin-site-core' ) . '</a>';
+		}
+		echo '<span class="gloskin-ui1-commerce-progress__connector" aria-hidden="true"><span class="gloskin-ui1-commerce-progress__connector-progress"></span></span>';
+		if ( 'checkout' === $active ) {
+			echo '<h1 class="gloskin-ui1-commerce-progress__step gloskin-ui1-commerce-progress__step--checkout is-active" aria-current="page">' . esc_html__( 'Checkout', 'gloskin-site-core' ) . '</h1>';
+		} else {
+			echo '<a class="gloskin-ui1-commerce-progress__step gloskin-ui1-commerce-progress__step--checkout" href="' . esc_url( $checkout_url ) . '">' . esc_html__( 'Checkout', 'gloskin-site-core' ) . '</a>';
+		}
+		echo '</nav></div></header>';
+	}
+}
+
 if ( ! function_exists( 'gloskin_ui1_render_commerce_page_heading' ) ) {
 	/** Render the single page H1 for cart/checkout/account shortcode or block routes. */
 	function gloskin_ui1_render_commerce_page_heading() {
-		$label = '';
 		if ( function_exists( 'is_cart' ) && is_cart() ) {
-			$label = __( 'Keranjang', 'gloskin-site-core' );
-		} elseif ( function_exists( 'is_checkout' ) && is_checkout() ) {
-			$label = __( 'Checkout', 'gloskin-site-core' );
-		} elseif ( function_exists( 'is_account_page' ) && is_account_page() ) {
-			$label = __( 'Akun', 'gloskin-site-core' );
-		}
-		if ( '' === $label ) {
+			gloskin_ui1_render_commerce_progress_heading( 'cart' );
 			return;
 		}
-		echo '<header class="gloskin-ui1-commerce-heading"><div class="gloskin-ui1-container"><h1>' . esc_html( $label ) . '</h1></div></header>';
+		if ( function_exists( 'is_checkout' ) && is_checkout() ) {
+			gloskin_ui1_render_commerce_progress_heading( 'checkout' );
+			return;
+		}
+		if ( ! function_exists( 'is_account_page' ) || ! is_account_page() ) {
+			return;
+		}
+		echo '<header class="gloskin-ui1-commerce-heading"><div class="gloskin-ui1-container"><h1>' . esc_html__( 'Akun', 'gloskin-site-core' ) . '</h1></div></header>';
 	}
 }
 

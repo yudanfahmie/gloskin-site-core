@@ -27,10 +27,118 @@
 	100%{opacity:1;transform:translateY(0) scale(1)}
 }
 
+/* Cart <-> Checkout editorial journey heading. Woo remains the sole route,
+   session, form, validation, shipping and payment owner; this layer is only
+   semantic navigation and presentation. */
+.gloskin-ui1-commerce-heading--journey{
+	padding:clamp(38px,6vw,72px) 0 clamp(26px,4vw,42px);
+}
+.gloskin-ui1-commerce-progress{
+	display:grid;
+	grid-template-columns:max-content minmax(44px,1fr) max-content;
+	align-items:center;
+	gap:clamp(14px,2vw,28px);
+	width:100%;
+	view-transition-name:gloskin-commerce-progress;
+}
+.gloskin-ui1-commerce-progress__step{
+	min-width:0;
+	margin:0;
+	font-family:var(--gloskin-font-heading);
+	font-size:clamp(2.7rem,5vw,4.6rem);
+	font-weight:400;
+	line-height:1;
+	letter-spacing:-.035em;
+	white-space:nowrap;
+	color:var(--gloskin-text);
+}
+.gloskin-ui1-commerce-progress__step--cart{justify-self:start;text-align:left}
+.gloskin-ui1-commerce-progress__step--checkout{justify-self:end;text-align:right}
+.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step{
+	display:inline-flex;
+	min-height:44px;
+	align-items:center;
+	opacity:.26;
+	text-decoration:none;
+	transition:opacity 220ms cubic-bezier(.22,1,.36,1),transform 220ms cubic-bezier(.22,1,.36,1);
+}
+.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step:hover,
+.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step:focus-visible{
+	opacity:.56;
+}
+.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step:hover{
+	transform:translateY(-1px);
+}
+.gloskin-ui1-commerce-progress__step.is-active{opacity:1}
+.gloskin-ui1-commerce-progress__connector{
+	position:relative;
+	display:block;
+	width:100%;
+	min-width:0;
+	height:1px;
+	background:color-mix(in srgb,var(--gloskin-border) 82%,transparent);
+}
+.gloskin-ui1-commerce-progress__connector::before,
+.gloskin-ui1-commerce-progress__connector::after{
+	position:absolute;
+	top:50%;
+	width:4px;
+	height:4px;
+	border-radius:999px;
+	background:var(--gloskin-border);
+	content:"";
+	transform:translateY(-50%);
+}
+.gloskin-ui1-commerce-progress__connector::before{left:0}
+.gloskin-ui1-commerce-progress__connector::after{right:0}
+.gloskin-ui1-commerce-progress__connector-progress{
+	position:absolute;
+	inset:0;
+	background:var(--gloskin-accent);
+	transform:scaleX(0);
+	transform-origin:left center;
+}
+.gloskin-ui1-commerce-progress--checkout .gloskin-ui1-commerce-progress__connector-progress{transform:scaleX(1)}
+body.woocommerce-cart .gloskin-ui1-commerce-native,
+body.woocommerce-checkout .gloskin-ui1-commerce-native{view-transition-name:gloskin-commerce-content}
+
+::view-transition-old(root),::view-transition-new(root){animation:none}
+::view-transition-old(gloskin-commerce-progress){animation:gloskin-commerce-progress-out 280ms cubic-bezier(.22,1,.36,1) both}
+::view-transition-new(gloskin-commerce-progress){animation:gloskin-commerce-progress-in 280ms cubic-bezier(.22,1,.36,1) both}
+::view-transition-old(gloskin-commerce-content){animation:gloskin-commerce-content-out 320ms cubic-bezier(.22,1,.36,1) both}
+::view-transition-new(gloskin-commerce-content){animation:gloskin-commerce-content-in 320ms cubic-bezier(.22,1,.36,1) both}
+@keyframes gloskin-commerce-progress-out{to{opacity:.84}}
+@keyframes gloskin-commerce-progress-in{from{opacity:.84}}
+@keyframes gloskin-commerce-content-out{to{opacity:0;transform:translateX(-18px)}}
+@keyframes gloskin-commerce-content-in{from{opacity:0;transform:translateX(18px)}}
+
+@media (max-width:760px){
+	.gloskin-ui1-commerce-heading--journey{padding:clamp(30px,6vw,46px) 0 24px}
+	.gloskin-ui1-commerce-progress{
+		grid-template-columns:max-content minmax(24px,1fr) max-content;
+		gap:10px;
+	}
+	.gloskin-ui1-commerce-progress__step{font-size:clamp(1.75rem,8.2vw,2.8rem)}
+}
+@media (max-width:430px){
+	.gloskin-ui1-commerce-progress{
+		grid-template-columns:max-content minmax(16px,1fr) max-content;
+		gap:6px;
+	}
+	.gloskin-ui1-commerce-progress__step{font-size:clamp(1.4rem,7.3vw,2rem)}
+}
+
 @media (prefers-reduced-motion:reduce){
 	[data-gloskin-cart-count].is-commerce-badge-added,
 	[data-gloskin-wishlist-count].is-commerce-badge-added{
 		animation:none;
 		transform:none;
 	}
+	.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step{
+		transition:none;
+	}
+	::view-transition-old(gloskin-commerce-progress),
+	::view-transition-new(gloskin-commerce-progress),
+	::view-transition-old(gloskin-commerce-content),
+	::view-transition-new(gloskin-commerce-content){animation:none}
 }

@@ -16,6 +16,7 @@ php tests/sample-product-woo-missing.php
 ./tests/purchase-dock-controller-contract.sh
 ./tests/single-product-ghost-space-contract.sh
 ./tests/micro-interactions-contract.sh
+php tests/commerce-progress-heading-contract.php
 php tests/single-product-guard-contract.php
 php tests/single-product-description-boundary-contract.php
 node tests/single-product-ajax-payload.test.js
@@ -65,6 +66,7 @@ if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/nu
   python tests/readiness-browser-smoke.py
   python tests/quick-add-browser-smoke.py
   python tests/commerce-closure-browser-smoke.py
+  python tests/commerce-progress-heading-browser-smoke.py
   python tests/variable-commerce-hardening-browser-smoke.py
   python tests/shop-catalog-browser-smoke.py
   python tests/public-rest-get-browser-smoke.py
