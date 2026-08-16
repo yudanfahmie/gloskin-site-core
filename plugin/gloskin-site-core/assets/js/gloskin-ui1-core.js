@@ -1072,6 +1072,99 @@
 		return true;
 	}
 
+	/* One canonical ownership bridge for every Gloskin-owned native cart
+	 * form. Different forms remain independent, while repeat click/Enter/
+	 * proxy/requestSubmit cannot start a second POST until the first request
+	 * deterministically settles. */
+	var wooAjaxInFlightForms = typeof WeakSet === 'function' ? new WeakSet() : null;
+	var wooAjaxBoundForms = typeof WeakSet === 'function' ? new WeakSet() : null;
+
+	function isWooAjaxFormInFlight(form) {
+		if (!form) { return false; }
+		return wooAjaxInFlightForms ? wooAjaxInFlightForms.has(form) : form.getAttribute('data-gloskin-ajax-in-flight') === '1';
+	}
+
+	function setWooAjaxFormInFlight(form, busy) {
+		if (!form) { return; }
+		if (wooAjaxInFlightForms) {
+			if (busy) { wooAjaxInFlightForms.add(form); }
+			else { wooAjaxInFlightForms.delete(form); }
+			return;
+		}
+		if (busy) { form.setAttribute('data-gloskin-ajax-in-flight', '1'); }
+		else { form.removeAttribute('data-gloskin-ajax-in-flight'); }
+	}
+
+	function claimWooAjaxSubmit(event, form, lifecycleFactory) {
+		if (!event || !form) { return false; }
+		if (form.getAttribute('data-gloskin-ajax-bypass') === '1') {
+			form.removeAttribute('data-gloskin-ajax-bypass');
+			return false;
+		}
+
+		var submitter = resolveWooSubmitter(form, event);
+		if (isWooAjaxFormInFlight(form) || isWooSubmitBusy(submitter)) {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			return true;
+		}
+		if (!shouldInterceptWooSubmit(form, submitter) || !hasWooAjaxBridge()) {
+			return false;
+		}
+
+		/* From this point this submit belongs to the canonical Gloskin AJAX
+		 * owner. Stop the SAME event before any delegated Woo/plugin mutation
+		 * handler can see it. */
+		event.preventDefault();
+		event.stopImmediatePropagation();
+
+		var lifecycle = typeof lifecycleFactory === 'function' ? (lifecycleFactory(submitter) || {}) : {};
+		var originalSuccess = lifecycle.onSuccess;
+		var originalFailure = lifecycle.onFailure;
+		setWooAjaxFormInFlight(form, true);
+
+		var claimed = ajaxAddToCart(form, submitter, {
+			redirectOnError: lifecycle.redirectOnError,
+			onSuccess: function (response) {
+				setWooAjaxFormInFlight(form, false);
+				if (typeof originalSuccess === 'function') { originalSuccess(response); }
+			},
+			onFailure: function (response, error) {
+				setWooAjaxFormInFlight(form, false);
+				if (typeof originalFailure === 'function') { originalFailure(response, error); }
+			}
+		});
+
+		/* ajaxAddToCart() returns false only before POST dispatch. Once it has
+		 * returned true, every later failure stays on the AJAX lifecycle and is
+		 * never replayed through native submission. */
+		if (!claimed) {
+			setWooAjaxFormInFlight(form, false);
+			nativeFallbackSubmit(form, submitter);
+		}
+		return true;
+	}
+
+	function bindWooAjaxSubmitOwner(form, lifecycleFactory) {
+		if (!form) { return false; }
+		if ((wooAjaxBoundForms && wooAjaxBoundForms.has(form)) || form.getAttribute('data-gloskin-ajax-owner-bound') === '1') {
+			return true;
+		}
+		form.setAttribute('data-gloskin-ajax-owner-bound', '1');
+		if (wooAjaxBoundForms) { wooAjaxBoundForms.add(form); }
+
+		var button = form.querySelector('.single_add_to_cart_button');
+		if (button && button.getAttribute('data-gloskin-ajax-click-owner') !== '1') {
+			button.setAttribute('data-gloskin-ajax-click-owner', '1');
+			button.addEventListener('click', function (event) { event.stopPropagation(); });
+		}
+
+		form.addEventListener('submit', function (event) {
+			claimWooAjaxSubmit(event, form, lifecycleFactory);
+		});
+		return true;
+	}
+
 	/* -----------------------------------------------------------------
 	 * SP-003 -- Single product page: progressive AJAX add-to-cart.
 	 * ----------------------------------------------------------------- */
@@ -1080,43 +1173,10 @@
 		if (!document.body.classList.contains('single-product')) { return; }
 		var form = document.querySelector('[data-gloskin-purchase-dock] form.cart');
 		if (!form || !isSupportedSingleProductAjaxForm(form)) { return; }
-
-		var button = form.querySelector('.single_add_to_cart_button');
-		if (button) {
-			/* The native button must still perform its default submit
-			 * activation, but a delegated document-level click mutation
-			 * handler must not run in parallel with the canonical
-			 * form-submit bridge below. Stopping bubbling at the SAME
-			 * button leaves its default form action intact and adds no
-			 * mutation path. */
-			button.addEventListener('click', function (event) { event.stopPropagation(); });
-		}
-
-		form.addEventListener('submit', function (event) {
-			if (form.getAttribute('data-gloskin-ajax-bypass') === '1') {
-				form.removeAttribute('data-gloskin-ajax-bypass');
-				return;
-			}
-			var submitter = resolveWooSubmitter(form, event);
-			if (isWooSubmitBusy(submitter)) {
-				event.preventDefault();
-				return;
-			}
-			if (!shouldInterceptWooSubmit(form, submitter) || !hasWooAjaxBridge()) {
-				return;
-			}
-			event.preventDefault();
-			if (!ajaxAddToCart(form, submitter, {
+		bindWooAjaxSubmitOwner(form, function (submitter) {
+			return {
 				onSuccess: function () { handleSingleProductAddToCartSuccess(submitter); }
-			})) {
-				nativeFallbackSubmit(form, submitter);
-			} else {
-				/* Already claimed: stop this SAME submit event from reaching
-				 * a second delegated Woo/plugin submit handler further up
-				 * the DOM. Never replay after POST dispatch -- ajaxAddToCart()
-				 * has already started it. */
-				event.stopImmediatePropagation();
-			}
+			};
 		});
 	}
 
@@ -1376,22 +1436,33 @@
 			if (summary) { dismissActionSpotlight(); }
 		}
 
+		function syncVariableStatePresentation(form, target) {
+			if (!target) { return; }
+			target.innerHTML = '';
+			var nativeState = form ? form.querySelector('.woocommerce-variation.single_variation') : null;
+			if (!nativeState) { return; }
+			['.woocommerce-variation-price', '.woocommerce-variation-availability'].forEach(function (selector) {
+				var node = nativeState.querySelector(selector);
+				if (node) { target.appendChild(node.cloneNode(true)); }
+			});
+		}
+
 		function syncModalPresentation(form) {
 			if (!form) { return; }
 			syncChipPresentation(form);
 			syncPdpTrigger(form);
 			var catalogAction = form.querySelector('.woocommerce-variation-add-to-cart.variations_button');
 			if (catalogAction) { catalogAction.classList.toggle('is-quantity-hidden', quantityHiddenByWoo(form)); }
+			var stateTarget = form.querySelector('[data-gloskin-variable-state]');
 			if ('pdp' === currentMode && currentForm === form) {
 				var actions = body.querySelector('[data-gloskin-variable-actions]');
 				if (actions) { actions.classList.toggle('is-quantity-hidden', quantityHiddenByWoo(form)); }
 				var qtyValue = body.querySelector('[data-gloskin-variable-qty-value]');
 				var input = getNativeQuantityInput(form);
 				if (qtyValue && input) { qtyValue.textContent = input.value; }
-				var state = body.querySelector('[data-gloskin-variable-state]');
-				var nativeState = form.querySelector('.woocommerce-variation.single_variation');
-				if (state && nativeState) { state.innerHTML = nativeState.innerHTML; }
+				stateTarget = body.querySelector('[data-gloskin-variable-state]');
 			}
+			syncVariableStatePresentation(form, stateTarget);
 		}
 
 		function bindSelectionSync(form) {
@@ -1413,30 +1484,9 @@
 		}
 
 		function bindForm(form) {
-			if (!form.classList.contains('variations_form') || !hasWooVariationRuntime()) { return; }
+			if (!form.classList.contains('variations_form') || !hasWooVariationRuntime()) { return false; }
 			window.jQuery(form).wc_variation_form();
-			if ('1' === form.dataset.gloskinQuickaddSubmit) { return; }
-			form.dataset.gloskinQuickaddSubmit = '1';
-			form.addEventListener('submit', function (event) {
-				if (form.getAttribute('data-gloskin-ajax-bypass') === '1') {
-					form.removeAttribute('data-gloskin-ajax-bypass');
-					return;
-				}
-				var submitter = resolveWooSubmitter(form, event);
-				if (isWooSubmitBusy(submitter)) {
-					event.preventDefault();
-					return;
-				}
-				if (!shouldInterceptWooSubmit(form, submitter) || !hasWooAjaxBridge()) { return; }
-				event.preventDefault();
-				clearMutationStatus();
-				if (!ajaxAddToCart(form, submitter, {
-					redirectOnError: false,
-					onFailure: function (response) { renderMutationError(response); }
-				})) {
-					nativeFallbackSubmit(form, submitter);
-				}
-			});
+			return true;
 		}
 
 		function unresolvedSelect(form) {
@@ -1469,7 +1519,7 @@
 			 * it; a repeat proxy click while that claim is in flight must not
 			 * dispatch a second submit -- only re-affirm the SAME visible
 			 * busy/loading presentation the proxy already carries. */
-			if (submit && submit.getAttribute('aria-busy') === 'true') { return; }
+			if (submit && (submit.getAttribute('aria-busy') === 'true' || isWooAjaxFormInFlight(form))) { return; }
 			var unresolved = unresolvedSelect(form);
 			if (unresolved) {
 				showTransientNotice('Pilih varian terlebih dahulu.', { tone: true });
@@ -1488,7 +1538,8 @@
 			var selects = attributeSelects(form);
 			var submit = getNativeSubmit(form);
 			var action = submit ? (submit.closest('.woocommerce-variation-add-to-cart.variations_button') || submit.parentNode) : null;
-			if (!allSelectsCanEnhance(selects) || !submit || !action) { return false; }
+			var nativeState = form.querySelector('.woocommerce-variation.single_variation');
+			if (!allSelectsCanEnhance(selects) || !submit || !action || !nativeState || !nativeState.parentNode) { return false; }
 
 			var plan = [];
 			for (var i = 0; i < selects.length; i += 1) {
@@ -1517,14 +1568,34 @@
 				action.appendChild(proxy);
 			}
 
+			var stateTarget = form.querySelector('[data-gloskin-variable-state]');
+			if (!stateTarget) {
+				stateTarget = document.createElement('div');
+				stateTarget.className = 'gloskin-ui1-variable-modal__variation-state';
+				stateTarget.setAttribute('data-gloskin-variable-state', '');
+				nativeState.insertAdjacentElement('afterend', stateTarget);
+			}
+
 			selects.forEach(function (select) { select.classList.add('gloskin-ui1-variable-select--enhanced'); });
 			submit.textContent = 'Tambahkan ke keranjang';
 			submit.classList.add('gloskin-ui1-variable-native-submit--enhanced');
+			nativeState.classList.add('gloskin-ui1-variable-native-state--enhanced');
+			nativeState.hidden = true;
 			enhanceQuantityControls(form.querySelector('.quantity'));
 			bindSelectionSync(form);
-			syncModalPresentation(form);
 			form.classList.add('gloskin-ui1-variable-catalog-enhanced');
+			syncModalPresentation(form);
 			return true;
+		}
+
+		function bindCatalogMutationOwner(form) {
+			return bindWooAjaxSubmitOwner(form, function () {
+				clearMutationStatus();
+				return {
+					redirectOnError: false,
+					onFailure: function (response) { renderMutationError(response); }
+				};
+			});
 		}
 
 		function render(data) {
@@ -1542,8 +1613,9 @@
 			var form = body.querySelector('form.cart');
 			if (form) {
 				currentForm = form;
-				bindForm(form);
-				addCatalogPresentation(form);
+				if (bindForm(form) && addCatalogPresentation(form)) {
+					bindCatalogMutationOwner(form);
+				}
 			}
 		}
 
@@ -2468,6 +2540,8 @@
 			dispatchWooAddedToCart: dispatchWooAddedToCart,
 			handleWooAddToCartResponse: handleWooAddToCartResponse,
 			isWooSubmitBusy: isWooSubmitBusy,
+			isWooAjaxFormInFlight: isWooAjaxFormInFlight,
+			claimWooAjaxSubmit: claimWooAjaxSubmit,
 			successFeedback: successFeedback,
 			showTransientNotice: showTransientNotice,
 			playNoticeSound: playNoticeSound,

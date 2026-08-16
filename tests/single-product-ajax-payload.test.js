@@ -16,7 +16,9 @@ const {
   hasWooNativeAddToCartRuntime,
   dispatchWooAddedToCart,
   handleWooAddToCartResponse,
-  isWooSubmitBusy
+  isWooSubmitBusy,
+  isWooAjaxFormInFlight,
+  claimWooAjaxSubmit
 } = require(corePath);
 
 function classList(names) {
@@ -114,6 +116,8 @@ assert.strictEqual(shouldInterceptWooSubmit(simpleForm, submitter('101', { class
 // Busy state is an explicit duplicate-submit guard while the POST is in flight.
 assert.strictEqual(isWooSubmitBusy({ getAttribute: (name) => name === 'aria-busy' ? 'true' : null }), true, 'aria-busy=true must block repeat submission');
 assert.strictEqual(isWooSubmitBusy({ getAttribute: () => 'false' }), false, 'aria-busy=false must not block a later user submission');
+assert.strictEqual(typeof isWooAjaxFormInFlight, 'function', 'shared per-form in-flight guard must be exported for regression coverage');
+assert.strictEqual(typeof claimWooAjaxSubmit, 'function', 'canonical submit claim helper must be exported for regression coverage');
 
 // Unsupported Woo product roots must never enter the custom single-product AJAX bridge.
 for (const type of ['product-type-grouped', 'product-type-external', 'product-type-affiliate', 'product-type-custom']) {
@@ -213,42 +217,53 @@ assert.deepStrictEqual(quickBusyOps, [['remove', 'aria-busy']], 'Quick Add Woo e
 assert.deepStrictEqual(quickErrorLifecycle.events, ['wc_fragment_refresh'], 'Quick Add error may only reconcile fragments non-mutatively');
 
 // Once ajaxAddToCart has reached fetch(), no catch path may replay the same
-// mutation through requestSubmit/native fallback. Pre-dispatch callers still
-// retain nativeFallbackSubmit when ajaxAddToCart returns false.
+// mutation through requestSubmit/native fallback. The one canonical claim
+// helper owns the only pre-dispatch fallback path.
 const ajaxStart = coreSource.indexOf('function ajaxAddToCart(form, submitter)');
-const ajaxEnd = coreSource.indexOf('/* -----------------------------------------------------------------\n\t * SP-003', ajaxStart);
+const ajaxEnd = coreSource.indexOf('/* One canonical ownership bridge', ajaxStart);
 assert(ajaxStart >= 0 && ajaxEnd > ajaxStart, 'ajaxAddToCart source block must be locatable');
 const ajaxSource = coreSource.slice(ajaxStart, ajaxEnd);
 assert(!ajaxSource.includes('nativeFallbackSubmit(form, submitter)'), 'post-dispatch AJAX failure must never replay add-to-cart through native submission');
 assert(ajaxSource.includes('clearWooSubmitBusy(submitter)'), 'post-dispatch failures must clear aria-busy');
 assert(ajaxSource.includes('requestWooFragmentRefresh()'), 'post-dispatch ambiguity may reconcile visible cart state non-mutatively');
 assert(ajaxSource.includes('notifyFailure(null, error)'), 'post-dispatch failure must expose a recoverable lifecycle callback');
-assert(coreSource.includes('if (!ajaxAddToCart(form, submitter, {\n\t\t\t\tonSuccess: function () { handleSingleProductAddToCartSuccess(submitter); }\n\t\t\t})) {\n\t\t\t\tnativeFallbackSubmit(form, submitter);'), 'pre-dispatch payload/runtime failure must retain native fallback');
+
+const claimStart = coreSource.indexOf('function claimWooAjaxSubmit(event, form, lifecycleFactory)');
+const claimEnd = coreSource.indexOf('function bindWooAjaxSubmitOwner(', claimStart);
+assert(claimStart >= 0 && claimEnd > claimStart, 'canonical submit claim source block must be locatable');
+const claimSource = coreSource.slice(claimStart, claimEnd);
+const bridgeGate = claimSource.indexOf('if (!shouldInterceptWooSubmit(form, submitter) || !hasWooAjaxBridge())');
+const interceptPrevent = claimSource.indexOf('event.preventDefault();', bridgeGate);
+assert(bridgeGate >= 0 && interceptPrevent > bridgeGate, 'unavailable Woo bridge must return before interception so native submission remains authoritative');
+assert(claimSource.includes('isWooAjaxFormInFlight(form) || isWooSubmitBusy(submitter)'), 'canonical submit claim must block repeats while pending');
+assert(claimSource.includes('event.stopImmediatePropagation();'), 'claimed submit must not escape to delegated mutation owners');
+assert(claimSource.includes('if (!claimed)') && claimSource.includes('nativeFallbackSubmit(form, submitter);'), 'pre-dispatch payload/runtime failure must retain exactly one native fallback');
 
 const singleStart = coreSource.indexOf('function initSingleProductAjax()');
 const singleEnd = coreSource.indexOf('/* -----------------------------------------------------------------\n\t * SP-004', singleStart);
 const singleSource = coreSource.slice(singleStart, singleEnd);
-const bridgeGate = singleSource.indexOf('if (!shouldInterceptWooSubmit(form, submitter) || !hasWooAjaxBridge())');
-const interceptPrevent = singleSource.indexOf('event.preventDefault();', bridgeGate);
-assert(bridgeGate >= 0 && interceptPrevent > bridgeGate, 'unavailable Woo bridge must return before the AJAX interception preventDefault so native submission remains authoritative');
-assert(singleSource.includes('if (isWooSubmitBusy(submitter))'), 'single-product AJAX must prevent accidental repeat submission while busy');
+assert(singleSource.includes('bindWooAjaxSubmitOwner(form, function (submitter)'), 'PDP simple/variable must bind the one canonical submit owner');
 
 // Quick Add dispatch is no longer treated as success. The modal remains open
 // until dispatchWooAddedToCart emits Woo's actual added_to_cart lifecycle;
 // initCart then switches to Cart through the one existing overlay controller.
 const quickStart = coreSource.indexOf('function initQuickAdd()');
-const quickEnd = coreSource.indexOf('/* -----------------------------------------------------------------\n\t * Wishlist', quickStart);
+const quickEnd = coreSource.indexOf('/* -----------------------------------------------------------------\n\t * Shop catalog', quickStart);
 assert(quickStart >= 0 && quickEnd > quickStart, 'Quick Add source block must be locatable');
 const quickSource = coreSource.slice(quickStart, quickEnd);
 assert(!quickSource.includes('if (ajaxAddToCart(form, submitter)) {\n\t\t\t\toverlay.close();'), 'Quick Add must not close merely because AJAX was dispatched');
 assert(!quickSource.includes('overlay.close();'), 'Quick Add must not own a competing success overlay transition');
 assert(quickSource.includes('redirectOnError: false'), 'Quick Add must preserve user context on Woo error response');
 assert(quickSource.includes('onFailure: function (response) { renderMutationError(response); }'), 'Quick Add must render post-dispatch recovery without replay');
-assert(quickSource.includes('if (isWooSubmitBusy(submitter))'), 'Quick Add must prevent accidental repeat submission while busy');
+assert(quickSource.includes('isWooAjaxFormInFlight(form)'), 'Quick Add proxy must honor the shared per-form in-flight guard');
+assert(quickSource.includes('bindCatalogMutationOwner(form)'), 'Catalog Quick Add must bind the same canonical submit owner only after enhancement succeeds');
 assert(quickSource.includes("open(productId, trigger.getAttribute('href') || '')"), 'Quick Add recovery must retain the triggering canonical product URL');
 assert(quickSource.includes("open(relatedProductId, relatedTrigger.getAttribute('href') || '')"), 'Related Products must feed the same Quick Add recovery URL/controller');
 assert(quickSource.includes('data-gloskin-quickadd-status'), 'Quick Add must expose an in-dialog recovery/status region');
 assert(quickSource.includes('Lihat Produk'), 'Quick Add recovery must offer a real product-detail action when available');
+assert(quickSource.includes("['.woocommerce-variation-price', '.woocommerce-variation-availability']"), 'Quick Add/PDP variation state must use the canonical allowlist');
+assert(!quickSource.includes('.woocommerce-variation-description'), 'variation description must never be projected into the reusable modal state');
+assert(!quickSource.includes('state.innerHTML = nativeState.innerHTML'), 'arbitrary Woo variation-state innerHTML mirror must be absent');
 
 const cartStart = coreSource.indexOf('function initCart()');
 const cartEnd = coreSource.indexOf('/* -----------------------------------------------------------------\n\t * SP-003/SP-004', cartStart);
