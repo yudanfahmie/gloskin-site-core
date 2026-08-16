@@ -203,7 +203,7 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1-cart-sheet__item-name{font-weight:600;color:var(--gloskin-text)}
 .gloskin-ui1-cart-sheet__item-variation{font-size:.82rem;color:var(--gloskin-muted)}
 .gloskin-ui1-cart-sheet__item-meta{font-size:.88rem;color:var(--gloskin-muted)}
-.gloskin-ui1-cart-sheet__item-remove{align-self:start;font-size:1.1rem;line-height:1;text-decoration:none;text-align:center}
+.gloskin-ui1-cart-sheet__item-remove{align-self:start;text-decoration:none}
 /* Pending row while Woo's own .remove_from_cart_button AJAX request is in
  * flight (see initCart() in gloskin-ui1-core.js). Row dimensions are
  * preserved -- only content is dimmed/hidden under a restrained shimmer, the
@@ -230,7 +230,7 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1-wishlist-sheet__item-link{text-decoration:none;display:grid;gap:2px}
 .gloskin-ui1-wishlist-sheet__item-name{font-weight:600;color:var(--gloskin-text)}
 .gloskin-ui1-wishlist-sheet__item-price{font-size:.88rem;color:var(--gloskin-accent-readable);font-weight:700}
-.gloskin-ui1-wishlist-sheet__item-remove{align-self:center;font-size:1.1rem}
+.gloskin-ui1-wishlist-sheet__item-remove{align-self:center}
 .gloskin-ui1-wishlist-sheet__empty{display:grid;gap:12px;padding:40px 0;text-align:center;color:var(--gloskin-muted)}
 .gloskin-ui1-wishlist-sheet__empty .gloskin-ui1-text-link{justify-self:center}
 .gloskin-ui1-wishlist-sheet__error{color:var(--gloskin-muted);text-align:center;padding:28px 0}
@@ -289,6 +289,14 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1-action-icon:hover,.gloskin-ui1-sheet__close:hover,.gloskin-ui1-quickadd__close:hover,.gloskin-ui1-search-overlay__clear:hover,.gloskin-ui1-drawer__close:hover,.gloskin-ui1-cart-sheet__item-remove:hover,.gloskin-ui1-wishlist-sheet__item-remove:hover{border-color:color-mix(in srgb,var(--gloskin-accent) 36%,var(--gloskin-field-border));background:var(--gloskin-surface);color:var(--gloskin-accent-strong)}
 .gloskin-ui1-search-overlay__clear,.gloskin-ui1-cart-sheet__item-remove,.gloskin-ui1-wishlist-sheet__item-remove{width:28px;height:28px;border:0;background:var(--gloskin-surface-strong);color:var(--gloskin-muted)}
 .gloskin-ui1-action-icon:focus-visible,.gloskin-ui1-sheet__close:focus-visible,.gloskin-ui1-quickadd__close:focus-visible,.gloskin-ui1-search-overlay__clear:focus-visible,.gloskin-ui1-drawer__close:focus-visible,.gloskin-ui1-cart-sheet__item-remove:focus-visible,.gloskin-ui1-wishlist-sheet__item-remove:focus-visible{outline:3px solid var(--gloskin-accent-readable);outline-offset:2px}
+
+/* ONE remove-icon primitive, shared by the PHP-rendered Mini-cart line item
+   remove control and the JS-rendered Wishlist sheet remove control -- same
+   28x28 action container above, same optical center via place-items:center,
+   same vector. A single CSS mask backed by one fixed SVG (gloskin-ui1-core-
+   base.css :root tokens) avoids duplicating literal SVG path strings across
+   PHP and JS. Zero font-glyph dependency. */
+.gloskin-ui1-icon-remove{display:block;width:16px;height:16px;background-color:currentColor;-webkit-mask:var(--gloskin-icon-remove) center/contain no-repeat;mask:var(--gloskin-icon-remove) center/contain no-repeat}
 
 /* Search cancel is the shared secondary action; captured native Woo Auth
    submits use the shared primary action tokens. */
@@ -501,6 +509,21 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.ca
 .gloskin-ui1 button.single_add_to_cart_button.loading::after,
 .gloskin-ui1 button.single_add_to_cart_button[aria-busy="true"]::after{content:"";position:absolute;top:50%;right:14px;width:15px;height:15px;margin-top:-8px;border:2px solid currentColor;border-right-color:transparent;border-radius:999px;background:none;font-family:inherit;animation:gloskin-atc-spin 650ms linear infinite}
 @keyframes gloskin-atc-spin{to{transform:rotate(360deg)}}
+/* ONE presentation icon primitive for every first-party DIRECT cart-mutation
+ * CTA (Shop/Skincare-category card, PDP Purchase Dock native submit, native
+ * variable fail-open submit). Scoped to product_type_simple only so Pilih
+ * Varian/Beli Sekarang/Lihat Produk never gain this icon. The plus lives on
+ * ::before, the existing spinner above stays on ::after, so idle and loading
+ * can never render both icons at once; the plus is suppressed the moment the
+ * SAME .loading/[aria-busy="true"] markers used by the spinner apply. */
+.gloskin-ui1 a.add_to_cart_button.product_type_simple,
+.gloskin-ui1 button.single_add_to_cart_button{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.gloskin-ui1 a.add_to_cart_button.product_type_simple::before,
+.gloskin-ui1 button.single_add_to_cart_button::before{content:"";flex:0 0 15px;width:15px;height:15px;background-color:currentColor;-webkit-mask:var(--gloskin-icon-plus) center/contain no-repeat;mask:var(--gloskin-icon-plus) center/contain no-repeat}
+.gloskin-ui1 a.add_to_cart_button.loading::before,
+.gloskin-ui1 a.add_to_cart_button[aria-busy="true"]::before,
+.gloskin-ui1 button.single_add_to_cart_button.loading::before,
+.gloskin-ui1 button.single_add_to_cart_button[aria-busy="true"]::before{content:none}
 /* CTA color ownership: the Gloskin Form/Action Kit stays the ONE owner of
  * every purchase CTA color (and, since the storefront/PDP refinement pass,
  * radius). The generic `.woocommerce button.button` base rule

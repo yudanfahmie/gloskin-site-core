@@ -78,6 +78,21 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 	}
 
 	/**
+	 * ONE canonical semantic label for every visible first-party DIRECT
+	 * cart-mutation CTA (native single/loop Add to Cart text, the normalized
+	 * product projection's add_to_cart_text, and the JS Variable Modal proxy
+	 * via gloskinData.cartCtaLabel). Product-type-specific navigation actions
+	 * (Pilih Varian/Beli Sekarang/Lihat Produk/View Cart/Checkout) and
+	 * external/custom product semantics never read from this method -- they
+	 * keep their own existing wording untouched.
+	 *
+	 * @return string
+	 */
+	public function direct_cart_cta_label() {
+		return __( 'Keranjang', 'gloskin-site-core' );
+	}
+
+	/**
 	 * Normalize the native single-product CTA only when it semantically means
 	 * a direct cart mutation. External/custom product actions keep their own
 	 * product-type-specific wording. The adapter is frontend-only because the
@@ -94,7 +109,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 		if ( ! $product->is_type( array( 'simple', 'variable', 'grouped' ) ) ) {
 			return $text;
 		}
-		return __( 'Tambahkan ke keranjang', 'gloskin-site-core' );
+		return $this->direct_cart_cta_label();
 	}
 
 	/**
@@ -115,7 +130,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 			|| ! $product->is_purchasable() || ! $product->is_in_stock() ) {
 			return $text;
 		}
-		return __( 'Tambahkan ke keranjang', 'gloskin-site-core' );
+		return $this->direct_cart_cta_label();
 	}
 
 	/**
@@ -663,7 +678,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 					 * never runs a second cart-mutation request for this. */
 					/* translators: %s: cart line item's product name, used in the remove link's accessible label. */
 					$item_remove_label = sprintf( __( 'Hapus %s', 'gloskin-site-core' ), $item['name'] );
-					echo '<a href="' . esc_url( $item['remove_url'] ) . '" class="remove remove_from_cart_button gloskin-ui1-cart-sheet__item-remove" aria-label="' . esc_attr( $item_remove_label ) . '" data-product_id="' . esc_attr( $item['product_id'] ) . '" data-cart_item_key="' . esc_attr( $item['key'] ) . '" data-product_sku="">&times;</a>';
+					echo '<a href="' . esc_url( $item['remove_url'] ) . '" class="remove remove_from_cart_button gloskin-ui1-cart-sheet__item-remove" aria-label="' . esc_attr( $item_remove_label ) . '" data-product_id="' . esc_attr( $item['product_id'] ) . '" data-cart_item_key="' . esc_attr( $item['key'] ) . '" data-product_sku=""><span class="gloskin-ui1-icon-remove" aria-hidden="true"></span></a>';
 				}
 				echo '</li>';
 			}
@@ -1286,7 +1301,7 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 				'sku'                     => (string) $product->get_sku(),
 				'type'                    => method_exists( $product, 'get_type' ) ? (string) $product->get_type() : 'simple',
 				'add_to_cart_url'         => (string) $product->add_to_cart_url(),
-				'add_to_cart_text'        => __( 'Tambahkan ke keranjang', 'gloskin-site-core' ),
+				'add_to_cart_text'        => $this->direct_cart_cta_label(),
 				'add_to_cart_description' => method_exists( $product, 'add_to_cart_description' ) ? wp_strip_all_tags( (string) $product->add_to_cart_description() ) : '',
 				'purchasable'             => $purchasable,
 				'in_stock'                => $in_stock,

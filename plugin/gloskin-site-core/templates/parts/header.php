@@ -164,5 +164,6 @@ if ( ! function_exists( 'gloskin_ui1_render_nav_tree' ) ) {
 	'cartUrl'        => $gloskin_woo ? esc_url( $gloskin_commerce['cart_url'] ) : '',
 	'checkoutUrl'    => $gloskin_woo ? esc_url( $gloskin_commerce['checkout_url'] ) : '',
 	'addToCartAjaxUrl' => $gloskin_woo && ! empty( $gloskin_commerce['add_to_cart_ajax_url'] ) ? esc_url_raw( $gloskin_commerce['add_to_cart_ajax_url'] ) : '',
+	'cartCtaLabel'   => $gloskin_woo && ! empty( $gloskin_commerce['cart_cta_label'] ) ? (string) $gloskin_commerce['cart_cta_label'] : '',
 ) ); ?>;</script>
 <?php require __DIR__ . '/mobile-drawer.php'; ?>

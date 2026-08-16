@@ -83,10 +83,11 @@ catalog_start = quickadd_js.index("\t\tfunction addCatalogPresentation(form) {")
 catalog_end = quickadd_js.index("\n\t\tfunction render(data)", catalog_start)
 catalog_js = quickadd_js[catalog_start:catalog_end]
 preflight_idx = catalog_js.index("!allSelectsCanEnhance(selects)")
-create_idx = catalog_js.index("createChipGroup(")
+create_idx = catalog_js.index("renderVariableFields(form, fields)")
 hide_idx = catalog_js.index("select.classList.add('gloskin-ui1-variable-select--enhanced')")
-require(preflight_idx < create_idx < hide_idx, "catalog must preflight every select and build every chip group before hiding native selects")
-require("groups.forEach(function (created) { created.remove(); });" in catalog_js, "catalog partial chip build must roll back presentation groups")
+require(preflight_idx < create_idx < hide_idx, "catalog must preflight every select and build every chip group (via the shared renderer) before hiding native selects")
+require("if (!renderVariableFields(form, fields)) {" in catalog_js and "fields.remove();" in catalog_js and "return false;" in catalog_js, "catalog partial chip build must fail open through the shared renderer")
+require("fields.forEach(function (created) { created.remove(); });" in quickadd_js, "shared renderer must roll back presentation groups on partial build")
 
 # Visible CTA is a non-mutating proxy; the native Woo button remains state owner.
 require("data-gloskin-variable-submit-proxy" in quickadd_js, "always-active modal CTA proxy missing")
@@ -104,8 +105,12 @@ for forbidden in (
     require(forbidden not in quickadd_js, f"Woo variation/submit authority must not be overridden: {forbidden}")
 
 # Existing mutation bridge remains the one path; PDP presentation never fetches a second form.
-require("ajaxAddToCart(form, submitter" in quickadd_js, "catalog must retain the existing AJAX bridge")
-require("nativeFallbackSubmit(form, submitter)" in quickadd_js, "catalog native fallback must remain")
+# ajaxAddToCart/nativeFallbackSubmit now live in the shared top-level claimWooAjaxSubmit
+# owner (core_js), reused by both initSingleProductAjax and Catalog's bindCatalogMutationOwner
+# -- checked against the whole file so ONE owner keeps serving both surfaces.
+require("ajaxAddToCart(form, submitter" in core_js, "catalog must retain the existing AJAX bridge")
+require("nativeFallbackSubmit(form, submitter)" in core_js, "catalog native fallback must remain")
+require("bindWooAjaxSubmitOwner(form, function () {" in quickadd_js, "catalog must reuse the SAME shared AJAX submit owner, not a second one")
 render_pdp_start = quickadd_js.index("\t\tfunction renderPdp(form, dock) {")
 render_pdp_end = quickadd_js.index("\n\t\tfunction notifyPdpRequirement", render_pdp_start)
 render_pdp = quickadd_js[render_pdp_start:render_pdp_end]
@@ -114,7 +119,7 @@ for forbidden in ("<form", "form.cart", "variations_form", "variation_id", "type
     require(forbidden not in render_pdp, f"PDP modal presentation must not contain a second native Woo control: {forbidden}")
 require("data-gloskin-variable-qty-value" in render_pdp, "PDP quantity proxy must be presentation-only text/buttons")
 require("getNativeQuantityInput(currentForm)" in quickadd_js, "PDP quantity proxy must write the existing native qty")
-require("made !== selects.length" in render_pdp and "return failOpenPdp(form, dock);" in render_pdp, "PDP presentation build failure must roll back to native Woo")
+require("!renderVariableFields(form, fields)" in render_pdp and "return failOpenPdp(form, dock);" in render_pdp, "PDP presentation build failure must roll back to native Woo")
 
 # PDP progressive enhancement requires one existing native form, all valid selects,
 # and commits its hiding class/trigger only after that preflight succeeds.
@@ -134,7 +139,7 @@ fail_end = quickadd_js.index("\n\t\tfunction preparePdp", fail_start)
 fail_js = quickadd_js[fail_start:fail_end]
 require("form.classList.remove('gloskin-ui1-variable-pdp-enhanced')" in fail_js, "PDP fail-open must reveal native variation controls")
 require("trigger.remove();" in fail_js, "PDP fail-open must remove broken Pilih Varian shell")
-require("selectedSummary(form) || 'Pilih Varian'" in quickadd_js, "PDP trigger copy must derive from native select state")
+require("var summary = selectedSummary(form);" in quickadd_js and "trigger.textContent = summary || 'Pilih Varian';" in quickadd_js, "PDP trigger copy must derive from native select state")
 
 # Toast/audio: one region, embedded short tone, no external request or stacking framework.
 require("function showTransientNotice(message, options)" in core_js, "reusable transient notice owner missing")

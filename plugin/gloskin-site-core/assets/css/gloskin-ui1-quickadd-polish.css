@@ -147,6 +147,10 @@
 	width:100%;
 	min-height:46px;
 	margin:0;
+	display:inline-flex;
+	align-items:center;
+	justify-content:center;
+	gap:8px;
 	border:1px solid var(--gloskin-accent);
 	border-radius:var(--gloskin-radius-control,10px);
 	background:var(--gloskin-accent);
@@ -160,18 +164,25 @@
 .gloskin-ui1-variable-modal__cta:focus-visible{
 	filter:brightness(.96);
 }
-.gloskin-ui1-variable-modal__cta.is-loading{
-	display:inline-flex;
-	align-items:center;
-	justify-content:center;
-	gap:8px;
-	pointer-events:none;
-}
-.gloskin-ui1-variable-modal__cta.is-loading::before{
+/* Idle: the shared plus-icon primitive. Loading: the SAME ::before swaps to
+   the existing canonical ring spinner -- one pseudo-element, one owner, so
+   idle and loading icons can never render at the same time. */
+.gloskin-ui1-variable-modal__cta::before{
 	content:"";
 	flex:0 0 15px;
 	width:15px;
 	height:15px;
+	background-color:currentColor;
+	-webkit-mask:var(--gloskin-icon-plus) center/contain no-repeat;
+	mask:var(--gloskin-icon-plus) center/contain no-repeat;
+}
+.gloskin-ui1-variable-modal__cta.is-loading{
+	pointer-events:none;
+}
+.gloskin-ui1-variable-modal__cta.is-loading::before{
+	background-color:transparent;
+	-webkit-mask:none;
+	mask:none;
 	border:2px solid currentColor;
 	border-right-color:transparent;
 	border-radius:999px;

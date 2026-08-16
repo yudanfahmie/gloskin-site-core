@@ -43,6 +43,16 @@
 		return { method: 'GET', credentials: 'same-origin' };
 	}
 
+	/* ONE canonical semantic label for every visible first-party DIRECT
+	 * cart-mutation CTA JS ever sets a proxy/native-fallback label from.
+	 * Sourced from the SAME server-side label owner (Gloskin_Site_Core_
+	 * WooCommerce_Adapter::direct_cart_cta_label()) via gloskinData.cartCtaLabel
+	 * -- this file never hard-codes the wording a second time. */
+	function cartCtaLabel() {
+		var config = window.gloskinData || {};
+		return config.cartCtaLabel || 'Keranjang';
+	}
+
 	/* -----------------------------------------------------------------
 	 * Shared confirmed-success feedback. Presentation only: callers invoke
 	 * this after their existing state owner has completed a real mutation
@@ -1580,7 +1590,7 @@
 				proxy.type = 'button';
 				proxy.className = 'gloskin-ui1-variable-modal__cta';
 				proxy.setAttribute('data-gloskin-variable-submit-proxy', '');
-				proxy.textContent = 'Tambahkan ke keranjang';
+				proxy.textContent = cartCtaLabel();
 				action.appendChild(proxy);
 			}
 
@@ -1592,13 +1602,32 @@
 				nativeState.insertAdjacentElement('afterend', stateTarget);
 			}
 
+			/* NATIVE WOO FORM = state engine only. table.variations, the matched-
+			 * variation block and Clear/reset move inside ONE Gloskin-owned
+			 * ancestor host instead of relying on hiding each native descendant
+			 * individually. Woo's own found_variation/reset_data handlers only
+			 * ever toggle *their own* elements' inline style -- never a wrapper
+			 * they don't know exists -- so a later Woo-owned inline-style
+			 * mutation on any node now inside `host` cannot reopen it the way it
+			 * could reopen an individually-hidden native descendant. The
+			 * existing per-element hidden/enhanced markers below stay as
+			 * defense-in-depth, not the primary guard. */
+			var host = document.createElement('div');
+			host.setAttribute('data-gloskin-variable-native-host', '');
+			nativeFields.parentNode.insertBefore(host, nativeFields);
+			host.appendChild(nativeFields);
+			host.appendChild(nativeState);
+			var resetLink = form.querySelector('.reset_variations');
+			if (resetLink) { host.appendChild(resetLink); }
+
 			selects.forEach(function (select) { select.classList.add('gloskin-ui1-variable-select--enhanced'); });
-			submit.textContent = 'Tambahkan ke keranjang';
+			submit.textContent = cartCtaLabel();
 			submit.classList.add('gloskin-ui1-variable-native-submit--enhanced');
 			nativeState.classList.add('gloskin-ui1-variable-native-state--enhanced');
 			nativeState.hidden = true;
 			nativeFields.classList.add('gloskin-ui1-variable-native-fields--enhanced');
 			nativeFields.hidden = true;
+			host.hidden = true;
 			enhanceQuantityControls(form.querySelector('.quantity'));
 			bindSelectionSync(form);
 			form.classList.add('gloskin-ui1-variable-catalog-enhanced');
@@ -1808,7 +1837,7 @@
 			proxy.type = 'button';
 			proxy.className = 'gloskin-ui1-variable-modal__cta';
 			proxy.setAttribute('data-gloskin-variable-submit-proxy', '');
-			proxy.textContent = 'Tambahkan ke keranjang';
+			proxy.textContent = cartCtaLabel();
 			actions.appendChild(proxy);
 			syncModalPresentation(form);
 			return true;
@@ -2339,7 +2368,7 @@
 						html += '<span class="gloskin-ui1-wishlist-sheet__item-name">' + escapeHtml(p.name) + '</span>';
 						if (p.price_html) { html += '<span class="gloskin-ui1-wishlist-sheet__item-price">' + p.price_html + '</span>'; }
 						html += '</a>';
-						html += '<button class="gloskin-ui1-wishlist-sheet__item-remove" type="button" data-gloskin-wishlist-toggle="' + p.id + '" aria-label="Hapus ' + escapeHtml(p.name) + '">&times;</button>';
+						html += '<button class="gloskin-ui1-wishlist-sheet__item-remove" type="button" data-gloskin-wishlist-toggle="' + p.id + '" aria-label="Hapus ' + escapeHtml(p.name) + '"><span class="gloskin-ui1-icon-remove" aria-hidden="true"></span></button>';
 						html += '</li>';
 					}
 					html += '</ul>';

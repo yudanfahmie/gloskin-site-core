@@ -570,6 +570,7 @@ final class Gloskin_Site_Core_Template_Service {
 			'mini_cart'            => $this->woocommerce->render_mini_cart_body(),
 			'quick_auth'           => $this->woocommerce->should_render_quick_auth(),
 			'add_to_cart_ajax_url' => $this->woocommerce->add_to_cart_ajax_url(),
+			'cart_cta_label'       => $this->woocommerce->direct_cart_cta_label(),
 		);
 	}
 

@@ -27,7 +27,7 @@ def section(source, start, end):
     return source[start_at:end_at]
 
 
-renderer = section(js, "function renderVariableFields(form, host)", "function syncChipPresentation(form)")
+renderer = section(js, "function createChipGroup(select, index, host, includeHeading)", "function syncChipPresentation(form)")
 catalog = section(js, "function addCatalogPresentation(form)", "function bindCatalogMutationOwner(form)")
 pdp = section(js, "function renderPdp(form, dock)", "function notifyPdpRequirement(form)")
 pdp_identity = section(js, "function renderPdpIdentityLikeCatalog()", "function failOpenPdp(form, dock)")
@@ -85,5 +85,20 @@ require("woocommerce-product-gallery__wrapper" not in geometry, "gallery spacing
 # No specificity debt or new runtime owner is allowed for this convergence pass.
 require("!important" not in geometry and "!important" not in polish, "presentation convergence must add zero !important")
 require("variable-modal-presentation-convergence-contract.py" in runner, "focused convergence contract must run through tests/check-runtime.sh")
+
+# Catalog native form = ONE hidden state host. Woo's own found_variation/
+# reset_data handlers only ever toggle inline style on elements THEY own
+# (table.variations/.reset_variations/the matched-variation block) -- moving
+# those into one Gloskin-owned ancestor and hiding THAT ancestor means a later
+# Woo-owned inline-style mutation on any of them can never reopen a visible
+# leak, unlike hiding each native descendant individually.
+require("host.setAttribute('data-gloskin-variable-native-host', '');" in catalog, "Catalog must own exactly one native state host ancestor")
+require("host.appendChild(nativeFields);" in catalog and "host.appendChild(nativeState);" in catalog, "Catalog must move the leak-prone native table/state under the host, not merely hide them in place")
+require("host.hidden = true;" in catalog, "Catalog native host must be the primary hidden-state guard")
+require(catalog.count("data-gloskin-variable-native-host") == 1, "Catalog must create exactly one native host per enhancement")
+host_idx = catalog.index("var host = document.createElement('div');")
+host_hide_idx = catalog.index("host.hidden = true;")
+require(host_idx < host_hide_idx, "native host must exist before it is hidden")
+require("nativeFields.parentNode.insertBefore(host, nativeFields);" in catalog, "native host must be inserted as a REAL DOM ancestor inside the SAME form, not a detached wrapper")
 
 print("variable-modal-presentation-convergence-contract: OK")

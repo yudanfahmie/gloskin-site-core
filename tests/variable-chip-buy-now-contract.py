@@ -59,7 +59,8 @@ require("localStorage" not in quick and "sessionStorage" not in quick, "variable
 catalog_start = quick.index("function addCatalogPresentation(form)")
 catalog_end = quick.index("function render(data)", catalog_start)
 catalog = quick[catalog_start:catalog_end]
-require("groups.forEach(function (created) { created.remove(); });" in catalog, "catalog enhancement must remain transactional/fail-open")
+require("if (!renderVariableFields(form, fields)) {" in catalog, "catalog enhancement must remain transactional/fail-open via the shared renderer")
+require("fields.forEach(function (created) { created.remove(); });" in quick, "shared renderer must roll back partially built chip groups")
 require("form.classList.add('gloskin-ui1-variable-catalog-enhanced');" in catalog, "successful catalog enhancement flag missing")
 
 proxy_start = quick.index("function setSubmitProxyBusy(busy)")
@@ -78,7 +79,7 @@ require("gloskin-ui1-commerce-closure" not in assets, "commerce closure asset re
 require("function renderSingleProductViewCartLink" not in core, "PDP View Cart create-then-delete choreography must not exist")
 require("wc-forward" not in core, "core must never create a PDP added_to_cart forward link")
 
-submit_owner_start = core.index("function initSingleProductAjax()")
+submit_owner_start = core.index("function claimWooAjaxSubmit(event, form, lifecycleFactory)")
 submit_owner_end = core.index("function handleSingleProductAddToCartSuccess", submit_owner_start)
 submit_owner = core[submit_owner_start:submit_owner_end]
 for forbidden in (
