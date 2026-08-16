@@ -21,6 +21,9 @@ const productHelpers = read('plugin/gloskin-site-core/templates/parts/template-h
 for (const forbidden of ['localStorage', 'sessionStorage', 'document.cookie', 'XMLHttpRequest', 'fetch(']) {
   expect(!frontend.includes(forbidden), `Finder persistence/network contract violated by ${forbidden}`);
 }
+for (const motionRuntime of ['requestAnimationFrame(', 'setInterval(', 'setTimeout(']) {
+  expect(!frontend.includes(motionRuntime), `Treatment path motion must remain CSS-only: ${motionRuntime}`);
+}
 for (const obsolete of ['fisherYates', 'eligibleQuestionsForPath', 'state.questions', 'state.history', 'state.scores', 'data-gloskin-consultation-question', 'data-gloskin-consultation-back', 'data-gloskin-consultation-restart']) {
   expect(!frontend.includes(obsolete), `Public questionnaire runtime must be absent: ${obsolete}`);
 }
@@ -81,7 +84,32 @@ expect(frontendCss.includes('@media (max-width:720px)') && frontendCss.includes(
 expect(frontendCss.includes('-webkit-line-clamp:3'), 'Result copy must clamp without an internal scrollbar');
 expect(!/overflow\s*:\s*(auto|scroll)/.test(frontendCss), 'Finder CSS must contain no internal auto/scroll overflow');
 expect(!frontendCss.includes('!important'), 'Finder CSS must contain no !important rules');
-expect(frontendCss.includes('width:clamp(150px,15vw,176px)') && frontendCss.includes('border-radius:50%'), 'Desktop paths must use circular 150-180px photo controls');
+
+// Treatment Finder path-media presentation: one circular clipping owner,
+// explicit cover behavior for direct/fallback media, CSS-only async breath,
+// and source-level responsive guards down to 320px.
+expect(frontendCss.includes('grid-template-columns:repeat(4,minmax(0,1fr))'), 'Treatment paths must remain four columns above the mobile breakpoint');
+expect(frontendCss.includes('width:min(100%,clamp(176px,17vw,208px))'), 'Desktop path circles must scale up to at least 208px while respecting their grid track');
+expect(/\.gloskin-ui1-consultation__path-media\{[\s\S]*?overflow:hidden;[\s\S]*?aspect-ratio:1;[\s\S]*?border-radius:50%;[\s\S]*?\}/.test(frontendCss), 'Path media must remain the circular 1:1 clipping owner');
+expect(/\.gloskin-ui1-consultation__path-image\{[\s\S]*?object-fit:cover;[\s\S]*?object-position:center;[\s\S]*?\}/.test(frontendCss), 'Direct Treatment path image must use centered cover cropping');
+expect(frontendCss.includes('.gloskin-ui1-consultation__path-media>.gloskin-ui1-media{') && /\.gloskin-ui1-consultation__path-image,\n\.gloskin-ui1-consultation__path-media>\.gloskin-ui1-media\{[\s\S]*?display:block;[\s\S]*?overflow:hidden;[\s\S]*?width:100%;[\s\S]*?height:100%;[\s\S]*?\}/.test(frontendCss), 'Fallback media root must fill and remain clipped inside the circle');
+expect(frontendCss.includes('.gloskin-ui1-consultation__path-media>.gloskin-ui1-media picture{') && frontendCss.includes('.gloskin-ui1-consultation__path-media>.gloskin-ui1-media img,') && frontendCss.includes('object-fit:cover;') && frontendCss.includes('object-position:center;'), 'Fallback picture/img/media descendants must inherit full centered cover geometry');
+expect(!frontendCss.includes('object-fit:contain'), 'Treatment consultation presentation must contain zero object-fit:contain');
+expect(frontendCss.includes('@keyframes gloskin-consultation-path-breathe{') && frontendCss.includes('50%{transform:scale(1.03) translateY(-.5px)}'), 'Path media must use restrained compositor-only breathing keyframes');
+for (const duration of ['5.4s', '6.2s', '5.8s', '6.8s']) {
+  expect(frontendCss.includes(`animation-duration:${duration}`), `Async path breath duration missing: ${duration}`);
+}
+for (const delay of ['-1.1s', '-3.7s', '-2.4s', '-5.2s']) {
+  expect(frontendCss.includes(`animation-delay:${delay}`), `Async negative path breath delay missing: ${delay}`);
+}
+expect(/\.gloskin-ui1-consultation__path\.is-active \.gloskin-ui1-consultation__path-media\{[\s\S]*?border-color:var\(--gloskin-accent\);[\s\S]*?box-shadow:0 0 0 5px var\(--gloskin-accent-soft\)/.test(frontendCss), 'Selected path must retain accent border and accent-soft halo');
+expect(frontendCss.includes('animation-play-state:paused') && frontendCss.includes('transform:scale(1.012)'), 'Selected path should calm the idle breath without losing media fill');
+expect(/@media \(max-width:900px\)\{[\s\S]*?\.gloskin-ui1-consultation__path-media\{width:min\(100%,clamp\(136px,16vw,164px\)\)\}/.test(frontendCss), '720-900px Treatment path circles must stay materially larger than the old 132px treatment');
+expect(/@media \(max-width:720px\)\{[\s\S]*?grid-template-columns:repeat\(2,minmax\(0,1fr\)\)[\s\S]*?width:min\(100%,clamp\(136px,32vw,160px\)\)/.test(frontendCss), 'At <=720px paths must stay two columns with 136-160px circles');
+expect(/@media \(max-width:480px\)\{[\s\S]*?width:min\(100%,clamp\(124px,36vw,140px\)\)/.test(frontendCss), 'At <=480px circles must stay touch-safe and track-bounded');
+expect(frontendCss.includes('@media (max-width:360px){') && frontendCss.includes('.gloskin-ui1-consultation__panel{padding-inline:14px}'), '320px source guard must preserve enough two-column track width for 124px circles');
+expect(/@media \(prefers-reduced-motion:reduce\)[\s\S]*?\.gloskin-ui1-consultation__path-image,[\s\S]*?\.gloskin-ui1-consultation__path-media>\.gloskin-ui1-media\{animation:none;transform:none\}/.test(frontendCss), 'Reduced motion must disable path breathing and residual inner-media transform');
+
 expect(frontendCss.includes('@media (hover:none),(pointer:coarse)') && frontendCss.includes('position:static;opacity:1'), 'Touch devices must keep the detail action visible');
 expect(frontendCss.includes('@media (prefers-reduced-motion:reduce)'), 'Finder motion must respect reduced-motion preference');
 expect(frontendCss.includes('@keyframes gloskin-consultation-concerns-in') && frontendCss.includes('transform:translateY(5px)'), 'Concern helper area must use only the subtle CSS entrance');
