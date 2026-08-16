@@ -1,0 +1,156 @@
+/* Purchase-action convergence + canonical brand shimmer. Presentation only:
+ * Woo remains the sole owner of View Cart href/navigation and cart mutation,
+ * while the existing Purchase Dock delegated owner remains the only Buy Now
+ * bridge into the SAME native submit button. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{
+	--gloskin-purchase-action-height:46px;
+	--gloskin-purchase-yellow-soft:color-mix(in srgb,var(--gloskin-brand-champagne) 28%,var(--gloskin-inverse));
+	--gloskin-purchase-yellow-soft-hover:color-mix(in srgb,var(--gloskin-brand-champagne) 36%,var(--gloskin-inverse));
+	--gloskin-purchase-yellow:color-mix(in srgb,var(--gloskin-brand-champagne) 42%,var(--gloskin-inverse));
+	--gloskin-purchase-yellow-hover:color-mix(in srgb,var(--gloskin-brand-champagne) 44%,var(--gloskin-inverse));
+	--gloskin-purchase-yellow-border:color-mix(in srgb,var(--gloskin-brand-champagne) 58%,var(--gloskin-inverse));
+	--gloskin-purchase-yellow-border-strong:color-mix(in srgb,var(--gloskin-brand-champagne) 70%,var(--gloskin-inverse));
+	--gloskin-purchase-warm-text:var(--gloskin-accent-strong);
+}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock a.added_to_cart.wc-forward,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now{
+	display:inline-flex;
+	box-sizing:border-box;
+	height:var(--gloskin-purchase-action-height);
+	min-height:var(--gloskin-purchase-action-height);
+	align-items:center;
+	justify-content:center;
+	margin-block:0;
+	border-radius:var(--gloskin-action-radius);
+	line-height:1;
+	vertical-align:middle;
+	text-decoration:none;
+}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit{
+	padding-block:0;
+}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock a.added_to_cart.wc-forward{
+	width:auto;
+	min-width:0;
+	padding:0 16px;
+	border:1px solid var(--gloskin-purchase-yellow-border);
+	background:var(--gloskin-purchase-yellow-soft);
+	color:var(--gloskin-purchase-warm-text);
+	font-family:inherit;
+	font-size:inherit;
+	font-weight:700;
+	white-space:nowrap;
+	transition:background-color 140ms ease,border-color 140ms ease,color 140ms ease,box-shadow 140ms ease;
+}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock a.added_to_cart.wc-forward:hover,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock a.added_to_cart.wc-forward:focus-visible{
+	border-color:var(--gloskin-purchase-yellow-border-strong);
+	background:var(--gloskin-purchase-yellow-soft-hover);
+	color:var(--gloskin-purchase-warm-text);
+}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now{
+	padding:0 16px;
+	border-color:var(--gloskin-purchase-yellow-border-strong);
+	background:var(--gloskin-purchase-yellow);
+	color:var(--gloskin-purchase-warm-text);
+	transition:background-color 140ms ease,border-color 140ms ease,color 140ms ease,box-shadow 140ms ease;
+}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:hover,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:focus-visible{
+	border-color:var(--gloskin-brand-champagne);
+	background:var(--gloskin-purchase-yellow-hover);
+	color:var(--gloskin-purchase-warm-text);
+}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:disabled{
+	border-color:color-mix(in srgb,var(--gloskin-brand-champagne) 34%,var(--gloskin-inverse));
+	background:color-mix(in srgb,var(--gloskin-brand-champagne) 18%,var(--gloskin-inverse));
+	color:var(--gloskin-text);
+	opacity:.52;
+}
+
+/* One shimmer definition, hosted by canonical logo anchors rather than the
+ * replaced <img>. The rim is static and extremely restrained; the diagonal
+ * sweep moves only by compositor-friendly transform + opacity. */
+.gloskin-ui1-brand,
+.gloskin-ui1-compact-brand,
+.gloskin-ui1-brand--footer{
+	position:relative;
+	overflow:hidden;
+	isolation:isolate;
+}
+.gloskin-ui1-brand::before,
+.gloskin-ui1-compact-brand::before,
+.gloskin-ui1-brand--footer::before,
+.gloskin-ui1-brand::after,
+.gloskin-ui1-compact-brand::after,
+.gloskin-ui1-brand--footer::after{
+	position:absolute;
+	z-index:1;
+	pointer-events:none;
+	content:"";
+}
+.gloskin-ui1-brand::before,
+.gloskin-ui1-compact-brand::before,
+.gloskin-ui1-brand--footer::before{
+	inset:0;
+	background:linear-gradient(118deg,transparent 14%,color-mix(in srgb,var(--gloskin-inverse) 16%,transparent) 48%,color-mix(in srgb,var(--gloskin-brand-champagne) 10%,transparent) 62%,transparent 84%);
+	mix-blend-mode:soft-light;
+	opacity:.16;
+}
+.gloskin-ui1-brand::after,
+.gloskin-ui1-compact-brand::after,
+.gloskin-ui1-brand--footer::after{
+	top:-42%;
+	bottom:-42%;
+	left:-46%;
+	width:32%;
+	background:linear-gradient(90deg,transparent 0%,color-mix(in srgb,var(--gloskin-inverse) 18%,transparent) 30%,color-mix(in srgb,var(--gloskin-inverse) 58%,transparent) 50%,color-mix(in srgb,var(--gloskin-brand-champagne) 20%,transparent) 62%,transparent 100%);
+	mix-blend-mode:screen;
+	opacity:0;
+	transform:translate3d(-155%,0,0) rotate(18deg);
+	transform-origin:center;
+	will-change:transform,opacity;
+	animation:gloskin-ui1-brand-shimmer var(--gloskin-brand-shimmer-duration,9.4s) cubic-bezier(.22,1,.36,1) var(--gloskin-brand-shimmer-delay,-2.3s) infinite;
+}
+.gloskin-ui1-brand{
+	--gloskin-brand-shimmer-duration:9.4s;
+	--gloskin-brand-shimmer-delay:-2.3s;
+}
+.gloskin-ui1-compact-brand{
+	--gloskin-brand-shimmer-duration:11.2s;
+	--gloskin-brand-shimmer-delay:-6.7s;
+}
+.gloskin-ui1-brand--footer{
+	--gloskin-brand-shimmer-duration:13.1s;
+	--gloskin-brand-shimmer-delay:-4.9s;
+}
+/* Header 1 compact mark is inert/collapsed until the existing sticky state
+ * activates it; keep the ambient animation asleep during that hidden state. */
+.gloskin-ui1-compact-brand::after{
+	animation:none;
+	opacity:0;
+}
+.gloskin-ui1-header__nav-row.is-compact-sticky .gloskin-ui1-compact-brand::after{
+	animation:gloskin-ui1-brand-shimmer var(--gloskin-brand-shimmer-duration) cubic-bezier(.22,1,.36,1) var(--gloskin-brand-shimmer-delay) infinite;
+}
+@keyframes gloskin-ui1-brand-shimmer{
+	0%,70%{opacity:0;transform:translate3d(-155%,0,0) rotate(18deg)}
+	72%{opacity:0;transform:translate3d(-155%,0,0) rotate(18deg)}
+	75%{opacity:.16}
+	82%{opacity:.24}
+	86%{opacity:0;transform:translate3d(520%,0,0) rotate(18deg)}
+	100%{opacity:0;transform:translate3d(520%,0,0) rotate(18deg)}
+}
+@media (prefers-reduced-motion:reduce){
+	.gloskin-ui1-brand::before,
+	.gloskin-ui1-compact-brand::before,
+	.gloskin-ui1-brand--footer::before,
+	.gloskin-ui1-brand::after,
+	.gloskin-ui1-compact-brand::after,
+	.gloskin-ui1-brand--footer::after,
+	.gloskin-ui1-header__nav-row.is-compact-sticky .gloskin-ui1-compact-brand::after{
+		animation:none;
+		opacity:0;
+	}
+}

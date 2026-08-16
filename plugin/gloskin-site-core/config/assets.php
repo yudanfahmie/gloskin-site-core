@@ -68,6 +68,13 @@ return array(
 			'deps'  => array( 'gloskin-ui1-commerce-polish' ),
 			'media' => 'all',
 		),
+		/* Purchase action convergence + canonical brand shimmer. This final
+		 * presentation-only layer adds no commerce or animation state owner. */
+		'gloskin-ui1-brand-purchase-polish' => array(
+			'src'   => 'assets/css/gloskin-ui1-brand-purchase-polish.css',
+			'deps'  => array( 'gloskin-ui1-loader-system' ),
+			'media' => 'all',
+		),
 		/* Treatment Consultation discovery (docs/task-treatment-
 		 * consultation-commerce-discovery.md section 10): conditionally
 		 * enqueued only on the Treatments Hub -- see
