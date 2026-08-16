@@ -182,12 +182,46 @@ html.gloskin-ui1-commerce-fly-active--wishlist [data-gloskin-wishlist-count].is-
    soften that native handoff: it never replaces Woo markup or lifecycle. */
 body.woocommerce-cart .gloskin-ui1-commerce-native,
 body.woocommerce-checkout .gloskin-ui1-commerce-native{
+	position:relative;
+}
+body.woocommerce-cart .gloskin-ui1-commerce-native > *,
+body.woocommerce-checkout .gloskin-ui1-commerce-native > *{
+	opacity:1;
 	transition:opacity 170ms cubic-bezier(.22,1,.36,1);
 }
-html.gloskin-ui1-commerce-journey-leaving .gloskin-ui1-commerce-native,
-html.gloskin-ui1-commerce-journey-arriving .gloskin-ui1-commerce-native{
+body.woocommerce-cart .gloskin-ui1-commerce-native::after,
+body.woocommerce-checkout .gloskin-ui1-commerce-native::after{
+	position:fixed;
+	top:50%;
+	left:50%;
+	z-index:40;
+	width:32px;
+	height:32px;
+	background:url("../images/favicon-32x32.png") center/32px 32px no-repeat;
+	content:"";
 	opacity:0;
 	pointer-events:none;
+	transform:translate(-50%,-50%) scale(.96);
+	transform-origin:center;
+	transition:opacity 170ms ease-in-out,transform 170ms ease-in-out;
+}
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-native > *,
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-native > *,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-native > *,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-native > *{
+	opacity:0;
+	pointer-events:none;
+}
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-native::after,
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-native::after,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-native::after,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-native::after{
+	opacity:.38;
+	animation:gloskin-ui1-commerce-handoff-breathe 920ms ease-in-out infinite;
+}
+@keyframes gloskin-ui1-commerce-handoff-breathe{
+	0%,100%{opacity:.38;transform:translate(-50%,-50%) scale(.96)}
+	50%{opacity:1;transform:translate(-50%,-50%) scale(1.02)}
 }
 html.gloskin-ui1-commerce-journey-leaving [data-gloskin-commerce-progress]{pointer-events:none}
 
@@ -214,8 +248,18 @@ html.gloskin-ui1-commerce-journey-leaving [data-gloskin-commerce-progress]{point
 		transform:none;
 	}
 	.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step,
-	body.woocommerce-cart .gloskin-ui1-commerce-native,
-	body.woocommerce-checkout .gloskin-ui1-commerce-native{
+	body.woocommerce-cart .gloskin-ui1-commerce-native > *,
+	body.woocommerce-checkout .gloskin-ui1-commerce-native > *,
+	body.woocommerce-cart .gloskin-ui1-commerce-native::after,
+	body.woocommerce-checkout .gloskin-ui1-commerce-native::after{
 		transition:none;
+	}
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-native::after,
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-native::after,
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-native::after,
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-native::after{
+		animation:none;
+		opacity:.72;
+		transform:translate(-50%,-50%) scale(1);
 	}
 }

@@ -13,6 +13,7 @@
 	var LEAVING_CLASS = 'gloskin-ui1-commerce-journey-leaving';
 	var ARRIVING_CLASS = 'gloskin-ui1-commerce-journey-arriving';
 	var HANDOFF_DELAY_MS = 100;
+	var OUTGOING_FAIL_OPEN_MS = 1800;
 	var ARRIVAL_SETTLE_MS = 120;
 	var ARRIVAL_FAIL_OPEN_MS = 1600;
 
@@ -74,14 +75,36 @@
 			root.location.assign(href);
 			return true;
 		} catch (error) {
-			clearMarker(root);
 			try {
 				root.location.href = href;
 				return true;
 			} catch (fallbackError) {
+				clearMarker(root);
 				return false;
 			}
 		}
+	}
+
+	function clearJourneyVisualState(doc) {
+		if (!doc || !doc.documentElement || !doc.documentElement.classList) { return false; }
+		doc.documentElement.classList.remove(LEAVING_CLASS);
+		doc.documentElement.classList.remove(ARRIVING_CLASS);
+		return true;
+	}
+
+	function recoverOutgoing(root, doc, href) {
+		clearJourneyVisualState(doc);
+		if (targetKey(href, root) !== currentKey(root)) {
+			clearMarker(root);
+		}
+	}
+
+	function scheduleOutgoingRecovery(root, doc, href) {
+		if (typeof root.setTimeout !== 'function') { return false; }
+		root.setTimeout(function () {
+			recoverOutgoing(root, doc, href);
+		}, OUTGOING_FAIL_OPEN_MS);
+		return true;
 	}
 
 	function handleJourneyClick(event, anchor, root, doc) {
@@ -94,17 +117,26 @@
 
 		event.preventDefault();
 		if (reducedMotion(root)) {
+			var reducedNavigated = nativeNavigate(root, anchor.href);
+			if (reducedNavigated) { scheduleOutgoingRecovery(root, doc, anchor.href); }
+			return reducedNavigated;
+		}
+
+		if (typeof root.setTimeout !== 'function') {
 			return nativeNavigate(root, anchor.href);
 		}
 
 		try {
 			doc.documentElement.classList.add(LEAVING_CLASS);
-			if (typeof root.setTimeout !== 'function') {
-				return nativeNavigate(root, anchor.href);
-			}
-			root.setTimeout(function () { nativeNavigate(root, anchor.href); }, HANDOFF_DELAY_MS);
+			root.setTimeout(function () {
+				if (!nativeNavigate(root, anchor.href)) {
+					recoverOutgoing(root, doc, anchor.href);
+				}
+			}, HANDOFF_DELAY_MS);
+			scheduleOutgoingRecovery(root, doc, anchor.href);
 			return true;
 		} catch (error) {
+			clearJourneyVisualState(doc);
 			return nativeNavigate(root, anchor.href);
 		}
 	}
@@ -160,6 +192,21 @@
 		return true;
 	}
 
+	function handlePageShow(event, root, doc) {
+		if (!event || event.persisted !== true) { return false; }
+		clearJourneyVisualState(doc);
+		clearMarker(root);
+		return true;
+	}
+
+	function bindPageShowRecovery(root, doc) {
+		if (typeof root.addEventListener !== 'function') { return false; }
+		root.addEventListener('pageshow', function (event) {
+			handlePageShow(event, root, doc);
+		});
+		return true;
+	}
+
 	function isExcludedCheckoutEndpoint(doc) {
 		var body = doc && doc.body;
 		return !!(body && body.classList && (
@@ -180,6 +227,7 @@
 	}
 
 	function boot(root, doc) {
+		bindPageShowRecovery(root, doc);
 		var prepared = prepareArrival(root, doc);
 		scheduleArrivalRelease(root, doc, prepared);
 		if (doc.readyState === 'loading') {
@@ -193,12 +241,18 @@
 		STORAGE_KEY: STORAGE_KEY,
 		LEAVING_CLASS: LEAVING_CLASS,
 		ARRIVING_CLASS: ARRIVING_CLASS,
+		HANDOFF_DELAY_MS: HANDOFF_DELAY_MS,
+		OUTGOING_FAIL_OPEN_MS: OUTGOING_FAIL_OPEN_MS,
 		targetKey: targetKey,
 		shouldIntercept: shouldIntercept,
 		writeMarker: writeMarker,
+		clearJourneyVisualState: clearJourneyVisualState,
+		recoverOutgoing: recoverOutgoing,
 		handleJourneyClick: handleJourneyClick,
 		prepareArrival: prepareArrival,
 		scheduleArrivalRelease: scheduleArrivalRelease,
+		handlePageShow: handlePageShow,
+		bindPageShowRecovery: bindPageShowRecovery,
 		isExcludedCheckoutEndpoint: isExcludedCheckoutEndpoint,
 		bindJourneyLinks: bindJourneyLinks,
 		boot: boot
