@@ -63,6 +63,7 @@ if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/nu
   python tests/page-richness-smoke.py
   python tests/readiness-browser-smoke.py
   python tests/quick-add-browser-smoke.py
+  python tests/commerce-closure-browser-smoke.py
   python tests/shop-catalog-browser-smoke.py
   python tests/public-rest-get-browser-smoke.py
   python tests/single-product-dock-browser-smoke.py

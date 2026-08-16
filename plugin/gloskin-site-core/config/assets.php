@@ -77,6 +77,15 @@ return array(
 			'deps'      => array( 'gloskin-ui1-core' ),
 			'in_footer' => true,
 		),
+		/* Post-core commerce closure: no cart endpoint, variation resolver or
+		 * modal controller. It only closes already-claimed submit propagation,
+		 * mirrors existing native busy state to the visible proxy, and performs
+		 * bounded PDP presentation cleanup after the canonical core owner. */
+		'gloskin-ui1-commerce-closure' => array(
+			'src'       => 'assets/js/gloskin-ui1-commerce-closure.js',
+			'deps'      => array( 'gloskin-ui1-core', 'gloskin-ui1-purchase-dock' ),
+			'in_footer' => true,
+		),
 		/* One small feature runtime, Treatments Hub only (see
 		 * AssetService::enqueue_frontend()). No frontend framework, no
 		 * second cart owner -- reuses the native Add to Cart handlers

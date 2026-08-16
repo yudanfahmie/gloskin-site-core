@@ -160,11 +160,46 @@
 .gloskin-ui1-variable-modal__cta:focus-visible{
 	filter:brightness(.96);
 }
+.gloskin-ui1-variable-modal__cta.is-loading{
+	display:inline-flex;
+	align-items:center;
+	justify-content:center;
+	gap:8px;
+	pointer-events:none;
+}
+.gloskin-ui1-variable-modal__cta.is-loading::before{
+	content:"";
+	flex:0 0 15px;
+	width:15px;
+	height:15px;
+	border:2px solid currentColor;
+	border-right-color:transparent;
+	border-radius:999px;
+	animation:gloskin-atc-spin 650ms linear infinite;
+}
 .gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart.variations_button.is-quantity-hidden{
 	grid-template-columns:minmax(0,1fr);
 }
 .gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart.variations_button.is-quantity-hidden .gloskin-ui1-variable-modal__cta{
 	grid-column:1;
+}
+
+.gloskin-ui1-quickadd__loading{
+	gap:10px;
+}
+.gloskin-ui1-quickadd__loading::before{
+	content:"";
+	flex:0 0 18px;
+	width:18px;
+	height:18px;
+	border:2px solid currentColor;
+	border-right-color:transparent;
+	border-radius:999px;
+	animation:gloskin-atc-spin 650ms linear infinite;
+}
+.gloskin-ui1-quickadd__image--placeholder{
+	display:block;
+	background:var(--gloskin-surface-soft,#fbf8f1);
 }
 
 .gloskin-ui1-variable-modal__pdp{
@@ -180,6 +215,9 @@
 .gloskin-ui1-variable-modal__identity strong{
 	font-size:1rem;
 	line-height:1.35;
+}
+.gloskin-ui1-variable-modal__identity-converged{
+	margin:0;
 }
 .gloskin-ui1-variable-modal__fields{
 	display:grid;
@@ -376,7 +414,8 @@ body.single-product [data-gloskin-purchase-dock] form.variations_form.gloskin-ui
 	backdrop-filter:blur(2px) saturate(.92);
 	pointer-events:none;
 }
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>[data-gloskin-purchase-dock].is-action-spotlight{
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home:has(>[data-gloskin-purchase-dock].is-action-spotlight){
+	position:relative;
 	z-index:9997;
 }
 [data-gloskin-variable-pdp-trigger].is-action-spotlight-target{
@@ -444,5 +483,9 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloski
 	[data-gloskin-variable-pdp-trigger].is-action-spotlight-target{
 		animation:none;
 		transform:none;
+	}
+	.gloskin-ui1-quickadd__loading::before,
+	.gloskin-ui1-variable-modal__cta.is-loading::before{
+		animation:none;
 	}
 }
