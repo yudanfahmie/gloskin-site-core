@@ -101,7 +101,18 @@
 /* Cross-document View Transition ownership is intentionally absent here.
    Cart/Checkout continue through native Woo document navigation, so neither
    the large journey text nor Woo Blocks' dynamic application area is ever
-   snapshotted by this presentation layer. */
+   snapshotted by this presentation layer. The small journey runtime can only
+   soften that native handoff: it never replaces Woo markup or lifecycle. */
+body.woocommerce-cart .gloskin-ui1-commerce-native,
+body.woocommerce-checkout .gloskin-ui1-commerce-native{
+	transition:opacity 170ms cubic-bezier(.22,1,.36,1);
+}
+html.gloskin-ui1-commerce-journey-leaving .gloskin-ui1-commerce-native,
+html.gloskin-ui1-commerce-journey-arriving .gloskin-ui1-commerce-native{
+	opacity:0;
+	pointer-events:none;
+}
+html.gloskin-ui1-commerce-journey-leaving [data-gloskin-commerce-progress]{pointer-events:none}
 
 @media (max-width:760px){
 	.gloskin-ui1-commerce-heading--journey{padding:clamp(30px,6vw,46px) 0 24px}
@@ -125,7 +136,9 @@
 		animation:none;
 		transform:none;
 	}
-	.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step{
+	.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step,
+	body.woocommerce-cart .gloskin-ui1-commerce-native,
+	body.woocommerce-checkout .gloskin-ui1-commerce-native{
 		transition:none;
 	}
 }

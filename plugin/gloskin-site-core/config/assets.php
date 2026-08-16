@@ -76,6 +76,15 @@ return array(
 			'deps'      => array(),
 			'in_footer' => true,
 		),
+		/* Cart <-> Checkout perceptual handoff. Head-loaded only on those
+		 * native Woo routes so an incoming presentation marker can mask the
+		 * dynamic Woo region before it paints. It never fetches/swaps markup,
+		 * changes history, or initializes Woo/Blocks/payment state. */
+		'gloskin-ui1-commerce-journey' => array(
+			'src'       => 'assets/js/gloskin-ui1-commerce-journey.js',
+			'deps'      => array(),
+			'in_footer' => false,
+		),
 		/* Core is already the broad interaction owner. Keep the bounded PDP
 		 * viewport controller separate and tiny so its observer/measurement
 		 * lifecycle cannot inflate that cross-site module; AssetService still

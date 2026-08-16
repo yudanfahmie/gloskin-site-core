@@ -5,13 +5,15 @@ $root = dirname( __DIR__ );
 $helpers = $root . '/plugin/gloskin-site-core/templates/parts/readiness-helpers.php';
 $css_path = $root . '/plugin/gloskin-site-core/assets/css/gloskin-ui1-commerce-polish.css';
 $asset_path = $root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-asset-service.php';
+$registry_path = $root . '/plugin/gloskin-site-core/config/assets.php';
+$journey_js_path = $root . '/plugin/gloskin-site-core/assets/js/gloskin-ui1-commerce-journey.js';
 
 function fail_contract( string $message ): void {
 	fwrite( STDERR, "commerce progress heading: {$message}\n" );
 	exit( 1 );
 }
 
-foreach ( array( $helpers, $css_path, $asset_path ) as $path ) {
+foreach ( array( $helpers, $css_path, $asset_path, $registry_path, $journey_js_path ) as $path ) {
 	if ( ! is_file( $path ) ) {
 		fail_contract( "missing file {$path}" );
 	}
@@ -114,19 +116,42 @@ foreach ( array(
 		fail_contract( "cross-document transition ownership must be absent: {$forbidden_transition}" );
 	}
 }
-if ( false !== strpos( $css, '.gloskin-ui1-commerce-native' ) ) {
-	fail_contract( 'dynamic Woo commerce area must not be a journey transition owner' );
+if ( false === strpos( $css, 'html.gloskin-ui1-commerce-journey-arriving .gloskin-ui1-commerce-native' )
+	|| false === strpos( $css, 'html.gloskin-ui1-commerce-journey-leaving .gloskin-ui1-commerce-native' ) ) {
+	fail_contract( 'native Woo region must have only the scoped perceptual handoff mask' );
 }
 
 $asset = (string) file_get_contents( $asset_path );
+$registry = (string) file_get_contents( $registry_path );
+$journey_js = (string) file_get_contents( $journey_js_path );
 foreach ( array( '@view-transition', 'maybe_enable_commerce_journey_view_transition', 'wp_add_inline_style' ) as $forbidden_transition ) {
-	if ( false !== strpos( $asset, $forbidden_transition ) ) {
+	if ( false !== strpos( $asset . $css . $journey_js, $forbidden_transition ) ) {
 		fail_contract( "native cross-document View Transition opt-in must be absent: {$forbidden_transition}" );
 	}
 }
-foreach ( array( 'pushState', 'MutationObserver', 'ResizeObserver', 'setInterval(', 'fetch(' ) as $forbidden ) {
-	if ( false !== strpos( $source . $css . $asset, $forbidden ) ) {
-		fail_contract( "forbidden journey mechanism present: {$forbidden}" );
+if ( false === strpos( $asset, "wp_enqueue_script( 'gloskin-ui1-commerce-journey' )" )
+	|| false === strpos( $asset, "function_exists( 'is_cart' ) && is_cart()" )
+	|| false === strpos( $asset, "function_exists( 'is_checkout' ) && is_checkout()" ) ) {
+	fail_contract( 'journey runtime must be enqueued only from Cart/Checkout-aware AssetService logic' );
+}
+if ( false === strpos( $registry, "'gloskin-ui1-commerce-journey' => array(" )
+	|| false === strpos( $registry, "'src'       => 'assets/js/gloskin-ui1-commerce-journey.js'" )
+	|| false === strpos( $registry, "'in_footer' => false" ) ) {
+	fail_contract( 'journey runtime must be a head-loaded declarative first-party asset' );
+}
+if ( false === strpos( $journey_js, "[data-gloskin-commerce-progress] a[href]" )
+	|| false === strpos( $journey_js, 'location.assign' )
+	|| false === strpos( $journey_js, 'sessionStorage' ) ) {
+	fail_contract( 'journey runtime must remain scoped, native-navigation, and presentation-marker based' );
+}
+foreach ( array( 'pushState', 'replaceState', 'MutationObserver', 'ResizeObserver', 'setInterval(', 'fetch(', 'XMLHttpRequest', 'DOMParser', '.innerHTML' ) as $forbidden ) {
+	if ( false !== strpos( $journey_js, $forbidden ) ) {
+		fail_contract( "forbidden fake-SPA journey mechanism present: {$forbidden}" );
+	}
+}
+foreach ( array( 'view-transition-name:', '::view-transition-old(', '::view-transition-new(' ) as $forbidden_transition ) {
+	if ( false !== strpos( $css . $journey_js, $forbidden_transition ) ) {
+		fail_contract( "retired View Transition implementation returned: {$forbidden_transition}" );
 	}
 }
 

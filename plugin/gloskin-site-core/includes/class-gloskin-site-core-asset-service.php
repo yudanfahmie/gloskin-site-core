@@ -52,11 +52,12 @@ final class Gloskin_Site_Core_Asset_Service {
 	/**
 	 * Registry handles that are always registered but only conditionally
 	 * enqueued below (never part of the unconditional loop every other
-	 * Gloskin frontend request gets) -- see enqueue_treatment_consultation().
+	 * Gloskin frontend request gets). Commerce journey and consultation each
+	 * have one small route-aware enqueue gate in this same AssetService.
 	 *
 	 * @var array<int,string>
 	 */
-	const CONDITIONAL_HANDLES = array( 'gloskin-ui1-consultation' );
+	const CONDITIONAL_HANDLES = array( 'gloskin-ui1-consultation', 'gloskin-ui1-commerce-journey' );
 
 	public function enqueue_frontend() {
 		if ( ! $this->should_enqueue_frontend() ) {
@@ -90,7 +91,26 @@ final class Gloskin_Site_Core_Asset_Service {
 		}
 
 		$this->enqueue_native_commerce_scripts();
+		$this->maybe_enqueue_commerce_journey();
 		$this->maybe_enqueue_treatment_consultation();
+	}
+
+	/**
+	 * Cart <-> Checkout perceptual handoff only. The script is deliberately
+	 * head-loaded so an incoming sessionStorage presentation marker can hide
+	 * only the dynamic Woo region before paint. Navigation itself remains a
+	 * full native Woo document request; no HTML swap, History API router, or
+	 * Woo Blocks/payment lifecycle is owned here.
+	 *
+	 * @return void
+	 */
+	private function maybe_enqueue_commerce_journey() {
+		$is_cart     = function_exists( 'is_cart' ) && is_cart();
+		$is_checkout = function_exists( 'is_checkout' ) && is_checkout();
+		if ( ! $is_cart && ! $is_checkout ) {
+			return;
+		}
+		wp_enqueue_script( 'gloskin-ui1-commerce-journey' );
 	}
 
 	/**
