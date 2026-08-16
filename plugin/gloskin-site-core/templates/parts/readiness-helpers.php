@@ -142,6 +142,13 @@ if ( ! function_exists( 'gloskin_ui1_fallback_breadcrumb_items' ) ) {
 				$current( gloskin_ui1_breadcrumb_current_title() );
 				break;
 			case 'insights': $current( __( 'Insight', 'gloskin-site-core' ) ); break;
+			case 'insight-single':
+				$hub( __( 'Insight', 'gloskin-site-core' ), '/insights/' );
+				$current( gloskin_ui1_breadcrumb_current_title() );
+				break;
+			case 'not-found':
+				$current( __( 'Halaman tidak ditemukan', 'gloskin-site-core' ) );
+				break;
 			case 'shop': $current( __( 'Belanja', 'gloskin-site-core' ) ); break;
 			case 'contact': $current( __( 'Kontak', 'gloskin-site-core' ) ); break;
 			case 'commerce-native':

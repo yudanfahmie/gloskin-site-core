@@ -104,7 +104,14 @@ final class Gloskin_Site_Core_Template_Service {
 			'insights'   => 'Insight',
 			'shop'       => 'Belanja',
 		);
-		if ( isset( $titles[ $view ] ) ) {
+		if ( 'insight-single' === $view ) {
+			$post = get_queried_object();
+			if ( $post instanceof WP_Post ) {
+				$parts['title'] = get_the_title( $post );
+			}
+		} elseif ( 'not-found' === $view ) {
+			$parts['title'] = __( 'Halaman tidak ditemukan', 'gloskin-site-core' );
+		} elseif ( isset( $titles[ $view ] ) ) {
 			$parts['title'] = $titles[ $view ];
 		}
 		return $parts;
@@ -178,9 +185,14 @@ final class Gloskin_Site_Core_Template_Service {
 		}
 		return 'page';
 	}
-
 	/** @return string */
 	private function identify_view() {
+		if ( is_404() ) {
+			return 'not-found';
+		}
+		if ( is_singular( 'post' ) ) {
+			return 'insight-single';
+		}
 		if ( is_singular( Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE ) ) {
 			return 'treatment';
 		}
@@ -242,6 +254,8 @@ final class Gloskin_Site_Core_Template_Service {
 			case 'doctor': return $this->doctor_context();
 			case 'contact': return $this->contact_context();
 			case 'insights': return $this->insights_context();
+			case 'insight-single': return $this->insight_single_context();
+			case 'not-found': return $this->not_found_context();
 			case 'shop': return $this->shop_context();
 			default: return array();
 		}
@@ -358,7 +372,6 @@ final class Gloskin_Site_Core_Template_Service {
 		if ( 4 !== count( $paths ) ) {
 			return $empty;
 		}
-
 		$products = array_values( array_filter( $this->woocommerce->treatment_products_with_concerns(), static function ( $product ) {
 			return ! empty( $product['concern_ids'] );
 		} ) );
@@ -527,7 +540,7 @@ final class Gloskin_Site_Core_Template_Service {
 		) );
 		$posts = array();
 		foreach ( $query->posts as $post ) {
-			$posts[] = $this->post_card( $post, 'insight' );
+			$posts[] = $this->insight_card( $post );
 		}
 		return array(
 			'page' => $page,
@@ -538,6 +551,109 @@ final class Gloskin_Site_Core_Template_Service {
 		);
 	}
 
+	/** Native WordPress post -> Gloskin single Insight context. */
+	private function insight_single_context() {
+		$post = get_queried_object();
+		if ( ! $post instanceof WP_Post || 'post' !== $post->post_type ) {
+			return array();
+		}
+		$categories = get_the_category( $post->ID );
+		$category = $categories ? (string) $categories[0]->name : '';
+		return array(
+			'post' => $post,
+			'category' => $category,
+			'excerpt' => has_excerpt( $post ) ? get_the_excerpt( $post ) : wp_trim_words( wp_strip_all_tags( $post->post_content ), 32 ),
+			'date' => get_the_date( 'j F Y', $post ),
+			'date_iso' => get_the_date( DATE_W3C, $post ),
+			'reading_time' => $this->reading_time_label( $post->post_content ),
+			'image_id' => absint( get_post_thumbnail_id( $post->ID ) ),
+			'related' => $this->related_insight_cards( $post, 3 ),
+		);
+	}
+
+	/** Existing shell needs no synthetic content model for a real 404. */
+	private function not_found_context() {
+		return array();
+	}
+
+	/** Dedicated native-post card payload; clinic/treatment card semantics stay untouched. */
+	private function insight_card( $post ) {
+		if ( ! $post instanceof WP_Post ) {
+			return array();
+		}
+		$categories = get_the_category( $post->ID );
+		return array(
+			'id' => (int) $post->ID,
+			'title' => get_the_title( $post ),
+			'url' => (string) get_permalink( $post ),
+			'excerpt' => has_excerpt( $post ) ? get_the_excerpt( $post ) : wp_trim_words( wp_strip_all_tags( $post->post_content ), 28 ),
+			'image_id' => absint( get_post_thumbnail_id( $post->ID ) ),
+			'category' => $categories ? (string) $categories[0]->name : '',
+			'date' => get_the_date( 'j F Y', $post ),
+			'date_iso' => get_the_date( DATE_W3C, $post ),
+			'reading_time' => $this->reading_time_label( $post->post_content ),
+		);
+	}
+
+	/** Conservative editorial reading-time estimate from native post_content. */
+	private function reading_time_label( $content ) {
+		$text = trim( wp_strip_all_tags( strip_shortcodes( (string) $content ) ) );
+		$words = '' === $text ? 0 : count( preg_split( '/\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY ) );
+		$minutes = max( 1, (int) ceil( $words / 220 ) );
+		return sprintf(
+			/* translators: %d: estimated reading time in minutes. */
+			_n( '%d menit baca', '%d menit baca', $minutes, 'gloskin-site-core' ),
+			$minutes
+		);
+	}
+
+	/**
+	 * Prefer current native category; fill any shortfall with latest posts.
+	 * Both queries are bounded and explicitly skip found-row counting.
+	 */
+	private function related_insight_cards( $post, $limit ) {
+		$limit = max( 1, min( 3, absint( $limit ) ) );
+		$related_posts = array();
+		$exclude = array( (int) $post->ID );
+		$categories = wp_get_post_categories( $post->ID );
+
+		if ( $categories ) {
+			$query = new WP_Query( array(
+				'post_type' => 'post',
+				'post_status' => 'publish',
+				'posts_per_page' => $limit,
+				'post__not_in' => $exclude,
+				'cat' => (int) $categories[0],
+				'ignore_sticky_posts' => true,
+				'no_found_rows' => true,
+			) );
+			$related_posts = $query->posts;
+			foreach ( $related_posts as $related_post ) {
+				$exclude[] = (int) $related_post->ID;
+			}
+		}
+
+		$remaining = $limit - count( $related_posts );
+		if ( $remaining > 0 ) {
+			$fallback = new WP_Query( array(
+				'post_type' => 'post',
+				'post_status' => 'publish',
+				'posts_per_page' => $remaining,
+				'post__not_in' => $exclude,
+				'orderby' => 'date',
+				'order' => 'DESC',
+				'ignore_sticky_posts' => true,
+				'no_found_rows' => true,
+			) );
+			$related_posts = array_merge( $related_posts, $fallback->posts );
+		}
+
+		$cards = array();
+		foreach ( array_slice( $related_posts, 0, $limit ) as $related_post ) {
+			$cards[] = $this->insight_card( $related_post );
+		}
+		return $cards;
+	}
 	/** @return array<string,mixed> */
 	private function shop_context() {
 		$page = $this->content_page( 'shop' );
@@ -717,7 +833,6 @@ final class Gloskin_Site_Core_Template_Service {
 			'max_pages' => (int) $catalog['max_pages'],
 		) );
 	}
-
 	/**
 	 * @param array<string,mixed> $results Shop result context.
 	 * @return string
@@ -929,7 +1044,7 @@ final class Gloskin_Site_Core_Template_Service {
 		) );
 		$cards = array();
 		foreach ( $posts as $post ) {
-			$cards[] = $this->post_card( $post, 'insight' );
+			$cards[] = $this->insight_card( $post );
 		}
 		return $cards;
 	}

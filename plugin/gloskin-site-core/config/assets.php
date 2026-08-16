@@ -75,6 +75,13 @@ return array(
 			'deps'  => array( 'gloskin-ui1-loader-system' ),
 			'media' => 'all',
 		),
+		/* Native post editorial surfaces + branded 404. Scoped selectors only;
+		 * WordPress keeps all content/taxonomy/media/status ownership. */
+		'gloskin-ui1-editorial' => array(
+			'src'   => 'assets/css/gloskin-ui1-editorial.css',
+			'deps'  => array( 'gloskin-ui1-brand-purchase-polish' ),
+			'media' => 'all',
+		),
 		/* Treatment Consultation discovery (docs/task-treatment-
 		 * consultation-commerce-discovery.md section 10): conditionally
 		 * enqueued only on the Treatments Hub -- see
