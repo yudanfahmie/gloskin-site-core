@@ -33,16 +33,16 @@ It already has request sequencing/stale-response protection, `AbortController`, 
 
 Decision: **extend this exact state machine and endpoint. Do not create a second AJAX endpoint, second catalog renderer, or client-side product store.**
 
-### 2.2 Important existing Woo query constraint
+### 2.2 Important existing Woo query constraint and scaling debt
 
 `WooCommerce_Adapter::products_paginated()` currently has two internal paths:
 
 - mapped category: `wc_get_products(... paginate => true ...)`;
-- unfiltered “Semua Produk”: a deliberate fallback path using a bounded WordPress product projection because the repository documents a live REST fatal in the unfiltered paginated Woo query shape.
+- unfiltered “Semua Produk”: a deliberate compatibility fallback because the repository documents a live REST fatal in the unfiltered paginated Woo query shape.
 
-This is proven existing compatibility code and must not be casually removed just to simplify the new filters.
+The compatibility fallback currently calls `get_posts()` with `posts_per_page => -1` to collect all visible product IDs and then slices/paginates in PHP. It avoids the documented fatal, but it is an **all-ID scan** and therefore a scaling debt if the catalog becomes large.
 
-Decision: expose one expanded adapter contract for category/search/price, but preserve the proven unfiltered fallback until a focused test demonstrates it can safely be retired.
+Decision: expose one expanded adapter contract for category/search/price while preserving the proven behavior. Do **not** blindly remove the fallback, but also do **not** extend search/price in a way that multiplies or worsens the all-ID scan. The implementation may replace/bound that fallback only when a focused regression test demonstrates the original unfiltered REST failure does not return.
 
 WooCommerce’s current official developer guidance still recommends `wc_get_products()` / `WC_Product_Query` as the stable product-query API. Woo core itself implements catalog min/max price semantics against the product price lookup range, so the new Gloskin filter must match Woo’s *range overlap* semantics rather than treating variable products as one arbitrary scalar price.
 
@@ -287,7 +287,7 @@ products_paginated( $page, $per_page, $filters )
 
 or an equivalent backwards-compatible expansion where `$filters` contains category/search/min/max.
 
-Implementation must preserve the current unfiltered REST fallback documented in the adapter until focused tests prove an alternative stable.
+Implementation must preserve the current unfiltered REST compatibility behavior until focused tests prove an alternative stable. The current `posts_per_page => -1` all-ID fallback is **known scaling debt**: do not make search/price run additional all-catalog object hydration or nested scans on top of it. If the implementation can replace it with a genuinely paginated/bounded path while keeping the historical unfiltered REST fatal fixed, do so and lock that with a regression test; otherwise preserve it narrowly and document the remaining debt.
 
 Search should use the Woo/WordPress product title/search projection already used by this adapter where appropriate; no client-side filtering of only the current page.
 
@@ -706,9 +706,9 @@ Use official source wording for practice area/specialization and richer profile/
 Current public-source gaps:
 
 ```text
-SIP number        unsupported for full roster → blank
+SIP number          unsupported for full roster → blank
 individual schedule unsupported for full roster → blank
-branch assignment unsupported for full roster → blank
+branch assignment   unsupported for full roster → blank
 photo mapping       import only when exact official mapping is verified
 ```
 
@@ -853,6 +853,7 @@ SERVER-RENDERED CARDS         YES
 CUSTOM RANGE LIBRARY          ZERO
 SHADOW PRODUCT CATALOG        ZERO
 GLOBAL SHOP QUERY HOOK        ZERO
+ALL-ID FALLBACK               NOT WORSENED; BOUNDED/REMOVED IF REGRESSION-PROVEN
 ```
 
 Test at least:
@@ -868,7 +869,8 @@ Test at least:
 - invalid range;
 - zero results;
 - Woo unavailable;
-- unfiltered existing compatibility path remains passing.
+- unfiltered existing compatibility path remains passing;
+- no additional all-catalog object scan is introduced by search/price.
 
 ### Contact
 
