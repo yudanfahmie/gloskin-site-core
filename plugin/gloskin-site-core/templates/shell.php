@@ -64,6 +64,18 @@ if ( 'home' === $gloskin_view ) {
 		 * tab from unrelated global the_content callbacks that can recursively
 		 * render another complete product tree. */
 		gloskin_ui1_register_product_description_boundary();
+
+		/* Cart <-> Checkout handoff loader. Static decorative markup only: the
+		 * journey runtime owns when its state classes appear, while Woo remains
+		 * the sole owner of navigation, document markup and commerce lifecycle. */
+		$gloskin_commerce_journey_loader = ( function_exists( 'is_cart' ) && is_cart() ) || ( function_exists( 'is_checkout' ) && is_checkout() );
+		if ( $gloskin_commerce_journey_loader ) {
+			echo '<div class="gloskin-ui1-commerce-handoff" data-gloskin-commerce-handoff aria-hidden="true">';
+			echo '<svg class="gloskin-ui1-commerce-handoff__defs" xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs><filter id="gloskin-ui1-commerce-handoff-goo" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur"/><feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10" result="goo"/></filter></defs></svg>';
+			echo '<div class="gloskin-ui1-commerce-handoff__goo"><span class="gloskin-ui1-commerce-handoff__blob"></span><span class="gloskin-ui1-commerce-handoff__blob"></span><span class="gloskin-ui1-commerce-handoff__blob"></span><span class="gloskin-ui1-commerce-handoff__blob"></span></div>';
+			echo '</div>';
+		}
+
 		echo '<div class="woocommerce gloskin-ui1-commerce-native">';
 		if ( 'woocommerce' === $gloskin_commerce_render && function_exists( 'woocommerce_content' ) ) {
 			woocommerce_content();

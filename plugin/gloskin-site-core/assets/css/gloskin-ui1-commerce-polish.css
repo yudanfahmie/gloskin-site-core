@@ -182,8 +182,6 @@ html.gloskin-ui1-commerce-fly-active--wishlist [data-gloskin-wishlist-count].is-
    soften that native handoff: it never replaces Woo markup or lifecycle. */
 body.woocommerce-cart .gloskin-ui1-commerce-native,
 body.woocommerce-checkout .gloskin-ui1-commerce-native{
-	--gloskin-commerce-handoff-size:clamp(96px,8vw,116px);
-	--gloskin-commerce-handoff-core-size:clamp(54px,4.7vw,68px);
 	position:relative;
 }
 body.woocommerce-cart .gloskin-ui1-commerce-native > *,
@@ -191,41 +189,55 @@ body.woocommerce-checkout .gloskin-ui1-commerce-native > *{
 	opacity:1;
 	transition:opacity 170ms cubic-bezier(.22,1,.36,1);
 }
-/* First-party handoff loader: two concentric token-colored forms exchange
-   visual weight through opposing scale/opacity pulses. Both layers are fixed
-   and decorative, so the Woo stage keeps its natural document geometry. */
-body.woocommerce-cart .gloskin-ui1-commerce-native::before,
-body.woocommerce-cart .gloskin-ui1-commerce-native::after,
-body.woocommerce-checkout .gloskin-ui1-commerce-native::before,
-body.woocommerce-checkout .gloskin-ui1-commerce-native::after{
+/* Reference-faithful goo loader: one static host, one local SVG goo filter,
+   four phase-shifted blobs. It is presentation-only and never owns loading,
+   routing, Woo state, or document replacement. */
+.gloskin-ui1-commerce-handoff{
+	--gloskin-commerce-handoff-size:clamp(104px,8vw,120px);
+	--gloskin-commerce-handoff-blob-size:clamp(34px,3vw,42px);
+	--gloskin-commerce-handoff-hero-size:clamp(42px,3.6vw,50px);
+	--gloskin-commerce-handoff-travel:clamp(28px,2.7vw,34px);
 	position:fixed;
 	top:50%;
 	left:50%;
 	z-index:40;
-	box-sizing:border-box;
-	border-radius:999px;
-	content:"";
-	opacity:0;
-	pointer-events:none;
-	transform:translate(-50%,-50%) scale(.72);
-	transform-origin:center;
-	transition:opacity 170ms ease-out;
-}
-body.woocommerce-cart .gloskin-ui1-commerce-native::before,
-body.woocommerce-checkout .gloskin-ui1-commerce-native::before{
 	width:var(--gloskin-commerce-handoff-size);
 	height:var(--gloskin-commerce-handoff-size);
-	border:1px solid color-mix(in srgb,var(--gloskin-accent) 62%,var(--gloskin-border));
-	background:radial-gradient(circle at 50% 48%,color-mix(in srgb,var(--gloskin-inverse) 84%,transparent) 0 18%,color-mix(in srgb,var(--gloskin-accent) 12%,transparent) 19% 45%,transparent 46%);
-	box-shadow:0 18px 44px color-mix(in srgb,var(--gloskin-text) 10%,transparent),inset 0 0 0 7px color-mix(in srgb,var(--gloskin-accent) 8%,transparent);
+	opacity:0;
+	pointer-events:none;
+	transform:translate(-50%,-50%) scale(.96);
+	transform-origin:center;
+	transition:opacity 170ms ease-out,transform 170ms ease-out;
 }
-body.woocommerce-cart .gloskin-ui1-commerce-native::after,
-body.woocommerce-checkout .gloskin-ui1-commerce-native::after{
-	width:var(--gloskin-commerce-handoff-core-size);
-	height:var(--gloskin-commerce-handoff-core-size);
-	border:1px solid color-mix(in srgb,var(--gloskin-accent-strong) 72%,var(--gloskin-border));
-	background:radial-gradient(circle,color-mix(in srgb,var(--gloskin-accent) 88%,var(--gloskin-inverse)) 0 30%,var(--gloskin-accent-strong) 31% 45%,color-mix(in srgb,var(--gloskin-inverse) 86%,var(--gloskin-accent)) 46% 61%,transparent 62%);
-	box-shadow:0 0 0 8px color-mix(in srgb,var(--gloskin-accent) 10%,transparent),0 9px 24px color-mix(in srgb,var(--gloskin-text) 12%,transparent);
+.gloskin-ui1-commerce-handoff__defs{
+	position:absolute;
+	width:0;
+	height:0;
+	overflow:hidden;
+	pointer-events:none;
+}
+.gloskin-ui1-commerce-handoff__goo{
+	position:absolute;
+	inset:0;
+	filter:url("#gloskin-ui1-commerce-handoff-goo");
+}
+.gloskin-ui1-commerce-handoff__blob{
+	position:absolute;
+	top:50%;
+	left:50%;
+	width:var(--gloskin-commerce-handoff-blob-size);
+	height:var(--gloskin-commerce-handoff-blob-size);
+	border-radius:50%;
+	background:var(--gloskin-accent);
+	transform:translate(-50%,-50%) scale(1);
+	transform-origin:center;
+	will-change:transform;
+}
+.gloskin-ui1-commerce-handoff__blob:nth-child(4){
+	width:var(--gloskin-commerce-handoff-hero-size);
+	height:var(--gloskin-commerce-handoff-hero-size);
+	background:var(--gloskin-accent-strong);
+	box-shadow:0 0 20px color-mix(in srgb,var(--gloskin-accent) 38%,transparent);
 }
 html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-native > *,
 html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-native > *,
@@ -234,27 +246,29 @@ html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui
 	opacity:0;
 	pointer-events:none;
 }
-html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-native::before,
-html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-native::before,
-html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-native::before,
-html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-native::before{
-	animation:gloskin-ui1-commerce-handoff-bloom-outer 1480ms cubic-bezier(.45,0,.25,1) infinite;
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff,
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff{
+	opacity:1;
+	transform:translate(-50%,-50%) scale(1);
 }
-html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-native::after,
-html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-native::after,
-html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-native::after,
-html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-native::after{
-	animation:gloskin-ui1-commerce-handoff-bloom-core 1480ms cubic-bezier(.45,0,.25,1) infinite;
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob{
+	animation:gloskin-ui1-commerce-handoff-goo-dance 3.5s infinite ease-in-out;
+	animation-delay:var(--gloskin-commerce-handoff-delay,0s);
 }
-@keyframes gloskin-ui1-commerce-handoff-bloom-outer{
-	0%,100%{opacity:.34;transform:translate(-50%,-50%) scale(.72)}
-	48%{opacity:.94;transform:translate(-50%,-50%) scale(1)}
-	68%{opacity:.72;transform:translate(-50%,-50%) scale(.94)}
-}
-@keyframes gloskin-ui1-commerce-handoff-bloom-core{
-	0%,100%{opacity:.92;transform:translate(-50%,-50%) scale(1)}
-	48%{opacity:.36;transform:translate(-50%,-50%) scale(.74)}
-	68%{opacity:.56;transform:translate(-50%,-50%) scale(.82)}
+.gloskin-ui1-commerce-handoff__blob:nth-child(1){--gloskin-commerce-handoff-delay:0s}
+.gloskin-ui1-commerce-handoff__blob:nth-child(2){--gloskin-commerce-handoff-delay:-.8s}
+.gloskin-ui1-commerce-handoff__blob:nth-child(3){--gloskin-commerce-handoff-delay:-1.6s}
+.gloskin-ui1-commerce-handoff__blob:nth-child(4){--gloskin-commerce-handoff-delay:-2.4s}
+@keyframes gloskin-ui1-commerce-handoff-goo-dance{
+	0%,100%{transform:translate(-50%,-50%) scale(1)}
+	25%{transform:translate(calc(-50% + var(--gloskin-commerce-handoff-travel)),calc(-50% - var(--gloskin-commerce-handoff-travel))) scale(.8)}
+	50%{transform:translate(calc(-50% - var(--gloskin-commerce-handoff-travel)),calc(-50% + var(--gloskin-commerce-handoff-travel))) scale(1.1)}
+	75%{transform:translate(calc(-50% + var(--gloskin-commerce-handoff-travel)),calc(-50% + var(--gloskin-commerce-handoff-travel))) scale(.9)}
 }
 html.gloskin-ui1-commerce-journey-leaving [data-gloskin-commerce-progress]{pointer-events:none}
 
@@ -265,10 +279,11 @@ html.gloskin-ui1-commerce-journey-leaving [data-gloskin-commerce-progress]{point
 		gap:10px;
 	}
 	.gloskin-ui1-commerce-progress__step{font-size:clamp(1.75rem,8.2vw,2.8rem)}
-	body.woocommerce-cart .gloskin-ui1-commerce-native,
-	body.woocommerce-checkout .gloskin-ui1-commerce-native{
-		--gloskin-commerce-handoff-size:clamp(78px,22vw,92px);
-		--gloskin-commerce-handoff-core-size:clamp(46px,13vw,58px);
+	.gloskin-ui1-commerce-handoff{
+		--gloskin-commerce-handoff-size:clamp(82px,23vw,96px);
+		--gloskin-commerce-handoff-blob-size:clamp(28px,8vw,34px);
+		--gloskin-commerce-handoff-hero-size:clamp(36px,10vw,42px);
+		--gloskin-commerce-handoff-travel:clamp(22px,6.5vw,27px);
 	}
 }
 @media (max-width:430px){
@@ -288,26 +303,27 @@ html.gloskin-ui1-commerce-journey-leaving [data-gloskin-commerce-progress]{point
 	.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step,
 	body.woocommerce-cart .gloskin-ui1-commerce-native > *,
 	body.woocommerce-checkout .gloskin-ui1-commerce-native > *,
-	body.woocommerce-cart .gloskin-ui1-commerce-native::before,
-	body.woocommerce-cart .gloskin-ui1-commerce-native::after,
-	body.woocommerce-checkout .gloskin-ui1-commerce-native::before,
-	body.woocommerce-checkout .gloskin-ui1-commerce-native::after{
+	.gloskin-ui1-commerce-handoff{
 		transition:none;
 	}
-	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-native::before,
-	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-native::before,
-	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-native::before,
-	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-native::before{
-		animation:none;
-		opacity:.72;
-		transform:translate(-50%,-50%) scale(.9);
-	}
-	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-native::after,
-	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-native::after,
-	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-native::after,
-	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-native::after{
-		animation:none;
-		opacity:.9;
-		transform:translate(-50%,-50%) scale(.86);
-	}
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob,
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob{animation:none}
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(1),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(1),
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(1),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(1){transform:translate(-50%,-50%) scale(1)}
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(2),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(2),
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(2),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(2){transform:translate(calc(-50% + 20px),calc(-50% - 18px)) scale(.86)}
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(3),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(3),
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(3),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(3){transform:translate(calc(-50% - 20px),calc(-50% + 18px)) scale(.94)}
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(4),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(4),
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(4),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(4){transform:translate(calc(-50% + 18px),calc(-50% + 18px)) scale(.9)}
 }
