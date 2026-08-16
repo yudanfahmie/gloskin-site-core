@@ -1076,24 +1076,21 @@
 	 * SP-003 -- Single product page: progressive AJAX add-to-cart.
 	 * ----------------------------------------------------------------- */
 
-	function renderSingleProductViewCartLink(submitter) {
-		var config = window.gloskinData || {};
-		var cartUrl = config.cartUrl;
-		if (!submitter || !submitter.parentNode || !cartUrl) { return; }
-		var link = submitter.parentNode.querySelector('a.added_to_cart.wc-forward');
-		if (!link) {
-			link = document.createElement('a');
-			link.className = 'added_to_cart wc-forward';
-			submitter.parentNode.insertBefore(link, submitter.nextSibling);
-		}
-		link.setAttribute('href', cartUrl);
-		link.textContent = 'Lihat Keranjang';
-	}
-
 	function initSingleProductAjax() {
 		if (!document.body.classList.contains('single-product')) { return; }
 		var form = document.querySelector('[data-gloskin-purchase-dock] form.cart');
 		if (!form || !isSupportedSingleProductAjaxForm(form)) { return; }
+
+		var button = form.querySelector('.single_add_to_cart_button');
+		if (button) {
+			/* The native button must still perform its default submit
+			 * activation, but a delegated document-level click mutation
+			 * handler must not run in parallel with the canonical
+			 * form-submit bridge below. Stopping bubbling at the SAME
+			 * button leaves its default form action intact and adds no
+			 * mutation path. */
+			button.addEventListener('click', function (event) { event.stopPropagation(); });
+		}
 
 		form.addEventListener('submit', function (event) {
 			if (form.getAttribute('data-gloskin-ajax-bypass') === '1') {
@@ -1113,6 +1110,12 @@
 				onSuccess: function () { handleSingleProductAddToCartSuccess(submitter); }
 			})) {
 				nativeFallbackSubmit(form, submitter);
+			} else {
+				/* Already claimed: stop this SAME submit event from reaching
+				 * a second delegated Woo/plugin submit handler further up
+				 * the DOM. Never replay after POST dispatch -- ajaxAddToCart()
+				 * has already started it. */
+				event.stopImmediatePropagation();
 			}
 		});
 	}
@@ -1126,7 +1129,6 @@
 				return;
 			}
 		}
-		renderSingleProductViewCartLink(submitter);
 	}
 
 	/* -----------------------------------------------------------------
@@ -1452,19 +1454,33 @@
 			if (group && typeof group.focus === 'function') { group.focus(); }
 		}
 
+		function setSubmitProxyBusy(busy) {
+			var proxy = body.querySelector('[data-gloskin-variable-submit-proxy]');
+			if (!proxy) { return; }
+			proxy.classList.toggle('is-loading', !!busy);
+			if (busy) { proxy.setAttribute('aria-busy', 'true'); }
+			else { proxy.removeAttribute('aria-busy'); }
+		}
+
 		function handleProxySubmit(form) {
 			if (!form) { return; }
+			var submit = getNativeSubmit(form);
+			/* The native submit already owns busy state once Core has claimed
+			 * it; a repeat proxy click while that claim is in flight must not
+			 * dispatch a second submit -- only re-affirm the SAME visible
+			 * busy/loading presentation the proxy already carries. */
+			if (submit && submit.getAttribute('aria-busy') === 'true') { return; }
 			var unresolved = unresolvedSelect(form);
 			if (unresolved) {
 				showTransientNotice('Pilih varian terlebih dahulu.', { tone: true });
 				focusSelectGroup(unresolved);
 				return;
 			}
-			var submit = getNativeSubmit(form);
 			if (!submit || submit.disabled || submit.classList.contains('disabled')) {
 				showTransientNotice('Varian yang dipilih belum tersedia.', { tone: true });
 				return;
 			}
+			setSubmitProxyBusy(true);
 			submit.click();
 		}
 
@@ -1554,6 +1570,71 @@
 				});
 		}
 
+		function afterCurrentStack(callback) {
+			if (typeof queueMicrotask === 'function') { queueMicrotask(callback); return; }
+			if (typeof Promise === 'function') { Promise.resolve().then(callback); return; }
+			window.setTimeout(callback, 0);
+		}
+
+		function identityPartsFromPdp() {
+			var dock = document.querySelector('[data-gloskin-purchase-dock]');
+			var product = dock && dock.closest ? dock.closest('div.product') : null;
+			if (!dock || !product) { return null; }
+			var galleryImage = product.querySelector('.woocommerce-product-gallery__image img, .woocommerce-product-gallery img.wp-post-image, img.wp-post-image');
+			var dockIdentity = dock.querySelector('[data-gloskin-purchase-identity]');
+			var title = (dockIdentity && dockIdentity.querySelector('.gloskin-ui1-purchase-dock__title')) || product.querySelector('.product_title');
+			var price = (dockIdentity && dockIdentity.querySelector('.gloskin-ui1-purchase-dock__price')) || product.querySelector('.summary .price');
+			return { image: galleryImage || null, name: title ? title.textContent.trim() : '', priceHtml: price ? price.innerHTML : '' };
+		}
+
+		/* Converges the PDP quick-add modal's identity block from raw dock-
+		 * identity markup to the SAME richer presentation the catalog Quick
+		 * Add already uses, sourced from existing PDP gallery/summary DOM
+		 * only -- no second identity data owner. Deferred one microtask past
+		 * the trigger click that opened/rendered the modal so it upgrades the
+		 * just-rendered basic identity rather than racing it. */
+		function renderPdpIdentityLikeCatalog() {
+			/* overlay.open() flips `hidden` off synchronously but defers the
+			 * aria-hidden="false" flip to the next animation frame (so the
+			 * CSS transition has a closed frame to start from) -- checking
+			 * aria-hidden here would race that deferral and always read
+			 * "true" one microtask later. `hidden` is the reliable
+			 * synchronous open/closed signal. */
+			if (modal.hidden) { return; }
+			var pdp = body.querySelector('.gloskin-ui1-variable-modal__pdp');
+			var oldIdentity = pdp ? pdp.querySelector('.gloskin-ui1-variable-modal__identity') : null;
+			if (!oldIdentity) { return; }
+			var parts = identityPartsFromPdp();
+			if (!parts) { return; }
+
+			var identity = document.createElement('div');
+			identity.className = 'gloskin-ui1-quickadd__product gloskin-ui1-variable-modal__identity-converged';
+			identity.setAttribute('data-gloskin-variable-modal-identity', '');
+			if (parts.image) {
+				var image = parts.image.cloneNode(true);
+				image.removeAttribute('id');
+				image.className = 'gloskin-ui1-quickadd__image';
+				identity.appendChild(image);
+			} else {
+				var placeholder = document.createElement('span');
+				placeholder.className = 'gloskin-ui1-quickadd__image gloskin-ui1-quickadd__image--placeholder';
+				placeholder.setAttribute('aria-hidden', 'true');
+				identity.appendChild(placeholder);
+			}
+			var copy = document.createElement('div');
+			var name = document.createElement('strong');
+			name.textContent = parts.name;
+			copy.appendChild(name);
+			if (parts.priceHtml) {
+				var price = document.createElement('div');
+				price.className = 'gloskin-ui1-product-price';
+				price.innerHTML = parts.priceHtml;
+				copy.appendChild(price);
+			}
+			identity.appendChild(copy);
+			oldIdentity.replaceWith(identity);
+		}
+
 		function failOpenPdp(form, dock) {
 			if (form) { form.classList.remove('gloskin-ui1-variable-pdp-enhanced'); }
 			var trigger = dock ? dock.querySelector('[data-gloskin-variable-pdp-trigger]') : null;
@@ -1586,7 +1667,10 @@
 				action.insertBefore(trigger, action.firstChild);
 				trigger.addEventListener('click', function () {
 					dismissActionSpotlight();
-					if (renderPdp(form, dock)) { overlay.open('quickadd'); }
+					if (renderPdp(form, dock)) {
+						overlay.open('quickadd');
+						afterCurrentStack(renderPdpIdentityLikeCatalog);
+					}
 				});
 			}
 
@@ -1744,6 +1828,17 @@
 			overlay.open('quickadd');
 			notifyPdpRequirement(detail.form);
 		});
+
+		/* The visible proxy is a synthetic button, distinct from the native
+		 * submit it delegates to, so it owns no busy state of its own until
+		 * mirrored here. Both a confirmed success and a known failure route
+		 * through Woo's own fragment-refresh lifecycle, so clearing on either
+		 * event always settles the proxy correctly. */
+		if (window.jQuery && document.body) {
+			window.jQuery(document.body).on('added_to_cart.gloskinVariableModal wc_fragment_refresh.gloskinVariableModal', function () {
+				setSubmitProxyBusy(false);
+			});
+		}
 
 		var existingDock = document.querySelector('[data-gloskin-purchase-dock][data-gloskin-purchase-composed="true"]');
 		var existingForm = existingDock ? existingDock.querySelector('form.variations_form') : null;

@@ -269,20 +269,23 @@ if grep -qE "single_add_to_cart_button:disabled[^{]*\{[^}]*background:var\(--glo
   fail "commerce accent: disabled Add to Cart must not render the active accent color"
 fi
 
-# View Cart: idempotent, success-only, single-product custom AJAX helper
-# (Woo's own wc-add-to-cart.js already creates this natively for catalog-
-# loop ajax_add_to_cart buttons, which is why this only targets the
-# single-product page's own bridge). Styled as a secondary action, never
-# duplicated on repeat adds.
-grep -qF 'function renderSingleProductViewCartLink(submitter)' "$core_js" \
-	|| fail "View Cart: single-product success helper missing"
-grep -qF "link.className = 'added_to_cart wc-forward';" "$core_js" \
-	|| fail "View Cart: helper must use Woo's own added_to_cart/wc-forward class contract"
-grep -qF "submitter.parentNode.querySelector('a.added_to_cart.wc-forward');" "$core_js" \
-	|| fail "View Cart: helper must reuse an existing link (idempotent) instead of always inserting a new one"
+# View Cart: normal PDP Add to Cart success is directly canonical
+# added_to_cart -> Cart overlay/count. A single-product-specific View Cart
+# link create-then-delete choreography must never exist (Woo's own
+# wc-add-to-cart.js still owns the catalog-loop ajax_add_to_cart forward
+# link independently; that CSS contract stays, only the PDP JS helper that
+# used to shadow it is gone).
+if grep -qF 'function renderSingleProductViewCartLink' "$core_js"; then
+	fail "View Cart: PDP create-then-delete success helper must not exist"
+fi
+if grep -qF 'wc-forward' "$core_js"; then
+	fail "View Cart: core must never create a PDP added_to_cart forward link"
+fi
 grep -qF 'onSuccess: function () { handleSingleProductAddToCartSuccess(submitter); }' "$core_js" \
-	|| fail "View Cart: helper must run only after a confirmed successful Woo mutation, not on dispatch"
-grep -qF '.gloskin-ui1 a.added_to_cart.wc-forward{' "$core_css" || fail "View Cart: secondary-action styling missing"
+	|| fail "single-product success handler must run only after a confirmed successful Woo mutation, not on dispatch"
+if [[ -f "$plugin_root/assets/js/gloskin-ui1-commerce-closure.js" ]]; then
+	fail "post-core commerce closure module must not exist"
+fi
 
 # -----------------------------------------------------------------------
 # Regression-hardening pass: primary-product CSS scope tightened to a
@@ -468,7 +471,9 @@ grep -qF 'buyNowBefore.disabled = !!submitBefore.disabled;' "$purchase_dock_js" 
 grep -qF 'function handleSingleProductAddToCartSuccess(submitter)' "$core_js" || fail "Buy Now: single-product success handler missing"
 grep -qF "submitter.hasAttribute('data-gloskin-buy-now-redirect')" "$core_js" || fail "Buy Now: success handler must check the one-shot redirect flag"
 grep -qF 'window.location.href = cartUrl;' "$core_js" || fail "Buy Now: confirmed success must redirect to the existing canonical cart URL"
-grep -qF 'renderSingleProductViewCartLink(submitter);' "$core_js" || fail "Buy Now: the normal Add to Cart path (View Cart link) must remain fully intact"
+# The normal (non-Buy-Now) Add to Cart path is directly canonical
+# added_to_cart -> Cart overlay/count now that the PDP View Cart
+# create-then-delete choreography is gone (asserted absent above).
 
 grep -qF -- '.gloskin-ui1-purchase-dock__buy-now{display:inline-flex' "$geometry" || fail "Buy Now: button styling missing"
 grep -qF -- 'border-radius:var(--gloskin-action-radius)' "$geometry" || fail "Buy Now: must share the one Action Kit radius token, not a bespoke pill"

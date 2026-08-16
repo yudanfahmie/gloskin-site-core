@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""Focused browser regression for final variable commerce closure."""
+"""Focused browser regression for final variable commerce closure.
+
+Claimed-submit propagation and modal presentation mirroring are owned
+directly by gloskin-ui1-core.js (initSingleProductAjax() / initQuickAdd()) --
+there is no separate post-core commerce-closure module."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CORE = (ROOT / "plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js").read_text(encoding="utf-8")
 DOCK = (ROOT / "plugin/gloskin-site-core/assets/js/gloskin-ui1-purchase-dock.js").read_text(encoding="utf-8")
-CLOSURE = (ROOT / "plugin/gloskin-site-core/assets/js/gloskin-ui1-commerce-closure.js").read_text(encoding="utf-8")
 CSS = "\n".join((ROOT / path).read_text(encoding="utf-8") for path in (
     "plugin/gloskin-site-core/assets/css/gloskin-ui1-core-base.css",
     "plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css",
@@ -19,10 +22,10 @@ def require(condition, message):
         raise AssertionError(message)
 
 
-for forbidden in ("fetch(", "MutationObserver", "ResizeObserver", "setInterval("):
-    require(forbidden not in CLOSURE, f"closure must not introduce {forbidden}")
-require("event.stopImmediatePropagation();" in CLOSURE, "claimed-submit propagation guard missing")
-require("a.added_to_cart.wc-forward" in CLOSURE, "PDP View Cart cleanup missing")
+require("function renderSingleProductViewCartLink" not in CORE, "PDP View Cart create-then-delete choreography must not exist")
+require("wc-forward" not in CORE, "core must never create a PDP added_to_cart forward link")
+require("event.stopImmediatePropagation();" in CORE, "claimed-submit propagation guard missing from the canonical submit owner")
+require(not (ROOT / "plugin/gloskin-site-core/assets/js/gloskin-ui1-commerce-closure.js").exists(), "post-core commerce closure module must not exist")
 print("commerce-closure-source-contract: OK")
 
 try:
@@ -31,10 +34,18 @@ except Exception:
     print("commerce-closure-browser-smoke: SKIPPED (playwright unavailable)")
     raise SystemExit(77)
 
-chromium = Path("/usr/bin/chromium")
-if not chromium.exists():
-    print("commerce-closure-browser-smoke: SKIPPED (chromium unavailable)")
-    raise SystemExit(77)
+
+def launch_browser(p):
+    chromium = Path("/usr/bin/chromium")
+    if chromium.exists():
+        launch_kwargs = {"executable_path": str(chromium)}
+    else:
+        bundled = Path(p.chromium.executable_path)
+        if not bundled.exists():
+            print("commerce-closure-browser-smoke: SKIPPED (chromium unavailable)")
+            raise SystemExit(77)
+        launch_kwargs = {}
+    return p.chromium.launch(headless=True, args=["--no-sandbox"], **launch_kwargs)
 
 HTML = """<!doctype html><html><head><meta charset='utf-8'></head>
 <body class='gloskin-ui1 single-product'>
@@ -78,14 +89,13 @@ window.fetch=function(url,opts){
 """
 
 with sync_playwright() as p:
-    browser=p.chromium.launch(headless=True,executable_path=str(chromium),args=['--no-sandbox'])
+    browser=launch_browser(p)
     page=browser.new_page(viewport={"width":1280,"height":900})
     page.set_content(HTML)
     page.add_style_tag(content=CSS)
     page.add_script_tag(content=RUNTIME)
     page.add_script_tag(content=CORE)
     page.add_script_tag(content=DOCK)
-    page.add_script_tag(content=CLOSURE)
     page.wait_for_selector('[data-gloskin-purchase-dock][data-gloskin-purchase-composed="true"]')
     page.wait_for_selector('[data-gloskin-variable-pdp-trigger]')
 
@@ -119,7 +129,7 @@ with sync_playwright() as p:
     require(page.evaluate('window.__nativeClicks')==1,'one modal click must delegate to same native submit exactly once')
     require(page.evaluate('window.__posts')==1 and page.evaluate('window.__added')==1,'one modal click must produce one POST and one added_to_cart')
     page.wait_for_timeout(0)
-    require(page.locator('[data-gloskin-purchase-dock] a.added_to_cart.wc-forward').count()==0,'PDP must retain zero persistent View Cart forward links')
+    require(page.locator('[data-gloskin-purchase-dock] a.added_to_cart.wc-forward').count()==0,'PDP must retain zero View Cart forward links -- none are ever created')
     after_action=action.bounding_box()
     require(before_action and after_action and abs(before_action['height']-after_action['height'])<=2,'Purchase Dock action geometry must remain stable after success')
     require(before_proxy and before_proxy['height']>=44,'visible modal CTA must remain touch-safe')

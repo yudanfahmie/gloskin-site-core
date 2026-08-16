@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Variable chip parity, Buy Now prerequisite and final commerce-closure contract."""
+"""Variable chip parity, Buy Now prerequisite and claimed-submit ownership contract."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,7 +17,6 @@ def require(condition, message):
 css = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-quickadd-polish.css")
 core = read("plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js")
 dock = read("plugin/gloskin-site-core/assets/js/gloskin-ui1-purchase-dock.js")
-closure = read("plugin/gloskin-site-core/assets/js/gloskin-ui1-commerce-closure.js")
 assets = read("plugin/gloskin-site-core/config/assets.php")
 runner = read("tests/check-runtime.sh")
 
@@ -63,35 +62,40 @@ catalog = quick[catalog_start:catalog_end]
 require("groups.forEach(function (created) { created.remove(); });" in catalog, "catalog enhancement must remain transactional/fail-open")
 require("form.classList.add('gloskin-ui1-variable-catalog-enhanced');" in catalog, "successful catalog enhancement flag missing")
 
-proxy_start = quick.index("function handleProxySubmit(form)")
+proxy_start = quick.index("function setSubmitProxyBusy(busy)")
 proxy_end = quick.index("function addCatalogPresentation(form)", proxy_start)
 proxy = quick[proxy_start:proxy_end]
 require("showTransientNotice('Pilih varian terlebih dahulu.', { tone: true });" in proxy, "modal incomplete CTA must keep reusable toast/tone")
 require("focusSelectGroup(unresolved);" in proxy, "modal incomplete CTA must keep unresolved chip-group focus")
 require("submit.click();" in proxy, "visible proxy must keep delegating to the SAME native submit")
 
-# The closure is non-mutating: it may close propagation and mirror presentation,
-# but it must never become a second cart/variation owner.
+# Final ownership state: no separate post-core commerce-closure module.
+# Claimed-submit propagation is owned directly by the canonical core mutation
+# owner (initSingleProductAjax()); modal busy mirroring and PDP identity
+# convergence are owned directly by the canonical modal owner (initQuickAdd()).
+require(not (ROOT / "plugin/gloskin-site-core/assets/js/gloskin-ui1-commerce-closure.js").exists(), "post-core commerce closure module must not exist")
+require("gloskin-ui1-commerce-closure" not in assets, "commerce closure asset registration must be removed")
+require("function renderSingleProductViewCartLink" not in core, "PDP View Cart create-then-delete choreography must not exist")
+require("wc-forward" not in core, "core must never create a PDP added_to_cart forward link")
+
+submit_owner_start = core.index("function initSingleProductAjax()")
+submit_owner_end = core.index("function handleSingleProductAddToCartSuccess", submit_owner_start)
+submit_owner = core[submit_owner_start:submit_owner_end]
 for forbidden in (
-    "fetch(", "XMLHttpRequest", "wc-ajax=add_to_cart", "addToCartAjaxUrl",
-    "variation_id.value", "variations.find", "MutationObserver", "ResizeObserver",
+    "fetch(", "XMLHttpRequest", "MutationObserver", "ResizeObserver",
     "setInterval(", "addEventListener('scroll'", "window.confirm", "window.alert",
 ):
-    require(forbidden not in closure, f"commerce closure must not own {forbidden}")
-require("event.stopImmediatePropagation();" in closure, "claimed native submit must stop before delegated mutation handlers")
-require("data-gloskin-commerce-closure" in closure, "per-form idempotence marker missing")
-require("submitter.getAttribute('aria-busy') !== 'true'" in closure, "submit guard must activate only after core claims native busy state")
-require("event.target.closest('[data-gloskin-variable-submit-proxy]')" in closure, "visible proxy capture guard missing")
-require("setProxyBusy(proxy, true);" in closure and "setProxyBusy(proxy, false);" in closure, "visible proxy busy lifecycle missing")
-require("added_to_cart.gloskinCommerceClosure" in closure, "confirmed-success settlement hook missing")
-require("wc_fragment_refresh.gloskinCommerceClosure" in closure, "known-failure settlement hook missing")
-require("a.added_to_cart.wc-forward" in closure and "link.remove();" in closure, "PDP persistent View Cart cleanup missing")
-require("renderPdpIdentityLikeCatalog" in closure, "PDP identity convergence utility missing")
-require("woocommerce-product-gallery__image img" in closure, "PDP identity must derive presentation image from existing gallery DOM")
-require("cloneNode(true)" in closure, "PDP image must be presentation clone only")
-require("form.cart" in closure and "appendChild(form" not in closure, "closure must never clone/create a PDP form")
-require("gloskin-ui1-commerce-closure" in assets and "assets/js/gloskin-ui1-commerce-closure.js" in assets, "commerce closure asset registration missing")
-require("'deps'      => array( 'gloskin-ui1-core', 'gloskin-ui1-purchase-dock' )" in assets, "closure must load after canonical core/Purchase Dock owners")
+    require(forbidden not in submit_owner, f"canonical submit owner must not own {forbidden}")
+require("event.stopPropagation();" in submit_owner, "native submit button click-guard missing from the canonical submit owner")
+require("event.stopImmediatePropagation();" in submit_owner, "claimed-submit propagation guard missing from the canonical submit owner")
+require("isWooSubmitBusy(submitter)" in submit_owner, "repeat-submit-while-busy guard missing from the canonical submit owner")
+
+require("setSubmitProxyBusy(true);" in proxy and "aria-busy') === 'true'" in proxy, "visible proxy busy lifecycle missing from the modal owner")
+require("added_to_cart.gloskinVariableModal" in quick, "confirmed-success settlement hook missing from the modal owner")
+require("wc_fragment_refresh.gloskinVariableModal" in quick, "known-failure settlement hook missing from the modal owner")
+require("renderPdpIdentityLikeCatalog" in quick, "PDP identity convergence utility missing from the modal owner")
+require("woocommerce-product-gallery__image img" in quick, "PDP identity must derive presentation image from existing gallery DOM")
+require("cloneNode(true)" in quick, "PDP image must be presentation clone only")
 require(core.count("function ajaxAddToCart(") == 1, "a second cart mutation owner was introduced")
 
 # Loading has one visual language and reuses the existing core spinner keyframe.
@@ -131,7 +135,7 @@ for required in (
 require("source: 'buy-now'" in dock, "Purchase Dock must retain existing Buy Now prerequisite event")
 require("submitBefore.setAttribute('data-gloskin-buy-now-redirect', '1');" in dock, "valid Buy Now redirect marker path changed")
 require("submitBefore.click();" in dock, "valid Buy Now must retain SAME native submit path")
-require("window.confirm" not in core + dock + closure and "window.alert" not in core + dock + closure, "native confirm/alert must not be introduced")
+require("window.confirm" not in core + dock and "window.alert" not in core + dock, "native confirm/alert must not be introduced")
 require("variable-chip-buy-now-contract.py" in runner, "focused commerce contract must run through tests/check-runtime.sh")
 require("commerce-closure-browser-smoke.py" in runner, "focused commerce browser regression must run through tests/check-runtime.sh")
 
