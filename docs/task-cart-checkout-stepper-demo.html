@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gloskin — Cart / Checkout Step Demo v2</title>
+<style>
+:root{
+  --bg:#fbfbfa;
+  --surface:#fff;
+  --text:#2a232c;
+  --muted:#8d8485;
+  --border:#ddd7d3;
+  --accent:#b12e2f;
+  --shadow:0 18px 50px rgba(42,35,44,.08);
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif}
+body{min-height:100vh}
+.shell{width:min(1180px,calc(100% - 40px));margin:0 auto;padding:68px 0 90px}
+
+/* Full-width commerce title stepper:
+   left title pinned left, right title pinned right, connector auto-fills the gap. */
+.commerce-stepper{
+  display:grid;
+  grid-template-columns:max-content minmax(44px,1fr) max-content;
+  align-items:center;
+  gap:clamp(14px,2vw,28px);
+  width:100%;
+  margin:0 0 34px;
+}
+.step{
+  appearance:none;
+  border:0;
+  background:none;
+  padding:0;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(2.7rem,5vw,4.65rem);
+  line-height:1;
+  letter-spacing:-.035em;
+  color:var(--text);
+  cursor:pointer;
+  opacity:.26;
+  white-space:nowrap;
+  transition:opacity .22s var(--ease),transform .22s var(--ease),color .22s var(--ease);
+}
+.step--cart{justify-self:start;text-align:left}
+.step--checkout{justify-self:end;text-align:right}
+.step:hover{opacity:.55}
+.step[aria-current="step"]{opacity:1;cursor:default}
+.step:not([aria-current="step"]):hover{transform:translateY(-1px)}
+
+.connector{
+  position:relative;
+  width:100%;
+  min-width:0;
+  height:1px;
+  background:color-mix(in srgb,var(--border) 82%,transparent);
+  overflow:hidden;
+}
+.connector::before,
+.connector::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  width:5px;
+  height:5px;
+  border-radius:999px;
+  background:var(--border);
+  transform:translateY(-50%);
+}
+.connector::before{left:0}
+.connector::after{right:0}
+.connector-progress{
+  position:absolute;
+  inset:0;
+  background:var(--accent);
+  transform-origin:left center;
+  transform:scaleX(0);
+  transition:transform .48s var(--ease);
+}
+body[data-step="checkout"] .connector-progress{transform:scaleX(1)}
+
+.viewport{overflow:hidden}
+.track{
+  display:flex;
+  width:200%;
+  transform:translateX(0);
+  transition:transform .55s var(--ease);
+}
+body[data-step="checkout"] .track{transform:translateX(-50%)}
+.panel{width:50%;flex:0 0 50%;padding:2px 2px 20px}
+.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,.8fr);gap:68px}
+.card{
+  background:var(--surface);
+  border:1px solid color-mix(in srgb,var(--border) 65%,transparent);
+  border-radius:16px;
+  box-shadow:var(--shadow);
+  padding:22px;
+}
+.row{display:flex;align-items:center;gap:16px;padding:12px 0}
+.thumb{width:64px;height:64px;border-radius:11px;background:linear-gradient(145deg,#eef1eb,#d9dfd4)}
+.copy{flex:1}
+.copy strong{display:block;font-size:1rem}
+.copy span{display:block;margin-top:5px;color:var(--muted);font-size:.86rem}
+.price{font-weight:700;color:var(--accent)}
+.side{padding-top:12px}
+.side h3{font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;margin:0 0 14px}
+.rule{height:1px;background:var(--border);margin:13px 0}
+.total{display:flex;justify-content:space-between;font-size:1.15rem;padding:8px 0 14px}
+.cta{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  min-height:48px;
+  border:0;
+  border-radius:8px;
+  background:var(--accent);
+  color:white;
+  font-weight:800;
+  cursor:pointer
+}
+.checkout-form{display:grid;gap:14px}
+.field{height:52px;border:1px solid var(--border);border-radius:8px;background:white;padding:0 14px;font:inherit}
+.summary-line{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}
+.micro{margin-top:14px;color:var(--muted);font-size:.82rem}
+
+@media(max-width:760px){
+  .shell{width:min(100% - 28px,1180px);padding-top:42px}
+  .commerce-stepper{
+    grid-template-columns:max-content minmax(24px,1fr) max-content;
+    gap:10px;
+    margin-bottom:26px;
+  }
+  .step{font-size:clamp(1.85rem,9.5vw,3.15rem)}
+  .connector::before,.connector::after{width:4px;height:4px}
+  .grid{grid-template-columns:1fr;gap:24px}
+}
+
+@media(max-width:430px){
+  .shell{width:min(100% - 22px,1180px)}
+  .commerce-stepper{
+    grid-template-columns:max-content minmax(18px,1fr) max-content;
+    gap:8px;
+  }
+  .step{font-size:clamp(1.6rem,8.8vw,2.35rem)}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .track,.connector-progress,.step{transition:none}
+}
+</style>
+</head>
+<body data-step="cart">
+<main class="shell">
+  <nav class="commerce-stepper" aria-label="Tahapan belanja">
+    <button class="step step--cart" id="step-cart" aria-current="step">Keranjang</button>
+    <span class="connector" aria-hidden="true">
+      <span class="connector-progress"></span>
+    </span>
+    <button class="step step--checkout" id="step-checkout">Checkout</button>
+  </nav>
+
+  <div class="viewport">
+    <div class="track">
+      <section class="panel" aria-labelledby="step-cart">
+        <div class="grid">
+          <div class="card">
+            <div class="row">
+              <div class="thumb"></div>
+              <div class="copy">
+                <strong>Gloskin Daily Shield UV Cream</strong>
+                <span>Ukuran: 30 g · Qty 1</span>
+              </div>
+              <div class="price">Rp229.000</div>
+            </div>
+          </div>
+
+          <aside class="side">
+            <h3>Cart totals</h3>
+            <div class="rule"></div>
+            <div class="total"><span>Estimated total</span><strong>Rp229.000</strong></div>
+            <button class="cta" data-go="checkout">Lanjut ke Checkout</button>
+          </aside>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="step-checkout">
+        <div class="grid">
+          <div class="card">
+            <div class="checkout-form">
+              <input class="field" placeholder="Nama lengkap">
+              <input class="field" placeholder="Email">
+              <input class="field" placeholder="Alamat">
+              <input class="field" placeholder="Kota / Kabupaten">
+            </div>
+          </div>
+
+          <aside class="side">
+            <h3>Ringkasan pesanan</h3>
+            <div class="rule"></div>
+            <div class="summary-line"><span>Daily Shield UV Cream</span><strong>Rp229.000</strong></div>
+            <div class="total"><span>Total</span><strong>Rp229.000</strong></div>
+            <button class="cta">Buat Pesanan</button>
+            <p class="micro">Demo visual — tidak mengirim transaksi.</p>
+          </aside>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script>
+(() => {
+  const cart = document.getElementById('step-cart');
+  const checkout = document.getElementById('step-checkout');
+
+  function setStep(next, push = true){
+    const isCheckout = next === 'checkout';
+    document.body.dataset.step = next;
+
+    cart.removeAttribute('aria-current');
+    checkout.removeAttribute('aria-current');
+    (isCheckout ? checkout : cart).setAttribute('aria-current','step');
+
+    if (push) history.pushState({step:next}, '', '#' + next);
+  }
+
+  cart.addEventListener('click', () => setStep('cart'));
+  checkout.addEventListener('click', () => setStep('checkout'));
+  document.querySelector('[data-go="checkout"]').addEventListener('click', () => setStep('checkout'));
+
+  window.addEventListener('popstate', e => {
+    const step =
+      (e.state && e.state.step) ||
+      (location.hash === '#checkout' ? 'checkout' : 'cart');
+    setStep(step, false);
+  });
+
+  if (location.hash === '#checkout') setStep('checkout', false);
+})();
+</script>
+</body>
+</html>
