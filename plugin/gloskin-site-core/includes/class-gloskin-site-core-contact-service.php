@@ -2,7 +2,8 @@
 /** First-party Gloskin Contact owner composed from narrow internal traits. */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 final class Gloskin_Site_Core_Contact_Service {
-	const MESSAGE_POST_TYPE = 'gloskin_contact_message';
+	const MESSAGE_POST_TYPE = 'gloskin_contact_msg';
+	const LEGACY_MESSAGE_POST_TYPE = 'gloskin_contact_message';
 	const SETTINGS_OPTION = 'gloskin_site_core_contact_settings';
 	const FORM_ACTION = 'gloskin_contact_submit';
 	const FORM_NONCE = 'gloskin_contact_submit';
