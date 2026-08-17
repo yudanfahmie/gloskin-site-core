@@ -387,12 +387,11 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
    remove control, no second cart owner, no custom AJAX flow. This only
    re-skins the existing wc-block-cart-item__* structure WC already
    renders, and reuses Gloskin tokens in place of WC Blocks' own default
-   (unthemed) border/spacing values. The extra wp-block-woocommerce-cart-
-   line-items-block ancestor class is required, not decorative: WC's own
-   block stylesheet sets these same properties at that specificity, so a
-   bare .wc-block-cart-items__row rule silently loses the cascade. */
-.wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row,
-.wp-block-woocommerce-cart-line-items-block .wc-block-cart-items thead{border-bottom-color:var(--gloskin-border)}
+   (unthemed) border/spacing values. The line-items block marker and
+   wc-block-cart-items class live on the SAME table in real Woo markup;
+   compound selectors below intentionally encode that DOM contract. */
+table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row,
+table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block thead{border-bottom-color:var(--gloskin-border)}
 /* WC's own cell border also includes a top edge, independent of the
    bottom-edge divider recolored above -- removed at every width (not just
    the desktop table polish below) since it renders on the mobile grid row
@@ -475,39 +474,14 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 .wc-block-cart-item__remove-link::after{content:"";position:absolute;inset:-8px}
 .wc-block-cart-item__remove-link:hover{background:var(--gloskin-surface);color:var(--gloskin-accent-strong)}
 
-/* Desktop Cart table: ONE deliberate separator + surface strategy. Woo's
-   own block stylesheet leaves per-cell/table chrome active alongside the
-   row/thead divider the rule above already recolors, which is what a real
-   screenshot actually shows as "multiple competing lines" (outer surface +
-   header separator + cell/row borders + an isolated total-cell line).
-   th/td borders are reset to 0 here, and the row/thead divider is
-   redeclared as a full border-bottom (not just -color, so this rule is
-   self-sufficient regardless of Woo's own default width/style) on the
-   same two elements the rule above already targets -- under
-   border-collapse:collapse a real, non-none border always wins the
-   collapse over an explicit 0/none one at the same edge, so this becomes
-   the only line left at each boundary, and the last product row drops
-   its own trailing one.
-   Scoped >=769px only: Woo's Cart block switches each row to its own CSS
-   grid at <=768px (the heavily-tested mobile block below, untouched by
-   this rule), and grid items never participate in table border-collapse
-   at all.
-   Every selector is scoped under body.woocommerce-cart .wp-block-
-   woocommerce-cart, same as the checkout-CTA-clearance rule below, plus
-   either the .wp-block-woocommerce-cart-line-items-block ancestor already
-   proven above necessary to win the cascade against WC's own equally-
-   specific rules, or (for the price/product cells) the cart-exclusive
-   .wc-block-cart-item__prices / __total wrapper -- both keep every
-   generic wc-block-components-* selector here (shared with Checkout's own
-   order summary) from ever reaching Checkout. Product cell/price class
-   names (.wc-block-cart-item__product, __prices,
-   .wc-block-components-product-price__value) match
-   tests/cart-block-mobile-regression.py's WC_CART_BASELINE fixture,
-   itself reverse-engineered from real staging via getComputedStyle
-   probing, not guessed. */
+/* Desktop Cart table: ONE deliberate separator + surface strategy. The real
+   Woo Cart table carries wc-block-cart-items AND
+   wp-block-woocommerce-cart-line-items-block on the same element. Every
+   table-owned selector therefore starts from that same-element compound;
+   rows/cells/components remain descendants of the table. Scoped >=769px so
+   the established Woo mobile grid contract below remains untouched. */
 @media (min-width:769px){
-	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block{border:0;background:transparent}
-	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items{
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block{
 		border:1px solid color-mix(in srgb,var(--gloskin-border) 70%,transparent);
 		border-radius:var(--gloskin-radius-md);
 		border-collapse:collapse;
@@ -515,19 +489,21 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 		box-shadow:none;
 		overflow:hidden;
 	}
-	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items th,
-	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items td{
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block th,
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block td{
 		border:0;
 		padding:20px;
 		vertical-align:middle;
 	}
-	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items thead{
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block thead{
+		display:table-header-group;
 		border:0;
 		background:var(--gloskin-accent);
 	}
-	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items thead th{
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block thead th{
 		padding-block:16px;
 		border:0;
+		background:var(--gloskin-accent);
 		color:var(--gloskin-inverse);
 		font-size:.78rem;
 		font-weight:700;
@@ -535,31 +511,31 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 		text-align:left;
 		text-transform:uppercase;
 	}
-	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row{
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row{
 		border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 70%,transparent);
 	}
-	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row:last-child{border-bottom:0}
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row:last-child{border-bottom:0}
 	body.woocommerce-cart .wp-block-woocommerce-cart .wc-block-cart-item__image img{width:80px;height:80px}
-	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-components-product-name{
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-components-product-name{
 		color:var(--gloskin-text);
 		font-size:.95rem;
 		font-weight:600;
 		text-decoration:none;
 	}
-	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-components-product-name:hover,
-	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-components-product-name:focus-visible{color:var(--gloskin-accent-readable)}
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-components-product-name:hover,
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-components-product-name:focus-visible{color:var(--gloskin-accent-readable)}
 	body.woocommerce-cart .wp-block-woocommerce-cart .wc-block-cart-item__prices .wc-block-components-product-price__value{
 		color:var(--gloskin-accent-readable);
 		font-size:.86rem;
 		font-weight:600;
 	}
-	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-components-product-metadata,
-	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-components-product-details{
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-components-product-metadata,
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-components-product-details{
 		color:var(--gloskin-muted);
 		font-size:.82rem;
 		line-height:1.4;
 	}
-	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-item__total{
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-cart-item__total{
 		border:0;
 		box-shadow:none;
 		text-align:right;

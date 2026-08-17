@@ -9,14 +9,15 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 COMMERCE_CSS = (ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-commerce-polish.css').read_text(encoding='utf-8')
 PRODUCTION_CSS = (ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-production.css').read_text(encoding='utf-8')
+LOADER_CSS = (ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-loader-system.css').read_text(encoding='utf-8')
 
 BASE = '''
 :root{--gloskin-font-heading:serif;--gloskin-font-body:Arial,sans-serif;--gloskin-container:1180px;--gloskin-gutter:24px;--gloskin-text:#2A232C;--gloskin-muted:#6F6667;--gloskin-border:#DDD7D3;--gloskin-bg:#fff;--gloskin-surface:#F8F5F3;--gloskin-surface-strong:#EFE9E6;--gloskin-accent:#B12E2F;--gloskin-accent-strong:#8F2025;--gloskin-accent-readable:#8F2025;--gloskin-inverse:#fff;--gloskin-radius-sm:8px;--gloskin-radius-md:12px;--gloskin-action-radius:8px}
 *{box-sizing:border-box}html,body{margin:0}body{min-height:100vh}.gloskin-ui1-container{width:min(calc(100% - 48px),1180px);margin:auto}
-/* Woo-like initial Cart block hydration footprint. It is intentionally native-owned. */
-.wc-block-components-skeleton--cart{display:grid;grid-template-columns:2fr 1fr;gap:28px;min-height:230px;padding:24px;border:1px solid #ece7e4;background:#fff}
+.wc-block-components-skeleton--cart{position:relative;z-index:1;display:grid;grid-template-columns:2fr 1fr;gap:28px;min-height:230px;padding:24px;border:1px solid #ece7e4;background:#fff}
 .wc-block-components-skeleton--cart span{display:block;min-height:28px;background:#eee8e5;border-radius:6px}
 .wc-block-components-skeleton--cart span:first-child{min-height:170px}
+@media(max-width:768px){.wc-block-cart-items thead{display:none}}
 '''
 
 
@@ -30,10 +31,10 @@ def handoff_markup():
 
 def build_html(hydrated=False):
     if hydrated:
-        cart = '''<div class="gloskin-ui1-container gloskin-ui1-commerce-native"><div class="wp-block-woocommerce-cart"><div class="wp-block-woocommerce-cart-line-items-block"><table class="wc-block-cart-items" data-hydrated-cart><thead><tr><th>Product</th><th>Total</th></tr></thead><tbody><tr class="wc-block-cart-items__row"><td>Product</td><td>Rp 100.000</td></tr></tbody></table></div></div></div>'''
+        cart = '''<div class="gloskin-ui1-container gloskin-ui1-commerce-native"><div class="wp-block-woocommerce-cart"><table class="wc-block-cart-items wp-block-woocommerce-cart-line-items-block" data-hydrated-cart><thead><tr><th>Product</th><th>Total</th></tr></thead><tbody><tr class="wc-block-cart-items__row"><td>Product</td><td>Rp 100.000</td></tr></tbody></table></div></div>'''
     else:
-        cart = '''<div class="gloskin-ui1-container gloskin-ui1-commerce-native"><div class="wp-block-woocommerce-cart" data-prehydration-cart><div class="wc-block-cart__main"><div class="wc-block-components-skeleton wc-block-components-skeleton--cart" data-woo-cart-skeleton aria-hidden="true"><span></span><span></span></div></div></div></div>'''
-    return f'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>{BASE}\n{COMMERCE_CSS}\n/* production intentionally follows commerce to reproduce the real global-H1 cascade pressure */\n{PRODUCTION_CSS}</style></head><body class="gloskin-ui1 woocommerce-cart">{journey_markup()}{handoff_markup()}{cart}</body></html>'''
+        cart = '''<div class="gloskin-ui1-container gloskin-ui1-commerce-native"><div class="wp-block-woocommerce-cart is-loading" data-prehydration-cart><div class="wc-block-cart__main"><div class="wc-block-components-skeleton wc-block-components-skeleton--cart" data-woo-cart-skeleton aria-hidden="true"><span></span><span></span></div></div></div></div>'''
+    return f'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>{BASE}\n{COMMERCE_CSS}\n{PRODUCTION_CSS}\n{LOADER_CSS}</style></head><body class="gloskin-ui1 woocommerce-cart">{journey_markup()}{handoff_markup()}{cart}</body></html>'''
 
 
 def heading_state(page):
@@ -43,13 +44,7 @@ def heading_state(page):
       const inactive=root.querySelector('a.gloskin-ui1-commerce-progress__step');
       const connector=root.querySelector('.gloskin-ui1-commerce-progress__connector');
       const a=getComputedStyle(active), i=getComputedStyle(inactive);
-      return {
-        h1Count:root.querySelectorAll('h1').length,
-        progressCount:document.querySelectorAll('[data-gloskin-commerce-progress]').length,
-        active:{font:parseFloat(a.fontSize),shadow:a.textShadow,synthesis:a.fontSynthesis,box:active.getBoundingClientRect().toJSON()},
-        inactive:{font:parseFloat(i.fontSize),box:inactive.getBoundingClientRect().toJSON()},
-        connector:connector.getBoundingClientRect().toJSON()
-      };
+      return {h1Count:root.querySelectorAll('h1').length,progressCount:document.querySelectorAll('[data-gloskin-commerce-progress]').length,active:{font:parseFloat(a.fontSize),shadow:a.textShadow,synthesis:a.fontSynthesis,opacity:parseFloat(a.opacity),box:active.getBoundingClientRect().toJSON()},inactive:{font:parseFloat(i.fontSize),box:inactive.getBoundingClientRect().toJSON()},connector:connector.getBoundingClientRect().toJSON()};
     }''')
 
 
@@ -58,8 +53,8 @@ def assert_heading(page, max_font=54):
     assert s['h1Count'] == 1 and s['progressCount'] == 1, s
     assert s['active']['font'] <= max_font, s
     assert abs(s['active']['font'] - s['inactive']['font']) <= 0.5, s
-    assert s['active']['shadow'] == 'none', s
-    assert s['active']['synthesis'] == 'none', s
+    assert s['active']['shadow'] == 'none' and s['active']['synthesis'] == 'none', s
+    assert s['active']['opacity'] == 1, s
     assert s['connector']['left'] >= s['active']['box']['right'] - 0.5, s
     assert s['connector']['right'] <= s['inactive']['box']['left'] + 0.5, s
     return s
@@ -70,7 +65,8 @@ def handoff_state(page):
       const host=document.querySelector('[data-gloskin-commerce-handoff]');
       const blobs=[...document.querySelectorAll('.gloskin-ui1-commerce-handoff__blob')];
       const hs=getComputedStyle(host), content=getComputedStyle(document.querySelector('.gloskin-ui1-commerce-native'));
-      return {host:{position:hs.position,width:parseFloat(hs.width),opacity:parseFloat(hs.opacity)},filter:getComputedStyle(document.querySelector('.gloskin-ui1-commerce-handoff__goo')).filter,blobs:blobs.map(b=>{const s=getComputedStyle(b);return {name:s.animationName,duration:s.animationDuration,delay:s.animationDelay}}),content:{opacity:parseFloat(content.opacity),pointer:content.pointerEvents}};
+      const b=host.getBoundingClientRect();
+      return {count:document.querySelectorAll('[data-gloskin-commerce-handoff]').length,host:{position:hs.position,z:parseInt(hs.zIndex)||0,width:parseFloat(hs.width),opacity:parseFloat(hs.opacity),box:b.toJSON()},filter:getComputedStyle(document.querySelector('.gloskin-ui1-commerce-handoff__goo')).filter,blobs:blobs.map(b=>{const s=getComputedStyle(b);return {name:s.animationName,duration:s.animationDuration,delay:s.animationDelay}}),content:{opacity:parseFloat(content.opacity),pointer:content.pointerEvents}};
     }''')
 
 executable = os.environ.get('CHROMIUM_PATH') or shutil.which('chromium') or shutil.which('chromium-browser') or shutil.which('google-chrome')
@@ -81,22 +77,32 @@ with sync_playwright() as p:
     page = browser.new_page(viewport={'width': 1440, 'height': 900})
     page.set_content(build_html(False))
 
-    desktop = assert_heading(page)
+    assert_heading(page)
     skeleton = page.locator('[data-woo-cart-skeleton]')
     assert skeleton.is_visible(), 'native Woo pre-hydration skeleton must remain visible'
-    header_box = page.locator('.gloskin-ui1-commerce-heading--journey').bounding_box()
-    skeleton_box = skeleton.bounding_box()
-    assert header_box and skeleton_box and skeleton_box['y'] >= header_box['y'] + header_box['height'] - 0.5, (header_box, skeleton_box)
+    assert page.locator('[data-gloskin-commerce-handoff]').count() == 1, 'must reuse exactly one handoff host'
+    loading = handoff_state(page)
+    skeleton_z = int(skeleton.evaluate("e => getComputedStyle(e).zIndex"))
+    assert loading['host']['opacity'] > 0 and loading['host']['z'] > skeleton_z, (loading, skeleton_z)
+    assert all(b['name'] == 'gloskin-ui1-goo-loader-dance' for b in loading['blobs']), loading
+    cx = loading['host']['box']['x'] + loading['host']['box']['width'] / 2
+    cy = loading['host']['box']['y'] + loading['host']['box']['height'] / 2
+    assert abs(cx - 720) <= 2 and abs(cy - 450) <= 2, loading
 
-    idle = handoff_state(page)
-    assert idle['host']['opacity'] == 0 and idle['content']['opacity'] == 1
-    assert len(idle['blobs']) == 4 and idle['filter'] != 'none'
+    # Woo settles hydration by removing its own is-loading class. No Gloskin
+    # loading class/state is involved; the same host must disappear.
+    page.eval_on_selector('[data-prehydration-cart]', "e => e.classList.remove('is-loading')")
+    page.wait_for_timeout(220)
+    settled = handoff_state(page)
+    assert settled['host']['opacity'] == 0 and page.locator('[data-gloskin-commerce-handoff]').count() == 1, settled
+    assert not page.locator('html').evaluate("e => Array.from(e.classList).some(c => c.includes('hydration'))")
 
+    # Existing journey presentation still reveals that exact same host.
     page.evaluate("document.documentElement.classList.add('gloskin-ui1-commerce-journey-leaving')")
     page.wait_for_timeout(220)
     leaving = handoff_state(page)
-    assert leaving['host']['position'] == 'fixed' and 104 <= leaving['host']['width'] <= 122
-    assert leaving['host']['opacity'] > 0 and leaving['content']['opacity'] == 0 and leaving['content']['pointer'] == 'none'
+    assert leaving['count'] == 1 and leaving['host']['opacity'] > 0 and leaving['content']['opacity'] == 0 and leaving['content']['pointer'] == 'none'
+    assert all(b['name'] == 'gloskin-ui1-goo-loader-dance' for b in leaving['blobs']), leaving
     page.evaluate("document.documentElement.classList.remove('gloskin-ui1-commerce-journey-leaving')")
     page.wait_for_timeout(220)
 
@@ -111,19 +117,24 @@ with sync_playwright() as p:
     assert_heading(hydrated)
     table = hydrated.locator('[data-hydrated-cart]')
     assert table.is_visible()
-    thead_style = hydrated.eval_on_selector('[data-hydrated-cart] thead', "e=>({background:getComputedStyle(e).backgroundColor,border:getComputedStyle(e).borderTopWidth})")
-    th_style = hydrated.eval_on_selector('[data-hydrated-cart] thead th', "e=>({color:getComputedStyle(e).color,border:getComputedStyle(e).borderTopWidth,weight:getComputedStyle(e).fontWeight})")
-    assert thead_style['background'] == 'rgb(177, 46, 47)', thead_style
-    assert thead_style['border'] == '0px', thead_style
-    assert th_style['color'] == 'rgb(255, 255, 255)', th_style
-    assert th_style['border'] == '0px' and int(th_style['weight']) >= 700, th_style
+    thead_style = hydrated.eval_on_selector('[data-hydrated-cart] thead', "e=>({display:getComputedStyle(e).display,background:getComputedStyle(e).backgroundColor,borders:[getComputedStyle(e).borderTopWidth,getComputedStyle(e).borderRightWidth,getComputedStyle(e).borderBottomWidth,getComputedStyle(e).borderLeftWidth]})")
+    th_style = hydrated.eval_on_selector('[data-hydrated-cart] thead th', "e=>({background:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color,borders:[getComputedStyle(e).borderTopWidth,getComputedStyle(e).borderRightWidth,getComputedStyle(e).borderBottomWidth,getComputedStyle(e).borderLeftWidth],weight:getComputedStyle(e).fontWeight})")
+    assert thead_style['display'] != 'none' and thead_style['background'] == 'rgb(177, 46, 47)', thead_style
+    assert all(v == '0px' for v in thead_style['borders']), thead_style
+    assert th_style['background'] == 'rgb(177, 46, 47)' and th_style['color'] == 'rgb(255, 255, 255)', th_style
+    assert all(v == '0px' for v in th_style['borders']) and int(th_style['weight']) >= 700, th_style
+
+    hydrated.set_viewport_size({'width': 390, 'height': 800})
+    assert hydrated.eval_on_selector('[data-hydrated-cart] thead', "e => getComputedStyle(e).display") == 'none'
 
     reduced = browser.new_page(viewport={'width': 390, 'height': 800}, reduced_motion='reduce')
     reduced.set_content(build_html(False))
     assert_heading(reduced)
-    reduced.evaluate("document.documentElement.classList.add('gloskin-ui1-commerce-journey-arriving')")
     reduced_state = handoff_state(reduced)
-    assert reduced_state['host']['opacity'] > 0 and reduced_state['content']['opacity'] == 0
+    assert reduced_state['host']['opacity'] > 0
+    assert all(b['name'] == 'none' for b in reduced_state['blobs']), reduced_state
+    reduced.eval_on_selector('[data-prehydration-cart]', "e => e.classList.remove('is-loading')")
+    assert handoff_state(reduced)['host']['opacity'] == 0
     reduced.close()
     hydrated.close()
     browser.close()

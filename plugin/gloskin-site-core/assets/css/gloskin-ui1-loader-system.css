@@ -74,6 +74,19 @@ html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui
 	animation-name:gloskin-ui1-goo-loader-dance;
 }
 
+/* Native Woo Cart hydration gets a second presentation trigger on the SAME
+   handoff host. Woo owns the is-loading class and hydration lifecycle; CSS
+   merely reflects that state, so no observer/request/controller is added. */
+body.woocommerce-cart:has(.wp-block-woocommerce-cart.is-loading) .gloskin-ui1-commerce-handoff{
+	z-index:60;
+	opacity:1;
+	transform:translate(-50%,-50%) scale(1);
+}
+body.woocommerce-cart:has(.wp-block-woocommerce-cart.is-loading) .gloskin-ui1-commerce-handoff__blob{
+	animation:gloskin-ui1-goo-loader-dance 3.5s infinite ease-in-out;
+	animation-delay:var(--gloskin-commerce-handoff-delay,0s);
+}
+
 /* Home hero: reuse its existing preparing/ready/failed state machine. The
    existing loader node becomes a compact goo field; no new JS state exists. */
 .gloskin-ui1-hero-bg-video__loader{
@@ -221,6 +234,7 @@ html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui
 }
 
 @media (prefers-reduced-motion:reduce){
+	body.woocommerce-cart:has(.wp-block-woocommerce-cart.is-loading) .gloskin-ui1-commerce-handoff__blob,
 	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,
 	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob,
 	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,

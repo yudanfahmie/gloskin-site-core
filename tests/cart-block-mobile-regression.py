@@ -1,18 +1,6 @@
 #!/usr/bin/env python3
-"""Real-Chromium regression for the WooCommerce Cart block's mobile row
-presentation (gloskin-ui1-production.css's "Cart item presentation"
-section). Exists because two earlier fixes for this exact area passed
-rect-math/diagnostic-CSS checks and still regressed on real staging: the
-diagnostic style tags used for verification did not match the cascade of
-the actually-shipped CSS against WC's own !important-heavy Cart Block
-stylesheet. This fixture embeds a minimal, faithful reproduction of that
-WC baseline (the specific !important declarations reverse-engineered from
-real staging this session -- grid-template-columns, forced grid-row-start
-on every cell, the product cell's forced grid-column-end, the remove
-button's forced width/height) alongside the real, unmodified production
-CSS file, so a future change to this section is checked against the same
-constraints that caused the previous regressions, locally, before ever
-touching staging."""
+"""Real-Chromium regression for the WooCommerce Cart block's desktop header
+and mobile row presentation using the same staging-derived table markup."""
 from pathlib import Path
 
 try:
@@ -27,14 +15,15 @@ CSS_BASE = (PLUGIN / "assets/css/gloskin-ui1-core-base.css").read_text(encoding=
 CSS_CORE = (PLUGIN / "assets/css/gloskin-ui1-core.css").read_text(encoding="utf-8")
 CSS_PRODUCTION = (PLUGIN / "assets/css/gloskin-ui1-production.css").read_text(encoding="utf-8")
 
-# The exact !important constraints WC Blocks' own Cart stylesheet applies
-# on mobile, reverse-engineered from real staging (gloskin-id.markas.cloud)
-# this session via getComputedStyle probing -- not guessed. This is what
-# actually defeated the two earlier (reverted) fix attempts.
+# Faithful Woo Blocks constraints. The real table carries both classes on the
+# same element; its header is a table header on desktop and hidden at <=768px.
 WC_CART_BASELINE = r"""
-.wc-block-cart-items{display:block}
-.wc-block-cart-items thead{display:none}
+.wc-block-cart-items{width:100%;border-collapse:separate}
+.wc-block-cart-items thead{display:table-header-group;background:rgb(255,255,255)}
+.wc-block-cart-items th,.wc-block-cart-items td{border:1px solid rgb(226,232,240)}
 @media (max-width:768px){
+  .wc-block-cart-items{display:block}
+  .wc-block-cart-items thead{display:none}
   .wc-block-cart-items__row{
     display:grid;
     grid-template-columns:80px 132px !important;
@@ -57,8 +46,8 @@ WC_CART_BASELINE = r"""
 """
 
 FIXTURE_LAYOUT = r"""
-body{margin:0}
-.gloskin-ui1-commerce-native{width:min(calc(100% - 36px),1400px);margin-inline:auto}
+:root{--gloskin-accent:#b12e2f;--gloskin-inverse:#fff;--gloskin-border:#ddd7d3;--gloskin-bg:#fff;--gloskin-surface:#f6f3f1;--gloskin-surface-strong:#ecebe8;--gloskin-text:#2a232c;--gloskin-muted:#6f6667;--gloskin-accent-readable:#8f2025;--gloskin-accent-strong:#8f2025;--gloskin-radius-sm:8px;--gloskin-radius-md:12px}
+body{margin:0}.gloskin-ui1-commerce-native{width:min(calc(100% - 36px),1400px);margin-inline:auto}
 """
 
 STRESS_TITLES = {
@@ -76,7 +65,7 @@ def markup(title, qty, subtotal):
 <div class="woocommerce gloskin-ui1-commerce-native">
 <div class="wp-block-woocommerce-cart alignwide">
 <div class="wc-block-components-sidebar-layout wc-block-cart wp-block-woocommerce-filled-cart-block">
-<div class="wc-block-components-main wc-block-cart__main wp-block-woocommerce-cart-items-block">
+<div class="wc-block-components-main wc-block-cart__main">
 <div class="table-container">
 <table class="wc-block-cart-items wp-block-woocommerce-cart-line-items-block" tabindex="-1">
 <thead><tr class="wc-block-cart-items__header"><th>Product</th><th>Details</th><th>Total</th></tr></thead>
@@ -128,6 +117,12 @@ def launch_browser(p):
     return p.chromium.launch(headless=True, args=['--no-sandbox'])
 
 
+def install(page, title="Gloskin Gentle Balance Facial Cleanser", qty=1, subtotal="Rp165.000"):
+    page.set_content(markup(title, qty, subtotal))
+    page.add_style_tag(content=CSS_BASE + '\n' + CSS_CORE + '\n' + WC_CART_BASELINE + '\n' + CSS_PRODUCTION + '\n' + FIXTURE_LAYOUT)
+    page.wait_for_timeout(30)
+
+
 def rect(page, selector):
     return page.evaluate(
         """(sel) => {
@@ -147,13 +142,6 @@ def intersects(a, b):
 
 
 def title_glyph_rects(page, selector):
-    """The title reserves space via padding-right rather than a hard
-    width, so its own element box intentionally extends into that
-    reserved zone (harmless empty space, not text) -- checking the
-    element's bounding box for overlap would false-positive on that
-    padding. What actually matters is where the rendered TEXT glyphs
-    land, which this reads via Range.getClientRects() the same way a
-    real screenshot comparison was verified on staging."""
     return page.evaluate(
         """(sel) => {
             const el = document.querySelector(sel);
@@ -168,16 +156,38 @@ def title_glyph_rects(page, selector):
 
 with sync_playwright() as p:
     browser = launch_browser(p)
+
+    # Desktop contract: real Woo DOM has BOTH identifying classes on the table.
+    desktop = browser.new_page(viewport={'width': 1440, 'height': 900})
+    install(desktop)
+    table = desktop.locator('table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block')
+    thead = table.locator('thead')
+    require(table.is_visible(), 'desktop Cart table is not visible')
+    require(thead.evaluate("e => getComputedStyle(e).display") != 'none', 'desktop Cart thead is hidden')
+    thead_style = thead.evaluate("e => ({background:getComputedStyle(e).backgroundColor,borders:[getComputedStyle(e).borderTopWidth,getComputedStyle(e).borderRightWidth,getComputedStyle(e).borderBottomWidth,getComputedStyle(e).borderLeftWidth]})")
+    th_style = table.locator('thead th').first.evaluate("e => ({background:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color,weight:getComputedStyle(e).fontWeight,transform:getComputedStyle(e).textTransform,spacing:getComputedStyle(e).letterSpacing,borders:[getComputedStyle(e).borderTopWidth,getComputedStyle(e).borderRightWidth,getComputedStyle(e).borderBottomWidth,getComputedStyle(e).borderLeftWidth]})")
+    require(thead_style['background'] == 'rgb(177, 46, 47)', f'desktop thead not accent: {thead_style}')
+    require(all(v == '0px' for v in thead_style['borders']), f'desktop thead border remains: {thead_style}')
+    require(th_style['background'] == 'rgb(177, 46, 47)', f'desktop th not continuous accent: {th_style}')
+    require(th_style['color'] == 'rgb(255, 255, 255)', f'desktop th not inverse: {th_style}')
+    require(int(th_style['weight']) >= 700 and th_style['transform'] == 'uppercase', f'desktop th typography regressed: {th_style}')
+    require(abs(float(th_style['spacing'].replace('px', '')) - (0.06 * 12.48)) < 0.25, f'desktop th letter spacing regressed: {th_style}')
+    require(all(v == '0px' for v in th_style['borders']), f'desktop th border remains: {th_style}')
+    desktop.close()
+
+    # Woo's <=768px contract still hides the native header.
+    mobile_header = browser.new_page(viewport={'width': 390, 'height': 900})
+    install(mobile_header)
+    require(mobile_header.locator('.wc-block-cart-items thead').evaluate("e => getComputedStyle(e).display") == 'none', 'mobile Cart thead must remain hidden')
+    mobile_header.close()
+
     checked = 0
     for width in VIEWPORTS:
         for title_key, title in STRESS_TITLES.items():
             for qty in STRESS_QUANTITIES:
                 for subtotal in STRESS_SUBTOTALS:
                     page = browser.new_page(viewport={'width': width, 'height': 900})
-                    page.set_content(markup(title, qty, subtotal))
-                    page.add_style_tag(content=CSS_BASE + '\n' + CSS_CORE + '\n' + WC_CART_BASELINE + '\n' + CSS_PRODUCTION + '\n' + FIXTURE_LAYOUT)
-                    page.wait_for_timeout(30)
-
+                    install(page, title, qty, subtotal)
                     label = f'{width}px title={title_key} qty={qty} subtotal={subtotal}'
 
                     overflow_x = page.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
@@ -194,15 +204,6 @@ with sync_playwright() as p:
                     require(product['right'] <= row['right'] + 1, f'{label}: product escapes row right edge: {product} vs {row}')
                     require(total['right'] <= row['right'] + 1, f'{label}: subtotal escapes row right edge: {total} vs {row}')
                     require(total['right'] <= width + 1, f'{label}: subtotal escapes viewport: {total}')
-
-                    # Checked against actual rendered text glyphs, not the
-                    # title element's own box -- the title intentionally
-                    # reserves space via padding-right, so its box extends
-                    # into the subtotal's column as harmless empty space;
-                    # only real glyph overlap is a genuine defect (this
-                    # exact gap between box-overlap and text-overlap is
-                    # what real staging caught that this fixture's earlier
-                    # box-only check did not).
                     require(not any(intersects(total, line) for line in title_lines), f'{label}: subtotal intersects product title text: total={total} title_lines={title_lines}')
                     require(not intersects(total, image), f'{label}: subtotal intersects image: total={total} image={image}')
 
@@ -219,7 +220,6 @@ with sync_playwright() as p:
                     )
                     require(remove_hit_area['position'] == 'relative', f'{label}: remove action lost its positioning context for the expanded hit area')
                     require(remove_hit_area['afterContent'] not in ('none', ''), f'{label}: remove action expanded hit area (::after) missing')
-
                     require(row['right'] <= width + 1, f'{label}: row itself overflows viewport: {row}')
 
                     checked += 1
@@ -227,4 +227,4 @@ with sync_playwright() as p:
     browser.close()
 
 require(checked == len(VIEWPORTS) * len(STRESS_TITLES) * len(STRESS_QUANTITIES) * len(STRESS_SUBTOTALS), f'unexpected checked count: {checked}')
-print(f'cart-block-mobile-regression: OK ({checked} stress combinations across {VIEWPORTS} viewports)')
+print(f'cart-block-mobile-regression: OK (desktop compound header + {checked} mobile stress combinations across {VIEWPORTS})')

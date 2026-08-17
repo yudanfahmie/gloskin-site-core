@@ -571,3 +571,36 @@
 		animation: none;
 	}
 }
+
+/* Real-staging loading composition: setBusy() remains the sole lifecycle
+   owner. Existing result DOM stays in normal flow for stable geometry but is
+   visually inaccessible while one opaque skeleton surface overlays the result
+   region from its exact top-left. */
+[data-gloskin-shop-catalog-owner].is-loading [data-gloskin-shop-results]{
+	position:relative;
+	isolation:isolate;
+}
+[data-gloskin-shop-catalog-owner].is-loading [data-gloskin-shop-results]>:not([data-gloskin-shop-skeleton]){
+	visibility:hidden;
+	pointer-events:none;
+}
+[data-gloskin-shop-catalog-owner].is-loading .gloskin-ui1-shop-skeleton{
+	position:absolute;
+	z-index:2;
+	top:0;
+	right:0;
+	left:0;
+	min-height:100%;
+	background:var(--gloskin-bg);
+	pointer-events:none;
+}
+[data-gloskin-shop-catalog-owner].is-loading .gloskin-ui1-shop-skeleton__grid{
+	position:relative;
+	z-index:1;
+}
+[data-gloskin-shop-catalog-owner].is-loading .gloskin-ui1-shop-skeleton__loader{
+	z-index:2;
+}
+[data-gloskin-shop-catalog-owner].is-loading .gloskin-ui1-shop-skeleton__goo{
+	z-index:3;
+}
