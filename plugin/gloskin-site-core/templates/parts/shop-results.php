@@ -24,6 +24,8 @@ $gloskin_shop_page           = isset( $gloskin_shop_results['page'] ) ? max( 1, 
 $gloskin_shop_max_pages      = isset( $gloskin_shop_results['max_pages'] ) ? max( 1, absint( $gloskin_shop_results['max_pages'] ) ) : 1;
 $gloskin_shop_category_label = isset( $gloskin_shop_results['category_label'] ) ? trim( (string) $gloskin_shop_results['category_label'] ) : '';
 $gloskin_shop_woo_ready      = ! empty( $gloskin_shop_results['woo_ready'] );
+$gloskin_shop_filtered       = ! empty( $gloskin_shop_results['filtered'] );
+$gloskin_shop_q              = isset( $gloskin_shop_results['q'] ) ? trim( (string) $gloskin_shop_results['q'] ) : '';
 $gloskin_shop_heading        = '' !== $gloskin_shop_category_label ? $gloskin_shop_category_label : __( 'Semua Produk', 'gloskin-site-core' );
 $gloskin_shop_page_url       = static function ( $page ) {
 	$page = max( 1, absint( $page ) );
@@ -62,6 +64,29 @@ $gloskin_shop_total_label = sprintf( __( '%d produk', 'gloskin-site-core' ), $gl
 	<?php endif; ?>
 <?php elseif ( ! $gloskin_shop_woo_ready ) : ?>
 	<?php gloskin_ui1_render_empty_state( 'product', __( 'Belanja belum tersedia', 'gloskin-site-core' ), __( 'Katalog produk belum tersedia pada situs ini.', 'gloskin-site-core' ), __( 'Lihat Skincare', 'gloskin-site-core' ), home_url( '/skincare/' ) ); ?>
+<?php elseif ( $gloskin_shop_filtered ) : ?>
+	<div class="gloskin-ui1-shop-empty-search">
+		<p class="gloskin-ui1-shop-empty-search__title">
+			<?php
+			if ( '' !== $gloskin_shop_q ) {
+				echo esc_html( sprintf(
+					/* translators: %s: search query. */
+					__( 'Produk tidak ditemukan untuk "%s"', 'gloskin-site-core' ),
+					$gloskin_shop_q
+				) );
+			} else {
+				echo esc_html__( 'Produk tidak ditemukan dengan filter ini', 'gloskin-site-core' );
+			}
+			?>
+		</p>
+		<p class="gloskin-ui1-shop-empty-search__hint"><?php echo esc_html__( 'Coba kata lain atau perluas rentang harga.', 'gloskin-site-core' ); ?></p>
+		<div class="gloskin-ui1-shop-empty-search__actions">
+			<?php if ( '' !== $gloskin_shop_q ) : ?>
+				<button type="button" class="gloskin-ui1-button gloskin-ui1-button--ghost gloskin-ui1-button--small" data-gloskin-shop-clear-search><?php echo esc_html__( 'Reset pencarian', 'gloskin-site-core' ); ?></button>
+			<?php endif; ?>
+			<button type="button" class="gloskin-ui1-text-link" data-gloskin-shop-clear-all><?php echo esc_html__( 'Hapus semua filter', 'gloskin-site-core' ); ?></button>
+		</div>
+	</div>
 <?php else : ?>
 	<?php gloskin_ui1_render_empty_state( 'product', __( 'Belum ada produk yang dapat ditampilkan', 'gloskin-site-core' ), __( 'Produk akan tampil di sini setelah item tersedia dalam katalog.', 'gloskin-site-core' ), __( 'Lihat Skincare', 'gloskin-site-core' ), home_url( '/skincare/' ) ); ?>
 <?php endif; ?>

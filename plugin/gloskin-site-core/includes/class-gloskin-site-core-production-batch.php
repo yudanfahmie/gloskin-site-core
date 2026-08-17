@@ -34,7 +34,7 @@ final class Gloskin_Site_Core_Production_Batch {
 		self::$services[] = $contact;
 
 		if ( ! is_admin() ) {
-			foreach ( array( 'route', 'rest', 'query', 'normalize' ) as $part ) { require_once __DIR__ . '/gloskin-site-core-shop-discovery-' . $part . '-trait.php'; }
+			foreach ( array( 'route', 'rest', 'query', 'normalize', 'search' ) as $part ) { require_once __DIR__ . '/gloskin-site-core-shop-discovery-' . $part . '-trait.php'; }
 			require_once __DIR__ . '/class-gloskin-site-core-shop-discovery.php';
 			$shop = new Gloskin_Site_Core_Shop_Discovery( $plugin_file );
 			$shop->register();

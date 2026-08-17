@@ -25,20 +25,27 @@ trait Gloskin_Site_Core_Shop_Discovery_Rest_Trait {
 			return new WP_Error( 'gloskin_shop_category', __( 'Kategori produk tidak tersedia.', 'gloskin-site-core' ), array( 'status' => 400 ) );
 		}
 
+		$tokens  = $this->normalize_q_tokens( $q );
 		$filters = array( 'category' => $category, 'q' => $q, 'min_price' => $min, 'max_price' => $max );
 		$catalog = $this->catalog( $page, $filters );
+
+		// Dynamic price bounds: reflect category + q match set, not current price filter.
+		$bounds = $this->get_price_bounds( $category, $tokens );
+
 		$results = array(
-			'products'       => $catalog['products'],
-			'total'          => $catalog['total'],
-			'page'           => $catalog['page'],
-			'max_pages'      => $catalog['max_pages'],
-			'category'       => $category,
-			'category_label' => '' !== $category && isset( $mappings[ $category ] ) ? $mappings[ $category ] : '',
-			'woo_ready'      => class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' ) ? ( new Gloskin_Site_Core_WooCommerce_Adapter() )->available() : function_exists( 'wc_get_product' ),
-			'filtered'       => '' !== $category || '' !== $q || null !== $min || null !== $max,
-			'q'              => $q,
-			'min_price'      => $min,
-			'max_price'      => $max,
+			'products'            => $catalog['products'],
+			'total'               => $catalog['total'],
+			'page'                => $catalog['page'],
+			'max_pages'           => $catalog['max_pages'],
+			'category'            => $category,
+			'category_label'      => '' !== $category && isset( $mappings[ $category ] ) ? $mappings[ $category ] : '',
+			'woo_ready'           => class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' ) ? ( new Gloskin_Site_Core_WooCommerce_Adapter() )->available() : function_exists( 'wc_get_product' ),
+			'filtered'            => '' !== $category || '' !== $q || null !== $min || null !== $max,
+			'q'                   => $q,
+			'min_price'           => $min,
+			'max_price'           => $max,
+			'available_min_price' => $bounds['min'],
+			'available_max_price' => $bounds['max'],
 		);
 		$html = $this->render_results( $results );
 		if ( '' === $html ) {
@@ -46,14 +53,16 @@ trait Gloskin_Site_Core_Shop_Discovery_Rest_Trait {
 		}
 		return rest_ensure_response(
 			array(
-				'html'      => $html,
-				'category'  => $category,
-				'q'         => $q,
-				'min_price' => null === $min ? '' : (string) $min,
-				'max_price' => null === $max ? '' : (string) $max,
-				'page'      => (int) $catalog['page'],
-				'total'     => (int) $catalog['total'],
-				'max_pages' => (int) $catalog['max_pages'],
+				'html'                => $html,
+				'category'            => $category,
+				'q'                   => $q,
+				'min_price'           => null === $min ? '' : (string) $min,
+				'max_price'           => null === $max ? '' : (string) $max,
+				'page'                => (int) $catalog['page'],
+				'total'               => (int) $catalog['total'],
+				'max_pages'           => (int) $catalog['max_pages'],
+				'available_min_price' => (float) $bounds['min'],
+				'available_max_price' => (float) $bounds['max'],
 			)
 		);
 	}

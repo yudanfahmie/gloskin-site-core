@@ -91,7 +91,7 @@ $forbidden = array( 'sip', 'schedule', 'clinic', 'clinic_slug', 'specialization'
 foreach ( $doctor_json['doctors'] as $doctor ) {
 	foreach ( $forbidden as $field ) { require_contract( ! array_key_exists( $field, $doctor ), 'invented doctor field forbidden: ' . $field ); }
 }
-require_contract( false !== strpos( $doctor_state, '$this->acquire_lock()' ) && false !== strpos( $doctor_state, "\$state['index'] = \$index + 1" ), 'doctor lock/checkpoint semantics must remain' );
+require_contract( false !== strpos( $doctor_state, '$this->acquire_lock()' ) && (bool) preg_match( "/\\\\?\\\$state\['index'\]\\s*=\\s*\\\\?\\\$index\\s*\\+\\s*1/", $doctor_state ), 'doctor lock/checkpoint semantics must remain' );
 require_contract( false !== strpos( $doctor_upsert, 'self::SOURCE_META' ) && false !== strpos( $doctor_upsert, 'Unowned doctor collision' ), 'doctor idempotent source ownership/collision guard must remain' );
 $consumed = strpos( $doctor_finalize, "\$state['status'] = 'consumed'" );
 $cleanup = strpos( $doctor_finalize, '$this->cleanup_runtime' );

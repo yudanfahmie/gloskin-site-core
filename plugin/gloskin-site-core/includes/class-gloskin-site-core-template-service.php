@@ -656,19 +656,50 @@ final class Gloskin_Site_Core_Template_Service {
 	}
 	/** @return array<string,mixed> */
 	private function shop_context() {
-		$page = $this->content_page( 'shop' );
+		$page  = $this->content_page( 'shop' );
 		$paged = max( 1, absint( get_query_var( 'paged' ) ), absint( get_query_var( 'page' ) ) );
 		$catalog = $this->woocommerce->products_paginated( $paged, 12 );
 		return array(
-			'page' => $page,
-			'hero' => $this->hero_context( $page, __( 'Belanja', 'gloskin-site-core' ), __( 'Jelajahi seluruh skincare Gloskin.', 'gloskin-site-core' ) ),
-			'mappings' => $this->skincare_mappings(),
-			'products' => $catalog['products'],
+			'page'           => $page,
+			'hero'           => $this->hero_context( $page, __( 'Belanja', 'gloskin-site-core' ), __( 'Jelajahi seluruh skincare Gloskin.', 'gloskin-site-core' ) ),
+			'mappings'       => $this->skincare_mappings(),
+			'products'       => $catalog['products'],
 			'products_total' => $catalog['total'],
-			'current_page' => $catalog['page'],
-			'total_pages' => $catalog['max_pages'],
-			'woo_ready' => $this->woocommerce->available(),
+			'current_page'   => $catalog['page'],
+			'total_pages'    => $catalog['max_pages'],
+			'woo_ready'      => $this->woocommerce->available(),
+			'price_bounds'   => $this->shop_price_bounds(),
 		);
+	}
+
+	/**
+	 * Compute overall available price bounds for the shop SSR.
+	 * Uses a single aggregate SQL query against wc_product_meta_lookup;
+	 * no product hydration, no posts_per_page=-1.
+	 *
+	 * @return array{min:float,max:float}
+	 */
+	private function shop_price_bounds() {
+		global $wpdb;
+		if ( ! isset( $wpdb ) || ! ( $wpdb instanceof wpdb ) ) {
+			return array( 'min' => 0.0, 'max' => 5000000.0 );
+		}
+		$lookup = $wpdb->prefix . 'wc_product_meta_lookup';
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row(
+			"SELECT MIN(l.min_price) AS avail_min, MAX(l.max_price) AS avail_max
+			 FROM {$lookup} l
+			 INNER JOIN {$wpdb->posts} p ON l.product_id = p.ID
+			 WHERE p.post_type = 'product' AND p.post_status = 'publish'",
+			ARRAY_A
+		);
+		// phpcs:enable
+		$min = ( $row && null !== $row['avail_min'] ) ? (float) $row['avail_min'] : 0.0;
+		$max = ( $row && null !== $row['avail_max'] ) ? (float) $row['avail_max'] : 5000000.0;
+		if ( $max <= $min || $max <= 0.0 ) {
+			$max = 5000000.0;
+		}
+		return array( 'min' => $min, 'max' => $max );
 	}
 
 	/* -----------------------------------------------------------------
