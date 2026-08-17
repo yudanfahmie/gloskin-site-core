@@ -138,9 +138,10 @@ html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui
 .gloskin-ui1-hero--video-only.is-video-preparing .gloskin-ui1-hero-bg-video__loader-dot::before{animation-delay:-1.6s}
 .gloskin-ui1-hero--video-only.is-video-preparing .gloskin-ui1-hero-bg-video__loader-dot::after{animation-delay:-2.4s}
 
-/* Quick Add: its existing loading div remains the lifecycle owner and is
-   replaced by the existing renderer when the product projection resolves. */
-.gloskin-ui1-quickadd__loading{
+/* Quick Add and Shop skeleton share the same semantic goo presentation. Each
+   host keeps its own lifecycle owner; only the visual primitive is shared. */
+.gloskin-ui1-quickadd__loading,
+.gloskin-ui1-shop-skeleton__goo{
 	--gloskin-goo-loader-size:clamp(72px,7vw,88px);
 	--gloskin-goo-loader-blob:clamp(24px,2.3vw,29px);
 	--gloskin-goo-loader-hero-blob:clamp(30px,2.8vw,35px);
@@ -153,7 +154,8 @@ html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui
 	color:transparent;
 	filter:url("#gloskin-ui1-commerce-handoff-goo");
 }
-.gloskin-ui1-quickadd__loading>span{
+.gloskin-ui1-quickadd__loading>span,
+.gloskin-ui1-shop-skeleton__goo>span{
 	position:absolute;
 	inset:0;
 	display:block;
@@ -166,7 +168,11 @@ html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui
 .gloskin-ui1-quickadd__loading::before,
 .gloskin-ui1-quickadd__loading::after,
 .gloskin-ui1-quickadd__loading>span::before,
-.gloskin-ui1-quickadd__loading>span::after{
+.gloskin-ui1-quickadd__loading>span::after,
+.gloskin-ui1-shop-skeleton__goo::before,
+.gloskin-ui1-shop-skeleton__goo::after,
+.gloskin-ui1-shop-skeleton__goo>span::before,
+.gloskin-ui1-shop-skeleton__goo>span::after{
 	position:absolute;
 	top:50%;
 	left:50%;
@@ -183,16 +189,21 @@ html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui
 	will-change:transform;
 	animation:gloskin-ui1-goo-loader-dance 3.5s infinite ease-in-out;
 }
-.gloskin-ui1-quickadd__loading>span::after{
+.gloskin-ui1-quickadd__loading>span::after,
+.gloskin-ui1-shop-skeleton__goo>span::after{
 	width:var(--gloskin-goo-loader-hero-blob);
 	height:var(--gloskin-goo-loader-hero-blob);
 	background:var(--gloskin-accent-strong);
 	box-shadow:0 0 16px color-mix(in srgb,var(--gloskin-accent) 34%,transparent);
 }
-.gloskin-ui1-quickadd__loading::before{animation-delay:0s}
-.gloskin-ui1-quickadd__loading::after{animation-delay:-.8s}
-.gloskin-ui1-quickadd__loading>span::before{animation-delay:-1.6s}
-.gloskin-ui1-quickadd__loading>span::after{animation-delay:-2.4s}
+.gloskin-ui1-quickadd__loading::before,
+.gloskin-ui1-shop-skeleton__goo::before{animation-delay:0s}
+.gloskin-ui1-quickadd__loading::after,
+.gloskin-ui1-shop-skeleton__goo::after{animation-delay:-.8s}
+.gloskin-ui1-quickadd__loading>span::before,
+.gloskin-ui1-shop-skeleton__goo>span::before{animation-delay:-1.6s}
+.gloskin-ui1-quickadd__loading>span::after,
+.gloskin-ui1-shop-skeleton__goo>span::after{animation-delay:-2.4s}
 
 @media (max-width:760px){
 	.gloskin-ui1-hero-bg-video__loader{
@@ -221,7 +232,11 @@ html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui
 	.gloskin-ui1-quickadd__loading::before,
 	.gloskin-ui1-quickadd__loading::after,
 	.gloskin-ui1-quickadd__loading>span::before,
-	.gloskin-ui1-quickadd__loading>span::after{
+	.gloskin-ui1-quickadd__loading>span::after,
+	.gloskin-ui1-shop-skeleton__goo::before,
+	.gloskin-ui1-shop-skeleton__goo::after,
+	.gloskin-ui1-shop-skeleton__goo>span::before,
+	.gloskin-ui1-shop-skeleton__goo>span::after{
 		animation:none;
 		will-change:auto;
 	}

@@ -112,3 +112,160 @@
 
 /* Reduced motion for overlays/sheets/empty-state settle. */
 @media (prefers-reduced-motion:reduce){.gloskin-ui1-search-overlay,.gloskin-ui1-sheet,.gloskin-ui1-search-overlay__canvas,.gloskin-ui1-sheet__panel,.gloskin-ui1-auth-overlay,.gloskin-ui1-auth-overlay__panel,.gloskin-ui1-badge{transition:none !important}.gloskin-ui1-search-overlay__loading span{animation:none}.gloskin-ui1-empty-state{animation:none}}
+
+/* Logged-in My Account polish: Woo keeps sole ownership of navigation,
+   endpoints, forms, validation and persisted account data. */
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation{
+	margin:0 0 20px;
+	padding:4px;
+	border:0;
+	border-radius:12px;
+	background:color-mix(in srgb,var(--gloskin-surface) 78%,var(--gloskin-bg));
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation ul{
+	align-items:stretch;
+	gap:4px;
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a{
+	padding:8px 12px;
+	border-radius:9px;
+	background:transparent;
+	color:var(--gloskin-muted);
+	font-family:var(--gloskin-font-body);
+	font-size:.9rem;
+	font-weight:600;
+	transition:background-color 140ms ease,color 140ms ease,box-shadow 140ms ease;
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a:hover{
+	background:var(--gloskin-accent-soft);
+	color:var(--gloskin-accent-readable);
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation .is-active>a,
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a[aria-current="page"]{
+	background:var(--gloskin-bg);
+	color:var(--gloskin-accent-readable);
+	box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gloskin-border) 78%,transparent),0 1px 5px color-mix(in srgb,var(--gloskin-text) 8%,transparent);
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation .is-active>a::before,
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a[aria-current="page"]::before{content:none}
+
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-content{
+	padding:0;
+	border:0;
+	border-radius:0;
+	background:transparent;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content h2{
+	font-size:clamp(1.4rem,2vw,1.8rem);
+	line-height:1.2;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content h3{
+	font-size:clamp(1.15rem,1.5vw,1.35rem);
+	line-height:1.25;
+}
+
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses{
+	display:grid;
+	grid-template-columns:repeat(2,minmax(0,1fr));
+	gap:18px;
+	margin:0;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address{
+	float:none;
+	width:100%;
+	min-width:0;
+	box-sizing:border-box;
+	margin:0;
+	padding:clamp(20px,2.4vw,24px);
+	border:1px solid var(--gloskin-border);
+	border-radius:var(--gloskin-radius-md);
+	background:color-mix(in srgb,var(--gloskin-surface) 46%,var(--gloskin-bg));
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address-title{
+	display:flex;
+	align-items:flex-start;
+	justify-content:space-between;
+	gap:12px;
+	margin:0 0 12px;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address-title h2{
+	margin:0;
+	font-size:clamp(1.4rem,2vw,1.65rem);
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address-title .edit{
+	float:none;
+	margin:2px 0 0;
+	color:var(--gloskin-accent-readable);
+	font-size:.82rem;
+	font-weight:700;
+	text-decoration:none;
+	white-space:nowrap;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address address{
+	margin:0;
+	color:var(--gloskin-muted);
+	font-style:normal;
+	line-height:1.65;
+}
+
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm{
+	display:grid;
+	grid-template-columns:repeat(2,minmax(0,1fr));
+	column-gap:16px;
+	align-items:start;
+	margin:0;
+	padding:clamp(20px,2.5vw,24px);
+	border:0;
+	border-radius:var(--gloskin-radius-md);
+	background:color-mix(in srgb,var(--gloskin-surface) 46%,var(--gloskin-bg));
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row{
+	float:none;
+	width:100%;
+	min-width:0;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row-first{grid-column:1}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row-last{grid-column:2}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row-wide{grid-column:1/-1}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm fieldset{
+	grid-column:1/-1;
+	min-width:0;
+	margin:8px 0 18px;
+	padding:18px 0 0;
+	border:0;
+	border-top:1px solid var(--gloskin-border);
+	border-radius:0;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm fieldset legend{
+	padding:0 10px 0 0;
+	color:var(--gloskin-text);
+	font-family:var(--gloskin-font-heading);
+	font-size:clamp(1.15rem,1.5vw,1.35rem);
+	font-weight:600;
+	line-height:1.25;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm>p:last-child{
+	grid-column:1/-1;
+	margin-bottom:0;
+}
+
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-info,
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-message,
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-error{
+	border:0;
+	border-left:3px solid var(--gloskin-accent);
+	border-radius:var(--gloskin-radius-sm);
+	background:color-mix(in srgb,var(--gloskin-accent-soft) 44%,var(--gloskin-bg));
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-error{border-left-color:var(--gloskin-accent-strong)}
+
+@media (max-width:782px){
+	.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation{margin-bottom:16px}
+	.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a{padding:8px 10px;font-size:.86rem}
+	.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-content{padding:0;border-radius:0}
+	.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses{grid-template-columns:1fr;gap:14px}
+	.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm{grid-template-columns:1fr;padding:18px}
+	.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row-first,
+	.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row-last,
+	.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row-wide{grid-column:1/-1}
+}

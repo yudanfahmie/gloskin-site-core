@@ -522,13 +522,15 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 		vertical-align:middle;
 	}
 	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items thead{
-		border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 70%,transparent);
+		border:0;
+		background:var(--gloskin-accent);
 	}
 	body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items thead th{
 		padding-block:16px;
-		color:var(--gloskin-muted);
+		border:0;
+		color:var(--gloskin-inverse);
 		font-size:.78rem;
-		font-weight:600;
+		font-weight:700;
 		letter-spacing:.06em;
 		text-align:left;
 		text-transform:uppercase;

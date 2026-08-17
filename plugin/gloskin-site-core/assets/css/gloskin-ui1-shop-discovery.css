@@ -371,13 +371,44 @@
    -------------------------------------------------------------------------- */
 
 [data-gloskin-shop-catalog-owner].is-loading [data-gloskin-shop-results] {
-	opacity: var(--gloskin-shop-loading-opacity);
 	transition: opacity .16s ease;
 }
 
 @keyframes gloskin-skeleton-shimmer {
 	from { background-position: -400px 0; }
 	to { background-position: 400px 0; }
+}
+
+.gloskin-ui1-shop-skeleton {
+	position: relative;
+}
+
+.gloskin-ui1-shop-skeleton__grid {
+	opacity: var(--gloskin-shop-loading-opacity);
+	transition: opacity .16s ease;
+}
+
+.gloskin-ui1-shop-skeleton__loader {
+	position: absolute;
+	z-index: 1;
+	inset: 0;
+	display: grid;
+	align-content: center;
+	justify-items: center;
+	gap: 8px;
+	pointer-events: none;
+}
+
+.gloskin-ui1-shop-skeleton__goo {
+	margin: 0;
+}
+
+.gloskin-ui1-shop-skeleton__loading-label {
+	margin: 0;
+	color: var(--gloskin-muted);
+	font-size: .78rem;
+	font-weight: 600;
+	line-height: 1.2;
 }
 
 .gloskin-ui1-shop-skeleton__card {
@@ -521,7 +552,8 @@
 	.gloskin-ui1-shop-search-field,
 	.gloskin-ui1-shop-search-field__icon,
 	.gloskin-ui1-shop-search-field__clear,
-	[data-gloskin-shop-catalog-owner].is-loading [data-gloskin-shop-results] {
+	[data-gloskin-shop-catalog-owner].is-loading [data-gloskin-shop-results],
+	.gloskin-ui1-shop-skeleton__grid {
 		transition: none;
 	}
 

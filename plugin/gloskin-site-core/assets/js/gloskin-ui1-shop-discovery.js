@@ -345,7 +345,7 @@
 			var card  = '<div class="gloskin-ui1-shop-skeleton__card"><div class="gloskin-ui1-shop-skeleton__media"></div><div class="gloskin-ui1-shop-skeleton__line gloskin-ui1-shop-skeleton__line--title"></div><div class="gloskin-ui1-shop-skeleton__line gloskin-ui1-shop-skeleton__line--price"></div></div>';
 			var cards = '';
 			for (var i = 0; i < SKELETON_CARD_COUNT; i += 1) { cards += card; }
-			return '<div class="gloskin-ui1-shop-skeleton" data-gloskin-shop-skeleton aria-hidden="true"><div class="gloskin-ui1-shop-skeleton__grid">' + cards + '</div></div>';
+			return '<div class="gloskin-ui1-shop-skeleton" data-gloskin-shop-skeleton aria-hidden="true"><div class="gloskin-ui1-shop-skeleton__grid">' + cards + '</div><div class="gloskin-ui1-shop-skeleton__loader"><div class="gloskin-ui1-shop-skeleton__goo"><span></span></div><span class="gloskin-ui1-shop-skeleton__loading-label">Loading product…</span></div></div>';
 		}
 
 		function setBusy(busy) {
