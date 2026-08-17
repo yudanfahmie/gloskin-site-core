@@ -6,6 +6,14 @@
 :root{
 	--gloskin-font-body:"Mulish","Segoe UI",Arial,sans-serif;
 	--gloskin-font-heading:"Marcellus","Times New Roman",serif;
+	/* Navigation-specific font: DM Sans for desktop + mobile nav across both
+	 * Header 1 and Header 2. Applied once at the shared .gloskin-ui1-nav root;
+	 * all nav descendants inherit naturally without per-element overrides.
+	 * Not preloaded -- the font stylesheet (gloskin-ui1-fonts.css) is the
+	 * first dependency in the load chain and font-display:fallback ensures
+	 * the system-ui fallback (visually close) renders immediately without
+	 * a layout shift. */
+	--gloskin-font-nav:"DM Sans",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 .gloskin-ui1--modern{--gloskin-font-heading:"Marcellus","Times New Roman",serif}
 body.gloskin-ui1{
@@ -31,12 +39,19 @@ body.gloskin-ui1{
 	font-weight:400;
 	letter-spacing:.005em;
 }
+/* ONE canonical navigation font owner: both Header 1 desktop/sticky and
+ * Header 2 desktop use <nav class="gloskin-ui1-nav gloskin-ui1-nav--desktop">;
+ * the mobile drawer uses <nav class="gloskin-ui1-nav gloskin-ui1-nav--mobile">.
+ * Setting font-family here lets every nav descendant inherit DM Sans without
+ * repeating the declaration on __link, __toggle, submenu, or mobile variants. */
+.gloskin-ui1-nav{
+	font-family:var(--gloskin-font-nav);
+}
 .gloskin-ui1-nav__link{
 	padding-inline:8px;
-	font-family:var(--gloskin-font-body);
 	font-size:.91rem;
 	font-weight:600;
-	letter-spacing:.004em;
+	letter-spacing:-.005em;
 }
 .gloskin-ui1-nav--mobile .gloskin-ui1-nav__link{font-size:.98rem}
 .gloskin-ui1-button,
