@@ -1,59 +1,73 @@
 /* ==========================================================================
-   Gloskin Shop Discovery — filter rail, search field, dual-range price slider.
-   Token-driven; no override markers. Theme-aware via CSS custom properties.
+   Gloskin Shop Discovery — one editorial filter rail.
+   Canonical Gloskin tokens only; no Shop-local brand palette.
    ========================================================================== */
 
-[data-gloskin-shop-catalog],
 [data-gloskin-shop-catalog-owner],
 [data-gloskin-shop-discovery] {
-	--gloskin-shop-filter-gap:       14px;
-	--gloskin-rail-section-gap:       6px;
-	--gloskin-rail-label-color:       #999;
-	--gloskin-rail-label-size:        0.6875rem;
-	--gloskin-rail-label-weight:      600;
-	--gloskin-rail-label-ls:          0.07em;
-	--gloskin-rail-divider:           1px solid rgba(17 17 17 / .09);
+	--gloskin-shop-filter-gap: 14px;
+	--gloskin-shop-rail-gap: 0;
+	--gloskin-shop-rail-section-gap: 6px;
+	--gloskin-shop-rail-sticky-clearance: 76px;
+	--gloskin-shop-rail-label-size: 0.6875rem;
+	--gloskin-shop-rail-label-weight: 600;
+	--gloskin-shop-rail-label-ls: 0.07em;
 
-	/* Search field tokens */
-	--gloskin-search-bg:              #fff;
-	--gloskin-search-border:          rgba(17 17 17 / .18);
-	--gloskin-search-border-focus:    var(--gloskin-color-brand, #2d6a4f);
-	--gloskin-search-radius:          100px;
-	--gloskin-search-icon-color:      #9ba3af;
-	--gloskin-search-icon-color-focus:#2d6a4f;
-	--gloskin-search-clear-color:     #9ba3af;
+	--gloskin-shop-search-bg: var(--gloskin-surface);
+	--gloskin-shop-search-border: var(--gloskin-border);
+	--gloskin-shop-search-border-focus: var(--gloskin-accent);
+	--gloskin-shop-search-radius: 100px;
+	--gloskin-shop-search-icon: var(--gloskin-muted);
+	--gloskin-shop-search-icon-focus: var(--gloskin-accent-readable);
 
-	/* Price slider tokens */
-	--gloskin-slider-track-h:         4px;
-	--gloskin-slider-track-bg:        rgba(17 17 17 / .12);
-	--gloskin-slider-fill-color:      var(--gloskin-color-brand, #2d6a4f);
-	--gloskin-slider-thumb-size:      20px;
-	--gloskin-slider-thumb-bg:        #fff;
-	--gloskin-slider-thumb-border:    2px solid var(--gloskin-color-brand, #2d6a4f);
-	--gloskin-slider-thumb-shadow:    0 1px 4px rgba(0 0 0 / .18);
-	--gloskin-slider-thumb-shadow-act:0 2px 8px rgba(0 0 0 / .28);
-	--gloskin-price-label-size:       0.8125rem;
-	--gloskin-price-label-weight:     600;
-
-	/* Loading */
-	--gloskin-shop-loading-opacity:   0.62;
+	--gloskin-shop-slider-track-h: 4px;
+	--gloskin-shop-slider-track-bg: color-mix(in srgb,var(--gloskin-border) 78%,var(--gloskin-surface-strong));
+	--gloskin-shop-slider-fill: color-mix(in srgb,var(--gloskin-accent) 82%,var(--gloskin-brand-champagne));
+	--gloskin-shop-slider-thumb-size: 20px;
+	--gloskin-shop-slider-thumb-bg: var(--gloskin-surface);
+	--gloskin-shop-slider-thumb-border: 2px solid var(--gloskin-accent);
+	--gloskin-shop-slider-thumb-shadow: 0 1px 4px color-mix(in srgb,var(--gloskin-text) 18%,transparent);
+	--gloskin-shop-slider-thumb-shadow-active: 0 2px 8px color-mix(in srgb,var(--gloskin-text) 26%,transparent);
+	--gloskin-shop-price-label-size: 0.8125rem;
+	--gloskin-shop-price-label-weight: 600;
+	--gloskin-shop-loading-opacity: 0.62;
 }
 
 /* --------------------------------------------------------------------------
-   Rail layout
+   Rail layout — sole sticky owner on wide layouts
    -------------------------------------------------------------------------- */
 
 .gloskin-ui1-shop-catalog__rail {
 	display: grid;
-	gap: 0;
+	gap: var(--gloskin-shop-rail-gap);
 	align-content: start;
+	align-self: start;
+	min-width: 0;
+	position: sticky;
+	top: calc(var(--gloskin-ui1-nav-sticky-top) + var(--gloskin-shop-rail-sticky-clearance));
+}
+
+/* Neutralize the older category-only structural defaults from core.css.
+   Discovery CSS is loaded after core.css and owns the complete filter rail. */
+.gloskin-ui1-shop-categories {
+	position: static;
+	top: auto;
+	min-width: 0;
+	max-width: 100%;
+	padding: 0;
+	border: 0;
+	overflow: visible;
 }
 
 .gloskin-ui1-shop-rail-section {
 	display: grid;
-	gap: var(--gloskin-rail-section-gap);
+	gap: var(--gloskin-shop-rail-section-gap);
 	padding: 18px 0;
-	border-bottom: var(--gloskin-rail-divider);
+	border: 0;
+}
+
+.gloskin-ui1-shop-rail-section:not(:last-of-type) {
+	border-bottom: 1px solid var(--gloskin-border);
 }
 
 .gloskin-ui1-shop-rail-section:first-child {
@@ -62,60 +76,80 @@
 
 .gloskin-ui1-shop-rail-section__label {
 	display: block;
-	font-size: var(--gloskin-rail-label-size);
-	font-weight: var(--gloskin-rail-label-weight);
-	letter-spacing: var(--gloskin-rail-label-ls);
+	font-size: var(--gloskin-shop-rail-label-size);
+	font-weight: var(--gloskin-shop-rail-label-weight);
+	letter-spacing: var(--gloskin-shop-rail-label-ls);
 	text-transform: uppercase;
-	color: var(--gloskin-rail-label-color);
+	color: var(--gloskin-muted);
 	line-height: 1;
 }
 
-/* Clear-all beneath all sections */
-.gloskin-ui1-shop-filter__clear,
-.gloskin-ui1-shop-catalog__rail > [data-gloskin-shop-clear-all] {
-	margin-top: 14px;
+/* Clear All remains a real button, but reads as a restrained reset action. */
+.gloskin-ui1-shop-filter__clear {
+	justify-self: start;
+	width: auto;
 	min-height: 44px;
+	margin-top: 12px;
+	padding: 8px 0;
+	border: 0;
+	border-radius: var(--gloskin-radius-sm);
+	background: transparent;
+	color: var(--gloskin-accent-readable);
+	font: inherit;
+	font-weight: 700;
+	line-height: 1.2;
+	cursor: pointer;
+	appearance: none;
+}
+
+.gloskin-ui1-shop-filter__clear:hover {
+	background: transparent;
+	color: var(--gloskin-accent-strong);
+	text-decoration: underline;
 }
 
 /* --------------------------------------------------------------------------
-   Premium pill search field
+   Search field
    -------------------------------------------------------------------------- */
 
 .gloskin-ui1-shop-search-field {
 	display: flex;
 	align-items: center;
 	gap: 6px;
+	min-width: 0;
 	min-height: 44px;
 	padding: 0 14px;
-	background: var(--gloskin-search-bg);
-	border: 1px solid var(--gloskin-search-border);
-	border-radius: var(--gloskin-search-radius);
+	background: var(--gloskin-shop-search-bg);
+	border: 1px solid var(--gloskin-shop-search-border);
+	border-radius: var(--gloskin-shop-search-radius);
 	transition: border-color .15s ease, box-shadow .15s ease;
 }
 
 .gloskin-ui1-shop-search-field:focus-within {
-	border-color: var(--gloskin-search-border-focus);
-	box-shadow: 0 0 0 3px rgba(45 106 79 / .14);
+	border-color: var(--gloskin-shop-search-border-focus);
+	box-shadow: var(--gloskin-field-focus-ring);
 }
 
 .gloskin-ui1-shop-search-field__icon {
 	flex-shrink: 0;
 	display: flex;
 	align-items: center;
-	color: var(--gloskin-search-icon-color);
+	color: var(--gloskin-shop-search-icon);
 	pointer-events: none;
 	transition: color .15s ease;
 }
 
 .gloskin-ui1-shop-search-field:focus-within .gloskin-ui1-shop-search-field__icon {
-	color: var(--gloskin-search-icon-color-focus);
+	color: var(--gloskin-shop-search-icon-focus);
 }
 
 .gloskin-ui1-shop-search-field input[type="search"] {
 	flex: 1 1 0;
 	min-width: 0;
+	width: 100%;
 	border: 0;
 	background: transparent;
+	color: var(--gloskin-text);
 	padding: 0;
 	margin: 0;
 	font: inherit;
@@ -125,7 +159,10 @@
 	appearance: none;
 }
 
-/* Remove browser-native clear × on WebKit */
+.gloskin-ui1-shop-search-field input[type="search"]::placeholder {
+	color: var(--gloskin-muted);
+}
+
 .gloskin-ui1-shop-search-field input[type="search"]::-webkit-search-decoration,
 .gloskin-ui1-shop-search-field input[type="search"]::-webkit-search-cancel-button {
 	-webkit-appearance: none;
@@ -137,19 +174,21 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	min-width: 32px;
+	min-height: 32px;
 	padding: 4px;
 	border: 0;
 	background: transparent;
-	color: var(--gloskin-search-clear-color);
+	color: var(--gloskin-muted);
 	cursor: pointer;
 	border-radius: 50%;
 	line-height: 1;
-	transition: color .12s ease, background .12s ease;
+	transition: color .12s ease, background-color .12s ease;
 }
 
 .gloskin-ui1-shop-search-field__clear:hover {
-	color: #374151;
-	background: rgba(17 17 17 / .07);
+	color: var(--gloskin-accent-readable);
+	background: var(--gloskin-accent-soft);
 }
 
 .gloskin-ui1-shop-search-field__clear[hidden] {
@@ -157,35 +196,47 @@
 }
 
 /* --------------------------------------------------------------------------
-   Dual-range price slider
+   Price availability + dual native range slider
    -------------------------------------------------------------------------- */
 
 .gloskin-ui1-price-filter {
 	display: grid;
 	gap: 10px;
+	min-width: 0;
 }
 
-/* Price labels row */
 .gloskin-ui1-price-filter__labels {
 	display: flex;
 	align-items: baseline;
+	flex-wrap: wrap;
 	gap: 4px;
-	font-size: var(--gloskin-price-label-size);
-	font-weight: var(--gloskin-price-label-weight);
-	line-height: 1;
+	min-width: 0;
+	font-size: var(--gloskin-shop-price-label-size);
+	font-weight: var(--gloskin-shop-price-label-weight);
+	line-height: 1.25;
+	color: var(--gloskin-text);
 }
 
 .gloskin-ui1-price-filter__label-sep {
-	color: var(--gloskin-rail-label-color);
+	color: var(--gloskin-muted);
 	font-weight: 400;
 }
 
-/* Slider track wrapper */
+.gloskin-ui1-price-filter[data-gloskin-price-state="empty"] .gloskin-ui1-price-filter__labels,
+.gloskin-ui1-price-filter[data-gloskin-price-state="single"] .gloskin-ui1-price-filter__labels {
+	color: var(--gloskin-muted);
+}
+
 .gloskin-ui1-price-slider {
 	position: relative;
-	height: calc(var(--gloskin-slider-thumb-size) + 8px);
+	height: calc(var(--gloskin-shop-slider-thumb-size) + 8px);
 	display: flex;
 	align-items: center;
+	min-width: 0;
+}
+
+.gloskin-ui1-price-slider[hidden] {
+	display: none;
 }
 
 .gloskin-ui1-price-slider__track {
@@ -194,25 +245,31 @@
 	right: 0;
 	top: 50%;
 	transform: translateY(-50%);
-	height: var(--gloskin-slider-track-h);
+	height: var(--gloskin-shop-slider-track-h);
 	border-radius: 100px;
-	background: var(--gloskin-slider-track-bg);
+	background: var(--gloskin-shop-slider-track-bg);
 	pointer-events: none;
 }
 
-/* Filled range between the two thumbs via CSS custom props */
 .gloskin-ui1-price-slider__track::after {
 	content: '';
 	position: absolute;
 	top: 0;
 	bottom: 0;
-	left:  var(--gloskin-price-min-pct, 0%);
+	left: var(--gloskin-price-min-pct, 0%);
 	right: calc(100% - var(--gloskin-price-max-pct, 100%));
-	background: var(--gloskin-slider-fill-color);
+	background: var(--gloskin-shop-slider-fill);
 	border-radius: 100px;
 }
 
-/* Both range inputs overlap the same space */
+.gloskin-ui1-price-filter[data-gloskin-price-state="single"] .gloskin-ui1-price-slider__track {
+	background: color-mix(in srgb,var(--gloskin-border) 70%,var(--gloskin-accent-soft));
+}
+
+.gloskin-ui1-price-filter[data-gloskin-price-state="single"] .gloskin-ui1-price-slider__track::after {
+	display: none;
+}
+
 .gloskin-ui1-price-slider__input {
 	position: absolute;
 	left: 0;
@@ -220,24 +277,27 @@
 	width: 100%;
 	margin: 0;
 	padding: 0;
-	height: var(--gloskin-slider-thumb-size);
+	height: var(--gloskin-shop-slider-thumb-size);
 	background: transparent;
 	-webkit-appearance: none;
 	appearance: none;
-	pointer-events: none;      /* thumbs only are hit-testable */
+	pointer-events: none;
 	outline: none;
 }
 
-/* WebKit thumb */
+.gloskin-ui1-price-slider__input[hidden] {
+	display: none;
+}
+
 .gloskin-ui1-price-slider__input::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	appearance: none;
-	width: var(--gloskin-slider-thumb-size);
-	height: var(--gloskin-slider-thumb-size);
+	width: var(--gloskin-shop-slider-thumb-size);
+	height: var(--gloskin-shop-slider-thumb-size);
 	border-radius: 50%;
-	background: var(--gloskin-slider-thumb-bg);
-	border: var(--gloskin-slider-thumb-border);
-	box-shadow: var(--gloskin-slider-thumb-shadow);
+	background: var(--gloskin-shop-slider-thumb-bg);
+	border: var(--gloskin-shop-slider-thumb-border);
+	box-shadow: var(--gloskin-shop-slider-thumb-shadow);
 	cursor: pointer;
 	pointer-events: all;
 	transition: box-shadow .12s ease, transform .1s ease;
@@ -245,18 +305,17 @@
 
 .gloskin-ui1-price-slider__input::-webkit-slider-thumb:hover,
 .gloskin-ui1-price-slider__input:active::-webkit-slider-thumb {
-	box-shadow: var(--gloskin-slider-thumb-shadow-act);
+	box-shadow: var(--gloskin-shop-slider-thumb-shadow-active);
 	transform: scale(1.12);
 }
 
-/* Firefox thumb */
 .gloskin-ui1-price-slider__input::-moz-range-thumb {
-	width: var(--gloskin-slider-thumb-size);
-	height: var(--gloskin-slider-thumb-size);
+	width: var(--gloskin-shop-slider-thumb-size);
+	height: var(--gloskin-shop-slider-thumb-size);
 	border-radius: 50%;
-	background: var(--gloskin-slider-thumb-bg);
-	border: var(--gloskin-slider-thumb-border);
-	box-shadow: var(--gloskin-slider-thumb-shadow);
+	background: var(--gloskin-shop-slider-thumb-bg);
+	border: var(--gloskin-shop-slider-thumb-border);
+	box-shadow: var(--gloskin-shop-slider-thumb-shadow);
 	cursor: pointer;
 	pointer-events: all;
 	transition: box-shadow .12s ease;
@@ -264,31 +323,42 @@
 
 .gloskin-ui1-price-slider__input::-moz-range-thumb:hover,
 .gloskin-ui1-price-slider__input:active::-moz-range-thumb {
-	box-shadow: var(--gloskin-slider-thumb-shadow-act);
+	box-shadow: var(--gloskin-shop-slider-thumb-shadow-active);
 }
 
-/* Remove Firefox track coloring (we paint it ourselves) */
 .gloskin-ui1-price-slider__input::-moz-range-track {
 	background: transparent;
 }
 
-/* Focus ring on the input itself (not the thumb) is suppressed; visual focus is via the thumb transform */
 .gloskin-ui1-price-slider__input:focus {
 	outline: none;
 }
 
 .gloskin-ui1-price-slider__input:focus-visible::-webkit-slider-thumb {
-	box-shadow: 0 0 0 3px rgba(45 106 79 / .28), var(--gloskin-slider-thumb-shadow);
+	box-shadow: var(--gloskin-field-focus-ring), var(--gloskin-shop-slider-thumb-shadow);
 }
 
 .gloskin-ui1-price-slider__input:focus-visible::-moz-range-thumb {
-	box-shadow: 0 0 0 3px rgba(45 106 79 / .28), var(--gloskin-slider-thumb-shadow);
+	box-shadow: var(--gloskin-field-focus-ring), var(--gloskin-shop-slider-thumb-shadow);
 }
 
-/* Reset link */
 .gloskin-ui1-price-filter__reset {
 	justify-self: start;
+	min-height: 44px;
+	padding: 8px 0;
+	border: 0;
+	background: transparent;
+	color: var(--gloskin-accent-readable);
+	font: inherit;
 	font-size: 0.8rem;
+	font-weight: 700;
+	cursor: pointer;
+	appearance: none;
+}
+
+.gloskin-ui1-price-filter__reset:hover {
+	color: var(--gloskin-accent-strong);
+	text-decoration: underline;
 }
 
 .gloskin-ui1-price-filter__reset[hidden] {
@@ -296,22 +366,17 @@
 }
 
 /* --------------------------------------------------------------------------
-   Loading state
+   Loading state + skeletons
    -------------------------------------------------------------------------- */
 
-[data-gloskin-shop-catalog].is-loading [data-gloskin-shop-results],
 [data-gloskin-shop-catalog-owner].is-loading [data-gloskin-shop-results] {
 	opacity: var(--gloskin-shop-loading-opacity);
 	transition: opacity .16s ease;
 }
 
-/* --------------------------------------------------------------------------
-   Skeleton cards
-   -------------------------------------------------------------------------- */
-
 @keyframes gloskin-skeleton-shimmer {
 	from { background-position: -400px 0; }
-	to   { background-position:  400px 0; }
+	to { background-position: 400px 0; }
 }
 
 .gloskin-ui1-shop-skeleton__grid {
@@ -328,24 +393,19 @@
 .gloskin-ui1-shop-skeleton__media,
 .gloskin-ui1-shop-skeleton__line {
 	border-radius: 6px;
-	background: linear-gradient(90deg, #f0f0f0 25%, #e4e4e4 50%, #f0f0f0 75%);
+	background: linear-gradient(
+		90deg,
+		var(--gloskin-surface-strong) 25%,
+		color-mix(in srgb,var(--gloskin-border) 68%,var(--gloskin-surface)) 50%,
+		var(--gloskin-surface-strong) 75%
+	);
 	background-size: 800px 100%;
 	animation: gloskin-skeleton-shimmer 1.4s ease-in-out infinite;
 }
 
-.gloskin-ui1-shop-skeleton__media {
-	aspect-ratio: 1;
-}
-
-.gloskin-ui1-shop-skeleton__line--title {
-	height: 14px;
-	width: 80%;
-}
-
-.gloskin-ui1-shop-skeleton__line--price {
-	height: 12px;
-	width: 50%;
-}
+.gloskin-ui1-shop-skeleton__media { aspect-ratio: 1; }
+.gloskin-ui1-shop-skeleton__line--title { height: 14px; width: 80%; }
+.gloskin-ui1-shop-skeleton__line--price { height: 12px; width: 50%; }
 
 /* --------------------------------------------------------------------------
    Empty search state
@@ -368,7 +428,7 @@
 .gloskin-ui1-shop-empty-search__hint {
 	margin: 0;
 	font-size: 0.875rem;
-	color: var(--gloskin-rail-label-color);
+	color: var(--gloskin-muted);
 }
 
 .gloskin-ui1-shop-empty-search__actions {
@@ -380,61 +440,72 @@
 }
 
 /* --------------------------------------------------------------------------
-   Category list (legacy .gloskin-ui1-shop-filter passthrough)
+   Responsive rail: vertical, normal-flow below the single-column breakpoint.
    -------------------------------------------------------------------------- */
 
-.gloskin-ui1-shop-filter {
-	display: grid;
-	gap: var(--gloskin-shop-filter-gap);
-}
-
-.gloskin-ui1-shop-filter__title,
-.gloskin-ui1-shop-filter label > span {
-	display: block;
-	font-weight: 700;
-}
-
-.gloskin-ui1-shop-filter input[type="search"],
-.gloskin-ui1-shop-filter input[type="number"] {
-	box-sizing: border-box;
-	width: 100%;
-	min-height: 44px;
-	padding: 10px 12px;
-	border: 1px solid rgba(17 17 17 / .18);
-	border-radius: 8px;
-	background: #fff;
-	font: inherit;
-}
-
-.gloskin-ui1-shop-filter__price-grid {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 10px;
-}
-
-.gloskin-ui1-shop-filter__actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px 12px;
-	align-items: center;
-}
-
-.gloskin-ui1-shop-filter__validation {
-	margin: 0;
-	font-size: .875rem;
-	color: #8a1f11;
-}
-
-/* --------------------------------------------------------------------------
-   Responsive
-   -------------------------------------------------------------------------- */
-
-@media (max-width: 720px) {
-	.gloskin-ui1-shop-filter__price-grid {
-		grid-template-columns: 1fr;
+@media (max-width: 900px) {
+	.gloskin-ui1-shop-catalog__rail {
+		position: static;
+		top: auto;
+		width: 100%;
+		max-width: 100%;
 	}
 
+	.gloskin-ui1-shop-categories {
+		position: static;
+		top: auto;
+		overflow: visible;
+		max-width: 100%;
+		padding: 0;
+		border: 0;
+	}
+
+	.gloskin-ui1-shop-categories ul {
+		display: grid;
+		width: auto;
+		min-width: 0;
+		gap: 4px;
+	}
+
+	.gloskin-ui1-shop-categories li {
+		min-width: 0;
+	}
+
+	.gloskin-ui1-shop-categories a {
+		white-space: normal;
+	}
+
+	.gloskin-ui1-shop-search-field,
+	.gloskin-ui1-price-filter,
+	.gloskin-ui1-price-slider {
+		max-width: 100%;
+	}
+}
+
+@media (max-width: 720px) {
 	.gloskin-ui1-price-filter__labels {
 		font-size: 0.875rem;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.gloskin-ui1-shop-search-field,
+	.gloskin-ui1-shop-search-field__icon,
+	.gloskin-ui1-shop-search-field__clear,
+	[data-gloskin-shop-catalog-owner].is-loading [data-gloskin-shop-results] {
+		transition: none;
+	}
+
+	.gloskin-ui1-price-slider__input::-webkit-slider-thumb {
+		transition: none;
+	}
+
+	.gloskin-ui1-price-slider__input::-moz-range-thumb {
+		transition: none;
+	}
+
+	.gloskin-ui1-shop-skeleton__media,
+	.gloskin-ui1-shop-skeleton__line {
+		animation: none;
 	}
 }

@@ -28,6 +28,7 @@ php tests/consultation-demo-importer-contract.php
 php tests/woo-cart-notice-contract.php
 php tests/release-version-contract.php
 php tests/shop-catalog-contract.php
+php tests/shop-smart-search-contract.php
 node tests/shop-catalog-controller.test.js
 python tests/storefront-regression-contract.py
 php tests/rest-sanitize-callback-contract.php

@@ -25,9 +25,58 @@ trait Gloskin_Site_Core_Shop_Discovery_Rest_Trait {
 			return new WP_Error( 'gloskin_shop_category', __( 'Kategori produk tidak tersedia.', 'gloskin-site-core' ), array( 'status' => 400 ) );
 		}
 
-		$filters = array( 'category' => $category, 'q' => $q, 'min_price' => $min, 'max_price' => $max );
+		/* Price availability is resolved before the one catalog query so this
+		 * same response can clear/clamp stale price filters when category/q
+		 * changes. No second REST request is required to repair slider state. */
+		$bounds      = $this->catalog_price_bounds( $category, $q );
+		$price_state = isset( $bounds['state'] ) && in_array( $bounds['state'], array( 'normal', 'single', 'empty' ), true )
+			? (string) $bounds['state']
+			: 'empty';
+		$effective_min = $min;
+		$effective_max = $max;
+
+		if ( 'normal' !== $price_state || null === $bounds['min'] || null === $bounds['max'] ) {
+			$effective_min = null;
+			$effective_max = null;
+		} else {
+			$available_min = (float) $bounds['min'];
+			$available_max = (float) $bounds['max'];
+			$disjoint = ( null !== $effective_max && $effective_max < $available_min )
+				|| ( null !== $effective_min && $effective_min > $available_max );
+
+			if ( $disjoint ) {
+				$effective_min = null;
+				$effective_max = null;
+			} else {
+				if ( null !== $effective_min ) {
+					$effective_min = max( $available_min, min( (float) $effective_min, $available_max ) );
+				}
+				if ( null !== $effective_max ) {
+					$effective_max = max( $available_min, min( (float) $effective_max, $available_max ) );
+				}
+				/* Canonicalize bounds that now equal the full available edge: they
+				 * no longer restrict the catalog and must not survive as ghost
+				 * active filters after a category/search transition. */
+				if ( null !== $effective_min && $effective_min <= $available_min ) {
+					$effective_min = null;
+				}
+				if ( null !== $effective_max && $effective_max >= $available_max ) {
+					$effective_max = null;
+				}
+				if ( null !== $effective_min && null !== $effective_max && $effective_min > $effective_max ) {
+					$effective_min = null;
+					$effective_max = null;
+				}
+			}
+		}
+
+		$filters = array(
+			'category'  => $category,
+			'q'         => $q,
+			'min_price' => $effective_min,
+			'max_price' => $effective_max,
+		);
 		$catalog = $this->catalog( $page, $filters );
-		$bounds  = $this->catalog_price_bounds( $category, $q );
 
 		$results = array(
 			'products'            => $catalog['products'],
@@ -37,10 +86,11 @@ trait Gloskin_Site_Core_Shop_Discovery_Rest_Trait {
 			'category'            => $category,
 			'category_label'      => '' !== $category && isset( $mappings[ $category ] ) ? $mappings[ $category ] : '',
 			'woo_ready'           => class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' ) ? ( new Gloskin_Site_Core_WooCommerce_Adapter() )->available() : function_exists( 'wc_get_product' ),
-			'filtered'            => '' !== $category || '' !== $q || null !== $min || null !== $max,
+			'filtered'            => '' !== $category || '' !== $q || null !== $effective_min || null !== $effective_max,
 			'q'                   => $q,
-			'min_price'           => $min,
-			'max_price'           => $max,
+			'min_price'           => $effective_min,
+			'max_price'           => $effective_max,
+			'price_state'         => $price_state,
 			'available_min_price' => $bounds['min'],
 			'available_max_price' => $bounds['max'],
 		);
@@ -53,13 +103,14 @@ trait Gloskin_Site_Core_Shop_Discovery_Rest_Trait {
 				'html'                => $html,
 				'category'            => $category,
 				'q'                   => $q,
-				'min_price'           => null === $min ? '' : (string) $min,
-				'max_price'           => null === $max ? '' : (string) $max,
+				'min_price'           => null === $effective_min ? '' : (string) $effective_min,
+				'max_price'           => null === $effective_max ? '' : (string) $effective_max,
 				'page'                => (int) $catalog['page'],
 				'total'               => (int) $catalog['total'],
 				'max_pages'           => (int) $catalog['max_pages'],
-				'available_min_price' => (float) $bounds['min'],
-				'available_max_price' => (float) $bounds['max'],
+				'price_state'         => $price_state,
+				'available_min_price' => null === $bounds['min'] ? null : (float) $bounds['min'],
+				'available_max_price' => null === $bounds['max'] ? null : (float) $bounds['max'],
 			)
 		);
 	}

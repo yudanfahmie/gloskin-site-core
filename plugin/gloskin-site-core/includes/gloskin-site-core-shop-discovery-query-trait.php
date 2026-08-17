@@ -21,17 +21,17 @@ trait Gloskin_Site_Core_Shop_Discovery_Query_Trait {
 	}
 
 	/**
-	 * Dynamic slider bounds share the same adapter-owned query implementation.
+	 * Dynamic price availability shares the same adapter-owned implementation.
 	 *
 	 * @param string $category Product category slug.
 	 * @param string $q Search query.
-	 * @return array{min:float,max:float}
+	 * @return array{state:string,min:?float,max:?float}
 	 */
 	private function catalog_price_bounds( $category, $q ) {
 		if ( ! class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' )
 			|| ! class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog' )
 		) {
-			return array( 'min' => 0.0, 'max' => 5000000.0 );
+			return array( 'state' => 'empty', 'min' => null, 'max' => null );
 		}
 		$adapter = new Gloskin_Site_Core_WooCommerce_Adapter();
 		$catalog = new Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog( $adapter );

@@ -172,16 +172,18 @@ final class Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog {
 	}
 
 	/**
-	 * Dynamic available price range for category + q, ignoring active price limits.
+	 * Dynamic available price state for category + q, ignoring active price limits.
+	 * No synthetic range is invented: equal bounds are a single-price state and
+	 * a null aggregate is an empty state.
 	 *
 	 * @param string $category Product category slug.
 	 * @param string $q Search query.
-	 * @return array{min:float,max:float}
+	 * @return array{state:string,min:?float,max:?float}
 	 */
 	public function price_bounds( $category = '', $q = '' ) {
 		global $wpdb;
 		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
-			return array( 'min' => 0.0, 'max' => 5000000.0 );
+			return array( 'state' => 'empty', 'min' => null, 'max' => null );
 		}
 
 		$category    = sanitize_title( (string) $category );
@@ -234,12 +236,17 @@ final class Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog {
 		$row = $params ? $wpdb->get_row( $wpdb->prepare( $sql, $params ), ARRAY_A ) : $wpdb->get_row( $sql, ARRAY_A );
 		// phpcs:enable
 
-		$min = ( $row && null !== $row['avail_min'] ) ? (float) $row['avail_min'] : 0.0;
-		$max = ( $row && null !== $row['avail_max'] ) ? (float) $row['avail_max'] : 5000000.0;
-		if ( $max <= $min || $max <= 0.0 ) {
-			$max = 5000000.0;
+		if ( ! $row || null === $row['avail_min'] || null === $row['avail_max'] ) {
+			return array( 'state' => 'empty', 'min' => null, 'max' => null );
 		}
-		return array( 'min' => $min, 'max' => $max );
+
+		$min = (float) $row['avail_min'];
+		$max = (float) $row['avail_max'];
+		return array(
+			'state' => $max > $min ? 'normal' : 'single',
+			'min'   => $min,
+			'max'   => $max,
+		);
 	}
 
 	/** @param string $q Query. @return array<int,string> */

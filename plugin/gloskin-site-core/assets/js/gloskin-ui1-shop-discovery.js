@@ -5,18 +5,10 @@
 		return { method: 'GET', credentials: 'same-origin' };
 	}
 
-	/* -----------------------------------------------------------------
-	 * IDR currency formatting  (e.g. 100000 → "Rp 100.000")
-	 * ----------------------------------------------------------------- */
-
 	function formatIDR(value) {
 		var n = Math.round(Number(value) || 0);
 		return 'Rp ' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 	}
-
-	/* -----------------------------------------------------------------
-	 * Slider step: 1k for narrow ranges, 5k/10k for wider ones.
-	 * ----------------------------------------------------------------- */
 
 	function computeStep(spread) {
 		if (spread <= 0) { return 1000; }
@@ -25,11 +17,15 @@
 		return 10000;
 	}
 
-	/* -----------------------------------------------------------------
-	 * Shop catalog -- SSR-first, read-only AJAX enhancement.
-	 * ONE canonical state owner · ONE request builder · ONE AbortController.
-	 * No window.fetch monkeypatch · No history API monkeypatch.
-	 * ----------------------------------------------------------------- */
+	function normalizePriceState(state, minValue, maxValue) {
+		if (state === 'normal' || state === 'single' || state === 'empty') {
+			return state;
+		}
+		var min = Number(minValue);
+		var max = Number(maxValue);
+		if (!isFinite(min) || !isFinite(max)) { return 'empty'; }
+		return max > min ? 'normal' : 'single';
+	}
 
 	function normalizeShopCatalogState(state, defaultPage) {
 		state = state || {};
@@ -90,20 +86,19 @@
 		var results    = root.querySelector('[data-gloskin-shop-results]');
 		if (!categories || !results) { return; }
 
-		/* Search field elements */
 		var searchForm  = root.querySelector('[data-gloskin-shop-search-form]');
 		var searchInput = root.querySelector('[data-gloskin-shop-search]');
 		var searchClear = root.querySelector('[data-gloskin-shop-search-clear]');
 
-		/* Price slider elements */
 		var priceFilter   = root.querySelector('[data-gloskin-shop-price-filter]');
+		var priceSlider   = root.querySelector('[data-gloskin-price-slider]');
 		var minSlider     = root.querySelector('[data-gloskin-shop-min-price-slider]');
 		var maxSlider     = root.querySelector('[data-gloskin-shop-max-price-slider]');
 		var priceMinLabel = root.querySelector('[data-gloskin-price-label-min]');
 		var priceMaxLabel = root.querySelector('[data-gloskin-price-label-max]');
+		var priceLabelSep = root.querySelector('.gloskin-ui1-price-filter__label-sep');
 		var priceReset    = root.querySelector('[data-gloskin-shop-price-reset]');
 
-		/* Other controls */
 		var clearAll       = root.querySelector('[data-gloskin-shop-clear-all]');
 		var config         = window.gloskinData || {};
 		var initialPage    = Math.max(1, parseInt(root.getAttribute('data-gloskin-shop-initial-page'), 10) || 1);
@@ -116,27 +111,120 @@
 		var searchTimer     = null;
 		var SEARCH_DELAY    = 325;
 
-		/* --- Price slider state ------------------------------------------------ */
-		var availMin    = priceFilter ? (parseFloat(priceFilter.getAttribute('data-gloskin-price-avail-min') || '0') || 0)       : 0;
-		var availMax    = priceFilter ? (parseFloat(priceFilter.getAttribute('data-gloskin-price-avail-max') || '5000000') || 5000000) : 5000000;
-		if (availMax <= availMin) { availMax = availMin + 5000000; }
-		var selectedMin = availMin;
-		var selectedMax = availMax;
-		var sliderStep  = computeStep(availMax - availMin);
+		var priceState = 'empty';
+		var availMin = 0;
+		var availMax = 0;
+		var selectedMin = 0;
+		var selectedMax = 0;
+		var sliderStep = 1000;
 
-		function applySliderBounds(aMin, aMax) {
-			if (aMax <= aMin || aMax <= 0) { return; }
-			availMin   = aMin;
-			availMax   = aMax;
-			sliderStep = computeStep(availMax - availMin);
-			if (minSlider) { minSlider.min = availMin; minSlider.max = availMax; minSlider.step = sliderStep; }
-			if (maxSlider) { maxSlider.min = availMin; maxSlider.max = availMax; maxSlider.step = sliderStep; }
-			selectedMin = Math.max(availMin, Math.min(selectedMin, availMax));
-			selectedMax = Math.max(selectedMin, Math.min(selectedMax, availMax));
+		function readNullableNumber(value) {
+			if (value === null || value === undefined || value === '') { return null; }
+			var parsed = Number(value);
+			return isFinite(parsed) ? parsed : null;
+		}
+
+		function setPriceInteraction(state) {
+			var normal = state === 'normal';
+			var single = state === 'single';
+
+			if (priceFilter) {
+				priceFilter.setAttribute('data-gloskin-price-state', state);
+			}
+			if (priceSlider) {
+				priceSlider.hidden = !normal && !single;
+			}
+			[minSlider, maxSlider].forEach(function (slider) {
+				if (!slider) { return; }
+				slider.disabled = !normal;
+				slider.hidden = !normal;
+			});
+			if (priceLabelSep) { priceLabelSep.hidden = !normal; }
+			if (priceMaxLabel) { priceMaxLabel.hidden = !normal; }
+			if (priceReset && !normal) { priceReset.hidden = true; }
+		}
+
+		function renderPriceAvailability() {
+			setPriceInteraction(priceState);
+			if (priceState === 'empty') {
+				if (priceMinLabel) { priceMinLabel.textContent = 'Harga belum tersedia'; }
+				if (priceMaxLabel) { priceMaxLabel.textContent = ''; }
+				if (priceFilter) {
+					priceFilter.style.setProperty('--gloskin-price-min-pct', '0%');
+					priceFilter.style.setProperty('--gloskin-price-max-pct', '0%');
+				}
+				return;
+			}
+			if (priceState === 'single') {
+				if (priceMinLabel) { priceMinLabel.textContent = formatIDR(availMin); }
+				if (priceMaxLabel) { priceMaxLabel.textContent = ''; }
+				if (priceFilter) {
+					priceFilter.style.setProperty('--gloskin-price-min-pct', '0%');
+					priceFilter.style.setProperty('--gloskin-price-max-pct', '0%');
+				}
+				return;
+			}
 			renderSlider(selectedMin, selectedMax);
 		}
 
+		function applySliderBounds(state, aMin, aMax) {
+			var nextMin = readNullableNumber(aMin);
+			var nextMax = readNullableNumber(aMax);
+			priceState = normalizePriceState(state, nextMin, nextMax);
+
+			if (priceState === 'normal' && (nextMin === null || nextMax === null || nextMax <= nextMin)) {
+				priceState = 'empty';
+			}
+			if (priceState === 'single' && (nextMin === null || nextMax === null)) {
+				priceState = 'empty';
+			}
+
+			if (priceState === 'empty') {
+				availMin = 0;
+				availMax = 0;
+				selectedMin = 0;
+				selectedMax = 0;
+				sliderStep = 1000;
+				renderPriceAvailability();
+				return;
+			}
+
+			availMin = nextMin;
+			availMax = nextMax;
+			selectedMin = Math.max(availMin, Math.min(selectedMin, availMax));
+			selectedMax = Math.max(selectedMin, Math.min(selectedMax, availMax));
+
+			if (priceState === 'single') {
+				selectedMin = availMin;
+				selectedMax = availMin;
+				sliderStep = 1000;
+				renderPriceAvailability();
+				return;
+			}
+
+			sliderStep = computeStep(availMax - availMin);
+			if (minSlider) {
+				minSlider.min = availMin;
+				minSlider.max = availMax;
+				minSlider.step = sliderStep;
+			}
+			if (maxSlider) {
+				maxSlider.min = availMin;
+				maxSlider.max = availMax;
+				maxSlider.step = sliderStep;
+			}
+			if (selectedMax < selectedMin) {
+				selectedMin = availMin;
+				selectedMax = availMax;
+			}
+			renderPriceAvailability();
+		}
+
 		function renderSlider(sMin, sMax) {
+			if (priceState !== 'normal') {
+				renderPriceAvailability();
+				return;
+			}
 			var spread  = availMax - availMin;
 			var minPct  = spread > 0 ? ((sMin - availMin) / spread * 100) : 0;
 			var maxPct  = spread > 0 ? ((sMax - availMin) / spread * 100) : 100;
@@ -156,15 +244,16 @@
 			}
 			if (priceMinLabel) { priceMinLabel.textContent = formatIDR(sMin); }
 			if (priceMaxLabel) { priceMaxLabel.textContent = formatIDR(sMax); }
-			if (priceReset)    { priceReset.hidden = (sMin === availMin && sMax === availMax); }
+			if (priceReset) { priceReset.hidden = (sMin === availMin && sMax === availMax); }
+			setPriceInteraction('normal');
 		}
 
-		/* Initialise slider visuals */
-		if (minSlider) { minSlider.step = sliderStep; }
-		if (maxSlider) { maxSlider.step = sliderStep; }
-		renderSlider(selectedMin, selectedMax);
-
-		/* --- Utilities --------------------------------------------------------- */
+		var initialMin = priceFilter ? readNullableNumber(priceFilter.getAttribute('data-gloskin-price-avail-min')) : null;
+		var initialMax = priceFilter ? readNullableNumber(priceFilter.getAttribute('data-gloskin-price-avail-max')) : null;
+		var initialPriceState = priceFilter ? priceFilter.getAttribute('data-gloskin-price-state') : 'empty';
+		selectedMin = initialMin === null ? 0 : initialMin;
+		selectedMax = initialMax === null ? selectedMin : initialMax;
+		applySliderBounds(initialPriceState, initialMin, initialMax);
 
 		function stateForLocation() {
 			var defaultPage = window.location.href.split('#')[0] === initialUrl.split('#')[0] ? initialPage : 1;
@@ -195,17 +284,28 @@
 			if (searchInput) { searchInput.value = state.q; }
 			if (searchClear) { searchClear.hidden = !state.q; }
 
-			/* Sync slider to state */
-			if (minSlider && maxSlider) {
-				var stMin = '' !== state.min_price ? parseFloat(state.min_price) : availMin;
-				var stMax = '' !== state.max_price ? parseFloat(state.max_price) : availMax;
+			if (priceState === 'normal' && minSlider && maxSlider) {
+				var stMin = state.min_price !== '' ? parseFloat(state.min_price) : availMin;
+				var stMax = state.max_price !== '' ? parseFloat(state.max_price) : availMax;
 				if (!isFinite(stMin)) { stMin = availMin; }
 				if (!isFinite(stMax)) { stMax = availMax; }
-				stMin = Math.max(availMin, Math.min(stMin, availMax));
-				stMax = Math.max(stMin, Math.min(stMax, availMax));
+
+				if (stMax < availMin || stMin > availMax) {
+					stMin = availMin;
+					stMax = availMax;
+				} else {
+					stMin = Math.max(availMin, Math.min(stMin, availMax));
+					stMax = Math.max(availMin, Math.min(stMax, availMax));
+					if (stMin > stMax) {
+						stMin = availMin;
+						stMax = availMax;
+					}
+				}
 				selectedMin = stMin;
 				selectedMax = stMax;
 				renderSlider(selectedMin, selectedMax);
+			} else {
+				renderPriceAvailability();
 			}
 
 			if (clearAll) {
@@ -223,9 +323,9 @@
 			var status = results.querySelector('[data-gloskin-shop-status]');
 			if (!status) { return; }
 			status.innerHTML = '';
-			var copy    = document.createElement('span');
+			var copy = document.createElement('span');
 			copy.textContent = 'Katalog belum dapat diperbarui. Hasil sebelumnya tetap ditampilkan.';
-			var retry   = document.createElement('button');
+			var retry = document.createElement('button');
 			retry.type = 'button';
 			retry.className = 'gloskin-ui1-button gloskin-ui1-button--ghost gloskin-ui1-button--small';
 			retry.setAttribute('data-gloskin-shop-retry', '');
@@ -280,14 +380,14 @@
 		function updateHistory(state, mode) {
 			if (!window.history || mode === 'none') { return; }
 			state = normalizeShopCatalogState(state, 1);
-			var target       = historyTarget(state);
+			var target = historyTarget(state);
 			var historyState = {
 				gloskinShop: true,
-				category:    state.category,
-				q:           state.q,
-				min_price:   state.min_price,
-				max_price:   state.max_price,
-				page:        state.page
+				category: state.category,
+				q: state.q,
+				min_price: state.min_price,
+				max_price: state.max_price,
+				page: state.page
 			};
 			if (mode === 'replace' && typeof window.history.replaceState === 'function') {
 				window.history.replaceState(historyState, '', target);
@@ -308,7 +408,7 @@
 
 		function requestCatalog(nextState, options) {
 			options = options || {};
-			nextState    = normalizeShopCatalogState(nextState, 1);
+			nextState = normalizeShopCatalogState(nextState, 1);
 			currentState = nextState;
 			var sequence = ++requestSequence;
 			if (abortController) { abortController.abort(); }
@@ -318,7 +418,7 @@
 			clearStatus();
 			setBusy(true);
 
-			var endpoint     = buildShopCatalogRequestUrl(config.restUrl || '/wp-json/gloskin/v1/', nextState);
+			var endpoint = buildShopCatalogRequestUrl(config.restUrl || '/wp-json/gloskin/v1/', nextState);
 			var fetchOptions = publicRestGetOptions();
 			if (abortController) { fetchOptions.signal = abortController.signal; }
 
@@ -332,28 +432,26 @@
 					if (!data || typeof data.html !== 'string') { throw new Error('shop_catalog_response'); }
 					results.innerHTML = data.html;
 					currentState = normalizeShopCatalogState({
-						category:  data.category,
-						q:         data.q,
+						category: data.category,
+						q: data.q,
 						min_price: data.min_price,
 						max_price: data.max_price,
-						page:      data.page
+						page: data.page
 					}, 1);
 
-					/* Update available price bounds from the catalog response */
-					if (typeof data.available_min_price === 'number' &&
-						typeof data.available_max_price === 'number' &&
-						data.available_max_price > data.available_min_price) {
-						applySliderBounds(data.available_min_price, data.available_max_price);
-					}
+					/* The same catalog response owns availability and any stale
+					 * price-state repair. This never triggers a follow-up request. */
+					applySliderBounds(
+						data.price_state,
+						data.available_min_price,
+						data.available_max_price
+					);
 
 					syncControls(currentState);
 					updateHistory(currentState, options.historyMode || 'none');
 					document.dispatchEvent(new CustomEvent('gloskin:catalog-updated', { detail: currentState }));
 					if (options.pagination) { revealPaginationContext(); }
-
-					/* Wire inline empty-state buttons in the freshly-rendered HTML */
 					wireEmptyStateButtons();
-
 					return true;
 				})
 				.catch(function (error) {
@@ -376,8 +474,6 @@
 			nextState.page = 1;
 			return requestCatalog(nextState, { historyMode: 'push', fallbackHref: fallbackHref || categoryFallback(nextState.category) });
 		}
-
-		/* ---- Search ---------------------------------------------------------- */
 
 		function applySearchNow() {
 			if (!searchInput) { return; }
@@ -412,37 +508,42 @@
 			});
 		}
 
-		/* ---- Price slider ---------------------------------------------------- */
-		/* input  → visual update only (track fill, labels, aria); NO fetch.
-		 * change → commit; fetch via the canonical request owner.               */
-
 		function onSliderInput(which) {
+			if (priceState !== 'normal') { return; }
 			var rawMin = parseFloat(minSlider ? minSlider.value : selectedMin);
 			var rawMax = parseFloat(maxSlider ? maxSlider.value : selectedMax);
-			if ('min' === which && rawMin > selectedMax) { rawMin = selectedMax; if (minSlider) { minSlider.value = rawMin; } }
-			if ('max' === which && rawMax < selectedMin) { rawMax = selectedMin; if (maxSlider) { maxSlider.value = rawMax; } }
+			if (which === 'min' && rawMin > selectedMax) {
+				rawMin = selectedMax;
+				if (minSlider) { minSlider.value = rawMin; }
+			}
+			if (which === 'max' && rawMax < selectedMin) {
+				rawMax = selectedMin;
+				if (maxSlider) { maxSlider.value = rawMax; }
+			}
 			selectedMin = rawMin;
 			selectedMax = rawMax;
 			renderSlider(selectedMin, selectedMax);
 		}
 
 		function onSliderChange() {
+			if (priceState !== 'normal') { return; }
 			var nextState = normalizeShopCatalogState(currentState, 1);
-			nextState.min_price = (selectedMin === availMin) ? '' : String(Math.round(selectedMin));
-			nextState.max_price = (selectedMax === availMax) ? '' : String(Math.round(selectedMax));
+			nextState.min_price = selectedMin === availMin ? '' : String(Math.round(selectedMin));
+			nextState.max_price = selectedMax === availMax ? '' : String(Math.round(selectedMax));
 			requestFilterState(nextState);
 		}
 
 		if (minSlider) {
-			minSlider.addEventListener('input',  function () { onSliderInput('min'); });
+			minSlider.addEventListener('input', function () { onSliderInput('min'); });
 			minSlider.addEventListener('change', onSliderChange);
 		}
 		if (maxSlider) {
-			maxSlider.addEventListener('input',  function () { onSliderInput('max'); });
+			maxSlider.addEventListener('input', function () { onSliderInput('max'); });
 			maxSlider.addEventListener('change', onSliderChange);
 		}
 		if (priceReset) {
 			priceReset.addEventListener('click', function () {
+				if (priceState !== 'normal') { return; }
 				selectedMin = availMin;
 				selectedMax = availMax;
 				renderSlider(selectedMin, selectedMax);
@@ -453,22 +554,19 @@
 			});
 		}
 
-		/* ---- Clear all ------------------------------------------------------- */
-
 		if (clearAll) {
 			clearAll.addEventListener('click', function () {
 				window.clearTimeout(searchTimer);
-				selectedMin = availMin;
-				selectedMax = availMax;
-				renderSlider(selectedMin, selectedMax);
+				if (priceState === 'normal') {
+					selectedMin = availMin;
+					selectedMax = availMax;
+					renderSlider(selectedMin, selectedMax);
+				}
 				requestFilterState({ category: '', q: '', min_price: '', max_price: '', page: 1 }, shopUrl);
 			});
 		}
 
-		/* ---- Empty-state inline buttons (rendered into results by server) ---- */
-
 		function wireEmptyStateButtons() {
-			/* "Reset pencarian" clears only q */
 			var clearSearch = results.querySelector('[data-gloskin-shop-clear-search]');
 			if (clearSearch) {
 				clearSearch.addEventListener('click', function () {
@@ -478,20 +576,19 @@
 					requestFilterState(nextState);
 				});
 			}
-			/* "Hapus semua filter" in results area */
 			var inlineAll = results.querySelector('[data-gloskin-shop-clear-all]');
 			if (inlineAll) {
 				inlineAll.addEventListener('click', function () {
 					window.clearTimeout(searchTimer);
-					selectedMin = availMin;
-					selectedMax = availMax;
-					renderSlider(selectedMin, selectedMax);
+					if (priceState === 'normal') {
+						selectedMin = availMin;
+						selectedMax = availMax;
+						renderSlider(selectedMin, selectedMax);
+					}
 					requestFilterState({ category: '', q: '', min_price: '', max_price: '', page: 1 }, shopUrl);
 				});
 			}
 		}
-
-		/* ---- Delegation: category, pagination, retry ------------------------- */
 
 		root.addEventListener('click', function (event) {
 			var categoryLink = event.target.closest && event.target.closest('[data-gloskin-shop-category]');
@@ -519,14 +616,12 @@
 			if (retry && results.contains(retry) && retryRequest) {
 				event.preventDefault();
 				requestCatalog(retryRequest.state, {
-					historyMode:  retryRequest.options.historyMode || 'none',
-					pagination:   !!retryRequest.options.pagination,
+					historyMode: retryRequest.options.historyMode || 'none',
+					pagination: !!retryRequest.options.pagination,
 					fallbackHref: retryRequest.fallbackHref
 				});
 			}
 		});
-
-		/* ---- Back / Forward -------------------------------------------------- */
 
 		window.addEventListener('popstate', function () {
 			window.clearTimeout(searchTimer);
@@ -534,8 +629,6 @@
 			syncControls(state);
 			requestCatalog(state, { historyMode: 'none', fallbackHref: categoryFallback(state.category) });
 		});
-
-		/* ---- Initial state from hash ----------------------------------------- */
 
 		currentState = stateForLocation();
 		syncControls(currentState);
@@ -558,12 +651,13 @@
 
 	if (typeof module !== 'undefined' && module.exports) {
 		module.exports = {
-			normalizeShopCatalogState:    normalizeShopCatalogState,
-			parseShopCatalogHash:         parseShopCatalogHash,
-			buildShopCatalogHash:         buildShopCatalogHash,
-			buildShopCatalogRequestUrl:   buildShopCatalogRequestUrl,
-			formatIDR:                    formatIDR,
-			computeStep:                  computeStep
+			normalizeShopCatalogState: normalizeShopCatalogState,
+			parseShopCatalogHash: parseShopCatalogHash,
+			buildShopCatalogHash: buildShopCatalogHash,
+			buildShopCatalogRequestUrl: buildShopCatalogRequestUrl,
+			formatIDR: formatIDR,
+			computeStep: computeStep,
+			normalizePriceState: normalizePriceState
 		};
 	}
 }());

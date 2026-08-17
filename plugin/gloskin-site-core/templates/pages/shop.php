@@ -2,7 +2,42 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 gloskin_ui1_render_hero( $gloskin_context['hero'] );
-$gloskin_shop_url     = home_url( '/shop/' );
+$gloskin_shop_url = home_url( '/shop/' );
+
+/* Initial price availability is resolved through the same adapter-owned Shop
+ * catalog component used by AJAX. The older context field remains tolerated
+ * for compatibility, but it is never allowed to invent a range for an
+ * equal-price or empty catalog. */
+$gloskin_shop_price_bounds = array( 'state' => 'empty', 'min' => null, 'max' => null );
+if ( ! empty( $gloskin_context['woo_ready'] )
+	&& class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' )
+	&& class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog' )
+) {
+	$gloskin_shop_price_adapter = new Gloskin_Site_Core_WooCommerce_Adapter();
+	$gloskin_shop_price_catalog = new Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog( $gloskin_shop_price_adapter );
+	$gloskin_shop_price_bounds  = $gloskin_shop_price_catalog->price_bounds( '', '' );
+}
+$gloskin_shop_price_state = isset( $gloskin_shop_price_bounds['state'] )
+	&& in_array( $gloskin_shop_price_bounds['state'], array( 'normal', 'single', 'empty' ), true )
+	? (string) $gloskin_shop_price_bounds['state']
+	: 'empty';
+$gloskin_shop_available_min = isset( $gloskin_shop_price_bounds['min'] ) && is_numeric( $gloskin_shop_price_bounds['min'] )
+	? (float) $gloskin_shop_price_bounds['min']
+	: null;
+$gloskin_shop_available_max = isset( $gloskin_shop_price_bounds['max'] ) && is_numeric( $gloskin_shop_price_bounds['max'] )
+	? (float) $gloskin_shop_price_bounds['max']
+	: null;
+if ( 'normal' === $gloskin_shop_price_state && ( null === $gloskin_shop_available_min || null === $gloskin_shop_available_max || $gloskin_shop_available_max <= $gloskin_shop_available_min ) ) {
+	$gloskin_shop_price_state = 'empty';
+	$gloskin_shop_available_min = null;
+	$gloskin_shop_available_max = null;
+}
+if ( 'single' === $gloskin_shop_price_state && ( null === $gloskin_shop_available_min || null === $gloskin_shop_available_max ) ) {
+	$gloskin_shop_price_state = 'empty';
+	$gloskin_shop_available_min = null;
+	$gloskin_shop_available_max = null;
+}
+
 $gloskin_shop_results = array(
 	'products'            => isset( $gloskin_context['products'] ) ? $gloskin_context['products'] : array(),
 	'total'               => isset( $gloskin_context['products_total'] ) ? $gloskin_context['products_total'] : 0,
@@ -15,14 +50,22 @@ $gloskin_shop_results = array(
 	'q'                   => '',
 	'min_price'           => null,
 	'max_price'           => null,
-	'available_min_price' => isset( $gloskin_context['price_bounds']['min'] ) ? (float) $gloskin_context['price_bounds']['min'] : 0.0,
-	'available_max_price' => isset( $gloskin_context['price_bounds']['max'] ) ? (float) $gloskin_context['price_bounds']['max'] : 5000000.0,
+	'price_state'         => $gloskin_shop_price_state,
+	'available_min_price' => $gloskin_shop_available_min,
+	'available_max_price' => $gloskin_shop_available_max,
 );
-$gloskin_shop_avail_min = (int) round( $gloskin_shop_results['available_min_price'] );
-$gloskin_shop_avail_max = (int) round( $gloskin_shop_results['available_max_price'] );
-if ( $gloskin_shop_avail_max <= $gloskin_shop_avail_min ) {
-	$gloskin_shop_avail_max = 5000000;
-}
+
+$gloskin_shop_input_min = null === $gloskin_shop_available_min ? 0 : (int) round( $gloskin_shop_available_min );
+$gloskin_shop_input_max = null === $gloskin_shop_available_max ? $gloskin_shop_input_min : (int) round( $gloskin_shop_available_max );
+$gloskin_shop_format_idr = static function ( $value ) {
+	return 'Rp ' . number_format( (float) $value, 0, ',', '.' );
+};
+$gloskin_shop_price_label_min = 'empty' === $gloskin_shop_price_state
+	? __( 'Harga belum tersedia', 'gloskin-site-core' )
+	: $gloskin_shop_format_idr( $gloskin_shop_available_min );
+$gloskin_shop_price_label_max = 'normal' === $gloskin_shop_price_state
+	? $gloskin_shop_format_idr( $gloskin_shop_available_max )
+	: '';
 $gloskin_shop_results_partial = dirname( __DIR__ ) . '/parts/shop-results.php';
 ?>
 <?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?>
@@ -79,33 +122,34 @@ $gloskin_shop_results_partial = dirname( __DIR__ ) . '/parts/shop-results.php';
 					<span class="gloskin-ui1-shop-rail-section__label"><?php echo esc_html__( 'Harga', 'gloskin-site-core' ); ?></span>
 					<div class="gloskin-ui1-price-filter"
 						data-gloskin-shop-price-filter
-						data-gloskin-price-avail-min="<?php echo esc_attr( (string) $gloskin_shop_avail_min ); ?>"
-						data-gloskin-price-avail-max="<?php echo esc_attr( (string) $gloskin_shop_avail_max ); ?>">
+						data-gloskin-price-state="<?php echo esc_attr( $gloskin_shop_price_state ); ?>"
+						data-gloskin-price-avail-min="<?php echo null === $gloskin_shop_available_min ? '' : esc_attr( (string) $gloskin_shop_available_min ); ?>"
+						data-gloskin-price-avail-max="<?php echo null === $gloskin_shop_available_max ? '' : esc_attr( (string) $gloskin_shop_available_max ); ?>">
 						<div class="gloskin-ui1-price-filter__labels" aria-live="polite" aria-atomic="true">
-							<span class="gloskin-ui1-price-filter__label-min" data-gloskin-price-label-min></span>
-							<span class="gloskin-ui1-price-filter__label-sep" aria-hidden="true">&ndash;</span>
-							<span class="gloskin-ui1-price-filter__label-max" data-gloskin-price-label-max></span>
+							<span class="gloskin-ui1-price-filter__label-min" data-gloskin-price-label-min><?php echo esc_html( $gloskin_shop_price_label_min ); ?></span>
+							<span class="gloskin-ui1-price-filter__label-sep"<?php echo 'normal' === $gloskin_shop_price_state ? '' : ' hidden'; ?> aria-hidden="true">&ndash;</span>
+							<span class="gloskin-ui1-price-filter__label-max" data-gloskin-price-label-max<?php echo 'normal' === $gloskin_shop_price_state ? '' : ' hidden'; ?>><?php echo esc_html( $gloskin_shop_price_label_max ); ?></span>
 						</div>
-						<div class="gloskin-ui1-price-slider" data-gloskin-price-slider>
+						<div class="gloskin-ui1-price-slider" data-gloskin-price-slider<?php echo 'empty' === $gloskin_shop_price_state ? ' hidden' : ''; ?>>
 							<div class="gloskin-ui1-price-slider__track" data-gloskin-price-track aria-hidden="true"></div>
 							<input
 								type="range"
 								class="gloskin-ui1-price-slider__input gloskin-ui1-price-slider__input--min"
 								data-gloskin-shop-min-price-slider
-								min="<?php echo esc_attr( (string) $gloskin_shop_avail_min ); ?>"
-								max="<?php echo esc_attr( (string) $gloskin_shop_avail_max ); ?>"
-								value="<?php echo esc_attr( (string) $gloskin_shop_avail_min ); ?>"
+								min="<?php echo esc_attr( (string) $gloskin_shop_input_min ); ?>"
+								max="<?php echo esc_attr( (string) $gloskin_shop_input_max ); ?>"
+								value="<?php echo esc_attr( (string) $gloskin_shop_input_min ); ?>"
 								step="10000"
-								aria-label="<?php echo esc_attr__( 'Harga minimum', 'gloskin-site-core' ); ?>" />
+								aria-label="<?php echo esc_attr__( 'Harga minimum', 'gloskin-site-core' ); ?>"<?php echo 'normal' === $gloskin_shop_price_state ? '' : ' hidden disabled'; ?> />
 							<input
 								type="range"
 								class="gloskin-ui1-price-slider__input gloskin-ui1-price-slider__input--max"
 								data-gloskin-shop-max-price-slider
-								min="<?php echo esc_attr( (string) $gloskin_shop_avail_min ); ?>"
-								max="<?php echo esc_attr( (string) $gloskin_shop_avail_max ); ?>"
-								value="<?php echo esc_attr( (string) $gloskin_shop_avail_max ); ?>"
+								min="<?php echo esc_attr( (string) $gloskin_shop_input_min ); ?>"
+								max="<?php echo esc_attr( (string) $gloskin_shop_input_max ); ?>"
+								value="<?php echo esc_attr( (string) $gloskin_shop_input_max ); ?>"
 								step="10000"
-								aria-label="<?php echo esc_attr__( 'Harga maksimum', 'gloskin-site-core' ); ?>" />
+								aria-label="<?php echo esc_attr__( 'Harga maksimum', 'gloskin-site-core' ); ?>"<?php echo 'normal' === $gloskin_shop_price_state ? '' : ' hidden disabled'; ?> />
 						</div>
 						<button
 							type="button"

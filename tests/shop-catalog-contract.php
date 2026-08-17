@@ -12,18 +12,19 @@ $ok = static function ( bool $condition, string $message ): void {
 	if ( ! $condition ) { fwrite( STDERR, "FAIL: {$message}\n" ); exit( 1 ); }
 };
 
-$shop    = $read( 'plugin/gloskin-site-core/templates/pages/shop.php' );
-$results = $read( 'plugin/gloskin-site-core/templates/parts/shop-results.php' );
-$service = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php' );
-$adapter = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php' );
-$catalog = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter-shop-catalog.php' );
-$route   = $read( 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-route-trait.php' );
-$query   = $read( 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-query-trait.php' );
-$rest    = $read( 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-rest-trait.php' );
-$core    = $read( 'plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js' );
-$owner   = $read( 'plugin/gloskin-site-core/assets/js/gloskin-ui1-shop-discovery.js' );
-$css     = $read( 'plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css' );
-$runner  = $read( 'tests/check-runtime.sh' );
+$shop       = $read( 'plugin/gloskin-site-core/templates/pages/shop.php' );
+$results    = $read( 'plugin/gloskin-site-core/templates/parts/shop-results.php' );
+$service    = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php' );
+$adapter    = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php' );
+$catalog    = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter-shop-catalog.php' );
+$route      = $read( 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-route-trait.php' );
+$query      = $read( 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-query-trait.php' );
+$rest       = $read( 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-rest-trait.php' );
+$core       = $read( 'plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js' );
+$owner      = $read( 'plugin/gloskin-site-core/assets/js/gloskin-ui1-shop-discovery.js' );
+$core_css   = $read( 'plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css' );
+$shop_css   = $read( 'plugin/gloskin-site-core/assets/css/gloskin-ui1-shop-discovery.css' );
+$runner     = $read( 'tests/check-runtime.sh' );
 
 /* SSR + semantic fallback behavior remains intact. */
 $ok( false !== strpos( $shop, 'data-gloskin-shop-catalog-owner' ), 'Shop must render one canonical catalog owner marker' );
@@ -63,14 +64,13 @@ $ok( ! preg_match( '/window\.fetch\s*=(?!=)/', $owner . $core ), 'global fetch m
 $ok( ! preg_match( '/(?:window\.)?history\.pushState\s*=(?!=)/', $owner . $core ), 'global pushState monkeypatch forbidden' );
 $ok( ! preg_match( '/(?:window\.)?history\.replaceState\s*=(?!=)/', $owner . $core ), 'global replaceState monkeypatch forbidden' );
 
-/* Shop Discovery owns no product query/SQL after the refactor. */
+/* Shop Discovery owns no product query/SQL. */
 $ok( false === strpos( $query, 'new WP_Query' ) && false === strpos( $query, 'WP_Query(' ), 'Shop Discovery must not own direct filtered-product WP_Query' );
 $ok( false === strpos( $query, 'posts_clauses' ) && false === strpos( $query, 'gloskin_price_lookup' ), 'Shop Discovery must own zero product SQL/posts_clauses' );
-$ok( false === strpos( $route, 'query_scope_active' ) && false === strpos( $route, 'query_filters' ), 'obsolete Shop Discovery query-scope state must be removed' );
-$ok( false !== strpos( $query, 'Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog' ) && false !== strpos( $query, 'products_paginated_filtered( $page, self::PER_PAGE, $filters )' ), 'category/q/min/max/page must delegate to adapter-owned catalog API' );
+$ok( false === strpos( $route, 'query_scope_active' ) && false === strpos( $route, 'query_filters' ), 'obsolete Discovery query-scope state must remain removed' );
+$ok( false !== strpos( $query, 'Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog' ) && false !== strpos( $query, 'products_paginated_filtered( $page, self::PER_PAGE, $filters )' ), 'full filter state must delegate to adapter-owned catalog API' );
 
-/* Adapter-owned filtered path is bounded and preserves Woo price overlap semantics. */
-$ok( false !== strpos( $catalog, 'final class Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog' ), 'adapter-owned Shop query component missing' );
+/* Adapter-owned filtered path is bounded and preserves Woo price overlap/search. */
 $ok( false !== strpos( $catalog, 'public function products_paginated_filtered(' ), 'coherent adapter filtered API missing' );
 $ok( false !== strpos( $catalog, 'min( 12, absint( $per_page ) )' ) && false !== strpos( $catalog, "'posts_per_page'              => \$per_page" ), 'filtered adapter query must remain bounded to 12' );
 $ok( false === strpos( $catalog, "'posts_per_page' => -1" ) && false === strpos( $catalog, "'posts_per_page'              => -1" ), 'filtered adapter path must not contain all-product scan' );
@@ -79,15 +79,16 @@ $ok( false !== strpos( $catalog, 'gloskin_price_lookup.max_price >= %f' ) && fal
 $ok( false !== strpos( $catalog, '.post_title LIKE %s' ) && false !== strpos( $catalog, '.post_excerpt LIKE %s' ) && false !== strpos( $catalog, '.post_content LIKE %s' ), 'scoped search must cover title/excerpt/content' );
 $ok( false === strpos( $catalog, "add_action( 'pre_get_posts'" ) && false === strpos( $catalog, "add_filter( 'pre_get_posts'" ), 'global pre_get_posts ownership forbidden' );
 
-$ok( false !== strpos( $owner, "results.setAttribute('aria-busy', busy ? 'true' : 'false')" ), 'aria-busy ownership missing' );
-$ok( false !== strpos( $owner, 'function skeletonMarkup()' ) && false !== strpos( $owner, "results.insertAdjacentHTML('beforeend', skeletonMarkup())" ), 'Shop skeleton overlay missing' );
-$ok( false !== strpos( $owner, 'results.style.minHeight = height' ) && false !== strpos( $owner, "results.style.removeProperty('min-height')" ), 'Shop skeleton geometry preservation missing' );
-$ok( false === strpos( $owner, 'setInterval(' ), 'Shop loading must not add polling' );
-$ok( false !== strpos( $css, 'grid-template-columns:minmax(210px,240px) minmax(0,1fr)' ), 'desktop Shop layout changed' );
-$ok( false !== strpos( $css, '@media (max-width:900px)' ) && false !== strpos( $css, '.gloskin-ui1-shop-categories{position:static;top:auto;overflow-x:auto' ), 'responsive Shop category layout changed' );
-$ok( false !== strpos( $css, '@media (prefers-reduced-motion:reduce)' ), 'Shop must respect reduced motion' );
+/* Presentation owner convergence: discovery CSS loads after core and neutralizes
+ * the old category-only sticky/borders while the complete rail owns sticky. */
+$ok( false !== strpos( $core_css, 'grid-template-columns:minmax(210px,240px) minmax(0,1fr)' ), 'desktop Shop grid changed' );
+$ok( false !== strpos( $shop_css, '.gloskin-ui1-shop-catalog__rail {' ) && false !== strpos( $shop_css, 'position: sticky;' ), 'complete filter rail sticky owner missing' );
+$ok( false !== strpos( $shop_css, '.gloskin-ui1-shop-categories {' ) && false !== strpos( $shop_css, 'position: static;' ) && false !== strpos( $shop_css, 'border: 0;' ), 'category legacy sticky/borders must be neutralized by scoped discovery owner' );
+$ok( false !== strpos( $shop_css, '@media (max-width: 900px)' ) && false !== strpos( $shop_css, 'top: auto;' ), 'single-column rail must return to normal flow' );
+$ok( false !== strpos( $shop_css, '@media (prefers-reduced-motion: reduce)' ), 'Shop discovery must respect reduced motion' );
 
 $ok( false !== strpos( $runner, 'php tests/shop-catalog-contract.php' ), 'runtime runner must execute Shop PHP contract' );
+$ok( false !== strpos( $runner, 'php tests/shop-smart-search-contract.php' ), 'runtime runner must execute focused Shop discovery contract' );
 $ok( false !== strpos( $runner, 'node tests/shop-catalog-controller.test.js' ), 'runtime runner must execute Shop JS contract' );
 $ok( false !== strpos( $runner, 'python tests/shop-catalog-browser-smoke.py' ), 'runtime browser gate must execute Shop browser smoke' );
 
