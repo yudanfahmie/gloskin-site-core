@@ -327,3 +327,30 @@ html.gloskin-ui1-commerce-journey-leaving [data-gloskin-commerce-progress]{point
 	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(4),
 	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(4){transform:translate(calc(-50% + 18px),calc(-50% + 18px)) scale(.9)}
 }
+
+/* Real-staging journey closure: this canonical component owner is explicitly
+   stronger than the global .gloskin-ui1 h1 billboard rule without changing
+   that global typography or Woo's native Cart/Checkout hydration lifecycle. */
+.gloskin-ui1-commerce-heading--journey{
+	padding:clamp(28px,4vw,48px) 0 clamp(20px,3vw,32px);
+}
+.gloskin-ui1 .gloskin-ui1-commerce-progress__step{
+	min-width:0;
+	margin:0;
+	font-family:var(--gloskin-font-heading);
+	font-size:clamp(2.1rem,3.4vw,3.25rem);
+	font-weight:400;
+	line-height:1;
+	letter-spacing:-.028em;
+	white-space:nowrap;
+	color:var(--gloskin-text);
+	text-shadow:none;
+	font-synthesis:none;
+}
+@media (max-width:760px){
+	.gloskin-ui1-commerce-heading--journey{padding:24px 0 18px}
+	.gloskin-ui1 .gloskin-ui1-commerce-progress__step{font-size:clamp(1.75rem,8.2vw,2.8rem)}
+}
+@media (max-width:430px){
+	.gloskin-ui1 .gloskin-ui1-commerce-progress__step{font-size:clamp(1.4rem,7.3vw,2rem)}
+}

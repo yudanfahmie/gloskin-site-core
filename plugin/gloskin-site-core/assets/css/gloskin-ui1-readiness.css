@@ -269,3 +269,107 @@
 	.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row-last,
 	.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row-wide{grid-column:1/-1}
 }
+
+/* Real-staging closure: make native Woo account geometry deterministic even
+   when legacy col2-set clearfix and notice pseudos are injected after us. */
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation{margin-bottom:18px}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a{
+	display:flex;
+	align-items:center;
+	box-sizing:border-box;
+	min-height:40px;
+	transition:background-color 140ms ease,color 140ms ease;
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation .is-active>a,
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a[aria-current="page"]{
+	box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gloskin-border) 78%,transparent);
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content>p{margin:0 0 16px}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses{
+	align-items:stretch;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses::before,
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses::after{
+	content:none;
+	display:none;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address{
+	float:none;
+	clear:none;
+	width:auto;
+	min-width:0;
+	height:100%;
+	margin:0;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses>.u-column1.col-1.woocommerce-Address{
+	grid-column:1;
+	grid-row:1;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses>.u-column2.col-2.woocommerce-Address{
+	grid-column:2;
+	grid-row:1;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address-title{align-items:center}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address-title h2{
+	font-size:clamp(1.375rem,1.7vw,1.55rem);
+	font-weight:600;
+	line-height:1.2;
+	letter-spacing:-.012em;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address-title .edit{
+	position:static;
+	display:inline-flex;
+	align-items:center;
+	min-height:32px;
+	margin:0;
+	padding:2px 0;
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native :is(.woocommerce-info,.woocommerce-message,.woocommerce-error){
+	display:flex;
+	align-items:center;
+	gap:12px;
+	min-height:58px;
+	margin:0;
+	padding:13px 14px 13px 16px;
+	border:0;
+	border-left:3px solid var(--gloskin-accent);
+	border-radius:var(--gloskin-radius-sm);
+	background:color-mix(in srgb,var(--gloskin-accent-soft) 44%,var(--gloskin-bg));
+	box-shadow:none;
+	color:var(--gloskin-text);
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-error{border-left-color:var(--gloskin-accent-strong)}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native :is(.woocommerce-info,.woocommerce-message,.woocommerce-error)::before,
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native :is(.woocommerce-info,.woocommerce-message,.woocommerce-error)::after{
+	content:none;
+	display:none;
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native :is(.woocommerce-info,.woocommerce-message,.woocommerce-error)+:is(.woocommerce-info,.woocommerce-message,.woocommerce-error){margin-top:10px}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native :is(.woocommerce-info,.woocommerce-message,.woocommerce-error) .button{
+	order:2;
+	float:none;
+	flex:0 0 auto;
+	width:auto;
+	min-height:40px;
+	margin:0 0 0 auto;
+	padding:9px 16px;
+	background:var(--gloskin-accent);
+	color:var(--gloskin-inverse);
+	line-height:1.2;
+	white-space:nowrap;
+}
+@media (max-width:782px){
+	.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses>.u-column1.col-1.woocommerce-Address,
+	.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses>.u-column2.col-2.woocommerce-Address{
+		grid-column:1;
+		grid-row:auto;
+	}
+}
+@media (max-width:600px){
+	.woocommerce-account.logged-in .gloskin-ui1-commerce-native :is(.woocommerce-info,.woocommerce-message,.woocommerce-error){
+		align-items:flex-start;
+		flex-direction:column;
+		padding:14px 15px;
+	}
+	.woocommerce-account.logged-in .gloskin-ui1-commerce-native :is(.woocommerce-info,.woocommerce-message,.woocommerce-error) .button{margin-left:0}
+}
