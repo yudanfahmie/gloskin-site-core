@@ -18,6 +18,7 @@ trait Gloskin_Site_Core_Contact_Service_Bootstrap_Trait {
 
 	/** @return void */
 	public function register() {
+		add_action( 'init', array( $this, 'migrate_message_post_type' ), 5 );
 		add_action( 'init', array( $this, 'register_message_post_type' ), 6 );
 		add_action( 'init', array( $this, 'register_shortcode' ), 8 );
 		add_filter( 'option_gloskin_site_core_settings', array( $this, 'own_contact_runtime_shortcode' ), 50, 2 );
@@ -26,6 +27,34 @@ trait Gloskin_Site_Core_Contact_Service_Bootstrap_Trait {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_recaptcha' ), 45 );
 		add_action( 'admin_init', array( $this, 'maybe_prune_retention' ), 60 );
 		$this->mailer->register_site_wide_scope();
+	}
+
+	/**
+	 * One-time compatibility migration from the historical invalid (>20 chars)
+	 * post type key. Existing inbox records are preserved and normalized before
+	 * the valid post type is registered.
+	 *
+	 * @return void
+	 */
+	public function migrate_message_post_type() {
+		$option = 'gloskin_contact_post_type_migrated_v1';
+		if ( get_option( $option ) === '1' ) {
+			return;
+		}
+
+		global $wpdb;
+		if ( ! isset( $wpdb->posts ) ) {
+			return;
+		}
+
+		$wpdb->update(
+			$wpdb->posts,
+			array( 'post_type' => self::MESSAGE_POST_TYPE ),
+			array( 'post_type' => self::LEGACY_MESSAGE_POST_TYPE ),
+			array( '%s' ),
+			array( '%s' )
+		);
+		update_option( $option, '1', false );
 	}
 
 	/**
