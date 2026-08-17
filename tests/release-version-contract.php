@@ -16,15 +16,12 @@ if ( ! preg_match( "/const VERSION = '([0-9]+\\.[0-9]+\\.[0-9]+)';/", $kernel, $
 	fwrite( STDERR, "Kernel VERSION missing\n" );
 	exit( 1 );
 }
-$expected = '0.7.115';
+$expected = '0.7.116';
 if ( $plugin_match[1] !== $expected || $kernel_match[1] !== $expected ) {
 	fwrite( STDERR, 'Release version mismatch: header=' . $plugin_match[1] . ', kernel=' . $kernel_match[1] . ', expected=' . $expected . "\n" );
 	exit( 1 );
 }
 
-// Active exact-version assertions across the test suite must agree with the
-// release owners. Match assertion-shaped usages only, so historical prose or
-// fixtures can still mention an older release without becoming a false gate.
 $patterns = array(
 	'/(?:===|==)\s*[\'\"](0\.7\.\d+)[\'\"]/',
 	'/const VERSION\s*=\s*[\'\"](0\.7\.\d+)[\'\"]/',
@@ -32,24 +29,20 @@ $patterns = array(
 );
 $tests = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $root . '/tests', FilesystemIterator::SKIP_DOTS ) );
 foreach ( $tests as $file ) {
-	if ( ! $file->isFile() ) {
-		continue;
-	}
+	if ( ! $file->isFile() ) { continue; }
 	$contents = file_get_contents( $file->getPathname() );
 	if ( false === $contents ) {
 		fwrite( STDERR, 'Unable to read test file: ' . $file->getPathname() . "\n" );
 		exit( 1 );
 	}
 	foreach ( $patterns as $pattern ) {
-		if ( ! preg_match_all( $pattern, $contents, $matches ) ) {
-			continue;
-		}
+		if ( ! preg_match_all( $pattern, $contents, $matches ) ) { continue; }
 		foreach ( array_unique( $matches[1] ) as $version ) {
 			if ( $version !== $expected ) {
 				fwrite( STDERR, 'Stale active release assertion in ' . $file->getPathname() . ': ' . $version . "\n" );
 				exit( 1 );
 			}
-		}
+	}
 	}
 }
 
