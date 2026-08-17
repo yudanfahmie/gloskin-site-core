@@ -28,16 +28,12 @@ final class Gloskin_Site_Core_Kernel {
 	/**
 	 * Register only the services needed by the current request profile.
 	 *
+	 * Gloskin Site Core does not own or intercept WordPress authentication.
+	 * Core login/logout/cookie/session lifecycles remain entirely WordPress-owned.
+	 *
 	 * @return void
 	 */
 	public function boot() {
-		// wp-login.php is neither the public site nor wp-admin. Do not let the
-		// frontend service graph (content, WooCommerce, forms, templates, assets,
-		// production batch) execute inside the authentication lifecycle.
-		if ( $this->is_auth_request() ) {
-			return;
-		}
-
 		$this->load_shared_classes();
 
 		$content = new Gloskin_Site_Core_Content_Service();
@@ -108,36 +104,6 @@ final class Gloskin_Site_Core_Kernel {
 		$this->services[] = $form;
 		$this->services[] = $templates;
 		$this->boot_production_batch();
-	}
-
-	/**
-	 * Authentication is a separate WordPress document lifecycle. Keep this
-	 * classifier dependency-free so it is safe during normal plugin loading.
-	 *
-	 * @return bool
-	 */
-	private function is_auth_request() {
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			return false;
-		}
-
-		$uri = isset( $_SERVER['REQUEST_URI'] ) && is_scalar( $_SERVER['REQUEST_URI'] )
-			? (string) $_SERVER['REQUEST_URI']
-			: '';
-		if ( $uri === '' ) {
-			return false;
-		}
-
-		$path = parse_url( $uri, PHP_URL_PATH );
-		if ( ! is_string( $path ) ) {
-			return false;
-		}
-		$path = '/' . ltrim( $path, '/' );
-		$path = $path === '/' ? '/' : rtrim( $path, '/' );
-
-		return basename( $path ) === 'wp-login.php'
-			|| $path === '/masuk'
-			|| substr( $path, -6 ) === '/masuk';
 	}
 
 	/**
