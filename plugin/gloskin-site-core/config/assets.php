@@ -82,6 +82,14 @@ return array(
 			'deps'  => array( 'gloskin-ui1-brand-purchase-polish' ),
 			'media' => 'all',
 		),
+		/* Shared first-party product-grid geometry. Home products, Shop SSR/AJAX
+		 * products and Shop skeletons opt into this one scoped column matrix;
+		 * generic editorial/card grids remain on their existing owner. */
+		'gloskin-ui1-product-grid' => array(
+			'src'   => 'assets/css/gloskin-ui1-product-grid.css',
+			'deps'  => array( 'gloskin-ui1-editorial' ),
+			'media' => 'all',
+		),
 		/* Treatment Consultation discovery (docs/task-treatment-
 		 * consultation-commerce-discovery.md section 10): conditionally
 		 * enqueued only on the Treatments Hub -- see

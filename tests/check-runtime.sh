@@ -28,7 +28,7 @@ php tests/consultation-demo-importer-contract.php
 php tests/woo-cart-notice-contract.php
 php tests/release-version-contract.php
 php tests/shop-catalog-contract.php
-php tests/shop-smart-search-contract.php
+php tests/product-grid-contract.php
 node tests/shop-catalog-controller.test.js
 python tests/storefront-regression-contract.py
 php tests/rest-sanitize-callback-contract.php
@@ -70,6 +70,7 @@ if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/nu
   python tests/commerce-progress-heading-browser-smoke.py
   python tests/variable-commerce-hardening-browser-smoke.py
   python tests/shop-catalog-browser-smoke.py
+  python tests/product-grid-browser-smoke.py
   python tests/public-rest-get-browser-smoke.py
   python tests/single-product-dock-browser-smoke.py
   python tests/single-product-ghost-space-browser-smoke.py

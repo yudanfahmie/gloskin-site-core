@@ -366,7 +366,8 @@
 }
 
 /* --------------------------------------------------------------------------
-   Loading state + skeletons
+   Loading state + skeletons. Column geometry is owned by the shared
+   gloskin-ui1-product-grid.css contract, alongside real Home/Shop products.
    -------------------------------------------------------------------------- */
 
 [data-gloskin-shop-catalog-owner].is-loading [data-gloskin-shop-results] {
@@ -379,20 +380,20 @@
 	to { background-position: 400px 0; }
 }
 
-.gloskin-ui1-shop-skeleton__grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-	gap: 16px;
-}
-
 .gloskin-ui1-shop-skeleton__card {
 	display: grid;
-	gap: 8px;
+	grid-template-rows: auto auto auto auto;
+	min-width: 0;
+	overflow: hidden;
+	border: 1px solid var(--gloskin-border);
+	border-radius: var(--gloskin-radius-md);
+	background: var(--gloskin-bg);
+	box-shadow: 0 8px 28px color-mix(in srgb,var(--gloskin-text) 5%,transparent);
 }
 
 .gloskin-ui1-shop-skeleton__media,
-.gloskin-ui1-shop-skeleton__line {
-	border-radius: 6px;
+.gloskin-ui1-shop-skeleton__line,
+.gloskin-ui1-shop-skeleton__card::after {
 	background: linear-gradient(
 		90deg,
 		var(--gloskin-surface-strong) 25%,
@@ -403,9 +404,37 @@
 	animation: gloskin-skeleton-shimmer 1.4s ease-in-out infinite;
 }
 
-.gloskin-ui1-shop-skeleton__media { aspect-ratio: 1; }
-.gloskin-ui1-shop-skeleton__line--title { height: 14px; width: 80%; }
-.gloskin-ui1-shop-skeleton__line--price { height: 12px; width: 50%; }
+.gloskin-ui1-shop-skeleton__media {
+	width: 100%;
+	aspect-ratio: 1;
+}
+
+.gloskin-ui1-shop-skeleton__line {
+	border-radius: 6px;
+	margin-inline: clamp(20px, 3vw, 28px);
+}
+
+.gloskin-ui1-shop-skeleton__line--title {
+	height: 14px;
+	width: min(72%, calc(100% - 40px));
+	margin-top: clamp(20px, 3vw, 28px);
+}
+
+.gloskin-ui1-shop-skeleton__line--price {
+	height: 12px;
+	width: min(46%, calc(100% - 40px));
+	margin-top: 10px;
+}
+
+/* The real product card owns one persistent footer CTA. Mirror its 38px small
+   action footprint without adding fake text or another DOM/state owner. */
+.gloskin-ui1-shop-skeleton__card::after {
+	content: '';
+	display: block;
+	height: 38px;
+	margin: 18px clamp(20px, 3vw, 28px) clamp(20px, 3vw, 28px);
+	border-radius: var(--gloskin-action-radius);
+}
 
 /* --------------------------------------------------------------------------
    Empty search state
@@ -505,7 +534,8 @@
 	}
 
 	.gloskin-ui1-shop-skeleton__media,
-	.gloskin-ui1-shop-skeleton__line {
+	.gloskin-ui1-shop-skeleton__line,
+	.gloskin-ui1-shop-skeleton__card::after {
 		animation: none;
 	}
 }
