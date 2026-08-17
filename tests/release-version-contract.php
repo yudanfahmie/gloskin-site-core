@@ -16,7 +16,7 @@ if ( ! preg_match( "/const VERSION = '([0-9]+\\.[0-9]+\\.[0-9]+)';/", $kernel, $
 	fwrite( STDERR, "Kernel VERSION missing\n" );
 	exit( 1 );
 }
-$expected = '0.7.116';
+$expected = '0.7.117';
 if ( $plugin_match[1] !== $expected || $kernel_match[1] !== $expected ) {
 	fwrite( STDERR, 'Release version mismatch: header=' . $plugin_match[1] . ', kernel=' . $kernel_match[1] . ', expected=' . $expected . "\n" );
 	exit( 1 );
@@ -31,10 +31,7 @@ $tests = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $root . 
 foreach ( $tests as $file ) {
 	if ( ! $file->isFile() ) { continue; }
 	$contents = file_get_contents( $file->getPathname() );
-	if ( false === $contents ) {
-		fwrite( STDERR, 'Unable to read test file: ' . $file->getPathname() . "\n" );
-		exit( 1 );
-	}
+	if ( false === $contents ) { fwrite( STDERR, 'Unable to read test file: ' . $file->getPathname() . "\n" ); exit( 1 ); }
 	foreach ( $patterns as $pattern ) {
 		if ( ! preg_match_all( $pattern, $contents, $matches ) ) { continue; }
 		foreach ( array_unique( $matches[1] ) as $version ) {
@@ -42,7 +39,7 @@ foreach ( $tests as $file ) {
 				fwrite( STDERR, 'Stale active release assertion in ' . $file->getPathname() . ': ' . $version . "\n" );
 				exit( 1 );
 			}
-	}
+		}
 	}
 }
 

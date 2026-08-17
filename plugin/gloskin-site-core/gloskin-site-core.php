@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Gloskin Site Core
  * Description: Gloskin website presentation, content and integration runtime.
- * Version: 0.7.116
+ * Version: 0.7.117
  * Requires PHP: 7.4
  * Text Domain: gloskin-site-core
  */
@@ -18,6 +18,3 @@ register_deactivation_hook( __FILE__, array( 'Gloskin_Site_Core_Kernel', 'deacti
 
 $gloskin_site_core_kernel = new Gloskin_Site_Core_Kernel( __FILE__ );
 $gloskin_site_core_kernel->boot();
-
-require_once __DIR__ . '/includes/class-gloskin-site-core-production-batch.php';
-Gloskin_Site_Core_Production_Batch::boot( __FILE__ );

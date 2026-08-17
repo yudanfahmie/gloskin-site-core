@@ -25,7 +25,7 @@ $gloskin_shop_results_partial = dirname( __DIR__ ) . '/parts/shop-results.php';
 	</div>
 </section>
 <?php endif; ?>
-<section class="gloskin-ui1-section gloskin-ui1-section--soft" data-gloskin-section="shop-products" data-gloskin-shop-catalog data-gloskin-shop-url="<?php echo esc_url( $gloskin_shop_url ); ?>" data-gloskin-shop-endpoint="<?php echo esc_url( rest_url( 'gloskin/v1/shop/catalog' ) ); ?>" data-gloskin-shop-initial-page="<?php echo esc_attr( (string) $gloskin_shop_results['page'] ); ?>">
+<section class="gloskin-ui1-section gloskin-ui1-section--soft" data-gloskin-section="shop-products" data-gloskin-shop-catalog-owner data-gloskin-shop-url="<?php echo esc_url( $gloskin_shop_url ); ?>" data-gloskin-shop-endpoint="<?php echo esc_url( rest_url( 'gloskin/v1/shop/catalog' ) ); ?>" data-gloskin-shop-initial-page="<?php echo esc_attr( (string) $gloskin_shop_results['page'] ); ?>">
 	<div class="gloskin-ui1-container">
 		<div class="gloskin-ui1-shop-catalog">
 			<aside class="gloskin-ui1-shop-catalog__rail" aria-label="<?php echo esc_attr__( 'Penyaring produk', 'gloskin-site-core' ); ?>">

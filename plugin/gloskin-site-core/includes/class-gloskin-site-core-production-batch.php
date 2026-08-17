@@ -1,6 +1,6 @@
 <?php
 /**
- * Composition root for Shop discovery, native Contact operations and doctor migration.
+ * Kernel-owned module for Shop discovery, native Contact operations and doctor migration.
  *
  * @package GloskinSiteCore
  */
@@ -13,8 +13,16 @@ final class Gloskin_Site_Core_Production_Batch {
 	/** @var array<int,object> */
 	private static $services = array();
 
+	/** @var bool */
+	private static $booted = false;
+
 	/** @param string $plugin_file Main plugin file. @return void */
 	public static function boot( $plugin_file ) {
+		if ( self::$booted ) {
+			return;
+		}
+		self::$booted = true;
+
 		require_once __DIR__ . '/class-gloskin-site-core-contact-mailer.php';
 		foreach ( array( 'bootstrap', 'settings', 'form', 'submit', 'security', 'persist', 'mail' ) as $part ) {
 			require_once __DIR__ . '/gloskin-site-core-contact-service-' . $part . '-trait.php';

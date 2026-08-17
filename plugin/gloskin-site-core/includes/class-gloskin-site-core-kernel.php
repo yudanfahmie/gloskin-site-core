@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.7.116';
+	const VERSION = '0.7.117';
 
 	/** @var string */
 	private $plugin_file;
@@ -63,6 +63,7 @@ final class Gloskin_Site_Core_Kernel {
 			$this->services[] = $admin;
 			$this->services[] = $insight_migration;
 			$this->services[] = $lifecycle;
+			$this->boot_production_batch();
 			return;
 		}
 
@@ -99,6 +100,7 @@ final class Gloskin_Site_Core_Kernel {
 		$this->services[] = $woocommerce;
 		$this->services[] = $form;
 		$this->services[] = $templates;
+		$this->boot_production_batch();
 	}
 
 	/**
@@ -107,6 +109,18 @@ final class Gloskin_Site_Core_Kernel {
 	private function load_shared_classes() {
 		require_once __DIR__ . '/class-gloskin-site-core-content-service.php';
 		require_once __DIR__ . '/class-gloskin-site-core-asset-service.php';
+	}
+
+	/**
+	 * Kernel-owned bridge for the production batch added after the original
+	 * service graph. Keeping this call after the existing branch registrations
+	 * preserves the previous object/hook registration order.
+	 *
+	 * @return void
+	 */
+	private function boot_production_batch() {
+		require_once __DIR__ . '/class-gloskin-site-core-production-batch.php';
+		Gloskin_Site_Core_Production_Batch::boot( $this->plugin_file );
 	}
 
 	/**

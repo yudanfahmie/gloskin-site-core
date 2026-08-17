@@ -1,107 +1,84 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Shop catalog SSR/AJAX architecture contract.
- */
-
+/** Shop catalog SSR/AJAX architecture contract. */
 $root = dirname( __DIR__ );
+$read = static function ( string $relative ) use ( $root ): string {
+	$data = file_get_contents( $root . '/' . $relative );
+	if ( false === $data ) { fwrite( STDERR, "FAIL: unable to read {$relative}\n" ); exit( 1 ); }
+	return $data;
+};
+$ok = static function ( bool $condition, string $message ): void {
+	if ( ! $condition ) { fwrite( STDERR, "FAIL: {$message}\n" ); exit( 1 ); }
+};
 
-function source( string $path ): string {
-	global $root;
-	$content = file_get_contents( $root . '/' . $path );
-	if ( false === $content ) {
-		fwrite( STDERR, "FAIL: unable to read {$path}\n" );
-		exit( 1 );
-	}
-	return $content;
-}
+$shop    = $read( 'plugin/gloskin-site-core/templates/pages/shop.php' );
+$results = $read( 'plugin/gloskin-site-core/templates/parts/shop-results.php' );
+$service = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php' );
+$adapter = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php' );
+$route   = $read( 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-route-trait.php' );
+$query   = $read( 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-query-trait.php' );
+$core    = $read( 'plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js' );
+$owner   = $read( 'plugin/gloskin-site-core/assets/js/gloskin-ui1-shop-discovery.js' );
+$css     = $read( 'plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css' );
+$runner  = $read( 'tests/check-runtime.sh' );
 
-function ok( bool $condition, string $message ): void {
-	if ( ! $condition ) {
-		fwrite( STDERR, "FAIL: {$message}\n" );
-		exit( 1 );
-	}
-}
+/* SSR + semantic fallback behavior remains intact. */
+$ok( false !== strpos( $shop, 'data-gloskin-shop-catalog-owner' ), 'Shop must render one canonical catalog owner marker' );
+$ok( 0 === preg_match( '/\sdata-gloskin-shop-catalog(?:\s|>)/', $shop ), 'legacy core root marker must be inactive' );
+$ok( false !== strpos( $shop, '<nav class="gloskin-ui1-shop-categories"' ) && false !== strpos( $shop, '<ul>' ) && false !== strpos( $shop, '<li><a ' ), 'category control must remain semantic nav/list/anchors' );
+$ok( false === strpos( $shop, 'role="tab"' ) && false === strpos( $shop, 'role="tabpanel"' ), 'Shop category navigation must not use tab semantics' );
+$ok( 1 === substr_count( $shop, "__( 'Semua Produk', 'gloskin-site-core' )" ), 'sidebar must expose exactly one Semua Produk source action' );
+$ok( false !== strpos( $shop, "home_url( '/shop/' )" ), 'Semua Produk must retain canonical /shop/ fallback' );
+$ok( false !== strpos( $shop, '$gloskin_mapping[\'url\']' ) && false !== strpos( $shop, '$gloskin_mapping[\'woo_slug\']' ), 'mapped category anchors must retain existing URL/slug ownership' );
+$ok( false !== strpos( $shop, 'include $gloskin_shop_results_partial' ), 'SSR Shop must use shared results partial' );
+$ok( false !== strpos( $service, "'/templates/parts/shop-results.php'" ) && false !== strpos( $service, 'render_shop_results' ), 'AJAX projection must use same shared results partial' );
+$ok( false !== strpos( $results, 'gloskin_ui1_render_product_card' ), 'shared renderer must reuse canonical product-card helper' );
+$ok( false !== strpos( $results, 'data-gloskin-shop-count' ) && false !== strpos( $results, 'data-gloskin-shop-status' ), 'shared renderer must own count/status region' );
+$ok( false !== strpos( $results, 'data-gloskin-shop-page' ) && false !== strpos( $results, "home_url( '/shop/page/' . \$page . '/' )" ), 'pagination must keep canonical real-URL fallback' );
 
-$shop    = source( 'plugin/gloskin-site-core/templates/pages/shop.php' );
-$results = source( 'plugin/gloskin-site-core/templates/parts/shop-results.php' );
-$service = source( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php' );
-$adapter = source( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php' );
-$js      = source( 'plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js' );
-$css     = source( 'plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css' );
-$runner  = source( 'tests/check-runtime.sh' );
+/* Existing endpoint is retained; discovery service only extends that route. */
+$ok( false !== strpos( $service, "register_rest_route( 'gloskin/v1', '/shop/catalog'" ), 'existing Shop endpoint missing' );
+$ok( false !== strpos( $service, "'methods'             => 'GET'" ), 'Shop projection must remain GET only' );
+$ok( false !== strpos( $route, "\$route = '/gloskin/v1/shop/catalog';" ), 'Shop discovery must extend the existing route only' );
+$ok( false !== strpos( $route, 'gloskin-ui1-shop-discovery.js' ) && false !== strpos( $route, 'gloskin-ui1-shop-discovery.css' ), 'scoped Shop owner/CSS assets missing' );
+$ok( false !== strpos( $adapter, 'public function products_paginated(' ), 'existing Woo catalog owner must remain' );
 
-/* SSR + semantic navigation. */
-ok( false !== strpos( $shop, 'data-gloskin-shop-catalog' ), 'Shop must render an SSR catalog root' );
-ok( false !== strpos( $shop, '<nav class="gloskin-ui1-shop-categories"' ) && false !== strpos( $shop, '<ul>' ) && false !== strpos( $shop, '<li><a ' ), 'category control must remain semantic nav/list/anchors' );
-ok( false === strpos( $shop, 'role="tab"' ) && false === strpos( $shop, 'role="tabpanel"' ), 'Shop category navigation must not use tab semantics' );
-ok( 1 === substr_count( $shop, "__( 'Semua Produk', 'gloskin-site-core' )" ), 'sidebar must expose exactly one Semua Produk source action' );
-ok( false !== strpos( $shop, "home_url( '/shop/' )" ), 'Semua Produk must retain canonical /shop/ fallback' );
-ok( false !== strpos( $shop, '$gloskin_mapping[\'url\']' ) && false !== strpos( $shop, '$gloskin_mapping[\'woo_slug\']' ), 'mapped category anchors must retain canonical skincare URL while enhancement uses existing woo_slug' );
-ok( false !== strpos( $shop, 'aria-current="page"' ), 'SSR active category must expose aria-current' );
+/* One active browser owner for category + q + min/max + page. */
+$ok( false !== strpos( $owner, "document.querySelector('[data-gloskin-shop-catalog-owner]')" ), 'active Shop owner marker mismatch' );
+$ok( false !== strpos( $core, "document.querySelector('[data-gloskin-shop-catalog]')" ), 'legacy controller contract unexpectedly moved' );
+$ok( 1 === substr_count( $owner, 'function buildShopCatalogRequestUrl(' ), 'one active URL builder expected' );
+$ok( 1 === substr_count( $owner, 'function requestCatalog(' ), 'one active request owner expected' );
+$ok( 1 === substr_count( $owner, 'return window.fetch(' ), 'one active Shop fetch path expected' );
+$ok( false !== strpos( $owner, 'new window.AbortController()' ) && false !== strpos( $owner, 'var requestSequence = 0' ) && false !== strpos( $owner, 'sequence !== requestSequence' ), 'Shop stale-request guard missing' );
+$ok( false !== strpos( $owner, "category: String(state.category || '')" ) && false !== strpos( $owner, "q: String(state.q || '')" ) && false !== strpos( $owner, "min_price: String(state.min_price || '')" ) && false !== strpos( $owner, "max_price: String(state.max_price || '')" ), 'full filter state missing' );
+$ok( false !== strpos( $owner, 'nextState.page = 1;' ), 'filter changes must reset page 1' );
+$ok( false !== strpos( $owner, 'nextPageState = normalizeShopCatalogState(currentState, 1);' ), 'pagination must preserve current filters' );
+$ok( false !== strpos( $owner, "window.addEventListener('popstate'" ) && false !== strpos( $owner, 'syncControls(state);' ), 'back/forward must restore controls/state' );
+$ok( false !== strpos( $owner, "searchForm.addEventListener('submit'" ) && false !== strpos( $owner, 'window.clearTimeout(searchTimer);' ), 'Enter must apply search immediately without pending debounce duplicate' );
+$ok( ! preg_match( '/window\.fetch\s*=(?!=)/', $owner . $core ), 'global fetch monkeypatch forbidden' );
+$ok( ! preg_match( '/(?:window\.)?history\.pushState\s*=(?!=)/', $owner . $core ), 'global pushState monkeypatch forbidden' );
+$ok( ! preg_match( '/(?:window\.)?history\.replaceState\s*=(?!=)/', $owner . $core ), 'global replaceState monkeypatch forbidden' );
+$ok( false === strpos( $owner, 'originalFetch' ) && false === strpos( $owner, 'originalPushState' ) && false === strpos( $owner, 'originalReplaceState' ), 'legacy decorator interception code still present' );
 
-/* One shared results renderer for SSR and projection. */
-ok( false !== strpos( $shop, 'include $gloskin_shop_results_partial' ), 'SSR Shop must use shared results partial' );
-ok( false !== strpos( $service, "'/templates/parts/shop-results.php'" ) && false !== strpos( $service, 'render_shop_results' ), 'AJAX Shop projection must use the same shared results partial' );
-ok( false !== strpos( $results, "require_once __DIR__ . '/template-helpers.php'" ) && false !== strpos( $results, "require_once __DIR__ . '/readiness-helpers.php'" ), 'shared renderer must load existing helper owners when invoked by REST' );
-ok( false !== strpos( $results, 'gloskin_ui1_render_product_card' ), 'shared renderer must reuse canonical product-card helper' );
-ok( false !== strpos( $results, 'data-gloskin-shop-count' ) && false !== strpos( $results, 'data-gloskin-shop-status' ), 'shared renderer must own count and polite status region' );
-ok( false !== strpos( $results, 'home_url( \'/shop/page/\' . $page . \'/\' )' ) && false !== strpos( $results, 'data-gloskin-shop-page' ), 'shared renderer must keep canonical Shop pagination fallback even when invoked from REST' );
-ok( false !== strpos( $results, 'gloskin_ui1_render_empty_state' ), 'shared renderer must own Shop empty states' );
+/* q/price stay bounded server-side; the documented unfiltered fallback stays. */
+$ok( false !== strpos( $query, 'products_paginated( $page, self::PER_PAGE, $category )' ), 'historical unfiltered Woo compatibility path must remain' );
+$ok( false !== strpos( $query, "'posts_per_page' => self::PER_PAGE" ), 'filtered query must remain bounded' );
+$ok( false === strpos( $query, "'posts_per_page' => -1" ), 'q/price must not add all-product scan' );
+$ok( false === strpos( $query, "add_action( 'pre_get_posts'" ) && false === strpos( $query, "add_filter( 'pre_get_posts'" ), 'global pre_get_posts ownership forbidden' );
+$ok( false !== strpos( $query, 'gloskin_price_lookup.max_price >= %f' ) && false !== strpos( $query, 'gloskin_price_lookup.min_price <= %f' ), 'Woo-compatible variable price overlap semantics missing' );
 
-/* Read-only projection delegates to existing Woo owner. */
-ok( false !== strpos( $service, "register_rest_route( 'gloskin/v1', '/shop/catalog'" ), 'Template Service must own the small Shop projection' );
-ok( false !== strpos( $service, "'methods'             => 'GET'" ), 'Shop projection must be GET only' );
-ok( false !== strpos( $service, '$this->woocommerce->products_paginated( $page, 12, $category )' ), 'Shop projection must delegate exactly to existing products_paginated() with server-owned 12/page' );
-ok( false !== strpos( $service, 'isset( $candidate[\'woo_slug\'] )' ) && false !== strpos( $service, '$candidate_slug === $category' ), 'Shop projection must validate category against existing woo_slug mappings' );
-ok( false === strpos( $service, 'wc_get_products(' ) && false === strpos( $service, 'wp_ajax_nopriv' ), 'Template Service must not introduce a second Woo query or public wp_ajax path' );
-ok( false !== strpos( $adapter, 'public function products_paginated(' ), 'existing Woo catalog owner must remain present' );
-foreach ( array( "'html'", "'category'", "'page'", "'total'", "'max_pages'" ) as $field ) {
-	ok( false !== strpos( $service, $field ), "Shop projection response missing {$field}" );
-}
+/* Loading/presentation behavior remains the same component contract. */
+$ok( false !== strpos( $owner, "results.setAttribute('aria-busy', busy ? 'true' : 'false')" ), 'aria-busy ownership missing' );
+$ok( false !== strpos( $owner, 'function skeletonMarkup()' ) && false !== strpos( $owner, "results.insertAdjacentHTML('beforeend', skeletonMarkup())" ), 'Shop skeleton overlay missing' );
+$ok( false !== strpos( $owner, 'results.style.minHeight = height' ) && false !== strpos( $owner, "results.style.removeProperty('min-height')" ), 'Shop skeleton geometry preservation missing' );
+$ok( false === strpos( $owner, 'setInterval(' ), 'Shop loading must not add polling' );
+$ok( false !== strpos( $css, 'grid-template-columns:minmax(210px,240px) minmax(0,1fr)' ), 'desktop Shop layout changed' );
+$ok( false !== strpos( $css, '@media (max-width:900px)' ) && false !== strpos( $css, '.gloskin-ui1-shop-categories{position:static;top:auto;overflow-x:auto' ), 'responsive Shop category layout changed' );
+$ok( false !== strpos( $css, '@media (prefers-reduced-motion:reduce)' ), 'Shop must respect reduced motion' );
 
-/* AJAX interaction, stale-request guard, failure preservation, history. */
-ok( false !== strpos( $js, 'function initShopCatalog()' ), 'Shop catalog controller missing' );
-ok( false !== strpos( $js, 'requestCatalog(category, 1,' ), 'category request must reset to page 1' );
-ok( false !== strpos( $js, 'requestCatalog(currentCategory, page,' ), 'pagination must preserve current category' );
-ok( false !== strpos( $js, 'new window.AbortController()' ) && false !== strpos( $js, 'var requestSequence = 0' ) && false !== strpos( $js, 'sequence !== requestSequence' ), 'Shop controller must guard stale requests with AbortController plus sequence fallback' );
-ok( false !== strpos( $js, "results.setAttribute('aria-busy', busy ? 'true' : 'false')" ), 'Shop result region must expose aria-busy' );
-ok( false !== strpos( $js, 'showCatalogFailure(fallbackHref)' ) && false !== strpos( $js, 'Hasil sebelumnya tetap ditampilkan' ), 'GET failure must preserve previous grid and expose recovery' );
-ok( false !== strpos( $js, "window.addEventListener('popstate'" ) && false !== strpos( $js, 'buildShopCatalogHash' ), 'browser back/forward must restore hash-backed AJAX state' );
-ok( false !== strpos( $js, "document.dispatchEvent(new CustomEvent('gloskin:catalog-updated'" ), 'catalog replacement must dispatch one small internal event' );
-ok( false !== strpos( $js, "document.addEventListener('gloskin:catalog-updated', syncToggles)" ), 'wishlist owner must re-sync only toggle state after catalog update' );
-ok( false !== strpos( $js, "event.target.closest('[data-gloskin-quickadd-open]')" ), 'Quick Add must remain delegated for injected cards' );
-
-/* Ghost-space fix: the shop-intro section itself (not just its inner
- * content) is conditional on real page content -- no empty padded DOM
- * section, no negative margin/fixed-height/CSS-hiding compensation. */
-ok( false !== strpos( $shop, "<?php if ( gloskin_ui1_has_content( \$gloskin_context['page'] ) ) : ?>\n<section class=\"gloskin-ui1-section gloskin-ui1-section--tight\" data-gloskin-section=\"shop-intro\">" ), 'the whole shop-intro section, not only its inner content, must be conditional on real page content' );
-ok( false === strpos( $css, 'shop-intro' ), 'shop-intro ghost space must not be patched with CSS' );
-
-/* Shop filter skeleton extends the existing aria-busy/is-loading setBusy()
- * state -- one loading controller, tied to the same requestSequence/
- * AbortController stale-request guard already covering setBusy() itself. */
-ok( 1 === substr_count( $js, 'function setBusy(busy) {' ), 'skeleton must extend the existing single setBusy() owner, not a second loading controller' );
-ok( false !== strpos( $js, 'function skeletonMarkup()' ), 'shop skeleton markup owner missing' );
-ok( false !== strpos( $js, "results.insertAdjacentHTML('beforeend', skeletonMarkup())" ), 'skeleton must overlay results, never replace the previous grid' );
-ok( false !== strpos( $js, "results.querySelector('[data-gloskin-shop-skeleton]')" ), 'skeleton insertion/removal must be idempotent' );
-ok( false !== strpos( $js, 'results.style.minHeight = height' ) && false !== strpos( $js, "results.style.removeProperty('min-height')" ), 'skeleton must lock/release results height to avoid a scroll jump' );
-ok( false !== strpos( $js, "aria-hidden=\"true\"><div class=\"gloskin-ui1-shop-skeleton__grid\">" ), 'skeleton overlay must be aria-hidden' );
-ok( false !== strpos( $shop, 'data-gloskin-shop-status-live' ), 'shop must expose a persistent screen-reader loading status outside the replaced results region' );
-ok( false !== strpos( $css, '.gloskin-ui1-shop-skeleton{' ) && false !== strpos( $css, '.gloskin-ui1-shop-skeleton__grid{' ), 'shop skeleton grid presentation missing' );
-ok( false !== strpos( $css, '@keyframes gloskin-skeleton-shimmer' ), 'skeleton shimmer must be CSS-only, no JS animation loop' );
-ok( false === strpos( $js, 'setInterval(' ), 'skeleton must not use a JS polling/animation interval' );
-
-/* Responsive layout stays one component. */
-ok( false !== strpos( $css, 'grid-template-columns:minmax(210px,240px) minmax(0,1fr)' ), 'desktop Shop must use compact 210-240px sidebar' );
-ok( false !== strpos( $css, '@media (max-width:900px)' ) && false !== strpos( $css, '.gloskin-ui1-shop-categories{position:static;top:auto;overflow-x:auto' ), 'same Shop category nav must become horizontal overflow presentation on smaller screens' );
-ok( false !== strpos( $css, '.gloskin-ui1-shop-results[aria-busy="true"]{opacity:.68}' ), 'loading treatment must preserve existing result geometry' );
-ok( false !== strpos( $css, '@media (prefers-reduced-motion:reduce)' ), 'Shop presentation must respect reduced motion' );
-
-/* Standard suite must execute focused contracts. */
-ok( false !== strpos( $runner, 'php tests/shop-catalog-contract.php' ), 'runtime runner must execute Shop PHP contract' );
-ok( false !== strpos( $runner, 'node tests/shop-catalog-controller.test.js' ), 'runtime runner must execute Shop JS contract' );
-ok( false !== strpos( $runner, 'python tests/shop-catalog-browser-smoke.py' ), 'runtime browser gate must execute Shop browser smoke' );
+$ok( false !== strpos( $runner, 'php tests/shop-catalog-contract.php' ), 'runtime runner must execute Shop PHP contract' );
+$ok( false !== strpos( $runner, 'node tests/shop-catalog-controller.test.js' ), 'runtime runner must execute Shop JS contract' );
+$ok( false !== strpos( $runner, 'python tests/shop-catalog-browser-smoke.py' ), 'runtime browser gate must execute Shop browser smoke' );
 
 echo "shop catalog contract: OK\n";

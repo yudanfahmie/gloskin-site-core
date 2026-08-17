@@ -1,4 +1,5 @@
 [data-gloskin-shop-catalog],
+[data-gloskin-shop-catalog-owner],
 [data-gloskin-shop-discovery] {
 	--gloskin-shop-filter-gap: 14px;
 }
@@ -63,7 +64,8 @@
 	color: #8a1f11;
 }
 
-[data-gloskin-shop-catalog].is-loading [data-gloskin-shop-results] {
+[data-gloskin-shop-catalog].is-loading [data-gloskin-shop-results],
+[data-gloskin-shop-catalog-owner].is-loading [data-gloskin-shop-results] {
 	opacity: .62;
 	transition: opacity .16s ease;
 }

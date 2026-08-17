@@ -62,10 +62,9 @@ trait Gloskin_Site_Core_Shop_Discovery_Route_Trait {
 			return;
 		}
 		$version = class_exists( 'Gloskin_Site_Core_Kernel' ) ? Gloskin_Site_Core_Kernel::VERSION : null;
-		/* Head-load only the small q/price bridge. The existing core Shop
-		 * controller remains the sole request/AbortController/results owner; this
-		 * bridge registers first so popstate restores q/price before core reads
-		 * category/page and issues its normal request. */
+		/* The Shop template exposes one dedicated catalog-owner marker, so this
+		 * controller is the only active Shop request/state owner. It never
+		 * intercepts fetch or History API primitives. */
 		wp_enqueue_script( 'gloskin-ui1-shop-discovery', plugins_url( 'assets/js/gloskin-ui1-shop-discovery.js', $this->plugin_file ), array(), $version, false );
 		wp_enqueue_style( 'gloskin-ui1-shop-discovery', plugins_url( 'assets/css/gloskin-ui1-shop-discovery.css', $this->plugin_file ), array( 'gloskin-ui1-core' ), $version );
 	}
