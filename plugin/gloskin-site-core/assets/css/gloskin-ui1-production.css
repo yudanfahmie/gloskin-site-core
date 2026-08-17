@@ -49,11 +49,9 @@ body.gloskin-ui1{
 }
 .gloskin-ui1-nav__link{
 	padding-inline:8px;
-	font-size:.91rem;
-	font-weight:600;
-	letter-spacing:-.005em;
+	font-size:1rem;
+	font-weight:200;
 }
-.gloskin-ui1-nav--mobile .gloskin-ui1-nav__link{font-size:.98rem}
 .gloskin-ui1-button,
 .gloskin-ui1-text-link,
 .gloskin-ui1-form button,

@@ -92,6 +92,6 @@ require("'sanitize_callback' => 'sanitize_title'" not in template_service, "the 
 
 header_version = re.search(r'\* Version:\s*([0-9.]+)', plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == '0.7.125', 'production version must be synchronized at 0.7.125')
+require(header_version == kernel_version == '0.7.126', 'production version must be synchronized at 0.7.126')
 
 print('storefront regression contract: OK')
