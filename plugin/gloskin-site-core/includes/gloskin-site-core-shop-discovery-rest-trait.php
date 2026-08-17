@@ -25,12 +25,9 @@ trait Gloskin_Site_Core_Shop_Discovery_Rest_Trait {
 			return new WP_Error( 'gloskin_shop_category', __( 'Kategori produk tidak tersedia.', 'gloskin-site-core' ), array( 'status' => 400 ) );
 		}
 
-		$tokens  = $this->normalize_q_tokens( $q );
 		$filters = array( 'category' => $category, 'q' => $q, 'min_price' => $min, 'max_price' => $max );
 		$catalog = $this->catalog( $page, $filters );
-
-		// Dynamic price bounds: reflect category + q match set, not current price filter.
-		$bounds = $this->get_price_bounds( $category, $tokens );
+		$bounds  = $this->catalog_price_bounds( $category, $q );
 
 		$results = array(
 			'products'            => $catalog['products'],

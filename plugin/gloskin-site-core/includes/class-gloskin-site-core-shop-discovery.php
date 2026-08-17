@@ -6,6 +6,4 @@ final class Gloskin_Site_Core_Shop_Discovery {
 	use Gloskin_Site_Core_Shop_Discovery_Route_Trait;
 	use Gloskin_Site_Core_Shop_Discovery_Rest_Trait;
 	use Gloskin_Site_Core_Shop_Discovery_Query_Trait;
-	use Gloskin_Site_Core_Shop_Discovery_Normalize_Trait;
-	use Gloskin_Site_Core_Shop_Discovery_Search_Trait;
 }

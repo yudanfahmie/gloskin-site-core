@@ -16,8 +16,10 @@ $shop    = $read( 'plugin/gloskin-site-core/templates/pages/shop.php' );
 $results = $read( 'plugin/gloskin-site-core/templates/parts/shop-results.php' );
 $service = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php' );
 $adapter = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php' );
+$catalog = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter-shop-catalog.php' );
 $route   = $read( 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-route-trait.php' );
 $query   = $read( 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-query-trait.php' );
+$rest    = $read( 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-rest-trait.php' );
 $core    = $read( 'plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js' );
 $owner   = $read( 'plugin/gloskin-site-core/assets/js/gloskin-ui1-shop-discovery.js' );
 $css     = $read( 'plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css' );
@@ -37,8 +39,9 @@ $ok( false !== strpos( $results, 'gloskin_ui1_render_product_card' ), 'shared re
 $ok( false !== strpos( $results, 'data-gloskin-shop-count' ) && false !== strpos( $results, 'data-gloskin-shop-status' ), 'shared renderer must own count/status region' );
 $ok( false !== strpos( $results, 'data-gloskin-shop-page' ) && false !== strpos( $results, "home_url( '/shop/page/' . \$page . '/' )" ), 'pagination must keep canonical real-URL fallback' );
 
-/* Existing endpoint is retained; discovery service only extends that route. */
+/* Existing endpoint is retained; discovery only replaces that route callback. */
 $ok( false !== strpos( $service, "register_rest_route( 'gloskin/v1', '/shop/catalog'" ), 'existing Shop endpoint missing' );
+$ok( 1 === substr_count( $service . $route . $rest . $query . $catalog, "register_rest_route( 'gloskin/v1', '/shop/catalog'" ), 'there must still be exactly one /gloskin/v1/shop/catalog registration' );
 $ok( false !== strpos( $service, "'methods'             => 'GET'" ), 'Shop projection must remain GET only' );
 $ok( false !== strpos( $route, "\$route = '/gloskin/v1/shop/catalog';" ), 'Shop discovery must extend the existing route only' );
 $ok( false !== strpos( $route, 'gloskin-ui1-shop-discovery.js' ) && false !== strpos( $route, 'gloskin-ui1-shop-discovery.css' ), 'scoped Shop owner/CSS assets missing' );
@@ -59,16 +62,23 @@ $ok( false !== strpos( $owner, "searchForm.addEventListener('submit'" ) && false
 $ok( ! preg_match( '/window\.fetch\s*=(?!=)/', $owner . $core ), 'global fetch monkeypatch forbidden' );
 $ok( ! preg_match( '/(?:window\.)?history\.pushState\s*=(?!=)/', $owner . $core ), 'global pushState monkeypatch forbidden' );
 $ok( ! preg_match( '/(?:window\.)?history\.replaceState\s*=(?!=)/', $owner . $core ), 'global replaceState monkeypatch forbidden' );
-$ok( false === strpos( $owner, 'originalFetch' ) && false === strpos( $owner, 'originalPushState' ) && false === strpos( $owner, 'originalReplaceState' ), 'legacy decorator interception code still present' );
 
-/* q/price stay bounded server-side; the documented unfiltered fallback stays. */
-$ok( false !== strpos( $query, 'products_paginated( $page, self::PER_PAGE, $category )' ), 'historical unfiltered Woo compatibility path must remain' );
-$ok( false !== strpos( $query, "'posts_per_page' => self::PER_PAGE" ), 'filtered query must remain bounded' );
-$ok( false === strpos( $query, "'posts_per_page' => -1" ), 'q/price must not add all-product scan' );
-$ok( false === strpos( $query, "add_action( 'pre_get_posts'" ) && false === strpos( $query, "add_filter( 'pre_get_posts'" ), 'global pre_get_posts ownership forbidden' );
-$ok( false !== strpos( $query, 'gloskin_price_lookup.max_price >= %f' ) && false !== strpos( $query, 'gloskin_price_lookup.min_price <= %f' ), 'Woo-compatible variable price overlap semantics missing' );
+/* Shop Discovery owns no product query/SQL after the refactor. */
+$ok( false === strpos( $query, 'new WP_Query' ) && false === strpos( $query, 'WP_Query(' ), 'Shop Discovery must not own direct filtered-product WP_Query' );
+$ok( false === strpos( $query, 'posts_clauses' ) && false === strpos( $query, 'gloskin_price_lookup' ), 'Shop Discovery must own zero product SQL/posts_clauses' );
+$ok( false === strpos( $route, 'query_scope_active' ) && false === strpos( $route, 'query_filters' ), 'obsolete Shop Discovery query-scope state must be removed' );
+$ok( false !== strpos( $query, 'Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog' ) && false !== strpos( $query, 'products_paginated_filtered( $page, self::PER_PAGE, $filters )' ), 'category/q/min/max/page must delegate to adapter-owned catalog API' );
 
-/* Loading/presentation behavior remains the same component contract. */
+/* Adapter-owned filtered path is bounded and preserves Woo price overlap semantics. */
+$ok( false !== strpos( $catalog, 'final class Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog' ), 'adapter-owned Shop query component missing' );
+$ok( false !== strpos( $catalog, 'public function products_paginated_filtered(' ), 'coherent adapter filtered API missing' );
+$ok( false !== strpos( $catalog, 'min( 12, absint( $per_page ) )' ) && false !== strpos( $catalog, "'posts_per_page'              => \$per_page" ), 'filtered adapter query must remain bounded to 12' );
+$ok( false === strpos( $catalog, "'posts_per_page' => -1" ) && false === strpos( $catalog, "'posts_per_page'              => -1" ), 'filtered adapter path must not contain all-product scan' );
+$ok( false !== strpos( $adapter, "'posts_per_page' => -1" ) && false !== strpos( $adapter, 'private function products_paginated_unfiltered(' ), 'historical all-ID fallback must remain only in canonical unfiltered adapter path' );
+$ok( false !== strpos( $catalog, 'gloskin_price_lookup.max_price >= %f' ) && false !== strpos( $catalog, 'gloskin_price_lookup.min_price <= %f' ), 'Woo-compatible variable price overlap semantics missing' );
+$ok( false !== strpos( $catalog, '.post_title LIKE %s' ) && false !== strpos( $catalog, '.post_excerpt LIKE %s' ) && false !== strpos( $catalog, '.post_content LIKE %s' ), 'scoped search must cover title/excerpt/content' );
+$ok( false === strpos( $catalog, "add_action( 'pre_get_posts'" ) && false === strpos( $catalog, "add_filter( 'pre_get_posts'" ), 'global pre_get_posts ownership forbidden' );
+
 $ok( false !== strpos( $owner, "results.setAttribute('aria-busy', busy ? 'true' : 'false')" ), 'aria-busy ownership missing' );
 $ok( false !== strpos( $owner, 'function skeletonMarkup()' ) && false !== strpos( $owner, "results.insertAdjacentHTML('beforeend', skeletonMarkup())" ), 'Shop skeleton overlay missing' );
 $ok( false !== strpos( $owner, 'results.style.minHeight = height' ) && false !== strpos( $owner, "results.style.removeProperty('min-height')" ), 'Shop skeleton geometry preservation missing' );

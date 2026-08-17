@@ -4,12 +4,6 @@ trait Gloskin_Site_Core_Shop_Discovery_Route_Trait {
 	/** @var string */
 	private $plugin_file;
 
-	/** @var bool */
-	private $query_scope_active = false;
-
-	/** @var array<string,mixed> */
-	private $query_filters = array();
-
 	/** @param string $plugin_file Main plugin file. */
 	public function __construct( $plugin_file ) {
 		$this->plugin_file = (string) $plugin_file;

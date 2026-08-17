@@ -52,9 +52,7 @@ require("remove_action( 'woocommerce_cart_is_empty', 'wc_empty_cart_message', 10
 for forbidden in ("BreadcrumbList", "application/ld+json", 'rel="canonical"', "wp_head", "meta name=", "og:"):
     require(forbidden not in helper, f"readiness helper must not own SEO metadata/schema: {forbidden}")
 
-# Single-product Description remains Woo-owned content but has a stable
-# presentation boundary: no global the_content re-entry and no nested full
-# product renderer inside the current product's Description tab.
+# Single-product Description remains Woo-owned content but has a stable presentation boundary.
 require("product-description-boundary.php" in shell, "single-product Description boundary must be loaded by the canonical shell")
 require("gloskin_ui1_register_product_description_boundary();" in shell, "single-product Description boundary must be registered before Woo renders")
 require("woocommerce_product_tabs" in description_boundary, "Description boundary must replace only Woo's Description tab callback")
@@ -139,6 +137,6 @@ for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "read
 require("gloskin_ui1_render_commerce_page_heading" in shell, "cart/checkout/account H1 owner missing")
 header_version = re.search(r"\* Version:\s*([0-9.]+)", main_plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == "0.7.118", "plugin/kernel version mismatch")
+require(header_version == kernel_version == "0.7.119", "plugin/kernel version mismatch")
 
 print("readiness-contract-smoke: OK")

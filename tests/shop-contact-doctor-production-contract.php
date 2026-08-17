@@ -19,6 +19,7 @@ $kernel = read_contract_file( $root, 'plugin/gloskin-site-core/includes/class-gl
 $batch = read_contract_file( $root, 'plugin/gloskin-site-core/includes/class-gloskin-site-core-production-batch.php' );
 $route = read_contract_file( $root, 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-route-trait.php' );
 $query = read_contract_file( $root, 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-query-trait.php' );
+$woo_shop = read_contract_file( $root, 'plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter-shop-catalog.php' );
 $contact = read_contract_file( $root, 'plugin/gloskin-site-core/includes/gloskin-site-core-contact-service-submit-trait.php' );
 $mailer = read_contract_file( $root, 'plugin/gloskin-site-core/includes/class-gloskin-site-core-contact-mailer.php' );
 $contact_security = read_contract_file( $root, 'plugin/gloskin-site-core/includes/gloskin-site-core-contact-service-security-trait.php' );
@@ -50,11 +51,12 @@ require_contract( ! preg_match( '/(?:window\.)?history\.pushState\s*=(?!=)/', $s
 require_contract( ! preg_match( '/(?:window\.)?history\.replaceState\s*=(?!=)/', $shop_owner . $core ), 'replaceState monkeypatch forbidden' );
 require_contract( false === strpos( $shop_owner, 'originalFetch' ) && false === strpos( $shop_owner, 'originalPushState' ) && false === strpos( $shop_owner, 'originalReplaceState' ), 'legacy Shop decorator code must be retired' );
 require_contract( false !== strpos( $route, 'gloskin-ui1-shop-discovery.js' ) && false !== strpos( $route, 'gloskin-ui1-shop-discovery.css' ), 'Shop owner/CSS assets must stay scoped to Shop' );
-require_contract( false !== strpos( $query, 'products_paginated( $page, self::PER_PAGE, $category )' ), 'historical unfiltered Woo fallback must remain' );
-require_contract( false !== strpos( $query, "'posts_per_page' => self::PER_PAGE" ), 'filtered query must stay bounded' );
-require_contract( false === strpos( $query, "'posts_per_page' => -1" ), 'q/price must not add another all-product scan' );
-require_contract( false === strpos( $query, "add_action( 'pre_get_posts'" ) && false === strpos( $query, "add_filter( 'pre_get_posts'" ), 'global pre_get_posts owner forbidden' );
-require_contract( false !== strpos( $query, 'gloskin_price_lookup.max_price >= %f' ) && false !== strpos( $query, 'gloskin_price_lookup.min_price <= %f' ), 'Woo-compatible variable price overlap semantics missing' );
+require_contract( false === strpos( $query, 'WP_Query' ) && false === strpos( $query, 'posts_clauses' ), 'Shop Discovery must own zero product WP_Query/posts_clauses' );
+require_contract( false !== strpos( $query, 'products_paginated_filtered( $page, self::PER_PAGE, $filters )' ), 'Shop filters must delegate to adapter-owned API' );
+require_contract( false !== strpos( $woo_shop, "'posts_per_page'              => \$per_page" ) && false !== strpos( $woo_shop, 'min( 12, absint( $per_page ) )' ), 'filtered adapter query must stay bounded' );
+require_contract( false === strpos( $woo_shop, "'posts_per_page' => -1" ) && false === strpos( $woo_shop, "'posts_per_page'              => -1" ), 'q/price adapter path must not add all-product scan' );
+require_contract( false === strpos( $woo_shop, "add_action( 'pre_get_posts'" ) && false === strpos( $woo_shop, "add_filter( 'pre_get_posts'" ), 'global pre_get_posts owner forbidden' );
+require_contract( false !== strpos( $woo_shop, 'gloskin_price_lookup.max_price >= %f' ) && false !== strpos( $woo_shop, 'gloskin_price_lookup.min_price <= %f' ), 'Woo-compatible variable price overlap semantics missing' );
 
 /* Bootstrap: main -> Kernel -> production module, with duplicate boot guarded. */
 require_contract( 1 === substr_count( $main, '$gloskin_site_core_kernel->boot();' ), 'main must boot Kernel exactly once' );
@@ -62,6 +64,7 @@ require_contract( false === strpos( $main, 'Gloskin_Site_Core_Production_Batch' 
 require_contract( 1 === substr_count( $kernel, 'Gloskin_Site_Core_Production_Batch::boot( $this->plugin_file );' ), 'Kernel must own Production_Batch boot' );
 require_contract( false !== strpos( $kernel, 'private function boot_production_batch()' ), 'Kernel production bridge missing' );
 require_contract( false !== strpos( $batch, 'private static $booted = false;' ) && false !== strpos( $batch, 'if ( self::$booted )' ) && false !== strpos( $batch, 'self::$booted = true;' ), 'Production_Batch duplicate-registration guard missing' );
+require_contract( false !== strpos( $batch, 'class-gloskin-site-core-woocommerce-adapter-shop-catalog.php' ), 'Production Batch must load adapter-owned Shop catalog component before Discovery' );
 require_contract( false !== strpos( $kernel, 'Gloskin_Site_Core_Insight_Migration_Admin' ), 'existing Insights admin registration must remain in Kernel' );
 
 /* Contact: persist first, scoped transport, secret/token safety unchanged. */
