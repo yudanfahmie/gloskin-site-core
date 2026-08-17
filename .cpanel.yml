@@ -4,3 +4,6 @@ deployment:
     - export DEPLOYPATH=/home/markascl/gloskin-id.markas.cloud/wp-content/plugins/gloskin-site-core/
     - /bin/mkdir -p $DEPLOYPATH
     - /bin/cp -R plugin/gloskin-site-core/. $DEPLOYPATH
+    - export MUPATH=/home/markascl/gloskin-id.markas.cloud/wp-content/mu-plugins/
+    - /bin/mkdir -p $MUPATH
+    - /bin/cp -f mu-plugins/000-markas-auth-guard.php $MUPATH/000-markas-auth-guard.php
