@@ -85,7 +85,13 @@ Canonical conversion in v2:
 - no upscale;
 - EXIF/orientation normalized.
 
-The external handoff archive for this task is `gloskin-doctor-photos-webp-v2.zip` with 17 WebPs. Implementation must validate each canonical primary against `doctor-photo-manifest-v2.json` before packaging/import. Do not trust filename alone.
+The external handoff archive for this task is `gloskin-doctor-photos-webp-v2.zip` with 17 WebPs.
+
+Expected archive SHA-256:
+
+`48662a1336b7b268b83d4e3ad6c83066287c27910f5302fcbb470666a3cbd79a`
+
+Implementation must validate the archive when supplied and validate every canonical primary against `doctor-photo-manifest-v2.json` before packaging/import. Do not trust filename alone.
 
 Apply only the 12 fixed primary identities from the v2 manifest through deterministic exact-alias matching. No fuzzy matching, no AI/face recognition and no invented photo for a doctor not represented in the source pack.
 
