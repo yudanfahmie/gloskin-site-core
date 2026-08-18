@@ -593,3 +593,301 @@ if ( ! function_exists( 'gloskin_ui1_render_card_grid' ) ) {
 		echo '</div>';
 	}
 }
+
+if ( ! function_exists( 'gloskin_ui1_render_treatment_bands' ) ) {
+	/**
+	 * Render configured consultation paths as large alternating editorial bands.
+	 * The consultation/recommendation engine remains authoritative; this is
+	 * discovery presentation only.
+	 *
+	 * @param array<int,array<string,mixed>> $paths Consultation paths.
+	 * @return void
+	 */
+	function gloskin_ui1_render_treatment_bands( $paths ) {
+		if ( ! $paths ) {
+			return;
+		}
+		?>
+		<div class="gloskin-ui1-treatment-bands">
+			<?php foreach ( $paths as $index => $path ) :
+				$label    = isset( $path['label'] ) ? (string) $path['label'] : '';
+				$image_id = isset( $path['image_id'] ) ? absint( $path['image_id'] ) : 0;
+				$path_id  = isset( $path['id'] ) ? absint( $path['id'] ) : 0;
+				$reverse  = 1 === ( $index % 2 );
+				?>
+				<div class="gloskin-ui1-treatment-band<?php echo $reverse ? ' gloskin-ui1-treatment-band--reverse' : ''; ?>" data-gloskin-treatment-band="<?php echo esc_attr( (string) $path_id ); ?>">
+					<div class="gloskin-ui1-treatment-band__media">
+						<?php if ( $image_id ) : ?>
+							<?php echo wp_get_attachment_image( $image_id, 'large', false, array( 'loading' => 0 === $index ? 'eager' : 'lazy', 'class' => 'gloskin-ui1-treatment-band__image' ) ); ?>
+						<?php else : ?>
+							<?php gloskin_ui1_render_editorial_media( 'treatment', $label, 'gloskin-ui1-treatment-band__image gloskin-ui1-treatment-band__image--editorial', 0 === $index ); ?>
+						<?php endif; ?>
+					</div>
+					<div class="gloskin-ui1-treatment-band__content">
+						<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Perawatan', 'gloskin-site-core' ); ?></p>
+						<h2 class="gloskin-ui1-treatment-band__title"><?php echo esc_html( $label ); ?></h2>
+						<p class="gloskin-ui1-treatment-band__copy"><?php echo esc_html__( 'Temukan pilihan perawatan yang relevan dan diskusikan dengan dokter Gloskin saat konsultasi.', 'gloskin-site-core' ); ?></p>
+						<a class="gloskin-ui1-button gloskin-ui1-button--primary" href="<?php echo esc_url( home_url( '/treatments/' ) ); ?>" data-gloskin-band-path="<?php echo esc_attr( (string) $path_id ); ?>">
+							<?php echo esc_html__( 'Jelajahi Solusi', 'gloskin-site-core' ); ?>
+						</a>
+					</div>
+				</div>
+			<?php endforeach; ?>
+		</div>
+		<?php
+	}
+}
+
+if ( ! function_exists( 'gloskin_ui1_render_managed_promo_carousel' ) ) {
+	/**
+	 * Multi-campaign Promo carousel from managed gloskin_promo records.
+	 * Keyboard-accessible, reduced-motion safe, clean empty/one-record state.
+	 *
+	 * @param array<int,array<string,mixed>> $promos  Active promo records.
+	 * @param string                         $heading_tag h1 on /promo/ page, h2 on Home.
+	 * @param bool                           $compact True when embedded on Home.
+	 * @return void
+	 */
+	function gloskin_ui1_render_managed_promo_carousel( $promos, $heading_tag = 'h2', $compact = false ) {
+		$heading_tag = in_array( $heading_tag, array( 'h1', 'h2' ), true ) ? $heading_tag : 'h2';
+		$count       = count( $promos );
+		$classes     = 'gloskin-ui1-promo-carousel' . ( $compact ? ' gloskin-ui1-promo-carousel--compact' : ' gloskin-ui1-promo-carousel--page' );
+
+		if ( 0 === $count ) {
+			/* No published promo records — render editorial fallback */
+			?>
+			<section class="<?php echo esc_attr( $classes ); ?>" data-gloskin-promo-carousel>
+				<div class="gloskin-ui1-container gloskin-ui1-promo-carousel__empty">
+					<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Promo', 'gloskin-site-core' ); ?></p>
+					<<?php echo esc_attr( $heading_tag ); ?> class="gloskin-ui1-promo-carousel__empty-heading"><?php echo esc_html__( 'Promo Gloskin', 'gloskin-site-core' ); ?></<?php echo esc_attr( $heading_tag ); ?>>
+					<p><?php echo esc_html__( 'Informasi promo belum tersedia.', 'gloskin-site-core' ); ?></p>
+				</div>
+			</section>
+			<?php
+			return;
+		}
+
+		$first = $promos[0];
+		?>
+		<section class="<?php echo esc_attr( $classes ); ?>" data-gloskin-promo-carousel aria-label="<?php echo esc_attr__( 'Promo Gloskin', 'gloskin-site-core' ); ?>">
+			<div class="gloskin-ui1-container">
+				<!-- main panel -->
+				<div class="gloskin-ui1-promo-carousel__stage" role="region" aria-live="polite" aria-atomic="true">
+					<?php foreach ( $promos as $promo_index => $promo ) :
+						$is_first = 0 === $promo_index;
+						$title     = (string) $promo['title'];
+						$eyebrow   = (string) $promo['eyebrow'];
+						$summary   = '' !== (string) $promo['summary'] ? (string) $promo['summary'] : (string) $promo['excerpt'];
+						$cta_label = (string) $promo['cta_label'];
+						$cta_url   = (string) $promo['cta_url'];
+						$image_id  = absint( $promo['image_id'] );
+						?>
+						<div class="gloskin-ui1-promo-carousel__slide<?php echo $is_first ? ' is-active' : ''; ?>" data-gloskin-promo-slide="<?php echo esc_attr( (string) $promo_index ); ?>" <?php echo $is_first ? '' : 'hidden'; ?> aria-label="<?php /* translators: %1$d: slide number; %2$d: total slides. */ echo esc_attr( sprintf( __( 'Promo %1$d dari %2$d', 'gloskin-site-core' ), $promo_index + 1, $count ) ); ?>">
+							<div class="gloskin-ui1-promo-carousel__slide-inner">
+								<div class="gloskin-ui1-promo-carousel__copy">
+									<?php if ( '' !== $eyebrow ) : ?><p class="gloskin-ui1-eyebrow"><?php echo esc_html( $eyebrow ); ?></p><?php endif; ?>
+									<<?php echo esc_attr( $heading_tag ); ?> class="gloskin-ui1-promo-carousel__title"><?php echo esc_html( $title ); ?></<?php echo esc_attr( $heading_tag ); ?>>
+									<?php if ( '' !== $summary ) : ?><p class="gloskin-ui1-promo-carousel__summary"><?php echo esc_html( wp_trim_words( $summary, 40 ) ); ?></p><?php endif; ?>
+									<?php if ( '' !== $cta_label && '' !== $cta_url ) : ?>
+										<a class="gloskin-ui1-button gloskin-ui1-button--primary" href="<?php echo esc_url( $cta_url ); ?>"><?php echo esc_html( $cta_label ); ?></a>
+									<?php endif; ?>
+								</div>
+								<?php if ( $image_id ) : ?>
+									<div class="gloskin-ui1-promo-carousel__media">
+										<?php echo wp_get_attachment_image( $image_id, 'large', false, array( 'loading' => $is_first ? 'eager' : 'lazy', 'class' => 'gloskin-ui1-promo-carousel__image' ) ); ?>
+									</div>
+								<?php endif; ?>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+
+				<?php if ( $count > 1 ) : ?>
+					<!-- controls -->
+					<div class="gloskin-ui1-promo-carousel__controls" role="group" aria-label="<?php echo esc_attr__( 'Navigasi promo', 'gloskin-site-core' ); ?>">
+						<button type="button" class="gloskin-ui1-promo-carousel__prev" data-gloskin-promo-prev aria-label="<?php echo esc_attr__( 'Promo sebelumnya', 'gloskin-site-core' ); ?>">
+							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M13 4L7 10L13 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+						</button>
+						<div class="gloskin-ui1-promo-carousel__dots" role="tablist" aria-label="<?php echo esc_attr__( 'Pilih promo', 'gloskin-site-core' ); ?>">
+							<?php foreach ( $promos as $dot_index => $dot_promo ) : ?>
+								<button type="button" class="gloskin-ui1-promo-carousel__dot<?php echo 0 === $dot_index ? ' is-active' : ''; ?>" role="tab" data-gloskin-promo-dot="<?php echo esc_attr( (string) $dot_index ); ?>" aria-selected="<?php echo 0 === $dot_index ? 'true' : 'false'; ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Promo %d', 'gloskin-site-core' ), $dot_index + 1 ) ); ?>"></button>
+							<?php endforeach; ?>
+						</div>
+						<button type="button" class="gloskin-ui1-promo-carousel__next" data-gloskin-promo-next aria-label="<?php echo esc_attr__( 'Promo berikutnya', 'gloskin-site-core' ); ?>">
+							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M7 4L13 10L7 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+						</button>
+					</div>
+				<?php endif; ?>
+			</div>
+		</section>
+		<?php
+	}
+}
+
+if ( ! function_exists( 'gloskin_ui1_render_why_gloskin' ) ) {
+	/**
+	 * Why Gloskin — dominant primary value block + 2-3 supporting cards.
+	 * Copy is factual/generic only; no numbers, guarantees, or medical claims.
+	 *
+	 * @param WP_Post|null $home_page Home page for optional editor override.
+	 * @return void
+	 */
+	function gloskin_ui1_render_why_gloskin( $home_page = null ) {
+		?>
+		<section class="gloskin-ui1-section gloskin-ui1-section--why" data-gloskin-section="why-gloskin">
+			<div class="gloskin-ui1-container">
+				<div class="gloskin-ui1-why__intro">
+					<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Mengapa Gloskin', 'gloskin-site-core' ); ?></p>
+					<h2 class="gloskin-ui1-why__heading"><?php echo esc_html__( 'Konsultasi dulu, baru menentukan perawatan', 'gloskin-site-core' ); ?></h2>
+					<p class="gloskin-ui1-why__lead"><?php echo esc_html__( 'Setiap perjalanan dimulai dari pemeriksaan dan diskusi bersama dokter — bukan dari katalog pilihan instan.', 'gloskin-site-core' ); ?></p>
+				</div>
+				<div class="gloskin-ui1-why__primary">
+					<div class="gloskin-ui1-why__primary-copy">
+						<h3><?php echo esc_html__( 'Perjalanan yang Dipandu', 'gloskin-site-core' ); ?></h3>
+						<p><?php echo esc_html__( 'Gloskin menggabungkan konsultasi medis, pilihan perawatan, dan produk skincare dalam satu ekosistem yang terhubung — sehingga setiap rekomendasi didasari pemeriksaan kondisi kulit Anda secara langsung.', 'gloskin-site-core' ); ?></p>
+						<a class="gloskin-ui1-button gloskin-ui1-button--primary" href="<?php echo esc_url( home_url( '/treatments/' ) ); ?>"><?php echo esc_html__( 'Jelajahi Perawatan', 'gloskin-site-core' ); ?></a>
+					</div>
+					<div class="gloskin-ui1-why__primary-media" aria-hidden="true">
+						<?php gloskin_ui1_render_editorial_media( 'treatment', 'why-gloskin-primary', 'gloskin-ui1-why__primary-image' ); ?>
+					</div>
+				</div>
+				<div class="gloskin-ui1-why__cards">
+					<div class="gloskin-ui1-why__card">
+						<div class="gloskin-ui1-why__card-icon" aria-hidden="true">
+							<svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="1.5"/><path d="M10 16.5c1.5 2 3.5 3.5 6 3.5s4.5-1.5 6-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="13" r="1.2" fill="currentColor"/><circle cx="20" cy="13" r="1.2" fill="currentColor"/></svg>
+						</div>
+						<h3 class="gloskin-ui1-why__card-title"><?php echo esc_html__( 'Penemuan berdasarkan kebutuhan', 'gloskin-site-core' ); ?></h3>
+						<p class="gloskin-ui1-why__card-copy"><?php echo esc_html__( 'Temukan pilihan perawatan berdasarkan keluhan dan kondisi kulit — bukan label generik.', 'gloskin-site-core' ); ?></p>
+					</div>
+					<div class="gloskin-ui1-why__card">
+						<div class="gloskin-ui1-why__card-icon" aria-hidden="true">
+							<svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M8 24V12l8-6 8 6v12H8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><rect x="13" y="17" width="6" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+						</div>
+						<h3 class="gloskin-ui1-why__card-title"><?php echo esc_html__( 'Klinik dan produk dalam satu jaringan', 'gloskin-site-core' ); ?></h3>
+						<p class="gloskin-ui1-why__card-copy"><?php echo esc_html__( 'Perawatan klinik dan produk skincare Gloskin dirancang dalam satu ekosistem yang saling melengkapi.', 'gloskin-site-core' ); ?></p>
+					</div>
+					<div class="gloskin-ui1-why__card">
+						<div class="gloskin-ui1-why__card-icon" aria-hidden="true">
+							<svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M16 4C9.373 4 4 9.373 4 16s5.373 12 12 12 12-5.373 12-12S22.627 4 16 4z" stroke="currentColor" stroke-width="1.5"/><path d="M16 10v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+						</div>
+						<h3 class="gloskin-ui1-why__card-title"><?php echo esc_html__( 'Dukungan dokter yang tersedia', 'gloskin-site-core' ); ?></h3>
+						<p class="gloskin-ui1-why__card-copy"><?php echo esc_html__( 'Tim dokter Gloskin tersedia di jaringan klinik untuk konsultasi dan perencanaan perawatan.', 'gloskin-site-core' ); ?></p>
+					</div>
+				</div>
+			</div>
+		</section>
+		<?php
+	}
+}
+
+if ( ! function_exists( 'gloskin_ui1_render_testimonials' ) ) {
+	/**
+	 * Testimonials section — renders only from valid published records.
+	 * Static for one record, slider/dots for multiple. No forced auto-rotation.
+	 *
+	 * @param array<int,array<string,mixed>> $testimonials Published testimonial records.
+	 * @return void
+	 */
+	function gloskin_ui1_render_testimonials( $testimonials ) {
+		if ( ! $testimonials ) {
+			return; /* Omit section entirely when no published factual records */
+		}
+		$count = count( $testimonials );
+		?>
+		<section class="gloskin-ui1-section gloskin-ui1-section--testimonials" data-gloskin-section="testimonials">
+			<div class="gloskin-ui1-container">
+				<div class="gloskin-ui1-section-heading">
+					<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Testimoni', 'gloskin-site-core' ); ?></p>
+					<h2><?php echo esc_html__( 'Pengalaman Pelanggan Gloskin', 'gloskin-site-core' ); ?></h2>
+				</div>
+				<div class="gloskin-ui1-testimonials" data-gloskin-testimonials aria-label="<?php echo esc_attr__( 'Testimoni pelanggan', 'gloskin-site-core' ); ?>">
+					<?php foreach ( $testimonials as $t_index => $testimonial ) :
+						$is_first    = 0 === $t_index;
+						$attribution = (string) $testimonial['meta']['attribution'];
+						$subtitle    = (string) $testimonial['meta']['subtitle'];
+						$quote       = '' !== (string) $testimonial['excerpt']
+							? (string) $testimonial['excerpt']
+							: (string) $testimonial['title'];
+						?>
+						<figure class="gloskin-ui1-testimonial<?php echo $is_first ? ' is-active' : ''; ?>" data-gloskin-testimonial="<?php echo esc_attr( (string) $t_index ); ?>"<?php echo $is_first ? '' : ' hidden'; ?> aria-label="<?php echo esc_attr( sprintf( __( 'Testimoni %d dari %d', 'gloskin-site-core' ), $t_index + 1, $count ) ); ?>">
+							<blockquote class="gloskin-ui1-testimonial__quote">
+								<p>"<?php echo esc_html( wp_trim_words( $quote, 60 ) ); ?>"</p>
+							</blockquote>
+							<figcaption class="gloskin-ui1-testimonial__attribution">
+								<?php if ( $testimonial['image_id'] ) : ?>
+									<?php echo wp_get_attachment_image( $testimonial['image_id'], 'thumbnail', false, array( 'class' => 'gloskin-ui1-testimonial__avatar', 'loading' => 'lazy' ) ); ?>
+								<?php endif; ?>
+								<div class="gloskin-ui1-testimonial__identity">
+									<?php if ( '' !== $attribution ) : ?><strong><?php echo esc_html( $attribution ); ?></strong><?php endif; ?>
+									<?php if ( '' !== $subtitle ) : ?><span><?php echo esc_html( $subtitle ); ?></span><?php endif; ?>
+								</div>
+							</figcaption>
+						</figure>
+					<?php endforeach; ?>
+					<?php if ( $count > 1 ) : ?>
+						<div class="gloskin-ui1-testimonials__controls" role="group" aria-label="<?php echo esc_attr__( 'Navigasi testimoni', 'gloskin-site-core' ); ?>">
+							<div class="gloskin-ui1-testimonials__dots" role="tablist">
+								<?php foreach ( $testimonials as $d_index => $_ ) : ?>
+									<button type="button" class="gloskin-ui1-testimonials__dot<?php echo 0 === $d_index ? ' is-active' : ''; ?>" role="tab" data-gloskin-testimonial-dot="<?php echo esc_attr( (string) $d_index ); ?>" aria-selected="<?php echo 0 === $d_index ? 'true' : 'false'; ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Testimoni %d', 'gloskin-site-core' ), $d_index + 1 ) ); ?>"></button>
+								<?php endforeach; ?>
+							</div>
+						</div>
+					<?php endif; ?>
+				</div>
+			</div>
+		</section>
+		<?php
+	}
+}
+
+if ( ! function_exists( 'gloskin_ui1_render_achievements' ) ) {
+	/**
+	 * Achievements/Piagam section — renders only from valid published records.
+	 *
+	 * @param array<int,array<string,mixed>> $achievements Published achievement records.
+	 * @param string                         $variant      'compact' for Home, 'full' for About.
+	 * @return void
+	 */
+	function gloskin_ui1_render_achievements( $achievements, $variant = 'compact' ) {
+		if ( ! $achievements ) {
+			return; /* Omit section entirely when no published factual records */
+		}
+		$classes = 'gloskin-ui1-section gloskin-ui1-achievements' . ( 'full' === $variant ? ' gloskin-ui1-achievements--full' : ' gloskin-ui1-achievements--compact' );
+		?>
+		<section class="<?php echo esc_attr( $classes ); ?>" data-gloskin-section="achievements">
+			<div class="gloskin-ui1-container">
+				<div class="gloskin-ui1-section-heading">
+					<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Penghargaan', 'gloskin-site-core' ); ?></p>
+					<h2><?php echo 'full' === $variant ? esc_html__( 'Pencapaian dan Penghargaan', 'gloskin-site-core' ) : esc_html__( 'Diakui', 'gloskin-site-core' ); ?></h2>
+				</div>
+				<div class="gloskin-ui1-achievements__grid">
+					<?php foreach ( $achievements as $achievement ) :
+						$title   = (string) $achievement['title'];
+						$excerpt = (string) $achievement['excerpt'];
+						$issuer  = (string) $achievement['meta']['issuer'];
+						$year    = (string) $achievement['meta']['year'];
+						$img_id  = absint( $achievement['image_id'] );
+						?>
+						<div class="gloskin-ui1-achievement">
+							<?php if ( $img_id ) : ?>
+								<div class="gloskin-ui1-achievement__media">
+									<?php echo wp_get_attachment_image( $img_id, 'medium', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-achievement__image' ) ); ?>
+								</div>
+							<?php endif; ?>
+							<div class="gloskin-ui1-achievement__body">
+								<h3 class="gloskin-ui1-achievement__title"><?php echo esc_html( $title ); ?></h3>
+								<?php if ( '' !== $issuer || '' !== $year ) : ?>
+									<p class="gloskin-ui1-achievement__meta"><?php echo esc_html( trim( $issuer . ( $issuer && $year ? ', ' : '' ) . $year ) ); ?></p>
+								<?php endif; ?>
+								<?php if ( '' !== $excerpt && 'full' === $variant ) : ?>
+									<p class="gloskin-ui1-achievement__copy"><?php echo esc_html( wp_trim_words( $excerpt, 30 ) ); ?></p>
+								<?php endif; ?>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			</div>
+		</section>
+		<?php
+	}
+}

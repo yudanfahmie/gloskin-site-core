@@ -224,29 +224,59 @@ final class Gloskin_Site_Core_Template_Service {
 		);
 		$hero = array_merge( $hero, $this->hero_background_video() );
 		$hero['mode'] = 'campaign';
-		$promo_page = $this->content_page( 'promo' );
 		return array(
-			'page'       => $page,
-			'hero'       => $hero,
-			'treatments' => $this->post_cards( Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 8 ),
-			'promo'      => $this->promo_campaign_context( $promo_page ),
-			'skincare'   => $this->skincare_mappings(),
-			'products'   => $this->woocommerce->products( 4 ),
-			'woo_ready'  => $this->woocommerce->available(),
+			'page'          => $page,
+			'hero'          => $hero,
+			'treatments'    => $this->post_cards( Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 8 ),
+			'promo'         => $this->managed_promo_records( 5 ),
+			'skincare'      => $this->skincare_mappings(),
+			'products'      => $this->woocommerce->products( 4 ),
+			'testimonials'  => $this->published_managed_records( Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_active', 6 ),
+			'achievements'  => $this->published_managed_records( Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_active', 8, 'gloskin_achievement_feature_on_home' ),
+			'woo_ready'     => $this->woocommerce->available(),
 		);
 	}
 
 	/** @return array<string,mixed> */
 	private function about_context() {
 		$page = $this->content_page( 'about' );
+		$founder = $this->about_founder_context( $page );
 		return array(
-			'page' => $page,
-			'hero' => $this->hero_context( $page, __( 'Tentang Gloskin', 'gloskin-site-core' ), __( 'Kenali Gloskin melalui jaringan klinik, informasi perawatan, skincare, dan kanal kontak yang tersedia.', 'gloskin-site-core' ) ),
-			'vision' => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_vision', true ) : '',
-			'mission' => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_mission', true ) : '',
-			'values' => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_values', true ) : '',
-			'clinics' => $this->clinic_cards(),
-			'doctors' => $this->all_published_doctor_cards(),
+			'page'         => $page,
+			'hero'         => $this->hero_context( $page, __( 'Tentang Gloskin', 'gloskin-site-core' ), __( 'Kenali Gloskin melalui jaringan klinik, informasi perawatan, skincare, dan kanal kontak yang tersedia.', 'gloskin-site-core' ) ),
+			'vision'       => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_vision', true ) : '',
+			'mission'      => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_mission', true ) : '',
+			'values'       => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_values', true ) : '',
+			'founder'      => $founder,
+			'clinics'      => $this->clinic_cards(),
+			'doctors'      => $this->all_published_doctor_cards(),
+			'achievements' => $this->published_managed_records( Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_active', 20 ),
+		);
+	}
+
+	/**
+	 * Optional founder block for About page. Renders only when required fields exist.
+	 *
+	 * @param WP_Post|null $about_page About page.
+	 * @return array<string,mixed>|null Founder data, or null if required fields missing.
+	 */
+	private function about_founder_context( $about_page ) {
+		if ( ! ( $about_page instanceof WP_Post ) ) {
+			return null;
+		}
+		$name  = trim( (string) get_post_meta( $about_page->ID, 'gloskin_about_founder_name', true ) );
+		$role  = trim( (string) get_post_meta( $about_page->ID, 'gloskin_about_founder_role', true ) );
+		$story = trim( (string) get_post_meta( $about_page->ID, 'gloskin_about_founder_story', true ) );
+		/* Render only when both name and role are populated — prevents a blank
+		 * "founder" block from appearing before the editor fills in the fields. */
+		if ( '' === $name || '' === $role ) {
+			return null;
+		}
+		return array(
+			'name'     => $name,
+			'role'     => $role,
+			'story'    => $story,
+			'media_id' => absint( get_post_meta( $about_page->ID, 'gloskin_about_founder_media_id', true ) ),
 		);
 	}
 
@@ -254,70 +284,150 @@ final class Gloskin_Site_Core_Template_Service {
 	private function treatments_context() {
 		$page = $this->content_page( 'treatments' );
 		return array(
-			'page' => $page,
-			'hero' => $this->hero_context( $page, __( 'Perawatan', 'gloskin-site-core' ), __( 'Pelajari informasi perawatan Gloskin sebelum menentukan langkah konsultasi.', 'gloskin-site-core' ) ),
+			'page'         => $page,
+			'hero'         => $this->hero_context( $page, __( 'Perawatan', 'gloskin-site-core' ), __( 'Pelajari informasi perawatan Gloskin sebelum menentukan langkah konsultasi.', 'gloskin-site-core' ) ),
 			'consultation' => $this->consultation_context(),
+			'paths'        => $this->treatment_discovery_paths(),
 		);
+	}
+
+	/**
+	 * Treatment discovery paths for the editorial band presentation.
+	 * Returns the same canonical path data as the consultation widget but
+	 * shaped for large alternating editorial bands — does not duplicate the engine.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	private function treatment_discovery_paths() {
+		if ( ! taxonomy_exists( Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY ) ) {
+			return array();
+		}
+		$path_terms = get_terms( array(
+			'taxonomy'   => Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY,
+			'hide_empty' => false,
+		) );
+		if ( is_wp_error( $path_terms ) || count( $path_terms ) < 1 ) {
+			return array();
+		}
+		usort( $path_terms, static function ( $a, $b ) {
+			return absint( get_term_meta( $a->term_id, Gloskin_Site_Core_Content_Service::PATH_META_ORDER, true ) )
+				<=> absint( get_term_meta( $b->term_id, Gloskin_Site_Core_Content_Service::PATH_META_ORDER, true ) );
+		} );
+
+		$paths = array();
+		foreach ( array_slice( $path_terms, 0, 4 ) as $term ) {
+			$paths[] = array(
+				'id'       => (int) $term->term_id,
+				'label'    => (string) $term->name,
+				'image_id' => absint( get_term_meta( $term->term_id, Gloskin_Site_Core_Content_Service::PATH_META_IMAGE_ID, true ) ),
+			);
+		}
+		return $paths;
 	}
 
 	/** @return array<string,mixed> */
 	private function promo_context() {
 		$page = $this->content_page( 'promo' );
 		return array(
-			'page'     => $page,
-			'campaign' => $this->promo_campaign_context( $page ),
+			'page'   => $page,
+			'promos' => $this->managed_promo_records( 10 ),
 		);
 	}
 
 	/**
-	 * Native Promo Page/Media projection shared by Home and /promo/. Attached
-	 * media is optional and bounded; Page content remains the canonical long-form
-	 * source. No commercial facts are generated by this projection.
+	 * Fetch active published gloskin_promo records for the carousel.
+	 * Falls back to empty array — caller handles empty state gracefully.
 	 *
-	 * @param WP_Post|null $page Promo page.
-	 * @return array<string,mixed>
+	 * @param int $limit Max records.
+	 * @return array<int,array<string,mixed>>
 	 */
-	private function promo_campaign_context( $page ) {
-		$title       = __( 'Promo Gloskin', 'gloskin-site-core' );
-		$copy        = '';
-		$url         = home_url( '/promo/' );
-		$media_ids   = array();
-		$has_content = false;
-		if ( $page instanceof WP_Post ) {
-			$hero_heading = trim( (string) get_post_meta( $page->ID, 'gloskin_hero_heading', true ) );
-			$hero_copy    = trim( (string) get_post_meta( $page->ID, 'gloskin_hero_copy', true ) );
-			$title         = '' !== $hero_heading ? $hero_heading : (string) get_the_title( $page );
-			$url           = (string) get_permalink( $page );
-			$has_content   = '' !== trim( (string) $page->post_content );
-			if ( '' !== $hero_copy ) {
-				$copy = $hero_copy;
-			} elseif ( has_excerpt( $page ) ) {
-				$copy = (string) get_the_excerpt( $page );
-			} elseif ( $has_content ) {
-				$copy = wp_trim_words( wp_strip_all_tags( strip_shortcodes( (string) $page->post_content ) ), 40 );
-			}
-
-			$hero_media = absint( get_post_meta( $page->ID, 'gloskin_hero_media_id', true ) );
-			$featured   = absint( get_post_thumbnail_id( $page->ID ) );
-			if ( $hero_media ) { $media_ids[] = $hero_media; }
-			if ( $featured ) { $media_ids[] = $featured; }
-			if ( function_exists( 'get_attached_media' ) ) {
-				$attached = get_attached_media( 'image', $page->ID );
-				foreach ( (array) $attached as $attachment ) {
-					if ( $attachment instanceof WP_Post ) {
-						$media_ids[] = absint( $attachment->ID );
-					}
-			}
-			}
+	private function managed_promo_records( $limit = 5 ) {
+		if ( ! post_type_exists( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE ) ) {
+			return array();
 		}
-		$media_ids = array_slice( array_values( array_unique( array_filter( $media_ids ) ) ), 0, 3 );
-		return array(
-			'title'       => $title,
-			'copy'        => $copy,
-			'url'         => $url,
-			'media_ids'   => $media_ids,
-			'has_content' => $has_content,
+		$posts = get_posts( array(
+			'post_type'      => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => $limit,
+			'orderby'        => 'menu_order',
+			'order'          => 'ASC',
+			'meta_query'     => array(
+				array(
+					'key'     => 'gloskin_promo_active',
+					'value'   => '1',
+					'compare' => '=',
+				),
+			),
+		) );
+
+		$records = array();
+		foreach ( $posts as $post ) {
+			$records[] = array(
+				'id'         => (int) $post->ID,
+				'title'      => (string) get_the_title( $post ),
+				'eyebrow'    => (string) get_post_meta( $post->ID, 'gloskin_promo_eyebrow', true ),
+				'summary'    => (string) get_post_meta( $post->ID, 'gloskin_promo_summary', true ),
+				'cta_label'  => (string) get_post_meta( $post->ID, 'gloskin_promo_cta_label', true ),
+				'cta_url'    => (string) get_post_meta( $post->ID, 'gloskin_promo_cta_url', true ),
+				'image_id'   => absint( get_post_thumbnail_id( $post->ID ) ),
+				'excerpt'    => (string) get_the_excerpt( $post ),
+			);
+		}
+		return $records;
+	}
+
+	/**
+	 * Fetch active published records from a private managed CPT.
+	 *
+	 * @param string      $post_type    CPT slug.
+	 * @param string      $active_meta  Meta key for the active flag.
+	 * @param int         $limit        Max records.
+	 * @param string|null $feature_meta Optional meta key to filter by (e.g. feature_on_home).
+	 * @return array<int,array<string,mixed>>
+	 */
+	private function published_managed_records( $post_type, $active_meta, $limit = 10, $feature_meta = null ) {
+		if ( ! post_type_exists( $post_type ) ) {
+			return array();
+		}
+		$meta_query = array(
+			array(
+				'key'     => $active_meta,
+				'value'   => '1',
+				'compare' => '=',
+			),
 		);
+		if ( $feature_meta ) {
+			$meta_query[] = array(
+				'key'     => $feature_meta,
+				'value'   => '1',
+				'compare' => '=',
+			);
+		}
+		$posts = get_posts( array(
+			'post_type'      => $post_type,
+			'post_status'    => 'publish',
+			'posts_per_page' => $limit,
+			'orderby'        => 'menu_order',
+			'order'          => 'ASC',
+			'meta_query'     => $meta_query,
+		) );
+
+		$records = array();
+		foreach ( $posts as $post ) {
+			$records[] = array(
+				'id'       => (int) $post->ID,
+				'title'    => (string) get_the_title( $post ),
+				'excerpt'  => (string) get_the_excerpt( $post ),
+				'image_id' => absint( get_post_thumbnail_id( $post->ID ) ),
+				'meta'     => array(
+					'attribution' => (string) get_post_meta( $post->ID, 'gloskin_testimonial_attribution', true ),
+					'subtitle'    => (string) get_post_meta( $post->ID, 'gloskin_testimonial_subtitle', true ),
+					'issuer'      => (string) get_post_meta( $post->ID, 'gloskin_achievement_issuer', true ),
+					'year'        => (string) get_post_meta( $post->ID, 'gloskin_achievement_year', true ),
+				),
+			);
+		}
+		return $records;
 	}
 
 	/** @return array{paths:array<int,array<string,mixed>>,products:array<int,array<string,mixed>>,disclaimer:string} */

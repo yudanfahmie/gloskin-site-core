@@ -2,6 +2,16 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 gloskin_ui1_render_hero( $gloskin_context['hero'] );
 
+/* Large alternating editorial bands — discovery presentation over canonical path terms.
+ * The consultation/recommendation engine below remains the authoritative interactive layer. */
+if ( $gloskin_context['paths'] ) :
+?>
+<div data-gloskin-section="treatments-bands">
+	<?php gloskin_ui1_render_treatment_bands( $gloskin_context['paths'] ); ?>
+</div>
+<?php endif; ?>
+
+<?php
 /* The finder is a read-only presentation over canonical path/concern terms
  * and SSR Woo Treatment Product cards. Private questions remain admin data
  * and are intentionally absent from this public payload. */

@@ -1,7 +1,9 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-gloskin_ui1_render_promo_campaign( (array) $gloskin_context['campaign'], 'h1', false );
+/* Managed multi-campaign promo carousel from gloskin_promo CPT records.
+ * h1 heading tag for the primary page heading on /promo/. */
+gloskin_ui1_render_managed_promo_carousel( $gloskin_context['promos'], 'h1', false );
 ?>
 <?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?>
 <section class="gloskin-ui1-section" data-gloskin-section="promo-content"><div class="gloskin-ui1-container gloskin-ui1-container--narrow">
