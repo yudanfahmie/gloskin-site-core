@@ -95,8 +95,17 @@ body.gloskin-ui1--home [data-gloskin-header="header-2"].is-compact-sticky{
 	backdrop-filter:saturate(120%) blur(14px);
 	border-bottom-color:color-mix(in srgb,var(--gloskin-border) 72%,transparent);
 }
-[data-gloskin-header="header-2"] .gloskin-ui1-header__inner{grid-template-columns:auto minmax(0,1fr) auto;transition:min-height 220ms cubic-bezier(.22,1,.36,1)}
+/* Header V2 inner grid: minmax(0,1fr) auto minmax(0,1fr) guarantees the
+ * nav column is geometrically centered in the container regardless of logo
+ * width or utility count. Logo sits at start of column 1; nav auto-centers
+ * in column 2; utilities sit at end of column 3. The previous `auto` outer
+ * columns only centered the nav within the remaining space, producing a
+ * visual shift when logo and utility zone widths differed. */
+[data-gloskin-header="header-2"] .gloskin-ui1-header__inner{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);transition:min-height 220ms cubic-bezier(.22,1,.36,1)}
 [data-gloskin-header="header-2"] .gloskin-ui1-brand{grid-column:1;justify-self:start}
+/* Utilities: explicit column-3 / end alignment for Header V2 (complements the
+ * global .gloskin-ui1-header__zone--end rule already present for Header 1). */
+[data-gloskin-header="header-2"] .gloskin-ui1-header__zone--end{grid-column:3;justify-self:end}
 /* Compact-sticky state (same node as the full-size logo above -- no clone):
    once scrolled past its own natural height, Header 2 mirrors Header 1's
    nav-row compact-logo dimensions and trims its own row height, instead of

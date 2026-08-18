@@ -34,13 +34,16 @@ require("@media (prefers-reduced-motion:reduce)" in css, "reduced-motion contrac
 require(":focus-visible" in css, "keyboard focus contract missing")
 require("min-height:44px" in css, "practical touch target contract missing")
 
-# Target family names may be declared as honest stacks, but the repository must
-# not pretend absent Graphik/Felix binaries are self-hosted. Keep the existing
-# proven local preload chain until owner-supplied/licensed target binaries exist.
-require("'assets/fonts/Marcellus-Regular.woff2'" in assets, "existing Marcellus preload must remain until licensed target binary is supplied")
-require("'assets/fonts/Mulish-Variable.woff2'" in assets, "existing Mulish preload must remain until licensed target binary is supplied")
-require("Graphik" not in fonts and "Felix Titling" not in fonts, "font-face registry must not falsely self-host absent Graphik/Felix binaries")
-require("Graphik.woff" not in assets and "Felix" not in assets, "asset registry must not point at nonexistent target font binaries")
+# Owner-supplied Graphik and Felix Titling binaries are now installed (v0.7.132).
+# The @font-face registry must declare both families; the preload list must
+# reference only the two critical faces; legacy Marcellus/Mulish preloads
+# must be retired.
+require('"Graphik"' in fonts, "Graphik @font-face must be declared in gloskin-ui1-fonts.css")
+require('"Felix Titling"' in fonts, "Felix Titling @font-face must be declared in gloskin-ui1-fonts.css")
+require("'assets/fonts/GraphikRegular.woff2'" in assets, "GraphikRegular.woff2 must be in the preload list")
+require("'assets/fonts/Felixti.woff2'" in assets, "Felixti.woff2 must be in the preload list")
+require("Marcellus-Regular.woff2" not in assets, "retired Marcellus preload must be removed from assets.php")
+require("Mulish-Variable.woff2" not in assets, "retired Mulish preload must be removed from assets.php")
 
 require("'gloskin-ui1-prototype-refresh' => array(" in assets, "refresh style is not registered")
 require("'assets/css/gloskin-ui1-prototype-refresh.css'" in assets, "refresh asset path missing")

@@ -11,8 +11,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 return array(
 	'font_preload' => array(
-		'assets/fonts/Marcellus-Regular.woff2',
-		'assets/fonts/Mulish-Variable.woff2',
+		/* Only the two most-critical faces are preloaded.
+		 * GraphikMedium/Semibold/Bold and italic variants are demand-loaded
+		 * by the browser on first use — no preload to avoid unused round-trips. */
+		'assets/fonts/GraphikRegular.woff2',
+		'assets/fonts/Felixti.woff2',
 	),
 	'styles' => array(
 		'gloskin-ui1-fonts' => array(

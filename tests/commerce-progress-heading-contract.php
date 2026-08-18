@@ -116,8 +116,8 @@ foreach ( array(
 		fail_contract( "cross-document transition ownership must be absent: {$forbidden_transition}" );
 	}
 }
-if ( false === strpos( $css, 'html.gloskin-ui1-commerce-journey-arriving .gloskin-ui1-commerce-native' )
-	|| false === strpos( $css, 'html.gloskin-ui1-commerce-journey-leaving .gloskin-ui1-commerce-native' ) ) {
+if ( false === strpos( $css, 'html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-native' )
+	|| false === strpos( $css, 'html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-native' ) ) {
 	fail_contract( 'native Woo region must have only the scoped perceptual handoff mask' );
 }
 

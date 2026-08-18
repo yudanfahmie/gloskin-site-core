@@ -60,9 +60,13 @@ body.gloskin-ui1{
 	font-weight:400;
 	letter-spacing:.01em;
 }
-.gloskin-ui1 h1{font-size:clamp(3rem,7vw,7rem);line-height:.94}
-.gloskin-ui1 h2{font-size:clamp(2rem,4.8vw,4.8rem);line-height:1.02}
-.gloskin-ui1 h3{font-size:clamp(1.2rem,2vw,1.65rem);line-height:1.16}
+/* Typography scale — pre-prototype production baseline, with minor Felix
+ * Titling metric adjustment (Felix renders slightly more compact than Marcellus
+ * at equivalent em values, so the max of the clamp is a touch higher than pure
+ * Marcellus-era values to compensate without over-enlarging smaller viewports). */
+.gloskin-ui1 h1{font-size:clamp(2.6rem,7vw,5.6rem);line-height:.94}
+.gloskin-ui1 h2{font-size:clamp(2rem,4vw,3.4rem);line-height:1.02}
+.gloskin-ui1 h3{font-size:clamp(1.2rem,2vw,1.6rem);line-height:1.16}
 .gloskin-ui1 p{color:inherit}
 .gloskin-ui1 a{color:inherit}
 .gloskin-ui1 :focus-visible{outline:3px solid var(--gloskin-refresh-red);outline-offset:3px}
@@ -92,7 +96,11 @@ body.gloskin-ui1{
 	min-height:40px;
 	padding:8px 13px;
 	border-radius:999px;
-	font-size:.82rem;
+	/* Graphik is a geometric sans with naturally consistent spacing; .075em
+	 * uppercase letter-spacing remains appropriate and avoids over-tightening.
+	 * Size raised from the over-compressed .82rem to the readable production
+	 * baseline target (~0.91rem). */
+	font-size:.91rem;
 	font-weight:500;
 	letter-spacing:.075em;
 	text-transform:uppercase;
@@ -293,8 +301,10 @@ body.woocommerce-page .gloskin-ui1-commerce-native{background:var(--gloskin-refr
 	[data-gloskin-section="home-treatments"] .gloskin-ui1-card--treatment{grid-template-columns:minmax(230px,.9fr) minmax(0,1.1fr)}
 }
 @media (max-width:760px){
-	.gloskin-ui1 h1{font-size:clamp(2.7rem,15vw,4.6rem)}
-	.gloskin-ui1 h2{font-size:clamp(2rem,10vw,3.2rem)}
+	/* Reverted from the oversized prototype-convergence mobile values.
+	 * These match the pre-prototype production density on narrow viewports. */
+	.gloskin-ui1 h1{font-size:clamp(2.2rem,11vw,3.6rem)}
+	.gloskin-ui1 h2{font-size:clamp(1.85rem,9vw,2.8rem)}
 	.gloskin-ui1-section{padding:clamp(58px,13vw,82px) 0}
 	.gloskin-ui1-hero{padding:52px 0 68px}
 	.gloskin-ui1-hero .gloskin-ui1-hero__grid{grid-template-columns:1fr}

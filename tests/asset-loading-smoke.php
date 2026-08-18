@@ -48,7 +48,7 @@ foreach ( array( 'gloskin-ui1-fonts', 'gloskin-ui1-core-base', 'gloskin-ui1-core
 }
 if ( ! in_array( 'gloskin-ui1-core', $GLOBALS['gl_scripts'], true ) ) { fwrite( STDERR, "frontend script missing on Gloskin shell request\n" ); exit( 1 ); }
 $font = $GLOBALS['gl_registered_styles']['gloskin-ui1-fonts'] ?? array();
-if ( empty( $font['src'] ) || $font['src'] !== '/plugins/gloskin/assets/css/gloskin-ui1-fonts.css' ) { fwrite( STDERR, "self-hosted Marcellus/Mulish font stylesheet registration failed\n" ); exit( 1 ); }
+if ( empty( $font['src'] ) || $font['src'] !== '/plugins/gloskin/assets/css/gloskin-ui1-fonts.css' ) { fwrite( STDERR, "self-hosted Graphik/Felix Titling font stylesheet registration failed\n" ); exit( 1 ); }
 foreach ( $GLOBALS['gl_registered_styles'] as $handle => $asset ) {
 	if ( false !== strpos( (string) ( $asset['src'] ?? '' ), 'fonts.googleapis.com' ) || false !== strpos( (string) ( $asset['src'] ?? '' ), 'fonts.gstatic.com' ) ) {
 		fwrite( STDERR, "external Google Fonts dependency still registered: {$handle}\n" ); exit( 1 );
@@ -128,8 +128,13 @@ ob_start();
 $service->print_font_preload();
 $preload = (string) ob_get_clean();
 if ( 2 !== substr_count( $preload, '<link rel="preload"' ) ) { fwrite( STDERR, "expected exactly two critical font preload links, got: {$preload}\n" ); exit( 1 ); }
-foreach ( array( 'Marcellus-Regular.woff2', 'Mulish-Variable.woff2' ) as $expected_file ) {
+/* Graphik/Felix Titling era (v0.7.132): only the two critical owner-supplied
+ * faces are preloaded; Marcellus and Mulish are retired. */
+foreach ( array( 'GraphikRegular.woff2', 'Felixti.woff2' ) as $expected_file ) {
 	if ( false === strpos( $preload, $expected_file ) ) { fwrite( STDERR, "font preload missing critical file: {$expected_file}\n" ); exit( 1 ); }
+}
+foreach ( array( 'Marcellus-Regular.woff2', 'Mulish-Variable.woff2' ) as $retired_file ) {
+	if ( false !== strpos( $preload, $retired_file ) ) { fwrite( STDERR, "retired legacy font still in preload: {$retired_file}\n" ); exit( 1 ); }
 }
 if ( false === strpos( $preload, 'as="font"' ) || false === strpos( $preload, 'type="font/woff2"' ) || false === strpos( $preload, 'crossorigin' ) ) {
 	fwrite( STDERR, "font preload missing required as/type/crossorigin attributes: {$preload}\n" ); exit( 1 );

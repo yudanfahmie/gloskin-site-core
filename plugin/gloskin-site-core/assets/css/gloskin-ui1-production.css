@@ -3,19 +3,20 @@
  * Structural component CSS remains in gloskin-ui1-core.css; this file owns the
  * selected production typography and editorial-photo presentation.
  */
+/* Font custom-property owners.
+ * The prototype-refresh convergence layer (gloskin-ui1-prototype-refresh.css,
+ * loaded after this file) re-declares these with the canonical Graphik/Felix
+ * Titling values. The declarations here serve as the in-layer baseline and are
+ * intentionally overridden; they are kept for layer-order clarity only.
+ * Marcellus, Mulish and DM Sans are retired as active Gloskin production fonts. */
 :root{
-	--gloskin-font-body:"Mulish","Segoe UI",Arial,sans-serif;
-	--gloskin-font-heading:"Marcellus","Times New Roman",serif;
-	/* Navigation-specific font: DM Sans for desktop + mobile nav across both
-	 * Header 1 and Header 2. Applied once at the shared .gloskin-ui1-nav root;
-	 * all nav descendants inherit naturally without per-element overrides.
-	 * Not preloaded -- the font stylesheet (gloskin-ui1-fonts.css) is the
-	 * first dependency in the load chain and font-display:fallback ensures
-	 * the system-ui fallback (visually close) renders immediately without
-	 * a layout shift. */
-	--gloskin-font-nav:"DM Sans",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+	--gloskin-font-body:"Graphik","Helvetica Neue",Arial,sans-serif;
+	--gloskin-font-heading:"Felix Titling",Georgia,"Times New Roman",serif;
+	/* Navigation uses the same Graphik body family — one geometric sans family
+	 * site-wide, weight differentiated per role (see prototype-refresh.css). */
+	--gloskin-font-nav:var(--gloskin-font-body);
 }
-.gloskin-ui1--modern{--gloskin-font-heading:"Marcellus","Times New Roman",serif}
+.gloskin-ui1--modern{--gloskin-font-heading:"Felix Titling",Georgia,"Times New Roman",serif}
 body.gloskin-ui1{
 	font-family:var(--gloskin-font-body);
 	font-weight:400;
@@ -47,10 +48,12 @@ body.gloskin-ui1{
 .gloskin-ui1-nav{
 	font-family:var(--gloskin-font-nav);
 }
+/* Nav link base values — overridden by prototype-refresh.css for the
+ * canonical Graphik-era nav appearance (size/weight/letter-spacing/case). */
 .gloskin-ui1-nav__link{
 	padding-inline:8px;
-	font-size:1rem;
-	font-weight:200;
+	font-size:.91rem;
+	font-weight:500;
 }
 .gloskin-ui1-button,
 .gloskin-ui1-text-link,

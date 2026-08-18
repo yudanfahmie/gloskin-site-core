@@ -1,34 +1,84 @@
 /*
  * Gloskin UI v1 self-hosted production fonts.
  *
- * Vendored once from the official Google Fonts distribution --
- * Marcellus-Regular.woff2, the single Mulish variable-weight instance
- * (wght 400-800), and the DM Sans variable instance used for navigation
- * (wght 400-700, normal style, latin subset). No runtime request to an
- * external font CDN remains. SIL Open Font License notices are preserved
- * alongside the font files (see Marcellus-OFL.txt / Mulish-OFL.txt /
- * DMSans-OFL.txt in ../fonts/).
+ * Binaries supplied by the repository owner (ready-to-use.zip, 2026-08-18).
+ * No runtime request to an external font CDN remains.
  *
- * This file declares only @font-face rules -- no other selectors.
+ * Licensing: Graphik is a commercial typeface by Commercial Type; Felix Titling
+ * (Felixti.woff2) was provided by the owner as a licensed runtime asset.
+ * Self-hosting requires the appropriate commercial web-font license from each
+ * foundry. These binaries must NOT be redistributed in a public repository
+ * without confirming that the owner's license explicitly permits redistribution.
+ *
+ * This file declares only @font-face rules — no other selectors.
  */
+
+/* Felix Titling — editorial display headings only (400 normal) */
 @font-face{
-	font-family:"Marcellus";
-	src:url("../fonts/Marcellus-Regular.woff2") format("woff2");
+	font-family:"Felix Titling";
+	src:url("../fonts/Felixti.woff2") format("woff2");
 	font-style:normal;
 	font-weight:400;
-	font-display:fallback;
+	font-display:swap;
+}
+
+/* Graphik — one canonical sans-serif family.
+ * All weights map to a single font-family name so callers use plain
+ * font-weight values (300/400/500/600/700) — no separate family names
+ * such as "Graphik Medium" or "Graphik Semibold". */
+@font-face{
+	font-family:"Graphik";
+	src:url("../fonts/GraphikLight.woff2") format("woff2");
+	font-style:normal;
+	font-weight:300;
+	font-display:swap;
 }
 @font-face{
-	font-family:"Mulish";
-	src:url("../fonts/Mulish-Variable.woff2") format("woff2");
-	font-style:normal;
-	font-weight:400 800;
-	font-display:fallback;
+	font-family:"Graphik";
+	src:url("../fonts/GraphikLightItalic.woff2") format("woff2");
+	font-style:italic;
+	font-weight:300;
+	font-display:swap;
 }
 @font-face{
-	font-family:"DM Sans";
-	src:url("../fonts/DMSans-Variable.woff2") format("woff2");
+	font-family:"Graphik";
+	src:url("../fonts/GraphikRegular.woff2") format("woff2");
 	font-style:normal;
-	font-weight:400 700;
-	font-display:fallback;
+	font-weight:400;
+	font-display:swap;
+}
+@font-face{
+	font-family:"Graphik";
+	src:url("../fonts/GraphikRegularItalic.woff2") format("woff2");
+	font-style:italic;
+	font-weight:400;
+	font-display:swap;
+}
+@font-face{
+	font-family:"Graphik";
+	src:url("../fonts/GraphikMedium.woff2") format("woff2");
+	font-style:normal;
+	font-weight:500;
+	font-display:swap;
+}
+@font-face{
+	font-family:"Graphik";
+	src:url("../fonts/GraphikMediumItalic.woff2") format("woff2");
+	font-style:italic;
+	font-weight:500;
+	font-display:swap;
+}
+@font-face{
+	font-family:"Graphik";
+	src:url("../fonts/GraphikSemibold.woff2") format("woff2");
+	font-style:normal;
+	font-weight:600;
+	font-display:swap;
+}
+@font-face{
+	font-family:"Graphik";
+	src:url("../fonts/GraphikBold.woff2") format("woff2");
+	font-style:normal;
+	font-weight:700;
+	font-display:swap;
 }

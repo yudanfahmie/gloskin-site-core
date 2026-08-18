@@ -71,8 +71,10 @@ require("remove_from_cart_button" in js and "removed_from_cart" in js, 'cart pen
 require('wc-ajax=remove_from_cart' not in js and "remove_from_cart'" not in js, 'Gloskin must not create a second cart removal request owner')
 
 # Wishlist count remains the existing localStorage owner.
-require(header.count('data-gloskin-wishlist-count aria-hidden="true"') == 3, 'all header wishlist controls need count badges')
-require(header.count('data-gloskin-wishlist-count-sr aria-live="polite"') == 3, 'all header wishlist controls need accessible count reflection')
+# Header V2 (canonical since prototype refresh) has one header row, so one
+# wishlist button with its badge lives in header.php (previously 3 in Header V1).
+require(header.count('data-gloskin-wishlist-count aria-hidden="true"') == 1, 'header wishlist control needs count badge')
+require(header.count('data-gloskin-wishlist-count-sr aria-live="polite"') == 1, 'header wishlist control needs accessible count reflection')
 require("var count = getIds().length;" in js, 'wishlist count must derive from existing getIds owner')
 require("document.querySelectorAll('[data-gloskin-wishlist-count]')" in js, 'wishlist visual count reflection missing')
 require("document.querySelectorAll('[data-gloskin-wishlist-count-sr]')" in js, 'wishlist accessible count reflection missing')
@@ -92,6 +94,6 @@ require("'sanitize_callback' => 'sanitize_title'" not in template_service, "the 
 
 header_version = re.search(r'\* Version:\s*([0-9.]+)', plugin).group(1)
 kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == '0.7.130', 'production version must be synchronized at 0.7.130')
+require(header_version == kernel_version == '0.7.132', 'production version must be synchronized at 0.7.132')
 
 print('storefront regression contract: OK')
