@@ -12,6 +12,7 @@ php tests/sample-product-importer-behavior.php
 php tests/sample-product-importer-hardening.php
 php tests/sample-product-woo-missing.php
 ./tests/check-presentation.sh
+python tests/prototype-refresh-contract.py
 ./tests/plugin-check-remediation-contract.sh
 ./tests/single-product-commerce-contract.sh
 ./tests/purchase-dock-controller-contract.sh

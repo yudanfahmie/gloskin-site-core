@@ -1,8 +1,21 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 $gloskin_home_clinics = gloskin_ui1_real_cards( $gloskin_context['clinics'] );
-gloskin_ui1_render_hero( $gloskin_context['hero'] );
-?>
+/* The current Home context intentionally keeps the canonical Media Library
+ * campaign-video data on the existing hero object. The approved refresh uses
+ * that same data twice through the one hero renderer: first as an editorial
+ * standard hero (mode removed), then as a video campaign (heading removed so
+ * the page keeps exactly one semantic H1). No second video or content owner. */
+$gloskin_home_editorial_hero = $gloskin_context['hero'];
+unset( $gloskin_home_editorial_hero['mode'], $gloskin_home_editorial_hero['sources'] );
+$gloskin_home_campaign = $gloskin_context['hero'];
+$gloskin_home_campaign['heading'] = '';
+gloskin_ui1_render_hero( $gloskin_home_editorial_hero );
+if ( ! empty( $gloskin_home_campaign['sources'] ) ) : ?>
+<div class="gloskin-ui1-home-campaign" data-gloskin-section="home-campaign">
+	<?php gloskin_ui1_render_hero( $gloskin_home_campaign ); ?>
+</div>
+<?php endif; ?>
 <section class="gloskin-ui1-section" data-gloskin-section="home-orientation"><div class="gloskin-ui1-container">
 	<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?><div class="gloskin-ui1-container--narrow gloskin-ui1-section__intro"><?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?></div><?php endif; ?>
 	<?php gloskin_ui1_render_editorial_split( __( 'Pendekatan Gloskin', 'gloskin-site-core' ), __( 'Konsultasi dulu, baru menentukan perawatan', 'gloskin-site-core' ), __( 'Setiap kunjungan dimulai dari pemeriksaan dan diskusi bersama dokter di klinik Gloskin, bukan dari katalog pilihan instan. Rencana perawatan disesuaikan dengan kondisi kulit, rambut, atau kebutuhan estetika masing-masing pasien, dengan fokus pada kualitas kulit yang bertahan lama.', 'gloskin-site-core' ), __( 'Kenali Gloskin Lebih Jauh', 'gloskin-site-core' ), home_url( '/about/' ), 'editorial', true ); ?>
