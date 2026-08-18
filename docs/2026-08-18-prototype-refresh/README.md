@@ -1,140 +1,100 @@
 # Gloskin Prototype Refresh — 2026-08-18
 
-Owner-approved execution package for the next Gloskin UI revamp.
+This package is the latest client-approved authority for Gloskin's **public/editorial IA and presentation**.
 
-## Outcome
+## Precedence
 
-Keep the current WordPress/WooCommerce architecture and data ownership, but make the next production presentation visually and behaviorally converge on `prototype.html` across the site. This is a presentation revamp, not a platform rewrite.
+1. explicit current owner instruction;
+2. this package for public IA, primary navigation, editorial page hierarchy, Home, Treatments, Promo, Skincare landing, About and global visual/interaction direction;
+3. canonical repository architecture/security/data docs for WordPress/WooCommerce ownership, storage, useful routes, security, SEO/GEO engineering and service boundaries;
+4. current WooCommerce implementation as the protected functional commerce baseline.
 
-## Authority / conflict rule
+This supersedes older presentation-only decisions. It does not supersede WordPress/WooCommerce data ownership or commerce correctness.
 
-Use these sources together, by concern:
+## Product zones
 
-1. **Architecture, routes, storage, security, SEO/GEO structure:** existing canonical repository docs remain authoritative.
-2. **Visual geometry, hierarchy, component feel, spacing, section rhythm, responsive behavior, and interaction direction:** `prototype.html` is the target.
-3. **Color and typography:** the brand contract in `resources/BRAND-ASSETS.md` overrides temporary colors/fonts from the first prototype draft or older production CSS.
-4. **Factual content and commerce data:** current WordPress/WooCommerce data is authoritative. Prototype copy/data is demonstrative only.
-5. **Raw wireframe provenance:** the source archive is identified by checksum in `resources/BRAND-ASSETS.md`; use it only for ambiguity resolution when available locally.
+### Prototype-controlled editorial zone
 
-This package is a newer owner instruction. Where an older canonical document contains presentation-only details that conflict with this package (for example old font choices, old color tokens, or the previous Home hero visual treatment), this package wins for presentation. Architecture/data ownership does not change.
+Header, primary nav, Home, Treatments, Promo, Skincare landing, About, footer, shared editorial cards/sections/modals/drawers should achieve recognizable parity in hierarchy, rhythm, typography, palette, card/media geometry, CTA hierarchy, responsive behavior and interaction feel.
 
-## Canonical brand foundation
+### Commerce protected zone
 
-### Palette
+Shop, PDP, Cart, Checkout, My Account and Woo actions keep their mature behavior. The prototype is a design-system reference here, not a literal replacement wireframe.
 
-Use these seven owner-supplied colors as the canonical brand set:
+## Primary IA
 
-- `#CA050E` — primary red / high-emphasis CTA and active state
-- `#784F0C` — deep brown / secondary dark accent
-- `#F6D179` — gold
-- `#FBE2B2` — warm cream
-- `#FFEBBB` — light gold/cream
-- `#FFF2EB` — blush/off-white surface
-- `#000000` — primary text / strongest contrast
+Logo → Home.
 
-Derived UI neutrals are allowed only as transparent mixes/tints for borders, disabled states, overlays, shadows, and accessibility. Do not introduce a new competing brand palette.
+Primary menu:
 
-### Typography
+- Perawatan
+- Promo
+- Skincare
+- Tentang Gloskin
 
-Owner-supplied font package contents:
+Search/Cart/Account/contact-consultation are utilities. Shop, Clinics, Doctors, Contact and Insights remain useful supporting routes.
 
-- **Graphik**: Light, Regular, Medium, Semibold, Bold + supplied italics.
-- **Felix Titling**: `Felixti.TTF`.
+No fake language switcher.
 
-Target role:
+## Home target
 
-- Graphik = body, navigation, buttons, labels, product/commerce UI, forms, utility text.
-- Felix Titling = brand/display typography and major editorial headings where legibility remains strong.
-- Do not keep Marcellus/Mulish/DM Sans as visible production typography once the new system is verified, unless a narrow technical fallback remains necessary.
+Hero/Campaign → Why Gloskin → Featured Treatments/discovery → Promo → Skincare/product discovery → Testimonials only when factual → About/brand-story transition → Achievements only when factual → closing CTA/footer.
 
-The supplied font package contains no license file. Treat the typefaces as **owner-supplied brand assets**; do not invent redistribution/license claims. Convert approved faces to optimized WOFF2 for production if tooling permits; preload only critical faces.
+There must be one strong semantic primary hero and one H1. Reuse the existing Media Library video owner when configured. Do not create another video service. Do not force Doctors/Clinics/Insights onto Home.
 
-## Prototype interpretation
+## Treatments
 
-`prototype.html` is a one-page interactive reference, not production architecture. Preserve its recognizable visual language:
+Retain the existing data relationships/recommendation engine. Converge presentation toward prototype discovery, using Face/Hair/Body/Wellness only when configured canonical path data supports those labels. No duplicate treatment/product storage or fabricated claims.
 
-- fixed/light glass header;
-- strong editorial hero;
-- rounded cards and large calm spacing;
-- restrained warm palette with red accent;
-- clear CTA hierarchy;
-- Treatment categories presented as large visual bands/cards;
-- Promo as a campaign section/carousel language;
-- Skincare as clean product cards;
-- Testimonials as a focused slider/card composition;
-- About/Tentang Kami as photo/story/founder/vision-team/network/achievement blocks;
-- polished drawers/modals/mobile nav and strong hover/focus feedback.
+## Promo
 
-The raw wireframes establish the primary sequence: Home → Video Campaign → Why Gloskin → Treatment Unggulan → Testimoni → Piagam; Treatment → Face/Hair/Body/Wellness; Promo; Skincare; Tentang Kami. The prototype resolves these into one coherent digital system.
+`/promo/` is a native WordPress Page and primary IA destination. No Promo CPT/database. Home links to it. Missing content yields a clean state, never invented discounts, prices, terms or dates.
 
-## Production mapping
+## Skincare and Shop
 
-Do **not** collapse the mature site into a literal one-page website. Apply the prototype system to existing route families.
+`/skincare/` is editorial/discovery and prototype-controlled. `/shop/` is protected mature Woo commerce. This distinction is intentional.
 
-- Logo/brand → Home.
-- Treatment → existing `/treatments/` and treatment detail/category surfaces.
-- Promo → prefer a Home `#promo` section/anchor unless a real native Promo page already exists; do not create a new CPT/service only for this.
-- Skincare → existing `/skincare/`, category landings, Shop/product surfaces.
-- Tentang Kami → existing `/about/`.
-- Cart → existing WooCommerce cart/mini-cart behavior/data.
-- `ID` language control from the sketch/prototype is **not required** unless the site has a real supported multilingual feature. Do not fake a language system.
-- Existing Clinics, Doctors, Insights, Contact, Shop, product, cart, checkout and account routes stay; restyle them with the same design language even though the original sketch did not draw every family.
+## About
 
-## Data rule
+Use approved brand-story content, vision/mission/values, factual founder/team/network/achievement data when available, and a strong CTA. Omit unavailable factual blocks.
 
-Prototype prices, awards, branch facts, doctor/founder identity, medical claims, promotion terms and product copy are placeholders unless they already match authoritative site data. Never publish them as truth merely for visual parity.
+## Official brand foundation
 
-Prefer current WordPress/WooCommerce data and entity relationships. If staging data genuinely must change to exercise a redesigned surface, mirror the repository's existing deterministic migration pattern instead of inventing a new migration framework. Reuse current one-shot/identity/archive/runtime-copy conventions where applicable, keep synthetic data clearly marked, and do not rewrite immutable historical migration archives.
+Palette:
 
-## Allowed take-out
+- `#CA050E`
+- `#784F0C`
+- `#F6D179`
+- `#FBE2B2`
+- `#FFEBBB`
+- `#FFF2EB`
+- `#000000`
 
-To reach one coherent UI, the implementer may remove/retire:
+Graphik roles: body/nav/buttons/forms/commerce/utility.
 
-- obsolete presentation-only CSS/rules that conflict with the new token system;
-- old production font files after proving there are no remaining consumers;
-- redundant visual variants and decorative elements that create two competing design systems;
-- prototype-only fake content/claims;
-- language controls without real multilingual capability;
-- demo/staging content only when safe, traceable, and not authoritative production data.
+Felix Titling roles: major display/editorial typography.
 
-Do **not** remove required routes, WooCommerce ownership, factual WP/Woo content, accessibility behavior, SEO/GEO semantics, or security boundaries just because they are absent from the sketch.
+Do not claim Graphik/Felix are self-hosted until owner-supplied binaries are present and redistribution is authorized. Legacy font binaries may remain technical fallbacks in the meantime.
 
-## Low-effort / high-impact task groups
+## Bounded IA migration
 
-### TG1 — Brand tokens first
+Revision `2026-08-18` has a one-click wp-admin runner with real progress UI. It automatically chains deterministic checkpoints:
 
-Replace the visible production font/palette foundation before page-by-page polishing. Keep one token owner and one asset owner. Avoid selector-by-selector color hacks.
+1. Pages;
+2. Primary Menu;
+3. Safety Verify;
+4. Finalize/Consumed.
 
-### TG2 — Global shell
+It is resumable/idempotent, preserves unknown editor menu items and support Pages, snapshots Woo page configuration, and writes target schema only after verification. It is **not** a generic migration framework.
 
-Bring header, desktop/mobile navigation, CTA/button language, sheets/drawers, footer, focus states, spacing/radius/shadow system into prototype parity. This gives immediate site-wide impact.
+## Acceptance
 
-### TG3 — Core prototype pages
-
-Revamp Home, Treatments, Promo section, Skincare/Shop, and About to match the prototype's hierarchy and component compositions. Reuse current data owners.
-
-### TG4 — Extend the system
-
-Apply the same typography, cards, hero treatment, media framing, section rhythm and CTA system to Clinics, Doctors, Insights, Contact, single product, cart, checkout and account surfaces without changing their platform responsibilities.
-
-### TG5 — Prune + verify
-
-Remove superseded presentation code/assets only after references are gone. Run repository checks, Woo flows, keyboard/mobile checks, semantic heading/link checks and visual review at ~375, 768, 1024 and 1440px.
-
-## Definition of done
-
-- The site unmistakably reads as the same design system as `prototype.html` on first view.
-- Official palette and owner-supplied typography are visible, centralized and reusable.
-- No second theme/design mode remains visually competing with the target.
-- Existing content, routes and Woo flows still work.
-- Home/Treatments/Skincare/About are the strongest parity surfaces; remaining page families feel native to the same system.
-- No fabricated medical/commercial/factual data was introduced for appearance.
-- Mobile nav, drawers/modals, keyboard focus and reduced-motion behavior remain usable.
-- Server-rendered crawlable content, logical heading hierarchy, stable links and provider-safe SEO/schema structure remain intact.
-- Production asset loading is bounded; do not preload every font weight.
-- Canonical docs are updated in the implementation commit wherever older presentation requirements are superseded.
-- Work directly on `main`; no new repo/branch/PR; prefer one coherent commit, split only if the implementation naturally requires independent safe outcomes.
-
-## Start here
-
-For an AI developer, use `AI-DEVELOPER-PROMPT.md` verbatim as the execution prompt.
+- primary menu matches approved IA;
+- `/promo/` exists natively;
+- desktop/mobile consume the same normalized menu tree;
+- support routes/data are preserved;
+- Woo Shop/PDP/Cart/Checkout/My Account functionality remains;
+- migration is one-click, resumable and idempotent;
+- no fabricated facts;
+- keyboard/focus/reduced-motion/responsive behavior remains sound;
+- repository docs contain one clear current authority model.

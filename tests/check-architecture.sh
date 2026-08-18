@@ -47,7 +47,7 @@ unexpected_gates="$(echo "$woo_gate_files" | grep -vF "$adapter_file" | grep -vF
 [[ -z "$unexpected_gates" ]] || { echo "Woo availability gate(s) outside the adapter and the documented LifecycleService exception: $unexpected_gates" >&2; exit 1; }
 [[ "$woo_gate_count" -le 2 ]] || { echo "expected at most 2 Woo availability gates (adapter + documented lifecycle exception), found $woo_gate_count: $woo_gate_files" >&2; exit 1; }
 
-required_templates=(home about treatments treatment skincare skincare-category clinics clinic doctors doctor contact insights shop)
+required_templates=(home about treatments promo treatment skincare skincare-category clinics clinic doctors doctor contact insights shop)
 for template in "${required_templates[@]}"; do
 	[[ -f "$plugin_root/templates/pages/$template.php" ]] || { echo "missing template: $template" >&2; exit 1; }
 done

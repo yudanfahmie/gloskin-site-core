@@ -1,96 +1,105 @@
 # Gloskin Site Core
 
-WordPress presentation and page-builder plugin for Gloskin, using selected proven Morgen UI V6 patterns while keeping WordPress and WooCommerce as the authoritative platform layers.
+WordPress presentation and page-builder plugin for Gloskin. WordPress and WooCommerce remain the authoritative platform/data layers; Gloskin Site Core owns the public presentation shell, Gloskin editorial content structures, and safe WooCommerce presentation integration.
 
-## Current status
+## Current product authority
 
-This repository is the canonical developer handoff for Gloskin Site Core. Developer-only requirements from the original project material have already been normalized here; routine implementation must not depend on reopening `project-9901`.
+Gloskin was initially built from an earlier public hierarchy. After the client presentation, that public editorial IA and presentation were substantially revised. The **2026-08-18 prototype revision is now the current product authority for the public/editorial experience**.
 
-No Morgen production code has been cloned into the plugin. The implementation must start from a fresh Gloskin micro-kernel and selectively adapt only approved V6 behavior.
+When requirements conflict, use this order:
 
-Pinned Morgen provenance:
+1. explicit current repository-owner instruction;
+2. `docs/2026-08-18-prototype-refresh/` for public IA, primary navigation, editorial hierarchy, Home, Treatments, Promo, Skincare landing, About, and the global visual/interaction system;
+3. canonical architecture/security/data documentation for WordPress/WooCommerce ownership, storage, useful routes, security, SEO/GEO engineering, and service ownership;
+4. the existing WooCommerce implementation as the protected commerce UX/functionality baseline.
 
-- repository: `yudanfahmie/morgen-core`;
-- commit: `374432cee6380e0aa0f81390e26b990147e5e58d`;
-- UI V6 is structural/interaction provenance only;
-- production presentation name: **Gloskin UI v1**.
+Prototype copy, prices, claims, awards, identities, promotion terms, and other demonstrative data are never authoritative site facts.
 
-### Current owner-approved presentation refresh
+## Two production zones
 
-The next Gloskin presentation revamp is packaged in `docs/2026-08-18-prototype-refresh/` with the interactive prototype, raw-wireframe provenance, official color contract, owner-supplied font manifest, implementation rules, acceptance criteria and one codebase-only AI developer prompt.
+### Prototype-controlled editorial zone
 
-For that work, the refresh package is the newest owner-approved authority for **visual presentation and interaction direction**. Existing canonical documents remain authoritative for architecture, routes, storage, security, WordPress/WooCommerce ownership and SEO/GEO structure. Factual site data remains WordPress/WooCommerce-owned; prototype copy is not commercial/medical truth.
+Strongly converge to the approved prototype:
 
-## Canonical developer reading order
+- global header and primary navigation;
+- Home;
+- Treatments;
+- `/promo/`;
+- Skincare landing;
+- About / Tentang Gloskin;
+- global footer;
+- shared editorial cards, sections, drawers and modals.
 
-1. `CONTRIBUTING.md` — mandatory main-only workflow and architecture discipline.
-2. `docs/2026-08-18-prototype-refresh/README.md` — current owner-approved presentation target and task group.
-3. `docs/developer-source-of-truth.md` — authoritative normalized product/developer requirements outside presentation overrides above.
-4. `docs/architecture-efficiency-audit.md` — canonical runtime architecture, simplification and security contract.
-5. `docs/runtime-service-map.csv` — one-owner service/request/storage boundaries.
-6. `docs/content-data-contracts.md` — content/entity fields, relationships and pending inputs.
-7. `docs/morgen-v6-reverse-engineering.md` — source-level Morgen findings and dependency cuts.
-8. `docs/implementation-plan.md` — ordered implementation sequence.
-9. `docs/page-matrix.csv` — route/page-family inventory.
-10. `docs/prune-matrix.csv` — source/capability retain-adapt-remove decisions.
-11. `docs/source-notes.md` — provenance only; not a normal development dependency.
-12. `tests/README.md` — verification contract.
+### Commerce protected zone
+
+Keep the mature existing implementation for:
+
+- `/shop/`;
+- Woo product detail;
+- Cart;
+- Checkout;
+- My Account;
+- Woo commerce actions, Quick Add, wishlist/cart ownership, filtering/search/category/price behavior.
+
+Commerce consumes the new brand system but is **not** rebuilt as the simplified prototype.
+
+## Primary public IA
+
+Logo → Home.
+
+Primary navigation:
+
+1. Perawatan
+2. Promo
+3. Skincare
+4. Tentang Gloskin
+
+Search, Cart, Account and consultation/contact utilities remain separate. Shop, Clinics, Doctors, Insights and Contact remain functional supporting routes, discoverable contextually and from footer/commerce journeys.
+
+## One-shot 2026-08-18 IA migration
+
+The post-client IA revision is applied by one bounded deterministic migration owned by Lifecycle discipline, not by a generic migration framework.
+
+In wp-admin, **Prototype IA Migration** runs with one user action and a real progress loader. The browser automatically chains four server checkpoints:
+
+1. native Page provisioning;
+2. primary-menu normalization;
+3. page/menu/Woo safety verification;
+4. consumed/schema finalization.
+
+The process is resumable and idempotent. It never deletes supporting pages or Woo/customer/order/product data, and it preserves unrelated editor-created primary-menu items. Schema `0.3.0` is written only after verification/finalization succeeds; ordinary `admin_init` does not continuously repair the menu.
 
 ## Architecture at a glance
 
-The target is a **modular monolith with one micro-kernel and small internal services**, not distributed/network microservices.
+The runtime remains a modular monolith with one Kernel and small owners:
 
-The intended first-party owners are:
+- ContentService
+- TemplateService
+- AssetService
+- NavigationService
+- WooCommerceAdapter
+- FormAdapter
+- AdminService
+- LifecycleService
 
-- `ContentService` — Gloskin content types/meta/relationships;
-- `TemplateService` — page contexts and template ownership;
-- `AssetService` — the only first-party frontend asset owner;
-- `NavigationService` — one normalized desktop/mobile menu tree;
-- `WooCommerceAdapter` — optional Woo presentation bridge only;
-- `FormAdapter` — optional external form presentation bridge only;
-- `AdminService` — minimal native-first admin/settings enhancements;
-- `LifecycleService` — activation/deactivation and narrowly scoped future upgrades only.
+No custom database, duplicate commerce layer, generic migration console/framework, second design system, or custom Woo backend is introduced.
 
-`Kernel` is composition only. It must not become a Gloskin equivalent of the Morgen `System` mega-class.
+## Canonical reading order
 
-### Complexity guardrails
+1. `CONTRIBUTING.md`
+2. `docs/2026-08-18-prototype-refresh/README.md`
+3. `docs/2026-08-18-prototype-refresh/AI-DEVELOPER-PROMPT.md`
+4. `docs/developer-source-of-truth.md`
+5. `docs/architecture-efficiency-audit.md`
+6. `docs/runtime-service-map.csv`
+7. `docs/content-data-contracts.md`
+8. `docs/seo-geo-engineering-contract.md`
+9. `docs/implementation-plan.md`
+10. `docs/page-matrix.csv`
+11. `tests/README.md`
 
-Gloskin UI v1 starts with:
+`project-9901` and pinned Morgen material are provenance/reference only, not current public product authority.
 
-- one composition root;
-- at most eight first-party bootable services;
-- one asset registry/owner;
-- at most one small global plugin option;
-- zero custom database tables;
-- zero generic runtime migration framework;
-- zero custom form/mail backend;
-- zero duplicate WooCommerce commerce ownership;
-- zero UI version switcher;
-- zero routine custom write locks/read-after-write rollback/cache surgery;
-- zero compatibility/recovery layers without a real released Gloskin compatibility requirement.
+## Workflow
 
-The principle is **strict boundaries, not repeated validation**: capability + nonce + sanitization at writes, contextual escaping at output, dependency checks once in adapters, and native WordPress/WooCommerce persistence.
-
-## Required site families
-
-The normalized architecture covers Home, About, Treatments Hub + exactly eight treatment category pages, Skincare Hub + seven Woo-mapped landing pages, Clinics Hub + nine clinic pages, Contact, Insights Hub, Shop Hub, Doctors Hub + thirteen doctor pages, up to twenty WooCommerce product pages, and Woo cart/checkout presentation compatibility.
-
-The explicit route inventory supersedes stale raw headline counts such as `21` or `33` pages.
-
-## Key Morgen pruning conclusion
-
-Do **not** copy `morgen-plugin/` wholesale.
-
-The pinned Morgen runtime combines multiple UI generations, virtual routing, industrial domains, custom product/document/PDF systems, inquiry/mail handling, large custom admin persistence, compatibility guards, diagnostics, telemetry and historical migration/reconciliation machinery.
-
-Gloskin keeps only proven V6 presentation behavior that can live cleanly under Gloskin ownership. If a proposed class mainly exists to repair/protect another Gloskin class, fix the original owner instead of adding another layer.
-
-## Explicit exclusions
-
-Unless the owner later changes scope, this repository does not implement SEO/GEO operations, Rank Math proxy/schema administration, GSC/GA4/GTM/GBP, backlinks/media/social/reporting, DNS/domain/redirect/SSL orchestration, medical approval workflow tooling, custom Midtrans/Xendit business logic, WooCommerce backend replacement, a second product manager, Morgen Technical Library/Documents/PDF/download features, Applications/Hammer/Quality Testing, historical Morgen migrations/repairs, Morgen EN/DE routing, custom inquiry/mail handling, or UI V1-V5/presentation switching.
-
-## Workflow rules
-
-This repository is main-only. Work directly on `main`, pull/record HEAD before editing, make one coherent change set, use short lowercase action-oriented commit messages, run available checks, verify remote `main`, and update canonical architecture/docs in the same commit when implementation decisions change.
-
-Do not modify `project-9901` while working on Gloskin.
+This repository is main-only. Work directly on `main`, pull/record HEAD, make coherent changes, run available checks, push directly to `origin/main`, and verify remote `main`.

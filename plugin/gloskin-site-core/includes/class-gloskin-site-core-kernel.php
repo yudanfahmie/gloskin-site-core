@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.7.129';
+	const VERSION = '0.7.130';
 
 	/** @var string */
 	private $plugin_file;
@@ -49,6 +49,7 @@ final class Gloskin_Site_Core_Kernel {
 			require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
 			require_once __DIR__ . '/class-gloskin-site-core-sample-media-compatibility.php';
 			require_once __DIR__ . '/class-gloskin-site-core-insight-migration-admin.php';
+			require_once __DIR__ . '/class-gloskin-site-core-prototype-ia-migration-admin.php';
 
 			$media_compatibility = new Gloskin_Site_Core_Sample_Media_Compatibility();
 			$media_compatibility->register();
@@ -62,10 +63,14 @@ final class Gloskin_Site_Core_Kernel {
 			$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();
 			$lifecycle->register_upgrade();
 
+			$prototype_ia_migration = new Gloskin_Site_Core_Prototype_IA_Migration_Admin( $assets );
+			$prototype_ia_migration->register();
+
 			$this->services[] = $media_compatibility;
 			$this->services[] = $admin;
 			$this->services[] = $insight_migration;
 			$this->services[] = $lifecycle;
+			$this->services[] = $prototype_ia_migration;
 			$this->boot_production_batch();
 			return;
 		}

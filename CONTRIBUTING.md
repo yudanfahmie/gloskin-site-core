@@ -1,155 +1,110 @@
 # Contribution Rules
 
-These rules are mandatory for AI agents and human developers working in this repository.
+These rules are mandatory for AI agents and human developers.
 
 ## Branch policy
 
 - Work directly on `main`.
 - Do not create feature/work/temp branches or pull requests unless the repository owner explicitly changes this policy.
-- Never use a branch as a scratch area.
+- Pull latest `origin/main` and record HEAD before editing.
 
 ## Requirements authority
 
-For normal Gloskin development, this repository is authoritative. Read relevant material in this order:
+When requirements conflict, use this order:
 
-1. `docs/developer-source-of-truth.md`
-2. `docs/architecture-efficiency-audit.md`
-3. `docs/runtime-service-map.csv`
-4. `docs/content-data-contracts.md`
-5. `docs/seo-geo-engineering-contract.md`
-6. `docs/morgen-v6-reverse-engineering.md`
-7. `docs/implementation-plan.md`
-8. `docs/page-matrix.csv`
-9. `docs/prune-matrix.csv`
+1. explicit current repository-owner instruction;
+2. `docs/2026-08-18-prototype-refresh/` for **public/editorial product IA and presentation**;
+3. canonical architecture/security/data docs for storage, WordPress/WooCommerce ownership, useful routes, security, SEO/GEO engineering and service ownership;
+4. existing WooCommerce implementation as the protected commerce behavior baseline;
+5. pinned Morgen/raw project material only as historical provenance.
 
-`yudanfahmie/project-9901` is provenance/raw reference only. Do not modify it, copy its raw files here, or make routine implementation dependent on re-reading it. If a value is not captured in canonical Gloskin docs, treat it as pending/new input instead of silently rediscovering raw assumptions.
+The 2026-08-18 client revision supersedes older presentation-only decisions, including the old primary menu, old mandatory Home Doctors/Clinics/Insights hierarchy, old strict video-only Home requirement, and old multiple-design-direction expectations. Do not keep two competing current truths.
 
-The pinned Morgen source may be inspected only when implementing a documented reuse/adaptation decision.
+## Product zones
 
-## Before editing
+### Prototype-controlled editorial zone
 
-1. Confirm repository `yudanfahmie/gloskin-site-core`.
-2. Checkout `main`.
-3. Pull latest `origin/main`.
-4. Record/report current HEAD.
-5. Inspect current implementation and relevant canonical docs.
-6. Define one coherent outcome for the change.
-7. Identify the canonical service/owner for every runtime concern being changed.
-8. For route/template/navigation changes, verify the SEO/GEO engineering contract remains satisfied.
+Converge strongly to the prototype: header, primary nav, Home, Treatments, Promo, Skincare landing, About, footer, shared editorial components and interactions.
+
+### Commerce protected zone
+
+Do not simplify away mature Shop/PDP/Cart/Checkout/My Account behavior. Preserve filtering, search, category/price discovery, pagination/AJAX, Quick Add, wishlist/cart ownership, Woo hooks, native variation/add-to-cart behavior, checkout and account flows. Converge only the design system/presentation unless an explicit owner instruction changes commerce behavior.
+
+## Primary IA
+
+Logo → Home.
+
+Primary navigation is:
+
+1. Perawatan
+2. Promo
+3. Skincare
+4. Tentang Gloskin
+
+Search/Cart/Account/contact-consultation are utilities. Shop, Clinics, Doctors, Insights and Contact remain supporting destinations and must not be deleted merely because they leave primary navigation.
 
 ## Architecture efficiency contract
 
-The target is a modular monolith with one micro-kernel and small internal services. Do not introduce distributed-service infrastructure, a generic DI container, or framework complexity merely to imitate microservices.
-
-Mandatory rules:
-
-- exactly one composition root (`Kernel`);
-- at most eight first-party bootable services in v1 unless the owner approves an architecture change;
-- one canonical owner per concern;
+- exactly one Kernel composition root;
+- at most eight first-party bootable `*-service.php` / `*-adapter.php` owners unless explicitly approved;
+- one owner per concern;
 - one first-party asset registry/owner;
-- native WordPress routing/storage before custom infrastructure;
+- native WordPress routing/storage first;
 - WooCommerce remains the sole commerce authority;
-- optional integrations are adapters and dependency availability is resolved inside the adapter, not repeatedly in templates;
-- do not create a Gloskin `System` mega-class;
-- do not create a second bootstrap/workflow composition layer;
-- do not add a class whose primary purpose is to repair/protect/restore another Gloskin class without first fixing the canonical owner;
-- do not prebuild compatibility wrappers, recovery frameworks, migration consoles, telemetry or cache layers;
-- no custom database tables in v1 without a demonstrated need and explicit architecture update;
-- at most one small global settings option; entity/page/commerce data must stay in their native owners;
-- do not dual-write relationships merely for convenience; keep one canonical relationship direction unless measured performance later justifies denormalization.
+- no custom DB without demonstrated need and architecture update;
+- no second bootstrap/workflow composition layer;
+- no duplicate commerce/data store;
+- no generic migration framework;
+- no compatibility/recovery framework without a real released compatibility requirement.
 
-See `docs/architecture-efficiency-audit.md` and `docs/runtime-service-map.csv`.
+A bounded one-shot migration for a known product revision is allowed inside lifecycle discipline. It must have deterministic identity/state, capability+nonce boundaries, idempotency, safety verification, and a consumed/version state.
 
-## SEO/GEO engineering contract
+## 2026-08-18 IA migration discipline
 
-Developer-side SEO/GEO friendliness is part of the Gloskin product baseline. It is not operational SEO work.
+The post-client IA migration is a specific bounded migration, not a reusable framework. It may:
 
-Any route/template/component change must preserve:
+- ensure Home, Perawatan, Promo, Skincare and Tentang Gloskin native Pages exist;
+- normalize the assigned `gloskin-primary` menu to Perawatan → Promo → Skincare → Tentang Gloskin;
+- remove only known obsolete Gloskin primary-menu items;
+- preserve unrelated/custom editor menu items;
+- preserve support pages and all Woo page configuration/data;
+- store a consumed/schema state after verification.
 
-- server-rendered, crawlable primary content;
-- semantic landmarks and logical heading hierarchy;
-- one clear page topic/H1;
-- stable WordPress/Woo canonical route behavior;
-- crawlable anchor-based navigation/internal links;
-- useful hub/detail relationships and breadcrumb capability;
-- metadata/schema provider compatibility without duplicate output;
-- meaningful WordPress Media alt-data support;
-- Core Web Vitals-minded asset/media behavior;
-- graceful empty states rather than invented SEO copy;
-- no hidden keyword/GEO blocks, cloaking, duplicate SEO prose, or crawler-specific content hacks.
+The admin UX should require one user action only. A real loader/progress UI may automatically chain bounded server checkpoints; server writes must remain serial/deterministic rather than parallel race-prone mutations. Interrupted runs must resume from persisted checkpoints.
 
-Operational SEO remains excluded: keyword campaigns, backlink work, recurring GSC/GA4/GBP operations, ranking/reporting, media/social campaigns, and content-production operations.
+Removing a menu item never authorizes deleting its destination Page.
 
-Do not interpret older documentation phrases such as “SEO/GEO/schema administration excluded” as excluding semantic HTML, crawlability, performance, stable IA, or provider-safe technical structure. Read `docs/seo-geo-engineering-contract.md`.
+## Security and persistence
 
-## Validation and persistence discipline
+For custom state-changing admin paths:
 
-Simplification must not weaken security.
+- capability check;
+- nonce;
+- field-appropriate sanitization/validation;
+- native WordPress persistence;
+- output escaping at the final context.
 
-For custom state-changing admin paths use capability checks, nonces, field-appropriate validation/sanitization, then one native WordPress persistence path. Escape again for the final output context.
+No public `wp_ajax_nopriv_*` migration endpoint. Avoid direct `$wpdb` writes. Multi-object migration locks are acceptable only where concurrent requests could mutate the same Page/menu state.
 
-Do not add routine custom locks, revision choreography, read-after-write verification, rollback wrappers or manual option-cache invalidation around normal WordPress settings/meta writes. Those mechanisms require a concrete failure mode or multi-object atomicity requirement.
+## SEO/GEO engineering baseline
 
-Prefer `register_setting()`, registered post meta, native Posts/Pages/Media, and WooCommerce APIs. Avoid direct `$wpdb` writes.
+Route/template/component changes must preserve server-rendered crawlable primary content, semantic landmarks/headings, one clear H1/topic, stable WordPress/Woo routes, crawlable anchors, breadcrumbs/provider compatibility, meaningful Media alt-data support, performance-minded assets, and graceful non-fabricated empty states.
 
-No public `wp_ajax_nopriv_*` endpoint belongs in v1 unless a later explicit feature requires it and its threat model is documented.
+Operational SEO/marketing remains out of scope.
 
-## Commit policy
+## Data/content safety
 
-- Group files implementing one coherent outcome into one commit.
-- Do not create one commit per file.
-- Do not create probe/checkpoint/temporary commits.
-- Keep messages short, lowercase and action-oriented.
-- If a task naturally contains independent production outcomes, use the smallest reasonable number of commits rather than forcing unrelated changes together.
+Never invent medical claims, doctor/founder identities, clinic facts, awards, promotion terms, product pricing/BPOM facts or business data. WordPress/WooCommerce data is factual authority. Missing factual data should be omitted or rendered as a neutral empty state.
 
-## Change discipline
+## Validation before push
 
-- Make only changes required by the current task and canonical architecture.
-- Keep working Gloskin behavior unless requirements explicitly change it.
-- Do not add dependencies/frameworks without demonstrated need.
-- Do not add/change GitHub Actions merely as a probe/workaround.
-- Do not wholesale-copy Morgen.
-- Do not introduce Morgen historical migrations, repair state, compatibility aliases, virtual route engine, diagnosis bundle, telemetry, custom mail or product systems.
-- Do not duplicate WooCommerce product/cart/checkout/order/payment ownership.
-- Do not introduce operational SEO/marketing/infrastructure tooling that is outside developer scope; developer-side semantic/crawlable/performance structure remains mandatory.
+1. inspect the complete diff;
+2. run relevant/full repository checks when available;
+3. confirm no duplicate owner/framework/state store was introduced;
+4. verify migration idempotency, consumed state, editor-item preservation and Woo page preservation when migration code changes;
+5. verify responsive/focus/reduced-motion semantics for public/admin UI changes;
+6. commit coherent changes;
+7. push directly to `origin/main`;
+8. verify remote `main` and final diff.
 
-### Staging editorial media policy
-
-- WordPress Media Library attachments and WooCommerce-owned product images are always the factual production authority and must override any editorial fallback.
-- During staging, a small curated deterministic set of Unsplash photography may be used for generic/decorative hero, skincare, treatment-discovery and editorial compositions when approved WordPress media is not yet available.
-- Staging Unsplash usage must use fixed photo URLs or first-party downloaded derivatives. Do not use the Unsplash API, random/query endpoints or runtime search.
-- Stock photography must never be presented as a specific Gloskin doctor, a specific clinic branch, a real WooCommerce product, or a medical before/after result.
-- Missing factual doctor/clinic/product media must keep the neutral Gloskin empty-state placeholder until real WordPress/Woo media is supplied.
-- Production migration should replace staging editorial stock with approved WordPress media where the surface has a factual media owner; do not create a parallel media database or service to manage that transition.
-
-## Plugin Check discipline
-
-Before release, triage every WordPress Plugin Check/PHPCS finding as one of:
-
-- **fix** -- the underlying defect is real; fix the canonical owner;
-- **context-safe suppression** -- a narrow, local `phpcs:ignore`/`phpcs:disable`...`phpcs:enable` with a comment naming the sniff and the reason it is safe in this exact context (e.g. output already escaped by a proven trusted renderer, a documented core-hook false positive, a bounded one-shot admin-only query); or
-- **owner-approved documented exception** -- for decisions outside engineering scope (licensing, packaging), record the exception instead of silently resolving it.
-
-Never chase zero warnings by violating canonical architecture (no CSS-hiding workarounds, no blanket `wp_kses_post()`/global filter removal, no new query/filesystem abstraction layer merely to silence a sniff). Every real finding becomes a targeted regression assertion, a documented local suppression, or an owner-approved exception -- see `docs/audits/plugin-check-remediation-2026-08-11.csv` and `tests/plugin-check-remediation-contract.sh` (run by `./tests/check-runtime.sh`) for the reusable pattern.
-
-## Documentation discipline
-
-When implementation changes architecture ownership, service boundaries, storage, content fields, relationships, routes, SEO/GEO engineering responsibilities, or retained/pruned Morgen dependencies, update the matching canonical documentation in the **same coherent commit**.
-
-Do not let implementation knowledge live only in chat, commit messages, or developer memory.
-
-## Verification before push
-
-1. Review the complete diff.
-2. Confirm production files changed when the task is an implementation task.
-3. Run existing checks available in the environment.
-4. Check for secrets, raw client files, generated archives and debug artifacts.
-5. Run static architecture/exclusion checks when relevant.
-6. Confirm no duplicate concern owner or corrective shim was introduced.
-7. For public presentation changes, confirm SEO/GEO structural invariants and no duplicate metadata/schema owner.
-8. Commit the coherent change set.
-9. Push directly to `origin/main`.
-10. Verify remote `main` points to the pushed commit.
-11. Inspect final commit stats/diff.
-
-Do not claim completion when changes exist only locally or push verification fails.
+Do not claim checks that could not run in the available environment.

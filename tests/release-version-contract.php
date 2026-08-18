@@ -16,7 +16,7 @@ if ( ! preg_match( "/const VERSION = '([0-9]+\\.[0-9]+\\.[0-9]+)';/", $kernel, $
 	fwrite( STDERR, "Kernel VERSION missing\n" );
 	exit( 1 );
 }
-$expected = '0.7.129';
+$expected = '0.7.130';
 if ( $plugin_match[1] !== $expected || $kernel_match[1] !== $expected ) {
 	fwrite( STDERR, 'Release version mismatch: header=' . $plugin_match[1] . ', kernel=' . $kernel_match[1] . ', expected=' . $expected . "\n" );
 	exit( 1 );
@@ -39,7 +39,7 @@ foreach ( $tests as $file ) {
 				fwrite( STDERR, 'Stale active release assertion in ' . $file->getPathname() . ': ' . $version . "\n" );
 				exit( 1 );
 			}
-	}
+		}
 	}
 }
 

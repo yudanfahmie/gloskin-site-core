@@ -10,11 +10,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Lifecycle_Service {
-	const SCHEMA_VERSION = '0.2.2';
-	const VERSION_OPTION = 'gloskin_site_core_schema_version';
+	const BASE_SCHEMA_VERSION = '0.2.2';
+	const SCHEMA_VERSION      = '0.3.0';
+	const VERSION_OPTION      = 'gloskin_site_core_schema_version';
 
 	/**
-	 * Register a narrowly scoped version upgrade for already-active installs.
+	 * Register narrowly scoped upgrades for already-active installs.
+	 *
+	 * Schema 0.3.0 is intentionally completed by the bounded prototype IA
+	 * migration runner. admin_init never continuously repairs the primary menu.
 	 *
 	 * @return void
 	 */
@@ -22,25 +26,38 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 		add_action( 'admin_init', array( $this, 'maybe_upgrade' ), 5 );
 	}
 
-	/**
-	 * @return void
-	 */
+	/** @return void */
 	public function maybe_upgrade() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
-		if ( self::SCHEMA_VERSION === (string) get_option( self::VERSION_OPTION, '' ) ) {
+		$current = (string) get_option( self::VERSION_OPTION, '' );
+		if ( '' === $current || version_compare( $current, self::BASE_SCHEMA_VERSION, '<' ) ) {
+			$this->provision_approved_structure();
+			update_option( self::VERSION_OPTION, self::BASE_SCHEMA_VERSION, false );
+			flush_rewrite_rules( false );
+			$current = self::BASE_SCHEMA_VERSION;
+		}
+
+		if ( version_compare( $current, self::SCHEMA_VERSION, '>=' ) ) {
 			return;
 		}
 
-		$this->provision_approved_structure();
-		update_option( self::VERSION_OPTION, self::SCHEMA_VERSION, false );
-		flush_rewrite_rules( false );
+		/*
+		 * Do not auto-run schema 0.3.0 here. The client-approved IA revision
+		 * changes a real editor-visible primary menu and provisions the new
+		 * native Promo page, so one bounded admin workflow owns that mutation.
+		 * Its consumed checkpoint writes SCHEMA_VERSION exactly once after
+		 * page/menu/Woo safety verification.
+		 */
 	}
 
 	/**
-	 * Register rewrites, populate approved structural content and flush once.
+	 * Register rewrites, populate the pre-revision safe baseline structure and flush once.
+	 *
+	 * The 2026-08-18 IA Page/menu migration remains explicitly pending after activation
+	 * so the same one-shot engine owns both upgraded and newly activated installs.
 	 *
 	 * @return void
 	 */
@@ -52,20 +69,19 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 		 * fired yet on this static register_activation_hook path. */
 		Gloskin_Site_Core_Content_Service::register_taxonomies();
 		$this->provision_approved_structure();
-		update_option( self::VERSION_OPTION, self::SCHEMA_VERSION, false );
+		update_option( self::VERSION_OPTION, self::BASE_SCHEMA_VERSION, false );
 		flush_rewrite_rules( false );
 	}
 
-	/**
-	 * @return void
-	 */
+	/** @return void */
 	public function deactivate() {
 		flush_rewrite_rules( false );
 	}
 
 	/**
-	 * Create only factual records normalized in canonical Gloskin docs.
-	 * Existing editor content is never overwritten.
+	 * Create only factual/structural records normalized in the pre-revision baseline.
+	 * Existing editor content is never overwritten. The new `/promo/` Page is
+	 * deliberately NOT owned here; Prototype_IA_Migration owns that revision.
 	 *
 	 * @return void
 	 */
@@ -101,10 +117,6 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 			$this->ensure_post( Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE, $slug, $title );
 		}
 
-		/* Structural only: ensures the two stable gloskin_product_family
-		 * terms (skincare, treatment) exist. Never seeds consultation
-		 * paths/concerns/questions/demo products -- that stays owned by
-		 * the explicit, staging-only demo importer. */
 		Gloskin_Site_Core_Content_Service::ensure_family_terms();
 	}
 
@@ -115,20 +127,7 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 	 * that no longer exists/is trashed), safely point it at Gloskin's own
 	 * provisioned /shop/ page so the two stay aligned. If a merchant has
 	 * already configured a valid Shop page -- Gloskin's own or a different
-	 * one -- that choice is preserved untouched; this never silently
-	 * overwrites an existing merchant configuration, and never creates a
-	 * duplicate page.
-	 *
-	 * Documented lifecycle exception (architecture audit, hotfix): this is
-	 * the one place in the plugin allowed to check class_exists('WooCommerce')
-	 * outside the canonical WooCommerce_Adapter. LifecycleService runs from
-	 * admin_init and from the static Kernel::activate()/deactivate()
-	 * entrypoints WordPress calls directly on register_activation_hook/
-	 * register_deactivation_hook -- neither path ever constructs
-	 * Gloskin_Site_Core_WooCommerce_Adapter (Kernel::boot() only
-	 * instantiates it on the non-admin frontend branch), so there is no
-	 * adapter instance to delegate to here. This narrow exception is
-	 * enforced, not merely asserted, by tests/check-architecture.sh.
+	 * one -- that choice is preserved untouched.
 	 *
 	 * @param int $shop_page_id Gloskin's own provisioned /shop/ page ID.
 	 * @return void
@@ -158,7 +157,7 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 	private function ensure_page( $slug, $title, $parent_id ) {
 		$path = $parent_id ? get_page_uri( $parent_id ) . '/' . $slug : $slug;
 		$page = get_page_by_path( $path, OBJECT, 'page' );
-		if ( $page instanceof WP_Post ) {
+		if ( $page instanceof WP_Post && 'trash' !== $page->post_status ) {
 			return (int) $page->ID;
 		}
 

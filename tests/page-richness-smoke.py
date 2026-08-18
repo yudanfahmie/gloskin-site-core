@@ -8,16 +8,18 @@ ROOT = Path(__file__).resolve().parents[1]
 BASE_CSS = ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-core-base.css'
 CSS = ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css'
 PRODUCTION_CSS = ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-production.css'
+REFRESH_CSS = ROOT / 'plugin/gloskin-site-core/assets/css/gloskin-ui1-prototype-refresh.css'
 
 views = [
-    'home', 'about', 'treatments', 'treatment', 'skincare', 'skincare-category',
+    'home', 'about', 'treatments', 'promo', 'treatment', 'skincare', 'skincare-category',
     'clinics', 'clinic', 'doctors', 'doctor', 'insights', 'shop', 'contact',
 ]
 viewports = [390, 760, 782, 1024, 1440, 1920, 2560]
 required_sections = {
-    'home': ['home-orientation', 'home-clinics', 'home-skincare', 'home-closing'],
+    'home': ['home-orientation', 'home-treatments', 'home-promo', 'home-skincare', 'home-about', 'home-closing'],
     'about': ['about-story', 'about-clinics', 'about-closing'],
     'treatments': ['treatments-closing'],
+    'promo': ['promo-content', 'promo-pathways'],
     'treatment': ['treatment-orientation', 'treatment-closing'],
     'skincare': ['skincare-intro', 'skincare-categories', 'skincare-pathways'],
     'skincare-category': ['skincare-category-products', 'skincare-category-closing'],
@@ -38,7 +40,7 @@ def fixture(view: str) -> str:
     return subprocess.check_output(['php', str(ROOT / 'tests/render-fixture.php')], text=True, env=env)
 
 fixtures = {view: fixture(view) for view in views}
-EDITORIAL_STUB = '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200"><rect width="1600" height="1200" fill="#eaf0f4"/></svg>'
+EDITORIAL_STUB = '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200"><rect width="1600" height="1200" fill="#fbe2b2"/></svg>'
 
 with sync_playwright() as p:
     browser = p.chromium.launch(executable_path='/usr/bin/chromium', headless=True, args=['--no-sandbox'])
@@ -50,9 +52,6 @@ with sync_playwright() as p:
             page.on('console', lambda msg, e=errors: e.append(msg.text) if msg.type == 'error' else None)
             page.on('pageerror', lambda err, e=errors: e.append(str(err)))
             page.route('https://images.unsplash.com/**', lambda route: route.fulfill(status=200, content_type='image/svg+xml', body=EDITORIAL_STUB))
-            # render-fixture.php intentionally emits example.test as its fake
-            # WordPress origin. Keep this browser-only fixture deterministic so
-            # console errors still signal application failures rather than DNS.
             page.route(
                 'https://example.test/**',
                 lambda route: route.fulfill(
@@ -65,6 +64,7 @@ with sync_playwright() as p:
             page.add_style_tag(path=str(BASE_CSS))
             page.add_style_tag(path=str(CSS))
             page.add_style_tag(path=str(PRODUCTION_CSS))
+            page.add_style_tag(path=str(REFRESH_CSS))
             page.wait_for_timeout(100)
 
             if page.locator('main h1').count() != 1:
@@ -79,6 +79,8 @@ with sync_playwright() as p:
             if view in closing_views and page.locator('[data-gloskin-composition="closing-cta"]').count() != 1:
                 raise SystemExit(f'{width}/{view}: closing CTA contract failed')
 
+            if view == 'home' and page.locator('.gloskin-ui1-hero').count() != 1:
+                raise SystemExit(f'{width}/home: expected exactly one primary hero')
             if view == 'clinic':
                 sparse_or_factual = page.locator('[data-gloskin-section="clinic-sparse"], [data-gloskin-section="clinic-facts"]')
                 if sparse_or_factual.count() != 1:
@@ -93,3 +95,5 @@ with sync_playwright() as p:
             page.close()
         print(f'page richness smoke passed ({width}px, {len(views)} views)')
     browser.close()
+
+print('page-richness-smoke: OK')

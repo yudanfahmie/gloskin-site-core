@@ -13,6 +13,7 @@ php tests/sample-product-importer-hardening.php
 php tests/sample-product-woo-missing.php
 ./tests/check-presentation.sh
 python tests/prototype-refresh-contract.py
+python tests/prototype-authority-contract.py
 ./tests/plugin-check-remediation-contract.sh
 ./tests/single-product-commerce-contract.sh
 ./tests/purchase-dock-controller-contract.sh
@@ -30,6 +31,7 @@ php tests/consultation-demo-importer-contract.php
 php tests/woo-cart-notice-contract.php
 php tests/release-version-contract.php
 php tests/shop-catalog-contract.php
+php tests/shop-smart-search-contract.php
 php tests/product-grid-contract.php
 python tests/insight-typography-contract.py
 node tests/shop-catalog-controller.test.js
@@ -58,6 +60,8 @@ php tests/product-card-commerce-contract.php
 php tests/catalog-discovery-contract.php
 php tests/navigation-fallback-contract.php
 php tests/lifecycle-shop-page-alignment-contract.php
+php tests/prototype-ia-migration-contract.php
+python tests/prototype-ia-loader-contract.py
 php tests/admin-navigation-smoke.php
 php tests/runtime-smoke.php
 GL_TEST_ADMIN=1 php tests/runtime-smoke.php

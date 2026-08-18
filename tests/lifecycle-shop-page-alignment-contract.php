@@ -2,18 +2,11 @@
 declare(strict_types=1);
 
 /**
- * Gloskin Catalog Discovery v1 -- proves LifecycleService safely aligns
- * WooCommerce's woocommerce_shop_page_id to Gloskin's own provisioned
- * /shop/ page only when genuinely unconfigured (empty or pointing at a
- * page that no longer exists), and never overwrites an existing valid
- * merchant-configured Shop page.
+ * Lifecycle baseline + prototype IA handoff contract.
  *
- * Also proves the upgrade path: SCHEMA_VERSION was bumped 0.2.0 -> 0.2.1
- * specifically so an already-active install still sitting on 0.2.0 (i.e.
- * one that activated before align_woo_shop_page() existed) actually runs
- * maybe_upgrade() -> provision_approved_structure() once after deployment,
- * instead of maybe_upgrade() returning early because the stored schema
- * version already equals the constant.
+ * Baseline provisioning remains responsible for safe native structure/Woo Shop
+ * alignment. The 2026-08-18 IA revision (including /promo/) is deliberately
+ * NOT auto-consumed by admin_init: its bounded migration/loader owns 0.3.0.
  */
 
 define( 'ABSPATH', __DIR__ . '/' );
@@ -42,6 +35,7 @@ class WooCommerce {}
 $GLOBALS['gl_options']  = array();
 $GLOBALS['gl_posts']    = array();
 $GLOBALS['gl_next_id']  = 1;
+$GLOBALS['gl_can_manage_options'] = true;
 
 function get_option( $key, $default = false ) { return array_key_exists( $key, $GLOBALS['gl_options'] ) ? $GLOBALS['gl_options'][ $key ] : $default; }
 function update_option( $key, $value, $autoload = null ) { $GLOBALS['gl_options'][ $key ] = $value; return true; }
@@ -49,7 +43,7 @@ function get_post( $id ) { return $GLOBALS['gl_posts'][ $id ] ?? null; }
 function get_page_uri( $id ) { return isset( $GLOBALS['gl_posts'][ $id ] ) ? $GLOBALS['gl_posts'][ $id ]->post_name : ''; }
 function get_page_by_path( $path, $output = null, $post_type = 'page' ) {
 	foreach ( $GLOBALS['gl_posts'] as $post ) {
-		if ( $post->post_type === $post_type && $post->post_name === basename( (string) $path ) ) { return $post; }
+		if ( $post->post_type === $post_type && $post->post_name === basename( (string) $path ) && 'trash' !== $post->post_status ) { return $post; }
 	}
 	return null;
 }
@@ -62,8 +56,9 @@ function is_wp_error( $value ) { return false; }
 function absint( $value ) { return abs( (int) $value ); }
 function flush_rewrite_rules( $hard = true ) {}
 function add_action() {}
-$GLOBALS['gl_can_manage_options'] = true;
 function current_user_can( $capability ) { return 'manage_options' !== $capability || $GLOBALS['gl_can_manage_options']; }
+function get_post_meta( $id, $key, $single = false ) { return ''; }
+function update_post_meta( $id, $key, $value ) { return true; }
 
 class Gloskin_Site_Core_Content_Service {
 	const CLINIC_POST_TYPE = 'gloskin_clinic';
@@ -80,70 +75,74 @@ function reset_world() {
 	$GLOBALS['gl_options'] = array();
 	$GLOBALS['gl_posts']   = array();
 	$GLOBALS['gl_next_id'] = 1;
+	$GLOBALS['gl_can_manage_options'] = true;
 }
 
-/* Genuinely unconfigured: safely associate with Gloskin's own /shop/. */
+/* Activation provisions only the safe pre-revision baseline and aligns Woo Shop. */
 reset_world();
 ( new Gloskin_Site_Core_Lifecycle_Service() )->activate();
 $shop_page = get_page_by_path( 'shop', null, 'page' );
 ok( $shop_page instanceof WP_Post, 'Gloskin /shop/ page is provisioned' );
-ok( (int) get_option( 'woocommerce_shop_page_id', 0 ) === (int) $shop_page->ID, 'unconfigured Woo shop page setting is safely aligned to /shop/' );
+ok( null === get_page_by_path( 'promo', null, 'page' ), 'Promo must remain owned by the one-shot IA migration, not baseline activation' );
+ok( (int) get_option( 'woocommerce_shop_page_id', 0 ) === (int) $shop_page->ID, 'unconfigured Woo Shop is safely aligned' );
+ok(
+	Gloskin_Site_Core_Lifecycle_Service::BASE_SCHEMA_VERSION === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ),
+	'activation records only the safe baseline schema; prototype IA remains pending for the loader'
+);
 
-/* Already configured to a different, still-valid page: preserved untouched. */
+/* Existing valid merchant Shop choice survives activation. */
 reset_world();
-$other_id = wp_insert_post( array( 'post_type' => 'page', 'post_title' => 'Merchant Shop', 'post_name' => 'merchant-shop' ) );
-$GLOBALS['gl_options']['woocommerce_shop_page_id'] = $other_id;
+$merchant_shop_id = wp_insert_post( array( 'post_type' => 'page', 'post_title' => 'Merchant Shop', 'post_name' => 'merchant-shop' ) );
+$GLOBALS['gl_options']['woocommerce_shop_page_id'] = $merchant_shop_id;
 ( new Gloskin_Site_Core_Lifecycle_Service() )->activate();
-ok( (int) get_option( 'woocommerce_shop_page_id' ) === (int) $other_id, 'an existing valid merchant Shop page configuration is never overwritten' );
+ok( (int) get_option( 'woocommerce_shop_page_id' ) === (int) $merchant_shop_id, 'valid merchant Shop setting is never overwritten' );
 
-/* Configured to a page that no longer exists: treated as unconfigured. */
+/* Invalid Shop pointer is repaired to the existing/provisioned Gloskin Shop. */
 reset_world();
 $GLOBALS['gl_options']['woocommerce_shop_page_id'] = 999;
 ( new Gloskin_Site_Core_Lifecycle_Service() )->activate();
-$shop_page3 = get_page_by_path( 'shop', null, 'page' );
-ok( (int) get_option( 'woocommerce_shop_page_id' ) === (int) $shop_page3->ID, 'a shop_page_id pointing at a nonexistent page is safely realigned' );
+$shop_page = get_page_by_path( 'shop', null, 'page' );
+ok( (int) get_option( 'woocommerce_shop_page_id' ) === (int) $shop_page->ID, 'invalid Shop pointer is safely realigned' );
 
-/* No duplicate /shop/ page is ever created. */
+/* Baseline remains idempotent and does not provision Promo. */
 reset_world();
 ( new Gloskin_Site_Core_Lifecycle_Service() )->activate();
 ( new Gloskin_Site_Core_Lifecycle_Service() )->activate();
 $shop_pages = array_filter( $GLOBALS['gl_posts'], static function ( $post ) { return 'page' === $post->post_type && 'shop' === $post->post_name; } );
-ok( 1 === count( $shop_pages ), 'no duplicate /shop/ page is created on repeated activation' );
+ok( 1 === count( $shop_pages ), 'baseline never duplicates /shop/' );
+ok( null === get_page_by_path( 'promo', null, 'page' ), 'baseline does not take ownership of /promo/' );
 
-/* Existing-install upgrade path: an install already active on the old
- * 0.2.0 schema (its Gloskin /shop/ page already exists from that earlier
- * activate(), Woo Shop page still unconfigured because align_woo_shop_page()
- * did not exist yet) must actually run provisioning -- and therefore the
- * new shop-alignment logic -- on the very next authenticated admin_init,
- * because the schema constant moved to 0.2.1. */
+/* Old existing install gets only the safe baseline upgrade on admin_init. */
 reset_world();
-$GLOBALS['gl_can_manage_options'] = true;
 $existing_shop_id = wp_insert_post( array( 'post_type' => 'page', 'post_title' => 'Belanja', 'post_name' => 'shop' ) );
 $GLOBALS['gl_options'][ Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ] = '0.2.0';
 ( new Gloskin_Site_Core_Lifecycle_Service() )->maybe_upgrade();
-ok( (int) get_option( 'woocommerce_shop_page_id', 0 ) === (int) $existing_shop_id, '1. existing-install upgrade aligns Woo Shop page to the existing Gloskin /shop/ page' );
-ok( Gloskin_Site_Core_Lifecycle_Service::SCHEMA_VERSION === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ), '2. schema version becomes ' . Gloskin_Site_Core_Lifecycle_Service::SCHEMA_VERSION . ' after upgrade' );
-$upgrade_shop_pages = array_filter( $GLOBALS['gl_posts'], static function ( $post ) { return 'page' === $post->post_type && 'shop' === $post->post_name; } );
-ok( 1 === count( $upgrade_shop_pages ), '3. no duplicate /shop/ page is created by the upgrade path' );
+ok( (int) get_option( 'woocommerce_shop_page_id', 0 ) === (int) $existing_shop_id, 'old install baseline upgrade aligns existing /shop/' );
+ok(
+	Gloskin_Site_Core_Lifecycle_Service::BASE_SCHEMA_VERSION === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ),
+	'old install stops at baseline schema until explicit IA migration completes'
+);
 
-/* Same existing-install upgrade, but the merchant already configured a
- * different, valid Shop page before upgrading -- that choice must survive
- * the upgrade untouched even though the schema version still advances. */
+/* A current baseline install must not be continuously repaired/auto-consumed. */
 reset_world();
-$GLOBALS['gl_can_manage_options'] = true;
-wp_insert_post( array( 'post_type' => 'page', 'post_title' => 'Belanja', 'post_name' => 'shop' ) );
-$merchant_shop_id = wp_insert_post( array( 'post_type' => 'page', 'post_title' => 'Merchant Shop', 'post_name' => 'merchant-shop' ) );
-$GLOBALS['gl_options']['woocommerce_shop_page_id'] = $merchant_shop_id;
-$GLOBALS['gl_options'][ Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ] = '0.2.0';
+$GLOBALS['gl_options'][ Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ] = Gloskin_Site_Core_Lifecycle_Service::BASE_SCHEMA_VERSION;
 ( new Gloskin_Site_Core_Lifecycle_Service() )->maybe_upgrade();
-ok( (int) get_option( 'woocommerce_shop_page_id' ) === (int) $merchant_shop_id, 'existing-install upgrade preserves an already valid merchant-configured Shop page' );
-ok( Gloskin_Site_Core_Lifecycle_Service::SCHEMA_VERSION === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ), 'schema version still becomes ' . Gloskin_Site_Core_Lifecycle_Service::SCHEMA_VERSION . ' even when the shop page itself is left untouched' );
+ok(
+	Gloskin_Site_Core_Lifecycle_Service::BASE_SCHEMA_VERSION === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ),
+	'admin_init does not silently consume the 0.3.0 prototype IA migration'
+);
 
-/* A non-administrator request must not silently run provisioning. */
+/* Completed state is inert. */
+reset_world();
+$GLOBALS['gl_options'][ Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ] = Gloskin_Site_Core_Lifecycle_Service::SCHEMA_VERSION;
+( new Gloskin_Site_Core_Lifecycle_Service() )->maybe_upgrade();
+ok( array() === $GLOBALS['gl_posts'], 'completed schema performs no provisioning on subsequent admin_init' );
+
+/* Non-admin request never provisions. */
 reset_world();
 $GLOBALS['gl_can_manage_options'] = false;
 $GLOBALS['gl_options'][ Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ] = '0.2.0';
 ( new Gloskin_Site_Core_Lifecycle_Service() )->maybe_upgrade();
-ok( '0.2.0' === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ), 'maybe_upgrade() requires manage_options and does not silently provision otherwise' );
+ok( '0.2.0' === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ), 'maybe_upgrade requires manage_options' );
 
 echo "lifecycle shop page alignment contract: OK\n";

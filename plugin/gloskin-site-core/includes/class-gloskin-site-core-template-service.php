@@ -23,10 +23,10 @@ final class Gloskin_Site_Core_Template_Service {
 	private $form;
 
 	/**
-	 * @param string                                $plugin_root Plugin directory.
-	 * @param Gloskin_Site_Core_Navigation_Service $navigation Navigation service.
+	 * @param string                                 $plugin_root Plugin directory.
+	 * @param Gloskin_Site_Core_Navigation_Service  $navigation Navigation service.
 	 * @param Gloskin_Site_Core_WooCommerce_Adapter $woocommerce Woo adapter.
-	 * @param Gloskin_Site_Core_Form_Adapter       $form Form adapter.
+	 * @param Gloskin_Site_Core_Form_Adapter        $form Form adapter.
 	 */
 	public function __construct( $plugin_root, $navigation, $woocommerce, $form ) {
 		$this->plugin_root = untrailingslashit( $plugin_root );
@@ -43,23 +43,7 @@ final class Gloskin_Site_Core_Template_Service {
 		add_action( 'wp_head', array( $this, 'render_favicon_fallback' ) );
 	}
 
-	/**
-	 * Gloskin's branded favicon set, derived from the canonical logo's G
-	 * glyph, is the single canonical favicon owner -- it always renders,
-	 * regardless of any WordPress Site Icon. A Site Icon can be a stale
-	 * pre-rebrand Customizer setting nobody revisited, so deferring to its
-	 * mere presence previously let an old icon silently outrank the current
-	 * brand one. WordPress core's own wp_site_icon() output is unhooked from
-	 * wp_head here (its documented, stable core registration point --
-	 * `add_action( 'wp_head', 'wp_site_icon', 99 )` in
-	 * wp-includes/default-filters.php, unchanged since Site Icon shipped in
-	 * WP 4.3) before rendering ours, so the two never both emit competing
-	 * <link rel="icon"> tags. This runs at wp_head's default priority (10),
-	 * i.e. before wp_site_icon's priority 99, so the removal always lands
-	 * before WordPress would otherwise have dispatched it.
-	 *
-	 * @return void
-	 */
+	/** @return void */
 	public function render_favicon_fallback() {
 		remove_action( 'wp_head', 'wp_site_icon', 99 );
 		$png_sizes = array(
@@ -75,28 +59,19 @@ final class Gloskin_Site_Core_Template_Service {
 		echo '<link rel="apple-touch-icon" sizes="180x180" href="' . esc_url( $this->image_url( 'apple-touch-icon.png' ) ) . '">' . "\n";
 	}
 
-	/**
-	 * Build a URL for a file inside the canonical images asset directory.
-	 * Templates receive a ready-made URL rather than composing plugins_url()
-	 * themselves, keeping asset-path composition in one place.
-	 *
-	 * @param string $relative Filename within assets/images.
-	 * @return string
-	 */
+	/** @param string $relative Filename within assets/images. @return string */
 	private function image_url( $relative ) {
 		return plugins_url( 'assets/images/' . ltrim( $relative, '/' ), $this->plugin_root . '/gloskin-site-core.php' );
 	}
 
-	/**
-	 * @param array<string,string> $parts WordPress title parts.
-	 * @return array<string,string>
-	 */
+	/** @param array<string,string> $parts WordPress title parts. @return array<string,string> */
 	public function localize_document_title( $parts ) {
 		$view = $this->identify_view();
 		$titles = array(
 			'home'       => 'Gloskin',
 			'about'      => 'Tentang Gloskin',
 			'treatments' => 'Perawatan',
+			'promo'      => 'Promo',
 			'skincare'   => 'Skincare',
 			'clinics'    => 'Klinik',
 			'doctors'    => 'Dokter',
@@ -117,10 +92,7 @@ final class Gloskin_Site_Core_Template_Service {
 		return $parts;
 	}
 
-	/**
-	 * @param string $template Theme-resolved template.
-	 * @return string
-	 */
+	/** @param string $template Theme-resolved template. @return string */
 	public function resolve_template( $template ) {
 		$native_commerce = $this->woocommerce->is_commerce_request() && ! $this->woocommerce->is_shop_request();
 		$view            = $native_commerce ? '' : $this->identify_view();
@@ -154,37 +126,14 @@ final class Gloskin_Site_Core_Template_Service {
 		return is_readable( $shell ) ? $shell : $template;
 	}
 
-	/**
-	 * Keep WooCommerce authoritative for native commerce content while the
-	 * Gloskin shell owns the one site header/footer. Product routes render
-	 * through Woo's standard woocommerce_content() entrypoint; cart,
-	 * checkout and My Account retain their normal page/block/shortcode
-	 * content through the WordPress loop.
-	 *
-	 * Route-ownership audit (Catalog Discovery v1, section 10): this also
-	 * covers Woo's own native product_cat term archive (is_product_category()
-	 * makes is_woocommerce() true, and is_shop() is false for it, so it
-	 * renders here as 'woocommerce' -- Woo's generic archive loop). For the
-	 * seven canonical mapped categories this coexists with the Gloskin-
-	 * branded /skincare/{slug}/ landing page for the same category; both
-	 * currently resolve correctly to real, working content, so nothing is
-	 * broken. A redirect from the native term archive to the branded page
-	 * was deliberately NOT added here: it would be a canonicalization/SEO
-	 * decision (this task's own scope explicitly reserves SEO to the
-	 * provider owner), it would need to stay Woo-owned for any *unmapped*
-	 * future category, and "do not blindly redirect every Woo product
-	 * category" is an explicit constraint. If the merchant wants the native
-	 * archive to forward to the branded page, that is a follow-up decision
-	 * for a human, not something to introduce silently here.
-	 *
-	 * @return string
-	 */
+	/** @return string */
 	private function native_commerce_render_mode() {
 		if ( function_exists( 'is_woocommerce' ) && is_woocommerce() ) {
 			return 'woocommerce';
 		}
 		return 'page';
 	}
+
 	/** @return string */
 	private function identify_view() {
 		if ( is_404() ) {
@@ -213,8 +162,9 @@ final class Gloskin_Site_Core_Template_Service {
 				}
 				$views = array(
 					'home' => 'home', 'about' => 'about', 'treatments' => 'treatments',
-					'skincare' => 'skincare', 'clinics' => 'clinics', 'contact' => 'contact',
-					'insights' => 'insights', 'shop' => 'shop', 'doctors' => 'doctors',
+					'promo' => 'promo', 'skincare' => 'skincare', 'clinics' => 'clinics',
+					'contact' => 'contact', 'insights' => 'insights', 'shop' => 'shop',
+					'doctors' => 'doctors',
 				);
 				if ( isset( $views[ $post->post_name ] ) ) {
 					return $views[ $post->post_name ];
@@ -245,6 +195,7 @@ final class Gloskin_Site_Core_Template_Service {
 			case 'home': return $this->home_context();
 			case 'about': return $this->about_context();
 			case 'treatments': return $this->treatments_context();
+			case 'promo': return $this->promo_context();
 			case 'treatment': return $this->treatment_context();
 			case 'skincare': return $this->skincare_context();
 			case 'skincare-category': return $this->skincare_category_context();
@@ -264,29 +215,23 @@ final class Gloskin_Site_Core_Template_Service {
 	/** @return array<string,mixed> */
 	private function home_context() {
 		$page = $this->content_page( 'home' );
-		$hero = $this->hero_context( $page, __( 'Perawatan kulit, anti-aging, dan rambut yang dimulai dari konsultasi.', 'gloskin-site-core' ), __( 'Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengutamakan pemeriksaan bersama dokter sebelum menentukan langkah perawatan untuk kulit Anda.', 'gloskin-site-core' ), __( 'Cari Klinik Terdekat', 'gloskin-site-core' ), home_url( '/clinics/' ) );
-		/* Home's one video owner resolves a Media Library attachment through
-		 * the existing settings option and shared hero renderer. */
+		$hero = $this->hero_context(
+			$page,
+			__( 'Perawatan kulit, anti-aging, dan rambut yang dimulai dari konsultasi.', 'gloskin-site-core' ),
+			__( 'Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengutamakan pemeriksaan bersama dokter sebelum menentukan langkah perawatan untuk kulit Anda.', 'gloskin-site-core' ),
+			__( 'Cari Klinik Terdekat', 'gloskin-site-core' ),
+			home_url( '/clinics/' )
+		);
 		$hero = array_merge( $hero, $this->hero_background_video() );
-		/* Home's hero is a strict full-width native-video surface: no
-		 * video hero -- no eyebrow/heading/copy/CTA/split column. One
-		 * explicit presentation mode on the SAME existing hero renderer
-		 * (gloskin_ui1_render_hero()); every other hero_context() caller
-		 * above is untouched and keeps rendering 'standard'. Home never
-		 * passes its featured/page image into the video-only fallback path;
-		 * an absent/invalid native source produces the clean white state. */
 		$hero['mode'] = 'video-only';
 		$hero['media_id'] = 0;
 		return array(
-			'page' => $page,
-			'hero' => $hero,
+			'page'       => $page,
+			'hero'       => $hero,
 			'treatments' => $this->post_cards( Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 8 ),
-			'clinics' => $this->clinic_cards(),
-			'doctors' => $this->post_cards( Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE, 4 ),
-			'skincare' => $this->skincare_mappings(),
-			'products' => $this->woocommerce->products( 4 ),
-			'insights' => $this->insight_cards( 3 ),
-			'woo_ready' => $this->woocommerce->available(),
+			'skincare'   => $this->skincare_mappings(),
+			'products'   => $this->woocommerce->products( 4 ),
+			'woo_ready'  => $this->woocommerce->available(),
 		);
 	}
 
@@ -314,16 +259,16 @@ final class Gloskin_Site_Core_Template_Service {
 		);
 	}
 
-	/**
-	 * Consultation discovery context for the Treatments Hub. Fails
-	 * gracefully (empty 'paths') when fewer than 4 valid consultation
-	 * paths exist. The closing consultation CTA remains available regardless.
-	 *
-	 * Questions remain private/admin-managed data but are deliberately not
-	 * projected into this simple public finder.
-	 *
-	 * @return array{paths:array<int,array<string,mixed>>,products:array<int,array<string,mixed>>,disclaimer:string}
-	 */
+	/** @return array<string,mixed> */
+	private function promo_context() {
+		$page = $this->content_page( 'promo' );
+		return array(
+			'page' => $page,
+			'hero' => $this->hero_context( $page, __( 'Promo', 'gloskin-site-core' ), __( 'Temukan informasi promo Gloskin yang tersedia.', 'gloskin-site-core' ) ),
+		);
+	}
+
+	/** @return array{paths:array<int,array<string,mixed>>,products:array<int,array<string,mixed>>,disclaimer:string} */
 	private function consultation_context() {
 		$empty = array( 'paths' => array(), 'products' => array(), 'disclaimer' => '' );
 		if ( ! taxonomy_exists( Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY )
@@ -378,7 +323,6 @@ final class Gloskin_Site_Core_Template_Service {
 		if ( ! $products ) {
 			return $empty;
 		}
-
 		return array(
 			'paths'      => $paths,
 			'products'   => $products,
@@ -551,7 +495,7 @@ final class Gloskin_Site_Core_Template_Service {
 		);
 	}
 
-	/** Native WordPress post -> Gloskin single Insight context. */
+	/** @return array<string,mixed> */
 	private function insight_single_context() {
 		$post = get_queried_object();
 		if ( ! $post instanceof WP_Post || 'post' !== $post->post_type ) {
@@ -571,12 +515,12 @@ final class Gloskin_Site_Core_Template_Service {
 		);
 	}
 
-	/** Existing shell needs no synthetic content model for a real 404. */
+	/** @return array<string,mixed> */
 	private function not_found_context() {
 		return array();
 	}
 
-	/** Dedicated native-post card payload; clinic/treatment card semantics stay untouched. */
+	/** @param WP_Post $post Post. @return array<string,mixed> */
 	private function insight_card( $post ) {
 		if ( ! $post instanceof WP_Post ) {
 			return array();
@@ -595,7 +539,7 @@ final class Gloskin_Site_Core_Template_Service {
 		);
 	}
 
-	/** Conservative editorial reading-time estimate from native post_content. */
+	/** @param string $content Content. @return string */
 	private function reading_time_label( $content ) {
 		$text = trim( wp_strip_all_tags( strip_shortcodes( (string) $content ) ) );
 		$words = '' === $text ? 0 : count( preg_split( '/\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY ) );
@@ -607,53 +551,39 @@ final class Gloskin_Site_Core_Template_Service {
 		);
 	}
 
-	/**
-	 * Prefer current native category; fill any shortfall with latest posts.
-	 * Both queries are bounded and explicitly skip found-row counting.
-	 */
+	/** @param WP_Post $post Post. @param int $limit Limit. @return array<int,array<string,mixed>> */
 	private function related_insight_cards( $post, $limit ) {
 		$limit = max( 1, min( 3, absint( $limit ) ) );
 		$related_posts = array();
 		$exclude = array( (int) $post->ID );
 		$categories = wp_get_post_categories( $post->ID );
-
 		if ( $categories ) {
 			$query = new WP_Query( array(
-				'post_type' => 'post',
-				'post_status' => 'publish',
-				'posts_per_page' => $limit,
-				'post__not_in' => $exclude,
-				'cat' => (int) $categories[0],
-				'ignore_sticky_posts' => true,
-				'no_found_rows' => true,
+				'post_type' => 'post', 'post_status' => 'publish', 'posts_per_page' => $limit,
+				'post__not_in' => $exclude, 'cat' => (int) $categories[0],
+				'ignore_sticky_posts' => true, 'no_found_rows' => true,
 			) );
 			$related_posts = $query->posts;
 			foreach ( $related_posts as $related_post ) {
 				$exclude[] = (int) $related_post->ID;
 			}
 		}
-
 		$remaining = $limit - count( $related_posts );
 		if ( $remaining > 0 ) {
 			$fallback = new WP_Query( array(
-				'post_type' => 'post',
-				'post_status' => 'publish',
-				'posts_per_page' => $remaining,
-				'post__not_in' => $exclude,
-				'orderby' => 'date',
-				'order' => 'DESC',
-				'ignore_sticky_posts' => true,
-				'no_found_rows' => true,
+				'post_type' => 'post', 'post_status' => 'publish', 'posts_per_page' => $remaining,
+				'post__not_in' => $exclude, 'orderby' => 'date', 'order' => 'DESC',
+				'ignore_sticky_posts' => true, 'no_found_rows' => true,
 			) );
 			$related_posts = array_merge( $related_posts, $fallback->posts );
 		}
-
 		$cards = array();
 		foreach ( array_slice( $related_posts, 0, $limit ) as $related_post ) {
 			$cards[] = $this->insight_card( $related_post );
 		}
 		return $cards;
 	}
+
 	/** @return array<string,mixed> */
 	private function shop_context() {
 		$page  = $this->content_page( 'shop' );
@@ -672,13 +602,7 @@ final class Gloskin_Site_Core_Template_Service {
 		);
 	}
 
-	/**
-	 * Compute overall available price bounds for the shop SSR.
-	 * Uses a single aggregate SQL query against wc_product_meta_lookup;
-	 * no product hydration, no posts_per_page=-1.
-	 *
-	 * @return array{min:float,max:float}
-	 */
+	/** @return array{min:float,max:float} */
 	private function shop_price_bounds() {
 		global $wpdb;
 		if ( ! isset( $wpdb ) || ! ( $wpdb instanceof wpdb ) ) {
@@ -702,10 +626,6 @@ final class Gloskin_Site_Core_Template_Service {
 		return array( 'min' => $min, 'max' => $max );
 	}
 
-	/* -----------------------------------------------------------------
-	 * Commerce header context
-	 * ----------------------------------------------------------------- */
-
 	/** @return array<string,mixed> */
 	private function commerce_header_context() {
 		return array(
@@ -720,10 +640,6 @@ final class Gloskin_Site_Core_Template_Service {
 			'cart_cta_label'       => $this->woocommerce->direct_cart_cta_label(),
 		);
 	}
-
-	/* -----------------------------------------------------------------
-	 * REST API: live search and read-only Shop catalog projection
-	 * ----------------------------------------------------------------- */
 
 	/** @return void */
 	public function register_rest_routes() {
@@ -754,81 +670,37 @@ final class Gloskin_Site_Core_Template_Service {
 					'required' => false,
 					'type'     => 'string',
 					'default'  => '',
-					/* Root cause proven live on staging (2026-08-13): the REST
-					 * framework invokes a registered sanitize_callback as
-					 * call_user_func( $callback, $value, $request, $param ) --
-					 * three positional arguments. sanitize_title()'s own
-					 * signature is ( $title, $fallback_title = '', $context =
-					 * 'save' ), so that call silently binds the *request
-					 * object itself* to $fallback_title. Because sanitize_title()
-					 * returns $fallback_title whenever $title is empty, every
-					 * "Semua Produk" request (category value == '') made
-					 * get_param('category') resolve to the WP_REST_Request
-					 * object instead of a string; rest_shop_catalog()'s own
-					 * (string) cast of that object then fataled uncatchably
-					 * before any business logic ran. No 'sanitize_callback' is
-					 * registered here anymore -- rest_shop_catalog() already
-					 * calls sanitize_title() itself with a single, safe
-					 * argument, which is the only correct way to use it. */
 				),
 			),
 		) );
 	}
 
-	/**
-	 * @param WP_REST_Request $request Request object.
-	 * @return WP_REST_Response|WP_Error
-	 */
+	/** @param WP_REST_Request $request Request. @return WP_REST_Response|WP_Error */
 	public function rest_search( $request ) {
 		$query = (string) $request->get_param( 'q' );
 		if ( mb_strlen( $query ) < 2 || mb_strlen( $query ) > 100 ) {
 			return rest_ensure_response( array( 'groups' => array() ) );
 		}
-
 		$groups = array();
-
 		$treatments = $this->search_posts( $query, Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 3 );
-		if ( $treatments ) {
-			$groups[] = array( 'type' => 'perawatan', 'label' => 'Perawatan', 'items' => $treatments );
-		}
-
+		if ( $treatments ) { $groups[] = array( 'type' => 'perawatan', 'label' => 'Perawatan', 'items' => $treatments ); }
 		$clinics = $this->search_posts( $query, Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE, 3 );
-		if ( $clinics ) {
-			$groups[] = array( 'type' => 'klinik', 'label' => 'Klinik', 'items' => $clinics );
-		}
-
+		if ( $clinics ) { $groups[] = array( 'type' => 'klinik', 'label' => 'Klinik', 'items' => $clinics ); }
 		$doctors = $this->search_posts( $query, Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE, 3 );
-		if ( $doctors ) {
-			$groups[] = array( 'type' => 'dokter', 'label' => 'Dokter', 'items' => $doctors );
-		}
-
+		if ( $doctors ) { $groups[] = array( 'type' => 'dokter', 'label' => 'Dokter', 'items' => $doctors ); }
 		$products = $this->woocommerce->search_products( $query, 3 );
-		if ( $products ) {
-			$groups[] = array( 'type' => 'produk', 'label' => 'Produk', 'items' => $products );
-		}
-
+		if ( $products ) { $groups[] = array( 'type' => 'produk', 'label' => 'Produk', 'items' => $products ); }
 		$insights = $this->search_posts( $query, 'post', 2 );
-		if ( $insights ) {
-			$groups[] = array( 'type' => 'insight', 'label' => 'Insight', 'items' => $insights );
-		}
-
+		if ( $insights ) { $groups[] = array( 'type' => 'insight', 'label' => 'Insight', 'items' => $insights ); }
 		return rest_ensure_response( array( 'groups' => $groups ) );
 	}
 
-	/**
-	 * Read-only Shop projection. WooCommerce remains the sole product query
-	 * authority; this validates the existing skincare mapping, delegates to
-	 * products_paginated(), then renders the exact same partial SSR uses.
-	 *
-	 * @param WP_REST_Request $request Request object.
-	 * @return WP_REST_Response|WP_Error
-	 */
+	/** @param WP_REST_Request $request Request. @return WP_REST_Response|WP_Error */
 	public function rest_shop_catalog( $request ) {
 		$page     = max( 1, min( 1000, absint( $request->get_param( 'page' ) ) ) );
 		$category = sanitize_title( (string) $request->get_param( 'category' ) );
 		$mappings = $this->skincare_mappings();
 		$mapping  = null;
-
 		if ( '' !== $category ) {
 			foreach ( $mappings as $candidate ) {
 				$candidate_slug = isset( $candidate['woo_slug'] ) ? sanitize_title( (string) $candidate['woo_slug'] ) : '';
@@ -841,7 +713,6 @@ final class Gloskin_Site_Core_Template_Service {
 				return new WP_Error( 'gloskin_shop_category', __( 'Kategori produk tidak tersedia.', 'gloskin-site-core' ), array( 'status' => 400 ) );
 			}
 		}
-
 		$catalog = $this->woocommerce->products_paginated( $page, 12, $category );
 		$results = array(
 			'products'       => $catalog['products'],
@@ -864,10 +735,8 @@ final class Gloskin_Site_Core_Template_Service {
 			'max_pages' => (int) $catalog['max_pages'],
 		) );
 	}
-	/**
-	 * @param array<string,mixed> $results Shop result context.
-	 * @return string
-	 */
+
+	/** @param array<string,mixed> $results Shop result context. @return string */
 	private function render_shop_results( $results ) {
 		$partial = $this->plugin_root . '/templates/parts/shop-results.php';
 		if ( ! is_readable( $partial ) ) {
@@ -879,34 +748,24 @@ final class Gloskin_Site_Core_Template_Service {
 		return trim( (string) ob_get_clean() );
 	}
 
-	/**
-	 * @param string $query Search term.
-	 * @param string $post_type Post type.
-	 * @param int    $limit Max results.
-	 * @return array<int,array<string,mixed>>
-	 */
+	/** @param string $query Search. @param string $post_type Type. @param int $limit Limit. @return array<int,array<string,mixed>> */
 	private function search_posts( $query, $post_type, $limit ) {
 		$posts = get_posts( array(
-			'post_type'      => $post_type,
-			'post_status'    => 'publish',
-			'posts_per_page' => max( 1, min( absint( $limit ), 6 ) ),
-			's'              => $query,
+			'post_type' => $post_type, 'post_status' => 'publish',
+			'posts_per_page' => max( 1, min( absint( $limit ), 6 ) ), 's' => $query,
 		) );
 		$results = array();
 		foreach ( $posts as $post ) {
 			$results[] = array(
-				'id'       => (int) $post->ID,
-				'title'    => get_the_title( $post ),
-				'url'      => (string) get_permalink( $post ),
-				'excerpt'  => wp_trim_words( has_excerpt( $post ) ? get_the_excerpt( $post ) : $post->post_content, 12 ),
-				'image_id' => absint( get_post_thumbnail_id( $post->ID ) ),
-				'type'     => $post_type,
+				'id' => (int) $post->ID, 'title' => get_the_title( $post ), 'url' => (string) get_permalink( $post ),
+				'excerpt' => wp_trim_words( has_excerpt( $post ) ? get_the_excerpt( $post ) : $post->post_content, 12 ),
+				'image_id' => absint( get_post_thumbnail_id( $post->ID ) ), 'type' => $post_type,
 			);
 		}
 		return $results;
 	}
 
-	/** @param string $slug Page slug. @return WP_Post|null */
+	/** @param string $slug Slug. @return WP_Post|null */
 	private function content_page( $slug ) {
 		$current = get_queried_object();
 		if ( $current instanceof WP_Post && 'page' === $current->post_type && $slug === $current->post_name ) {
@@ -936,9 +795,7 @@ final class Gloskin_Site_Core_Template_Service {
 			'posts_per_page' => max( 1, absint( $limit ) ), 'orderby' => 'menu_order title', 'order' => 'ASC',
 		) );
 		$cards = array();
-		foreach ( $posts as $post ) {
-			$cards[] = $this->post_card( $post, $post_type );
-		}
+		foreach ( $posts as $post ) { $cards[] = $this->post_card( $post, $post_type ); }
 		return $cards;
 	}
 
@@ -969,9 +826,7 @@ final class Gloskin_Site_Core_Template_Service {
 			'orderby' => 'title', 'order' => 'ASC',
 		) );
 		$by_slug = array();
-		foreach ( $published as $post ) {
-			$by_slug[ $post->post_name ] = $post;
-		}
+		foreach ( $published as $post ) { $by_slug[ $post->post_name ] = $post; }
 		$cards = array();
 		foreach ( Gloskin_Site_Core_Content_Service::clinic_definitions() as $slug => $title ) {
 			if ( isset( $by_slug[ $slug ] ) ) {
@@ -1031,9 +886,7 @@ final class Gloskin_Site_Core_Template_Service {
 		$cards = array();
 		foreach ( $posts as $post ) {
 			$ids = $this->id_meta( $post->ID, $meta_key );
-			if ( in_array( absint( $target_id ), $ids, true ) ) {
-				$cards[] = $this->post_card( $post, $post_type );
-			}
+			if ( in_array( absint( $target_id ), $ids, true ) ) { $cards[] = $this->post_card( $post, $post_type ); }
 		}
 		return $cards;
 	}
@@ -1041,9 +894,7 @@ final class Gloskin_Site_Core_Template_Service {
 	/** @return array<int,int> */
 	private function id_meta( $post_id, $key ) {
 		$value = get_post_meta( $post_id, $key, true );
-		if ( ! is_array( $value ) ) {
-			return array();
-		}
+		if ( ! is_array( $value ) ) { return array(); }
 		return array_values( array_filter( array_map( 'absint', $value ) ) );
 	}
 
@@ -1053,9 +904,7 @@ final class Gloskin_Site_Core_Template_Service {
 		foreach ( Gloskin_Site_Core_Content_Service::skincare_definitions() as $slug => $label ) {
 			$page = get_page_by_path( 'skincare/' . $slug, OBJECT, 'page' );
 			$woo_slug = $page instanceof WP_Post ? (string) get_post_meta( $page->ID, 'gloskin_woo_category_slug', true ) : '';
-			if ( '' === $woo_slug ) {
-				$woo_slug = $slug;
-			}
+			if ( '' === $woo_slug ) { $woo_slug = $slug; }
 			$mappings[] = array(
 				'label' => $label, 'slug' => $slug,
 				'url' => $page instanceof WP_Post ? get_permalink( $page ) : home_url( '/skincare/' . $slug . '/' ),
@@ -1074,9 +923,7 @@ final class Gloskin_Site_Core_Template_Service {
 			'orderby' => 'date', 'order' => 'DESC',
 		) );
 		$cards = array();
-		foreach ( $posts as $post ) {
-			$cards[] = $this->insight_card( $post );
-		}
+		foreach ( $posts as $post ) { $cards[] = $this->insight_card( $post ); }
 		return $cards;
 	}
 
@@ -1096,33 +943,14 @@ final class Gloskin_Site_Core_Template_Service {
 		return in_array( $value, array( 'medical', 'modern', 'luxury' ), true ) ? $value : 'medical';
 	}
 
-	/**
-	 * Canonical Header Type selection -- same one settings option
-	 * (Gloskin_Site_Core_Admin_Service::SETTINGS_OPTION, read here through
-	 * the existing shared owner constant) already used by design_variant()
-	 * above, strict-allowlisted the same way. Missing/tampered/unknown
-	 * values always resolve to 'header-1', the current production header,
-	 * so an existing site's header composition never silently changes.
-	 *
-	 * @return string 'header-1'|'header-2'
-	 */
+	/** @return string */
 	private function header_variant() {
 		$settings = get_option( Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION, array() );
 		$value = isset( $settings['header_variant'] ) ? sanitize_key( $settings['header_variant'] ) : 'header-1';
 		return in_array( $value, array( 'header-1', 'header-2' ), true ) ? $value : 'header-1';
 	}
 
-	/**
-	 * Home video-only mode's native background video (task J/K/L): resolves
-	 * the same shared settings option's hero_video_media_id key to a real
-	 * WordPress Media Library attachment -- never a remote video
-	 * download, never a second settings option. Only MP4 and WebM Media
-	 * Library attachments resolve; anything else returns an empty sources
-	 * array and gloskin_ui1_render_hero() renders the clean white unavailable
-	 * state without an image/editorial fallback.
-	 *
-	 * @return array{sources:array<int,array{src:string,type:string}>}
-	 */
+	/** @return array{sources:array<int,array{src:string,type:string}>} */
 	private function hero_background_video() {
 		if ( ! class_exists( 'Gloskin_Site_Core_Admin_Service' ) ) {
 			require_once __DIR__ . '/class-gloskin-site-core-admin-service.php';
@@ -1130,9 +958,7 @@ final class Gloskin_Site_Core_Template_Service {
 		$defaults = class_exists( 'Gloskin_Site_Core_Admin_Service' ) ? Gloskin_Site_Core_Admin_Service::settings_defaults() : array( 'hero_video_media_id' => 0 );
 		$settings = array_merge( $defaults, get_option( Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION, $defaults ) );
 		$media_id = isset( $settings['hero_video_media_id'] ) ? absint( $settings['hero_video_media_id'] ) : 0;
-		if ( ! $media_id ) {
-			return array( 'sources' => array() );
-		}
+		if ( ! $media_id ) { return array( 'sources' => array() ); }
 		$url  = function_exists( 'wp_get_attachment_url' ) ? wp_get_attachment_url( $media_id ) : false;
 		$mime = function_exists( 'get_post_mime_type' ) ? get_post_mime_type( $media_id ) : '';
 		if ( ! $url || ! in_array( (string) $mime, array( 'video/mp4', 'video/webm' ), true ) ) {

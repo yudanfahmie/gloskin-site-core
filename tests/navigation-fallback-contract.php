@@ -2,10 +2,12 @@
 declare(strict_types=1);
 
 /**
- * Gloskin Catalog Discovery v1 -- proves the fallback primary navigation
- * includes Belanja right after Skincare and no longer carries the
- * redundant Kontak entry, while an editor-owned real WordPress menu at
- * gloskin-primary is never mutated by either change.
+ * Latest client-approved primary navigation contract.
+ *
+ * NavigationService itself remains read-only: it consumes one normalized native
+ * WordPress menu for desktop/mobile and exposes the same four-item fallback when
+ * no menu is assigned. The one-shot IA migration is the only owner allowed to
+ * mutate an existing primary menu.
  */
 
 define( 'ABSPATH', __DIR__ . '/' );
@@ -35,46 +37,36 @@ function untrailingslashit( $value ) { return rtrim( (string) $value, '/' ); }
 function wp_unslash( $value ) { return $value; }
 function __( $text, $domain = 'default' ) { return $text; }
 
-class Gloskin_Site_Core_Content_Service {
-	public static function skincare_definitions() {
-		return array( 'serum' => 'Serum', 'toner' => 'Toner' );
-	}
-	public static function clinic_definitions() {
-		return array( 'kebayoran-baru' => 'Kebayoran Baru' );
-	}
-}
-
 require dirname( __DIR__ ) . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-navigation-service.php';
 
 $nav = new Gloskin_Site_Core_Navigation_Service();
 
-/* H + I: fallback tree (no real menu assigned to gloskin-primary). */
+/* No real menu assigned: fallback is exactly the client-approved primary IA. */
 $GLOBALS['gl_has_menu'] = false;
 $tree   = $nav->tree();
 $labels = array_column( $tree, 'label' );
 
-ok( in_array( 'Belanja', $labels, true ), 'H: fallback nav includes Belanja' );
-$skincare_index = array_search( 'Skincare', $labels, true );
-$belanja_index  = array_search( 'Belanja', $labels, true );
-ok( false !== $skincare_index && $belanja_index === $skincare_index + 1, 'H: Belanja sits immediately after Skincare in the fallback nav' );
-ok( ! in_array( 'Kontak', $labels, true ), 'I: the redundant fallback Kontak entry is removed' );
-ok( array( 'Tentang Gloskin', 'Perawatan', 'Skincare', 'Belanja', 'Klinik', 'Dokter', 'Insight' ) === $labels, 'H+I: fallback nav matches the exact expected order' );
+ok(
+	array( 'Perawatan', 'Promo', 'Skincare', 'Tentang Gloskin' ) === $labels,
+	'fallback primary nav must be Perawatan, Promo, Skincare, Tentang Gloskin'
+);
+foreach ( array( 'Belanja', 'Klinik', 'Dokter', 'Insight', 'Kontak', 'Beranda' ) as $support_label ) {
+	ok( ! in_array( $support_label, $labels, true ), "support destination leaked into primary fallback: {$support_label}" );
+}
 
-/* J: an editor-owned real WordPress menu is never mutated -- when
- * has_nav_menu() is true, tree() must return exactly the real menu items,
- * including a Kontak item the editor deliberately kept, with no Belanja
- * silently injected and no items removed. */
+/* NavigationService remains a read-only consumer of editor/native menu state. */
 $GLOBALS['gl_has_menu']   = true;
 $GLOBALS['gl_menu_items'] = array(
-	(object) array( 'ID' => 1, 'menu_item_parent' => '0', 'title' => 'Kontak', 'url' => 'https://example.test/contact/', 'classes' => array() ),
-	(object) array( 'ID' => 2, 'menu_item_parent' => '0', 'title' => 'Custom Editor Item', 'url' => 'https://example.test/custom/', 'classes' => array() ),
+	(object) array( 'ID' => 1, 'menu_item_parent' => '0', 'title' => 'Custom Editor Item', 'url' => 'https://example.test/custom/', 'classes' => array() ),
+	(object) array( 'ID' => 2, 'menu_item_parent' => '0', 'title' => 'Promo Lama', 'url' => 'https://example.test/promo/', 'classes' => array() ),
+	(object) array( 'ID' => 3, 'menu_item_parent' => '0', 'title' => 'Partner Shop', 'url' => 'https://partner.example/shop/', 'classes' => array() ),
 );
 $real_tree   = $nav->tree();
 $real_labels = array_column( $real_tree, 'label' );
 
-ok( 2 === count( $real_tree ), 'J: real menu item count is not mutated' );
-ok( in_array( 'Kontak', $real_labels, true ), 'J: an editor-owned real menu keeps its own Kontak item untouched' );
-ok( in_array( 'Custom Editor Item', $real_labels, true ), 'J: editor-owned custom menu item label is preserved verbatim' );
-ok( ! in_array( 'Belanja', $real_labels, true ), 'J: Gloskin never injects Belanja into a real menu that does not already have it' );
+ok( 3 === count( $real_tree ), 'NavigationService must not inject/delete native menu items at render time' );
+ok( in_array( 'Custom Editor Item', $real_labels, true ), 'custom editor item must remain verbatim' );
+ok( in_array( 'Promo', $real_labels, true ), 'known same-site Promo route label should normalize publicly without mutating storage' );
+ok( in_array( 'Partner Shop', $real_labels, true ), 'external custom label must remain editor-owned even when its path resembles /shop/' );
 
 echo "navigation fallback contract: OK\n";
