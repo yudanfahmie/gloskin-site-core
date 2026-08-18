@@ -17,9 +17,11 @@ views = [
 viewports = [390, 760, 782, 1024, 1440, 1920, 2560]
 required_sections = {
     'home': ['home-orientation', 'home-treatments', 'home-promo', 'home-skincare', 'home-about', 'home-closing'],
-    'about': ['about-story', 'about-clinics', 'about-closing'],
+    # About story/principles/team/network are factual and therefore optional in sparse fixtures.
+    'about': ['about-closing'],
     'treatments': ['treatments-closing'],
-    'promo': ['promo-content', 'promo-pathways'],
+    # Native Promo campaign and closing CTA remain even when factual Page media/content is empty.
+    'promo': ['promo-campaign', 'promo-closing'],
     'treatment': ['treatment-orientation', 'treatment-closing'],
     'skincare': ['skincare-intro', 'skincare-categories', 'skincare-pathways'],
     'skincare-category': ['skincare-category-products', 'skincare-category-closing'],
@@ -31,7 +33,7 @@ required_sections = {
     'shop': ['shop-products'],
     'contact': ['contact-clinics'],
 }
-closing_views = {'home', 'about', 'treatments', 'treatment', 'skincare-category', 'clinics', 'clinic', 'doctors', 'doctor'}
+closing_views = {'home', 'about', 'treatments', 'promo', 'treatment', 'skincare-category', 'clinics', 'clinic', 'doctors', 'doctor'}
 
 
 def fixture(view: str) -> str:
@@ -69,6 +71,8 @@ with sync_playwright() as p:
 
             if page.locator('main h1').count() != 1:
                 raise SystemExit(f'{width}/{view}: expected exactly one main H1')
+            if not page.locator('main h1').is_visible():
+                raise SystemExit(f'{width}/{view}: main H1 must be visible')
             if page.evaluate('document.documentElement.scrollWidth - window.innerWidth') > 1:
                 raise SystemExit(f'{width}/{view}: horizontal overflow')
 
@@ -79,8 +83,13 @@ with sync_playwright() as p:
             if view in closing_views and page.locator('[data-gloskin-composition="closing-cta"]').count() != 1:
                 raise SystemExit(f'{width}/{view}: closing CTA contract failed')
 
-            if view == 'home' and page.locator('.gloskin-ui1-hero').count() != 1:
-                raise SystemExit(f'{width}/home: expected exactly one primary hero')
+            if view == 'home':
+                if page.locator('.gloskin-ui1-hero').count() != 1:
+                    raise SystemExit(f'{width}/home: expected exactly one primary hero')
+                if page.locator('.gloskin-ui1-hero__copy').count() != 1 or page.locator('.gloskin-ui1-hero__actions a').count() != 1:
+                    raise SystemExit(f'{width}/home: visible hero copy/CTA hierarchy missing')
+            if view == 'promo' and page.locator('.gloskin-ui1-promo-campaign').count() != 1:
+                raise SystemExit(f'{width}/promo: expected one native campaign composition')
             if view == 'clinic':
                 sparse_or_factual = page.locator('[data-gloskin-section="clinic-sparse"], [data-gloskin-section="clinic-facts"]')
                 if sparse_or_factual.count() != 1:

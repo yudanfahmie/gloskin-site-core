@@ -1,20 +1,19 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-/* One Home hero only. The existing hero context remains the sole Media Library
- * video owner and already contains the page's one semantic H1 as a screen-reader
- * heading in video-only mode. No second editorial/video hero is rendered. */
+/* One Home hero only. TemplateService supplies the visible campaign H1/copy/CTA
+ * and may enhance the same media column with the existing native Media Library
+ * video controller. There is no second hero or second video service. */
 gloskin_ui1_render_hero( $gloskin_context['hero'] );
+/* Home no longer consumes clinic preview rows at all, so no gloskin_ui1_real_cards
+ * filtering is needed here; factual clinic presentation stays on About/Clinics. */
 ?>
 <section class="gloskin-ui1-section" data-gloskin-section="home-orientation"><div class="gloskin-ui1-container">
 	<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?><div class="gloskin-ui1-container--narrow gloskin-ui1-section__intro"><?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?></div><?php endif; ?>
 	<?php gloskin_ui1_render_editorial_split( __( 'Mengapa Gloskin', 'gloskin-site-core' ), __( 'Konsultasi dulu, baru menentukan perawatan', 'gloskin-site-core' ), __( 'Setiap kunjungan dimulai dari pemeriksaan dan diskusi bersama dokter di klinik Gloskin, bukan dari katalog pilihan instan. Rencana perawatan disesuaikan dengan kondisi kulit, rambut, atau kebutuhan estetika masing-masing pasien, dengan fokus pada kualitas kulit yang bertahan lama.', 'gloskin-site-core' ), __( 'Tentang Gloskin', 'gloskin-site-core' ), home_url( '/about/' ), 'editorial', true ); ?>
 </div></section>
 <?php if ( $gloskin_context['treatments'] ) : ?><section class="gloskin-ui1-section gloskin-ui1-section--soft" data-gloskin-section="home-treatments"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_section_heading( __( 'Pilihan Perawatan', 'gloskin-site-core' ), __( 'Kenali ragam perawatan Gloskin dan temukan pilihan yang relevan untuk dibahas saat konsultasi.', 'gloskin-site-core' ) ); gloskin_ui1_render_card_grid( $gloskin_context['treatments'], 'treatment' ); ?><p class="gloskin-ui1-section__action"><a class="gloskin-ui1-text-link" href="<?php echo esc_url( home_url( '/treatments/' ) ); ?>"><?php echo esc_html__( 'Jelajahi Perawatan', 'gloskin-site-core' ); ?> →</a></p></div></section><?php endif; ?>
-<section id="promo" class="gloskin-ui1-section gloskin-ui1-section--contrast" data-gloskin-section="home-promo"><div class="gloskin-ui1-container">
-	<?php gloskin_ui1_render_section_heading( __( 'Promo', 'gloskin-site-core' ), __( 'Temukan informasi promo Gloskin pada halaman Promo.', 'gloskin-site-core' ) ); ?>
-	<p class="gloskin-ui1-section__action"><a class="gloskin-ui1-button gloskin-ui1-button--light" href="<?php echo esc_url( home_url( '/promo/' ) ); ?>"><?php echo esc_html__( 'Lihat Promo', 'gloskin-site-core' ); ?></a></p>
-</div></section>
+<div data-gloskin-section="home-promo"><?php gloskin_ui1_render_promo_campaign( (array) $gloskin_context['promo'], 'h2', true ); ?></div>
 <section class="gloskin-ui1-section gloskin-ui1-section--soft" data-gloskin-section="home-skincare"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_section_heading( __( 'Skincare Gloskin', 'gloskin-site-core' ), __( 'Pilih kategori sesuai kebutuhan kulit harian Anda.', 'gloskin-site-core' ) ); ?><div class="gloskin-ui1-grid gloskin-ui1-grid--categories"><?php foreach ( $gloskin_context['skincare'] as $gloskin_mapping ) { gloskin_ui1_render_category_link( $gloskin_mapping ); } ?></div><p class="gloskin-ui1-section__action"><a class="gloskin-ui1-text-link" href="<?php echo esc_url( home_url( '/skincare/' ) ); ?>"><?php echo esc_html__( 'Jelajahi Skincare', 'gloskin-site-core' ); ?> →</a></p></div></section>
 <?php if ( $gloskin_context['products'] ) : ?><section class="gloskin-ui1-section" data-gloskin-section="home-products"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_section_heading( __( 'Pilihan Produk', 'gloskin-site-core' ), __( 'Lihat produk skincare Gloskin yang tersedia untuk perawatan harian.', 'gloskin-site-core' ) ); ?><div class="gloskin-ui1-grid gloskin-ui1-grid--cards gloskin-ui1-product-grid" data-gloskin-product-grid><?php foreach ( $gloskin_context['products'] as $gloskin_product ) { gloskin_ui1_render_product_card( $gloskin_product ); } ?></div><p class="gloskin-ui1-section__action"><a class="gloskin-ui1-text-link" href="<?php echo esc_url( home_url( '/shop/' ) ); ?>"><?php echo esc_html__( 'Lihat Semua Produk', 'gloskin-site-core' ); ?> →</a></p></div></section><?php endif; ?>
 <section class="gloskin-ui1-section gloskin-ui1-section--soft" data-gloskin-section="home-about"><div class="gloskin-ui1-container">

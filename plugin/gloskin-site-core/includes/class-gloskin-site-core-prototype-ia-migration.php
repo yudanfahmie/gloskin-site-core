@@ -11,12 +11,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- domain errors are escaped by the admin/AJAX boundary.
 final class Gloskin_Site_Core_Prototype_IA_Migration {
-	const REVISION      = '2026-08-18';
-	const STATE_OPTION  = 'gloskin_site_core_prototype_ia_20260818_state';
-	const LOCK_OPTION   = 'gloskin_site_core_prototype_ia_20260818_lock';
-	const MENU_LOCATION = 'gloskin-primary';
-	const MENU_NAME     = 'Gloskin Primary';
-	const LOCK_TTL      = 300;
+	const REVISION            = '2026-08-18';
+	const STATE_OPTION        = 'gloskin_site_core_prototype_ia_20260818_state';
+	const LOCK_OPTION         = 'gloskin_site_core_prototype_ia_20260818_lock';
+	const MENU_LOCATION       = 'gloskin-primary';
+	const MENU_NAME           = 'Gloskin Primary';
+	const PRESERVED_MENU_NAME = 'Gloskin Primary Preserved 2026-08-18';
+	const PRESERVED_SOURCE_META = '_gloskin_preserved_source_menu_item';
+	const PRESERVED_REVISION_META = '_gloskin_preserved_menu_revision';
+	const LOCK_TTL            = 300;
 
 	/** @return array<int,array{key:string,label:string}> */
 	private function steps() {
@@ -33,17 +36,19 @@ final class Gloskin_Site_Core_Prototype_IA_Migration {
 		$state = get_option( self::STATE_OPTION, array() );
 		$state = is_array( $state ) ? $state : array();
 		$defaults = array(
-			'revision'           => self::REVISION,
-			'status'             => 'pending',
-			'next_step_index'    => 0,
-			'processed_products' => 0,
-			'expected_products'  => count( $this->steps() ),
-			'current_step'       => 'Siap dijalankan',
-			'last_error'         => '',
-			'page_ids'           => array(),
-			'menu_id'            => 0,
-			'commerce_snapshot'  => array(),
-			'updated_at'         => 0,
+			'revision'             => self::REVISION,
+			'status'               => 'pending',
+			'next_step_index'      => 0,
+			'processed_products'   => 0,
+			'expected_products'    => count( $this->steps() ),
+			'current_step'         => 'Siap dijalankan',
+			'last_error'           => '',
+			'page_ids'             => array(),
+			'menu_id'              => 0,
+			'preserved_menu_id'    => 0,
+			'preserved_item_count' => 0,
+			'commerce_snapshot'    => array(),
+			'updated_at'           => 0,
 		);
 		$state = array_merge( $defaults, $state );
 		if ( self::REVISION !== (string) $state['revision'] ) {
@@ -134,7 +139,10 @@ final class Gloskin_Site_Core_Prototype_IA_Migration {
 					$state['page_ids'] = $this->ensure_approved_pages();
 					break;
 				case 'menu':
-					$state['menu_id'] = $this->normalize_primary_menu( (array) $state['page_ids'] );
+					$menu_result = $this->normalize_primary_menu( (array) $state['page_ids'] );
+					$state['menu_id']              = absint( $menu_result['menu_id'] );
+					$state['preserved_menu_id']    = absint( $menu_result['preserved_menu_id'] );
+					$state['preserved_item_count'] = absint( $menu_result['preserved_item_count'] );
 					break;
 				case 'verify':
 					$state['status'] = 'verifying';
@@ -189,21 +197,51 @@ final class Gloskin_Site_Core_Prototype_IA_Migration {
 			}
 		}
 
-		$front_id = (int) get_option( 'page_on_front', 0 );
-		$front    = $front_id > 0 ? get_post( $front_id ) : null;
-		if ( ! ( $front instanceof WP_Post ) || 'trash' === $front->post_status ) {
-			update_option( 'show_on_front', 'page' );
-			update_option( 'page_on_front', $ids['home'] );
-		}
+		$this->normalize_front_page( absint( $ids['home'] ) );
 		return $ids;
 	}
 
 	/**
-	 * Normalize only known same-site Gloskin top-level IA. Unknown editor-created
-	 * or external items survive and are positioned after the four destinations.
+	 * Normalize only when ownership is provable. An unset, invalid or trashed
+	 * front-page configuration is safely pointed at canonical Home. A valid
+	 * non-Home Page is editor-owned/ambiguous from the migration's perspective,
+	 * so it is preserved and the run stops with an actionable warning instead
+	 * of guessing or silently replacing it.
+	 *
+	 * @param int $home_id Canonical Home Page ID.
+	 * @return void
+	 */
+	private function normalize_front_page( $home_id ) {
+		$front_id = (int) get_option( 'page_on_front', 0 );
+		$front    = $front_id > 0 ? get_post( $front_id ) : null;
+
+		if ( $front_id === $home_id ) {
+			if ( 'page' !== (string) get_option( 'show_on_front', 'posts' ) ) {
+				update_option( 'show_on_front', 'page' );
+			}
+			return;
+		}
+
+		if ( ! ( $front instanceof WP_Post ) || 'page' !== $front->post_type || 'trash' === $front->post_status ) {
+			update_option( 'show_on_front', 'page' );
+			update_option( 'page_on_front', $home_id );
+			return;
+		}
+
+		throw new RuntimeException(
+			'Halaman depan saat ini adalah "' . (string) $front->post_title . '" (#' . absint( $front->ID ) . '). Kepemilikannya tidak dapat dibuktikan sebagai canonical Home Gloskin, sehingga konfigurasi dipertahankan. Review page_on_front lalu lanjutkan migrasi.'
+		);
+	}
+
+	/**
+	 * Normalize the assigned primary menu to exactly the four approved top-level
+	 * destinations. Before any original nav_menu_item is removed from primary,
+	 * the complete old menu snapshot (including editor items and hierarchy) is
+	 * copied idempotently into one deterministic unassigned preservation menu.
+	 * Pages are never deleted by this operation.
 	 *
 	 * @param array<string,int> $page_ids Approved page IDs.
-	 * @return int
+	 * @return array{menu_id:int,preserved_menu_id:int,preserved_item_count:int}
 	 */
 	private function normalize_primary_menu( array $page_ids ) {
 		$locations = get_theme_mod( 'nav_menu_locations', array() );
@@ -222,6 +260,8 @@ final class Gloskin_Site_Core_Prototype_IA_Migration {
 
 		$items = wp_get_nav_menu_items( $menu_id );
 		$items = is_array( $items ) ? $items : array();
+		$preserved_menu_id = $this->preserve_primary_menu_snapshot( $items );
+
 		$target = array(
 			'treatments' => array( 'label' => 'Perawatan', 'path' => '/treatments/' ),
 			'promo'      => array( 'label' => 'Promo', 'path' => '/promo/' ),
@@ -229,25 +269,14 @@ final class Gloskin_Site_Core_Prototype_IA_Migration {
 			'about'      => array( 'label' => 'Tentang Gloskin', 'path' => '/about/' ),
 		);
 		$target_existing = array();
-		$delete_ids      = array();
-
 		foreach ( $items as $item ) {
-			$path = $this->menu_path( (string) $item->url );
-			$key  = $this->target_key_for_path( $path );
-			if ( '' !== $key ) {
-				if ( ! isset( $target_existing[ $key ] ) ) {
-					$target_existing[ $key ] = absint( $item->ID );
-				} else {
-					$delete_ids[] = absint( $item->ID );
-				}
-				continue;
-			}
-			if ( $this->is_obsolete_primary_path( $path ) ) {
-				$delete_ids[] = absint( $item->ID );
+			$key = $this->target_key_for_path( $this->menu_path( (string) $item->url ) );
+			if ( '' !== $key && ! isset( $target_existing[ $key ] ) ) {
+				$target_existing[ $key ] = absint( $item->ID );
 			}
 		}
 
-		$position = 1;
+		$position      = 1;
 		$canonical_ids = array();
 		foreach ( $target as $key => $definition ) {
 			$item_id = isset( $target_existing[ $key ] ) ? absint( $target_existing[ $key ] ) : 0;
@@ -271,47 +300,119 @@ final class Gloskin_Site_Core_Prototype_IA_Migration {
 			$position++;
 		}
 
-		$delete_ids = array_values( array_unique( array_filter( $delete_ids ) ) );
-		foreach ( $delete_ids as $delete_id ) {
-			if ( 'nav_menu_item' === get_post_type( $delete_id ) ) {
-				wp_delete_post( $delete_id, true );
-			}
-		}
-
-		$remaining = wp_get_nav_menu_items( $menu_id );
-		$remaining = is_array( $remaining ) ? $remaining : array();
-		foreach ( $remaining as $item ) {
+		foreach ( $items as $item ) {
 			$item_id = absint( $item->ID );
 			if ( in_array( $item_id, $canonical_ids, true ) ) {
 				continue;
 			}
-			$parent = absint( $item->menu_item_parent );
-			if ( $parent && in_array( $parent, $delete_ids, true ) ) {
-				$parent = 0;
+			if ( 'nav_menu_item' === get_post_type( $item_id ) ) {
+				wp_delete_post( $item_id, true );
 			}
-			$preserved = wp_update_nav_menu_item(
-				$menu_id,
-				$item_id,
-				array(
-					'menu-item-title'     => (string) $item->title,
-					'menu-item-url'       => (string) $item->url,
-					'menu-item-type'      => 'custom' === (string) $item->type ? 'custom' : (string) $item->type,
-					'menu-item-object'    => (string) $item->object,
-					'menu-item-object-id' => absint( $item->object_id ),
-					'menu-item-status'    => 'publish',
-					'menu-item-parent-id' => $parent,
-					'menu-item-position'  => $position,
-				)
-			);
-			if ( is_wp_error( $preserved ) || ! $preserved ) {
-				throw new RuntimeException( 'Gagal mempertahankan item menu editor: ' . (string) $item->title . '.' );
-			}
-			$position++;
 		}
 
 		$locations[ self::MENU_LOCATION ] = $menu_id;
 		set_theme_mod( 'nav_menu_locations', $locations );
-		return $menu_id;
+		return array(
+			'menu_id'              => $menu_id,
+			'preserved_menu_id'    => $preserved_menu_id,
+			'preserved_item_count' => count( $items ),
+		);
+	}
+
+	/**
+	 * @param array<int,WP_Post> $items Original primary-menu items.
+	 * @return int Preservation menu ID, or 0 when there was nothing to preserve.
+	 */
+	private function preserve_primary_menu_snapshot( array $items ) {
+		if ( ! $items ) {
+			return 0;
+		}
+
+		$preserved = wp_get_nav_menu_object( self::PRESERVED_MENU_NAME );
+		if ( ! $preserved ) {
+			$created = wp_create_nav_menu( self::PRESERVED_MENU_NAME );
+			if ( is_wp_error( $created ) ) {
+				throw new RuntimeException( 'Gagal membuat menu preservasi: ' . $created->get_error_message() );
+			}
+			$preserved = wp_get_nav_menu_object( absint( $created ) );
+		}
+		if ( ! $preserved ) {
+			throw new RuntimeException( 'Menu preservasi tidak dapat diverifikasi.' );
+		}
+		$preserved_menu_id = absint( $preserved->term_id );
+
+		$existing = wp_get_nav_menu_items( $preserved_menu_id );
+		$existing = is_array( $existing ) ? $existing : array();
+		$source_to_copy = array();
+		foreach ( $existing as $copy ) {
+			$source_id = absint( get_post_meta( $copy->ID, self::PRESERVED_SOURCE_META, true ) );
+			$revision  = (string) get_post_meta( $copy->ID, self::PRESERVED_REVISION_META, true );
+			if ( $source_id && self::REVISION === $revision ) {
+				$source_to_copy[ $source_id ] = absint( $copy->ID );
+			}
+		}
+
+		$position = 1;
+		foreach ( $items as $item ) {
+			$source_id = absint( $item->ID );
+			$copy_id   = isset( $source_to_copy[ $source_id ] ) ? absint( $source_to_copy[ $source_id ] ) : 0;
+			$result    = wp_update_nav_menu_item(
+				$preserved_menu_id,
+				$copy_id,
+				$this->menu_item_copy_args( $item, 0, $position )
+			);
+			if ( is_wp_error( $result ) || ! $result ) {
+				throw new RuntimeException( 'Gagal mempreservasi item menu editor: ' . (string) $item->title . '.' );
+			}
+			$copy_id = absint( $result );
+			$source_to_copy[ $source_id ] = $copy_id;
+			update_post_meta( $copy_id, self::PRESERVED_SOURCE_META, $source_id );
+			update_post_meta( $copy_id, self::PRESERVED_REVISION_META, self::REVISION );
+			$position++;
+		}
+
+		$position = 1;
+		foreach ( $items as $item ) {
+			$source_id   = absint( $item->ID );
+			$source_parent = absint( $item->menu_item_parent );
+			$copy_id     = absint( $source_to_copy[ $source_id ] ?? 0 );
+			$copy_parent = $source_parent && isset( $source_to_copy[ $source_parent ] ) ? absint( $source_to_copy[ $source_parent ] ) : 0;
+			$result = wp_update_nav_menu_item(
+				$preserved_menu_id,
+				$copy_id,
+				$this->menu_item_copy_args( $item, $copy_parent, $position )
+			);
+			if ( is_wp_error( $result ) || ! $result ) {
+				throw new RuntimeException( 'Gagal mempertahankan hierarki menu editor: ' . (string) $item->title . '.' );
+			}
+			$position++;
+		}
+
+		return $preserved_menu_id;
+	}
+
+	/**
+	 * @param WP_Post $item Source menu item.
+	 * @param int     $parent_id Copied parent ID.
+	 * @param int     $position Menu position.
+	 * @return array<string,mixed>
+	 */
+	private function menu_item_copy_args( $item, $parent_id, $position ) {
+		return array(
+			'menu-item-title'       => (string) $item->title,
+			'menu-item-url'         => (string) $item->url,
+			'menu-item-description' => isset( $item->description ) ? (string) $item->description : '',
+			'menu-item-attr-title'  => isset( $item->attr_title ) ? (string) $item->attr_title : '',
+			'menu-item-target'      => isset( $item->target ) ? (string) $item->target : '',
+			'menu-item-classes'     => isset( $item->classes ) ? (array) $item->classes : array(),
+			'menu-item-xfn'         => isset( $item->xfn ) ? (string) $item->xfn : '',
+			'menu-item-type'        => isset( $item->type ) && '' !== (string) $item->type ? (string) $item->type : 'custom',
+			'menu-item-object'      => isset( $item->object ) ? (string) $item->object : 'custom',
+			'menu-item-object-id'   => isset( $item->object_id ) ? absint( $item->object_id ) : 0,
+			'menu-item-status'      => 'publish',
+			'menu-item-parent-id'   => absint( $parent_id ),
+			'menu-item-position'    => absint( $position ),
+		);
 	}
 
 	/** @param array<string,mixed> $state State. @return void */
@@ -330,18 +431,26 @@ final class Gloskin_Site_Core_Prototype_IA_Migration {
 		$top     = array();
 		foreach ( $items as $item ) {
 			if ( 0 !== absint( $item->menu_item_parent ) ) {
-				continue;
+				throw new RuntimeException( 'Primary navigation masih memiliki submenu tak terduga setelah normalisasi.' );
 			}
 			$path = $this->menu_path( (string) $item->url );
-			if ( '' !== $this->target_key_for_path( $path ) ) {
-				$top[] = $path;
+			if ( '' === $this->target_key_for_path( $path ) ) {
+				throw new RuntimeException( 'Primary navigation masih memiliki item di luar empat destinasi approved: ' . (string) $item->title . '.' );
 			}
-			if ( $this->is_obsolete_primary_path( $path ) ) {
-				throw new RuntimeException( 'Menu lama masih berada di primary navigation: ' . $path );
-			}
+			$top[] = $path;
 		}
-		if ( array( '/treatments/', '/promo/', '/skincare/', '/about/' ) !== array_slice( $top, 0, 4 ) ) {
-			throw new RuntimeException( 'Urutan primary navigation belum sesuai revisi client.' );
+		if ( array( '/treatments/', '/promo/', '/skincare/', '/about/' ) !== $top ) {
+			throw new RuntimeException( 'Primary navigation harus tepat Perawatan, Promo, Skincare, Tentang Gloskin tanpa item tambahan.' );
+		}
+
+		$preserved_count = absint( $state['preserved_item_count'] ?? 0 );
+		if ( $preserved_count > 0 ) {
+			$preserved_menu_id = absint( $state['preserved_menu_id'] ?? 0 );
+			$preserved_items   = $preserved_menu_id ? wp_get_nav_menu_items( $preserved_menu_id ) : array();
+			$preserved_items   = is_array( $preserved_items ) ? $preserved_items : array();
+			if ( count( $preserved_items ) < $preserved_count ) {
+				throw new RuntimeException( 'Snapshot menu editor tidak lengkap; migrasi dihentikan sebelum finalize.' );
+			}
 		}
 
 		if ( $this->commerce_page_snapshot() !== (array) $state['commerce_snapshot'] ) {
@@ -419,15 +528,6 @@ final class Gloskin_Site_Core_Prototype_IA_Migration {
 		return isset( $targets[ $path ] ) ? $targets[ $path ] : '';
 	}
 
-	/** @param string $path Path. @return bool */
-	private function is_obsolete_primary_path( $path ) {
-		return in_array(
-			$path,
-			array( '/', '/shop/', '/clinics/', '/doctors/', '/insights/', '/contact/' ),
-			true
-		);
-	}
-
 	/** @param int $index Step index. @return string */
 	private function step_label( $index ) {
 		$steps = $this->steps();
@@ -448,6 +548,7 @@ final class Gloskin_Site_Core_Prototype_IA_Migration {
 			'current_step'       => (string) $state['current_step'],
 			'last_error'         => (string) $state['last_error'],
 			'menu_id'            => absint( $state['menu_id'] ),
+			'preserved_menu_id'  => absint( $state['preserved_menu_id'] ?? 0 ),
 		);
 	}
 

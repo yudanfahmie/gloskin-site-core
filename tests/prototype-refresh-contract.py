@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Static regression contract for the approved 2026-08-18 prototype refresh."""
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -12,21 +13,34 @@ def require(condition, message):
         raise AssertionError(message)
 
 css = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-prototype-refresh.css")
+consultation_css = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-consultation.css")
+consultation_rules = re.sub(r"/\*.*?\*/", "", consultation_css, flags=re.S)
 assets = read("plugin/gloskin-site-core/config/assets.php")
+fonts = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-fonts.css")
 home = read("plugin/gloskin-site-core/templates/pages/home.php")
 promo = read("plugin/gloskin-site-core/templates/pages/promo.php")
+about = read("plugin/gloskin-site-core/templates/pages/about.php")
 skincare = read("plugin/gloskin-site-core/templates/pages/skincare.php")
+helpers = read("plugin/gloskin-site-core/templates/parts/template-helpers.php")
 template_service = read("plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php")
 page_matrix = read("docs/page-matrix.csv")
 
 for value in ("#CA050E", "#784F0C", "#F6D179", "#FBE2B2", "#FFEBBB", "#FFF2EB", "#000000"):
     require(value in css, f"approved brand color missing: {value}")
-require('"Graphik"' in css, "Graphik role missing")
-require('"Felix Titling"' in css, "Felix Titling role missing")
+require('"Graphik"' in css, "Graphik target role missing")
+require('"Felix Titling"' in css, "Felix Titling target role missing")
 require("!important" not in css, "prototype refresh must add zero !important declarations")
 require("@media (prefers-reduced-motion:reduce)" in css, "reduced-motion contract missing")
 require(":focus-visible" in css, "keyboard focus contract missing")
 require("min-height:44px" in css, "practical touch target contract missing")
+
+# Target family names may be declared as honest stacks, but the repository must
+# not pretend absent Graphik/Felix binaries are self-hosted. Keep the existing
+# proven local preload chain until owner-supplied/licensed target binaries exist.
+require("'assets/fonts/Marcellus-Regular.woff2'" in assets, "existing Marcellus preload must remain until licensed target binary is supplied")
+require("'assets/fonts/Mulish-Variable.woff2'" in assets, "existing Mulish preload must remain until licensed target binary is supplied")
+require("Graphik" not in fonts and "Felix Titling" not in fonts, "font-face registry must not falsely self-host absent Graphik/Felix binaries")
+require("Graphik.woff" not in assets and "Felix" not in assets, "asset registry must not point at nonexistent target font binaries")
 
 require("'gloskin-ui1-prototype-refresh' => array(" in assets, "refresh style is not registered")
 require("'assets/css/gloskin-ui1-prototype-refresh.css'" in assets, "refresh asset path missing")
@@ -34,28 +48,53 @@ require("'deps'  => array( 'gloskin-ui1-product-grid' )" in assets, "refresh mus
 consultation = assets[assets.index("'gloskin-ui1-consultation' => array("):]
 require("'deps'  => array( 'gloskin-ui1-prototype-refresh' )" in consultation, "Treatments specialist layer must follow refresh")
 
-# Current Home: one primary hero only; old support-route sections are no longer mandatory.
 require(home.count("gloskin_ui1_render_hero(") == 1, "Home must render exactly one shared hero")
-require('data-gloskin-section="home-promo"' in home and 'href="<?php echo esc_url( home_url( \'/promo/\' ) ); ?>"' in home,
-        "Home Promo section/link missing")
+require("gloskin_ui1_render_promo_campaign( (array) $gloskin_context['promo'], 'h2', true )" in home,
+        "Home must reuse Promo renderer with h2 + compact Home presentation")
 for obsolete in ("home-doctors", "home-clinics", "home-insights"):
     require(obsolete not in home, f"superseded primary Home section remains: {obsolete}")
 for fabricated in ("testimonial", "testimoni", "piagam", "award", "penghargaan"):
     require(fabricated not in home.lower(), f"Home must not fabricate unavailable {fabricated} content")
 require('data-gloskin-section="home-about"' in home, "Home About transition missing")
+home_context = template_service.split("private function home_context()", 1)[1].split("private function about_context()", 1)[0]
+require("$hero['mode'] = 'campaign';" in home_context, "Home must use visible campaign hero mode")
+require("'video-only'" not in home_context, "strict video-only Home authority must remain retired")
+require("$hero['media_id'] = 0;" not in home_context, "Home must not discard its factual/editorial fallback media")
+for removed_owner in ("'clinics'", "'doctors'", "'insights'"):
+    require(removed_owner not in home_context, f"Home context still requires support data: {removed_owner}")
+require("gloskin-ui1-hero--campaign" in helpers and '<h1 class="gloskin-ui1-hero__title">' in helpers,
+        "shared hero renderer must keep a visible semantic H1 in campaign mode")
+require("data-gloskin-hero-bg-video" in helpers and helpers.count("<video class=\"gloskin-ui1-hero-bg-video__media\"") == 1,
+        "campaign hero must reuse exactly one existing native video node")
 
-# Promo is a real native Page routed through the Gloskin shell/template service.
 require("'promo'      => 'Promo'" in template_service, "Promo document-title mapping missing")
 require("'promo' => 'promo'" in template_service, "Promo Page view mapping missing")
 require("case 'promo': return $this->promo_context();" in template_service, "Promo context routing missing")
-require("private function promo_context()" in template_service, "Promo context owner missing")
-require("gloskin_ui1_render_page_content" in promo, "Promo template must render native Page content")
-require("harga" not in promo.lower() and "diskon" not in promo.lower() and "bpom" not in promo.lower(), "Promo empty state must not invent commercial facts")
+require("private function promo_campaign_context" in template_service, "shared native Promo projection missing")
+require("gloskin_ui1_render_promo_campaign" in promo and "gloskin_ui1_render_page_content" in promo,
+        "Promo route must reuse shared campaign composition and native Page long-form content")
+require("function gloskin_ui1_render_promo_campaign" in helpers, "shared Promo renderer missing")
+for invented in ("diskon", "harga promo", "berlaku sampai", "syarat promo", "bpom"):
+    require(invented not in promo.lower(), f"Promo template must not invent commercial fact: {invented}")
 
-# Home context no longer spends queries on supporting route preview sections.
-home_context = template_service.split("private function home_context()", 1)[1].split("private function about_context()", 1)[0]
-for removed_owner in ("'clinics'", "'doctors'", "'insights'"):
-    require(removed_owner not in home_context, f"Home context still requires support data: {removed_owner}")
+require("gloskin_ui1_has_content" in about, "About story must be source-gated")
+require("$gloskin_has_principles" in about, "About principles must be source-gated")
+require("if ( $gloskin_context['doctors'] )" in about, "About team section must be source-gated")
+require("if ( $gloskin_about_clinics )" in about, "About network section must be source-gated")
+for fabricated in ("founder", "pendiri", "award", "penghargaan", "sertifikasi terbaik"):
+    require(fabricated not in about.lower(), f"About must not fabricate {fabricated}")
+
+# Treatments keeps the existing consultation engine; only pathway geometry is
+# converged: configured path labels/media remain canonical, 4 -> 2 -> 1.
+require("grid-template-columns:repeat(4,minmax(0,1fr))" in consultation_rules, "desktop Treatments pathways must present four configured cards")
+require("object-fit:cover" in consultation_rules, "Treatment pathway media must use prototype-style cover geometry")
+require("@media (max-width:900px)" in consultation_rules and "repeat(2,minmax(0,1fr))" in consultation_rules,
+        "Treatment pathway grid must collapse to two columns")
+require("@media (max-width:480px)" in consultation_rules and "grid-template-columns:1fr" in consultation_rules,
+        "Treatment pathway grid must collapse to one column on narrow phones")
+require("@media (prefers-reduced-motion:reduce)" in consultation_rules, "Treatment pathway motion needs reduced-motion handling")
+for hardcoded_path in ("Face", "Hair", "Body", "Wellness"):
+    require(hardcoded_path not in consultation_rules, f"Treatments CSS rules must not hardcode prototype pathway label: {hardcoded_path}")
 
 require("gloskin-ui1-product-grid" in skincare and "data-gloskin-product-grid" in skincare, "Skincare must reuse the canonical product grid")
 require("Prototype-controlled primary hero/campaign" in page_matrix, "page matrix must record the current Home target")

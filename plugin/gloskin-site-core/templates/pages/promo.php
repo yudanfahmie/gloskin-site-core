@@ -1,17 +1,13 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
-gloskin_ui1_render_hero( $gloskin_context['hero'] );
+
+gloskin_ui1_render_promo_campaign( (array) $gloskin_context['campaign'], 'h1', false );
 ?>
+<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?>
 <section class="gloskin-ui1-section" data-gloskin-section="promo-content"><div class="gloskin-ui1-container gloskin-ui1-container--narrow">
-	<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?>
-		<?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?>
-	<?php else : ?>
-		<div class="gloskin-ui1-empty"><?php echo esc_html__( 'Informasi promo akan ditampilkan di halaman ini saat tersedia.', 'gloskin-site-core' ); ?></div>
-	<?php endif; ?>
+	<?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?>
 </div></section>
-<section class="gloskin-ui1-section gloskin-ui1-section--soft" data-gloskin-section="promo-pathways"><div class="gloskin-ui1-container">
-	<?php gloskin_ui1_render_pathway_grid( array(
-		array( 'eyebrow' => __( 'Perawatan', 'gloskin-site-core' ), 'title' => __( 'Jelajahi pilihan perawatan', 'gloskin-site-core' ), 'copy' => __( 'Kenali informasi perawatan sebelum konsultasi.', 'gloskin-site-core' ), 'label' => __( 'Lihat Perawatan', 'gloskin-site-core' ), 'url' => home_url( '/treatments/' ) ),
-		array( 'eyebrow' => __( 'Skincare', 'gloskin-site-core' ), 'title' => __( 'Temukan skincare Gloskin', 'gloskin-site-core' ), 'copy' => __( 'Jelajahi kategori dan produk yang tersedia.', 'gloskin-site-core' ), 'label' => __( 'Lihat Skincare', 'gloskin-site-core' ), 'url' => home_url( '/skincare/' ) ),
-	) ); ?>
+<?php endif; ?>
+<section class="gloskin-ui1-section gloskin-ui1-section--cta" data-gloskin-section="promo-closing"><div class="gloskin-ui1-container">
+	<?php gloskin_ui1_render_closing_cta( __( 'Konsultasi', 'gloskin-site-core' ), __( 'Perlu bantuan sebelum memilih perawatan?', 'gloskin-site-core' ), __( 'Tim Gloskin dapat membantu Anda menentukan langkah konsultasi melalui kanal resmi yang tersedia.', 'gloskin-site-core' ), __( 'Jelajahi Perawatan', 'gloskin-site-core' ), home_url( '/treatments/' ), __( 'Hubungi Kami', 'gloskin-site-core' ), home_url( '/contact/' ) ); ?>
 </div></section>

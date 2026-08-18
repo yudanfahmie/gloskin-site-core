@@ -153,62 +153,33 @@ if ( ! function_exists( 'gloskin_ui1_render_editorial_media' ) ) {
 
 if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 	/**
-	 * One hero renderer, one explicit presentation mode flag -- 'standard'
-	 * (default, every existing consumer: About/Clinics/Contact/Doctors/
-	 * Shop/Skincare/Treatments/Insights, and Home itself when no mode is
-	 * set) or 'video-only' (Home's final requirement: a pure full-width
-	 * media hero, no eyebrow/heading/copy/CTA/split column). No second
-	 * Hero service, no second video settings system.
-	 *
-	 * 'video-only' is Home's strict background-video surface: it accepts a
-	 * native <video> sourced from a real WordPress Media Library
-	 * attachment (see Template_Service::hero_background_video()) and never
-	 * renders remote video/player chrome or static fallback media. Its only
-	 * outcomes are native video or a clean white unavailable state.
+	 * One shared hero renderer for every editorial route. Home uses the
+	 * `campaign` presentation mode: heading/copy/CTA remain visible while an
+	 * optional native Media Library MP4/WebM enhances the same media column.
+	 * The video is never a second hero or second data owner; on missing/failed
+	 * media the existing factual attachment or deterministic editorial fallback
+	 * remains visible behind it.
 	 *
 	 * @param array<string,mixed> $hero Hero context.
 	 * @return void
 	 */
 	function gloskin_ui1_render_hero( $hero ) {
-		$heading    = isset( $hero['heading'] ) ? (string) $hero['heading'] : '';
-		$copy       = isset( $hero['copy'] ) ? (string) $hero['copy'] : '';
-		$label      = isset( $hero['cta_label'] ) ? (string) $hero['cta_label'] : '';
-		$url        = isset( $hero['cta_url'] ) ? (string) $hero['cta_url'] : '';
-		$media      = isset( $hero['media_id'] ) ? absint( $hero['media_id'] ) : 0;
-		$video_only = isset( $hero['mode'] ) && 'video-only' === $hero['mode'];
-
-		if ( $video_only ) {
-			$bg_sources = isset( $hero['sources'] ) && is_array( $hero['sources'] ) ? array_values( array_filter( $hero['sources'], static function ( $source ) {
-				return is_array( $source )
-					&& ! empty( $source['src'] )
-					&& isset( $source['type'] )
-					&& in_array( (string) $source['type'], array( 'video/mp4', 'video/webm' ), true );
-			} ) ) : array();
-			$has_bg_video = array() !== $bg_sources;
-			?>
-			<section class="gloskin-ui1-hero gloskin-ui1-hero--video-only <?php echo $has_bg_video ? 'is-video-preparing' : 'is-video-unavailable'; ?>"<?php echo $has_bg_video ? ' data-gloskin-hero-bg-video-root' : ''; ?>>
-				<?php if ( '' !== $heading ) : ?><h1 class="screen-reader-text"><?php echo esc_html( $heading ); ?></h1><?php endif; ?>
-				<?php if ( $has_bg_video ) : ?>
-					<div class="gloskin-ui1-hero-bg-video" data-gloskin-hero-bg-video-wrap>
-						<video class="gloskin-ui1-hero-bg-video__media" data-gloskin-hero-bg-video muted autoplay loop playsinline preload="auto" aria-hidden="true" tabindex="-1">
-							<?php foreach ( $bg_sources as $source ) : ?>
-								<source src="<?php echo esc_url( (string) $source['src'] ); ?>" type="<?php echo esc_attr( (string) $source['type'] ); ?>" />
-							<?php endforeach; ?>
-						</video>
-						<div class="gloskin-ui1-hero-bg-video__loader" aria-hidden="true"><span class="gloskin-ui1-hero-bg-video__loader-dot"></span></div>
-					</div>
-				<?php endif; ?>
-				<div class="gloskin-ui1-hero__fade" aria-hidden="true"></div>
-				<button type="button" class="gloskin-ui1-hero__scroll-cue" data-gloskin-hero-scroll-cue aria-label="<?php echo esc_attr__( 'Gulir ke konten berikutnya', 'gloskin-site-core' ); ?>">
-					<span class="gloskin-ui1-hero__scroll-cue-dot" aria-hidden="true"></span>
-					<svg class="gloskin-ui1-hero__scroll-cue-chevron" width="18" height="10" viewBox="0 0 18 10" fill="none" aria-hidden="true" focusable="false"><path d="M1 1L9 8.5L17 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-				</button>
-			</section>
-			<?php
-			return;
-		}
+		$heading  = isset( $hero['heading'] ) ? (string) $hero['heading'] : '';
+		$copy     = isset( $hero['copy'] ) ? (string) $hero['copy'] : '';
+		$label    = isset( $hero['cta_label'] ) ? (string) $hero['cta_label'] : '';
+		$url      = isset( $hero['cta_url'] ) ? (string) $hero['cta_url'] : '';
+		$media    = isset( $hero['media_id'] ) ? absint( $hero['media_id'] ) : 0;
+		$campaign = isset( $hero['mode'] ) && 'campaign' === $hero['mode'];
+		$sources  = $campaign && isset( $hero['sources'] ) && is_array( $hero['sources'] ) ? array_values( array_filter( $hero['sources'], static function ( $source ) {
+			return is_array( $source )
+				&& ! empty( $source['src'] )
+				&& isset( $source['type'] )
+				&& in_array( (string) $source['type'], array( 'video/mp4', 'video/webm' ), true );
+		} ) ) : array();
+		$has_video = array() !== $sources;
+		$classes   = 'gloskin-ui1-hero' . ( $campaign ? ' gloskin-ui1-hero--campaign' : '' ) . ( $has_video ? ' is-video-preparing' : '' );
 		?>
-		<section class="gloskin-ui1-hero">
+		<section class="<?php echo esc_attr( $classes ); ?>"<?php echo $has_video ? ' data-gloskin-hero-bg-video-root' : ''; ?>>
 			<div class="gloskin-ui1-container gloskin-ui1-hero__grid">
 				<div class="gloskin-ui1-hero__content">
 					<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Gloskin', 'gloskin-site-core' ); ?></p>
@@ -224,24 +195,90 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 						</p>
 					<?php endif; ?>
 				</div>
-				<div class="gloskin-ui1-hero__media">
-					<?php if ( $media ) : ?>
-						<?php
-						echo wp_get_attachment_image(
-							$media,
-							'large',
-							false,
-							array(
-								'class'         => 'gloskin-ui1-hero__image',
-								'fetchpriority' => 'high',
-								'decoding'      => 'async',
-							)
-						);
-						?>
-					<?php else : ?>
-						<?php gloskin_ui1_render_editorial_media( 'hero', $heading, 'gloskin-ui1-hero__image gloskin-ui1-hero__image--editorial', true ); ?>
+				<div class="gloskin-ui1-hero__media<?php echo $campaign ? ' gloskin-ui1-hero__media--campaign' : ''; ?>">
+					<div class="gloskin-ui1-hero__media-fallback">
+						<?php if ( $media ) : ?>
+							<?php
+							echo wp_get_attachment_image(
+								$media,
+								'large',
+								false,
+								array(
+									'class'         => 'gloskin-ui1-hero__image',
+									'fetchpriority' => 'high',
+									'decoding'      => 'async',
+								)
+							);
+							?>
+						<?php else : ?>
+							<?php gloskin_ui1_render_editorial_media( 'hero', $heading, 'gloskin-ui1-hero__image gloskin-ui1-hero__image--editorial', true ); ?>
+						<?php endif; ?>
+					</div>
+					<?php if ( $has_video ) : ?>
+						<div class="gloskin-ui1-hero-bg-video" data-gloskin-hero-bg-video-wrap>
+							<video class="gloskin-ui1-hero-bg-video__media" data-gloskin-hero-bg-video muted autoplay loop playsinline preload="auto" aria-hidden="true" tabindex="-1">
+								<?php foreach ( $sources as $source ) : ?>
+									<source src="<?php echo esc_url( (string) $source['src'] ); ?>" type="<?php echo esc_attr( (string) $source['type'] ); ?>" />
+								<?php endforeach; ?>
+							</video>
+							<div class="gloskin-ui1-hero-bg-video__loader" aria-hidden="true"><span class="gloskin-ui1-hero-bg-video__loader-dot"></span></div>
+						</div>
 					<?php endif; ?>
 				</div>
+			</div>
+			<?php if ( $campaign ) : ?>
+				<div class="gloskin-ui1-hero__fade" aria-hidden="true"></div>
+				<button type="button" class="gloskin-ui1-hero__scroll-cue" data-gloskin-hero-scroll-cue aria-label="<?php echo esc_attr__( 'Gulir ke konten berikutnya', 'gloskin-site-core' ); ?>">
+					<span class="gloskin-ui1-hero__scroll-cue-dot" aria-hidden="true"></span>
+					<svg class="gloskin-ui1-hero__scroll-cue-chevron" width="18" height="10" viewBox="0 0 18 10" fill="none" aria-hidden="true" focusable="false"><path d="M1 1L9 8.5L17 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+				</button>
+			<?php endif; ?>
+		</section>
+		<?php
+	}
+}
+
+if ( ! function_exists( 'gloskin_ui1_render_promo_campaign' ) ) {
+	/**
+	 * Shared Promo composition for Home and /promo/. It renders only facts
+	 * supplied by the native WordPress Page/Media owners. No discount, period,
+	 * price or terms are synthesized when editors have not provided them.
+	 *
+	 * @param array<string,mixed> $campaign Promo context.
+	 * @param string              $heading_tag h1 on /promo/, h2 on Home.
+	 * @param bool                $compact Compact Home treatment.
+	 * @return void
+	 */
+	function gloskin_ui1_render_promo_campaign( $campaign, $heading_tag = 'h2', $compact = false ) {
+		$heading_tag = in_array( $heading_tag, array( 'h1', 'h2' ), true ) ? $heading_tag : 'h2';
+		$title       = isset( $campaign['title'] ) ? trim( (string) $campaign['title'] ) : '';
+		$copy        = isset( $campaign['copy'] ) ? trim( (string) $campaign['copy'] ) : '';
+		$url         = isset( $campaign['url'] ) ? trim( (string) $campaign['url'] ) : '';
+		$media_ids   = isset( $campaign['media_ids'] ) ? array_values( array_filter( array_map( 'absint', (array) $campaign['media_ids'] ) ) ) : array();
+		$has_content = ! empty( $campaign['has_content'] );
+		$has_facts   = '' !== $copy || $has_content || ! empty( $media_ids );
+		$classes     = 'gloskin-ui1-promo-campaign' . ( $compact ? ' gloskin-ui1-promo-campaign--home' : ' gloskin-ui1-promo-campaign--page' );
+		?>
+		<section class="<?php echo esc_attr( $classes ); ?>" data-gloskin-promo-campaign>
+			<div class="gloskin-ui1-container gloskin-ui1-promo-campaign__grid">
+				<div class="gloskin-ui1-promo-campaign__copy">
+					<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Promo', 'gloskin-site-core' ); ?></p>
+					<<?php echo esc_attr( $heading_tag ); ?> class="gloskin-ui1-promo-campaign__title"><?php echo esc_html( '' !== $title ? $title : __( 'Promo Gloskin', 'gloskin-site-core' ) ); ?></<?php echo esc_attr( $heading_tag ); ?>>
+					<?php if ( $has_facts ) : ?>
+						<?php if ( '' !== $copy ) : ?><p class="gloskin-ui1-promo-campaign__summary"><?php echo esc_html( $copy ); ?></p><?php endif; ?>
+						<?php if ( $compact && '' !== $url ) : ?><a class="gloskin-ui1-button gloskin-ui1-button--primary" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'Lihat Promo', 'gloskin-site-core' ); ?></a><?php endif; ?>
+					<?php else : ?>
+						<p class="gloskin-ui1-promo-campaign__empty"><?php echo esc_html__( 'Informasi promo belum tersedia.', 'gloskin-site-core' ); ?></p>
+						<?php if ( $compact && '' !== $url ) : ?><a class="gloskin-ui1-text-link" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'Buka halaman Promo', 'gloskin-site-core' ); ?> →</a><?php endif; ?>
+					<?php endif; ?>
+				</div>
+				<?php if ( $media_ids ) : ?>
+					<div class="gloskin-ui1-promo-campaign__media" aria-label="<?php echo esc_attr__( 'Media promo', 'gloskin-site-core' ); ?>">
+						<?php foreach ( array_slice( $media_ids, 0, 3 ) as $index => $media_id ) : ?>
+							<div class="gloskin-ui1-promo-campaign__poster gloskin-ui1-promo-campaign__poster--<?php echo esc_attr( (string) ( $index + 1 ) ); ?>"><?php echo wp_get_attachment_image( $media_id, 'large', false, array( 'loading' => $compact ? 'lazy' : 'eager', 'class' => 'gloskin-ui1-promo-campaign__image' ) ); ?></div>
+						<?php endforeach; ?>
+					</div>
+				<?php endif; ?>
 			</div>
 		</section>
 		<?php

@@ -26,9 +26,7 @@ class WP_Post {
 	public $post_title;
 	public $post_name;
 	public $post_parent;
-	public function __construct( array $data ) {
-		foreach ( $data as $key => $value ) { $this->$key = $value; }
-	}
+	public function __construct( array $data ) { foreach ( $data as $key => $value ) { $this->$key = $value; } }
 }
 class WooCommerce {}
 
@@ -85,10 +83,7 @@ $shop_page = get_page_by_path( 'shop', null, 'page' );
 ok( $shop_page instanceof WP_Post, 'Gloskin /shop/ page is provisioned' );
 ok( null === get_page_by_path( 'promo', null, 'page' ), 'Promo must remain owned by the one-shot IA migration, not baseline activation' );
 ok( (int) get_option( 'woocommerce_shop_page_id', 0 ) === (int) $shop_page->ID, 'unconfigured Woo Shop is safely aligned' );
-ok(
-	Gloskin_Site_Core_Lifecycle_Service::BASE_SCHEMA_VERSION === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ),
-	'activation records only the safe baseline schema; prototype IA remains pending for the loader'
-);
+ok( Gloskin_Site_Core_Lifecycle_Service::BASE_SCHEMA_VERSION === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ), 'new activation records the baseline schema' );
 
 /* Existing valid merchant Shop choice survives activation. */
 reset_world();
@@ -112,27 +107,37 @@ $shop_pages = array_filter( $GLOBALS['gl_posts'], static function ( $post ) { re
 ok( 1 === count( $shop_pages ), 'baseline never duplicates /shop/' );
 ok( null === get_page_by_path( 'promo', null, 'page' ), 'baseline does not take ownership of /promo/' );
 
+/* Regression: consumed IA + schema 0.3.0 -> deactivate/reactivate -> still 0.3.0. */
+reset_world();
+$GLOBALS['gl_options'][ Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ] = Gloskin_Site_Core_Lifecycle_Service::SCHEMA_VERSION;
+$GLOBALS['gl_options']['gloskin_site_core_prototype_ia_20260818_state'] = array( 'revision' => '2026-08-18', 'status' => 'consumed' );
+$service = new Gloskin_Site_Core_Lifecycle_Service();
+$service->deactivate();
+$service->activate();
+ok( Gloskin_Site_Core_Lifecycle_Service::SCHEMA_VERSION === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ), 'reactivation must never downgrade a completed 0.3.0 schema to baseline' );
+ok( 'consumed' === $GLOBALS['gl_options']['gloskin_site_core_prototype_ia_20260818_state']['status'], 'reactivation must leave consumed IA state intact' );
+
+/* A future/newer schema is also monotonic across activation. */
+reset_world();
+$GLOBALS['gl_options'][ Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ] = '0.4.0';
+( new Gloskin_Site_Core_Lifecycle_Service() )->activate();
+ok( '0.4.0' === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ), 'activation must never reduce a schema newer than current code' );
+
 /* Old existing install gets only the safe baseline upgrade on admin_init. */
 reset_world();
 $existing_shop_id = wp_insert_post( array( 'post_type' => 'page', 'post_title' => 'Belanja', 'post_name' => 'shop' ) );
 $GLOBALS['gl_options'][ Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ] = '0.2.0';
 ( new Gloskin_Site_Core_Lifecycle_Service() )->maybe_upgrade();
 ok( (int) get_option( 'woocommerce_shop_page_id', 0 ) === (int) $existing_shop_id, 'old install baseline upgrade aligns existing /shop/' );
-ok(
-	Gloskin_Site_Core_Lifecycle_Service::BASE_SCHEMA_VERSION === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ),
-	'old install stops at baseline schema until explicit IA migration completes'
-);
+ok( Gloskin_Site_Core_Lifecycle_Service::BASE_SCHEMA_VERSION === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ), 'old install stops at baseline schema until explicit IA migration completes' );
 
 /* A current baseline install must not be continuously repaired/auto-consumed. */
 reset_world();
 $GLOBALS['gl_options'][ Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ] = Gloskin_Site_Core_Lifecycle_Service::BASE_SCHEMA_VERSION;
 ( new Gloskin_Site_Core_Lifecycle_Service() )->maybe_upgrade();
-ok(
-	Gloskin_Site_Core_Lifecycle_Service::BASE_SCHEMA_VERSION === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ),
-	'admin_init does not silently consume the 0.3.0 prototype IA migration'
-);
+ok( Gloskin_Site_Core_Lifecycle_Service::BASE_SCHEMA_VERSION === (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ), 'admin_init does not silently consume the 0.3.0 prototype IA migration' );
 
-/* Completed state is inert. */
+/* Completed state is inert on admin_init. */
 reset_world();
 $GLOBALS['gl_options'][ Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION ] = Gloskin_Site_Core_Lifecycle_Service::SCHEMA_VERSION;
 ( new Gloskin_Site_Core_Lifecycle_Service() )->maybe_upgrade();

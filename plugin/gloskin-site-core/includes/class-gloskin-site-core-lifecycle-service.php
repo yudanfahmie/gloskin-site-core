@@ -56,8 +56,11 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 	/**
 	 * Register rewrites, populate the pre-revision safe baseline structure and flush once.
 	 *
-	 * The 2026-08-18 IA Page/menu migration remains explicitly pending after activation
-	 * so the same one-shot engine owns both upgraded and newly activated installs.
+	 * Activation is schema-monotonic. A new install records BASE_SCHEMA_VERSION,
+	 * while an install that already completed the 0.3.0 IA migration (or any
+	 * later schema) keeps that newer version across deactivate/reactivate. The
+	 * migration's own consumed state therefore remains authoritative and is not
+	 * made pending again merely because the plugin was reactivated.
 	 *
 	 * @return void
 	 */
@@ -68,8 +71,12 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 		 * registered here explicitly -- the normal init hook has not
 		 * fired yet on this static register_activation_hook path. */
 		Gloskin_Site_Core_Content_Service::register_taxonomies();
+
+		$current = (string) get_option( self::VERSION_OPTION, '' );
 		$this->provision_approved_structure();
-		update_option( self::VERSION_OPTION, self::BASE_SCHEMA_VERSION, false );
+		if ( '' === $current || version_compare( $current, self::BASE_SCHEMA_VERSION, '<' ) ) {
+			update_option( self::VERSION_OPTION, self::BASE_SCHEMA_VERSION, false );
+		}
 		flush_rewrite_rules( false );
 	}
 

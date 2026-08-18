@@ -28,6 +28,9 @@ final class Gloskin_Site_Core_Navigation_Service {
 
 	/**
 	 * Return one normalized tree consumed by both desktop and mobile navigation.
+	 * The rendered top level is always the four client-approved destinations.
+	 * Unknown/editor-owned top-level items are never promoted into the public
+	 * primary header while the bounded migration is pending or interrupted.
 	 *
 	 * @return array<int,array<string,mixed>>
 	 */
@@ -37,7 +40,7 @@ final class Gloskin_Site_Core_Navigation_Service {
 			$menu_id   = isset( $locations[ self::LOCATION ] ) ? absint( $locations[ self::LOCATION ] ) : 0;
 			$items     = $menu_id ? wp_get_nav_menu_items( $menu_id ) : array();
 			if ( is_array( $items ) && $items ) {
-				return $this->normalize_items( $items );
+				return $this->approved_primary_tree( $this->normalize_items( $items ) );
 			}
 		}
 
@@ -79,6 +82,44 @@ final class Gloskin_Site_Core_Navigation_Service {
 	}
 
 	/**
+	 * Project an editor menu onto the approved top-level IA without moving or
+	 * inventing editor content. Only already-top-level canonical destinations
+	 * may supply native children. Missing canonical items use the deterministic
+	 * fallback; unknown top-level items are intentionally absent from primary.
+	 *
+	 * @param array<int,array<string,mixed>> $tree Native normalized tree.
+	 * @return array<int,array<string,mixed>>
+	 */
+	private function approved_primary_tree( array $tree ) {
+		$targets = array(
+			'/treatments/' => array( 'label' => 'Perawatan', 'path' => '/treatments/' ),
+			'/promo/'      => array( 'label' => 'Promo', 'path' => '/promo/' ),
+			'/skincare/'   => array( 'label' => 'Skincare', 'path' => '/skincare/' ),
+			'/about/'      => array( 'label' => 'Tentang Gloskin', 'path' => '/about/' ),
+		);
+		$native = array();
+		foreach ( $tree as $node ) {
+			$path = $this->site_path( isset( $node['url'] ) ? (string) $node['url'] : '' );
+			if ( isset( $targets[ $path ] ) && ! isset( $native[ $path ] ) ) {
+				$native[ $path ] = $node;
+			}
+		}
+
+		$approved = array();
+		foreach ( $targets as $path => $definition ) {
+			if ( isset( $native[ $path ] ) ) {
+				$node          = $native[ $path ];
+				$node['parent'] = 0;
+				$node['label']  = $definition['label'];
+				$approved[]     = $node;
+				continue;
+			}
+			$approved[] = $this->fallback_item( $definition['label'], $definition['path'] );
+		}
+		return $approved;
+	}
+
+	/**
 	 * Latest client-approved primary editorial IA.
 	 *
 	 * Supporting destinations (Shop, Clinics, Doctors, Insights, Contact)
@@ -115,21 +156,15 @@ final class Gloskin_Site_Core_Navigation_Service {
 
 	/**
 	 * Keep canonical Gloskin labels normalized for same-site destinations.
-	 * External/custom menu labels remain fully editor-owned even when their
-	 * URL path happens to resemble a Gloskin route.
+	 * External/custom menu labels remain fully editor-owned in their source
+	 * menu even though they are not part of the approved primary projection.
 	 *
 	 * @param string $label Existing menu label.
 	 * @param string $url Menu URL.
 	 * @return string
 	 */
 	private function public_label_for_url( $label, $url ) {
-		$host      = wp_parse_url( $url, PHP_URL_HOST );
-		$site_host = wp_parse_url( home_url( '/' ), PHP_URL_HOST );
-		if ( is_string( $host ) && '' !== $host && is_string( $site_host ) && '' !== $site_host && strtolower( $host ) !== strtolower( $site_host ) ) {
-			return $label;
-		}
-		$path = wp_parse_url( $url, PHP_URL_PATH );
-		$path = is_string( $path ) ? trailingslashit( '/' . ltrim( $path, '/' ) ) : '';
+		$path = $this->site_path( $url );
 		$labels = array(
 			'/'            => 'Beranda',
 			'/about/'      => 'Tentang Gloskin',
@@ -144,6 +179,17 @@ final class Gloskin_Site_Core_Navigation_Service {
 		);
 
 		return isset( $labels[ $path ] ) ? $labels[ $path ] : $label;
+	}
+
+	/** @param string $url URL. @return string */
+	private function site_path( $url ) {
+		$host      = wp_parse_url( $url, PHP_URL_HOST );
+		$site_host = wp_parse_url( home_url( '/' ), PHP_URL_HOST );
+		if ( is_string( $host ) && '' !== $host && is_string( $site_host ) && '' !== $site_host && strtolower( $host ) !== strtolower( $site_host ) ) {
+			return '';
+		}
+		$path = wp_parse_url( $url, PHP_URL_PATH );
+		return is_string( $path ) ? trailingslashit( '/' . ltrim( $path, '/' ) ) : '';
 	}
 
 	/**
