@@ -1,26 +1,16 @@
 {
+  "bundle_id": "gloskin-doctor-photos-v2",
   "revision": "2026-08-19-owner-doctor-photos-v2",
-  "source": "Owner-supplied FOTO DOKTER GLOSKIN ZIP",
-  "source_sha256": "19d72cbd79bb0fab22a782de31e602e2abeaaa19aea7e3964e2124d570056c64",
-  "zip_v2_sha256": "48662a1336b7b268b83d4e3ad6c83066287c27910f5302fcbb470666a3cbd79a",
-  "conversion": {
-    "format": "webp",
-    "quality": 43,
-    "max_long_edge_px": 600,
-    "crop": false,
-    "upscale": false,
-    "exif_transpose": true,
-    "note": "Optimized engineering workpack conversion; source composition preserved."
-  },
+  "schema_version": 1,
+  "source_zip_sha256": "48662a1336b7b268b83d4e3ad6c83066287c27910f5302fcbb470666a3cbd79a",
+  "source_doc_manifest": "docs/2026-08-18-prototype-refresh/resources/doctor-photos/doctor-photo-manifest-v2.json",
   "supplied_unique_doctors": 12,
-  "supplied_images": 17,
   "migration_policy": {
     "import_primary_only": true,
     "alternates_reference_only": true,
     "match_requires_unique_exact_alias_after_normalization": true,
     "fuzzy_match_forbidden": true,
     "ai_face_match_forbidden": true,
-    "extra_doctors_without_supplied_photo_are_allowed": true,
     "every_supplied_primary_must_match_exactly_one_existing_doctor": true,
     "replace_featured_image_for_unique_match": true,
     "snapshot_previous_thumbnail": true,
@@ -32,94 +22,84 @@
       "match_aliases": ["arwina sufika"],
       "primary_webp": "dr-arwina-sufika.webp",
       "primary_sha256": "a9466ee012247257f83b8144f1930201260ca217aa5b34041e0d21438bd8e86a",
-      "dimensions": [338, 600],
-      "bytes": 5056,
-      "alternates": [
-        {"file":"dr-arwina-sufika-alt-01.webp","sha256":"8ee35f73c2e162ade02f0c7e52a1ebd439fed4f6f66559f1ccd14961abe14589","dimensions":[338,600],"bytes":6374},
-        {"file":"dr-arwina-sufika-alt-02.webp","sha256":"284bd12e8c742309dfa393fa1fb92651eef0a9a9396802ef044c329919ddac2b","dimensions":[480,600],"bytes":6638},
-        {"file":"dr-arwina-sufika-alt-03.webp","sha256":"dbb44f6b2ae38db0823b924fe9715c269bb0742b08fcdf2e81e01b564240c31d","dimensions":[400,600],"bytes":7098}
-      ]
+      "bytes": 5056
     },
     {
       "source_label": "DR CYINTIA MUSIUS",
       "match_aliases": ["cyintia musius", "cyntia musius"],
       "primary_webp": "dr-cyintia-musius.webp",
       "primary_sha256": "f8d23145cd5681e1d16e639c42ab09f31e3b2e313bad46f6516ca3d6c347b0f2",
-      "dimensions": [337,600], "bytes":5050, "alternates": []
+      "bytes": 5050
     },
     {
       "source_label": "DR DESY PUSTIKA SARI",
       "match_aliases": ["desy pustika sari"],
       "primary_webp": "dr-desy-pustika-sari.webp",
       "primary_sha256": "6e32d68101e0fb421d5e5534ff38243fcb6b9bcd7479b6740c46841e6f53e449",
-      "dimensions": [341,600], "bytes":6462, "alternates": []
+      "bytes": 6462
     },
     {
       "source_label": "DR FLORENTINA AIRA S SYAHARANI",
       "match_aliases": ["florentina aira s syaharani"],
       "primary_webp": "dr-florentina-aira-s-syaharani.webp",
       "primary_sha256": "8a9315536cec9be674cdb4966dfc033554d849dc151110c1447d02bf6486ec44",
-      "dimensions": [338,600], "bytes":7978, "alternates": []
+      "bytes": 7978
     },
     {
       "source_label": "DR MARIA MAGDALENA BR MANIK_",
       "match_aliases": ["maria magdalena br manik"],
       "primary_webp": "dr-maria-magdalena-br-manik.webp",
       "primary_sha256": "946a1183ca3b0668e34ce9811f2b4ff53d794bf59b6f16458fd8c3b24e578c31",
-      "dimensions": [480,600], "bytes":8536, "alternates": []
+      "bytes": 8536
     },
     {
       "source_label": "DR MEGA CARKANINBA",
       "match_aliases": ["mega carkaninba"],
       "primary_webp": "dr-mega-carkaninba.webp",
       "primary_sha256": "55dc8e26973130aa4de6a00eb9e56e426234481f4f07cb47a881875e9fecc3f4",
-      "dimensions": [480,600], "bytes":5404, "alternates": []
+      "bytes": 5404
     },
     {
       "source_label": "DR NANANG MASRANI, M BIOMED (AAM)",
       "match_aliases": ["nanang masrani", "nanang masrani m biomed aam"],
       "primary_webp": "dr-nanang-masrani-m-biomed-aam.webp",
       "primary_sha256": "986718e4ba086869e196146c1441faf2e27a058103556b0b19b9465a950a10df",
-      "dimensions": [400,600], "bytes":6998,
-      "alternates": [
-        {"file":"dr-nanang-masrani-m-biomed-aam-alt-01.webp","sha256":"3f01af5c2aef266df5359beda9c4dc796699c014cc0b9699913f516d040ae6f8","dimensions":[400,600],"bytes":5604},
-        {"file":"dr-nanang-masrani-m-biomed-aam-alt-02.webp","sha256":"95a9c1e0be164768d7332a227dc29d692464d6301011ae659f388d508ca8760e","dimensions":[450,600],"bytes":7446}
-      ]
+      "bytes": 6998
     },
     {
       "source_label": "DR NI NYOMAN AYU LAKSMI TRIMURTI",
       "match_aliases": ["ni nyoman ayu laksmi trimurti", "ni nyoman ayu laksmy trimurti"],
       "primary_webp": "dr-ni-nyoman-ayu-laksmi-trimurti.webp",
       "primary_sha256": "ba44cba76ab360fefd89ebbaef78ffc79a7a2fb2d64e5a9c26d2a9776df10722",
-      "dimensions": [600,400], "bytes":3756, "alternates": []
+      "bytes": 3756
     },
     {
       "source_label": "DR OQTI RODIA Sp.GK",
       "match_aliases": ["oqti rodia", "oqti rodia sp gk"],
       "primary_webp": "dr-oqti-rodia-sp-gk.webp",
       "primary_sha256": "c888dd0974b287bb12f38a0834998b763abb00720e7327a461a2bf2b829966bb",
-      "dimensions": [400,600], "bytes":8206, "alternates": []
+      "bytes": 8206
     },
     {
       "source_label": "DR PRISSILMA TANIA JONARDI Sp.DVE",
       "match_aliases": ["prissilma tania jonardi", "prissilma tania jonardi sp dve"],
       "primary_webp": "dr-prissilma-tania-jonardi-sp-dve.webp",
       "primary_sha256": "a6a88aa8bfb41cd17b56416369c8c14704a377dbab0472192b12b95c13a4b47f",
-      "dimensions": [338,600], "bytes":6200, "alternates": []
+      "bytes": 6200
     },
     {
       "source_label": "DR RODIAH",
       "match_aliases": ["rodiah"],
       "primary_webp": "dr-rodiah.webp",
       "primary_sha256": "1fb22ac14d55e96839753a502d1bfefeb989fbfb04201976b0ef70253623b3c3",
-      "dimensions": [400,600], "bytes":4824, "alternates": []
+      "bytes": 4824
     },
     {
       "source_label": "DR VINDI NAZHIFA",
       "match_aliases": ["vindi nazhifa", "vindy nazhifa"],
       "primary_webp": "dr-vindi-nazhifa.webp",
       "primary_sha256": "11435624c046617e64f4a603d790047972a7894b580d9bfe0e5ef17d7bad140c",
-      "dimensions": [400,600], "bytes":5830, "alternates": []
+      "bytes": 5830
     }
   ]
 }

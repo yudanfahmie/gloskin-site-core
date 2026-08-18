@@ -10,14 +10,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Content_Service {
-	const TREATMENT_POST_TYPE = 'gloskin_treatment';
-	const CLINIC_POST_TYPE    = 'gloskin_clinic';
-	const DOCTOR_POST_TYPE    = 'gloskin_doctor';
-	const ADMIN_MENU_SLUG     = 'gloskin-content';
+	const TREATMENT_POST_TYPE    = 'gloskin_treatment';
+	const CLINIC_POST_TYPE       = 'gloskin_clinic';
+	const DOCTOR_POST_TYPE       = 'gloskin_doctor';
+	const PROMO_POST_TYPE        = 'gloskin_promo';
+	const TESTIMONIAL_POST_TYPE  = 'gloskin_testimonial';
+	const ACHIEVEMENT_POST_TYPE  = 'gloskin_achievement';
+	const ADMIN_MENU_SLUG        = 'gloskin-content';
 
 	const TREATMENT_TARGET_COUNT = 8;
 	const CLINIC_TARGET_COUNT    = 9;
 	const DOCTOR_TARGET_COUNT    = 13;
+
+	/* Demo identity meta key — used to prevent seeding duplicates. */
+	const DEMO_IDENTITY_META     = '_gloskin_demo_identity';
+	const DEMO_REVISION_META     = '_gloskin_demo_revision';
 
 	/*
 	 * Treatment Consultation data model (docs/task-treatment-consultation-
@@ -67,6 +74,45 @@ final class Gloskin_Site_Core_Content_Service {
 		register_post_type( self::CLINIC_POST_TYPE, self::post_type_args( __( 'Clinics', 'gloskin-site-core' ), __( 'Clinic', 'gloskin-site-core' ), 'clinics' ) );
 		register_post_type( self::DOCTOR_POST_TYPE, self::post_type_args( __( 'Doctors', 'gloskin-site-core' ), __( 'Doctor', 'gloskin-site-core' ), 'doctors' ) );
 		register_post_type( self::QUESTION_POST_TYPE, self::question_post_type_args() );
+		register_post_type( self::PROMO_POST_TYPE, self::private_managed_post_type_args( __( 'Promos', 'gloskin-site-core' ), __( 'Promo', 'gloskin-site-core' ) ) );
+		register_post_type( self::TESTIMONIAL_POST_TYPE, self::private_managed_post_type_args( __( 'Testimonials', 'gloskin-site-core' ), __( 'Testimonial', 'gloskin-site-core' ) ) );
+		register_post_type( self::ACHIEVEMENT_POST_TYPE, self::private_managed_post_type_args( __( 'Achievements', 'gloskin-site-core' ), __( 'Achievement', 'gloskin-site-core' ) ) );
+	}
+
+	/**
+	 * Private managed CPT — native WordPress CRUD under Gloskin Content,
+	 * not publicly queryable, no public URL, no archive.
+	 *
+	 * @param string $plural   Plural label.
+	 * @param string $singular Singular label.
+	 * @return array<string,mixed>
+	 */
+	private static function private_managed_post_type_args( $plural, $singular ) {
+		return array(
+			'labels' => array(
+				'name'          => $plural,
+				'singular_name' => $singular,
+				/* translators: %s: singular post type label. */
+				'add_new_item'  => sprintf( __( 'Add New %s', 'gloskin-site-core' ), $singular ),
+				/* translators: %s: singular post type label. */
+				'edit_item'     => sprintf( __( 'Edit %s', 'gloskin-site-core' ), $singular ),
+			),
+			'public'              => false,
+			'publicly_queryable'  => false,
+			'show_ui'             => true,
+			'show_in_menu'        => self::ADMIN_MENU_SLUG,
+			'show_in_nav_menus'   => false,
+			'show_in_admin_bar'   => false,
+			'show_in_rest'        => true,
+			'has_archive'         => false,
+			'rewrite'             => false,
+			'query_var'           => false,
+			'exclude_from_search' => true,
+			'supports'            => array( 'title', 'editor', 'excerpt', 'thumbnail', 'custom-fields', 'page-attributes' ),
+			'map_meta_cap'        => true,
+			'capability_type'     => 'post',
+			'delete_with_user'    => false,
+		);
 	}
 
 	/**
@@ -419,6 +465,28 @@ final class Gloskin_Site_Core_Content_Service {
 
 	/** @return void */
 	private function register_meta() {
+		/* gloskin_promo managed fields */
+		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_eyebrow', 'text' );
+		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_summary', 'textarea' );
+		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_cta_label', 'text' );
+		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_cta_url', 'action_url' );
+		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_start_date', 'text' );
+		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_end_date', 'text' );
+		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_active', 'text' );
+
+		/* gloskin_testimonial managed fields */
+		$this->register_string_meta( self::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_attribution', 'text' );
+		$this->register_string_meta( self::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_subtitle', 'text' );
+		$this->register_string_meta( self::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_active', 'text' );
+		$this->register_string_meta( self::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_source_note', 'textarea' );
+
+		/* gloskin_achievement managed fields */
+		$this->register_string_meta( self::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_issuer', 'text' );
+		$this->register_string_meta( self::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_year', 'text' );
+		$this->register_string_meta( self::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_source_url', 'http_url' );
+		$this->register_string_meta( self::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_feature_on_home', 'text' );
+		$this->register_string_meta( self::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_active', 'text' );
+
 		$this->register_string_meta( self::TREATMENT_POST_TYPE, 'gloskin_summary', 'textarea' );
 		$this->register_string_meta( self::TREATMENT_POST_TYPE, 'gloskin_benefits', 'rich' );
 		$this->register_string_meta( self::TREATMENT_POST_TYPE, 'gloskin_contraindications', 'rich' );
@@ -450,6 +518,10 @@ final class Gloskin_Site_Core_Content_Service {
 		$this->register_string_meta( 'page', 'gloskin_about_vision', 'rich' );
 		$this->register_string_meta( 'page', 'gloskin_about_mission', 'rich' );
 		$this->register_string_meta( 'page', 'gloskin_about_values', 'rich' );
+		$this->register_string_meta( 'page', 'gloskin_about_founder_name', 'text' );
+		$this->register_string_meta( 'page', 'gloskin_about_founder_role', 'text' );
+		$this->register_string_meta( 'page', 'gloskin_about_founder_story', 'rich' );
+		$this->register_attachment_id_meta( 'page', 'gloskin_about_founder_media_id' );
 		$this->register_string_meta( 'page', 'gloskin_hero_heading', 'text' );
 		$this->register_string_meta( 'page', 'gloskin_hero_copy', 'textarea' );
 		$this->register_string_meta( 'page', 'gloskin_hero_cta_label', 'text' );
