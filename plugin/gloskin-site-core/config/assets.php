@@ -90,13 +90,21 @@ return array(
 			'deps'  => array( 'gloskin-ui1-editorial' ),
 			'media' => 'all',
 		),
+		/* Approved 2026 prototype refresh. This is the one final brand/page
+		 * convergence layer: it changes presentation only and deliberately
+		 * consumes the existing shell, component, Woo and data owners above. */
+		'gloskin-ui1-prototype-refresh' => array(
+			'src'   => 'assets/css/gloskin-ui1-prototype-refresh.css',
+			'deps'  => array( 'gloskin-ui1-product-grid' ),
+			'media' => 'all',
+		),
 		/* Treatment Consultation discovery (docs/task-treatment-
 		 * consultation-commerce-discovery.md section 10): conditionally
 		 * enqueued only on the Treatments Hub -- see
 		 * AssetService::enqueue_frontend(), never loaded site-wide. */
 		'gloskin-ui1-consultation' => array(
 			'src'   => 'assets/css/gloskin-ui1-consultation.css',
-			'deps'  => array( 'gloskin-ui1-production' ),
+			'deps'  => array( 'gloskin-ui1-prototype-refresh' ),
 			'media' => 'all',
 		),
 	),
