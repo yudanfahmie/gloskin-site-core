@@ -1,0 +1,133 @@
+{
+  "revision": "2026-08-19-owner-doctor-photos",
+  "source": "Owner-supplied FOTO DOKTER GLOSKIN ZIP",
+  "source_sha256": "19d72cbd79bb0fab22a782de31e602e2abeaaa19aea7e3964e2124d570056c64",
+  "conversion": {
+    "format": "webp",
+    "quality": 65,
+    "max_long_edge_px": 700,
+    "crop": false,
+    "upscale": false,
+    "exif_transpose": true
+  },
+  "supplied_unique_doctors": 12,
+  "supplied_images": 17,
+  "migration_policy": {
+    "import_primary_only": true,
+    "alternates_docs_reference_only": true,
+    "match_requires_unique_exact_alias_after_normalization": true,
+    "fuzzy_match_forbidden": true,
+    "extra_doctors_without_supplied_photo_are_allowed": true,
+    "every_supplied_primary_must_match_exactly_one_existing_doctor": true
+  },
+  "doctors": [
+    {
+      "source_label": "DR ARWINA SUFIKA",
+      "match_aliases": ["arwina sufika"],
+      "primary_webp": "dr-arwina-sufika.webp",
+      "primary_sha256": "9d3d9b037b8d14fba8aa33784941d0fceb59e9b0f4a0f9a3b1aff28d2007d5d0",
+      "source_primary_file": "dr Fika.png",
+      "webp_dimensions": [394, 700],
+      "alternates": ["dr-arwina-sufika-alt-01.webp", "dr-arwina-sufika-alt-02.webp", "dr-arwina-sufika-alt-03.webp"]
+    },
+    {
+      "source_label": "DR CYINTIA MUSIUS",
+      "match_aliases": ["cyintia musius", "cyntia musius"],
+      "primary_webp": "dr-cyintia-musius.webp",
+      "primary_sha256": "dad3aad53f2f03cb908eaaccca921053c29703dc4e481cf70475f6b924b6befe",
+      "source_primary_file": "DR. CYNTIA.jpg",
+      "webp_dimensions": [394, 700],
+      "alternates": []
+    },
+    {
+      "source_label": "DR DESY PUSTIKA SARI",
+      "match_aliases": ["desy pustika sari"],
+      "primary_webp": "dr-desy-pustika-sari.webp",
+      "primary_sha256": "e2a80854a7b32ae129e691a6d542bcc37daed75935ffc6776eacdeacb7273ee5",
+      "source_primary_file": "DR DESY.png",
+      "webp_dimensions": [398, 700],
+      "alternates": []
+    },
+    {
+      "source_label": "DR FLORENTINA AIRA S SYAHARANI",
+      "match_aliases": ["florentina aira s syaharani"],
+      "primary_webp": "dr-florentina-aira-s-syaharani.webp",
+      "primary_sha256": "c291ff52069724e7718bee00d6864088e347a13eec9751efa093c7cc38bbf704",
+      "source_primary_file": "DR FLO.png",
+      "webp_dimensions": [394, 700],
+      "alternates": []
+    },
+    {
+      "source_label": "DR MARIA MAGDALENA BR MANIK_",
+      "match_aliases": ["maria magdalena br manik"],
+      "primary_webp": "dr-maria-magdalena-br-manik.webp",
+      "primary_sha256": "04663c95a37ed4a295e800a6f90310155ab95194e5e7a040d0f93eac758c3cbd",
+      "source_primary_file": "Dr. Maria.png",
+      "webp_dimensions": [560, 700],
+      "alternates": []
+    },
+    {
+      "source_label": "DR MEGA CARKANINBA",
+      "match_aliases": ["mega carkaninba"],
+      "primary_webp": "dr-mega-carkaninba.webp",
+      "primary_sha256": "23badbd01f4cf3a119ffb725831a1f2eb5a56e2cc9eba4a891cb19373c385a40",
+      "source_primary_file": "DR MEGA.png",
+      "webp_dimensions": [560, 700],
+      "alternates": []
+    },
+    {
+      "source_label": "DR NANANG MASRANI, M BIOMED (AAM)",
+      "match_aliases": ["nanang masrani", "nanang masrani m biomed aam"],
+      "primary_webp": "dr-nanang-masrani-m-biomed-aam.webp",
+      "primary_sha256": "b96ffa92238d4862272a0d431ad6f63243c5042277b98a5853de1be2e1341103",
+      "source_primary_file": "dr. Nanang.png",
+      "webp_dimensions": [467, 700],
+      "alternates": ["dr-nanang-masrani-m-biomed-aam-alt-01.webp", "dr-nanang-masrani-m-biomed-aam-alt-02.webp"]
+    },
+    {
+      "source_label": "DR NI NYOMAN AYU LAKSMI TRIMURTI",
+      "match_aliases": ["ni nyoman ayu laksmi trimurti", "ni nyoman ayu laksmy trimurti"],
+      "primary_webp": "dr-ni-nyoman-ayu-laksmi-trimurti.webp",
+      "primary_sha256": "0cf655a7337a298760cae3d742d1dbea01c7b48e808bd25e1cfe24271d57c2b1",
+      "source_primary_file": "dr. Laksmy.jpeg",
+      "webp_dimensions": [700, 466],
+      "alternates": []
+    },
+    {
+      "source_label": "DR OQTI RODIA Sp.GK",
+      "match_aliases": ["oqti rodia", "oqti rodia sp gk"],
+      "primary_webp": "dr-oqti-rodia-sp-gk.webp",
+      "primary_sha256": "324c27319142cf861297352fc9a68df950a7db7689869a6f873668cb793ec699",
+      "source_primary_file": "DR OQTI.png",
+      "webp_dimensions": [467, 700],
+      "alternates": []
+    },
+    {
+      "source_label": "DR PRISSILMA TANIA JONARDI Sp.DVE",
+      "match_aliases": ["prissilma tania jonardi", "prissilma tania jonardi sp dve"],
+      "primary_webp": "dr-prissilma-tania-jonardi-sp-dve.webp",
+      "primary_sha256": "eaead03009da7d08cc9d42a49b5d184ba5ca9898e3210864906142ef8829ec78",
+      "source_primary_file": "DR TANIA.png",
+      "webp_dimensions": [394, 700],
+      "alternates": []
+    },
+    {
+      "source_label": "DR RODIAH",
+      "match_aliases": ["rodiah"],
+      "primary_webp": "dr-rodiah.webp",
+      "primary_sha256": "fe18e2b6243b76c5ef48115c311c60253fdcb7d88d7a2ced7bbac3129b0e994a",
+      "source_primary_file": "dokter diah.jpg",
+      "webp_dimensions": [467, 700],
+      "alternates": []
+    },
+    {
+      "source_label": "DR VINDI NAZHIFA",
+      "match_aliases": ["vindi nazhifa", "vindy nazhifa"],
+      "primary_webp": "dr-vindi-nazhifa.webp",
+      "primary_sha256": "178d6acc83dd05f9160f583748e2a9f55d39758a2f2b4dfb8811913fcab68ebd",
+      "source_primary_file": "dokter vindy.jpg",
+      "webp_dimensions": [467, 700],
+      "alternates": []
+    }
+  ]
+}
