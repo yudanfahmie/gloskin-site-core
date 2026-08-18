@@ -1,0 +1,1 @@
+Status: manifest/README are committed. Owner WebP binary blobs are being committed to the same directory; if a binary path already exists from an interrupted attempt, the final tree must overwrite it with the real WebP blob rather than a base64-text placeholder.
