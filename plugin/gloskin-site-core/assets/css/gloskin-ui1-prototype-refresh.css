@@ -6,9 +6,9 @@
  * only. WooCommerce, WordPress content, query state, routes and interactions
  * remain owned by their existing PHP/JS services.
  *
- * Owner font binaries (Graphik/Felix Titling) are not distributed in this
- * repository. Keep the exact family names first and fall back honestly to
- * system/editorial families until licensed binaries are supplied.
+ * Owner-supplied Graphik/Felix Titling WOFF2 assets are present in this
+ * repository and declared by gloskin-ui1-fonts.css. Their presence documents
+ * runtime implementation only; it does not establish redistribution rights.
  */
 :root,
 .gloskin-ui1--modern,
@@ -38,7 +38,6 @@
 	--gloskin-radius-md:18px;
 	--gloskin-radius-lg:28px;
 	--gloskin-shadow:0 22px 60px color-mix(in srgb,var(--gloskin-refresh-black) 10%,transparent);
-	--gloskin-ui1-content-max:1180px;
 }
 
 html{scroll-behavior:smooth}
@@ -50,7 +49,7 @@ body.gloskin-ui1{
 	font-weight:400;
 	line-height:1.62;
 }
-.gloskin-ui1 .gloskin-ui1-container{max-width:var(--gloskin-ui1-content-max)}
+.gloskin-ui1 .gloskin-ui1-container{max-width:var(--gloskin-container)}
 .gloskin-ui1 h1,
 .gloskin-ui1 h2,
 .gloskin-ui1 h3,
@@ -87,7 +86,7 @@ body.gloskin-ui1{
 	backdrop-filter:blur(18px);
 	-webkit-backdrop-filter:blur(18px);
 }
-.gloskin-ui1-header__inner{max-width:var(--gloskin-ui1-content-max);min-height:76px;gap:clamp(14px,2vw,30px)}
+.gloskin-ui1-header__inner{max-width:var(--gloskin-container);min-height:76px;gap:clamp(14px,2vw,30px)}
 .gloskin-ui1-brand{color:var(--gloskin-refresh-red);font-family:var(--gloskin-font-heading);letter-spacing:.03em}
 .gloskin-ui1-brand__image{max-width:150px}
 .gloskin-ui1-nav{font-family:var(--gloskin-font-nav)}
@@ -223,6 +222,22 @@ body.gloskin-ui1{
 .gloskin-ui1-pathway-card{min-height:220px;padding:clamp(24px,3vw,34px);background:var(--gloskin-refresh-cream)}
 .gloskin-ui1-pathway-card strong{font-family:var(--gloskin-font-heading);font-size:clamp(1.35rem,2.3vw,2rem);line-height:1.08}
 
+/* Doctor directories/team only: all published factual doctors use a dedicated
+ * 4/2/1 grid. Generic product/treatment/clinic grids keep their existing owners. */
+[data-gloskin-section="doctors-grid"] .gloskin-ui1-grid--cards,
+[data-gloskin-section="about-doctors"] .gloskin-ui1-grid--cards{
+	display:grid;
+	grid-template-columns:repeat(4,minmax(0,1fr));
+	gap:clamp(18px,2vw,24px);
+	align-items:stretch;
+}
+[data-gloskin-section="doctors-grid"] .gloskin-ui1-card--doctor,
+[data-gloskin-section="about-doctors"] .gloskin-ui1-card--doctor{min-width:0;height:100%}
+[data-gloskin-section="doctors-grid"] .gloskin-ui1-card--doctor .gloskin-ui1-card__body,
+[data-gloskin-section="about-doctors"] .gloskin-ui1-card--doctor .gloskin-ui1-card__body{display:flex;min-height:180px;flex-direction:column}
+[data-gloskin-section="doctors-grid"] .gloskin-ui1-card--doctor .gloskin-ui1-text-link,
+[data-gloskin-section="about-doctors"] .gloskin-ui1-card--doctor .gloskin-ui1-text-link{margin-top:auto}
+
 /* Home: campaign -> why -> treatment bands -> promo -> product discovery -> brand story. */
 [data-gloskin-section="home-orientation"] .gloskin-ui1-editorial-split{grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr)}
 [data-gloskin-section="home-treatments"] .gloskin-ui1-grid--cards{display:grid;grid-template-columns:1fr;gap:18px}
@@ -292,6 +307,10 @@ body.woocommerce-page .gloskin-ui1-commerce-native{background:var(--gloskin-refr
 .gloskin-ui1-footer__grid>div:not(.gloskin-ui1-footer__brand){border-left-color:color-mix(in srgb,var(--gloskin-refresh-blush) 18%,transparent)}
 .gloskin-ui1-footer__grid a:hover{color:var(--gloskin-refresh-gold)}
 
+@media (max-width:1099px){
+	[data-gloskin-section="doctors-grid"] .gloskin-ui1-grid--cards,
+	[data-gloskin-section="about-doctors"] .gloskin-ui1-grid--cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 @media (max-width:1040px){
 	.gloskin-ui1-header__inner{min-height:68px}
 	.gloskin-ui1-hero .gloskin-ui1-hero__grid{grid-template-columns:1fr 1fr;gap:34px}
@@ -299,6 +318,10 @@ body.woocommerce-page .gloskin-ui1-commerce-native{background:var(--gloskin-refr
 	.gloskin-ui1-section-heading{grid-template-columns:1fr;gap:14px}
 	.gloskin-ui1-section-heading p{margin-left:0}
 	[data-gloskin-section="home-treatments"] .gloskin-ui1-card--treatment{grid-template-columns:minmax(230px,.9fr) minmax(0,1.1fr)}
+}
+@media (max-width:759px){
+	[data-gloskin-section="doctors-grid"] .gloskin-ui1-grid--cards,
+	[data-gloskin-section="about-doctors"] .gloskin-ui1-grid--cards{grid-template-columns:1fr}
 }
 @media (max-width:760px){
 	/* Reverted from the oversized prototype-convergence mobile values.

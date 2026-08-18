@@ -74,7 +74,7 @@ Graphik roles: body/nav/buttons/forms/commerce/utility.
 
 Felix Titling roles: major display/editorial typography.
 
-Do not claim Graphik/Felix are self-hosted until owner-supplied binaries are present and redistribution is authorized. Legacy font binaries may remain technical fallbacks in the meantime.
+Owner-supplied Graphik/Felix WOFF2 assets are now present in the production plugin and self-hosted by `gloskin-ui1-fonts.css`. This records runtime implementation only. The source package did not include a license file, so public-repository redistribution rights must be confirmed separately rather than inferred from asset presence.
 
 ## Bounded IA migration
 

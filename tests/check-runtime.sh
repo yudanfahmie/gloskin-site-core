@@ -13,6 +13,7 @@ php tests/sample-product-importer-hardening.php
 php tests/sample-product-woo-missing.php
 ./tests/check-presentation.sh
 python tests/prototype-refresh-contract.py
+python tests/width-doctor-grid-contract.py
 python tests/prototype-authority-contract.py
 ./tests/plugin-check-remediation-contract.sh
 ./tests/single-product-commerce-contract.sh
@@ -84,6 +85,7 @@ if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/nu
   python tests/single-product-ghost-space-browser-smoke.py
   python tests/micro-interactions-browser-smoke.py
   python tests/header-variant-browser-smoke.py
+  python tests/width-doctor-grid-browser-smoke.py
   python tests/admin-shell-browser-smoke.py
   python tests/hero-video-browser-smoke.py
   python tests/cart-block-mobile-regression.py

@@ -85,4 +85,6 @@ Prototype interpretation is authoritative for normal implementation; raw handwri
 
 ## Binary handoff note
 
-The GitHub connector used to create this workpack writes UTF-8 repository files but does not expose a local-file/binary upload parameter. Therefore this document records exact supplied filenames, contents and SHA-256 identities so an implementation agent with normal checkout/filesystem access can verify and place the owner-supplied binary packages without guessing. The palette values themselves are fully captured above and are sufficient to implement the design tokens. Do not substitute/download lookalike fonts from the web.
+The current production plugin now contains owner-supplied WOFF2 derivatives under `plugin/gloskin-site-core/assets/fonts/`, and `gloskin-ui1-fonts.css` declares Graphik and Felix Titling for self-hosted runtime use. This updates the earlier connector-era handoff note; no external lookalike download is required.
+
+The supplied source package still contains no license file. Runtime presence/self-hosting does **not** establish public-repository redistribution rights, so the release owner must confirm those rights separately before treating redistribution as authorized.

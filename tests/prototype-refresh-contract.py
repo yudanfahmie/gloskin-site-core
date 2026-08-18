@@ -33,10 +33,12 @@ require("!important" not in css, "prototype refresh must add zero !important dec
 require("@media (prefers-reduced-motion:reduce)" in css, "reduced-motion contract missing")
 require(":focus-visible" in css, "keyboard focus contract missing")
 require("min-height:44px" in css, "practical touch target contract missing")
+require("not distributed in this repository" not in css, "stale absent-font-binary comment must not return")
+require("does not establish redistribution rights" in css, "font runtime note must keep licensing/redistribution boundary explicit")
 
-# Owner-supplied Graphik and Felix Titling binaries are now installed (v0.7.132).
-# The @font-face registry must declare both families; the preload list must
-# reference only the two critical faces; legacy Marcellus/Mulish preloads
+# Owner-supplied Graphik and Felix Titling binaries are installed in the current
+# release. The @font-face registry must declare both families; the preload list
+# must reference only the two critical faces; legacy Marcellus/Mulish preloads
 # must be retired.
 require('"Graphik"' in fonts, "Graphik @font-face must be declared in gloskin-ui1-fonts.css")
 require('"Felix Titling"' in fonts, "Felix Titling @font-face must be declared in gloskin-ui1-fonts.css")

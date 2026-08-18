@@ -85,6 +85,8 @@ require("return $this->approved_primary_tree" in nav and "return $this->fallback
 # JS interaction owner. We do not add a second header controller.
 require('[data-gloskin-header="header-2"]{position:sticky' in core_css, "canonical header sticky CSS missing")
 require('body.gloskin-ui1--home [data-gloskin-header="header-2"]' in core_css, "Home canonical glass header CSS missing")
+require('[data-gloskin-header="header-2"] .gloskin-ui1-header__inner{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);' in core_css,
+        "Header V2 geometric centering must remain the approved 1fr/auto/1fr structure")
 require(core_js.count("function initSmartHeader()") == 1, "must keep exactly one smart-header JS owner")
 require(core_js.count("function initNavBubble()") == 1, "must keep exactly one nav-bubble JS owner")
 for forbidden in ("initHeader2Sticky", "initHeader2Scroll", "Header2Controller", "initSmartHeaderType2"):
@@ -112,8 +114,8 @@ for test_command in (
 
 # Release/cache version must move coherently; migration schema is intentionally
 # unrelated and therefore not asserted/changed here.
-require("Version: 0.7.132" in plugin, "plugin header must be 0.7.132")
-require("const VERSION = '0.7.132';" in kernel, "Kernel VERSION must be 0.7.132")
-require("0.7.131" not in plugin and "0.7.131" not in kernel, "stale active release version remains")
+require("Version: 0.7.133" in plugin, "plugin header must be 0.7.133")
+require("const VERSION = '0.7.133';" in kernel, "Kernel VERSION must be 0.7.133")
+require("0.7.132" not in plugin and "0.7.132" not in kernel, "stale active release version remains")
 
 print("header-admin-contract: OK (canonical prototype header)")

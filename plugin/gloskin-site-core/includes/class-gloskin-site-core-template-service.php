@@ -246,7 +246,7 @@ final class Gloskin_Site_Core_Template_Service {
 			'mission' => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_mission', true ) : '',
 			'values' => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_values', true ) : '',
 			'clinics' => $this->clinic_cards(),
-			'doctors' => $this->post_cards( Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE, 4 ),
+			'doctors' => $this->all_published_doctor_cards(),
 		);
 	}
 
@@ -307,7 +307,7 @@ final class Gloskin_Site_Core_Template_Service {
 					if ( $attachment instanceof WP_Post ) {
 						$media_ids[] = absint( $attachment->ID );
 					}
-				}
+			}
 			}
 		}
 		$media_ids = array_slice( array_values( array_unique( array_filter( $media_ids ) ) ), 0, 3 );
@@ -488,7 +488,8 @@ final class Gloskin_Site_Core_Template_Service {
 		return array(
 			'page' => $page,
 			'hero' => $this->hero_context( $page, __( 'Dokter Gloskin', 'gloskin-site-core' ), __( 'Gunakan halaman ini untuk mengenali profil dokter dan lokasi praktik yang dipublikasikan Gloskin.', 'gloskin-site-core' ) ),
-			'doctors' => $this->post_cards( Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE, 13 ),
+			'doctors' => $this->all_published_doctor_cards(),
+			/* Readiness target only; never a directory display ceiling. */
 			'target' => Gloskin_Site_Core_Content_Service::DOCTOR_TARGET_COUNT,
 		);
 	}
@@ -848,6 +849,28 @@ final class Gloskin_Site_Core_Template_Service {
 		) );
 		$cards = array();
 		foreach ( $posts as $post ) { $cards[] = $this->post_card( $post, $post_type ); }
+		return $cards;
+	}
+
+	/**
+	 * Factual Doctor directory/team collection. Unlike readiness targets and
+	 * preview helpers, this collection has no display ceiling: every published
+	 * Gloskin doctor is projected in deterministic menu-order/title order.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	private function all_published_doctor_cards() {
+		$posts = get_posts( array(
+			'post_type'      => Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'orderby'        => 'menu_order title',
+			'order'          => 'ASC',
+		) );
+		$cards = array();
+		foreach ( $posts as $post ) {
+			$cards[] = $this->post_card( $post, Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE );
+		}
 		return $cards;
 	}
 
