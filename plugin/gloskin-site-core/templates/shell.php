@@ -15,7 +15,6 @@ if ( ! is_array( $gloskin_context ) ) {
 }
 
 $gloskin_view             = isset( $gloskin_context['view'] ) ? sanitize_key( $gloskin_context['view'] ) : '';
-$gloskin_variant          = isset( $gloskin_context['design_variant'] ) ? sanitize_key( $gloskin_context['design_variant'] ) : 'medical';
 $gloskin_view_file        = __DIR__ . '/pages/' . $gloskin_view . '.php';
 $gloskin_commerce_native  = ! empty( $gloskin_context['commerce_native'] );
 $gloskin_commerce_render  = isset( $gloskin_context['commerce_render_mode'] ) ? sanitize_key( $gloskin_context['commerce_render_mode'] ) : '';
@@ -24,7 +23,10 @@ require __DIR__ . '/parts/template-helpers.php';
 require __DIR__ . '/parts/readiness-helpers.php';
 require __DIR__ . '/parts/composition-helpers.php';
 require __DIR__ . '/parts/product-description-boundary.php';
-$gloskin_body_classes = array( 'gloskin-ui1', 'gloskin-ui1--' . $gloskin_variant );
+/* The approved prototype is now the only public presentation. Historical
+ * presentation settings may remain stored for backward compatibility, but the
+ * public shell intentionally never reads or projects them into CSS. */
+$gloskin_body_classes = array( 'gloskin-ui1' );
 if ( 'home' === $gloskin_view ) {
 	/* Home-only header entrance owner (see gloskin-ui1-core-base.css). No
 	 * second view/body-class owner is introduced -- $gloskin_view is the

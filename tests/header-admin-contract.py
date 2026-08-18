@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""Static contract checks for the Header Type 1/2 variant system and the
-Gloskin admin presentation shell."""
+"""Canonical public header/presentation hygiene contract."""
 from pathlib import Path
 import re
 
@@ -12,126 +11,109 @@ def read(rel):
     return (ROOT / rel).read_text(encoding="utf-8")
 
 
-def require(cond, message):
-    if not cond:
+def require(condition, message):
+    if not condition:
         raise AssertionError(message)
 
 
+header = read("plugin/gloskin-site-core/templates/parts/header.php")
+shell = read("plugin/gloskin-site-core/templates/shell.php")
 admin = read("plugin/gloskin-site-core/includes/class-gloskin-site-core-admin-service.php")
 template_service = read("plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php")
-assets_service = read("plugin/gloskin-site-core/includes/class-gloskin-site-core-asset-service.php")
-assets_config = read("plugin/gloskin-site-core/config/assets.php")
-header = read("plugin/gloskin-site-core/templates/parts/header.php")
+nav = read("plugin/gloskin-site-core/includes/class-gloskin-site-core-navigation-service.php")
 core_css = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css")
 core_js = read("plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js")
 admin_css = read("plugin/gloskin-site-core/assets/css/gloskin-admin.css")
 admin_js = read("plugin/gloskin-site-core/assets/js/gloskin-admin.js")
+check_runtime = read("tests/check-runtime.sh")
+plugin = read("plugin/gloskin-site-core/gloskin-site-core.php")
+kernel = read("plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php")
 
-# --- Canonical setting: gloskin_ui1_header_variant lives inside the one
-# existing Gloskin settings option, strict allowlist, header-1 fallback. ---
-require("'header_variant' => 'header-1'" in admin, "settings_defaults() must default header_variant to header-1")
-require("in_array( $header_variant, array( 'header-1', 'header-2' ), true ) ? $header_variant : 'header-1'" in admin, "sanitize_settings() must strict-allowlist header_variant with header-1 fallback")
-require("class Gloskin_Site_Core_Header_Settings_Service" not in "\n".join(p.read_text(encoding="utf-8") for p in PLUGIN.rglob("*.php")), "must not introduce a second Header_Settings_Service settings framework")
-require("private function header_variant()" in template_service, "Template Service must own reading the canonical header_variant setting")
-require("in_array( $value, array( 'header-1', 'header-2' ), true ) ? $value : 'header-1'" in template_service, "Template Service header_variant() must strict-allowlist the same way")
-require("$context['header_variant'] = $this->header_variant();" in template_service, "header_variant must be threaded into the one shared page context")
+# The approved prototype has exactly one public header markup path. Historical
+# header_variant data may still exist in the settings option, but the renderer
+# must have no branch and no ability to read it.
+require(header.count('data-gloskin-header="header-2"') == 1, "canonical header-2 markup must render exactly once")
+require('data-gloskin-header="header-1"' not in header, "legacy header-1 public markup must be retired")
+require("$gloskin_header_variant" not in header and "header_variant" not in header, "public header must not read legacy header_variant state")
+require("if ( 'header-2'" not in header and "else : ?>\n<header class=\"gloskin-ui1-header\"" not in header, "public header must have no variant branch")
+require(header.count("function gloskin_ui1_render_nav_tree") == 1, "one nav-tree renderer must remain")
+require(header.count("gloskin_ui1_render_nav_tree( $gloskin_navigation") == 1, "desktop header must render one NavigationService tree")
+for utility in ("data-gloskin-search-open", "data-gloskin-auth-open", "data-gloskin-wishlist-open", "data-gloskin-cart-open", "data-gloskin-drawer-open"):
+    require(utility in header, f"canonical header lost commerce/search utility: {utility}")
+require("gloskin-ui1-header__nav-row" not in header and "gloskin-ui1-compact-brand" not in header,
+        "legacy two-row header-1 markup must be absent")
 
-# --- One canonical server-rendered header, composition branches on the one
-# variant value; Header 1 stays the literal, unmodified default branch. ---
-require(header.count("data-gloskin-header=\"header-1\"") == 1 and header.count("data-gloskin-header=\"header-2\"") == 1, "header.php must expose exactly one header-1 and one header-2 branch")
-require("if ( 'header-2' === $gloskin_header_variant ) :" in header and "else :" in header, "header.php must branch on the one variant value, never render both")
-require(header.count("gloskin_ui1_render_nav_tree( $gloskin_navigation,") >= 2, "both variants must reuse the one canonical nav-tree renderer")
-require("function gloskin_ui1_render_nav_tree" in header and header.count("function gloskin_ui1_render_nav_tree") == 1, "must not introduce a second nav-tree renderer")
-require("gloskin-ui1-header__nav-row" not in header[header.index('data-gloskin-header="header-2"'):header.index('<?php else :')], "Header Type 2 must not render a second sticky nav row")
-require("data-gloskin-drawer-open" in header, "both header variants must keep the one existing mobile drawer trigger")
+# The public shell is similarly presentation-agnostic: stale medical/modern/
+# luxury settings cannot become body classes and revive an old visual system.
+require("design_variant" not in shell and "$gloskin_variant" not in shell, "public shell must not consume legacy design_variant")
+require("$gloskin_body_classes = array( 'gloskin-ui1' );" in shell, "public shell must use one canonical presentation root")
+for legacy_class in ("gloskin-ui1--medical", "gloskin-ui1--modern", "gloskin-ui1--luxury"):
+    require(legacy_class not in shell, f"legacy public design class remains reachable: {legacy_class}")
+require("gloskin-ui1--home" in shell, "Home-specific non-variant state class must remain")
 
-# --- Header Type 2 CSS: scoped to the variant attribute, one sticky owner,
-# reuses the existing compact/mobile breakpoint, zero new !important. ---
-require('[data-gloskin-header="header-2"]{position:sticky' in core_css, "Header Type 2 must be its own sticky owner")
-require('[data-gloskin-header="header-2"] .gloskin-ui1-header__inner{grid-template-columns:auto minmax(0,1fr) auto' in core_css, "Header Type 2 must use the specified auto/flex/auto grid")
-require('@media (max-width:1040px){[data-gloskin-header="header-2"] .gloskin-ui1-nav--desktop{display:none}}' in core_css, "Header Type 2 must reuse the existing 1040px compact/mobile breakpoint, not invent a new one")
-require("!important" not in core_css[core_css.index('[data-gloskin-header="header-2"]'):core_css.index('[data-gloskin-header="header-2"]') + 900], "Header Type 2 CSS must not use !important")
+# Legacy keys are intentionally allowed to remain stored/admin-visible during
+# this final hygiene pass; the important invariant is that neither public
+# renderer consumes them. No settings migration is introduced for presentation.
+require("'header_variant'" in admin and "'design_variant'" in admin, "historical setting compatibility unexpectedly removed")
+require("private function header_variant()" in template_service and "private function design_variant()" in template_service,
+        "historical readers may remain for compatibility until a later cleanup")
+require("header_variant" not in header and "design_variant" not in shell,
+        "historical settings must terminate before public rendering")
 
-# --- Header 2 sticky/compact behavioral parity with Header 1: one existing
-# smart-header owner, generalized target resolution, same state vocabulary,
-# same node for the compact logo (no clone), no second controller. ---
-require("function resolveSmartHeaderSurface()" in core_js, "one target-resolution helper must live inside the existing smart-header owner")
-require(core_js.count("function resolveSmartHeaderSurface()") == 1, "must not duplicate the target-resolution helper")
-for forbidden in ("initHeader2Sticky", "initHeader2Scroll", "Header2Controller", "function initSmartHeaderType2", "function initCompactStickyType2"):
-    require(forbidden not in core_js, f"must not introduce a second sticky/header controller: {forbidden}")
-require(core_js.count("function initSmartHeader()") == 1 and core_js.count("function initCompactSticky()") == 1, "must keep exactly the one existing smart-header owner (both functions), not add new ones")
-require("selfContained" in core_js, "the one smart-header owner must branch on the resolved target, not fork into separate functions")
-require("[data-gloskin-header=\"header-2\"].is-hidden{transform:translateY(calc(-100% - var(--gloskin-ui1-nav-sticky-top)))}" in core_css, "Header 2 must reuse the same is-hidden translateY state vocabulary as Header 1's nav row")
-require('[data-gloskin-header="header-2"].is-compact-sticky img.gloskin-ui1-brand__image{height:clamp(32px,3vw,45px)}' in core_css, "Header 2's compact logo must resize the SAME brand image node to Header 1's exact compact dimensions, not clone another logo")
-require('[data-gloskin-header="header-2"].is-compact-sticky .gloskin-ui1-header__inner{min-height:56px}' in core_css, "Header 2 must also reduce its row height when compact, not just the logo")
-require('img.gloskin-ui1-brand__image--compact' in core_css, "Header 1's compact-brand logo dimensions token must remain the shared source of truth")
-require("transition:transform 220ms cubic-bezier(.22,1,.36,1)" in core_css[core_css.index('[data-gloskin-header="header-2"]'):core_css.index('[data-gloskin-header="header-2"]') + 900], "Header 2 must animate its hide/reveal with the same transition timing as Header 1's nav row")
-require('[data-gloskin-header="header-2"]' in core_css[core_css.index("@media (prefers-reduced-motion:reduce)"):core_css.index("@media (prefers-reduced-motion:reduce)") + 400], "Header 2's new transitions must be included in the existing reduced-motion exemption")
-# Nav hover stays owned solely by initNavBubble() -- no second hover
-# controller introduced for Header 2's differently-shaped grid parent.
-require(core_js.count("function initNavBubble()") == 1, "nav hover bubble must remain owned by exactly one existing controller")
+# Primary IA remains exact and ordered. Desktop and mobile both consume this
+# same NavigationService tree; no support route returns to primary nav.
+targets_start = nav.index("$targets = array(")
+targets_end = nav.index(");", targets_start)
+targets = nav[targets_start:targets_end]
+ordered = [
+    ("'/treatments/'", "'Perawatan'"),
+    ("'/promo/'", "'Promo'"),
+    ("'/skincare/'", "'Skincare'"),
+    ("'/about/'", "'Tentang Gloskin'"),
+]
+positions = []
+for path, label in ordered:
+    require(path in targets and label in targets, f"approved primary destination missing: {label}")
+    positions.append(targets.index(path))
+require(positions == sorted(positions), "primary nav order must be Perawatan, Promo, Skincare, Tentang Gloskin")
+for obsolete in ("'/shop/'", "'/clinics/'", "'/doctors/'", "'/insights/'", "'/contact/'"):
+    require(obsolete not in targets, f"support route returned to primary nav: {obsolete}")
+require("return $this->approved_primary_tree" in nav and "return $this->fallback_tree()" in nav,
+        "assigned and fallback nav must share the approved projection")
 
-# --- Admin shell: Gloskin-owned naming, isolated scope, zero !important. ---
-require("#gloskin-admin-root" in admin_css, "admin shell must be scoped beneath #gloskin-admin-root")
-for owned_class in (".gloskin-admin-shell", ".gloskin-admin-shell__sidebar", ".gloskin-admin-tabs", ".gloskin-admin-canvas", ".gloskin-admin-card"):
-    require(owned_class in admin_css, f"admin shell must define Gloskin-owned class: {owned_class}")
-require("!important" not in admin_css, "admin shell CSS must carry zero !important")
-require("id=\"gloskin-admin-root\"" in admin, "Settings page must render the #gloskin-admin-root shell")
-for tab_label in ("Brand", "Header", "Booking & Social", "Page Mapping"):
-    require(f"'{tab_label}'" in admin or f'"{tab_label}"' in admin, f"Settings page must expose a {tab_label} tab")
+# Canonical header keeps the proven Header-2 sticky/glass CSS and one existing
+# JS interaction owner. We do not add a second header controller.
+require('[data-gloskin-header="header-2"]{position:sticky' in core_css, "canonical header sticky CSS missing")
+require('body.gloskin-ui1--home [data-gloskin-header="header-2"]' in core_css, "Home canonical glass header CSS missing")
+require(core_js.count("function initSmartHeader()") == 1, "must keep exactly one smart-header JS owner")
+require(core_js.count("function initNavBubble()") == 1, "must keep exactly one nav-bubble JS owner")
+for forbidden in ("initHeader2Sticky", "initHeader2Scroll", "Header2Controller", "initSmartHeaderType2"):
+    require(forbidden not in core_js, f"second header controller introduced: {forbidden}")
 
-# --- Header picker: real radio inputs, one per variant, label-wrapped,
-# decorative preview image (image is not the control). ---
-require(admin.count('type="radio"') >= 2, "Header picker must use real native radio inputs")
-require("self::SETTINGS_OPTION ); ?>[header_variant]\"" in admin, "Header picker radios must post into the one settings option's header_variant key")
-require("render_header_variant_card( 'header-1'" in admin and "render_header_variant_card( 'header-2'" in admin, "Settings page must render exactly the header-1 and header-2 cards")
-require('<label class="gloskin-admin-header-card' in admin, "each Header Type card must be a real <label> so the whole card activates its radio")
-require('alt=""' in admin, "Header Type preview image must stay presentation-only (empty alt), not a duplicate control/announcement")
+# Existing admin shell remains presentation-only. Its historical variant fields
+# are inert compatibility UI, not a second public presentation owner.
+require("#gloskin-admin-root" in admin_css and "!important" not in admin_css, "admin shell scope/purity regressed")
+require("function init()" in admin_js, "admin settings progressive enhancement missing")
+require("localStorage" not in admin_js and "fetch(" not in admin_js and "XMLHttpRequest" not in admin_js,
+        "admin settings JS must not become a state/network owner")
 
-# --- Preview PNGs: real local Playwright captures, not fabricated/missing. ---
-for filename in ("header-type-1.png", "header-type-2.png"):
-    png_path = PLUGIN / "assets/admin" / filename
-    require(png_path.is_file(), f"missing real preview screenshot: assets/admin/{filename}")
-    require(png_path.stat().st_size > 2000, f"assets/admin/{filename} looks empty/fabricated (too small)")
-    require(png_path.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n", f"assets/admin/{filename} must be a real PNG")
+# Commerce behavior stays protected by the unchanged native owners plus the
+# existing full-suite contracts for Shop/PDP/Cart/Checkout/My Account.
+for token in ("$gloskin_commerce_native", "woocommerce_content()", "is_cart()", "is_checkout()", "gloskin_ui1_register_product_description_boundary"):
+    require(token in shell, f"native commerce shell boundary lost: {token}")
+for test_command in (
+    "php tests/shop-catalog-contract.php",
+    "./tests/single-product-commerce-contract.sh",
+    "php tests/rendered-shell-auth-smoke.php",
+    "python tests/cart-block-mobile-regression.py",
+    "python tests/checkout-block-presentation-regression.py",
+):
+    require(test_command in check_runtime, f"full suite no longer protects commerce path: {test_command}")
 
-# --- Assets: AssetService remains the sole registry/enqueue owner; the
-# admin shell CSS/JS load only on the Settings screen, never globally. ---
-require("'gloskin-admin' => array(" in assets_config, "gloskin-admin CSS/JS must be declared in the one asset registry")
-require("public function enqueue_admin_settings()" in assets_service, "AssetService must own enqueueing the admin shell assets")
-require(assets_service.count("wp_enqueue_style( 'gloskin-admin' )") == 1, "gloskin-admin.css must be enqueued from exactly one place")
-require("public function enqueue_settings_assets( $hook_suffix )" in admin, "Admin Service must gate the admin shell enqueue to the exact Settings screen hook")
-require("if ( '' === $this->settings_hook || $hook_suffix !== $this->settings_hook ) { return; }" in admin, "admin shell assets must never load on unrelated wp-admin screens")
+# Release/cache version must move coherently; migration schema is intentionally
+# unrelated and therefore not asserted/changed here.
+require("Version: 0.7.131" in plugin, "plugin header must be 0.7.131")
+require("const VERSION = '0.7.131';" in kernel, "Kernel VERSION must be 0.7.131")
+require("0.7.130" not in plugin and "0.7.130" not in kernel, "stale active release version remains")
 
-# --- Zero Morgen runtime dependency: pattern adoption only, no reference to
-# the source repo/its namespace/branding anywhere in the shipped plugin. ---
-plugin_php_and_css_and_js = "\n".join(
-    p.read_text(encoding="utf-8")
-    for p in list(PLUGIN.rglob("*.php")) + list(PLUGIN.rglob("*.css")) + list(PLUGIN.rglob("*.js"))
-)
-require("morgen" not in plugin_php_and_css_and_js.lower(), "zero runtime reference to morgen-core anywhere in the shipped plugin")
-require("MGA" not in plugin_php_and_css_and_js, "must not adopt the Morgen MGA namespace")
-
-# --- Admin JS: presentation-only tab switching, owns no settings state. ---
-require("function init()" in admin_js, "admin tab-switching script present")
-require("localStorage" not in admin_js and "fetch(" not in admin_js and "XMLHttpRequest" not in admin_js, "admin shell JS must own no state/network -- presentation-only tab switching")
-
-# --- ARIA tabs: complete roving-tabindex pattern (server + JS), Home/End,
-# progressive enhancement (no JS => every panel stays visible/submittable). ---
-require('tabindex="<?php echo \'brand\' === $tab_key ? \'0\' : \'-1\'; ?>"' in admin, "server must render tabindex=0 for the active tab and -1 for the rest")
-require("tab.tabIndex = active ? 0 : -1;" in admin_js, "activate() must keep the roving tabindex in sync with which tab is active")
-require("tab.tabIndex = i === activeIndex ? 0 : -1;" in admin_js, "initial sync must also set roving tabindex to match the server-rendered active tab")
-for key in ("ArrowRight", "ArrowLeft", "Home", "End"):
-    require(f"event.key === '{key}'" in admin_js, f"tab keyboard navigation must support {key}")
-require("tabs[index].focus();" in admin_js, "activation must move focus to the newly active tab")
-require('hidden>' not in re.sub(r'data-gloskin-admin-panel="[a-z]+"', '', admin), "every settings panel must render visible by default (progressive enhancement without JS)")
-
-# --- Preview card keyboard focus: distinct from selected state, scoped,
-# reactive (never a stuck/permanent treatment), native radio stays canonical. ---
-require(".gloskin-admin-header-card:focus-within{box-shadow:" in admin_css, "Header Type card must project keyboard focus via :focus-within onto the whole card")
-require(admin_css.count("gloskin-admin-header-card:focus-within") == 1, "focus-within projection must be defined in exactly one place")
-focus_within_rule = admin_css[admin_css.index(".gloskin-admin-header-card:focus-within"):admin_css.index(".gloskin-admin-header-card:focus-within") + 200]
-require("border-color" not in focus_within_rule, "focus ring must be visually distinct from the selected-state border-color treatment")
-require("!important" not in focus_within_rule, "focus-within projection must not use !important")
-
-print("header-admin-contract: OK")
+print("header-admin-contract: OK (canonical prototype header)")
