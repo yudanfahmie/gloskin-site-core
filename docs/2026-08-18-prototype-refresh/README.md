@@ -11,6 +11,23 @@ This package is the latest client-approved authority for Gloskin's **public/edit
 
 This supersedes older presentation-only decisions. It does not supersede WordPress/WooCommerce data ownership or commerce correctness.
 
+## Current next implementation task
+
+The owner-reviewed next revision is defined in:
+
+`NEXT-TASK-PARITY-DATA-ADMIN-MIGRATION.md`
+
+It covers the remaining prototype parity, managed Promo/Testimonial/Achievement CRUD + deterministic demo data, About/content cleanup, and the intelligent one-click/one-shot migration.
+
+The owner has also supplied factual doctor photography for direct application. Its engineering source of truth is:
+
+`resources/doctor-photos/README.md`
+`resources/doctor-photos/doctor-photo-manifest.json`
+`resources/doctor-photos/doctor-photo-primaries-webp.zip`
+`resources/doctor-photos/doctor-photo-alternates-webp.zip`
+
+The next-task specification intentionally evolves Promo from one Page/Media composition into bounded repeatable managed campaign records while keeping `/promo/` as the native public destination. It also adds doctor-photo import/apply as a deterministic checkpoint in the same bounded migration.
+
 ## Product zones
 
 ### Prototype-controlled editorial zone
@@ -48,7 +65,7 @@ Retain the existing data relationships/recommendation engine. Converge presentat
 
 ## Promo
 
-`/promo/` is a native WordPress Page and primary IA destination. No Promo CPT/database. Home links to it. Missing content yields a clean state, never invented discounts, prices, terms or dates.
+`/promo/` remains a native WordPress Page and primary IA destination. The current revision uses Page/Media content; the next implementation task adds bounded native WordPress repeatable Promo campaign records for carousel/CRUD while keeping the Page as the public destination. No custom database and never invent terms/prices/dates.
 
 ## Skincare and Shop
 
@@ -76,25 +93,33 @@ Felix Titling roles: major display/editorial typography.
 
 Owner-supplied Graphik/Felix WOFF2 assets are now present in the production plugin and self-hosted by `gloskin-ui1-fonts.css`. This records runtime implementation only. The source package did not include a license file, so public-repository redistribution rights must be confirmed separately rather than inferred from asset presence.
 
-## Bounded IA migration
+## Current production baseline protected by next task
 
-Revision `2026-08-18` has a one-click wp-admin runner with real progress UI. It automatically chains deterministic checkpoints:
+As of v0.7.133:
 
-1. Pages;
-2. Primary Menu;
-3. Safety Verify;
-4. Finalize/Consumed.
+- canonical public container is semi-full 1320px with existing wider desktop breakpoints;
+- Doctors Hub and About consume all published doctors;
+- doctor grid is 4-column desktop / 2 tablet / 1 mobile;
+- Header V2 remains the sole canonical public header and its nav is geometrically centered;
+- Graphik/Felix typography remains canonical.
 
-It is resumable/idempotent, preserves unknown editor menu items and support Pages, snapshots Woo page configuration, and writes target schema only after verification. It is **not** a generic migration framework.
+These are regression-protected, not work to reopen.
+
+## Bounded migration discipline
+
+The previous IA migration established the required pattern: one-click wp-admin runner, deterministic checkpoints, resumable/idempotent execution, safety verification before finalize, monotonic schema, and permanent disappearance after `consumed`.
+
+The next revision must preserve the same discipline while adding managed-content setup/seeding and owner doctor-photo import/apply. It is **not** a generic migration framework.
 
 ## Acceptance
 
 - primary menu matches approved IA;
-- `/promo/` exists natively;
+- `/promo/` remains the public Promo destination;
 - desktop/mobile consume the same normalized menu tree;
 - support routes/data are preserved;
 - Woo Shop/PDP/Cart/Checkout/My Account functionality remains;
 - migration is one-click, resumable and idempotent;
+- owner doctor photos are applied only through deterministic exact manifest matching;
 - no fabricated facts;
 - keyboard/focus/reduced-motion/responsive behavior remains sound;
 - repository docs contain one clear current authority model.
