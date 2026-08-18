@@ -1,1 +1,0 @@
-Binary WebP assets in this directory are owner-supplied doctor-photo work material. `doctor-photo-manifest.json` is the mapping authority. Runtime must not hotlink these docs assets; the one-shot migration must package the 12 primary bytes first-party and apply them via deterministic manifest matching.

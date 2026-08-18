@@ -1,1 +1,0 @@
-The actual `.webp` doctor-photo bytes must be stored as Git binary blobs. Do not treat base64 strings as image file contents.
