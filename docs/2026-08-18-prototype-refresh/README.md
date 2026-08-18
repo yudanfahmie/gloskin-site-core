@@ -5,26 +5,30 @@ This package is the latest client-approved authority for Gloskin's **public/edit
 ## Precedence
 
 1. explicit current owner instruction;
-2. this package for public IA, primary navigation, editorial page hierarchy, Home, Treatments, Promo, Skincare landing, About and global visual/interaction direction;
-3. canonical repository architecture/security/data docs for WordPress/WooCommerce ownership, storage, useful routes, security, SEO/GEO engineering and service boundaries;
-4. current WooCommerce implementation as the protected functional commerce baseline.
+2. `CURRENT-ENGINEERING-PACK.md` for the active implementation bundle and conflict resolution;
+3. this package for public IA, primary navigation, editorial page hierarchy, Home, Treatments, Promo, Skincare landing, About and global visual/interaction direction;
+4. canonical repository architecture/security/data docs for WordPress/WooCommerce ownership, storage, useful routes, security, SEO/GEO engineering and service boundaries;
+5. current WooCommerce implementation as the protected functional commerce baseline.
 
 This supersedes older presentation-only decisions. It does not supersede WordPress/WooCommerce data ownership or commerce correctness.
 
 ## Current next implementation task
 
-The owner-reviewed next revision is defined in:
+Start from:
+
+`CURRENT-ENGINEERING-PACK.md`
+
+The primary task specification is:
 
 `NEXT-TASK-PARITY-DATA-ADMIN-MIGRATION.md`
 
-It covers the remaining prototype parity, managed Promo/Testimonial/Achievement CRUD + deterministic demo data, About/content cleanup, and the intelligent one-click/one-shot migration.
+The doctor-photo rules are additionally governed by:
 
-The owner has also supplied factual doctor photography for direct application. Its engineering source of truth is:
+- `DOCTOR-PHOTO-MIGRATION-ADDENDUM.md`;
+- `resources/doctor-photos/README-V2.md`;
+- `resources/doctor-photos/doctor-photo-manifest-v2.json`.
 
-`resources/doctor-photos/README.md`
-`resources/doctor-photos/doctor-photo-manifest.json`
-`resources/doctor-photos/doctor-photo-primaries-webp.zip`
-`resources/doctor-photos/doctor-photo-alternates-webp.zip`
+These v2 doctor-photo references supersede the older doctor-photo README/manifest and any experimental binary packaging artifacts in the same folder.
 
 The next-task specification intentionally evolves Promo from one Page/Media composition into bounded repeatable managed campaign records while keeping `/promo/` as the native public destination. It also adds doctor-photo import/apply as a deterministic checkpoint in the same bounded migration.
 
@@ -65,7 +69,7 @@ Retain the existing data relationships/recommendation engine. Converge presentat
 
 ## Promo
 
-`/promo/` remains a native WordPress Page and primary IA destination. The current revision uses Page/Media content; the next implementation task adds bounded native WordPress repeatable Promo campaign records for carousel/CRUD while keeping the Page as the public destination. No custom database and never invent terms/prices/dates.
+`/promo/` remains a native WordPress Page and primary IA destination. The next implementation task adds bounded native WordPress repeatable Promo campaign records for carousel/CRUD while keeping the Page as the public destination. No custom database and never invent terms/prices/dates.
 
 ## Skincare and Shop
 
@@ -91,7 +95,7 @@ Graphik roles: body/nav/buttons/forms/commerce/utility.
 
 Felix Titling roles: major display/editorial typography.
 
-Owner-supplied Graphik/Felix WOFF2 assets are now present in the production plugin and self-hosted by `gloskin-ui1-fonts.css`. This records runtime implementation only. The source package did not include a license file, so public-repository redistribution rights must be confirmed separately rather than inferred from asset presence.
+Owner-supplied Graphik/Felix WOFF2 assets are present in the production plugin and self-hosted by `gloskin-ui1-fonts.css`. This records runtime implementation only. Public-repository redistribution rights must not be inferred from asset presence.
 
 ## Current production baseline protected by next task
 
