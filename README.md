@@ -15,19 +15,26 @@ Pinned Morgen provenance:
 - UI V6 is structural/interaction provenance only;
 - production presentation name: **Gloskin UI v1**.
 
+### Current owner-approved presentation refresh
+
+The next Gloskin presentation revamp is packaged in `docs/2026-08-18-prototype-refresh/` with the interactive prototype, raw-wireframe provenance, official color contract, owner-supplied font manifest, implementation rules, acceptance criteria and one codebase-only AI developer prompt.
+
+For that work, the refresh package is the newest owner-approved authority for **visual presentation and interaction direction**. Existing canonical documents remain authoritative for architecture, routes, storage, security, WordPress/WooCommerce ownership and SEO/GEO structure. Factual site data remains WordPress/WooCommerce-owned; prototype copy is not commercial/medical truth.
+
 ## Canonical developer reading order
 
 1. `CONTRIBUTING.md` — mandatory main-only workflow and architecture discipline.
-2. `docs/developer-source-of-truth.md` — authoritative normalized product/developer requirements.
-3. `docs/architecture-efficiency-audit.md` — canonical runtime architecture, simplification and security contract.
-4. `docs/runtime-service-map.csv` — one-owner service/request/storage boundaries.
-5. `docs/content-data-contracts.md` — content/entity fields, relationships and pending inputs.
-6. `docs/morgen-v6-reverse-engineering.md` — source-level Morgen findings and dependency cuts.
-7. `docs/implementation-plan.md` — ordered implementation sequence.
-8. `docs/page-matrix.csv` — route/page-family inventory.
-9. `docs/prune-matrix.csv` — source/capability retain-adapt-remove decisions.
-10. `docs/source-notes.md` — provenance only; not a normal development dependency.
-11. `tests/README.md` — verification contract.
+2. `docs/2026-08-18-prototype-refresh/README.md` — current owner-approved presentation target and task group.
+3. `docs/developer-source-of-truth.md` — authoritative normalized product/developer requirements outside presentation overrides above.
+4. `docs/architecture-efficiency-audit.md` — canonical runtime architecture, simplification and security contract.
+5. `docs/runtime-service-map.csv` — one-owner service/request/storage boundaries.
+6. `docs/content-data-contracts.md` — content/entity fields, relationships and pending inputs.
+7. `docs/morgen-v6-reverse-engineering.md` — source-level Morgen findings and dependency cuts.
+8. `docs/implementation-plan.md` — ordered implementation sequence.
+9. `docs/page-matrix.csv` — route/page-family inventory.
+10. `docs/prune-matrix.csv` — source/capability retain-adapt-remove decisions.
+11. `docs/source-notes.md` — provenance only; not a normal development dependency.
+12. `tests/README.md` — verification contract.
 
 ## Architecture at a glance
 
