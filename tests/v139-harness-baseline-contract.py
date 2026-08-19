@@ -183,15 +183,24 @@ printf '%s\n' "$shop_price_block" | grep -qF "wc_product_meta_lookup" \
     elif "TemplateService raw DB access escaped shop_price_bounds()" not in src:
         raise SystemExit("check-presentation: raw-DB guard is neither known stale nor normalized")
 
-    stale_cart_prefix = "body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items"
-    corrected_cart_prefix = "body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block.wc-block-cart-items"
-    stale_cart_count = src.count(stale_cart_prefix)
-    if stale_cart_count:
-        if stale_cart_count != 7:
-            raise SystemExit(f"check-presentation: expected 7 stale desktop Cart selector prefixes, found {stale_cart_count}")
-        src = src.replace(stale_cart_prefix, corrected_cart_prefix)
-    elif src.count(corrected_cart_prefix) < 7:
-        raise SystemExit("check-presentation: desktop Cart selector guard is neither known stale nor normalized")
+    stale_items_prefix = "body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items"
+    corrected_items_prefix = "body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block.wc-block-cart-items"
+    if stale_items_prefix in src:
+        if src.count(stale_items_prefix) != 5:
+            raise SystemExit(f"check-presentation: expected 5 stale Cart items prefixes, found {src.count(stale_items_prefix)}")
+        src = src.replace(stale_items_prefix, corrected_items_prefix)
+    elif src.count(corrected_items_prefix) < 5:
+        raise SystemExit("check-presentation: Cart items prefixes are neither known stale nor normalized")
+
+    for suffix in ('.wc-block-cart-item__total', '.wc-block-components-product-name'):
+        stale = "body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block " + suffix
+        corrected = "body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block.wc-block-cart-items " + suffix
+        if stale in src:
+            if src.count(stale) != 1:
+                raise SystemExit(f"check-presentation: unexpected stale Cart selector count for {suffix}")
+            src = src.replace(stale, corrected, 1)
+        elif corrected not in src:
+            raise SystemExit(f"check-presentation: Cart selector is neither known stale nor normalized for {suffix}")
 
     PRESENTATION.write_text(src, encoding="utf-8")
 
