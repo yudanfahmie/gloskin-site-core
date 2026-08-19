@@ -70,6 +70,14 @@ jobs:
           s = p.read_text(encoding='utf-8')
           s = s.replace('"[\'editorial_audit\'] = $this->run_managed_content()"', '"[\'editorial_audit\'] = \\$this->run_managed_content()"')
           s = s.replace('"[\'ia_audit\'] = $this->run_normalize()"', '"[\'ia_audit\'] = \\$this->run_normalize()"')
+          s = s.replace(
+              'gl_final_ok( substr_count( $migration, "\'key\' =>") === 8, \'no migration checkpoint added\' );',
+              '$first_step = min( $positions ); $last_step = max( $positions ); $step_slice = substr( $migration, $first_step, ( $last_step - $first_step ) + strlen( "\'key\' => \'finalize\'" ) ); gl_final_ok( substr_count( $step_slice, "\'key\' => \'" ) === 8, \'no migration checkpoint added/reordered\' );'
+          )
+          s = s.replace(
+              'gl_final_ok( ! str_contains( $ia, "wp_delete_post( $page" ), \'IA normalizer never deletes supporting pages\' );',
+              'gl_final_ok( substr_count( $ia, \'wp_delete_post(\' ) === 1 && str_contains( $ia, \'wp_delete_post( $item_id, true )\' ), \'IA normalizer deletes only obsolete nav-menu items, never supporting pages\' );'
+          )
           p.write_text(s, encoding='utf-8')
 
       - name: Precommit syntax and focused contracts
