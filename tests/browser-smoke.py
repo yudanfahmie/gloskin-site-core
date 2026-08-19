@@ -231,15 +231,20 @@ with sync_playwright() as pw:
         load(page, fixtures['home'])
         geometry = page.evaluate(
             """() => {
-                const h=document.querySelector('.gloskin-ui1-header').getBoundingClientRect();
+                const header=document.querySelector('.gloskin-ui1-header');
+                const h=header.getBoundingClientRect();
                 const n=document.querySelector('.gloskin-ui1-header__nav-row');
-                const nr=n.getBoundingClientRect();
+                const nr=n ? n.getBoundingClientRect() : null;
                 const m=document.querySelector('.gloskin-ui1-main').getBoundingClientRect();
                 const b=document.querySelector('.gloskin-ui1-brand').getBoundingClientRect();
-                const ns=getComputedStyle(n), hs=getComputedStyle(document.querySelector('.gloskin-ui1-header'));
+                const ns=n ? getComputedStyle(n) : null;
+                const hs=getComputedStyle(header);
                 return {
-                    headerBottom:h.bottom, navTop:nr.top, navBottom:nr.bottom,
-                    mainTop:m.top, navDisplay:ns.display,
+                    headerBottom:h.bottom,
+                    navTop:nr ? nr.top : h.bottom,
+                    navBottom:nr ? nr.bottom : h.bottom,
+                    mainTop:m.top,
+                    navDisplay:ns ? ns.display : 'none',
                     headerPosition:hs.position,
                     brandCenter:b.left+b.width/2,
                     overflow:document.documentElement.scrollWidth-window.innerWidth
