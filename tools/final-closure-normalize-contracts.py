@@ -37,6 +37,33 @@ grep -Fq 'wp_get_attachment_image( $attachment_id' \"$helpers\" \\
   || { echo \"local WordPress editorial attachment rendering missing\" >&2; exit 1; }""",
 )
 
+# The former "empty catalog" cleanup rule is superseded by the final closure's
+# locally-hosted, migration-owned editorial attachment catalog. External runtime
+# URLs remain forbidden; the fallback presentation renderer may still be used
+# only when the bounded import is unavailable.
+legacy = Path('tests/legacy-presentation-cleanup-contract.py')
+ls = legacy.read_text(encoding='utf-8')
+ls = ls.replace('  9.  gloskin_ui1_editorial_media_catalog() returns empty array (no URLs).', '  9.  editorial_media_catalog() reads only the local migration-owned WordPress option (no runtime URLs).')
+old_legacy = """# 9. editorial_media_catalog returns empty array
+require(
+    re.search(r'gloskin_ui1_editorial_media_catalog\\b[^{]*\\{[^}]*return\\s+array\\s*\\(\\s*\\)', helpers, re.DOTALL),
+    'gloskin_ui1_editorial_media_catalog() must return empty array()'
+)
+"""
+new_legacy = """# 9. editorial_media_catalog reads the bounded local attachment catalog only
+require(
+    \"get_option( 'gloskin_site_core_editorial_media_v1', array() )\" in helpers,
+    'gloskin_ui1_editorial_media_catalog() must read the bounded local migration catalog'
+)
+require(
+    'https://assets.zyrosite.com' not in helpers and 'http://' not in helpers,
+    'template-helpers must not contain runtime editorial hotlinks'
+)
+"""
+if old_legacy not in ls:
+    raise SystemExit('legacy empty-catalog assertion not found')
+legacy.write_text(ls.replace(old_legacy, new_legacy, 1), encoding='utf-8')
+
 # The final Home requirement intentionally unifies Skincare and Product Discovery.
 replace_once(
     'tests/product-grid-contract.php',
