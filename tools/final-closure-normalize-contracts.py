@@ -37,4 +37,12 @@ grep -Fq 'wp_get_attachment_image( $attachment_id' \"$helpers\" \\
   || { echo \"local WordPress editorial attachment rendering missing\" >&2; exit 1; }""",
 )
 
+# The page-transition router may acknowledge the existing Cart<->Checkout handoff,
+# but it must not couple itself to Woo block cart markup. Keep cart-table polish CSS-only.
+replace_once(
+    'plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js',
+    "return (path === '/cart' || path === '/checkout') && !!link.closest('.woocommerce, .wp-block-woocommerce-cart, .wp-block-woocommerce-checkout');",
+    "return (path === '/cart' || path === '/checkout') && !!link.closest('.woocommerce');",
+)
+
 print('final-closure-normalize-contracts: OK')
