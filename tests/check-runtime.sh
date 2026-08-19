@@ -59,6 +59,11 @@ python tests/single-migration-action-contract.py
 php tests/doctor-snapshot-contract.php
 php tests/final-migration-contract.php
 php tests/final-migration-path-contract.php
+php tests/final-migration-state-contract.php
+php tests/final-migration-batch-contract.php
+python tests/final-migration-dom-contract.py
+python tests/final-migration-js-behavior-contract.py
+php tests/final-migration-path-contract.php
 php tests/final-migration-package-integrity.php
 php tests/final-migration-dom-ajax-contract.php
 php tests/final-migration-failed-resume-contract.php
