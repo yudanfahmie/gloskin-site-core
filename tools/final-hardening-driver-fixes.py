@@ -17,10 +17,14 @@ fixes = {
     r'''str_contains( $helpers, "in_array( $kind, array( 'doctor', 'clinic', 'product' ), true ) ) { return; }" )''': r'''str_contains( $helpers, "in_array( \$kind, array( 'doctor', 'clinic', 'product' ), true ) ) { return; }" )''',
     r'''str_contains( $helpers, "'alt' => $title" )''': r'''str_contains( $helpers, "'alt' => \$title" )''',
     r'''str_contains( $helpers, "'alt' => $name" )''': r'''str_contains( $helpers, "'alt' => \$name" )''',
+    r'''$service = new Gloskin_Site_Core_Template_Service('', null, null, null);
+$method = new ReflectionMethod($service, 'compare_managed_posts'); $method->setAccessible(true);''': r'''$service_ref = new ReflectionClass(Gloskin_Site_Core_Template_Service::class);
+$service = $service_ref->newInstanceWithoutConstructor();
+$method = new ReflectionMethod($service, 'compare_managed_posts'); $method->setAccessible(true);''',
 }
 for source, target in fixes.items():
     if source not in s:
-        raise SystemExit('assertion driver source target not found: ' + source)
+        raise SystemExit('hardening driver source target not found: ' + source)
     s = s.replace(source, target, 1)
 
 p.write_text(s, encoding='utf-8')
