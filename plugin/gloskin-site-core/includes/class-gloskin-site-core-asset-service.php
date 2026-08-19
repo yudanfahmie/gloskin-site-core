@@ -236,9 +236,8 @@ final class Gloskin_Site_Core_Asset_Service {
 	}
 
 	/**
-	 * Preload only the critical self-hosted font files (one Marcellus static
-	 * weight, one Mulish variable-weight instance) declared in
-	 * config/assets.php, and only on the same eligible Gloskin frontend
+	 * Preload only the critical self-hosted Graphik/Felix font files declared
+	 * in config/assets.php, and only on the same eligible Gloskin frontend
 	 * requests enqueue_frontend() already restricts styles/scripts to.
 	 * Never prints in wp-admin (wp_head does not fire there).
 	 *
@@ -253,8 +252,13 @@ final class Gloskin_Site_Core_Asset_Service {
 			return;
 		}
 		foreach ( $registry['font_preload'] as $relative ) {
+			$extension = strtolower( pathinfo( (string) $relative, PATHINFO_EXTENSION ) );
+			$type      = 'woff' === $extension ? 'font/woff' : ( 'woff2' === $extension ? 'font/woff2' : '' );
+			if ( '' === $type ) {
+				continue;
+			}
 			$url = plugins_url( (string) $relative, $this->plugin_file );
-			echo '<link rel="preload" href="' . esc_url( $url ) . '" as="font" type="font/woff2" crossorigin>' . "\n";
+			echo '<link rel="preload" href="' . esc_url( $url ) . '" as="font" type="' . $type . '" crossorigin>' . "\n";
 		}
 	}
 

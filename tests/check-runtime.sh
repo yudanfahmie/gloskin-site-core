@@ -5,6 +5,7 @@ cd "$repo_root"
 
 ./tests/check-architecture.sh
 python tests/v139-harness-baseline-contract.py
+python tests/font-integrity-contract.py
 python tests/v139-presentation-followup-contract.py
 php tests/core-auth-boundary-contract.php
 python tests/check-language.py
@@ -101,6 +102,7 @@ GL_TEST_WOO=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php t
 GL_TEST_WOO_LATE=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
 
 if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/null 2>&1; then
+  python tests/font-browser-smoke.py
   python tests/browser-smoke.py
   python tests/page-richness-smoke.py
   python tests/readiness-browser-smoke.py

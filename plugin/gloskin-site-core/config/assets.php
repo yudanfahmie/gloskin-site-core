@@ -11,10 +11,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 return array(
 	'font_preload' => array(
-		/* Only the two most-critical faces are preloaded.
-		 * GraphikMedium/Semibold/Bold and italic variants are demand-loaded
-		 * by the browser on first use — no preload to avoid unused round-trips. */
-		'assets/fonts/GraphikRegular.woff2',
+		/* Only the two most-critical faces are preloaded. Other Graphik weights
+		 * remain demand-loaded by the browser to avoid unused round-trips. */
+		'assets/fonts/Graphik-Regular.woff',
 		'assets/fonts/Felixti.woff2',
 	),
 	'styles' => array(
@@ -127,7 +126,7 @@ return array(
 			'in_footer' => true,
 		),
 		/* Cart <-> Checkout perceptual handoff. Head-loaded only on those
-		 * native Woo routes so an incoming presentation marker can mask the
+		 * native Woo routes so an incoming sessionStorage presentation marker can mask the
 		 * dynamic Woo region before it paints. It never fetches/swaps markup,
 		 * changes history, or initializes Woo/Blocks/payment state. */
 		'gloskin-ui1-commerce-journey' => array(

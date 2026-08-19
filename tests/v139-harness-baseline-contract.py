@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""Normalize only exact stale test assumptions proven against v0.7.138.
+"""Normalize exact stale test assumptions inherited from the v0.7.139 baseline.
 
-This script changes test files in the disposable CI workspace only. It never
-writes production plugin files and refuses unknown source shapes instead of
-weakening guards broadly.
+This script changes test files in the disposable runtime-test workspace only. It
+never writes production plugin files and refuses unknown source shapes instead
+of weakening guards broadly.
 """
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "tests/runtime-smoke.php"
 PRESENTATION = ROOT / "tests/check-presentation.sh"
+THIS_FILE = Path(__file__).resolve()
+RELEASE_VERSION = "0.7.140"
+BASELINE_VERSION = "0.7.139"
 
 
 def normalize_runtime() -> None:
@@ -73,7 +76,7 @@ def normalize_presentation() -> None:
 fi
 """
     corrected_media = """# Editorial staging media has no external image dependency in the protected
-# v0.7.138 baseline. The compatibility API remains, but resolves to the
+# v0.7.139 baseline. The compatibility API remains, but resolves to the
 # deterministic CSS-only presentation fallback instead of Unsplash.
 if grep -Eq 'source\\.unsplash\\.com|https://images\\.unsplash\\.com/' \"$helpers\"; then
   echo \"editorial staging media must not depend on external Unsplash runtime URLs\" >&2
@@ -93,13 +96,11 @@ grep -Fq 'gloskin_ui1_render_presentation_media( $kind, $seed, $class );' \"$hel
 
     stale_font_start = 'if [[ ! -f "$production_css" ]]'
     favicon_marker = "# Favicon derivatives: all sizes must exist and derive from the same master,\n"
-    corrected_font_marker = "Graphik/Felix production typography layer missing"
-    if corrected_font_marker not in src:
-        if src.count(stale_font_start) != 1 or src.count(favicon_marker) != 1:
-            raise SystemExit("check-presentation: stale font section boundaries changed")
-        start = src.index(stale_font_start)
-        end = src.index(favicon_marker, start)
-        corrected_fonts = r'''if [[ ! -f "$production_css" ]] \
+    if src.count(stale_font_start) != 1 or src.count(favicon_marker) != 1:
+        raise SystemExit("check-presentation: font section boundaries changed")
+    start = src.index(stale_font_start)
+    end = src.index(favicon_marker, start)
+    corrected_fonts = r'''if [[ ! -f "$production_css" ]] \
   || ! grep -qF -- '--gloskin-font-body:"Graphik"' "$production_css" \
   || ! grep -qF -- '--gloskin-font-heading:"Felix Titling"' "$production_css"; then
   echo "Graphik/Felix production typography layer missing (protected baseline regression)" >&2
@@ -117,31 +118,33 @@ grep -qF "'assets/css/gloskin-ui1-fonts.css'" "$assets_registry" \
   || { echo "gloskin-ui1-fonts registry entry missing" >&2; exit 1; }
 for expected_file in \
   'Felixti.woff2' \
-  'GraphikLight.woff2' 'GraphikLightItalic.woff2' \
-  'GraphikRegular.woff2' 'GraphikRegularItalic.woff2' \
-  'GraphikMedium.woff2' 'GraphikMediumItalic.woff2' \
-  'GraphikSemibold.woff2' 'GraphikBold.woff2'; do
-  [[ -f "$fonts_dir/$expected_file" ]] || { echo "required protected-baseline font file missing: $expected_file" >&2; exit 1; }
+  'Graphik-Light.woff' 'Graphik-Regular.woff' 'Graphik-Medium.woff' \
+  'Graphik-Semibold.woff' 'Graphik-Bold.woff'; do
+  [[ -f "$fonts_dir/$expected_file" ]] || { echo "required canonical font file missing: $expected_file" >&2; exit 1; }
 done
 grep -qF 'font-family:"Felix Titling"' "$fonts_css" \
   && grep -qF 'url("../fonts/Felixti.woff2")' "$fonts_css" \
   || { echo "Felix Titling @font-face missing or no longer local" >&2; exit 1; }
-grep -qF 'font-family:"Graphik"' "$fonts_css" \
-  && grep -qF 'url("../fonts/GraphikRegular.woff2")' "$fonts_css" \
-  && grep -qF 'font-weight:300;' "$fonts_css" \
-  && grep -qF 'font-weight:500;' "$fonts_css" \
-  && grep -qF 'font-weight:600;' "$fonts_css" \
-  && grep -qF 'font-weight:700;' "$fonts_css" \
-  || { echo "Graphik @font-face family/weight contract regressed" >&2; exit 1; }
-[[ "$(grep -c '^@font-face{' "$fonts_css")" -eq 9 ]] \
-  || { echo "protected baseline must expose exactly nine local @font-face rules" >&2; exit 1; }
-[[ "$(grep -c 'font-display:swap' "$fonts_css")" -eq 9 ]] \
-  || { echo "protected baseline font-display:swap policy regressed" >&2; exit 1; }
-[[ "$(grep -c 'font-style:italic' "$fonts_css")" -eq 3 ]] \
-  || { echo "protected baseline Graphik italic face set regressed" >&2; exit 1; }
-grep -qF "'assets/fonts/GraphikRegular.woff2'" "$assets_registry" \
+for expected in \
+  'url("../fonts/Graphik-Light.woff")' \
+  'url("../fonts/Graphik-Regular.woff")' \
+  'url("../fonts/Graphik-Medium.woff")' \
+  'url("../fonts/Graphik-Semibold.woff")' \
+  'url("../fonts/Graphik-Bold.woff")'; do
+  grep -qF "$expected" "$fonts_css" || { echo "canonical Graphik WOFF mapping missing: $expected" >&2; exit 1; }
+done
+[[ "$(grep -c '^@font-face{' "$fonts_css")" -eq 6 ]] \
+  || { echo "canonical font runtime must expose exactly six local @font-face rules" >&2; exit 1; }
+[[ "$(grep -c 'font-display:swap' "$fonts_css")" -eq 6 ]] \
+  || { echo "canonical font-display:swap policy regressed" >&2; exit 1; }
+if grep -qE 'font-style:(italic|oblique)' "$fonts_css"; then
+  echo "custom italic/oblique font face returned without an uploaded Graphik italic WOFF" >&2
+  exit 1
+fi
+grep -qF "'assets/fonts/Graphik-Regular.woff'" "$assets_registry" \
   && grep -qF "'assets/fonts/Felixti.woff2'" "$assets_registry" \
   || { echo "critical Graphik/Felix preload registry regressed" >&2; exit 1; }
+python "$repo_root/tests/font-integrity-contract.py"
 asset_service="$plugin_root/includes/class-gloskin-site-core-asset-service.php"
 admin_enqueue_block="$(awk '/public function enqueue_admin\(/,/^\t\}$/' "$asset_service")"
 if echo "$admin_enqueue_block" | grep -qE "registry\(\)\['styles'\]|font_preload|print_font_preload"; then
@@ -152,7 +155,7 @@ grep -qF "add_action( 'wp_head', array( \$this, 'print_font_preload' )" "$asset_
   || { echo "critical font preload is not wired through AssetService/wp_head" >&2; exit 1; }
 
 '''
-        src = src[:start] + corrected_fonts + src[end:]
+    src = src[:start] + corrected_fonts + src[end:]
 
     stale_sql = r'''if grep -qF '$wpdb' "$adapter" "$template_service"; then
   echo "raw \$wpdb product query found; WooCommerce must remain the sole catalog query owner" >&2
@@ -209,6 +212,38 @@ printf '%s\n' "$shop_price_block" | grep -qF "wc_product_meta_lookup" \
     PRESENTATION.write_text(src, encoding="utf-8")
 
 
+def normalize_release_assertions() -> None:
+    """Move test-only active release/cache assertions with the font release.
+
+    Migration revision/state identities are not matched here. A file is eligible
+    only when it contains an explicit plugin-header or Kernel VERSION assertion.
+    """
+    changed = 0
+    for path in (ROOT / "tests").iterdir():
+        if not path.is_file() or path.resolve() == THIS_FILE:
+            continue
+        if path.suffix.lower() not in {".py", ".php", ".sh", ".js"}:
+            continue
+        src = path.read_text(encoding="utf-8", errors="strict")
+        if BASELINE_VERSION not in src:
+            continue
+        active_release_assertion = (
+            f"Version: {BASELINE_VERSION}" in src
+            or f"const VERSION = '{BASELINE_VERSION}';" in src
+            or f'== "{BASELINE_VERSION}"' in src
+            or f"=== '{BASELINE_VERSION}'" in src
+            or f"'{BASELINE_VERSION}' ===" in src
+            or f"$expected = '{BASELINE_VERSION}';" in src
+        )
+        if not active_release_assertion:
+            continue
+        path.write_text(src.replace(BASELINE_VERSION, RELEASE_VERSION), encoding="utf-8")
+        changed += 1
+    if changed < 1:
+        raise SystemExit("release assertions: no v0.7.139 active release assertion was normalized")
+
+
 normalize_runtime()
 normalize_presentation()
-print("v139-harness-baseline-contract: normalized exact stale test assumptions")
+normalize_release_assertions()
+print("v139-harness-baseline-contract: normalized exact stale baseline/test assertions")

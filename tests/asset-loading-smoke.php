@@ -128,16 +128,16 @@ ob_start();
 $service->print_font_preload();
 $preload = (string) ob_get_clean();
 if ( 2 !== substr_count( $preload, '<link rel="preload"' ) ) { fwrite( STDERR, "expected exactly two critical font preload links, got: {$preload}\n" ); exit( 1 ); }
-/* Graphik/Felix Titling era (v0.7.132): only the two critical owner-supplied
- * faces are preloaded; Marcellus and Mulish are retired. */
-foreach ( array( 'GraphikRegular.woff2', 'Felixti.woff2' ) as $expected_file ) {
+/* Canonical Graphik/Felix runtime: only Regular Graphik and Felix are
+ * preloaded; other Graphik weights remain demand-loaded. */
+foreach ( array( 'Graphik-Regular.woff', 'Felixti.woff2' ) as $expected_file ) {
 	if ( false === strpos( $preload, $expected_file ) ) { fwrite( STDERR, "font preload missing critical file: {$expected_file}\n" ); exit( 1 ); }
 }
-foreach ( array( 'Marcellus-Regular.woff2', 'Mulish-Variable.woff2' ) as $retired_file ) {
+foreach ( array( 'GraphikRegular.woff2', 'Marcellus-Regular.woff2', 'Mulish-Variable.woff2' ) as $retired_file ) {
 	if ( false !== strpos( $preload, $retired_file ) ) { fwrite( STDERR, "retired legacy font still in preload: {$retired_file}\n" ); exit( 1 ); }
 }
-if ( false === strpos( $preload, 'as="font"' ) || false === strpos( $preload, 'type="font/woff2"' ) || false === strpos( $preload, 'crossorigin' ) ) {
-	fwrite( STDERR, "font preload missing required as/type/crossorigin attributes: {$preload}\n" ); exit( 1 );
+if ( false === strpos( $preload, 'as="font"' ) || false === strpos( $preload, 'type="font/woff"' ) || false === strpos( $preload, 'type="font/woff2"' ) || false === strpos( $preload, 'crossorigin' ) ) {
+	fwrite( STDERR, "font preload missing required WOFF/WOFF2 as/type/crossorigin attributes: {$preload}\n" ); exit( 1 );
 }
 if ( false !== strpos( $preload, 'fonts.googleapis.com' ) || false !== strpos( $preload, 'fonts.gstatic.com' ) ) {
 	fwrite( STDERR, "font preload still points at Google Fonts\n" ); exit( 1 );
