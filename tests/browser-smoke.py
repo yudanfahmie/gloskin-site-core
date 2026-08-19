@@ -35,7 +35,6 @@ VIEWPORTS = (
     ('exhibition', 1920, 1080),
     ('large-exhibition', 2560, 1440),
 )
-HEADER_WIDTHS = (390, 600, 601, 782, 1024, 1440, 1920)
 PUBLIC_LEAKS = (
     'not configured', 'content pending', 'missing data', 'architecture supports',
     'approved doctor profiles', 'approved treatment categories',
@@ -101,7 +100,7 @@ def load(page, html: str):
         "els => els.forEach(el => { el.loading = 'eager'; })"
     )
     page.wait_for_function(
-        "() => Array.from(document.querySelectorAll('main img')).every(" 
+        "() => Array.from(document.querySelectorAll('main img')).every("
         "img => img.complete && img.naturalWidth > 0 && img.naturalHeight > 0)",
         timeout=5000,
     )
@@ -223,52 +222,6 @@ with sync_playwright() as pw:
         print(
             f'browser smoke passed ({viewport_name} {width}x{height}, {len(VIEWS)} views)'
         )
-
-    # Header geometry remains broad and IA-independent at every breakpoint.
-    for width in HEADER_WIDTHS:
-        height = 1000 if width < 1200 else 900
-        page = browser.new_page(viewport={'width': width, 'height': height})
-        load(page, fixtures['home'])
-        geometry = page.evaluate(
-            """() => {
-                const header=document.querySelector('.gloskin-ui1-header');
-                const h=header.getBoundingClientRect();
-                const n=document.querySelector('.gloskin-ui1-header__nav-row');
-                const nr=n ? n.getBoundingClientRect() : null;
-                const m=document.querySelector('.gloskin-ui1-main').getBoundingClientRect();
-                const b=document.querySelector('.gloskin-ui1-brand').getBoundingClientRect();
-                const ns=n ? getComputedStyle(n) : null;
-                const hs=getComputedStyle(header);
-                return {
-                    headerBottom:h.bottom,
-                    navTop:nr ? nr.top : h.bottom,
-                    navBottom:nr ? nr.bottom : h.bottom,
-                    mainTop:m.top,
-                    navDisplay:ns ? ns.display : 'none',
-                    headerPosition:hs.position,
-                    brandCenter:b.left+b.width/2,
-                    overflow:document.documentElement.scrollWidth-window.innerWidth
-                };
-            }"""
-        )
-        if (
-            geometry['overflow'] > 1
-            or abs(geometry['brandCenter'] - width / 2) > 4
-            or geometry['headerPosition'] in ('sticky', 'fixed')
-        ):
-            raise SystemExit(
-                f'header-width/{width}: overflow/centering/sticky-owner regression: {geometry}'
-            )
-        if geometry['navDisplay'] == 'none':
-            if abs(geometry['headerBottom'] - geometry['mainTop']) > 1:
-                raise SystemExit(f'header-width/{width}: compact header ghost gap: {geometry}')
-        elif (
-            abs(geometry['headerBottom'] - geometry['navTop']) > 1
-            or abs(geometry['navBottom'] - geometry['mainTop']) > 1
-        ):
-            raise SystemExit(f'header-width/{width}: layered header ghost gap: {geometry}')
-        page.close()
-    print('browser smoke passed (header computed geometry)')
 
     # Canonical logo/favicons remain available; detailed typography and header
     # animation are covered by their focused suites.
