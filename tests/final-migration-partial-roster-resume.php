@@ -27,6 +27,7 @@ function trailingslashit( $value ) { return rtrim( (string) $value, '/' ) . '/';
 function plugin_dir_path( $file ) { return trailingslashit( dirname( (string) $file ) ); }
 function sanitize_key( $value ) { return strtolower( preg_replace( '/[^a-z0-9_-]/', '', (string) $value ) ); }
 function sanitize_text_field( $value ) { return trim( strip_tags( (string) $value ) ); }
+function sanitize_title( $value ) { $value = strtolower( trim( (string) $value ) ); $value = preg_replace( '/[^a-z0-9]+/', '-', $value ); return trim( (string) $value, '-' ); }
 function absint( $value ) { return abs( (int) $value ); }
 function __( $text, $domain = null ) { unset( $domain ); return $text; }
 function is_wp_error( $value ) { return $value instanceof WP_Error; }
@@ -122,15 +123,18 @@ $photo_path = $plugin_root . '/migration-runtime/gloskin-doctor-photos-v2/' . $p
 $original_photo = file_get_contents( $photo_path );
 pr_ok( is_string( $original_photo ), 'photo corruption fixture readable' );
 file_put_contents( $photo_path, $original_photo . 'corrupt' );
+clearstatcache( true, $photo_path );
 $before_posts = count( get_posts( array( 'post_type' => 'gloskin_doctor', 'post_status' => 'any', 'posts_per_page' => -1 ) ) );
 $before_state = $importer->state();
 $failed_validation = false;
-try { $importer->advance( 'continue' ); } catch ( Throwable $error ) { $failed_validation = false !== strpos( $error->getMessage(), 'bundle_invalid' ); }
-pr_ok( $failed_validation, 'corrupt immutable photo package blocks partial roster continuation' );
+$validation_message = '';
+try { $importer->advance( 'continue' ); } catch ( Throwable $error ) { $validation_message = $error->getMessage(); $failed_validation = false !== strpos( $validation_message, 'bundle_invalid' ); }
+pr_ok( $failed_validation, 'corrupt immutable photo package blocks partial roster continuation; error=' . $validation_message );
 pr_ok( $before_posts === count( get_posts( array( 'post_type' => 'gloskin_doctor', 'post_status' => 'any', 'posts_per_page' => -1 ) ) ), 'package failure causes zero doctor mutation' );
 $after_failed = $importer->state();
 pr_ok( 4 === (int) $after_failed['index'] && 4 === (int) $before_state['index'], 'package failure preserves partial roster cursor at 4' );
 file_put_contents( $photo_path, $original_photo );
+clearstatcache( true, $photo_path );
 
 $next = $importer->advance( 'continue' );
 pr_ok( 5 === (int) $next['index'], 'partial failed roster resumes from cursor 4 to 5' );
