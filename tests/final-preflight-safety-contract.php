@@ -8,26 +8,30 @@ $final = file_get_contents( $root . '/plugin/gloskin-site-core/includes/class-gl
 $batch = file_get_contents( $root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-production-batch.php' );
 $kernel = file_get_contents( $root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php' );
 $plugin = file_get_contents( $root . '/plugin/gloskin-site-core/gloskin-site-core.php' );
+$photo_manifest = (string) file_get_contents( $root . '/plugin/gloskin-site-core/migration-runtime/gloskin-doctor-photos-v2/manifest.json' );
 
 function fp_ok( bool $condition, string $message ): void {
 	if ( ! $condition ) { fwrite( STDERR, "FAIL: {$message}\n" ); exit( 1 ); }
 	echo "ok: {$message}\n";
 }
 
-foreach ( array( $state, $validator, $final, $batch, $kernel, $plugin ) as $src ) {
-	fp_ok( false !== $src, 'required source readable' );
+foreach ( array( $state, $validator, $final, $batch, $kernel, $plugin, $photo_manifest ) as $src ) {
+	fp_ok( false !== $src && '' !== $src, 'required source readable' );
 }
 
 $validate_pos = strpos( $state, '$payload = $this->bundle->load(); // A. gloskin-doctors-v1.' );
-$bc_pos = strpos( $state, 'validate_after_roster_bundle(); // B then C.' );
+$bc_pos = strpos( $state, 'validate_after_roster_bundle( $payload ); // B then C + exact cross-package compatibility.' );
 $lock_pos = strpos( $state, '$token   = $this->acquire_lock();' );
 $upsert_pos = strpos( $state, '$doctor_id = $this->upsert_doctor' );
-fp_ok( false !== $validate_pos && false !== $bc_pos && false !== $lock_pos && false !== $upsert_pos && $validate_pos < $bc_pos && $bc_pos < $lock_pos && $lock_pos < $upsert_pos, 'Final Migration roster path validates A -> B -> C before lock/upsert' );
+fp_ok( false !== $validate_pos && false !== $bc_pos && false !== $lock_pos && false !== $upsert_pos && $validate_pos < $bc_pos && $bc_pos < $lock_pos && $lock_pos < $upsert_pos, 'Final Migration roster path validates A -> B -> C plus compatibility before lock/upsert' );
 fp_ok( false !== strpos( $state, "class_exists( 'Gloskin_Site_Core_Revision_20260819_Final_Migration', false )" ), 'cross-package validation is scoped to loaded Final Migration ownership' );
 fp_ok( (bool) preg_match( "/const PHOTO_BUNDLE_ID\\s*=\\s*'gloskin-doctor-photos-v2'/", $validator ) && (bool) preg_match( '/const PHOTO_EXPECTED\s*=\s*12/', $validator ), 'photo validator owns exact immutable bundle/count' );
 fp_ok( false !== strpos( $validator, "const PHOTO_BUNDLE_REVISION = '2026-08-19-remastered';" ), 'doctor photo bundle revision remains exact and validated' );
 fp_ok( false !== strpos( $validator, 'is_readable( $manifest_path )' ) && false !== strpos( $validator, "hash_file( 'sha256', \$path )" ) && false !== strpos( $validator, 'basename( $file ) !== $file' ), 'photo validation proves manifest/readability/path/SHA before mutation' );
 fp_ok( false !== strpos( $validator, "'image/webp' !==" ) && false !== strpos( $validator, 'filesize( $path )' ) && false !== strpos( $validator, 'getimagesize( $path )' ), 'photo validation proves primary bytes/dimensions/mime' );
+fp_ok( false !== strpos( $validator, 'validate_roster_photo_compatibility' ) && false !== strpos( $validator, '1 !== count( $matched )' ) && false !== strpos( $validator, 'Multiple doctor photos resolve to one doctors-v1 identity' ), 'pure preflight proves exact one-to-one roster/photo compatibility' );
+fp_ok( false === stripos( $validator, 'levenshtein' ) && false === stripos( $validator, 'similar_text' ) && false === stripos( $validator, 'soundex' ), 'cross-package compatibility uses no fuzzy matching' );
+fp_ok( false !== strpos( $photo_manifest, '"lorentina aira syaharani"' ) && false !== strpos( $photo_manifest, '"ni nyoman ayu laksmi trimurti m biomed aam"' ) && false !== strpos( $photo_manifest, '"diah pasaribu"' ), 'photo manifest carries exact canonical roster aliases without binary/revision changes' );
 fp_ok( false !== strpos( $validator, 'Gloskin_Site_Core_Editorial_Media_Bundle' ) && false !== strpos( $validator, '->preflight()' ), 'editorial validation reuses canonical dimensions/mime/provenance preflight' );
 
 $advance = strpos( $final, 'private function advance_doctor_roster()' );
