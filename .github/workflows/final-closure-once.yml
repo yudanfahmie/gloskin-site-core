@@ -1,23 +1,23 @@
 name: final-closure-once
 
 on:
-  push:
+  pull_request:
     branches: [main]
-    paths:
-      - tools/final-closure-patch.py
-      - .github/workflows/final-closure-once.yml
 
 permissions:
   contents: write
 
-# Temporary one-shot writer. A successful final commit removes this workflow.
+# Temporary PR executor. A successful final patch deletes this workflow and its
+# driver from the resulting release tree before the tested commit is pushed.
 jobs:
   apply-final-closure:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout preparation tree
+      - name: Checkout PR head branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
       - name: Prove required continuation base and preparation-only diff
@@ -26,7 +26,7 @@ jobs:
           set -euo pipefail
           BASE=35776f3f42f5bf40b42ec3db845387b912173edc
           git merge-base --is-ancestor "$BASE" HEAD
-          unexpected="$(git diff --name-only "$BASE"..HEAD | grep -Ev '^(tools/final-closure-patch.py|\.github/workflows/final-closure-once.yml|FINAL_CLOSURE_FAILURE\.log)$' || true)"
+          unexpected="$(git diff --name-only "$BASE"..HEAD | grep -Ev '^(tools/final-closure-patch.py|tools/final-closure-trigger.txt|\.github/workflows/final-closure-once.yml)$' || true)"
           if [ -n "$unexpected" ]; then
             echo "Unexpected files changed since required continuation HEAD:" >&2
             echo "$unexpected" >&2
@@ -82,11 +82,11 @@ jobs:
           php tests/final-closure-contract.php
           python tests/page-transition-contract.py
 
-      - name: Commit final release tree without temporary writer
+      - name: Commit exact final release tree
         shell: bash
         run: |
           set -euo pipefail
-          rm -f tools/final-closure-patch.py .github/workflows/final-closure-once.yml FINAL_CLOSURE_FAILURE.log
+          rm -f tools/final-closure-patch.py tools/final-closure-trigger.txt .github/workflows/final-closure-once.yml FINAL_CLOSURE_FAILURE.log
           git config user.name 'gloskin-final-closure'
           git config user.email '57941518+yudanfahmie@users.noreply.github.com'
           git add -A
@@ -104,22 +104,9 @@ jobs:
           test "$(git show HEAD:plugin/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration.php | grep -c "2026-08-19-final")" -ge 1
           test "$(git show HEAD:plugin/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration.php | grep -c "gloskin_site_core_revision_20260819f_state")" -ge 1
 
-      - name: Push exact tested commit to main
+      - name: Push exact tested commit to PR branch
         shell: bash
         run: |
           set -euo pipefail
-          git push origin HEAD:main
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
           echo "pushed $FINAL_SHA"
-
-      - name: Persist failure diagnostics
-        if: failure()
-        shell: bash
-        run: |
-          set +e
-          git reset --hard "${GITHUB_SHA}"
-          printf 'workflow_run=%s\nworkflow_sha=%s\nfailed_at=%s\n' "${GITHUB_RUN_ID}" "${GITHUB_SHA}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > FINAL_CLOSURE_FAILURE.log
-          git config user.name 'gloskin-final-closure'
-          git config user.email '57941518+yudanfahmie@users.noreply.github.com'
-          git add FINAL_CLOSURE_FAILURE.log
-          git commit -m 'Record final closure runner failure'
-          git push origin HEAD:main
