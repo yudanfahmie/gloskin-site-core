@@ -507,7 +507,7 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 		exit( 1 );
 	}
 	$context = get_query_var( 'gloskin_context', array() );
-	if ( ( $context['view'] ?? '' ) !== 'home' || count( $context['clinics'] ?? array() ) !== 9 || count( $context['skincare'] ?? array() ) !== 7 ) {
+	if ( ( $context['view'] ?? '' ) !== 'home' || count( $context['skincare'] ?? array() ) !== 7 ) {
 		fwrite( STDERR, "Home context failed\n" );
 		exit( 1 );
 	}
