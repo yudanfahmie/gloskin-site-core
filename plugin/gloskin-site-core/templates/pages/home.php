@@ -11,7 +11,7 @@ gloskin_ui1_render_hero( $gloskin_context['hero'] );
  * Discovery -> factual Testimonials -> editor Home brand story -> factual
  * Achievements -> Closing CTA. */
 ?>
-<?php gloskin_ui1_render_why_gloskin( $gloskin_context['page'] ); ?>
+<?php require dirname( __DIR__ ) . '/parts/home-why-local-media.php'; ?>
 <?php if ( $gloskin_context['treatments'] ) : ?>
 <section class="gloskin-ui1-section gloskin-ui1-section--soft" data-gloskin-section="home-treatments"><div class="gloskin-ui1-container">
 	<?php gloskin_ui1_render_section_heading( __( 'Pilihan Perawatan', 'gloskin-site-core' ), __( 'Kenali ragam perawatan Gloskin dan temukan pilihan yang relevan untuk dibahas saat konsultasi.', 'gloskin-site-core' ) ); ?>
