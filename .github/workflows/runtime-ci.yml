@@ -38,7 +38,7 @@ jobs:
       - name: Install Playwright Chromium
         run: |
           python -m pip install --disable-pip-version-check playwright
-          python -m playwright install --with-deps chromium
+          python -m playwright install chromium
 
       - name: Run check-runtime.sh (read-only, including browser smoke)
         run: bash tests/check-runtime.sh
