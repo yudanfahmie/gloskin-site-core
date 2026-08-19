@@ -1,6 +1,13 @@
 <?php
 declare(strict_types=1);
 
+/* Browser fixtures execute runtime-smoke.php directly rather than through the
+ * CLI auto_prepend path used by check-runtime.sh. Load the same canonical
+ * WordPress shims explicitly so browser coverage exercises the identical
+ * runtime surface (including sanitize_email/is_email) without production-only
+ * test branches. */
+require_once __DIR__ . '/runtime-smoke-wordpress-stubs.php';
+
 putenv( 'GL_TEST_FIXTURE_BOOTSTRAP=1' );
 ob_start();
 require __DIR__ . '/runtime-smoke.php';
