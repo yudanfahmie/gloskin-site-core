@@ -51,7 +51,7 @@ for legacy_class in ("gloskin-ui1--medical", "gloskin-ui1--modern", "gloskin-ui1
     require(legacy_class not in shell, f"legacy public design class remains reachable: {legacy_class}")
 require("gloskin-ui1--home" in shell, "Home-specific non-variant state class must remain")
 
-# Presentation variant settings are fully retired in v0.7.138:
+# Presentation variant settings are fully retired in v0.7.139:
 # - No private methods in template-service that read design/header variant
 # - No context projection of design_variant / header_variant
 # - No hidden inputs in admin settings UI
@@ -117,8 +117,8 @@ for test_command in (
 
 # Release/cache version must move coherently; migration schema is intentionally
 # unrelated and therefore not asserted/changed here.
-require("Version: 0.7.138" in plugin, "plugin header must be 0.7.138")
-require("const VERSION = '0.7.138';" in kernel, "Kernel VERSION must be 0.7.138")
+require("Version: 0.7.139" in plugin, "plugin header must be 0.7.139")
+require("const VERSION = '0.7.139';" in kernel, "Kernel VERSION must be 0.7.139")
 require("0.7.137" not in plugin and "0.7.137" not in kernel, "stale active release version remains")
 
 print("header-admin-contract: OK (canonical prototype header)")

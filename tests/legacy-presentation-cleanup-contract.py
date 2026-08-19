@@ -16,7 +16,7 @@ Asserts:
   10. Why Gloskin meta box renders for 'home' page in admin service.
   11. Why Gloskin keys in admin save_schema() page strings.
   12. List-table column hooks for Promo, Testimonial, Achievement CPTs registered.
-  13. Plugin / Kernel version synchronized at 0.7.138.
+  13. Plugin / Kernel version synchronized at 0.7.139.
 """
 
 import re, sys, os
@@ -135,12 +135,12 @@ require(
 )
 
 # 13. Version sync
-require("Version: 0.7.138" in plugin_h, "plugin header must be 0.7.138")
-require("const VERSION = '0.7.138';" in kernel, "Kernel VERSION must be 0.7.138")
+require("Version: 0.7.139" in plugin_h, "plugin header must be 0.7.139")
+require("const VERSION = '0.7.139';" in kernel, "Kernel VERSION must be 0.7.139")
 
 if failures:
     for f in failures:
         print('FAIL:', f)
     sys.exit(1)
 
-print('legacy-presentation-cleanup-contract.py: OK (0.7.138)')
+print('legacy-presentation-cleanup-contract.py: OK (0.7.139)')

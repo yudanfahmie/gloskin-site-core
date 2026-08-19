@@ -17,7 +17,7 @@ Asserts:
   11. JS chip filter reads data-category-slugs from product card containers.
   12. No-JS: products are visible without chip interaction (no initial hidden state applied by PHP).
   13. Skincare intro copy no longer says "Pilih kategori, lalu..." (old gating copy removed).
-  14. Plugin / Kernel version synchronized at 0.7.138.
+  14. Plugin / Kernel version synchronized at 0.7.139.
 """
 
 import re, sys, os
@@ -126,12 +126,12 @@ require(
 )
 
 # 14. Version sync
-require("Version: 0.7.138" in plugin_h, "plugin header must be 0.7.138")
-require("const VERSION = '0.7.138';" in kernel, "Kernel VERSION must be 0.7.138")
+require("Version: 0.7.139" in plugin_h, "plugin header must be 0.7.139")
+require("const VERSION = '0.7.139';" in kernel, "Kernel VERSION must be 0.7.139")
 
 if failures:
     for f in failures:
         print('FAIL:', f)
     sys.exit(1)
 
-print('skincare-filter-contract.py: OK (0.7.138)')
+print('skincare-filter-contract.py: OK (0.7.139)')
