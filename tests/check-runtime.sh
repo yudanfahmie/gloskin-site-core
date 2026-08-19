@@ -12,7 +12,14 @@ php tests/sample-product-migration.php
 php tests/sample-product-importer-behavior.php
 php tests/sample-product-importer-hardening.php
 php tests/sample-product-woo-missing.php
-./tests/check-presentation.sh
+presentation_log="$(mktemp)"
+if ! ./tests/check-presentation.sh >"$presentation_log" 2>&1; then
+  cat "$presentation_log" >&2
+  presentation_detail="$(tail -n 1 "$presentation_log" | tr -cs 'A-Za-z0-9._=-' '-' | cut -c1-58)"
+  rm -f "$presentation_log"
+  false "presentation-${presentation_detail:-unknown}"
+fi
+rm -f "$presentation_log"
 python tests/prototype-refresh-contract.py
 python tests/width-doctor-grid-contract.py
 python tests/prototype-authority-contract.py
