@@ -139,7 +139,9 @@ final class Gloskin_Site_Core_Revision_20260819_Migration_Admin {
 		check_admin_referer( self::NONCE, 'gloskin_migration_nonce' );
 		try {
 			$this->migration->run_to_completion();
-			wp_redirect( admin_url( 'admin.php?page=' . self::SLUG . '&migrated=1' ) );
+			/* After consumed the migration menu disappears; redirect to Content
+			 * Overview so the user lands on a page that actually exists. */
+			wp_redirect( admin_url( 'admin.php?page=' . Gloskin_Site_Core_Content_Service::ADMIN_MENU_SLUG . '&migrated=1' ) );
 		} catch ( Throwable $error ) {
 			wp_redirect( admin_url( 'admin.php?page=' . self::SLUG . '&migration_error=' . rawurlencode( $error->getMessage() ) ) );
 		}

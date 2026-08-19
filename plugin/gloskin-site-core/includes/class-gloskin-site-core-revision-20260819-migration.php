@@ -599,16 +599,31 @@ final class Gloskin_Site_Core_Revision_20260819_Migration {
 
 			/* Find or create attachment */
 			$attachment_id = $this->find_attachment_by_sha( $sha256 );
+			$was_reused    = (bool) $attachment_id;
 			if ( ! $attachment_id ) {
 				$attachment_id = $this->import_doctor_photo( $asset_path, $webp_file, $sha256, $source_label );
 			}
 
-			/* Snapshot previous thumbnail */
+			/* Snapshot previous thumbnail once — idempotent on rerun */
 			$prev_thumb = absint( get_post_thumbnail_id( $doctor_id ) );
-			update_post_meta( $doctor_id, self::PREV_THUMBNAIL_META, $prev_thumb );
+			if ( '' === (string) get_post_meta( $doctor_id, self::PREV_THUMBNAIL_META, true ) ) {
+				update_post_meta( $doctor_id, self::PREV_THUMBNAIL_META, $prev_thumb );
+			}
 
-			/* Set featured image */
-			set_post_thumbnail( $doctor_id, $attachment_id );
+			/* Set featured image and verify */
+			$set_result = set_post_thumbnail( $doctor_id, $attachment_id );
+			if ( ! $set_result ) {
+				throw new RuntimeException(
+					'set_post_thumbnail() gagal untuk dokter #' . $doctor_id . ' (' . $match['doctor_title'] . ').'
+				);
+			}
+			$final_thumb = absint( get_post_thumbnail_id( $doctor_id ) );
+			if ( $final_thumb !== $attachment_id ) {
+				throw new RuntimeException(
+					'Verifikasi thumbnail gagal untuk dokter #' . $doctor_id
+					. ': expected=' . $attachment_id . ' got=' . $final_thumb
+				);
+			}
 
 			$entry = array(
 				'doctor_id'     => $doctor_id,
@@ -618,7 +633,7 @@ final class Gloskin_Site_Core_Revision_20260819_Migration {
 				'prev_thumb_id' => $prev_thumb,
 			);
 
-			if ( isset( $audit['reused_ids'] ) && in_array( $attachment_id, (array) $audit['reused_ids'], true ) ) {
+			if ( $was_reused ) {
 				$audit['reused'][] = $entry;
 			} else {
 				$audit['applied'][] = $entry;
@@ -666,16 +681,19 @@ final class Gloskin_Site_Core_Revision_20260819_Migration {
 	 * @throws RuntimeException On import failure.
 	 */
 	private function import_doctor_photo( $asset_path, $webp_file, $sha256, $source_label ) {
-		$filename = basename( $webp_file );
-		$upload   = wp_upload_dir();
+		$filename   = basename( $webp_file );
+		/* SHA prefix (8 hex chars) prevents collision with unrelated uploads */
+		$sha_prefix = substr( $sha256, 0, 8 );
+		$dest_name  = $sha_prefix . '-' . $filename;
+		$upload     = wp_upload_dir();
 
-		/* Write file to uploads */
-		$dest_path = trailingslashit( $upload['path'] ) . $filename;
+		/* Write file to uploads using SHA-prefixed name */
+		$dest_path = trailingslashit( $upload['path'] ) . $dest_name;
 		if ( ! copy( $asset_path, $dest_path ) ) {
-			throw new RuntimeException( 'Gagal menyalin foto dokter ke uploads: ' . $filename );
+			throw new RuntimeException( 'Gagal menyalin foto dokter ke uploads: ' . $dest_name );
 		}
 
-		$filetype  = wp_check_filetype( $filename, null );
+		$filetype    = wp_check_filetype( $dest_name, null );
 		$attach_data = array(
 			'post_mime_type' => $filetype['type'] ? (string) $filetype['type'] : 'image/webp',
 			'post_title'     => sanitize_file_name( pathinfo( $filename, PATHINFO_FILENAME ) ),
@@ -687,7 +705,7 @@ final class Gloskin_Site_Core_Revision_20260819_Migration {
 		if ( is_wp_error( $attachment_id ) || ! $attachment_id ) {
 			@unlink( $dest_path );
 			$msg = is_wp_error( $attachment_id ) ? $attachment_id->get_error_message() : 'wp_insert_attachment mengembalikan 0';
-			throw new RuntimeException( 'Gagal mendaftarkan attachment untuk ' . $filename . ': ' . $msg );
+			throw new RuntimeException( 'Gagal mendaftarkan attachment untuk ' . $dest_name . ': ' . $msg );
 		}
 
 		$attachment_id = absint( $attachment_id );
@@ -729,10 +747,24 @@ final class Gloskin_Site_Core_Revision_20260819_Migration {
 	 * @return void
 	 */
 	private function run_cleanup() {
-		/* Zero-consumer cleanup only — no editor content deleted.
-		 * Current obsolete surfaces: none require active deletion in this pass.
-		 * Future: header-variant admin controls, legacy CSS selectors — those are
-		 * code-level cleanup in the commit, not runtime teardown. */
+		/* Zero-consumer cleanup only — never deletes editor content or Woo data.
+		 * Strip obsolete design_variant/header_variant keys from the stored settings
+		 * option; both keys are already unused by all public renderers. */
+		$option_key = 'gloskin_site_core_settings';
+		$settings   = get_option( $option_key, array() );
+		if ( ! is_array( $settings ) ) {
+			return;
+		}
+		$changed = false;
+		foreach ( array( 'design_variant', 'header_variant' ) as $dead_key ) {
+			if ( array_key_exists( $dead_key, $settings ) ) {
+				unset( $settings[ $dead_key ] );
+				$changed = true;
+			}
+		}
+		if ( $changed ) {
+			update_option( $option_key, $settings );
+		}
 	}
 
 	/**
@@ -853,23 +885,10 @@ final class Gloskin_Site_Core_Revision_20260819_Migration {
 	 * ENVIRONMENT DETECTION
 	 * -------------------------------------------------------------------- */
 
-	/** @return string development|staging|production */
+	/** @return string development|local|staging|production */
 	private function detect_environment() {
-		if ( function_exists( 'wp_get_environment_type' ) ) {
-			$env = wp_get_environment_type();
-			if ( in_array( $env, array( 'development', 'local', 'staging' ), true ) ) {
-				return $env;
-			}
-		}
-		$home = strtolower( (string) get_option( 'home', '' ) );
-		if ( false !== strpos( $home, 'localhost' )
-			|| false !== strpos( $home, '.local' )
-			|| false !== strpos( $home, 'staging' )
-			|| false !== strpos( $home, 'markas.cloud' )
-			|| defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			return 'staging';
-		}
-		return 'production';
+		$env = function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : 'production';
+		return in_array( $env, array( 'development', 'local', 'staging' ), true ) ? $env : 'production';
 	}
 
 	/* -----------------------------------------------------------------------

@@ -2524,6 +2524,130 @@
 		return div.innerHTML;
 	}
 
+	/**
+	 * Promo carousel controller.
+	 * Activates prev/next buttons and dot indicators on [data-gloskin-promo-carousel].
+	 * No autoplay. Keyboard-accessible. Reduced-motion: instant transitions.
+	 */
+	function initPromoCarousel() {
+		var carousels = document.querySelectorAll('[data-gloskin-promo-carousel]');
+		for (var ci = 0; ci < carousels.length; ci++) {
+			(function (root) {
+				var slides = root.querySelectorAll('[data-gloskin-promo-slide]');
+				var dots   = root.querySelectorAll('[data-gloskin-promo-dot]');
+				var prev   = root.querySelector('[data-gloskin-promo-prev]');
+				var next   = root.querySelector('[data-gloskin-promo-next]');
+				if (!slides.length) { return; }
+				var current = 0;
+
+				function activate(index) {
+					var n = slides.length;
+					index = ((index % n) + n) % n;
+					for (var i = 0; i < slides.length; i++) {
+						var active = i === index;
+						slides[i].hidden = !active;
+						slides[i].setAttribute('aria-hidden', active ? 'false' : 'true');
+					}
+					for (var j = 0; j < dots.length; j++) {
+						var dotActive = j === index;
+						dots[j].setAttribute('aria-selected', dotActive ? 'true' : 'false');
+						dots[j].setAttribute('tabindex', dotActive ? '0' : '-1');
+						if (dotActive) { dots[j].classList.add('is-active'); }
+						else { dots[j].classList.remove('is-active'); }
+					}
+					current = index;
+				}
+
+				if (prev) { prev.addEventListener('click', function () { activate(current - 1); }); }
+				if (next) { next.addEventListener('click', function () { activate(current + 1); }); }
+				for (var di = 0; di < dots.length; di++) {
+					(function (dot, idx) {
+						dot.addEventListener('click', function () { activate(idx); });
+						dot.addEventListener('keydown', function (e) {
+							if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(idx); }
+						});
+					}(dots[di], di));
+				}
+				activate(0);
+			}(carousels[ci]));
+		}
+	}
+
+	/**
+	 * Testimonial dots controller.
+	 * Activates dot indicators on [data-gloskin-testimonials].
+	 * No autoplay. Keyboard-accessible.
+	 */
+	function initTestimonials() {
+		var widgets = document.querySelectorAll('[data-gloskin-testimonials]');
+		for (var wi = 0; wi < widgets.length; wi++) {
+			(function (root) {
+				var cards = root.querySelectorAll('[data-gloskin-testimonial]');
+				var dots  = root.querySelectorAll('[data-gloskin-testimonial-dot]');
+				if (!cards.length) { return; }
+				var current = 0;
+
+				function activate(index) {
+					var n = cards.length;
+					index = ((index % n) + n) % n;
+					for (var i = 0; i < cards.length; i++) {
+						var active = i === index;
+						cards[i].hidden = !active;
+						cards[i].setAttribute('aria-hidden', active ? 'false' : 'true');
+					}
+					for (var j = 0; j < dots.length; j++) {
+						var dotActive = j === index;
+						dots[j].setAttribute('aria-selected', dotActive ? 'true' : 'false');
+						dots[j].setAttribute('tabindex', dotActive ? '0' : '-1');
+						if (dotActive) { dots[j].classList.add('is-active'); }
+						else { dots[j].classList.remove('is-active'); }
+					}
+					current = index;
+				}
+
+				for (var di = 0; di < dots.length; di++) {
+					(function (dot, idx) {
+						dot.addEventListener('click', function () { activate(idx); });
+						dot.addEventListener('keydown', function (e) {
+							if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(idx); }
+						});
+					}(dots[di], di));
+				}
+				activate(0);
+			}(widgets[wi]));
+		}
+	}
+
+	/**
+	 * Treatment band click handler.
+	 * Clicking [data-gloskin-treatment-band] with a data-path attribute selects that
+	 * path in the consultation engine and scrolls to / focuses the concern step.
+	 * No-JS fallback: each band should carry an href to a hash/query URL.
+	 */
+	function initTreatmentBands() {
+		var bands = document.querySelectorAll('[data-gloskin-treatment-band]');
+		for (var bi = 0; bi < bands.length; bi++) {
+			(function (band) {
+				var pathSlug = band.getAttribute('data-path') || '';
+				if (!pathSlug) { return; }
+				band.addEventListener('click', function (e) {
+					var target = document.querySelector('[data-gloskin-consultation-path="' + pathSlug + '"]');
+					if (!target) { return; }
+					e.preventDefault();
+					/* Select the path */
+					target.click();
+					/* Scroll to and focus the consultation concern step */
+					var step = document.querySelector('[data-gloskin-consultation-step="concerns"]') || target;
+					var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+					step.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+					/* Focus the first interactive element within the step */
+					var focusable = step.querySelector('button, [tabindex="0"], input, select');
+					if (focusable) { focusable.focus({ preventScroll: true }); }
+				});
+			}(bands[bi]));
+		}
+	}
+
 	function init() {
 		initializeCommerceBadgeCounts();
 		initOverlayCloseButtons();
@@ -2541,6 +2665,9 @@
 		initWishlist();
 		initHeroBackgroundVideo();
 		initHeroScrollCue();
+		initPromoCarousel();
+		initTestimonials();
+		initTreatmentBands();
 	}
 
 	if (typeof document !== 'undefined') {
@@ -2574,7 +2701,10 @@
 			parseShopCatalogHash: parseShopCatalogHash,
 			buildShopCatalogHash: buildShopCatalogHash,
 			setupHeroBackgroundVideo: setupHeroBackgroundVideo,
-			initHeroBackgroundVideo: initHeroBackgroundVideo
+			initHeroBackgroundVideo: initHeroBackgroundVideo,
+			initPromoCarousel: initPromoCarousel,
+			initTestimonials: initTestimonials,
+			initTreatmentBands: initTreatmentBands
 		};
 	}
 }());

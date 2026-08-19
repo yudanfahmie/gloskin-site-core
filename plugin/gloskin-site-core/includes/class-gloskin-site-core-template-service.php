@@ -227,7 +227,7 @@ final class Gloskin_Site_Core_Template_Service {
 		return array(
 			'page'          => $page,
 			'hero'          => $hero,
-			'treatments'    => $this->post_cards( Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 8 ),
+			'treatments'    => $this->curated_home_treatments(),
 			'promo'         => $this->managed_promo_records( 5 ),
 			'skincare'      => $this->skincare_mappings(),
 			'products'      => $this->woocommerce->products( 4 ),
@@ -523,6 +523,52 @@ final class Gloskin_Site_Core_Template_Service {
 			'products' => $this->woocommerce->products( 8 ),
 			'woo_ready' => $this->woocommerce->available(),
 		);
+	}
+
+	/**
+	 * Up to 3 curated published treatments for the Home page.
+	 * Explicitly featured treatments (gloskin_treatment_feature_on_home = '1') are
+	 * sorted by post_title for determinism and capped at 3. If none are featured,
+	 * falls back to the 3 most-recently-published treatments — always deterministic,
+	 * never random.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	private function curated_home_treatments() {
+		$featured = get_posts( array(
+			'post_type'      => Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => 3,
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+			'meta_query'     => array(
+				array(
+					'key'     => 'gloskin_treatment_feature_on_home',
+					'value'   => '1',
+					'compare' => '=',
+				),
+			),
+		) );
+		if ( count( $featured ) > 0 ) {
+			$cards = array();
+			foreach ( $featured as $post ) {
+				$cards[] = $this->post_card( $post, Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE );
+			}
+			return $cards;
+		}
+		/* Deterministic fallback: 3 latest published treatments by date */
+		$fallback = get_posts( array(
+			'post_type'      => Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => 3,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+		) );
+		$cards = array();
+		foreach ( $fallback as $post ) {
+			$cards[] = $this->post_card( $post, Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE );
+		}
+		return $cards;
 	}
 
 	/** @return array<string,mixed> */

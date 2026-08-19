@@ -142,9 +142,12 @@ final class Gloskin_Site_Core_Admin_Service {
 	public function render_content_overview() {
 		if ( ! current_user_can( 'edit_posts' ) ) { return; }
 		$labels = array(
-			Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE => __( 'Treatments', 'gloskin-site-core' ),
-			Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE => __( 'Clinics', 'gloskin-site-core' ),
-			Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE => __( 'Doctors', 'gloskin-site-core' ),
+			Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE     => __( 'Treatments', 'gloskin-site-core' ),
+			Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE         => __( 'Clinics', 'gloskin-site-core' ),
+			Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE         => __( 'Doctors', 'gloskin-site-core' ),
+			Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE          => __( 'Promos', 'gloskin-site-core' ),
+			Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE    => __( 'Testimonials', 'gloskin-site-core' ),
+			Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE    => __( 'Achievements', 'gloskin-site-core' ),
 		);
 		?>
 		<div class="wrap"><h1><?php echo esc_html__( 'Gloskin Content', 'gloskin-site-core' ); ?></h1><p><?php echo esc_html__( 'Ringkasan konten Gloskin dan pintasan ke layar WordPress yang tetap menjadi pemilik datanya.', 'gloskin-site-core' ); ?></p><div class="gloskin-admin-overview">
@@ -155,6 +158,23 @@ final class Gloskin_Site_Core_Admin_Service {
 			/* translators: %1$d: number of published records; %2$d: target record count for this content type. */
 			$progress_label = sprintf( __( '%1$d dari target %2$d record telah dipublikasikan.', 'gloskin-site-core' ), $live, $target );
 			?><div class="card"><h2><?php echo esc_html( $labels[ $post_type ] ); ?></h2><p><?php echo esc_html( $progress_label ); ?></p><p><a class="button button-secondary" href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . $post_type ) ); ?>"><?php echo esc_html__( 'Kelola Konten', 'gloskin-site-core' ); ?></a></p></div><?php endforeach; ?>
+		</div>
+		<h2><?php echo esc_html__( 'Konten Terkelola', 'gloskin-site-core' ); ?></h2>
+		<div class="gloskin-admin-overview">
+		<?php
+		$managed_types = array(
+			Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE       => $labels[ Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE ],
+			Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE  => $labels[ Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE ],
+			Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE  => $labels[ Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE ],
+		);
+		foreach ( $managed_types as $mtype => $mlabel ) :
+			$mcount = wp_count_posts( $mtype );
+			$mall   = $mcount ? absint( $mcount->publish ) + absint( isset( $mcount->draft ) ? $mcount->draft : 0 ) : 0;
+			$mlive  = $mcount && isset( $mcount->publish ) ? absint( $mcount->publish ) : 0;
+			/* translators: %1$d: published; %2$d: total. */
+			$mlabel_full = sprintf( __( '%1$d dipublikasikan, %2$d total.', 'gloskin-site-core' ), $mlive, $mall );
+			?><div class="card"><h2><?php echo esc_html( $mlabel ); ?></h2><p><?php echo esc_html( $mlabel_full ); ?></p><p><a class="button button-secondary" href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . $mtype ) ); ?>"><?php echo esc_html__( 'Kelola Konten', 'gloskin-site-core' ); ?></a></p></div><?php
+		endforeach; ?>
 		</div><hr><h2><?php echo esc_html__( 'Konten WordPress yang Tetap Native', 'gloskin-site-core' ); ?></h2><p><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=page' ) ); ?>"><?php echo esc_html__( 'Pages Gloskin', 'gloskin-site-core' ); ?></a> · <a href="<?php echo esc_url( admin_url( 'edit.php' ) ); ?>"><?php echo esc_html__( 'Posts / Insights', 'gloskin-site-core' ); ?></a> · <a href="<?php echo esc_url( admin_url( 'upload.php' ) ); ?>"><?php echo esc_html__( 'Media Library', 'gloskin-site-core' ); ?></a></p><?php if ( current_user_can( 'manage_options' ) ) : ?><p><a class="button button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SETTINGS_SLUG ) ); ?>"><?php echo esc_html__( 'Buka Gloskin Settings', 'gloskin-site-core' ); ?></a></p><?php endif; ?>
 		<?php
 		if ( current_user_can( self::MIGRATION_CAPABILITY ) && '' !== $this->plugin_file ) :
@@ -411,6 +431,9 @@ final class Gloskin_Site_Core_Admin_Service {
 		add_meta_box( 'gloskin-clinic-details', __( 'Clinic Details', 'gloskin-site-core' ), array( $this, 'render_clinic_meta_box' ), Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE, 'normal', 'default' );
 		add_meta_box( 'gloskin-doctor-details', __( 'Doctor Details', 'gloskin-site-core' ), array( $this, 'render_doctor_meta_box' ), Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE, 'normal', 'default' );
 		add_meta_box( 'gloskin-page-details', __( 'Gloskin Page Settings', 'gloskin-site-core' ), array( $this, 'render_page_meta_box' ), 'page', 'normal', 'default' );
+		add_meta_box( 'gloskin-promo-details', __( 'Promo Details', 'gloskin-site-core' ), array( $this, 'render_promo_meta_box' ), Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE, 'normal', 'default' );
+		add_meta_box( 'gloskin-testimonial-details', __( 'Testimonial Details', 'gloskin-site-core' ), array( $this, 'render_testimonial_meta_box' ), Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'normal', 'default' );
+		add_meta_box( 'gloskin-achievement-details', __( 'Achievement Details', 'gloskin-site-core' ), array( $this, 'render_achievement_meta_box' ), Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE, 'normal', 'default' );
 	}
 
 	public function render_treatment_meta_box( $post ) {
@@ -421,6 +444,7 @@ final class Gloskin_Site_Core_Admin_Service {
 		$this->url_field( $post, 'gloskin_booking_target', __( 'Booking target', 'gloskin-site-core' ) );
 		$this->relationship_field( $post, 'gloskin_clinic_ids', Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE, __( 'Related clinics', 'gloskin-site-core' ) );
 		$this->relationship_field( $post, 'gloskin_doctor_ids', Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE, __( 'Related doctors', 'gloskin-site-core' ) );
+		$this->checkbox_field( $post, 'gloskin_treatment_feature_on_home', __( 'Feature on Home (max 3 shown; use order in title if multiple)', 'gloskin-site-core' ) );
 	}
 
 	public function render_clinic_meta_box( $post ) {
@@ -452,6 +476,40 @@ final class Gloskin_Site_Core_Admin_Service {
 		echo '<p class="description">' . esc_html__( 'Use the standard Featured Image panel for the approved doctor portrait.', 'gloskin-site-core' ) . '</p>';
 	}
 
+	public function render_promo_meta_box( $post ) {
+		$this->nonce();
+		$this->text_field( $post, 'gloskin_promo_eyebrow', __( 'Eyebrow label', 'gloskin-site-core' ) );
+		$this->textarea_field( $post, 'gloskin_promo_summary', __( 'Summary copy', 'gloskin-site-core' ), 4 );
+		$this->text_field( $post, 'gloskin_promo_cta_label', __( 'CTA button label', 'gloskin-site-core' ) );
+		$this->url_field( $post, 'gloskin_promo_cta_url', __( 'CTA URL', 'gloskin-site-core' ) );
+		$this->text_field( $post, 'gloskin_promo_start_date', __( 'Start date (YYYY-MM-DD, site timezone, leave blank for no limit)', 'gloskin-site-core' ) );
+		$this->text_field( $post, 'gloskin_promo_end_date', __( 'End date (YYYY-MM-DD, inclusive, site timezone, leave blank for no limit)', 'gloskin-site-core' ) );
+		$this->checkbox_field( $post, 'gloskin_promo_active', __( 'Active (eligible for display when within date range)', 'gloskin-site-core' ) );
+		$this->text_field( $post, 'gloskin_promo_order', __( 'Display order (lower = first; leave blank = unspecified)', 'gloskin-site-core' ) );
+		echo '<p class="description">' . esc_html__( 'Featured Image: use the standard Featured Image panel for the promo banner image.', 'gloskin-site-core' ) . '</p>';
+	}
+
+	public function render_testimonial_meta_box( $post ) {
+		$this->nonce();
+		$this->text_field( $post, 'gloskin_testimonial_attribution', __( 'Name / attribution', 'gloskin-site-core' ) );
+		$this->text_field( $post, 'gloskin_testimonial_subtitle', __( 'Subtitle / type (e.g. Pasien Gloskin)', 'gloskin-site-core' ) );
+		$this->textarea_field( $post, 'gloskin_testimonial_source_note', __( 'Source note (optional, for internal reference)', 'gloskin-site-core' ), 3 );
+		$this->checkbox_field( $post, 'gloskin_testimonial_active', __( 'Active (eligible for display)', 'gloskin-site-core' ) );
+		$this->text_field( $post, 'gloskin_testimonial_order', __( 'Display order (lower = first)', 'gloskin-site-core' ) );
+		echo '<p class="description">' . esc_html__( 'The quote body is the post excerpt. Featured Image: use the standard Featured Image panel.', 'gloskin-site-core' ) . '</p>';
+	}
+
+	public function render_achievement_meta_box( $post ) {
+		$this->nonce();
+		$this->text_field( $post, 'gloskin_achievement_issuer', __( 'Issuing body / organization', 'gloskin-site-core' ) );
+		$this->text_field( $post, 'gloskin_achievement_year', __( 'Year / date (e.g. 2024 or 2024-06)', 'gloskin-site-core' ) );
+		$this->url_field( $post, 'gloskin_achievement_source_url', __( 'Source URL (optional verification link)', 'gloskin-site-core' ) );
+		$this->checkbox_field( $post, 'gloskin_achievement_active', __( 'Active (eligible for display)', 'gloskin-site-core' ) );
+		$this->checkbox_field( $post, 'gloskin_achievement_feature_on_home', __( 'Feature on Home page', 'gloskin-site-core' ) );
+		$this->text_field( $post, 'gloskin_achievement_order', __( 'Display order (lower = first)', 'gloskin-site-core' ) );
+		echo '<p class="description">' . esc_html__( 'Featured Image: use the standard Featured Image panel for the award badge/logo.', 'gloskin-site-core' ) . '</p>';
+	}
+
 	public function render_page_meta_box( $post ) {
 		$this->nonce();
 		$this->text_field( $post, 'gloskin_hero_heading', __( 'Hero heading', 'gloskin-site-core' ) );
@@ -464,6 +522,12 @@ final class Gloskin_Site_Core_Admin_Service {
 			$this->textarea_field( $post, 'gloskin_about_vision', __( 'Vision', 'gloskin-site-core' ), 5 );
 			$this->textarea_field( $post, 'gloskin_about_mission', __( 'Mission', 'gloskin-site-core' ), 5 );
 			$this->textarea_field( $post, 'gloskin_about_values', __( 'Values', 'gloskin-site-core' ), 5 );
+			echo '<hr><h3>' . esc_html__( 'About Founder', 'gloskin-site-core' ) . '</h3>';
+			$this->text_field( $post, 'gloskin_about_founder_name', __( 'Founder name', 'gloskin-site-core' ) );
+			$this->text_field( $post, 'gloskin_about_founder_role', __( 'Founder role / title', 'gloskin-site-core' ) );
+			$this->textarea_field( $post, 'gloskin_about_founder_story', __( 'Founder story', 'gloskin-site-core' ), 8 );
+			$founder_media_id = absint( get_post_meta( $post->ID, 'gloskin_about_founder_media_id', true ) );
+			echo '<p><label for="gloskin-about-founder-media-id"><strong>' . esc_html__( 'Founder photo (media ID)', 'gloskin-site-core' ) . '</strong></label></p><div class="gloskin-admin-media-row"><input class="widefat" id="gloskin-about-founder-media-id" name="gloskin_about_founder_media_id" value="' . esc_attr( $founder_media_id ? (string) $founder_media_id : '' ) . '" /><button type="button" class="button" data-gloskin-media-picker data-target="#gloskin-about-founder-media-id" data-multiple="false">' . esc_html__( 'Choose image', 'gloskin-site-core' ) . '</button></div><p class="description">' . esc_html__( 'Founder section only renders when name and role are both present.', 'gloskin-site-core' ) . '</p>';
 		}
 		$parent = $post->post_parent ? get_post( $post->post_parent ) : null;
 		if ( $parent instanceof WP_Post && 'skincare' === $parent->post_name ) { $this->text_field( $post, 'gloskin_woo_category_slug', __( 'WooCommerce category slug', 'gloskin-site-core' ) ); }
@@ -508,10 +572,41 @@ final class Gloskin_Site_Core_Admin_Service {
 
 	private function save_schema() {
 		return array(
-			Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE => array( 'strings' => array( 'gloskin_summary', 'gloskin_benefits', 'gloskin_contraindications', 'gloskin_booking_target' ), 'arrays' => array( 'gloskin_clinic_ids', 'gloskin_doctor_ids' ), 'integers' => array() ),
-			Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE => array( 'strings' => array( 'gloskin_address', 'gloskin_phone_display', 'gloskin_phone_uri', 'gloskin_whatsapp_number', 'gloskin_whatsapp_message', 'gloskin_operating_hours', 'gloskin_map_url', 'gloskin_map_embed', 'gloskin_short_location' ), 'arrays' => array( 'gloskin_gallery_image_ids' ), 'integers' => array() ),
-			Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE => array( 'strings' => array( 'gloskin_degree_title', 'gloskin_specialization', 'gloskin_sip_number', 'gloskin_credentials', 'gloskin_profile', 'gloskin_schedule', 'gloskin_booking_target' ), 'arrays' => array( 'gloskin_branch_ids' ), 'integers' => array() ),
-			'page' => array( 'strings' => array( 'gloskin_woo_category_slug', 'gloskin_about_vision', 'gloskin_about_mission', 'gloskin_about_values', 'gloskin_hero_heading', 'gloskin_hero_copy', 'gloskin_hero_cta_label', 'gloskin_hero_cta_url' ), 'arrays' => array(), 'integers' => array( 'gloskin_hero_media_id' ) ),
+			Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE => array(
+				'strings'  => array( 'gloskin_summary', 'gloskin_benefits', 'gloskin_contraindications', 'gloskin_booking_target', 'gloskin_treatment_feature_on_home' ),
+				'arrays'   => array( 'gloskin_clinic_ids', 'gloskin_doctor_ids' ),
+				'integers' => array(),
+			),
+			Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE => array(
+				'strings'  => array( 'gloskin_address', 'gloskin_phone_display', 'gloskin_phone_uri', 'gloskin_whatsapp_number', 'gloskin_whatsapp_message', 'gloskin_operating_hours', 'gloskin_map_url', 'gloskin_map_embed', 'gloskin_short_location' ),
+				'arrays'   => array( 'gloskin_gallery_image_ids' ),
+				'integers' => array(),
+			),
+			Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE => array(
+				'strings'  => array( 'gloskin_degree_title', 'gloskin_specialization', 'gloskin_sip_number', 'gloskin_credentials', 'gloskin_profile', 'gloskin_schedule', 'gloskin_booking_target' ),
+				'arrays'   => array( 'gloskin_branch_ids' ),
+				'integers' => array(),
+			),
+			'page' => array(
+				'strings'  => array( 'gloskin_woo_category_slug', 'gloskin_about_vision', 'gloskin_about_mission', 'gloskin_about_values', 'gloskin_about_founder_name', 'gloskin_about_founder_role', 'gloskin_about_founder_story', 'gloskin_hero_heading', 'gloskin_hero_copy', 'gloskin_hero_cta_label', 'gloskin_hero_cta_url' ),
+				'arrays'   => array(),
+				'integers' => array( 'gloskin_hero_media_id', 'gloskin_about_founder_media_id' ),
+			),
+			Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE => array(
+				'strings'  => array( 'gloskin_promo_eyebrow', 'gloskin_promo_summary', 'gloskin_promo_cta_label', 'gloskin_promo_cta_url', 'gloskin_promo_start_date', 'gloskin_promo_end_date', 'gloskin_promo_active', 'gloskin_promo_order' ),
+				'arrays'   => array(),
+				'integers' => array(),
+			),
+			Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE => array(
+				'strings'  => array( 'gloskin_testimonial_attribution', 'gloskin_testimonial_subtitle', 'gloskin_testimonial_source_note', 'gloskin_testimonial_active', 'gloskin_testimonial_order' ),
+				'arrays'   => array(),
+				'integers' => array(),
+			),
+			Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE => array(
+				'strings'  => array( 'gloskin_achievement_issuer', 'gloskin_achievement_year', 'gloskin_achievement_source_url', 'gloskin_achievement_active', 'gloskin_achievement_feature_on_home', 'gloskin_achievement_order' ),
+				'arrays'   => array(),
+				'integers' => array(),
+			),
 		);
 	}
 
@@ -1453,6 +1548,7 @@ final class Gloskin_Site_Core_Admin_Service {
 	private function text_field( $post, $key, $label ) { $value = (string) get_post_meta( $post->ID, $key, true ); echo '<p><label for="' . esc_attr( $key ) . '"><strong>' . esc_html( $label ) . '</strong></label></p><input class="widefat" id="' . esc_attr( $key ) . '" name="' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '" />'; }
 	private function textarea_field( $post, $key, $label, $rows = 4 ) { $value = (string) get_post_meta( $post->ID, $key, true ); echo '<p><label for="' . esc_attr( $key ) . '"><strong>' . esc_html( $label ) . '</strong></label></p><textarea class="widefat" rows="' . esc_attr( (string) $rows ) . '" id="' . esc_attr( $key ) . '" name="' . esc_attr( $key ) . '">' . esc_textarea( $value ) . '</textarea>'; }
 	private function url_field( $post, $key, $label ) { $value = (string) get_post_meta( $post->ID, $key, true ); echo '<p><label for="' . esc_attr( $key ) . '"><strong>' . esc_html( $label ) . '</strong></label></p><input class="widefat" type="url" id="' . esc_attr( $key ) . '" name="' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '" />'; }
+	private function checkbox_field( $post, $key, $label ) { $checked = (bool) get_post_meta( $post->ID, $key, true ); echo '<p><label><input type="checkbox" name="' . esc_attr( $key ) . '" value="1" ' . checked( $checked, true, false ) . ' /> <strong>' . esc_html( $label ) . '</strong></label></p>'; }
 	private function relationship_field( $post, $key, $target_type, $label ) {
 		$selected = get_post_meta( $post->ID, $key, true ); $selected = is_array( $selected ) ? array_map( 'absint', $selected ) : array();
 		$choices = get_posts( array( 'post_type' => $target_type, 'post_status' => array( 'publish', 'draft', 'private' ), 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );

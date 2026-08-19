@@ -473,12 +473,14 @@ final class Gloskin_Site_Core_Content_Service {
 		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_start_date', 'text' );
 		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_end_date', 'text' );
 		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_active', 'text' );
+		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_order', 'text' );
 
 		/* gloskin_testimonial managed fields */
 		$this->register_string_meta( self::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_attribution', 'text' );
 		$this->register_string_meta( self::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_subtitle', 'text' );
 		$this->register_string_meta( self::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_active', 'text' );
 		$this->register_string_meta( self::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_source_note', 'textarea' );
+		$this->register_string_meta( self::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_order', 'text' );
 
 		/* gloskin_achievement managed fields */
 		$this->register_string_meta( self::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_issuer', 'text' );
@@ -486,8 +488,10 @@ final class Gloskin_Site_Core_Content_Service {
 		$this->register_string_meta( self::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_source_url', 'http_url' );
 		$this->register_string_meta( self::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_feature_on_home', 'text' );
 		$this->register_string_meta( self::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_active', 'text' );
+		$this->register_string_meta( self::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_order', 'text' );
 
 		$this->register_string_meta( self::TREATMENT_POST_TYPE, 'gloskin_summary', 'textarea' );
+		$this->register_string_meta( self::TREATMENT_POST_TYPE, 'gloskin_treatment_feature_on_home', 'text' );
 		$this->register_string_meta( self::TREATMENT_POST_TYPE, 'gloskin_benefits', 'rich' );
 		$this->register_string_meta( self::TREATMENT_POST_TYPE, 'gloskin_contraindications', 'rich' );
 		$this->register_post_id_list_meta( self::TREATMENT_POST_TYPE, 'gloskin_clinic_ids', self::CLINIC_POST_TYPE );
