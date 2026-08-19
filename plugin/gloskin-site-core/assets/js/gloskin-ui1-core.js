@@ -2619,32 +2619,61 @@
 	}
 
 	/**
-	 * Treatment band click handler.
-	 * Clicking [data-gloskin-treatment-band] with a data-path attribute selects that
-	 * path in the consultation engine and scrolls to / focuses the concern step.
-	 * No-JS fallback: each band should carry an href to a hash/query URL.
+	 * Treatment band CTA → consultation engine contract.
+	 *
+	 * Canonical contract: the CTA element owns `data-gloskin-band-path="<path_id>"`.
+	 * On click it intercepts navigation, selects the matching consultation path in
+	 * the recommendation engine ([data-gloskin-consultation-path="<id>"]), reveals
+	 * concerns, and scrolls/focuses correctly.
+	 *
+	 * No-JS fallback: each CTA href is `/treatments/?path=<id>#consultation` so the
+	 * user lands on the consultation section. On page load with ?path=<id> in the URL
+	 * the engine auto-selects that path (see the end of this function).
+	 *
+	 * Reduced-motion safe; no duplicate recommendation engine; no autoplay.
 	 */
 	function initTreatmentBands() {
-		var bands = document.querySelectorAll('[data-gloskin-treatment-band]');
-		for (var bi = 0; bi < bands.length; bi++) {
-			(function (band) {
-				var pathSlug = band.getAttribute('data-path') || '';
-				if (!pathSlug) { return; }
-				band.addEventListener('click', function (e) {
-					var target = document.querySelector('[data-gloskin-consultation-path="' + pathSlug + '"]');
-					if (!target) { return; }
+		var ctaElements = document.querySelectorAll('[data-gloskin-band-path]');
+		for (var bi = 0; bi < ctaElements.length; bi++) {
+			(function (cta) {
+				var pathId = cta.getAttribute('data-gloskin-band-path') || '';
+				if (!pathId) { return; }
+				cta.addEventListener('click', function (e) {
+					var pathBtn = document.querySelector('[data-gloskin-consultation-path="' + pathId + '"]');
+					if (!pathBtn) { return; } /* consultation not on this page; follow href */
 					e.preventDefault();
-					/* Select the path */
-					target.click();
-					/* Scroll to and focus the consultation concern step */
-					var step = document.querySelector('[data-gloskin-consultation-step="concerns"]') || target;
+					/* Select the consultation path (triggers the engine's path-selection handler) */
+					pathBtn.click();
+					/* Scroll to the consultation section */
+					var consultation = document.querySelector('[data-gloskin-consultation]');
 					var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-					step.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
-					/* Focus the first interactive element within the step */
-					var focusable = step.querySelector('button, [tabindex="0"], input, select');
-					if (focusable) { focusable.focus({ preventScroll: true }); }
+					if (consultation) {
+						consultation.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+						/* Focus first interactive element inside the engine */
+						var focusTarget = consultation.querySelector('button:not([disabled]), input:not([disabled]), [tabindex="0"]');
+						if (focusTarget) { focusTarget.focus({ preventScroll: true }); }
+					}
 				});
-			}(bands[bi]));
+			}(ctaElements[bi]));
+		}
+
+		/* No-JS fallback auto-select: when the page loaded with ?path=<id> in the URL,
+		 * select that path automatically so the user lands in the correct consultation state. */
+		if (typeof window !== 'undefined' && window.location && window.location.search) {
+			var searchStr = window.location.search;
+			var pathMatch = searchStr.match(/(?:^|[?&])path=([^&]+)/);
+			if (pathMatch) {
+				var autoPathId = decodeURIComponent(pathMatch[1]);
+				var autoBtn = document.querySelector('[data-gloskin-consultation-path="' + autoPathId + '"]');
+				if (autoBtn) {
+					autoBtn.click();
+					var autoConsultation = document.querySelector('[data-gloskin-consultation]');
+					if (autoConsultation) {
+						var autoReduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+						autoConsultation.scrollIntoView({ behavior: autoReduceMotion ? 'auto' : 'smooth', block: 'start' });
+					}
+				}
+			}
 		}
 	}
 

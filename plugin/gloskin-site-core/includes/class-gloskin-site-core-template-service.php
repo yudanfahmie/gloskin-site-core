@@ -231,8 +231,8 @@ final class Gloskin_Site_Core_Template_Service {
 			'promo'         => $this->managed_promo_records( 5 ),
 			'skincare'      => $this->skincare_mappings(),
 			'products'      => $this->woocommerce->products( 4 ),
-			'testimonials'  => $this->published_managed_records( Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_active', 6 ),
-			'achievements'  => $this->published_managed_records( Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_active', 8, 'gloskin_achievement_feature_on_home' ),
+			'testimonials'  => $this->published_managed_records( Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_active', 6, null, 'gloskin_testimonial_order' ),
+			'achievements'  => $this->published_managed_records( Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_active', 8, 'gloskin_achievement_feature_on_home', 'gloskin_achievement_order' ),
 			'woo_ready'     => $this->woocommerce->available(),
 		);
 	}
@@ -250,7 +250,7 @@ final class Gloskin_Site_Core_Template_Service {
 			'founder'      => $founder,
 			'clinics'      => $this->clinic_cards(),
 			'doctors'      => $this->all_published_doctor_cards(),
-			'achievements' => $this->published_managed_records( Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_active', 20 ),
+			'achievements' => $this->published_managed_records( Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_active', 20, null, 'gloskin_achievement_order' ),
 		);
 	}
 
@@ -336,20 +336,30 @@ final class Gloskin_Site_Core_Template_Service {
 
 	/**
 	 * Fetch active published gloskin_promo records for the carousel.
-	 * Falls back to empty array — caller handles empty state gracefully.
 	 *
-	 * @param int $limit Max records.
+	 * Ordering: explicit gloskin_promo_order meta (numeric ASC, blank sorts last),
+	 * then post_title as stable tiebreaker. Ordering is canonical — frontend must
+	 * never ignore this meta field.
+	 *
+	 * Date eligibility: gloskin_promo_start_date and gloskin_promo_end_date are
+	 * evaluated against the WordPress site timezone. Empty = no limit on that side.
+	 * Invalid stored date = treat as editor readiness problem; do not fatal.
+	 *
+	 * Both Home and /promo/ use this same method — one eligible-record owner.
+	 *
+	 * @param int $limit Max records returned after filtering.
 	 * @return array<int,array<string,mixed>>
 	 */
 	private function managed_promo_records( $limit = 5 ) {
 		if ( ! post_type_exists( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE ) ) {
 			return array();
 		}
+		/* Fetch a generous pool so we can filter by date and apply explicit order */
 		$posts = get_posts( array(
 			'post_type'      => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE,
 			'post_status'    => 'publish',
-			'posts_per_page' => $limit,
-			'orderby'        => 'menu_order',
+			'posts_per_page' => max( $limit * 4, 40 ),
+			'orderby'        => 'ID',
 			'order'          => 'ASC',
 			'meta_query'     => array(
 				array(
@@ -360,32 +370,98 @@ final class Gloskin_Site_Core_Template_Service {
 			),
 		) );
 
+		/* Filter by date eligibility */
+		$now   = function_exists( 'current_datetime' ) ? current_datetime() : new DateTimeImmutable( 'now', wp_timezone() );
+		$posts = array_values( array_filter( $posts, function ( $post ) use ( $now ) {
+			return $this->is_promo_date_eligible( $post->ID, $now );
+		} ) );
+
+		/* Sort by explicit gloskin_promo_order — blank/zero sorts after explicitly ordered */
+		usort( $posts, function ( $a, $b ) {
+			$ao = (int) get_post_meta( $a->ID, 'gloskin_promo_order', true );
+			$bo = (int) get_post_meta( $b->ID, 'gloskin_promo_order', true );
+			$ah = $ao > 0;
+			$bh = $bo > 0;
+			if ( $ah && ! $bh ) { return -1; }
+			if ( ! $ah && $bh ) { return 1; }
+			if ( $ao !== $bo ) { return $ao <=> $bo; }
+			return strcmp( (string) $a->post_title, (string) $b->post_title );
+		} );
+
+		$posts   = array_slice( $posts, 0, $limit );
 		$records = array();
 		foreach ( $posts as $post ) {
 			$records[] = array(
-				'id'         => (int) $post->ID,
-				'title'      => (string) get_the_title( $post ),
-				'eyebrow'    => (string) get_post_meta( $post->ID, 'gloskin_promo_eyebrow', true ),
-				'summary'    => (string) get_post_meta( $post->ID, 'gloskin_promo_summary', true ),
-				'cta_label'  => (string) get_post_meta( $post->ID, 'gloskin_promo_cta_label', true ),
-				'cta_url'    => (string) get_post_meta( $post->ID, 'gloskin_promo_cta_url', true ),
-				'image_id'   => absint( get_post_thumbnail_id( $post->ID ) ),
-				'excerpt'    => (string) get_the_excerpt( $post ),
+				'id'        => (int) $post->ID,
+				'title'     => (string) get_the_title( $post ),
+				'eyebrow'   => (string) get_post_meta( $post->ID, 'gloskin_promo_eyebrow', true ),
+				'summary'   => (string) get_post_meta( $post->ID, 'gloskin_promo_summary', true ),
+				'cta_label' => (string) get_post_meta( $post->ID, 'gloskin_promo_cta_label', true ),
+				'cta_url'   => (string) get_post_meta( $post->ID, 'gloskin_promo_cta_url', true ),
+				'image_id'  => absint( get_post_thumbnail_id( $post->ID ) ),
+				'excerpt'   => (string) get_the_excerpt( $post ),
 			);
 		}
 		return $records;
 	}
 
 	/**
+	 * Check promo date eligibility against the WordPress site timezone.
+	 *
+	 * Empty start_date => no lower limit. Empty end_date => no upper limit.
+	 * Start is inclusive; end is inclusive through local end-of-day (23:59:59).
+	 * An invalid stored date string is treated as a readiness problem — does not fatal;
+	 * returns true (record stays eligible) to avoid silently hiding valid promos.
+	 *
+	 * @param int                               $post_id Post ID.
+	 * @param DateTimeInterface|DateTimeImmutable $now     Current time in site timezone.
+	 * @return bool
+	 */
+	private function is_promo_date_eligible( $post_id, $now ) {
+		$tz    = wp_timezone();
+		$start = trim( (string) get_post_meta( $post_id, 'gloskin_promo_start_date', true ) );
+		$end   = trim( (string) get_post_meta( $post_id, 'gloskin_promo_end_date', true ) );
+
+		if ( '' !== $start ) {
+			try {
+				$start_dt = new DateTimeImmutable( $start . ' 00:00:00', $tz );
+				if ( $now < $start_dt ) {
+					return false;
+				}
+			} catch ( Exception $e ) {
+				/* Invalid date — treat as readiness problem, stay eligible */
+			}
+		}
+
+		if ( '' !== $end ) {
+			try {
+				$end_dt = new DateTimeImmutable( $end . ' 23:59:59', $tz );
+				if ( $now > $end_dt ) {
+					return false;
+				}
+			} catch ( Exception $e ) {
+				/* Invalid date — treat as readiness problem, stay eligible */
+			}
+		}
+
+		return true;
+	}
+
+	/**
 	 * Fetch active published records from a private managed CPT.
 	 *
-	 * @param string      $post_type    CPT slug.
-	 * @param string      $active_meta  Meta key for the active flag.
-	 * @param int         $limit        Max records.
-	 * @param string|null $feature_meta Optional meta key to filter by (e.g. feature_on_home).
+	 * Ordering: uses the CPT-specific explicit order meta key ($order_meta_key).
+	 * Blank/zero values sort after explicitly ordered records; post_title is the
+	 * stable tiebreaker. Frontend must not use menu_order or date for these CPTs.
+	 *
+	 * @param string      $post_type     CPT slug.
+	 * @param string      $active_meta   Meta key for the active flag.
+	 * @param int         $limit         Max records returned.
+	 * @param string|null $feature_meta  Optional meta key to require (e.g. feature_on_home).
+	 * @param string      $order_meta_key Explicit display-order meta key for this CPT.
 	 * @return array<int,array<string,mixed>>
 	 */
-	private function published_managed_records( $post_type, $active_meta, $limit = 10, $feature_meta = null ) {
+	private function published_managed_records( $post_type, $active_meta, $limit = 10, $feature_meta = null, $order_meta_key = '' ) {
 		if ( ! post_type_exists( $post_type ) ) {
 			return array();
 		}
@@ -406,12 +482,27 @@ final class Gloskin_Site_Core_Template_Service {
 		$posts = get_posts( array(
 			'post_type'      => $post_type,
 			'post_status'    => 'publish',
-			'posts_per_page' => $limit,
-			'orderby'        => 'menu_order',
+			'posts_per_page' => max( $limit * 4, 40 ),
+			'orderby'        => 'ID',
 			'order'          => 'ASC',
 			'meta_query'     => $meta_query,
 		) );
 
+		/* Sort by explicit order meta — blank/zero sorts last */
+		if ( '' !== $order_meta_key ) {
+			usort( $posts, function ( $a, $b ) use ( $order_meta_key ) {
+				$ao = (int) get_post_meta( $a->ID, $order_meta_key, true );
+				$bo = (int) get_post_meta( $b->ID, $order_meta_key, true );
+				$ah = $ao > 0;
+				$bh = $bo > 0;
+				if ( $ah && ! $bh ) { return -1; }
+				if ( ! $ah && $bh ) { return 1; }
+				if ( $ao !== $bo ) { return $ao <=> $bo; }
+				return strcmp( (string) $a->post_title, (string) $b->post_title );
+			} );
+		}
+
+		$posts   = array_slice( $posts, 0, $limit );
 		$records = array();
 		foreach ( $posts as $post ) {
 			$records[] = array(

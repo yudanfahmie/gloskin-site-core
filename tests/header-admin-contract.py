@@ -114,8 +114,8 @@ for test_command in (
 
 # Release/cache version must move coherently; migration schema is intentionally
 # unrelated and therefore not asserted/changed here.
-require("Version: 0.7.136" in plugin, "plugin header must be 0.7.136")
-require("const VERSION = '0.7.136';" in kernel, "Kernel VERSION must be 0.7.136")
+require("Version: 0.7.137" in plugin, "plugin header must be 0.7.137")
+require("const VERSION = '0.7.137';" in kernel, "Kernel VERSION must be 0.7.137")
 require("0.7.135" not in plugin and "0.7.135" not in kernel, "stale active release version remains")
 
 print("header-admin-contract: OK (canonical prototype header)")

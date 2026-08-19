@@ -531,6 +531,11 @@ final class Gloskin_Site_Core_Content_Service {
 		$this->register_string_meta( 'page', 'gloskin_hero_cta_label', 'text' );
 		$this->register_string_meta( 'page', 'gloskin_hero_cta_url', 'action_url' );
 		$this->register_attachment_id_meta( 'page', 'gloskin_hero_media_id' );
+		/* Why Gloskin editor-manageable meta (home page only; template falls back to defaults) */
+		$this->register_string_meta( 'page', 'gloskin_why_heading', 'text' );
+		$this->register_string_meta( 'page', 'gloskin_why_lead', 'textarea' );
+		$this->register_string_meta( 'page', 'gloskin_why_primary_title', 'text' );
+		$this->register_string_meta( 'page', 'gloskin_why_primary_copy', 'textarea' );
 	}
 
 	private function register_string_meta( $post_type, $meta_key, $sanitizer ) {

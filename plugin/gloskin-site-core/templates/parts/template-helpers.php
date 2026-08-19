@@ -62,92 +62,53 @@ if ( ! function_exists( 'gloskin_ui1_render_presentation_media' ) ) {
 
 if ( ! function_exists( 'gloskin_ui1_editorial_media_catalog' ) ) {
 	/**
-	 * Curated staging/editorial photography.
-	 *
-	 * These are fixed Unsplash image URLs, never random/query endpoints. They are
-	 * decorative only and must never represent a factual Gloskin doctor, clinic,
-	 * WooCommerce product or medical result. WordPress/Woo factual media always wins.
+	 * Formerly returned Unsplash URLs. Now returns empty — all editorial media
+	 * slots use the CSS-only abstract presentation fallback (gloskin_ui1_render_presentation_media)
+	 * instead of runtime requests to images.unsplash.com. Zero external staging-image
+	 * dependency after this change. WordPress/Woo factual media always wins.
 	 *
 	 * @return array<string,array<string,mixed>>
 	 */
 	function gloskin_ui1_editorial_media_catalog() {
-		return array(
-			'wellness-room' => array(
-				'src'    => 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&w=1600&h=1200&q=82',
-				'width'  => 1600,
-				'height' => 1200,
-			),
-			'skincare-still-life' => array(
-				'src'    => 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=1400&h=1100&q=82',
-				'width'  => 1400,
-				'height' => 1100,
-			),
-			'skincare-interior' => array(
-				'src'    => 'https://images.unsplash.com/photo-1778330804164-2f6d5d3b16ad?auto=format&fit=crop&w=1400&h=1100&q=82',
-				'width'  => 1400,
-				'height' => 1100,
-			),
-			'wellness-editorial' => array(
-				'src'    => 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1400&h=1100&q=82',
-				'width'  => 1400,
-				'height' => 1100,
-			),
-		);
+		return array(); /* No external image catalog — see gloskin_ui1_render_editorial_media(). */
 	}
 }
 
 if ( ! function_exists( 'gloskin_ui1_resolve_editorial_media' ) ) {
 	/**
-	 * Pick a deterministic generic editorial image without creating factual identity.
+	 * Formerly resolved Unsplash catalog entries. Now returns empty array — all
+	 * editorial media uses the CSS-only abstract presentation fallback. Kept for
+	 * backward API compatibility; callers should use gloskin_ui1_render_editorial_media().
 	 *
 	 * @param string $kind Generic visual family.
 	 * @param string $seed Stable variation seed.
 	 * @return array<string,mixed>
 	 */
 	function gloskin_ui1_resolve_editorial_media( $kind = 'editorial', $seed = 'gloskin' ) {
-		$catalog = gloskin_ui1_editorial_media_catalog();
-		$pools   = array(
-			'hero'      => array( 'wellness-room', 'skincare-interior' ),
-			'skincare'  => array( 'skincare-still-life', 'skincare-interior' ),
-			'treatment' => array( 'wellness-editorial', 'wellness-room' ),
-			'editorial' => array( 'wellness-room', 'skincare-interior', 'skincare-still-life' ),
-			'insight'   => array( 'skincare-interior', 'wellness-room' ),
-		);
-		$pool = isset( $pools[ $kind ] ) ? $pools[ $kind ] : $pools['editorial'];
-		$hash = (int) sprintf( '%u', crc32( $kind . '|' . $seed ) );
-		$key  = $pool[ $hash % count( $pool ) ];
-
-		return $catalog[ $key ];
+		unset( $kind, $seed );
+		return array();
 	}
 }
 
 if ( ! function_exists( 'gloskin_ui1_render_editorial_media' ) ) {
 	/**
-	 * Render curated decorative staging photography with stable intrinsic geometry.
+	 * Render a decorative editorial placeholder with no external network request.
+	 * All slots previously served by Unsplash now use the CSS-only abstract
+	 * presentation composition (gloskin_ui1_render_presentation_media). No runtime
+	 * request to images.unsplash.com or any external host remains after this change.
 	 *
-	 * @param string $kind Generic visual family.
-	 * @param string $seed Stable variation seed.
-	 * @param string $class Additional class.
-	 * @param bool   $eager Whether the image is above the fold.
+	 * WordPress/Woo factual Media Library images always take precedence over this
+	 * fallback; callers already check for a real attachment before calling here.
+	 *
+	 * @param string $kind  Generic visual family (hero|skincare|treatment|editorial…).
+	 * @param string $seed  Stable variation seed.
+	 * @param string $class Additional class applied to the wrapper.
+	 * @param bool   $eager Unused — kept for call-site API compatibility.
 	 * @return void
 	 */
 	function gloskin_ui1_render_editorial_media( $kind = 'editorial', $seed = 'gloskin', $class = '', $eager = false ) {
-		$media   = gloskin_ui1_resolve_editorial_media( $kind, $seed );
-		$classes = trim( 'gloskin-ui1-editorial-image gloskin-ui1-editorial-image--' . sanitize_html_class( $kind ) . ' ' . $class );
-		?>
-		<img
-			class="<?php echo esc_attr( $classes ); ?>"
-			src="<?php echo esc_url( $media['src'] ); ?>"
-			width="<?php echo esc_attr( (string) $media['width'] ); ?>"
-			height="<?php echo esc_attr( (string) $media['height'] ); ?>"
-			alt=""
-			aria-hidden="true"
-			decoding="async"
-			loading="<?php echo $eager ? 'eager' : 'lazy'; ?>"
-			<?php if ( $eager ) : ?>fetchpriority="high"<?php endif; ?>
-			data-gloskin-editorial="unsplash"
-		>
-		<?php
+		unset( $eager ); /* No network I/O — eager/lazy loading no longer applies. */
+		gloskin_ui1_render_presentation_media( $kind, $seed, $class );
 	}
 }
 
@@ -627,7 +588,7 @@ if ( ! function_exists( 'gloskin_ui1_render_treatment_bands' ) ) {
 						<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Perawatan', 'gloskin-site-core' ); ?></p>
 						<h2 class="gloskin-ui1-treatment-band__title"><?php echo esc_html( $label ); ?></h2>
 						<p class="gloskin-ui1-treatment-band__copy"><?php echo esc_html__( 'Temukan pilihan perawatan yang relevan dan diskusikan dengan dokter Gloskin saat konsultasi.', 'gloskin-site-core' ); ?></p>
-						<a class="gloskin-ui1-button gloskin-ui1-button--primary" href="<?php echo esc_url( home_url( '/treatments/' ) ); ?>" data-gloskin-band-path="<?php echo esc_attr( (string) $path_id ); ?>">
+						<a class="gloskin-ui1-button gloskin-ui1-button--primary" href="<?php echo esc_url( home_url( '/treatments/?path=' . $path_id . '#consultation' ) ); ?>" data-gloskin-band-path="<?php echo esc_attr( (string) $path_id ); ?>">
 							<?php echo esc_html__( 'Jelajahi Solusi', 'gloskin-site-core' ); ?>
 						</a>
 					</div>
@@ -726,29 +687,56 @@ if ( ! function_exists( 'gloskin_ui1_render_managed_promo_carousel' ) ) {
 
 if ( ! function_exists( 'gloskin_ui1_render_why_gloskin' ) ) {
 	/**
-	 * Why Gloskin — dominant primary value block + 2-3 supporting cards.
-	 * Copy is factual/generic only; no numbers, guarantees, or medical claims.
+	 * Why Gloskin — dominant primary value block + supporting cards.
+	 *
+	 * Editor-manageable: when the home page has gloskin_why_heading, gloskin_why_lead,
+	 * gloskin_why_primary_title, or gloskin_why_primary_copy meta fields set, those
+	 * values override the defaults below. Copy must be factual/generic only; no
+	 * numbers, guarantees, statistics, or medical claims.
 	 *
 	 * @param WP_Post|null $home_page Home page for optional editor override.
 	 * @return void
 	 */
 	function gloskin_ui1_render_why_gloskin( $home_page = null ) {
+		/* Read optional editor overrides — fall back to factual copy if blank */
+		$why_heading       = '';
+		$why_lead          = '';
+		$why_primary_title = '';
+		$why_primary_copy  = '';
+		if ( $home_page instanceof WP_Post ) {
+			$why_heading       = trim( (string) get_post_meta( $home_page->ID, 'gloskin_why_heading', true ) );
+			$why_lead          = trim( (string) get_post_meta( $home_page->ID, 'gloskin_why_lead', true ) );
+			$why_primary_title = trim( (string) get_post_meta( $home_page->ID, 'gloskin_why_primary_title', true ) );
+			$why_primary_copy  = trim( (string) get_post_meta( $home_page->ID, 'gloskin_why_primary_copy', true ) );
+		}
+		if ( '' === $why_heading ) {
+			$why_heading = __( 'Konsultasi dulu, baru menentukan perawatan', 'gloskin-site-core' );
+		}
+		if ( '' === $why_lead ) {
+			$why_lead = __( 'Setiap perjalanan dimulai dari pemeriksaan dan diskusi bersama dokter — bukan dari katalog pilihan instan.', 'gloskin-site-core' );
+		}
+		if ( '' === $why_primary_title ) {
+			$why_primary_title = __( 'Perjalanan yang Dipandu', 'gloskin-site-core' );
+		}
+		if ( '' === $why_primary_copy ) {
+			$why_primary_copy = __( 'Gloskin menggabungkan konsultasi medis, pilihan perawatan, dan produk skincare dalam satu ekosistem yang terhubung — sehingga setiap rekomendasi didasari pemeriksaan kondisi kulit Anda secara langsung.', 'gloskin-site-core' );
+		}
 		?>
 		<section class="gloskin-ui1-section gloskin-ui1-section--why" data-gloskin-section="why-gloskin">
 			<div class="gloskin-ui1-container">
 				<div class="gloskin-ui1-why__intro">
 					<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Mengapa Gloskin', 'gloskin-site-core' ); ?></p>
-					<h2 class="gloskin-ui1-why__heading"><?php echo esc_html__( 'Konsultasi dulu, baru menentukan perawatan', 'gloskin-site-core' ); ?></h2>
-					<p class="gloskin-ui1-why__lead"><?php echo esc_html__( 'Setiap perjalanan dimulai dari pemeriksaan dan diskusi bersama dokter — bukan dari katalog pilihan instan.', 'gloskin-site-core' ); ?></p>
+					<h2 class="gloskin-ui1-why__heading"><?php echo esc_html( $why_heading ); ?></h2>
+					<p class="gloskin-ui1-why__lead"><?php echo esc_html( $why_lead ); ?></p>
 				</div>
 				<div class="gloskin-ui1-why__primary">
 					<div class="gloskin-ui1-why__primary-copy">
-						<h3><?php echo esc_html__( 'Perjalanan yang Dipandu', 'gloskin-site-core' ); ?></h3>
-						<p><?php echo esc_html__( 'Gloskin menggabungkan konsultasi medis, pilihan perawatan, dan produk skincare dalam satu ekosistem yang terhubung — sehingga setiap rekomendasi didasari pemeriksaan kondisi kulit Anda secara langsung.', 'gloskin-site-core' ); ?></p>
+						<h3><?php echo esc_html( $why_primary_title ); ?></h3>
+						<p><?php echo esc_html( $why_primary_copy ); ?></p>
 						<a class="gloskin-ui1-button gloskin-ui1-button--primary" href="<?php echo esc_url( home_url( '/treatments/' ) ); ?>"><?php echo esc_html__( 'Jelajahi Perawatan', 'gloskin-site-core' ); ?></a>
 					</div>
 					<div class="gloskin-ui1-why__primary-media" aria-hidden="true">
-						<?php gloskin_ui1_render_editorial_media( 'treatment', 'why-gloskin-primary', 'gloskin-ui1-why__primary-image' ); ?>
+						<?php gloskin_ui1_render_presentation_media( 'treatment', 'why-gloskin-primary', 'gloskin-ui1-why__primary-image' ); ?>
 					</div>
 				</div>
 				<div class="gloskin-ui1-why__cards">

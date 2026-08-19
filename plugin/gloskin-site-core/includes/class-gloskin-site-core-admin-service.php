@@ -96,6 +96,14 @@ final class Gloskin_Site_Core_Admin_Service {
 		add_action( 'admin_post_' . self::MAPPING_ACTION, array( $this, 'handle_save_mapping' ) );
 		add_action( 'admin_post_' . self::DEMO_IMPORT_ACTION, array( $this, 'handle_demo_import' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_consultation_admin_assets' ), 30 );
+
+		// List-table columns for managed CPTs (item 12).
+		add_filter( 'manage_edit-' . Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE . '_columns', array( $this, 'promo_list_columns' ) );
+		add_action( 'manage_' . Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE . '_posts_custom_column', array( $this, 'promo_list_column_cell' ), 10, 2 );
+		add_filter( 'manage_edit-' . Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE . '_columns', array( $this, 'testimonial_list_columns' ) );
+		add_action( 'manage_' . Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE . '_posts_custom_column', array( $this, 'testimonial_list_column_cell' ), 10, 2 );
+		add_filter( 'manage_edit-' . Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE . '_columns', array( $this, 'achievement_list_columns' ) );
+		add_action( 'manage_' . Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE . '_posts_custom_column', array( $this, 'achievement_list_column_cell' ), 10, 2 );
 	}
 
 	public function register_settings() {
@@ -321,18 +329,16 @@ final class Gloskin_Site_Core_Admin_Service {
 						<section class="gloskin-admin-card" id="gloskin-admin-panel-brand" role="tabpanel" aria-labelledby="gloskin-admin-tab-brand" data-gloskin-admin-panel="brand">
 							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Design direction', 'gloskin-site-core' ); ?></h2>
 							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Arah palet dan tone visual global Gloskin.', 'gloskin-site-core' ); ?></p>
-							<p><label class="gloskin-admin-field-label" for="gloskin-design-variant"><?php echo esc_html__( 'Design direction', 'gloskin-site-core' ); ?></label><br />
-							<select id="gloskin-design-variant" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[design_variant]"><option value="medical" <?php selected( $variant, 'medical' ); ?>><?php echo esc_html__( 'Medical Professional', 'gloskin-site-core' ); ?></option><option value="modern" <?php selected( $variant, 'modern' ); ?>><?php echo esc_html__( 'Modern Aesthetic', 'gloskin-site-core' ); ?></option><option value="luxury" <?php selected( $variant, 'luxury' ); ?>><?php echo esc_html__( 'Premium Luxury', 'gloskin-site-core' ); ?></option></select></p>
+							<div class="notice notice-info inline"><p><?php echo esc_html__( 'Design direction is now fixed to Medical Professional and is no longer editor-selectable. Contact the developer to change the visual direction.', 'gloskin-site-core' ); ?></p></div>
+							<?php /* design_variant hidden: keep field name for settings sanitization contract */ ?>
+							<input type="hidden" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[design_variant]" value="<?php echo esc_attr( $variant ); ?>" />
 						</section>
 						<section class="gloskin-admin-card" id="gloskin-admin-panel-header" role="tabpanel" aria-labelledby="gloskin-admin-tab-header" data-gloskin-admin-panel="header">
 							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Header layout', 'gloskin-site-core' ); ?></h2>
-							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Pilih komposisi header. Header Type 1 tetap default dan tidak berubah untuk situs yang sudah ada.', 'gloskin-site-core' ); ?></p>
-							<div class="gloskin-admin-header-picker">
-								<?php
-								$this->render_header_variant_card( 'header-1', $header_variant, __( 'Header Type 1', 'gloskin-site-core' ), __( 'Centered-logo layout (default)', 'gloskin-site-core' ), $previews['header-1'], 1440, 133 );
-								$this->render_header_variant_card( 'header-2', $header_variant, __( 'Header Type 2', 'gloskin-site-core' ), __( 'Logo / Navigation / Actions', 'gloskin-site-core' ), $previews['header-2'], 1440, 73 );
-								?>
-							</div>
+							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Komposisi header saat ini ditetapkan dan tidak dapat diubah melalui admin. Hubungi developer untuk mengubah header variant.', 'gloskin-site-core' ); ?></p>
+							<div class="notice notice-info inline"><p><?php echo esc_html__( 'Header layout selection has been retired. The active layout is fixed and managed by the developer.', 'gloskin-site-core' ); ?></p></div>
+							<?php /* header_variant hidden: keep field name for settings sanitization contract */ ?>
+							<input type="hidden" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[header_variant]" value="<?php echo esc_attr( $header_variant ); ?>" />
 						</section>
 						<section class="gloskin-admin-card" id="gloskin-admin-panel-hero" role="tabpanel" aria-labelledby="gloskin-admin-tab-hero" data-gloskin-admin-panel="hero">
 							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Home hero video', 'gloskin-site-core' ); ?></h2>
@@ -529,6 +535,14 @@ final class Gloskin_Site_Core_Admin_Service {
 			$founder_media_id = absint( get_post_meta( $post->ID, 'gloskin_about_founder_media_id', true ) );
 			echo '<p><label for="gloskin-about-founder-media-id"><strong>' . esc_html__( 'Founder photo (media ID)', 'gloskin-site-core' ) . '</strong></label></p><div class="gloskin-admin-media-row"><input class="widefat" id="gloskin-about-founder-media-id" name="gloskin_about_founder_media_id" value="' . esc_attr( $founder_media_id ? (string) $founder_media_id : '' ) . '" /><button type="button" class="button" data-gloskin-media-picker data-target="#gloskin-about-founder-media-id" data-multiple="false">' . esc_html__( 'Choose image', 'gloskin-site-core' ) . '</button></div><p class="description">' . esc_html__( 'Founder section only renders when name and role are both present.', 'gloskin-site-core' ) . '</p>';
 		}
+		if ( 'home' === $post->post_name ) {
+			echo '<hr><h3>' . esc_html__( 'Why Gloskin', 'gloskin-site-core' ) . '</h3>';
+			echo '<p class="description">' . esc_html__( 'Leave fields blank to use built-in factual defaults.', 'gloskin-site-core' ) . '</p>';
+			$this->text_field( $post, 'gloskin_why_heading', __( 'Section heading', 'gloskin-site-core' ) );
+			$this->textarea_field( $post, 'gloskin_why_lead', __( 'Lead paragraph', 'gloskin-site-core' ), 3 );
+			$this->text_field( $post, 'gloskin_why_primary_title', __( 'Primary card title', 'gloskin-site-core' ) );
+			$this->textarea_field( $post, 'gloskin_why_primary_copy', __( 'Primary card copy', 'gloskin-site-core' ), 5 );
+		}
 		$parent = $post->post_parent ? get_post( $post->post_parent ) : null;
 		if ( $parent instanceof WP_Post && 'skincare' === $parent->post_name ) { $this->text_field( $post, 'gloskin_woo_category_slug', __( 'WooCommerce category slug', 'gloskin-site-core' ) ); }
 	}
@@ -588,7 +602,7 @@ final class Gloskin_Site_Core_Admin_Service {
 				'integers' => array(),
 			),
 			'page' => array(
-				'strings'  => array( 'gloskin_woo_category_slug', 'gloskin_about_vision', 'gloskin_about_mission', 'gloskin_about_values', 'gloskin_about_founder_name', 'gloskin_about_founder_role', 'gloskin_about_founder_story', 'gloskin_hero_heading', 'gloskin_hero_copy', 'gloskin_hero_cta_label', 'gloskin_hero_cta_url' ),
+				'strings'  => array( 'gloskin_woo_category_slug', 'gloskin_about_vision', 'gloskin_about_mission', 'gloskin_about_values', 'gloskin_about_founder_name', 'gloskin_about_founder_role', 'gloskin_about_founder_story', 'gloskin_hero_heading', 'gloskin_hero_copy', 'gloskin_hero_cta_label', 'gloskin_hero_cta_url', 'gloskin_why_heading', 'gloskin_why_lead', 'gloskin_why_primary_title', 'gloskin_why_primary_copy' ),
 				'arrays'   => array(),
 				'integers' => array( 'gloskin_hero_media_id', 'gloskin_about_founder_media_id' ),
 			),
@@ -1553,5 +1567,131 @@ final class Gloskin_Site_Core_Admin_Service {
 		$selected = get_post_meta( $post->ID, $key, true ); $selected = is_array( $selected ) ? array_map( 'absint', $selected ) : array();
 		$choices = get_posts( array( 'post_type' => $target_type, 'post_status' => array( 'publish', 'draft', 'private' ), 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
 		echo '<p><label for="' . esc_attr( $key ) . '"><strong>' . esc_html( $label ) . '</strong></label></p><select class="widefat" multiple size="8" id="' . esc_attr( $key ) . '" name="' . esc_attr( $key ) . '[]">'; foreach ( $choices as $choice ) { echo '<option value="' . esc_attr( (string) $choice->ID ) . '" ' . selected( in_array( (int) $choice->ID, $selected, true ), true, false ) . '>' . esc_html( get_the_title( $choice ) ) . '</option>'; } echo '</select>';
+	}
+
+	// -------------------------------------------------------------------------
+	// List-table columns — Promo (item 12)
+	// -------------------------------------------------------------------------
+
+	/** @param array<string,string> $columns @return array<string,string> */
+	public function promo_list_columns( $columns ) {
+		$new = array();
+		foreach ( $columns as $key => $label ) {
+			$new[ $key ] = $label;
+			if ( 'title' === $key ) {
+				$new['gloskin_promo_active']     = __( 'Active', 'gloskin-site-core' );
+				$new['gloskin_promo_dates']      = __( 'Date range', 'gloskin-site-core' );
+				$new['gloskin_promo_order']      = __( 'Order', 'gloskin-site-core' );
+				$new['gloskin_promo_is_demo']    = __( 'Demo', 'gloskin-site-core' );
+			}
+		}
+		return $new;
+	}
+
+	/** @return void */
+	public function promo_list_column_cell( $column, $post_id ) {
+		switch ( $column ) {
+			case 'gloskin_promo_active':
+				echo get_post_meta( $post_id, 'gloskin_promo_active', true ) ? '✔' : '—';
+				break;
+			case 'gloskin_promo_dates':
+				$start = (string) get_post_meta( $post_id, 'gloskin_promo_start_date', true );
+				$end   = (string) get_post_meta( $post_id, 'gloskin_promo_end_date', true );
+				echo esc_html( ( $start ?: '∞' ) . ' → ' . ( $end ?: '∞' ) );
+				break;
+			case 'gloskin_promo_order':
+				$order = (string) get_post_meta( $post_id, 'gloskin_promo_order', true );
+				echo esc_html( '' !== $order ? $order : '—' );
+				break;
+			case 'gloskin_promo_is_demo':
+				$identity = get_post_meta( $post_id, '_gloskin_demo_identity', true );
+				echo $identity ? '✔' : '—';
+				break;
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// List-table columns — Testimonial (item 12)
+	// -------------------------------------------------------------------------
+
+	/** @param array<string,string> $columns @return array<string,string> */
+	public function testimonial_list_columns( $columns ) {
+		$new = array();
+		foreach ( $columns as $key => $label ) {
+			$new[ $key ] = $label;
+			if ( 'title' === $key ) {
+				$new['gloskin_testimonial_attribution'] = __( 'Attribution', 'gloskin-site-core' );
+				$new['gloskin_testimonial_active']      = __( 'Active', 'gloskin-site-core' );
+				$new['gloskin_testimonial_order']       = __( 'Order', 'gloskin-site-core' );
+				$new['gloskin_testimonial_is_demo']     = __( 'Demo', 'gloskin-site-core' );
+			}
+		}
+		return $new;
+	}
+
+	/** @return void */
+	public function testimonial_list_column_cell( $column, $post_id ) {
+		switch ( $column ) {
+			case 'gloskin_testimonial_attribution':
+				$attr = (string) get_post_meta( $post_id, 'gloskin_testimonial_attribution', true );
+				echo esc_html( $attr ?: '—' );
+				break;
+			case 'gloskin_testimonial_active':
+				echo get_post_meta( $post_id, 'gloskin_testimonial_active', true ) ? '✔' : '—';
+				break;
+			case 'gloskin_testimonial_order':
+				$order = (string) get_post_meta( $post_id, 'gloskin_testimonial_order', true );
+				echo esc_html( '' !== $order ? $order : '—' );
+				break;
+			case 'gloskin_testimonial_is_demo':
+				$identity = get_post_meta( $post_id, '_gloskin_demo_identity', true );
+				echo $identity ? '✔' : '—';
+				break;
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// List-table columns — Achievement (item 12)
+	// -------------------------------------------------------------------------
+
+	/** @param array<string,string> $columns @return array<string,string> */
+	public function achievement_list_columns( $columns ) {
+		$new = array();
+		foreach ( $columns as $key => $label ) {
+			$new[ $key ] = $label;
+			if ( 'title' === $key ) {
+				$new['gloskin_achievement_issuer_year'] = __( 'Issuer / Year', 'gloskin-site-core' );
+				$new['gloskin_achievement_feature']     = __( 'Feature Home', 'gloskin-site-core' );
+				$new['gloskin_achievement_active']      = __( 'Active', 'gloskin-site-core' );
+				$new['gloskin_achievement_order']       = __( 'Order', 'gloskin-site-core' );
+				$new['gloskin_achievement_is_demo']     = __( 'Demo', 'gloskin-site-core' );
+			}
+		}
+		return $new;
+	}
+
+	/** @return void */
+	public function achievement_list_column_cell( $column, $post_id ) {
+		switch ( $column ) {
+			case 'gloskin_achievement_issuer_year':
+				$issuer = (string) get_post_meta( $post_id, 'gloskin_achievement_issuer', true );
+				$year   = (string) get_post_meta( $post_id, 'gloskin_achievement_year', true );
+				echo esc_html( trim( $issuer . ( $year ? ' (' . $year . ')' : '' ) ) ?: '—' );
+				break;
+			case 'gloskin_achievement_feature':
+				echo get_post_meta( $post_id, 'gloskin_achievement_feature_on_home', true ) ? '✔' : '—';
+				break;
+			case 'gloskin_achievement_active':
+				echo get_post_meta( $post_id, 'gloskin_achievement_active', true ) ? '✔' : '—';
+				break;
+			case 'gloskin_achievement_order':
+				$order = (string) get_post_meta( $post_id, 'gloskin_achievement_order', true );
+				echo esc_html( '' !== $order ? $order : '—' );
+				break;
+			case 'gloskin_achievement_is_demo':
+				$identity = get_post_meta( $post_id, '_gloskin_demo_identity', true );
+				echo $identity ? '✔' : '—';
+				break;
+		}
 	}
 }
