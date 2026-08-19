@@ -48,6 +48,13 @@ python tests/no-active-variant-context-contract.py
 python tests/single-migration-action-contract.py
 php tests/doctor-snapshot-contract.php
 php tests/final-migration-contract.php
+php tests/final-migration-path-contract.php
+php tests/final-migration-package-integrity.php
+php tests/final-migration-dom-ajax-contract.php
+php tests/final-migration-failed-resume-contract.php
+php tests/final-migration-doctor-batch-resume-contract.php
+php tests/final-migration-preflight-reset-contract.php
+php tests/final-migration-error-contract.php
 php tests/description-consolidation-contract.php
 php tests/hero-video-contract.php
 GL_TEST_MODE=success php tests/description-consolidation-bootstrap-contract.php
@@ -73,10 +80,10 @@ php tests/lifecycle-shop-page-alignment-contract.php
 php tests/prototype-ia-migration-contract.php
 python tests/prototype-ia-loader-contract.py
 php tests/admin-navigation-smoke.php
-php tests/runtime-smoke.php
-GL_TEST_ADMIN=1 php tests/runtime-smoke.php
-GL_TEST_WOO=1 php tests/runtime-smoke.php
-GL_TEST_WOO_LATE=1 php tests/runtime-smoke.php
+php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
+GL_TEST_ADMIN=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
+GL_TEST_WOO=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
+GL_TEST_WOO_LATE=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
 
 if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/null 2>&1; then
   python tests/browser-smoke.py

@@ -1,0 +1,228 @@
+name: v0.7.139 Hotfix Runtime
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring
+          coverage: none
+
+      - name: Helper for commit status
+        id: helper
+        run: echo ready
+
+      - name: Architecture
+        id: architecture
+        continue-on-error: true
+        run: ./tests/check-architecture.sh
+      - name: Report architecture
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok='${{ steps.architecture.outcome }}'==='success'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:ok?'success':'failure',context:'v139/architecture',description:`${ok?'PASS':'FAIL'}: check-architecture.sh`});
+
+      - name: Path contract
+        id: path
+        continue-on-error: true
+        run: php tests/final-migration-path-contract.php
+      - name: Report path
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok='${{ steps.path.outcome }}'==='success'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:ok?'success':'failure',context:'v139/path-contract',description:`${ok?'PASS':'FAIL'}: final migration path contract`});
+
+      - name: Package integrity
+        id: package
+        continue-on-error: true
+        run: php tests/final-migration-package-integrity.php
+      - name: Report package
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok='${{ steps.package.outcome }}'==='success'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:ok?'success':'failure',context:'v139/package-integrity',description:`${ok?'PASS':'FAIL'}: manifest + 12 WebPs + SHA-256`});
+
+      - name: DOM AJAX contract
+        id: dom
+        continue-on-error: true
+        run: php tests/final-migration-dom-ajax-contract.php
+      - name: Report DOM AJAX
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok='${{ steps.dom.outcome }}'==='success'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:ok?'success':'failure',context:'v139/dom-ajax-contract',description:`${ok?'PASS':'FAIL'}: final migration DOM/AJAX contract`});
+
+      - name: Failed state resume
+        id: failed_resume
+        continue-on-error: true
+        run: php tests/final-migration-failed-resume-contract.php
+      - name: Report failed state resume
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok='${{ steps.failed_resume.outcome }}'==='success'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:ok?'success':'failure',context:'v139/failed-state-resume',description:`${ok?'PASS':'FAIL'}: failed/index0 resume contract`});
+
+      - name: Doctor batch resume
+        id: doctor_batch
+        continue-on-error: true
+        run: php tests/final-migration-doctor-batch-resume-contract.php
+      - name: Report doctor batch resume
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok='${{ steps.doctor_batch.outcome }}'==='success'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:ok?'success':'failure',context:'v139/doctor-batch-resume',description:`${ok?'PASS':'FAIL'}: 3,6,9,12; resume 6->9`});
+
+      - name: Preflight reset contract
+        id: preflight
+        continue-on-error: true
+        run: php tests/final-migration-preflight-reset-contract.php
+      - name: Report preflight reset
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok='${{ steps.preflight.outcome }}'==='success'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:ok?'success':'failure',context:'v139/preflight-reset',description:`${ok?'PASS':'FAIL'}: preflight reset guard`});
+
+      - name: Typed error contract
+        id: errors
+        continue-on-error: true
+        run: php tests/final-migration-error-contract.php
+      - name: Report typed errors
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok='${{ steps.errors.outcome }}'==='success'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:ok?'success':'failure',context:'v139/error-contract',description:`${ok?'PASS':'FAIL'}: typed safe error contract`});
+
+      - name: Final migration contract
+        id: migration
+        continue-on-error: true
+        run: php tests/final-migration-contract.php
+      - name: Report final migration contract
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok='${{ steps.migration.outcome }}'==='success'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:ok?'success':'failure',context:'v139/final-migration-contract',description:`${ok?'PASS':'FAIL'}: final migration contract`});
+
+      - name: Doctor snapshot integrity
+        id: snapshot
+        continue-on-error: true
+        run: php tests/doctor-snapshot-contract.php
+      - name: Report doctor snapshot
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok='${{ steps.snapshot.outcome }}'==='success'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:ok?'success':'failure',context:'v139/doctor-snapshot',description:`${ok?'PASS':'FAIL'}: all-doctor/non-target snapshot`});
+
+      - name: Storefront regression
+        id: storefront
+        continue-on-error: true
+        run: python tests/storefront-regression-contract.py
+      - name: Report storefront regression
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok='${{ steps.storefront.outcome }}'==='success'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:ok?'success':'failure',context:'v139/storefront-regression',description:`${ok?'PASS':'FAIL'}: storefront regression contract`});
+
+      - name: Woo cart notice regression
+        id: woo_cart
+        continue-on-error: true
+        run: php tests/woo-cart-notice-contract.php
+      - name: Report Woo cart notice
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok='${{ steps.woo_cart.outcome }}'==='success'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:ok?'success':'failure',context:'v139/woo-cart-notice',description:`${ok?'PASS':'FAIL'}: Woo cart notice contract`});
+
+      - name: Woo runtime smoke
+        id: woo_runtime
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          GL_TEST_WOO=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php > woo-runtime.log 2>&1
+          code=$?
+          tail -n 40 woo-runtime.log
+          exit "$code"
+      - name: Report Woo runtime smoke
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs=require('fs'); const ok='${{ steps.woo_runtime.outcome }}'==='success'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:ok?'success':'failure',context:'v139/woo-runtime-smoke',description:`${ok?'PASS':'FAIL'}: GL_TEST_WOO runtime smoke`}); if(!ok&&fs.existsSync('woo-runtime.log')){const lines=fs.readFileSync('woo-runtime.log','utf8').split(/\r?\n/).filter(Boolean); const hit=lines.find(l=>/Fatal error|Uncaught|Undefined function|Error:/.test(l))||lines[lines.length-1]||'unknown'; const slug=hit.replace(/[^A-Za-z0-9._=-]+/g,'-').slice(0,72); await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:'failure',context:`v139/woo-runtime-fail/${slug||'unknown'}`,description:'Woo runtime failure detail'});}
+
+      - name: Relevant Chromium smoke if available
+        id: browser
+        continue-on-error: true
+        shell: bash
+        run: |
+          if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/null 2>&1; then
+            python tests/admin-shell-browser-smoke.py
+            echo result=PASS >> "$GITHUB_OUTPUT"
+          else
+            echo result=SKIP >> "$GITHUB_OUTPUT"
+          fi
+      - name: Report browser smoke
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const outcome='${{ steps.browser.outcome }}'; const result='${{ steps.browser.outputs.result }}'||'FAIL'; const ctx=result==='SKIP'?'v139/browser-skip':'v139/browser-pass'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:outcome==='failure'?'failure':'success',context:ctx,description:result==='SKIP'?'SKIP: Chromium/Playwright unavailable':`${result}: relevant Chromium smoke`});
+
+      - name: Full runtime suite
+        id: full
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          bash -x tests/check-runtime.sh > full-runtime.log 2>&1
+          code=$?
+          tail -n 100 full-runtime.log
+          exit "$code"
+      - name: Report full runtime suite
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs=require('fs'); const ok='${{ steps.full.outcome }}'==='success'; await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:ok?'success':'failure',context:'v139/full-runtime',description:`${ok?'PASS':'FAIL'}: bash tests/check-runtime.sh`}); if(!ok&&fs.existsSync('full-runtime.log')){const lines=fs.readFileSync('full-runtime.log','utf8').split(/\r?\n/).filter(Boolean); const traces=lines.filter(l=>l.startsWith('+ ')); const last=(traces.length?traces[traces.length-1].slice(2):'unknown').replace(/[^A-Za-z0-9._=-]+/g,'-').slice(0,64); await github.rest.repos.createCommitStatus({owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,state:'failure',context:`v139/full-fail/${last||'unknown'}`,description:'First failing command from full runtime suite'});}
+
+      - name: Enforce all non-browser-skip results
+        if: always()
+        run: |
+          test '${{ steps.architecture.outcome }}' = success
+          test '${{ steps.path.outcome }}' = success
+          test '${{ steps.package.outcome }}' = success
+          test '${{ steps.dom.outcome }}' = success
+          test '${{ steps.failed_resume.outcome }}' = success
+          test '${{ steps.doctor_batch.outcome }}' = success
+          test '${{ steps.preflight.outcome }}' = success
+          test '${{ steps.errors.outcome }}' = success
+          test '${{ steps.migration.outcome }}' = success
+          test '${{ steps.snapshot.outcome }}' = success
+          test '${{ steps.storefront.outcome }}' = success
+          test '${{ steps.woo_cart.outcome }}' = success
+          test '${{ steps.woo_runtime.outcome }}' = success
+          test '${{ steps.browser.outcome }}' != failure
+          test '${{ steps.full.outcome }}' = success
