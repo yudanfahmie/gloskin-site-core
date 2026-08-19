@@ -14,7 +14,6 @@ PRESENTATION = ROOT / "tests/check-presentation.sh"
 
 def normalize_runtime() -> None:
     src = RUNTIME.read_text(encoding="utf-8")
-
     home_old = """\t$context = get_query_var( 'gloskin_context', array() );
 \tif ( ( $context['view'] ?? '' ) !== 'home' || count( $context['skincare'] ?? array() ) !== 7 ) {
 \t\tfwrite( STDERR, \"Home context failed\\n\" );
@@ -38,7 +37,6 @@ def normalize_runtime() -> None:
 \t\texit( 1 );
 \t}
 """
-
     if home_old in src:
         if src.count(home_old) != 1:
             raise SystemExit("runtime-smoke: expected one exact stale Home block")
@@ -60,10 +58,8 @@ def normalize_runtime() -> None:
             raise SystemExit("runtime-smoke: expected one route context assertion block")
         src = src.replace(route_old, route_old + route_guard, 1)
 
-    commerce_contract = "if ( ! isset( $context['commerce'] ) || ! is_array( $context['commerce'] ) )"
-    if commerce_contract not in src:
+    if "if ( ! isset( $context['commerce'] ) || ! is_array( $context['commerce'] ) )" not in src:
         raise SystemExit("runtime-smoke: Home commerce assertion missing")
-
     RUNTIME.write_text(src, encoding="utf-8")
 
 
@@ -88,7 +84,6 @@ grep -Fq 'return array(); /* No external image catalog' \"$helpers\" \\
 grep -Fq 'gloskin_ui1_render_presentation_media( $kind, $seed, $class );' \"$helpers\" \\
   || { echo \"CSS-only editorial presentation fallback missing\" >&2; exit 1; }
 """
-
     if stale_media in src:
         if src.count(stale_media) != 1:
             raise SystemExit("check-presentation: expected one exact stale Unsplash guard")
@@ -99,7 +94,6 @@ grep -Fq 'gloskin_ui1_render_presentation_media( $kind, $seed, $class );' \"$hel
     stale_font_start = 'if [[ ! -f "$production_css" ]]'
     favicon_marker = "# Favicon derivatives: all sizes must exist and derive from the same master,\n"
     corrected_font_marker = "Graphik/Felix production typography layer missing"
-
     if corrected_font_marker not in src:
         if src.count(stale_font_start) != 1 or src.count(favicon_marker) != 1:
             raise SystemExit("check-presentation: stale font section boundaries changed")
@@ -112,8 +106,6 @@ grep -Fq 'gloskin_ui1_render_presentation_media( $kind, $seed, $class );' \"$hel
   exit 1
 fi
 
-# Protected baseline fonts are self-hosted Graphik + Felix Titling. No Google
-# Fonts CDN, no retired Marcellus/Mulish dependency, and no WP Admin font load.
 fonts_css="$plugin_root/assets/css/gloskin-ui1-fonts.css"
 fonts_dir="$plugin_root/assets/fonts"
 assets_registry="$plugin_root/config/assets.php"
@@ -150,7 +142,6 @@ grep -qF 'font-family:"Graphik"' "$fonts_css" \
 grep -qF "'assets/fonts/GraphikRegular.woff2'" "$assets_registry" \
   && grep -qF "'assets/fonts/Felixti.woff2'" "$assets_registry" \
   || { echo "critical Graphik/Felix preload registry regressed" >&2; exit 1; }
-
 asset_service="$plugin_root/includes/class-gloskin-site-core-asset-service.php"
 admin_enqueue_block="$(awk '/public function enqueue_admin\(/,/^\t\}$/' "$asset_service")"
 if echo "$admin_enqueue_block" | grep -qE "registry\(\)\['styles'\]|font_preload|print_font_preload"; then
@@ -191,6 +182,16 @@ printf '%s\n' "$shop_price_block" | grep -qF "wc_product_meta_lookup" \
         src = src.replace(stale_sql, corrected_sql, 1)
     elif "TemplateService raw DB access escaped shop_price_bounds()" not in src:
         raise SystemExit("check-presentation: raw-DB guard is neither known stale nor normalized")
+
+    stale_cart_prefix = "body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items"
+    corrected_cart_prefix = "body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block.wc-block-cart-items"
+    stale_cart_count = src.count(stale_cart_prefix)
+    if stale_cart_count:
+        if stale_cart_count != 7:
+            raise SystemExit(f"check-presentation: expected 7 stale desktop Cart selector prefixes, found {stale_cart_count}")
+        src = src.replace(stale_cart_prefix, corrected_cart_prefix)
+    elif src.count(corrected_cart_prefix) < 7:
+        raise SystemExit("check-presentation: desktop Cart selector guard is neither known stale nor normalized")
 
     PRESENTATION.write_text(src, encoding="utf-8")
 
