@@ -18,7 +18,7 @@ def migrated_fixture():
     env = dict(os.environ)
     env['GLOSKIN_MIGRATION_RENDER_JSON'] = '1'
     raw = subprocess.check_output(
-        ['php', str(ROOT / 'tests/final-migration-render-fixture.php')],
+        ['php', str(ROOT / 'tests/final-migration-render-fixture-runner.php')],
         text=True,
         env=env,
     )
