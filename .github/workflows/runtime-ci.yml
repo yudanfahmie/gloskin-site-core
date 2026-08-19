@@ -35,6 +35,9 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Report stale release literals
+        run: grep -RIn --exclude='*.md' '0\.7\.142' tests || true
+
       - name: Install Playwright Chromium
         run: |
           python -m pip install --disable-pip-version-check playwright
