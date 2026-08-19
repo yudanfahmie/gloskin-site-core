@@ -42,7 +42,7 @@ require("does not establish redistribution rights" in css, "font runtime note mu
 # must be retired.
 require('"Graphik"' in fonts, "Graphik @font-face must be declared in gloskin-ui1-fonts.css")
 require('"Felix Titling"' in fonts, "Felix Titling @font-face must be declared in gloskin-ui1-fonts.css")
-require("'assets/fonts/GraphikRegular.woff2'" in assets, "GraphikRegular.woff2 must be in the preload list")
+require("'assets/fonts/Graphik-Regular.woff'" in assets, "Graphik-Regular.woff must be in the preload list")
 require("'assets/fonts/Felixti.woff2'" in assets, "Felixti.woff2 must be in the preload list")
 require("Marcellus-Regular.woff2" not in assets, "retired Marcellus preload must be removed from assets.php")
 require("Mulish-Variable.woff2" not in assets, "retired Mulish preload must be removed from assets.php")
@@ -54,13 +54,18 @@ consultation = assets[assets.index("'gloskin-ui1-consultation' => array("):]
 require("'deps'  => array( 'gloskin-ui1-prototype-refresh' )" in consultation, "Treatments specialist layer must follow refresh")
 
 require(home.count("gloskin_ui1_render_hero(") == 1, "Home must render exactly one shared hero")
-require("gloskin_ui1_render_promo_campaign( (array) $gloskin_context['promo'], 'h2', true )" in home,
-        "Home must reuse Promo renderer with h2 + compact Home presentation")
+require("gloskin_ui1_render_managed_promo_carousel( $gloskin_context['promo'], 'h2', true )" in home,
+        "Home must keep the protected managed Promo carousel with h2 + compact presentation")
 for obsolete in ("home-doctors", "home-clinics", "home-insights"):
     require(obsolete not in home, f"superseded primary Home section remains: {obsolete}")
-for fabricated in ("testimonial", "testimoni", "piagam", "award", "penghargaan"):
-    require(fabricated not in home.lower(), f"Home must not fabricate unavailable {fabricated} content")
-require('data-gloskin-section="home-about"' in home, "Home About transition missing")
+require("gloskin_ui1_render_testimonials( $gloskin_context['testimonials'] );" in home,
+        "Home factual testimonials helper must remain context-driven")
+require("gloskin_ui1_render_achievements( $gloskin_context['achievements'], 'compact' );" in home,
+        "Home factual achievements helper must remain context-driven")
+for fabricated in ("piagam", "award", "penghargaan"):
+    require(fabricated not in home.lower(), f"Home must not hardcode fabricated {fabricated} content")
+require("gloskin_ui1_render_why_gloskin( $gloskin_context['page'] );" in home,
+        "Home protected Why Gloskin/About transition missing")
 home_context = template_service.split("private function home_context()", 1)[1].split("private function about_context()", 1)[0]
 require("$hero['mode'] = 'campaign';" in home_context, "Home must use visible campaign hero mode")
 require("'video-only'" not in home_context, "strict video-only Home authority must remain retired")
@@ -75,9 +80,10 @@ require("data-gloskin-hero-bg-video" in helpers and helpers.count("<video class=
 require("'promo'      => 'Promo'" in template_service, "Promo document-title mapping missing")
 require("'promo' => 'promo'" in template_service, "Promo Page view mapping missing")
 require("case 'promo': return $this->promo_context();" in template_service, "Promo context routing missing")
-require("private function promo_campaign_context" in template_service, "shared native Promo projection missing")
-require("gloskin_ui1_render_promo_campaign" in promo and "gloskin_ui1_render_page_content" in promo,
-        "Promo route must reuse shared campaign composition and native Page long-form content")
+require("private function managed_promo_records" in template_service, "managed Promo record projection missing")
+require("gloskin_ui1_render_managed_promo_carousel( $gloskin_context['promos'], 'h1', false )" in promo
+        and "gloskin_ui1_render_page_content" in promo,
+        "Promo route must keep managed campaign carousel and native Page long-form content")
 require("function gloskin_ui1_render_promo_campaign" in helpers, "shared Promo renderer missing")
 for invented in ("diskon", "harga promo", "berlaku sampai", "syarat promo", "bpom"):
     require(invented not in promo.lower(), f"Promo template must not invent commercial fact: {invented}")
@@ -86,7 +92,9 @@ require("gloskin_ui1_has_content" in about, "About story must be source-gated")
 require("$gloskin_has_principles" in about, "About principles must be source-gated")
 require("if ( $gloskin_context['doctors'] )" in about, "About team section must be source-gated")
 require("if ( $gloskin_about_clinics )" in about, "About network section must be source-gated")
-for fabricated in ("founder", "pendiri", "award", "penghargaan", "sertifikasi terbaik"):
+require("$gloskin_founder" in about, "About founder projection must remain source-gated")
+require("if ( $gloskin_founder )" in about, "About founder section must render only when source data exists")
+for fabricated in ("award", "penghargaan", "sertifikasi terbaik"):
     require(fabricated not in about.lower(), f"About must not fabricate {fabricated}")
 
 # Treatments keeps the existing consultation engine; only pathway geometry is

@@ -1,9 +1,9 @@
 /*
  * Gloskin UI v1 self-hosted production fonts.
  *
- * Graphik runtime faces are verbatim WOFF binaries mirrored in docs/fonts
- * from opr/bloc at commit ddd732dd29409153802e37936a365794368c30bf.
- * Runtime paths reuse those exact Git blobs; no font conversion is performed.
+ * Graphik runtime faces are verbatim owner-supplied WOFF binaries sourced from
+ * opr/bloc at commit ddd732dd29409153802e37936a365794368c30bf.
+ * No font conversion is performed; runtime files are the canonical binaries.
  * See assets/fonts/GRAPHIK-SOURCE.md for provenance and licensing notes.
  * No runtime request to an external font CDN remains.
  *

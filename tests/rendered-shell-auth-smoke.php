@@ -263,7 +263,7 @@ if ( is_user_logged_in() ) {
 }
 
 fixture_assert( 1 === substr_count( $html, 'id="gloskin-auth-overlay"' ), 'logged-out shell must render exactly one quick auth overlay' );
-fixture_assert( 2 === substr_count( $html, 'data-gloskin-auth-open aria-controls="gloskin-auth-overlay" aria-expanded="false"' ), 'logged-out Account anchors (full + compact) must carry quick-auth intent server-side' );
+fixture_assert( 1 === substr_count( $html, 'data-gloskin-auth-open aria-controls="gloskin-auth-overlay" aria-expanded="false"' ), 'logged-out Account anchor must carry quick-auth intent server-side' );
 fixture_assert( 1 === substr_count( $html, 'class="woocommerce-form woocommerce-form-login login"' ), 'quick auth must contain one native login form' );
 fixture_assert( 1 === substr_count( $html, 'class="woocommerce-form woocommerce-form-register register"' ), 'quick auth must contain one native register form' );
 fixture_assert( 1 === substr_count( $html, 'name="woocommerce-login-nonce"' ), 'quick auth login nonce duplicated/missing' );

@@ -145,7 +145,7 @@ quickadd_end = core_js.index("\n\tfunction ", quickadd_start + 1)
 quickadd_js = core_js[quickadd_start:quickadd_end]
 for forbidden in ("submit.disabled = false", "removeAttribute('disabled')", "MutationObserver", "setInterval"):
     require(forbidden not in quickadd_js, f"Quick Add ownership regression: {forbidden}")
-require("new MutationObserver" not in dock_js and "fetch(" not in dock_js and "cloneNode" not in dock_js, "Purchase Dock must keep native/FSM ownership unchanged")
+require("new MutationObserver" not in dock_js and "fetch(" not in dock_js and "cloneNode(" not in dock_js, "Purchase Dock must keep native/FSM ownership unchanged")
 require("var input = quantity.querySelector('input.qty');" in core_js and "var input = quantity.querySelector('input.qty');" in dock_js, "catalog/dock must retain SAME native input.qty")
 
 print("variable-quantity-presentation-contract: OK")

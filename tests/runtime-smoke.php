@@ -57,6 +57,7 @@ class WP_Query {
 }
 
 $GLOBALS['gl_hooks'] = array();
+$GLOBALS['gl_transients'] = array();
 $GLOBALS['gl_filters'] = array();
 $GLOBALS['gl_posts'] = array();
 $GLOBALS['gl_meta'] = array();
@@ -240,6 +241,12 @@ function wp_enqueue_style() {}
 function wp_register_script() {}
 function wp_enqueue_script() {}
 function plugins_url( $src, $file ) { return 'https://example.test/plugins/gloskin/' . ltrim( $src, '/' ); }
+function plugin_dir_path( $file ) { return trailingslashit( dirname( $file ) ); }
+function plugin_dir_url( $file ) { return 'https://example.test/plugins/gloskin/'; }
+if ( ! defined( 'DAY_IN_SECONDS' ) ) { define( 'DAY_IN_SECONDS', 86400 ); }
+function get_transient( $key ) { return $GLOBALS['gl_transients'][ $key ] ?? false; }
+function set_transient( $key, $value, $expiry = 0 ) { $GLOBALS['gl_transients'][ $key ] = $value; return true; }
+function delete_transient( $key ) { unset( $GLOBALS['gl_transients'][ $key ] ); return true; }
 function current_user_can( $cap, $id = null ) { return true; }
 function get_option( $key, $default = false ) { return array_key_exists( $key, $GLOBALS['gl_options'] ) ? $GLOBALS['gl_options'][ $key ] : $default; }
 function update_option( $key, $value, $autoload = null ) { $GLOBALS['gl_options'][ $key ] = $value; return true; }
@@ -507,7 +514,18 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 		exit( 1 );
 	}
 	$context = get_query_var( 'gloskin_context', array() );
-	if ( ( $context['view'] ?? '' ) !== 'home' || count( $context['skincare'] ?? array() ) !== 7 ) {
+	$expected_clinic_links = array();
+	foreach ( Gloskin_Site_Core_Content_Service::clinic_definitions() as $slug => $label ) {
+		$expected_clinic_links[] = array(
+			'label' => $label,
+			'url'   => home_url( '/clinics/' . $slug . '/' ),
+		);
+	}
+	if ( ( $context['view'] ?? '' ) !== 'home'
+		|| count( $context['skincare'] ?? array() ) !== 7
+		|| count( $context['clinic_links'] ?? array() ) !== Gloskin_Site_Core_Content_Service::CLINIC_TARGET_COUNT
+		|| ( $context['clinic_links'] ?? array() ) !== $expected_clinic_links
+		|| array_key_exists( 'clinics', $context ) ) {
 		fwrite( STDERR, "Home context failed\n" );
 		exit( 1 );
 	}
@@ -602,6 +620,10 @@ if ( ! $GLOBALS['gl_is_admin'] ) {
 		$context = get_query_var( 'gloskin_context', array() );
 		if ( ( $context['view'] ?? '' ) !== $case[0] ) {
 			fwrite( STDERR, 'Route context failed for ' . $case[0] . "\n" ); exit( 1 );
+		}
+		if ( in_array( $case[0], array( 'about', 'clinics' ), true )
+			&& count( $context['clinics'] ?? array() ) !== Gloskin_Site_Core_Content_Service::CLINIC_TARGET_COUNT ) {
+			fwrite( STDERR, 'Full clinic records missing for ' . $case[0] . "\n" ); exit( 1 );
 		}
 		if ( 'doctor' === $case[0] && ( ! empty( $context['sip_number'] ) || ! empty( $context['schedule'] ) ) ) {
 			fwrite( STDERR, "Doctor missing-data fallback failed\n" ); exit( 1 );

@@ -79,7 +79,7 @@ assert.strictEqual(shouldInterceptWooSubmit(simpleForm, clicked), true, 'eligibl
 const simpleData = new FormData();
 simpleData.append('quantity', '2');
 normalizeAddToCartPayload(simpleData, clicked);
-assert.strictEqual(simpleData.get('add-to-cart'), '101', 'actual submitter name/value must be appended');
+assert.strictEqual(simpleData.get('add-to-cart'), null, 'add-to-cart button field must be deleted from AJAX payload (prevents double WC_Form_Handler mutation)');
 assert.strictEqual(simpleData.get('product_id'), '101', 'simple product_id must derive from actual submitter when absent');
 assert.strictEqual(simpleData.get('quantity'), '2', 'native payload fields must survive normalization');
 
@@ -220,7 +220,7 @@ assert.deepStrictEqual(quickErrorLifecycle.events, ['wc_fragment_refresh'], 'Qui
 // mutation through requestSubmit/native fallback. The one canonical claim
 // helper owns the only pre-dispatch fallback path.
 const ajaxStart = coreSource.indexOf('function ajaxAddToCart(form, submitter)');
-const ajaxEnd = coreSource.indexOf('/* One canonical ownership bridge', ajaxStart);
+const ajaxEnd = coreSource.indexOf('function claimWooAjaxSubmit(', ajaxStart);
 assert(ajaxStart >= 0 && ajaxEnd > ajaxStart, 'ajaxAddToCart source block must be locatable');
 const ajaxSource = coreSource.slice(ajaxStart, ajaxEnd);
 assert(!ajaxSource.includes('nativeFallbackSubmit(form, submitter)'), 'post-dispatch AJAX failure must never replay add-to-cart through native submission');

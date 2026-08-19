@@ -75,9 +75,9 @@ grep -qF 'data-gloskin-wishlist-toggle=' "$core_js" || fail "wishlist: existing 
 grep -qF '<span class="gloskin-ui1-icon-remove" aria-hidden="true"></span>' "$core_js" || fail "wishlist: shared remove icon missing"
 
 # Badge motion is compositor-only and explicitly disabled for reduced motion.
-grep -qF 'animation:gloskin-ui1-commerce-badge-added 270ms cubic-bezier(.22,1,.36,1) both;' "$commerce_css" || fail "badge delta: motion timing missing"
-grep -qF 'transform:translateY(4px) scale(.86)' "$commerce_css" || fail "badge delta: added-in start transform missing"
-grep -qF 'transform:translateY(0) scale(1.06)' "$commerce_css" || fail "badge delta: restrained overshoot missing"
+grep -qF 'animation:gloskin-ui1-commerce-badge-added 240ms cubic-bezier(.22,1,.36,1) both;' "$commerce_css" || fail "badge delta: motion timing missing"
+grep -qF '@keyframes gloskin-ui1-commerce-badge-added{' "$commerce_css" || fail "badge delta: keyframes definition missing"
+grep -qF 'transform:scale(1.08)' "$commerce_css" || fail "badge delta: restrained scale overshoot missing"
 grep -qF '@media (prefers-reduced-motion:reduce)' "$commerce_css" || fail "badge delta: reduced-motion gate missing"
 grep -qF 'animation:none;' "$commerce_css" || fail "badge delta: reduced-motion animation suppression missing"
 grep -qF 'transform:none;' "$commerce_css" || fail "badge delta: reduced-motion transform suppression missing"

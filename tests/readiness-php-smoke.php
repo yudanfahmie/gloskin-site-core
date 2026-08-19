@@ -8,6 +8,7 @@ function sanitize_key( $v ) { return strtolower( preg_replace( '/[^a-z0-9_-]/', 
 function __( $v ) { return $v; }
 function esc_html( $v ) { return htmlspecialchars( (string) $v, ENT_QUOTES, 'UTF-8' ); }
 function esc_attr( $v ) { return esc_html( $v ); }
+function esc_html__( $text, $domain = 'default' ) { return esc_html( $text ); }
 function esc_url( $v ) { return (string) $v; }
 function home_url( $path = '/' ) { return 'https://gloskin.test' . $path; }
 function is_front_page() { return (bool) $GLOBALS['front']; }

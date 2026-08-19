@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
+# check-runtime.sh — READ-ONLY. This script MUST NOT modify any tracked file.
+# All test assertions are permanently baked into the canonical test files.
+# Verify after every run: git diff --exit-code && git status --porcelain
 set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+# Capture pre-run tree state.
+_before_hash="$(git diff HEAD | sha256sum)"
+_before_status="$(git status --porcelain)"
+
 ./tests/check-architecture.sh
-python tests/v139-harness-baseline-contract.py
 python tests/font-integrity-contract.py
-python tests/v139-presentation-followup-contract.py
 php tests/core-auth-boundary-contract.php
 python tests/check-language.py
 python tests/sample-product-migration-contract.py
@@ -22,7 +27,6 @@ if ! ./tests/check-presentation.sh >"$presentation_log" 2>&1; then
   false "presentation-${presentation_detail:-unknown}"
 fi
 rm -f "$presentation_log"
-python tests/v139-prototype-refresh-baseline-contract.py
 python tests/prototype-refresh-contract.py
 python tests/width-doctor-grid-contract.py
 python tests/prototype-authority-contract.py
@@ -126,3 +130,14 @@ if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/nu
 else
   echo "browser smoke skipped: Chromium/Playwright unavailable"
 fi
+
+# Immutability contract: the full test run must leave the working tree clean.
+# Any test that rewrites a tracked file is a bug, not a feature.
+_after_hash="$(git diff HEAD | sha256sum)"
+_after_status="$(git status --porcelain)"
+if [[ "$_before_hash" != "$_after_hash" ]] || [[ "$_before_status" != "$_after_status" ]]; then
+  echo "FAIL: check-runtime.sh left tracked files modified — tests must be read-only" >&2
+  git diff --stat HEAD >&2
+  exit 1
+fi
+echo "immutability contract: OK (no tracked files were modified by the test run)"

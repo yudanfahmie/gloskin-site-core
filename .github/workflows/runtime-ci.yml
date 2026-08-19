@@ -1,0 +1,62 @@
+name: runtime-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-check:
+    name: Runtime smoke & presentation contracts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: gd, mbstring, intl
+          coverage: none
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run check-runtime.sh (read-only)
+        run: bash tests/check-runtime.sh
+
+      - name: Verify working tree is clean after tests
+        run: |
+          git diff --exit-code || {
+            echo "FAIL: test run left tracked files modified — tests must be read-only" >&2
+            exit 1
+          }
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "FAIL: git status not clean after test run" >&2
+            git status --porcelain >&2
+            exit 1
+          fi
+          echo "Working tree is clean — immutability contract satisfied"
+
+      - name: Browser smoke (Playwright/Chromium)
+        if: false
+        # Browser smoke tests require a live staging environment; they are run
+        # manually via check-runtime.sh when Chromium/Playwright are available.
+        # This step is intentionally disabled in CI and reported as SKIP below.
+        run: python tests/font-browser-smoke.py
+
+      - name: Report browser SKIP
+        run: echo "browser smoke skipped in CI (Chromium/Playwright not available)"

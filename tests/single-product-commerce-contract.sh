@@ -466,7 +466,8 @@ grep -qF 'submitBefore.click();' "$purchase_dock_js" || fail "Buy Now: must trig
 if grep -RInE "wp_ajax_(nopriv_)?gloskin_(add_to_cart|cart|checkout)" "$purchase_dock_js"; then
 	fail "Buy Now: a second cart-mutation owner was introduced"
 fi
-grep -qF 'buyNowBefore.disabled = !!submitBefore.disabled;' "$purchase_dock_js" || fail "Buy Now: enabled state must stay mirrored to the real submit button's own disabled state"
+grep -qF 'function isNativeSubmitUnavailable(' "$purchase_dock_js" || fail "Buy Now: isNativeSubmitUnavailable() helper missing (checks disabled, .disabled class, wc-variation states)"
+grep -qF 'buyNowBefore.disabled = ' "$purchase_dock_js" || fail "Buy Now: enabled state must stay mirrored to the real submit button's own disabled state"
 
 grep -qF 'function handleSingleProductAddToCartSuccess(submitter)' "$core_js" || fail "Buy Now: single-product success handler missing"
 grep -qF "submitter.hasAttribute('data-gloskin-buy-now-redirect')" "$core_js" || fail "Buy Now: success handler must check the one-shot redirect flag"

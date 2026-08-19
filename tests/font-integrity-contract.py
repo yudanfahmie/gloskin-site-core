@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
-"""Graphik WOFF integrity/provenance contract for the v0.7.140 font closure."""
+"""Graphik WOFF integrity/provenance contract for the v0.7.140 font closure.
+
+Verifies the five canonical runtime WOFF files directly against fixed expected
+SHA-256 values and structural WOFF-header validity. No docs/fonts mirror is
+required; the runtime binaries in plugin/gloskin-site-core/assets/fonts/ are
+the sole canonical Graphik source.
+"""
 from pathlib import Path
+import hashlib
 import re
 import struct
 
@@ -8,7 +15,6 @@ ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugin/gloskin-site-core"
 CSS = PLUGIN / "assets/css/gloskin-ui1-fonts.css"
 FONT_DIR = PLUGIN / "assets/fonts"
-SOURCE_DIR = ROOT / "docs/fonts"
 CONFIG = PLUGIN / "config/assets.php"
 
 EXPECTED = {
@@ -17,6 +23,17 @@ EXPECTED = {
     500: "Graphik-Medium.woff",
     600: "Graphik-Semibold.woff",
     700: "Graphik-Bold.woff",
+}
+
+# Fixed SHA-256 fingerprints for the five canonical runtime Graphik WOFF files.
+# These are the authoritative hashes for the v0.7.140 closure — do NOT change
+# these values unless a deliberate font replacement is performed and reviewed.
+EXPECTED_SHA256 = {
+    "Graphik-Light.woff":    "d4c4406dd3c40e545598daec9ae7c5872f62ade56dd59957a8360eadd27b6e71",
+    "Graphik-Regular.woff":  "37c0b04c6187802d2e80ef3015b5e501b567c604e2f3c78910ba6e41bda27aee",
+    "Graphik-Medium.woff":   "89d86c635731cf9854947e3d7f0c5e5168da1e1213282252a9b4b1247ed4a604",
+    "Graphik-Semibold.woff": "7aeca3a21c553d2af7f8cc1184520d860157594ebd9a6be4d110bf56f2c81113",
+    "Graphik-Bold.woff":     "0edc5658fe5e3b0494eddf3538239fd99abff567834f476346931342501dc787",
 }
 
 css = CSS.read_text(encoding="utf-8")
@@ -69,13 +86,18 @@ header_fmt = ">4s4sIHHIHHIIIII"
 header_size = struct.calcsize(header_fmt)
 for weight, filename in EXPECTED.items():
     runtime = FONT_DIR / filename
-    source = SOURCE_DIR / filename
-    if not runtime.is_file() or not source.is_file():
-        raise SystemExit(f"missing runtime/source WOFF pair: {filename}")
+    if not runtime.is_file():
+        raise SystemExit(f"missing runtime WOFF: {filename}")
     runtime_bytes = runtime.read_bytes()
-    source_bytes = source.read_bytes()
-    if runtime_bytes != source_bytes:
-        raise SystemExit(f"runtime WOFF is not byte-identical to uploaded source: {filename}")
+    # Verify SHA-256 fingerprint against the fixed canonical value.
+    actual_sha256 = hashlib.sha256(runtime_bytes).hexdigest()
+    expected_sha256 = EXPECTED_SHA256[filename]
+    if actual_sha256 != expected_sha256:
+        raise SystemExit(
+            f"runtime WOFF SHA-256 mismatch for {filename}:\n"
+            f"  expected: {expected_sha256}\n"
+            f"  actual:   {actual_sha256}"
+        )
     if len(runtime_bytes) < header_size:
         raise SystemExit(f"{filename}: shorter than WOFF header")
     signature, _flavor, declared_len, num_tables, reserved, total_sfnt, _major, _minor, _meta_off, _meta_len, _meta_orig, _priv_off, _priv_len = struct.unpack(

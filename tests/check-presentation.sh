@@ -86,11 +86,17 @@ if ! grep -q "array( 'clinic', 'doctor' )" "$helpers" \
   echo "safe factual doctor/clinic/product empty-state boundary missing" >&2
   exit 1
 fi
-if ! grep -q 'https://images.unsplash.com/photo-' "$helpers" \
-  || grep -Eq 'source\.unsplash\.com|images\.unsplash\.com/[^p]' "$helpers"; then
-  echo "editorial staging media must use fixed curated Unsplash photo URLs" >&2
+# Editorial staging media has no external image dependency in the protected
+# v0.7.139 baseline. The compatibility API remains, but resolves to the
+# deterministic CSS-only presentation fallback instead of Unsplash.
+if grep -Eq 'source\.unsplash\.com|https://images\.unsplash\.com/' "$helpers"; then
+  echo "editorial staging media must not depend on external Unsplash runtime URLs" >&2
   exit 1
 fi
+grep -Fq 'return array(); /* No external image catalog' "$helpers" \
+  || { echo "empty editorial media catalog contract missing" >&2; exit 1; }
+grep -Fq 'gloskin_ui1_render_presentation_media( $kind, $seed, $class );' "$helpers" \
+  || { echo "CSS-only editorial presentation fallback missing" >&2; exit 1; }
 if grep -RInE "url\([\"']?https?://" "$plugin_root/assets" --include='*.css' --include='*.js'; then
   echo "critical first-party presentation asset depends on a remote CSS/JS URL" >&2
   exit 1
@@ -280,61 +286,50 @@ print('home header glass overlay contract: OK')
 PYGLASS
 
 if [[ ! -f "$production_css" ]] \
-  || ! grep -q -- '--gloskin-font-body:"Mulish"' "$production_css" \
-  || ! grep -q -- '--gloskin-font-heading:"Marcellus"' "$production_css"; then
-  echo "Marcellus/Mulish production typography layer missing (typography token regression)" >&2
+  || ! grep -qF -- '--gloskin-font-body:"Graphik"' "$production_css" \
+  || ! grep -qF -- '--gloskin-font-heading:"Felix Titling"' "$production_css"; then
+  echo "Graphik/Felix production typography layer missing (protected baseline regression)" >&2
   exit 1
 fi
 
-# Gloskin self-hosted production fonts: no runtime Google Fonts CDN
-# dependency, local WOFF2 files present, explicit font-display policy.
 fonts_css="$plugin_root/assets/css/gloskin-ui1-fonts.css"
 fonts_dir="$plugin_root/assets/fonts"
-if grep -qE 'fonts\.googleapis\.com|fonts\.gstatic\.com' "$plugin_root/config/assets.php"; then
-  echo "config/assets.php still references the Google Fonts CDN" >&2
+assets_registry="$plugin_root/config/assets.php"
+if grep -qE 'fonts\.googleapis\.com|fonts\.gstatic\.com' "$assets_registry" "$fonts_css"; then
+  echo "production font registry still references the Google Fonts CDN" >&2
   exit 1
 fi
-if ! grep -qF "'assets/css/gloskin-ui1-fonts.css'" "$plugin_root/config/assets.php"; then
-  echo "gloskin-ui1-fonts registry entry no longer points at the local font stylesheet" >&2
-  exit 1
-fi
-if [[ ! -f "$fonts_css" ]]; then
-  echo "local Gloskin font stylesheet missing: $fonts_css" >&2
-  exit 1
-fi
-if grep -qE 'fonts\.googleapis\.com|fonts\.gstatic\.com' "$fonts_css"; then
-  echo "local font stylesheet still references the Google Fonts CDN" >&2
-  exit 1
-fi
-for expected_file in 'Marcellus-Regular.woff2' 'Mulish-Variable.woff2'; do
-  [[ -f "$fonts_dir/$expected_file" ]] || { echo "required self-hosted font file missing: $expected_file" >&2; exit 1; }
+grep -qF "'assets/css/gloskin-ui1-fonts.css'" "$assets_registry" \
+  || { echo "gloskin-ui1-fonts registry entry missing" >&2; exit 1; }
+for expected_file in \
+  'Felixti.woff2' \
+  'Graphik-Light.woff' 'Graphik-Regular.woff' 'Graphik-Medium.woff' \
+  'Graphik-Semibold.woff' 'Graphik-Bold.woff'; do
+  [[ -f "$fonts_dir/$expected_file" ]] || { echo "required canonical font file missing: $expected_file" >&2; exit 1; }
 done
-for expected_license in 'Marcellus-OFL.txt' 'Mulish-OFL.txt'; do
-  [[ -s "$fonts_dir/$expected_license" ]] || { echo "required upstream font license notice missing: $expected_license" >&2; exit 1; }
+grep -qF 'font-family:"Felix Titling"' "$fonts_css" \
+  && grep -qF 'url("../fonts/Felixti.woff2")' "$fonts_css" \
+  || { echo "Felix Titling @font-face missing or no longer local" >&2; exit 1; }
+for expected in \
+  'url("../fonts/Graphik-Light.woff")' \
+  'url("../fonts/Graphik-Regular.woff")' \
+  'url("../fonts/Graphik-Medium.woff")' \
+  'url("../fonts/Graphik-Semibold.woff")' \
+  'url("../fonts/Graphik-Bold.woff")'; do
+  grep -qF "$expected" "$fonts_css" || { echo "canonical Graphik WOFF mapping missing: $expected" >&2; exit 1; }
 done
-if ! grep -qF 'font-family:"Marcellus"' "$fonts_css" || ! grep -qF 'url("../fonts/Marcellus-Regular.woff2")' "$fonts_css"; then
-  echo "Marcellus @font-face missing or no longer local" >&2
+[[ "$(grep -c '^@font-face{' "$fonts_css")" -eq 6 ]] \
+  || { echo "canonical font runtime must expose exactly six local @font-face rules" >&2; exit 1; }
+[[ "$(grep -c 'font-display:swap' "$fonts_css")" -eq 6 ]] \
+  || { echo "canonical font-display:swap policy regressed" >&2; exit 1; }
+if grep -qE 'font-style:(italic|oblique)' "$fonts_css"; then
+  echo "custom italic/oblique font face returned without an uploaded Graphik italic WOFF" >&2
   exit 1
 fi
-if ! grep -qF 'font-family:"Mulish"' "$fonts_css" || ! grep -qF 'url("../fonts/Mulish-Variable.woff2")' "$fonts_css" || ! grep -qF 'font-weight:400 800' "$fonts_css"; then
-  echo "Mulish @font-face missing, no longer local, or no longer covers the 400-800 weight range" >&2
-  exit 1
-fi
-if [[ "$(grep -c 'font-display:fallback' "$fonts_css")" -ne 2 ]]; then
-  echo "font-display:fallback policy not explicitly set on both @font-face rules" >&2
-  exit 1
-fi
-if grep -qE 'font-display:\s*(block|swap|optional)' "$fonts_css"; then
-  echo "font-display policy regressed away from fallback (FOIT/late-swap/optional risk)" >&2
-  exit 1
-fi
-if grep -qE 'italic|Italic' "$fonts_css"; then
-  echo "an unused italic font-face was introduced" >&2
-  exit 1
-fi
-
-# Font assets never load in WP Admin: enqueue_admin() must not touch the
-# frontend/font style registry at all.
+grep -qF "'assets/fonts/Graphik-Regular.woff'" "$assets_registry" \
+  && grep -qF "'assets/fonts/Felixti.woff2'" "$assets_registry" \
+  || { echo "critical Graphik/Felix preload registry regressed" >&2; exit 1; }
+python "$repo_root/tests/font-integrity-contract.py"
 asset_service="$plugin_root/includes/class-gloskin-site-core-asset-service.php"
 admin_enqueue_block="$(awk '/public function enqueue_admin\(/,/^\t\}$/' "$asset_service")"
 if echo "$admin_enqueue_block" | grep -qE "registry\(\)\['styles'\]|font_preload|print_font_preload"; then
@@ -572,10 +567,22 @@ fi
 
 # K. No new product database/query architecture: the catalog adapter and
 # template context owner never touch $wpdb directly.
-if grep -qF '$wpdb' "$adapter" "$template_service"; then
-  echo "raw \$wpdb product query found; WooCommerce must remain the sole catalog query owner" >&2
+# v0.7.138 already owns one bounded TemplateService price-range projection via
+# wc_product_meta_lookup. Keep the adapter free of raw DB access and ensure every
+# TemplateService $wpdb occurrence stays inside that exact shop_price_bounds().
+if grep -qF '$wpdb' "$adapter"; then
+  echo "raw \$wpdb product query escaped into the Woo adapter" >&2
   exit 1
 fi
+shop_price_block="$(awk '/private function shop_price_bounds\(\)/,/^\t\}$/' "$template_service")"
+[[ -n "$shop_price_block" ]] || { echo "bounded shop_price_bounds() SQL owner missing" >&2; exit 1; }
+template_wpdb_total="$(grep -cF '$wpdb' "$template_service" || true)"
+shop_price_wpdb_total="$(printf '%s\n' "$shop_price_block" | grep -cF '$wpdb' || true)"
+[[ "$template_wpdb_total" -gt 0 && "$template_wpdb_total" == "$shop_price_wpdb_total" ]] \
+  || { echo "TemplateService raw DB access escaped shop_price_bounds()" >&2; exit 1; }
+printf '%s\n' "$shop_price_block" | grep -qF "wc_product_meta_lookup" \
+  && printf '%s\n' "$shop_price_block" | grep -qF 'SELECT MIN(l.min_price) AS avail_min, MAX(l.max_price) AS avail_max' \
+  || { echo "bounded shop price SQL projection changed" >&2; exit 1; }
 
 # The shop ceiling was genuinely replaced with Woo's own pagination
 # contract, not just relabeled.
@@ -628,25 +635,25 @@ def block(selector):
     return match.group(1)
 
 
-cells = block('body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items th,\n\tbody.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items td')
+cells = block('body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block th,\n\tbody.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block td')
 if 'border:0' not in cells.replace(' ', '').replace('\n', '').replace('\t', ''):
     raise SystemExit('Desktop Cart table cells must reset border to 0 -- no per-cell left/right/top borders')
 
-thead = block('body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items thead')
-if 'border-bottom:1px solid' not in thead:
-    raise SystemExit('Desktop Cart table header must own exactly one bottom divider')
+thead = block('body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block thead')
+if 'border:0' not in thead:
+    raise SystemExit('Desktop Cart table header must keep the protected baseline border reset')
 
-row = block('body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row')
+row = block('body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row')
 if 'border-bottom:1px solid' not in row:
     raise SystemExit('Desktop Cart table row must own exactly one bottom divider')
-if 'body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row:last-child{border-bottom:0}' not in desktop:
+if 'body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row:last-child{border-bottom:0}' not in desktop:
     raise SystemExit('Desktop Cart table last row must not have a redundant bottom divider')
 
-total = block('body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-item__total')
+total = block('body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-cart-item__total')
 if 'border:0' not in total or 'box-shadow:none' not in total:
     raise SystemExit('Desktop Cart total cell must not carry its own independent border/shadow')
 
-name = block('body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-components-product-name')
+name = block('body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-components-product-name')
 if 'text-decoration:none' not in name:
     raise SystemExit('Desktop Cart product link must not underline at rest')
 if 'text-decoration:underline' in desktop:

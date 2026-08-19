@@ -14,7 +14,7 @@ Asserts:
   8.  Thumbnail buttons have click and keydown handlers wired.
   9.  Existing dots / prev / next controls are preserved.
   10. No autoplay introduced (no setInterval in initPromoCarousel).
-  11. Plugin / Kernel version synchronized at 0.7.139.
+  11. Plugin / Kernel version synchronized at 0.7.140.
 """
 
 import re, sys, os
@@ -104,12 +104,12 @@ require(
 )
 
 # 11. Version sync
-require("Version: 0.7.139" in plugin_h, "plugin header must be 0.7.139")
-require("const VERSION = '0.7.139';" in kernel, "Kernel VERSION must be 0.7.139")
+require("Version: 0.7.140" in plugin_h, "plugin header must be 0.7.140")
+require("const VERSION = '0.7.140';" in kernel, "Kernel VERSION must be 0.7.140")
 
 if failures:
     for f in failures:
         print('FAIL:', f)
     sys.exit(1)
 
-print('promo-thumbnail-contract.py: OK (0.7.139)')
+print('promo-thumbnail-contract.py: OK (0.7.140)')

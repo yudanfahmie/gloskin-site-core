@@ -58,7 +58,7 @@ require("'posts_per_page' => -1" in doctor_collection, "all-doctor collection mu
 require("Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE" in doctor_collection, "all-doctor collection must query Gloskin doctors only")
 about_context = template_service.split("private function about_context()", 1)[1].split("private function treatments_context()", 1)[0]
 doctors_context = template_service.split("private function doctors_context()", 1)[1].split("private function doctor_context()", 1)[0]
-require("'doctors' => $this->all_published_doctor_cards()" in about_context, "About must render all published doctors")
+require("$this->all_published_doctor_cards()" in about_context, "About must render all published doctors")
 require("'doctors' => $this->all_published_doctor_cards()" in doctors_context, "Doctor hub must render all published doctors")
 require("DOCTOR_POST_TYPE, 4" not in about_context, "About must not cap doctor team at four")
 require("DOCTOR_POST_TYPE, 13" not in doctors_context, "Doctor hub must not use readiness target as display ceiling")

@@ -5,7 +5,7 @@ declare(strict_types=1);
  * final-migration-batch-contract.php
  *
  * Static contract: doctor photo batch processing and cursor-based resume for
- * the v0.7.139 hotfix.
+ * the v0.7.140 hotfix.
  *
  * Asserts:
  *   1.  BATCH_SIZE constant is defined and equals 3.
@@ -22,7 +22,7 @@ declare(strict_types=1);
  *   12. doctor_audit reset to array() in the preflight case (on re-run).
  *   13. upload_unavailable: error thrown if wp_upload_dir() returns error.
  *   14. run_to_completion() loop limit > count(steps) + 3 (batch headroom).
- *   15. Plugin / Kernel version synchronized at 0.7.139.
+ *   15. Plugin / Kernel version synchronized at 0.7.140.
  */
 
 $root   = dirname( __DIR__ );
@@ -140,8 +140,8 @@ ok_batch(
 );
 
 /* 15. Version sync */
-ok_batch( (bool) preg_match( "/const VERSION\s*=\s*'0\.7\.139'/", $kernel ), 'Kernel VERSION must be 0.7.139' );
-ok_batch( (bool) preg_match( '/^ \* Version: 0\.7\.139$/m', $plugin_h ), 'Plugin header Version must be 0.7.139' );
+ok_batch( (bool) preg_match( "/const VERSION\s*=\s*'0\.7\.140'/", $kernel ), 'Kernel VERSION must be 0.7.140' );
+ok_batch( (bool) preg_match( '/^ \* Version: 0\.7\.140$/m', $plugin_h ), 'Plugin header Version must be 0.7.140' );
 
 echo "\nfinal-migration-batch-contract.php: {$passed} passed, {$failed} failed\n";
 exit( $failed > 0 ? 1 : 0 );

@@ -159,12 +159,12 @@ require(
 )
 
 # 18. Version sync
-require("Version: 0.7.139" in plugin_h, "plugin header must be 0.7.139")
-require("const VERSION = '0.7.139';" in kernel, "Kernel VERSION must be 0.7.139")
+require("Version: 0.7.140" in plugin_h, "plugin header must be 0.7.140")
+require("const VERSION = '0.7.140';" in kernel, "Kernel VERSION must be 0.7.140")
 
 if failures:
     for f in failures:
         print('FAIL:', f)
     sys.exit(1)
 
-print('no-active-variant-context-contract.py: OK (0.7.139)')
+print('no-active-variant-context-contract.py: OK (0.7.140)')

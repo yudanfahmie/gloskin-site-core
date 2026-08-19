@@ -157,7 +157,7 @@ require("gloskin:purchase-dock-ready" in dock_js, "Purchase Dock must hand the s
 require("gloskin:variable-product-modal-request" in dock_js, "Buy Now invalid variation must route to the reusable modal")
 require("detail: { dock: dock, form: formBefore" in dock_js, "PDP handoff must carry the same dock/form references")
 require("submitBefore.click();" in dock_js, "valid Buy Now must still trigger the same native submit")
-require("cloneNode" not in dock_js, "Purchase Dock must not clone the Woo form")
+require("cloneNode(" not in dock_js, "Purchase Dock must not clone the Woo form")
 require("fetch(" not in dock_js, "Purchase Dock must not become a form/cart request owner")
 require("formBefore.querySelector('.single_add_to_cart_button') === submitBefore" in dock_js, "native submit identity preservation check must remain")
 require("formBefore.querySelector('.quantity') === quantityBefore" in dock_js, "native quantity identity preservation check must remain")
@@ -172,7 +172,7 @@ for required in (
     "data-gloskin-variable-pdp-trigger",
     "window.__fetchCalls.length",
     "PDP sold-individually must explicitly hide presentation qty proxy",
-    "invalid Buy Now must open SAME PDP modal without fetch",
+    "highlighted trigger must open SAME PDP modal without fetch",
     "fail-open PDP must not leave a broken Pilih Varian trigger",
 ):
     require(required in browser, f"enhanced PDP browser regression missing: {required}")
