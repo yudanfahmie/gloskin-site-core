@@ -1,0 +1,105 @@
+name: final-hardening-executor
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'final-hardening-0-7-142'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Prove scope and detect final tree
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f tools/final-hardening-0-7-142.py ]; then
+            echo 'needs_patch=false' >> "$GITHUB_OUTPUT"
+            echo 'Final tested tree already produced; executor will no-op.'
+            exit 0
+          fi
+          BASE=0409b641451e04c940f3663e67dc39626a6294d3
+          git merge-base --is-ancestor "$BASE" HEAD
+          unexpected="$(git diff --name-only "$BASE"..HEAD | grep -Ev '^(tools/final-hardening-0-7-142.py|tools/final-hardening-trigger.txt|\.github/workflows/final-hardening-executor.yml)$' || true)"
+          test -z "$unexpected" || { printf 'Unexpected preparation diff:\n%s\n' "$unexpected" >&2; exit 1; }
+          echo 'needs_patch=true' >> "$GITHUB_OUTPUT"
+
+      - uses: shivammathur/setup-php@v2
+        if: steps.scope.outputs.needs_patch == 'true'
+        with:
+          php-version: '8.1'
+          extensions: gd, mbstring, intl
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        if: steps.scope.outputs.needs_patch == 'true'
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-python@v5
+        if: steps.scope.outputs.needs_patch == 'true'
+        with:
+          python-version: '3.11'
+
+      - name: Install deterministic image tooling
+        if: steps.scope.outputs.needs_patch == 'true'
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+
+      - name: Apply bounded hardening
+        if: steps.scope.outputs.needs_patch == 'true'
+        run: python tools/final-hardening-0-7-142.py
+
+      - name: Focused hardening gates
+        if: steps.scope.outputs.needs_patch == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l plugin/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration.php
+          php -l plugin/gloskin-site-core/includes/class-gloskin-site-core-final-ia-normalizer.php
+          php -l plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php
+          php -l plugin/gloskin-site-core/includes/class-gloskin-site-core-editorial-media-bundle.php
+          php -l plugin/gloskin-site-core/templates/parts/template-helpers.php
+          php tests/final-hardening-contract.php
+          php tests/managed-record-ordering-contract.php
+          ./tests/check-presentation.sh
+
+      - name: Commit exact release tree
+        if: steps.scope.outputs.needs_patch == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f tools/final-hardening-0-7-142.py tools/final-hardening-trigger.txt .github/workflows/final-hardening-executor.yml
+          git config user.name 'gloskin-final-hardening'
+          git config user.email '57941518+yudanfahmie@users.noreply.github.com'
+          git add -A
+          git commit -m 'Harden v0.7.142 final codebase'
+          echo "FINAL_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Exact committed read-only runtime suite
+        if: steps.scope.outputs.needs_patch == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash tests/check-runtime.sh
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+          grep -q "const VERSION.*0.7.142" plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php
+          grep -q "const REVISION.*2026-08-19-final" plugin/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration.php
+          grep -q "const STATE_OPTION.*gloskin_site_core_revision_20260819f_state" plugin/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration.php
+
+      - name: Push only the exact tested commit
+        if: steps.scope.outputs.needs_patch == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          echo "pushed $FINAL_SHA"
