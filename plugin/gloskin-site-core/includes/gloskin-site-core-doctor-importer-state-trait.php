@@ -28,6 +28,17 @@ trait Gloskin_Site_Core_Doctor_Importer_State_Trait {
 		);
 	}
 
+	/**
+	 * Pure package validation for callers that must prove the roster bundle
+	 * before any WordPress mutation. This intentionally reuses the canonical
+	 * bundle loader instead of duplicating importer validation rules.
+	 *
+	 * @return array{manifest:array<string,mixed>,doctors:array<int,array<string,string>>}
+	 */
+	public function validate_bundle() {
+		return $this->bundle->load();
+	}
+
 	/** @return bool */
 	public function should_show_menu() {
 		$state = $this->state();
@@ -54,7 +65,7 @@ trait Gloskin_Site_Core_Doctor_Importer_State_Trait {
 			throw new RuntimeException( __( 'Doctor migration sudah dimulai; gunakan Continue.', 'gloskin-site-core' ) );
 		}
 
-		$payload = $this->bundle->load(); // Validate entire bundle before any mutation.
+		$payload = $this->validate_bundle(); // Validate entire bundle before any mutation.
 		$token   = $this->acquire_lock();
 		try {
 			$state = $this->state();
