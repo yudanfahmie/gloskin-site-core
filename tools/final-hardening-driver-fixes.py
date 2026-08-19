@@ -10,5 +10,18 @@ new = r'''    "\n\t\t\t$doctor_admin = new Gloskin_Site_Core_Doctor_Migration_Ad
 if old not in s:
     raise SystemExit('doctor-admin driver source target not found')
 s = s.replace(old, new, 1)
+
+fixes = {
+    r'''str_contains( $ia, "'publish' === (string) $page->post_status" )''': r'''str_contains( $ia, "'publish' === (string) \$page->post_status" )''',
+    r'''str_contains( $ia, "'publish' !== $page->post_status" )''': r'''str_contains( $ia, "'publish' !== \$page->post_status" )''',
+    r'''str_contains( $helpers, "in_array( $kind, array( 'doctor', 'clinic', 'product' ), true ) ) { return; }" )''': r'''str_contains( $helpers, "in_array( \$kind, array( 'doctor', 'clinic', 'product' ), true ) ) { return; }" )''',
+    r'''str_contains( $helpers, "'alt' => $title" )''': r'''str_contains( $helpers, "'alt' => \$title" )''',
+    r'''str_contains( $helpers, "'alt' => $name" )''': r'''str_contains( $helpers, "'alt' => \$name" )''',
+}
+for source, target in fixes.items():
+    if source not in s:
+        raise SystemExit('assertion driver source target not found: ' + source)
+    s = s.replace(source, target, 1)
+
 p.write_text(s, encoding='utf-8')
 print('final-hardening-driver-fixes: OK')
