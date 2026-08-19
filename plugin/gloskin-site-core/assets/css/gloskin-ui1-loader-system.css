@@ -233,15 +233,26 @@ body.woocommerce-cart:has(.wp-block-woocommerce-cart.is-loading) .gloskin-ui1-co
 	}
 }
 
+.gloskin-ui1-commerce-handoff__g{
+	position:absolute;
+	top:50%;
+	left:50%;
+	z-index:2;
+	width:34px;
+	height:42px;
+	pointer-events:none;
+	transform:translate(-50%,-50%);
+}
+
 /* Page-to-page cross-document transition overlay.
    This overlay is presentation-only: JS owns the is-active lifecycle, BFCache
    cleanup runs on pageshow, and a hard timeout prevents permanent lockout.
    Woo AJAX/cart/checkout/modal flows are explicitly excluded in initPageTransitions(). */
 :root{
-	--gl-transition-bg:rgba(255,255,255,0.97);
-	--gl-transition-jelly:#DE1D34;
+	--gl-transition-bg:#FFF2EB;
+	--gl-transition-jelly:#CA050E;
 	--gl-transition-duration:360ms;
-	--gl-transition-g-size:88px;
+	--gl-transition-g-size:104px;
 }
 .gloskin-ui1-page-transition{
 	position:fixed;
@@ -268,6 +279,8 @@ body.woocommerce-cart:has(.wp-block-woocommerce-cart.is-loading) .gloskin-ui1-co
 	align-items:center;
 	justify-content:center;
 	animation:gloskin-ui1-transition-blob 2.6s ease-in-out infinite;
+}
+.gloskin-ui1-page-transition.is-active .gloskin-ui1-page-transition__blob{
 	will-change:border-radius;
 }
 .gloskin-ui1-page-transition__g{
@@ -280,6 +293,10 @@ body.woocommerce-cart:has(.wp-block-woocommerce-cart.is-loading) .gloskin-ui1-co
 	33%{border-radius:40% 60% 45% 55%/60% 40% 55% 45%}
 	66%{border-radius:55% 45% 60% 40%/45% 55% 50% 50%}
 	100%{border-radius:60% 40% 55% 45%/50% 60% 40% 50%}
+}
+
+@media (max-width:760px){
+	:root{--gl-transition-g-size:84px}
 }
 
 @media (prefers-reduced-motion:reduce){

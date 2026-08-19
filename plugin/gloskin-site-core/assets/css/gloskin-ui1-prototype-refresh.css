@@ -469,3 +469,10 @@ body.woocommerce-page .gloskin-ui1-commerce-native{background:var(--gloskin-refr
 	.gloskin-ui1-about-founder{grid-template-columns:1fr}
 	.gloskin-ui1-about-founder__media{max-width:320px}
 }
+
+/* Final Home parity: one unified discovery surface + post-testimonial brand story. */
+.gloskin-ui1-home-discovery__products{margin-top:clamp(28px,4vw,52px)}
+.gloskin-ui1-home-brand-story__grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(280px,.95fr);gap:clamp(28px,5vw,72px);align-items:center}
+.gloskin-ui1-home-brand-story__media{overflow:hidden;border-radius:28px;aspect-ratio:4/3;background:var(--gloskin-surface-soft)}
+.gloskin-ui1-home-brand-story__image{display:block;width:100%;height:100%;object-fit:cover}
+@media (max-width:760px){.gloskin-ui1-home-brand-story__grid{grid-template-columns:1fr}.gloskin-ui1-home-brand-story__media{border-radius:22px}}

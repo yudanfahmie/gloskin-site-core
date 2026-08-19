@@ -70,6 +70,8 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 			'doctor_matches'      => array(),
 			'doctor_audit'        => array(),
 			'demo_audit'          => array(),
+			'editorial_audit'     => array(),
+			'ia_audit'            => array(),
 			'commerce_snapshot'   => array(),
 			'doctor_all_snapshot' => array(),
 			'doctor_cursor'       => 0,
@@ -144,10 +146,15 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 				throw new RuntimeException( 'Migrasi belum dimulai.' );
 			}
 
+			$state = $this->reconcile_resume_checkpoint( $state );
+			$this->save_state( $state );
 			$index = (int) $state['next_step_index'];
 			$steps = $this->steps();
 
 			if ( $index >= count( $steps ) ) {
+				if ( (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION, '' ) !== (string) Gloskin_Site_Core_Lifecycle_Service::SCHEMA_VERSION ) {
+					throw new RuntimeException( 'verification_failed: Final migration cannot be consumed before schema closure.' );
+				}
 				$state['status']       = 'consumed';
 				$state['current_step'] = 'Selesai';
 				$state['last_error']   = '';
@@ -179,7 +186,7 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 					break;
 
 				case 'managed_content':
-					$this->run_managed_content();
+					$state['editorial_audit'] = $this->run_managed_content();
 					break;
 
 				case 'demo_seed':
@@ -197,7 +204,7 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 					break;
 
 				case 'normalize':
-					$this->run_normalize();
+					$state['ia_audit'] = $this->run_normalize();
 					break;
 
 				case 'cleanup':
@@ -244,6 +251,7 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 
 	/** @return array{matches:array<string,array<string,mixed>>,all_snapshot:array<int,int>} */
 	private function run_preflight() {
+		$this->editorial_media_service()->preflight();
 		if ( ! function_exists( 'wp_insert_attachment' ) ) {
 			throw new RuntimeException( 'bundle_invalid: Fungsi wp_insert_attachment tidak tersedia.' );
 		}
@@ -368,17 +376,16 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 		return $name;
 	}
 
-	/** @return void */
+	/** @return array<string,mixed> */
 	private function run_managed_content() {
 		foreach ( array(
 			Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE,
 			Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE,
 			Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE,
 		) as $post_type ) {
-			if ( ! post_type_exists( $post_type ) ) {
-				throw new RuntimeException( 'CPT tidak terdaftar: ' . $post_type . '.' );
-			}
+			if ( ! post_type_exists( $post_type ) ) { throw new RuntimeException( 'CPT tidak terdaftar: ' . $post_type . '.' ); }
 		}
+		return $this->editorial_media_service()->import();
 	}
 
 	/** @return array<string,mixed> */
@@ -551,14 +558,8 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 		return $attachment_id;
 	}
 
-	/** @return void */
-	private function run_normalize() {
-		$promo_page = get_page_by_path( 'promo', OBJECT, 'page' );
-		if ( ! ( $promo_page instanceof WP_Post ) || 'trash' === $promo_page->post_status ) {
-			$result = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'Promo', 'post_name' => 'promo' ), true );
-			if ( is_wp_error( $result ) ) { throw new RuntimeException( 'Gagal memastikan halaman /promo/: ' . $result->get_error_message() ); }
-		}
-	}
+	/** @return array<string,mixed> */
+	private function run_normalize() { return $this->final_ia_normalizer()->normalize(); }
 
 	/** @return void */
 	private function run_cleanup() {
@@ -574,6 +575,8 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 
 	/** @return void */
 	private function run_verify( array $state ) {
+		$this->editorial_media_service()->verify( (array) ( $state['editorial_audit'] ?? array() ) );
+		$this->final_ia_normalizer()->verify( (array) ( $state['ia_audit'] ?? array() ) );
 		foreach ( array( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE, Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE ) as $post_type ) {
 			if ( ! post_type_exists( $post_type ) ) { throw new RuntimeException( 'verification_failed: CPT tidak terdaftar setelah managed_content: ' . $post_type ); }
 		}
@@ -626,7 +629,13 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 	}
 
 	/** @return void */
-	private function run_finalize() { flush_rewrite_rules( false ); }
+	private function run_finalize() {
+		update_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION, Gloskin_Site_Core_Lifecycle_Service::SCHEMA_VERSION, false );
+		if ( (string) get_option( Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION, '' ) !== (string) Gloskin_Site_Core_Lifecycle_Service::SCHEMA_VERSION ) {
+			throw new RuntimeException( 'verification_failed: Schema closure did not persist.' );
+		}
+		flush_rewrite_rules( false );
+	}
 
 	/** @return array<string,mixed> */
 	private function load_bundle_manifest() {
@@ -649,6 +658,33 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 			}
 		}
 		return array_values( $manifest['doctors'] );
+	}
+
+	/** @return array<string,mixed> */
+	private function reconcile_resume_checkpoint( array $state ) {
+		$index = (int) ( $state['next_step_index'] ?? 0 );
+		$rewind = null;
+		if ( $index > 1 && empty( $state['editorial_audit'] ) ) { $rewind = 1; }
+		if ( $index > 4 && empty( $state['ia_audit'] ) ) { $rewind = null === $rewind ? 4 : min( $rewind, 4 ); }
+		if ( null !== $rewind ) {
+			$state['next_step_index'] = $rewind;
+			$state['processed_steps'] = min( (int) $state['processed_steps'], $rewind );
+			$state['current_step'] = $this->step_label( $rewind );
+			$state['status'] = 'running';
+		}
+		return $state;
+	}
+
+	/** @return Gloskin_Site_Core_Editorial_Media_Bundle */
+	private function editorial_media_service() {
+		require_once __DIR__ . '/class-gloskin-site-core-editorial-media-bundle.php';
+		return new Gloskin_Site_Core_Editorial_Media_Bundle( $this->plugin_file );
+	}
+
+	/** @return Gloskin_Site_Core_Final_IA_Normalizer */
+	private function final_ia_normalizer() {
+		require_once __DIR__ . '/class-gloskin-site-core-final-ia-normalizer.php';
+		return new Gloskin_Site_Core_Final_IA_Normalizer();
 	}
 
 	/** @return string */

@@ -75,6 +75,7 @@ php tests/final-migration-failed-resume-contract.php
 php tests/final-migration-doctor-batch-resume-contract.php
 php tests/final-migration-preflight-reset-contract.php
 php tests/final-migration-error-contract.php
+php tests/final-closure-contract.php
 php tests/description-consolidation-contract.php
 php tests/hero-video-contract.php
 GL_TEST_MODE=success php tests/description-consolidation-bootstrap-contract.php

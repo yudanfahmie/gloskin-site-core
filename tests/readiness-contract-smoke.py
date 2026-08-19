@@ -67,7 +67,6 @@ require("gloskin-empty-settle 220ms" in css and "prefers-reduced-motion:reduce" 
 for rel in (
     "plugin/gloskin-site-core/templates/pages/clinics.php",
     "plugin/gloskin-site-core/templates/pages/contact.php",
-    "plugin/gloskin-site-core/templates/pages/home.php",
     "plugin/gloskin-site-core/templates/pages/about.php",
 ):
     require("gloskin_ui1_real_cards" in read(rel), f"{rel} must not present synthetic clinic placeholders as records")

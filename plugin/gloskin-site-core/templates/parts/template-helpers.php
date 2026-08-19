@@ -61,53 +61,59 @@ if ( ! function_exists( 'gloskin_ui1_render_presentation_media' ) ) {
 }
 
 if ( ! function_exists( 'gloskin_ui1_editorial_media_catalog' ) ) {
-	/**
-	 * Formerly returned Unsplash URLs. Now returns empty — all editorial media
-	 * slots use the CSS-only abstract presentation fallback (gloskin_ui1_render_presentation_media)
-	 * instead of runtime requests to images.unsplash.com. Zero external staging-image
-	 * dependency after this change. WordPress/Woo factual media always wins.
-	 *
-	 * @return array<string,array<string,mixed>>
-	 */
+	/** @return array<string,array<string,mixed>> */
 	function gloskin_ui1_editorial_media_catalog() {
-		return array(); /* No external image catalog — see gloskin_ui1_render_editorial_media(). */
+		$catalog = function_exists( 'get_option' ) ? get_option( 'gloskin_site_core_editorial_media_v1', array() ) : array();
+		return is_array( $catalog ) ? $catalog : array();
 	}
 }
 
 if ( ! function_exists( 'gloskin_ui1_resolve_editorial_media' ) ) {
 	/**
-	 * Formerly resolved Unsplash catalog entries. Now returns empty array — all
-	 * editorial media uses the CSS-only abstract presentation fallback. Kept for
-	 * backward API compatibility; callers should use gloskin_ui1_render_editorial_media().
+	 * Resolve only generic editorial roles from the migration-owned local bundle.
+	 * Doctor, clinic and product identity media are deliberately excluded: those
+	 * entities may only display their own factual WordPress/Woo image.
 	 *
-	 * @param string $kind Generic visual family.
-	 * @param string $seed Stable variation seed.
 	 * @return array<string,mixed>
 	 */
 	function gloskin_ui1_resolve_editorial_media( $kind = 'editorial', $seed = 'gloskin' ) {
-		unset( $kind, $seed );
+		$kind = strtolower( (string) preg_replace( '/[^a-z0-9_-]+/i', '', (string) $kind ) );
+		if ( in_array( $kind, array( 'doctor', 'clinic', 'product' ), true ) ) { return array(); }
+		$catalog = gloskin_ui1_editorial_media_catalog();
+		if ( isset( $catalog[ $seed ] ) && is_array( $catalog[ $seed ] ) ) {
+			$entry = $catalog[ $seed ];
+			$id = absint( $entry['attachment_id'] ?? 0 );
+			if ( $id ) { return $entry; }
+		}
+		$groups = array(
+			'hero' => array( 'home_why', 'home_brand_story' ),
+			'treatment' => array( 'treatment_discovery', 'treatment_clinical' ),
+			'skincare' => array( 'skincare_editorial' ),
+			'editorial' => array( 'home_why', 'about_story', 'home_brand_story' ),
+		);
+		$keys = isset( $groups[ $kind ] ) ? $groups[ $kind ] : $groups['editorial'];
+		if ( ! $keys ) { return array(); }
+		$offset = abs( (int) crc32( $kind . '|' . (string) $seed ) ) % count( $keys );
+		for ( $i = 0; $i < count( $keys ); $i++ ) {
+			$key = $keys[ ( $offset + $i ) % count( $keys ) ];
+			$entry = isset( $catalog[ $key ] ) && is_array( $catalog[ $key ] ) ? $catalog[ $key ] : array();
+			if ( absint( $entry['attachment_id'] ?? 0 ) ) { return $entry; }
+		}
 		return array();
 	}
 }
 
 if ( ! function_exists( 'gloskin_ui1_render_editorial_media' ) ) {
-	/**
-	 * Render a decorative editorial placeholder with no external network request.
-	 * All slots previously served by Unsplash now use the CSS-only abstract
-	 * presentation composition (gloskin_ui1_render_presentation_media). No runtime
-	 * request to images.unsplash.com or any external host remains after this change.
-	 *
-	 * WordPress/Woo factual Media Library images always take precedence over this
-	 * fallback; callers already check for a real attachment before calling here.
-	 *
-	 * @param string $kind  Generic visual family (hero|skincare|treatment|editorial…).
-	 * @param string $seed  Stable variation seed.
-	 * @param string $class Additional class applied to the wrapper.
-	 * @param bool   $eager Unused — kept for call-site API compatibility.
-	 * @return void
-	 */
+	/** Render local editorial media, falling back to abstract media only if the migration bundle is unavailable. */
 	function gloskin_ui1_render_editorial_media( $kind = 'editorial', $seed = 'gloskin', $class = '', $eager = false ) {
-		unset( $eager ); /* No network I/O — eager/lazy loading no longer applies. */
+		$resolved = gloskin_ui1_resolve_editorial_media( $kind, $seed );
+		$attachment_id = absint( $resolved['attachment_id'] ?? 0 );
+		if ( $attachment_id ) {
+			$attrs = array( 'class' => trim( (string) $class ), 'decoding' => 'async', 'loading' => $eager ? 'eager' : 'lazy' );
+			if ( $eager ) { $attrs['fetchpriority'] = 'high'; }
+			$image = wp_get_attachment_image( $attachment_id, 'large', false, $attrs );
+			if ( is_string( $image ) && '' !== $image ) { echo $image; return; } // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		}
 		gloskin_ui1_render_presentation_media( $kind, $seed, $class );
 	}
 }
