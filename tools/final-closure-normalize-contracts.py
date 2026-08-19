@@ -44,5 +44,10 @@ replace_once(
     "return (path === '/cart' || path === '/checkout') && !!link.closest('.woocommerce, .wp-block-woocommerce-cart, .wp-block-woocommerce-checkout');",
     "return (path === '/cart' || path === '/checkout') && !!link.closest('.woocommerce');",
 )
+replace_once(
+    'plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js',
+    "[data-gloskin-modal], [data-gloskin-wishlist], .quantity, .variations, form.checkout, form.woocommerce-cart-form, .wc-block-cart-item__quantity",
+    "[data-gloskin-modal], [data-gloskin-wishlist], .quantity, .variations, form.checkout, form.woocommerce-cart-form, [class*=\"cart-item__quantity\"]",
+)
 
 print('final-closure-normalize-contracts: OK')
