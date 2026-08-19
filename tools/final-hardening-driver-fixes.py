@@ -28,4 +28,43 @@ for source, target in fixes.items():
     s = s.replace(source, target, 1)
 
 p.write_text(s, encoding='utf-8')
+
+
+def replace_once(path: Path, old: str, new: str) -> None:
+    text = path.read_text(encoding='utf-8')
+    if text.count(old) != 1:
+        raise SystemExit(f'{path}: factual detail target count={text.count(old)}')
+    path.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+# Normal factual detail pages are text-first when identity media is absent.
+doctor = Path('plugin/gloskin-site-core/templates/pages/doctor.php')
+replace_once(
+    doctor,
+    '<div class="gloskin-ui1-container gloskin-ui1-detail-hero__grid">',
+    '<div class="gloskin-ui1-container gloskin-ui1-detail-hero__grid<?php echo $gloskin_context[\'image_id\'] ? \'\' : \' gloskin-ui1-detail-hero__grid--text-first\'; ?>">',
+)
+replace_once(
+    doctor,
+    '<div class="gloskin-ui1-detail-hero__media"><?php if ( $gloskin_context[\'image_id\'] ) : ?><?php echo wp_get_attachment_image( $gloskin_context[\'image_id\'], \'large\', false, array( \'class\' => \'gloskin-ui1-detail-image\' ) ); ?><?php else : ?><?php gloskin_ui1_render_presentation_media( \'doctor\', get_the_title( $gloskin_post ), \'gloskin-ui1-detail-abstract\' ); ?><?php endif; ?></div>',
+    '<?php if ( $gloskin_context[\'image_id\'] ) : ?><div class="gloskin-ui1-detail-hero__media"><?php echo wp_get_attachment_image( $gloskin_context[\'image_id\'], \'large\', false, array( \'class\' => \'gloskin-ui1-detail-image\', \'alt\' => get_the_title( $gloskin_post ) ) ); ?></div><?php endif; ?>',
+)
+
+clinic = Path('plugin/gloskin-site-core/templates/pages/clinic.php')
+replace_once(
+    clinic,
+    '<div class="gloskin-ui1-container gloskin-ui1-detail-hero__grid">',
+    '<div class="gloskin-ui1-container gloskin-ui1-detail-hero__grid<?php echo $gloskin_context[\'gallery_ids\'] ? \'\' : \' gloskin-ui1-detail-hero__grid--text-first\'; ?>">',
+)
+replace_once(
+    clinic,
+    '<div class="gloskin-ui1-detail-hero__media"><?php if ( $gloskin_context[\'gallery_ids\'] ) : ?><?php echo wp_get_attachment_image( $gloskin_context[\'gallery_ids\'][0], \'large\', false, array( \'class\' => \'gloskin-ui1-detail-image\' ) ); ?><?php else : ?><?php gloskin_ui1_render_presentation_media( \'clinic\', get_the_title( $gloskin_post ), \'gloskin-ui1-detail-abstract\' ); ?><?php endif; ?></div>',
+    '<?php if ( $gloskin_context[\'gallery_ids\'] ) : ?><div class="gloskin-ui1-detail-hero__media"><?php echo wp_get_attachment_image( $gloskin_context[\'gallery_ids\'][0], \'large\', false, array( \'class\' => \'gloskin-ui1-detail-image\', \'alt\' => get_the_title( $gloskin_post ) ) ); ?></div><?php endif; ?>',
+)
+
+css = Path('plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css')
+css_text = css.read_text(encoding='utf-8')
+rule = '.gloskin-ui1-detail-hero__grid--text-first{grid-template-columns:minmax(0,1fr)}'
+if rule not in css_text:
+    css.write_text(css_text.rstrip() + '\n' + rule + '\n', encoding='utf-8')
+
 print('final-hardening-driver-fixes: OK')
