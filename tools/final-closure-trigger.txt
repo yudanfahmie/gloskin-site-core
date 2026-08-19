@@ -1,3 +1,4 @@
 2026-08-19-final closure execution trigger
 base=35776f3f42f5bf40b42ec3db845387b912173edc
 version=0.7.141
+attempt=4
