@@ -8,6 +8,7 @@ $ia = file_get_contents( $root . '/plugin/gloskin-site-core/includes/class-glosk
 $media = file_get_contents( $root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-editorial-media-bundle.php' );
 $helpers = file_get_contents( $root . '/plugin/gloskin-site-core/templates/parts/template-helpers.php' );
 $home = file_get_contents( $root . '/plugin/gloskin-site-core/templates/pages/home.php' );
+$home_why = file_get_contents( $root . '/plugin/gloskin-site-core/templates/parts/home-why-local-media.php' );
 $manifest = json_decode( (string) file_get_contents( $root . '/plugin/gloskin-site-core/migration-runtime/gloskin-editorial-media-v1/manifest.json' ), true );
 $steps = array( 'preflight', 'managed_content', 'demo_seed', 'doctor_photos', 'normalize', 'cleanup', 'verify', 'finalize' );
 $positions = array(); foreach ( $steps as $step ) { $positions[] = strpos( $migration, "'key' => '" . $step . "'" ); }
@@ -16,7 +17,6 @@ $first_step = min( $positions ); $last_step = max( $positions ); $step_slice = s
 gl_final_ok( str_contains( $migration, 'editorial_media_service()->preflight()' ) && str_contains( $migration, "['editorial_audit'] = \$this->run_managed_content()" ), 'existing managed_content checkpoint owns editorial bundle work' );
 gl_final_ok( str_contains( $migration, "['ia_audit'] = \$this->run_normalize()" ) && str_contains( $migration, 'final_ia_normalizer()->verify' ), 'existing normalize/verify checkpoints own stored IA' );
 gl_final_ok( str_contains( $migration, 'reconcile_resume_checkpoint' ), 'same revision failed state has bounded catch-up resume logic' );
-$update_pos = strpos( $migration, 'Gloskin_Site_Core_Lifecycle_Service::VERSION_OPTION' );
 $finalize_pos = strrpos( $migration, 'private function run_finalize' );
 $flush_pos = strpos( $migration, 'flush_rewrite_rules( false )', $finalize_pos );
 $schema_pos = strpos( $migration, 'Gloskin_Site_Core_Lifecycle_Service::SCHEMA_VERSION', $finalize_pos );
@@ -34,7 +34,8 @@ foreach ( (array) ( $manifest['items'] ?? array() ) as $item ) {
 	gl_final_ok( is_file( $file ) && hash_file( 'sha256', $file ) === (string) $item['sha256'], 'bundle SHA valid: ' . (string) $item['key'] );
 }
 gl_final_ok( ! str_contains( $home, 'home-orientation' ), 'early home-orientation is removed' );
-$order = array_map( static fn( $needle ) => strpos( $home, $needle ), array( 'render_why_gloskin', 'home-treatments', 'render_managed_promo_carousel', 'home-discovery', 'render_testimonials', 'home-brand-story', 'render_achievements', 'home-closing' ) );
+gl_final_ok( is_string( $home_why ) && str_contains( $home_why, 'gloskin_ui1_render_why_gloskin' ) && str_contains( $home_why, "'home_why'" ), 'Why slot preserves approved composition while resolving local editorial media' );
+$order = array_map( static fn( $needle ) => strpos( $home, $needle ), array( 'home-why-local-media.php', 'home-treatments', 'render_managed_promo_carousel', 'home-discovery', 'render_testimonials', 'home-brand-story', 'render_achievements', 'home-closing' ) );
 $sorted_order = $order; sort( $sorted_order );
 gl_final_ok( ! in_array( false, $order, true ) && $order === $sorted_order, 'Home order matches approved prototype hierarchy' );
 gl_final_ok( substr_count( $home, 'data-gloskin-product-grid' ) === 1, 'unified discovery reuses one supplied product collection without a duplicate Woo query' );
