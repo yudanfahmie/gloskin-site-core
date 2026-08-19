@@ -2753,21 +2753,18 @@
 		var overlay = document.querySelector('[data-gloskin-page-transition]');
 		if (!overlay) { return; }
 
-		var SESSION_KEY = 'gloskin_pt';
 		var HARD_TIMEOUT_MS = 3000;
 		var navigated = false;
 
-		/* BFCache: if page is restored from history cache, remove overlay immediately. */
+		/* BFCache: if page is restored from history cache, remove overlay immediately.
+		 * The overlay starts hidden (opacity:0 in CSS), so new pages always begin
+		 * clean — this guard handles only the BFCache back/forward restore edge case. */
 		window.addEventListener('pageshow', function (e) {
 			if (e.persisted) {
 				overlay.classList.remove('is-active');
 				navigated = false;
-				sessionStorage.removeItem(SESSION_KEY);
 			}
 		});
-
-		/* Clean up any stale marker left by a previous transition. */
-		sessionStorage.removeItem(SESSION_KEY);
 
 		function getTransitionDurationMs() {
 			var raw = getComputedStyle(document.documentElement)
@@ -2831,7 +2828,6 @@
 			e.preventDefault();
 			navigated = true;
 			overlay.classList.add('is-active');
-			sessionStorage.setItem(SESSION_KEY, '1');
 
 			var duration = getTransitionDurationMs();
 			var doNavigate = function () { location.href = href; };

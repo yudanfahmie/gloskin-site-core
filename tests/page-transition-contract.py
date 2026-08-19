@@ -24,7 +24,8 @@ Asserts:
   17. [data-gloskin-no-transition] opt-out is checked.
   18. No beforeunload or unload event listeners.
   19. No external library dependency (fetch inside transition, Barba, Swup).
-  20. initPageTransitions() is registered in the check-runtime.sh suite.
+  20. No sessionStorage (forbidden by auth contract).
+  21. initPageTransitions() is registered in the check-runtime.sh suite.
 """
 from pathlib import Path
 
@@ -117,6 +118,9 @@ require("'unload'" not in pt_js and '"unload"' not in pt_js, "page transition mu
 # No external library
 require("barba" not in pt_js.lower() and "swup" not in pt_js.lower(), "page transition must not use Barba or Swup")
 require("fetch(" not in pt_js, "page transition click handler must not fetch markup")
+
+# No sessionStorage (forbidden by auth contract in readiness-contract-smoke.py)
+require("sessionStorage" not in pt_js, "page transition must not use sessionStorage (forbidden by auth boundary contract)")
 
 # CI coverage
 require("page-transition-contract.py" in runtime, "page transition contract must run in check-runtime.sh")
