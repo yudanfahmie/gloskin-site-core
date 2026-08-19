@@ -66,7 +66,7 @@ const variantEnd = productHelpers.indexOf('\n\t\t$type', variantStart);
 const variant = productHelpers.slice(variantStart, variantEnd);
 expect(variantStart >= 0 && variantEnd > variantStart, 'Consultation product-card variant missing');
 expect((variant.match(/<a /g) || []).length === 1, 'Consultation card must contain exactly one anchor');
-expect(variant.includes('gloskin_ui1_render_editorial_media') && variant.includes("'woocommerce_thumbnail'"), 'Consultation image must prefer Woo media and retain deterministic editorial fallback');
+expect(variant.includes("'woocommerce_thumbnail'") && !variant.includes('gloskin_ui1_render_editorial_media') && variant.includes('gloskin-ui1-card--text-first'), 'Consultation image must use factual Woo media only and degrade text-first when absent');
 for (const forbidden of ['wishlist', 'add_to_cart', 'ajax_add_to_cart', 'quickadd', "'button'"]) {
   expect(!variant.toLowerCase().includes(forbidden.toLowerCase()), `Consultation variant must be detail-only: ${forbidden}`);
 }

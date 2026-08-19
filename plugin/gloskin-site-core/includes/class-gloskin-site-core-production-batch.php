@@ -1,6 +1,6 @@
 <?php
 /**
- * Kernel-owned module for Shop discovery, native Contact operations and doctor migration.
+ * Kernel-owned module for Shop discovery, native Contact operations and final-migration dependencies.
  *
  * @package GloskinSiteCore
  */
@@ -50,15 +50,13 @@ final class Gloskin_Site_Core_Production_Batch {
 			require_once __DIR__ . '/class-gloskin-site-core-doctor-bundle.php';
 			foreach ( array( 'state', 'upsert', 'finalize', 'lock' ) as $part ) { require_once __DIR__ . '/gloskin-site-core-doctor-importer-' . $part . '-trait.php'; }
 			require_once __DIR__ . '/class-gloskin-site-core-doctor-importer.php';
-			require_once __DIR__ . '/class-gloskin-site-core-doctor-migration-admin.php';
+			/* Doctor roster importer remains available for Final Migration ownership.
+		 * No second doctor-migration admin action is registered here. */
 
 			$contact_admin = new Gloskin_Site_Core_Contact_Admin( $plugin_file );
 			$contact_admin->register();
 			self::$services[] = $contact_admin;
 
-			$doctor_admin = new Gloskin_Site_Core_Doctor_Migration_Admin( $plugin_file );
-			$doctor_admin->register();
-			self::$services[] = $doctor_admin;
 		}
 	}
 }

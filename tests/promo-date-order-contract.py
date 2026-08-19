@@ -67,12 +67,12 @@ require('gloskin_promo_start_date' in svc, 'is_promo_date_eligible must read glo
 require('gloskin_promo_end_date' in svc, 'is_promo_date_eligible must read gloskin_promo_end_date')
 
 # 9. Version sync
-require("Version: 0.7.141" in plugin_h, "plugin header must be 0.7.141")
-require("const VERSION = '0.7.141';" in kernel, "Kernel VERSION must be 0.7.141")
+require("Version: 0.7.142" in plugin_h, "plugin header must be 0.7.142")
+require("const VERSION = '0.7.142';" in kernel, "Kernel VERSION must be 0.7.142")
 
 if failures:
     for f in failures:
         print('FAIL:', f)
     sys.exit(1)
 
-print('promo-date-order-contract.py: OK (0.7.141)')
+print('promo-date-order-contract.py: OK (0.7.142)')

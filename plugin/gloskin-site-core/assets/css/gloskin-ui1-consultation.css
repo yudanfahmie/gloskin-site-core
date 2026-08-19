@@ -322,3 +322,4 @@
 	.gloskin-ui1-consultation-card__action{transition:none}
 	.gloskin-ui1-consultation__path:hover{transform:none}
 }
+.gloskin-ui1-card--consultation.gloskin-ui1-card--text-first .gloskin-ui1-consultation-card__main{grid-template-columns:minmax(0,1fr)}

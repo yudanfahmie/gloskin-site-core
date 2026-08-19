@@ -40,6 +40,17 @@ final class Gloskin_Site_Core_Editorial_Media_Bundle {
 			if ( ! is_string( $actual ) || ! hash_equals( $sha, strtolower( $actual ) ) ) {
 				throw new RuntimeException( 'bundle_invalid: Editorial media SHA mismatch: ' . $key );
 			}
+			$image_info = @getimagesize( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- validation handles false explicitly.
+			$width = (int) ( $item['width'] ?? 0 ); $height = (int) ( $item['height'] ?? 0 ); $mime = (string) ( $item['mime'] ?? '' );
+			if ( false === $image_info || $width < 1 || $height < 1 || $width !== (int) $image_info[0] || $height !== (int) $image_info[1] || $mime !== (string) ( $image_info['mime'] ?? '' ) ) {
+				throw new RuntimeException( 'bundle_invalid: Editorial media dimensions/mime mismatch: ' . $key );
+			}
+			if ( empty( $item['semantic_role'] ) || empty( $item['source_page'] ) || empty( $item['source_asset_url'] ) || 'first-party-gloskin' !== (string) ( $item['source_type'] ?? '' ) || ! array_key_exists( 'decorative', $item ) || ! array_key_exists( 'alt', $item ) ) {
+				throw new RuntimeException( 'bundle_invalid: Editorial media semantic/provenance metadata incomplete: ' . $key );
+			}
+			if ( empty( $item['decorative'] ) && '' === trim( (string) $item['alt'] ) ) {
+				throw new RuntimeException( 'bundle_invalid: Meaningful editorial media requires concise alt text: ' . $key );
+			}
 			if ( isset( $seen[ $key ] ) ) { throw new RuntimeException( 'bundle_invalid: Duplicate editorial media key: ' . $key ); }
 			$seen[ $key ] = true;
 		}
@@ -77,6 +88,12 @@ final class Gloskin_Site_Core_Editorial_Media_Bundle {
 				'sha256' => $sha,
 				'source_page' => esc_url_raw( (string) ( $item['source_page'] ?? '' ) ),
 				'source_asset_url' => esc_url_raw( (string) ( $item['source_asset_url'] ?? '' ) ),
+				'width' => absint( $item['width'] ?? 0 ), 'height' => absint( $item['height'] ?? 0 ),
+				'mime' => sanitize_mime_type( (string) ( $item['mime'] ?? '' ) ),
+				'semantic_role' => sanitize_text_field( (string) ( $item['semantic_role'] ?? '' ) ),
+				'source_type' => sanitize_key( (string) ( $item['source_type'] ?? '' ) ),
+				'decorative' => ! empty( $item['decorative'] ),
+				'alt' => sanitize_text_field( (string) ( $item['alt'] ?? '' ) ),
 			);
 			$audit[ $bucket ][] = array( 'key' => $key, 'attachment_id' => $attachment_id, 'sha256' => $sha );
 		}
@@ -158,6 +175,7 @@ final class Gloskin_Site_Core_Editorial_Media_Bundle {
 		update_post_meta( $attachment_id, self::SOURCE_META, esc_url_raw( (string) ( $item['source_asset_url'] ?? '' ) ) );
 		update_post_meta( $attachment_id, self::SOURCE_PAGE_META, esc_url_raw( (string) ( $item['source_page'] ?? '' ) ) );
 		update_post_meta( $attachment_id, self::REVISION_META, self::REVISION );
+		update_post_meta( $attachment_id, '_wp_attachment_image_alt', ! empty( $item['decorative'] ) ? '' : sanitize_text_field( (string) ( $item['alt'] ?? '' ) ) );
 		return $attachment_id;
 	}
 }

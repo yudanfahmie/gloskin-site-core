@@ -42,7 +42,8 @@ final class Gloskin_Site_Core_Insight_Migration_Admin {
 		if ( ! current_user_can( self::CAPABILITY ) ) { return; }
 		$summary = $this->importer->get_summary();
 		if ( 'consumed' === $summary['detection'] || 'none' === $summary['detection'] ) {
-			echo '<div class="wrap"><h1>' . esc_html__( 'Insight Editorial Migration', 'gloskin-site-core' ) . '</h1><p>' . esc_html__( 'Bundle migrasi tidak lagi tersedia untuk dijalankan.', 'gloskin-site-core' ) . '</p></div>';
+			echo '<div class="wrap">
+			<p><strong>Ownership:</strong> Import Insight ini independen dari Finalisasi Prototype; paket ini hanya mengelola artikel WordPress, kategori, dan media editorial Insight.</p><h1>' . esc_html__( 'Insight Editorial Migration', 'gloskin-site-core' ) . '</h1><p>' . esc_html__( 'Bundle migrasi tidak lagi tersedia untuk dijalankan.', 'gloskin-site-core' ) . '</p></div>';
 			return;
 		}
 		$mode = in_array( $summary['detection'], array( 'running','failed','verifying','validating' ), true ) && ! empty( $summary['bundle_id'] ) ? 'continue' : 'start';

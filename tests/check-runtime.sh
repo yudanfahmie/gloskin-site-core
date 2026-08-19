@@ -76,6 +76,8 @@ php tests/final-migration-doctor-batch-resume-contract.php
 php tests/final-migration-preflight-reset-contract.php
 php tests/final-migration-error-contract.php
 php tests/final-closure-contract.php
+php tests/final-hardening-contract.php
+php tests/managed-record-ordering-contract.php
 php tests/description-consolidation-contract.php
 php tests/hero-video-contract.php
 GL_TEST_MODE=success php tests/description-consolidation-bootstrap-contract.php
@@ -110,6 +112,7 @@ GL_TEST_WOO_LATE=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.
 if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/null 2>&1; then
   python tests/font-browser-smoke.py
   python tests/browser-smoke.py
+  python tests/zero-placeholder-browser-smoke.py
   python tests/page-richness-smoke.py
   python tests/readiness-browser-smoke.py
   python tests/quick-add-browser-smoke.py

@@ -69,6 +69,7 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 			'last_error'          => '',
 			'doctor_matches'      => array(),
 			'doctor_audit'        => array(),
+			'doctor_roster_audit' => array(),
 			'demo_audit'          => array(),
 			'editorial_audit'     => array(),
 			'ia_audit'            => array(),
@@ -97,7 +98,7 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 	 */
 	public function run_to_completion() {
 		$state = $this->advance( 'start' );
-		$limit = count( $this->steps() ) + 20;
+		$limit = count( $this->steps() ) + 40;
 		for ( $i = 0; $i < $limit && 'consumed' !== $state['status']; $i++ ) {
 			$state = $this->advance( 'continue' );
 		}
@@ -177,6 +178,13 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 					if ( 0 !== $index || (int) $state['doctor_cursor'] > 0 || $this->doctor_audit_count( $state['doctor_audit'] ) > 0 ) {
 						throw new RuntimeException( 'verification_failed: Preflight tidak boleh diulang setelah mutasi foto dokter dimulai.' );
 					}
+					$roster = $this->advance_doctor_roster();
+					$state['doctor_roster_audit'] = $roster;
+					if ( empty( $roster['complete'] ) ) {
+						$step_complete = false;
+						$state['current_step'] = 'Menyiapkan roster dokter (' . (int) $roster['index'] . '/' . (int) $roster['expected'] . ')';
+						break;
+					}
 					$preflight_result             = $this->run_preflight();
 					$state['doctor_matches']      = $preflight_result['matches'];
 					$state['doctor_all_snapshot'] = $preflight_result['all_snapshot'];
@@ -247,6 +255,35 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 			$this->save_state( $failed );
 			throw new RuntimeException( $error->getMessage(), 0, $error );
 		}
+	}
+
+
+	/** @return array{status:string,index:int,expected:int,complete:bool,ownership:string} */
+	private function advance_doctor_roster() {
+		$importer = $this->doctor_roster_importer();
+		$before   = $importer->state();
+		if ( 'consumed' === (string) $before['status'] ) {
+			return array(
+				'status' => 'consumed', 'index' => (int) $before['index'], 'expected' => (int) $before['expected'],
+				'complete' => true, 'ownership' => 'final-migration-reused-importer',
+			);
+		}
+		$mode = ( (int) $before['index'] > 0 || in_array( (string) $before['status'], array( 'running', 'failed', 'verifying' ), true ) ) ? 'continue' : 'start';
+		$after = $importer->advance( $mode );
+		return array(
+			'status' => (string) $after['status'], 'index' => (int) $after['index'], 'expected' => (int) $after['expected'],
+			'complete' => 'consumed' === (string) $after['status'], 'ownership' => 'final-migration-reused-importer',
+		);
+	}
+
+	/** @return Gloskin_Site_Core_Doctor_Importer */
+	private function doctor_roster_importer() {
+		require_once __DIR__ . '/class-gloskin-site-core-doctor-bundle.php';
+		foreach ( array( 'state', 'upsert', 'finalize', 'lock' ) as $part ) {
+			require_once __DIR__ . '/gloskin-site-core-doctor-importer-' . $part . '-trait.php';
+		}
+		require_once __DIR__ . '/class-gloskin-site-core-doctor-importer.php';
+		return new Gloskin_Site_Core_Doctor_Importer( $this->plugin_file );
 	}
 
 	/** @return array{matches:array<string,array<string,mixed>>,all_snapshot:array<int,int>} */
@@ -390,18 +427,23 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 
 	/** @return array<string,mixed> */
 	private function run_demo_seed() {
-		$env        = $this->detect_environment();
-		$is_dev_stg = in_array( $env, array( 'development', 'staging', 'local' ), true );
-		$status     = $is_dev_stg ? 'publish' : 'draft';
-		$audit      = array( 'environment' => $env, 'status' => $status, 'created' => array(), 'reused' => array() );
+		$env    = $this->detect_environment();
+		$status = 'draft';
+		$audit  = array(
+			'environment' => $env,
+			'status'      => $status,
+			'policy'      => 'engineering-fixture-non-public-v2',
+			'created'     => array(),
+			'reused'      => array(),
+		);
 
 		$seeds = array(
-			array( 'type' => 'promo', 'post_type' => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE, 'identity' => 'gloskin-demo-promo-refresh-campaign-2026-1', 'title' => '[DEMO] Program Perawatan Kulit Wajah', 'excerpt' => 'Temukan rangkaian perawatan kulit wajah yang dirancang khusus sesuai kondisi dan kebutuhan Anda.', 'meta' => array( 'gloskin_promo_eyebrow' => 'Perawatan Pilihan', 'gloskin_promo_cta_label' => 'Jelajahi Perawatan', 'gloskin_promo_cta_url' => '/treatments/', 'gloskin_promo_active' => '1' ) ),
-			array( 'type' => 'promo', 'post_type' => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE, 'identity' => 'gloskin-demo-promo-refresh-campaign-2026-2', 'title' => '[DEMO] Skincare Gloskin — Perawatan Harian', 'excerpt' => 'Produk skincare Gloskin diformulasikan untuk mendukung rutinitas perawatan kulit harian Anda.', 'meta' => array( 'gloskin_promo_eyebrow' => 'Skincare Terbaru', 'gloskin_promo_cta_label' => 'Lihat Skincare', 'gloskin_promo_cta_url' => '/skincare/', 'gloskin_promo_active' => '1' ) ),
-			array( 'type' => 'promo', 'post_type' => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE, 'identity' => 'gloskin-demo-promo-refresh-campaign-2026-3', 'title' => '[DEMO] Konsultasi Dokter Gloskin', 'excerpt' => 'Setiap perawatan dimulai dari konsultasi bersama dokter kami untuk menentukan langkah terbaik bagi kondisi Anda.', 'meta' => array( 'gloskin_promo_eyebrow' => 'Konsultasi Medis', 'gloskin_promo_cta_label' => 'Temukan Dokter', 'gloskin_promo_cta_url' => '/doctors/', 'gloskin_promo_active' => '1' ) ),
-			array( 'type' => 'testimonial', 'post_type' => Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'identity' => 'gloskin-demo-testimonial-2026-1', 'title' => '[DEMO] Testimoni Perawatan Kulit', 'excerpt' => 'Setelah konsultasi dan mengikuti perawatan yang direkomendasikan, kondisi kulit saya membaik secara bertahap.', 'meta' => array( 'gloskin_testimonial_attribution' => 'Pengguna Demo', 'gloskin_testimonial_subtitle' => 'Pasien Gloskin', 'gloskin_testimonial_active' => '1' ) ),
-			array( 'type' => 'testimonial', 'post_type' => Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'identity' => 'gloskin-demo-testimonial-2026-2', 'title' => '[DEMO] Pengalaman Konsultasi', 'excerpt' => 'Tim dokter sangat membantu dalam menjelaskan pilihan perawatan yang sesuai dengan kebutuhan saya.', 'meta' => array( 'gloskin_testimonial_attribution' => 'Pengguna Demo', 'gloskin_testimonial_subtitle' => 'Pasien Klinik Gloskin', 'gloskin_testimonial_active' => '1' ) ),
-			array( 'type' => 'achievement', 'post_type' => Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE, 'identity' => 'gloskin-demo-achievement-2026-1', 'title' => '[DEMO] Penghargaan Layanan Kesehatan', 'excerpt' => 'Contoh penghargaan atau sertifikasi yang diterima Gloskin. Gantikan dengan data faktual resmi.', 'meta' => array( 'gloskin_achievement_issuer' => 'Lembaga Demo', 'gloskin_achievement_year' => (string) gmdate( 'Y' ), 'gloskin_achievement_feature_on_home' => '1', 'gloskin_achievement_active' => '1' ) ),
+			array( 'type' => 'promo', 'post_type' => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE, 'identity' => 'gloskin-demo-promo-refresh-campaign-2026-1', 'title' => '[DEMO NON-PUBLIC] Promo fixture 1', 'excerpt' => 'Engineering fixture untuk validasi layout. Bukan materi presentasi publik.', 'meta' => array( 'gloskin_promo_eyebrow' => 'Fixture Non-Publik', 'gloskin_promo_cta_label' => 'Fixture', 'gloskin_promo_cta_url' => '/treatments/', 'gloskin_promo_active' => '0' ) ),
+			array( 'type' => 'promo', 'post_type' => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE, 'identity' => 'gloskin-demo-promo-refresh-campaign-2026-2', 'title' => '[DEMO NON-PUBLIC] Promo fixture 2', 'excerpt' => 'Engineering fixture untuk validasi layout. Bukan materi presentasi publik.', 'meta' => array( 'gloskin_promo_eyebrow' => 'Fixture Non-Publik', 'gloskin_promo_cta_label' => 'Fixture', 'gloskin_promo_cta_url' => '/skincare/', 'gloskin_promo_active' => '0' ) ),
+			array( 'type' => 'promo', 'post_type' => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE, 'identity' => 'gloskin-demo-promo-refresh-campaign-2026-3', 'title' => '[DEMO NON-PUBLIC] Promo fixture 3', 'excerpt' => 'Engineering fixture untuk validasi layout. Bukan materi presentasi publik.', 'meta' => array( 'gloskin_promo_eyebrow' => 'Fixture Non-Publik', 'gloskin_promo_cta_label' => 'Fixture', 'gloskin_promo_cta_url' => '/doctors/', 'gloskin_promo_active' => '0' ) ),
+			array( 'type' => 'testimonial', 'post_type' => Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'identity' => 'gloskin-demo-testimonial-2026-1', 'title' => '[DEMO NON-PUBLIC] Testimonial fixture 1', 'excerpt' => 'Engineering fixture non-publik; tidak memuat atau menyiratkan hasil pasien.', 'meta' => array( 'gloskin_testimonial_attribution' => 'Fixture Non-Publik', 'gloskin_testimonial_subtitle' => 'Engineering fixture', 'gloskin_testimonial_active' => '0' ) ),
+			array( 'type' => 'testimonial', 'post_type' => Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'identity' => 'gloskin-demo-testimonial-2026-2', 'title' => '[DEMO NON-PUBLIC] Testimonial fixture 2', 'excerpt' => 'Engineering fixture non-publik; tidak memuat atau menyiratkan hasil pasien.', 'meta' => array( 'gloskin_testimonial_attribution' => 'Fixture Non-Publik', 'gloskin_testimonial_subtitle' => 'Engineering fixture', 'gloskin_testimonial_active' => '0' ) ),
+			array( 'type' => 'achievement', 'post_type' => Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE, 'identity' => 'gloskin-demo-achievement-2026-1', 'title' => '[DEMO NON-PUBLIC] Achievement fixture', 'excerpt' => 'Engineering fixture non-publik; bukan klaim penghargaan atau sertifikasi faktual.', 'meta' => array( 'gloskin_achievement_issuer' => 'Fixture Non-Publik', 'gloskin_achievement_year' => '', 'gloskin_achievement_feature_on_home' => '0', 'gloskin_achievement_active' => '0' ) ),
 		);
 
 		foreach ( $seeds as $seed ) {
@@ -414,18 +456,42 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 	/** @return array{action:string,id:int} */
 	private function seed_demo_post( $post_type, $identity, $title, $excerpt, $status, array $meta ) {
 		$existing = get_posts( array( 'post_type' => $post_type, 'post_status' => 'any', 'posts_per_page' => 1, 'fields' => 'ids', 'meta_query' => array( array( 'key' => self::DEMO_IDENTITY_META, 'value' => $identity ) ) ) ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-		if ( ! empty( $existing ) ) {
-			return array( 'action' => 'reused', 'id' => absint( $existing[0] ) );
-		}
-		$result = wp_insert_post( array( 'post_type' => $post_type, 'post_status' => $status, 'post_title' => $title, 'post_excerpt' => $excerpt ), true );
-		if ( is_wp_error( $result ) ) {
-			throw new RuntimeException( 'Gagal membuat demo record ' . $identity . ': ' . $result->get_error_message() );
+		$post_id = ! empty( $existing ) ? absint( $existing[0] ) : 0;
+		$action  = $post_id ? 'reused' : 'created';
+		$postarr = array( 'post_type' => $post_type, 'post_status' => 'draft', 'post_title' => $title, 'post_excerpt' => $excerpt );
+		if ( $post_id ) { $postarr['ID'] = $post_id; }
+		$result = $post_id ? wp_update_post( $postarr, true ) : wp_insert_post( $postarr, true );
+		if ( is_wp_error( $result ) || ! $result ) {
+			throw new RuntimeException( 'Gagal mengarantina demo record ' . $identity . ': ' . ( is_wp_error( $result ) ? $result->get_error_message() : 'unknown error' ) );
 		}
 		$post_id = absint( $result );
 		update_post_meta( $post_id, self::DEMO_IDENTITY_META, $identity );
 		update_post_meta( $post_id, self::DEMO_REVISION_META, self::REVISION );
 		foreach ( $meta as $key => $value ) { update_post_meta( $post_id, $key, $value ); }
-		return array( 'action' => 'created', 'id' => $post_id );
+		return array( 'action' => $action, 'id' => $post_id );
+	}
+
+	/** @return void */
+	private function quarantine_owned_demo_records() {
+		foreach ( array(
+			Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE => array( 'gloskin_promo_active' ),
+			Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE => array( 'gloskin_testimonial_active' ),
+			Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE => array( 'gloskin_achievement_active', 'gloskin_achievement_feature_on_home' ),
+		) as $post_type => $flags ) {
+			$ids = get_posts( array(
+				'post_type' => $post_type, 'post_status' => 'any', 'posts_per_page' => -1, 'fields' => 'ids',
+				'meta_query' => array( array( 'key' => self::DEMO_IDENTITY_META, 'compare' => 'EXISTS' ) ),
+			) ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			foreach ( $ids as $post_id ) {
+				$post_id = absint( $post_id );
+				if ( '' === (string) get_post_meta( $post_id, self::DEMO_IDENTITY_META, true ) ) { continue; }
+				if ( 'draft' !== get_post_status( $post_id ) ) {
+					$result = wp_update_post( array( 'ID' => $post_id, 'post_status' => 'draft' ), true );
+					if ( is_wp_error( $result ) ) { throw new RuntimeException( 'verification_failed: Gagal mengarantina fixture demo #' . $post_id . '.' ); }
+				}
+				foreach ( $flags as $flag ) { update_post_meta( $post_id, $flag, '0' ); }
+			}
+		}
 	}
 
 	/** @return array{doctor_audit:array<string,mixed>,cursor:int,total:int,complete:bool} */
@@ -575,14 +641,20 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 
 	/** @return void */
 	private function run_verify( array $state ) {
+		$this->quarantine_owned_demo_records();
 		$this->editorial_media_service()->verify( (array) ( $state['editorial_audit'] ?? array() ) );
 		$this->final_ia_normalizer()->verify( (array) ( $state['ia_audit'] ?? array() ) );
 		foreach ( array( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE, Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE ) as $post_type ) {
 			if ( ! post_type_exists( $post_type ) ) { throw new RuntimeException( 'verification_failed: CPT tidak terdaftar setelah managed_content: ' . $post_type ); }
 		}
 		$promo_page = get_page_by_path( 'promo', OBJECT, 'page' );
-		if ( ! ( $promo_page instanceof WP_Post ) || 'trash' === $promo_page->post_status ) { throw new RuntimeException( 'verification_failed: Halaman /promo/ tidak ditemukan.' ); }
+		if ( ! ( $promo_page instanceof WP_Post ) || 'publish' !== $promo_page->post_status ) { throw new RuntimeException( 'verification_failed: Halaman /promo/ harus published.' ); }
 		if ( $this->commerce_page_snapshot() !== (array) $state['commerce_snapshot'] ) { throw new RuntimeException( 'verification_failed: Konfigurasi halaman WooCommerce berubah selama migrasi.' ); }
+
+		$roster_audit = (array) ( $state['doctor_roster_audit'] ?? array() );
+		if ( empty( $roster_audit['complete'] ) && 'legacy-final-preflight' !== (string) ( $roster_audit['ownership'] ?? '' ) ) {
+			throw new RuntimeException( 'verification_failed: Doctor roster ownership belum terselesaikan.' );
+		}
 
 		$matches     = (array) ( $state['doctor_matches'] ?? array() );
 		$audit       = $this->normalize_doctor_audit( $state['doctor_audit'] ?? array() );
@@ -619,10 +691,12 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 
 		$demo_audit = (array) ( $state['demo_audit'] ?? array() );
 		$demo_items = array_merge( (array) ( $demo_audit['created'] ?? array() ), (array) ( $demo_audit['reused'] ?? array() ) );
-		$promo_count = count( array_filter( $demo_items, static function ( $item ) { return isset( $item['type'] ) && 'promo' === $item['type']; } ) );
-		$test_count  = count( array_filter( $demo_items, static function ( $item ) { return isset( $item['type'] ) && 'testimonial' === $item['type']; } ) );
-		$ach_count   = count( array_filter( $demo_items, static function ( $item ) { return isset( $item['type'] ) && 'achievement' === $item['type']; } ) );
-		if ( $promo_count < 1 || $test_count < 1 || $ach_count < 1 ) { throw new RuntimeException( 'verification_failed: Demo seed tidak lengkap.' ); }
+		foreach ( $demo_items as $item ) {
+			$post_id = absint( $item['id'] ?? 0 );
+			if ( ! $post_id || '' === (string) get_post_meta( $post_id, self::DEMO_IDENTITY_META, true ) || 'draft' !== get_post_status( $post_id ) ) {
+				throw new RuntimeException( 'verification_failed: Engineering fixture harus dimiliki migrasi dan non-publik.' );
+			}
+		}
 		$doctor_count = wp_count_posts( Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE );
 		$published    = $doctor_count ? (int) $doctor_count->publish : 0;
 		if ( $published < 1 ) { throw new RuntimeException( 'verification_failed: Tidak ada dokter yang dipublikasikan.' ); }
@@ -664,6 +738,19 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 	private function reconcile_resume_checkpoint( array $state ) {
 		$index = (int) ( $state['next_step_index'] ?? 0 );
 		$rewind = null;
+		if ( $index > 0 && empty( $state['doctor_roster_audit'] ) ) {
+			if ( ! empty( $state['doctor_matches'] ) ) {
+				$state['doctor_roster_audit'] = array(
+					'status' => 'legacy-preflight-compatible', 'index' => count( (array) $state['doctor_matches'] ),
+					'expected' => count( (array) $state['doctor_matches'] ), 'complete' => true,
+					'ownership' => 'legacy-final-preflight',
+				);
+			} elseif ( 0 === (int) $state['doctor_cursor'] && 0 === $this->doctor_audit_count( $state['doctor_audit'] ?? array() ) ) {
+				$rewind = 0;
+			} else {
+				throw new RuntimeException( 'verification_failed: Doctor roster ownership cannot be reconstructed after photo mutation; manual staging review required.' );
+			}
+		}
 		if ( $index > 1 && empty( $state['editorial_audit'] ) ) { $rewind = 1; }
 		if ( $index > 4 && empty( $state['ia_audit'] ) ) { $rewind = null === $rewind ? 4 : min( $rewind, 4 ); }
 		if ( null !== $rewind ) {
@@ -723,6 +810,7 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 	/** @return array<string,mixed> */
 	private function response_state( array $state ) {
 		$audit = $this->normalize_doctor_audit( $state['doctor_audit'] ?? array() );
+		$roster = (array) ( $state['doctor_roster_audit'] ?? array() );
 		return array(
 			'status' => (string) $state['status'],
 			'processed_steps' => (int) $state['processed_steps'],
@@ -733,6 +821,9 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 			'doctor_total' => count( (array) $state['doctor_matches'] ),
 			'doctor_applied' => count( $audit['applied'] ),
 			'doctor_reused' => count( $audit['reused'] ),
+			'doctor_roster_status' => (string) ( $roster['status'] ?? '' ),
+			'doctor_roster_index' => (int) ( $roster['index'] ?? 0 ),
+			'doctor_roster_expected' => (int) ( $roster['expected'] ?? 0 ),
 		);
 	}
 }

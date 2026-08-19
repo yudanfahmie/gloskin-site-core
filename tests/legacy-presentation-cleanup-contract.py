@@ -139,12 +139,12 @@ require(
 )
 
 # 13. Version sync
-require("Version: 0.7.141" in plugin_h, "plugin header must be 0.7.141")
-require("const VERSION = '0.7.141';" in kernel, "Kernel VERSION must be 0.7.141")
+require("Version: 0.7.142" in plugin_h, "plugin header must be 0.7.142")
+require("const VERSION = '0.7.142';" in kernel, "Kernel VERSION must be 0.7.142")
 
 if failures:
     for f in failures:
         print('FAIL:', f)
     sys.exit(1)
 
-print('legacy-presentation-cleanup-contract.py: OK (0.7.141)')
+print('legacy-presentation-cleanup-contract.py: OK (0.7.142)')

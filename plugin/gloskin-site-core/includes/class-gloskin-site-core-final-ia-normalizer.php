@@ -26,8 +26,8 @@ final class Gloskin_Site_Core_Final_IA_Normalizer {
 		$page_ids = isset( $audit['page_ids'] ) && is_array( $audit['page_ids'] ) ? $audit['page_ids'] : array();
 		foreach ( array( 'home', 'treatments', 'promo', 'skincare', 'about' ) as $key ) {
 			$page = ! empty( $page_ids[ $key ] ) ? get_post( absint( $page_ids[ $key ] ) ) : null;
-			if ( ! ( $page instanceof WP_Post ) || 'page' !== $page->post_type || 'trash' === $page->post_status ) {
-				throw new RuntimeException( 'verification_failed: IA page invalid: ' . $key . '.' );
+			if ( ! ( $page instanceof WP_Post ) || 'page' !== $page->post_type || 'publish' !== $page->post_status ) {
+				throw new RuntimeException( 'verification_failed: Canonical public IA page must be published: ' . $key . '.' );
 			}
 		}
 		$home_id = absint( $page_ids['home'] ?? 0 );
@@ -92,10 +92,16 @@ final class Gloskin_Site_Core_Final_IA_Normalizer {
 	private function ensure_page( $slug, $title ) {
 		$page = get_page_by_path( $slug, OBJECT, 'page' );
 		if ( $page instanceof WP_Post ) {
-			if ( 'trash' === $page->post_status ) {
-				throw new RuntimeException( 'IA page /' . $slug . '/ exists in Trash; ownership is ambiguous.' );
+			if ( 'publish' === (string) $page->post_status ) { return absint( $page->ID ); }
+			$provisioned = self::REVISION === (string) get_post_meta( $page->ID, '_gloskin_provisioned_revision', true );
+			if ( $provisioned ) {
+				$result = wp_update_post( array( 'ID' => absint( $page->ID ), 'post_status' => 'publish' ), true );
+				if ( is_wp_error( $result ) || 'publish' !== (string) get_post_status( $page->ID ) ) {
+					throw new RuntimeException( 'Failed to publish migration-provisioned canonical page /' . $slug . '/.' );
+				}
+				return absint( $page->ID );
 			}
-			return absint( $page->ID );
+			throw new RuntimeException( 'Canonical page safe-stop: editor-owned /' . $slug . '/ is ' . (string) $page->post_status . '. Publish it manually before Finalisasi Prototype; content was preserved.' );
 		}
 		$result = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => $title, 'post_name' => $slug ), true );
 		if ( is_wp_error( $result ) ) { throw new RuntimeException( 'Failed to ensure /' . $slug . '/: ' . $result->get_error_message() ); }
