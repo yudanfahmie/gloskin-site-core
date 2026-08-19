@@ -184,23 +184,27 @@ printf '%s\n' "$shop_price_block" | grep -qF "wc_product_meta_lookup" \
         raise SystemExit("check-presentation: raw-DB guard is neither known stale nor normalized")
 
     stale_items_prefix = "body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block .wc-block-cart-items"
-    corrected_items_prefix = "body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block.wc-block-cart-items"
+    intermediate_prefix = "body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block.wc-block-cart-items"
+    baseline_prefix = "body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block"
     if stale_items_prefix in src:
         if src.count(stale_items_prefix) != 5:
             raise SystemExit(f"check-presentation: expected 5 stale Cart items prefixes, found {src.count(stale_items_prefix)}")
-        src = src.replace(stale_items_prefix, corrected_items_prefix)
-    elif src.count(corrected_items_prefix) < 5:
-        raise SystemExit("check-presentation: Cart items prefixes are neither known stale nor normalized")
+        src = src.replace(stale_items_prefix, intermediate_prefix)
 
     for suffix in ('.wc-block-cart-item__total', '.wc-block-components-product-name'):
         stale = "body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block " + suffix
-        corrected = "body.woocommerce-cart .wp-block-woocommerce-cart .wp-block-woocommerce-cart-line-items-block.wc-block-cart-items " + suffix
+        intermediate = intermediate_prefix + " " + suffix
         if stale in src:
             if src.count(stale) != 1:
                 raise SystemExit(f"check-presentation: unexpected stale Cart selector count for {suffix}")
-            src = src.replace(stale, corrected, 1)
-        elif corrected not in src:
-            raise SystemExit(f"check-presentation: Cart selector is neither known stale nor normalized for {suffix}")
+            src = src.replace(stale, intermediate, 1)
+
+    if intermediate_prefix in src:
+        if src.count(intermediate_prefix) != 7:
+            raise SystemExit(f"check-presentation: expected 7 intermediate Cart table prefixes, found {src.count(intermediate_prefix)}")
+        src = src.replace(intermediate_prefix, baseline_prefix)
+    elif src.count(baseline_prefix) < 7:
+        raise SystemExit("check-presentation: desktop Cart table selectors are neither known stale nor normalized")
 
     PRESENTATION.write_text(src, encoding="utf-8")
 
