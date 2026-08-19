@@ -31,7 +31,10 @@ $tests = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $root . 
 foreach ( $tests as $file ) {
 	if ( ! $file->isFile() ) { continue; }
 	$contents = file_get_contents( $file->getPathname() );
-	if ( false === $contents ) { fwrite( STDERR, 'Unable to read test file: ' . $file->getPathname() . "\n" ); exit( 1 ); }
+	if ( false === $contents ) {
+		fwrite( STDERR, 'Unable to read test file: ' . $file->getPathname() . "\n" );
+		exit( 1 );
+	}
 	foreach ( $patterns as $pattern ) {
 		if ( ! preg_match_all( $pattern, $contents, $matches ) ) { continue; }
 		foreach ( array_unique( $matches[1] ) as $version ) {
@@ -39,6 +42,7 @@ foreach ( $tests as $file ) {
 				fwrite( STDERR, 'Stale active release assertion in ' . $file->getPathname() . ': ' . $version . "\n" );
 				exit( 1 );
 			}
+		}
 	}
 }
 
