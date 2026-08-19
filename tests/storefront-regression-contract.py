@@ -3,97 +3,29 @@ from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
-
-def read(rel):
-    return (ROOT / rel).read_text(encoding='utf-8')
-
+def read(rel): return (ROOT / rel).read_text(encoding='utf-8')
 def require(cond, message):
-    if not cond:
-        raise AssertionError(message)
+    if not cond: raise AssertionError(message)
 
-js = read('plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js')
-shop_js = read('plugin/gloskin-site-core/assets/js/gloskin-ui1-shop-discovery.js')
-shop_template = read('plugin/gloskin-site-core/templates/pages/shop.php')
-css = read('plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css')
-header = read('plugin/gloskin-site-core/templates/parts/header.php')
-template_service = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php')
-woo = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php')
-woo_shop = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter-shop-catalog.php')
-shop_query = read('plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-query-trait.php')
-assets = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-asset-service.php')
-plugin = read('plugin/gloskin-site-core/gloskin-site-core.php')
-kernel = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php')
-
-# Public Gloskin REST reads stay nonce-free guest projections.
-require("function publicRestGetOptions()" in js, 'shared public REST GET transport helper missing')
-require("return { method: 'GET', credentials: 'same-origin' };" in js, 'public GET helper must stay read-only/same-origin')
-require('X-WP-Nonce' not in js and 'restNonce' not in js, 'public GET client must not send/read REST nonce')
-require("wp_create_nonce( 'wp_rest' )" not in header and 'restNonce' not in header, 'header must not localize an unused public REST nonce')
-require(js.count('publicRestGetOptions()') == 5, 'core public GET helper declaration/call sites changed unexpectedly')
-for endpoint in ('search?q=', 'products/quick-add?id=', 'products/resolve?ids='):
-    require(endpoint in js, f'public projection endpoint missing: {endpoint}')
-require("shop/catalog?" in shop_js, 'active Shop catalog projection endpoint missing')
-require("window.fetch(config.addToCartAjaxUrl, { method: 'POST', credentials: 'same-origin', body: formData })" in js, 'Woo add-to-cart mutation POST must remain untouched')
-
-for route in ("'/search'", "'/shop/catalog'", "'/products/resolve'", "'/products/quick-add'"):
-    owner = template_service if route in ("'/search'", "'/shop/catalog'") else woo
-    pos = owner.find(route)
-    require(pos >= 0, f'route missing: {route}')
-    block = owner[pos:pos + 900]
-    require("'methods'             => 'GET'" in block, f'{route} must remain GET-only')
-    require("'permission_callback' => '__return_true'" in block, f'{route} must remain public/guest-readable')
-
-# Shop has exactly one active catalog marker/controller.
-require('data-gloskin-shop-catalog-owner' in shop_template, 'canonical Shop owner marker missing')
-require(re.search(r'\sdata-gloskin-shop-catalog(?:\s|>)', shop_template) is None, 'legacy core Shop marker must be inactive')
-for invariant in ('var requestSequence = 0', 'new window.AbortController()', 'sequence !== requestSequence', "results.setAttribute('aria-busy', busy ? 'true' : 'false')", 'showCatalogFailure(fallbackHref)', "document.dispatchEvent(new CustomEvent('gloskin:catalog-updated'"):
-    require(invariant in shop_js, f'active Shop invariant missing: {invariant}')
-for field in ("category: String(state.category || '')", "q: String(state.q || '')", "min_price: String(state.min_price || '')", "max_price: String(state.max_price || '')"):
-    require(field in shop_js, f'canonical Shop state field missing: {field}')
-require(shop_js.count('function requestCatalog(') == 1, 'active Shop must have one request owner')
-require(shop_js.count('return window.fetch(') == 1, 'active Shop must have one logical fetch path')
-require(re.search(r'window\.fetch\s*=(?!=)', shop_js) is None, 'Shop must not monkeypatch window.fetch')
-require(re.search(r'(?:window\.)?history\.(?:pushState|replaceState)\s*=(?!=)', shop_js) is None, 'Shop must not monkeypatch History API methods')
-
-# Filtered catalog query truth is adapter-owned; Discovery only delegates.
-require('Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog' in shop_query, 'Shop Discovery must delegate to adapter-owned Shop catalog query')
-require('products_paginated_filtered( $page, self::PER_PAGE, $filters )' in shop_query, 'full Shop filter state must delegate through one adapter API')
-require('WP_Query' not in shop_query and 'posts_clauses' not in shop_query, 'Shop Discovery must own zero product query SQL')
-require("'posts_per_page'              => $per_page" in woo_shop and 'min( 12, absint( $per_page ) )' in woo_shop, 'adapter filtered path must stay bounded to 12')
-require("'posts_per_page' => -1" not in woo_shop, 'adapter filtered path must never use all-ID scan')
-require('gloskin_price_lookup.max_price >= %f' in woo_shop and 'gloskin_price_lookup.min_price <= %f' in woo_shop, 'variable-product price overlap semantics missing')
-
-# Mini-cart removal stays Woo-native.
-require('remove_from_cart_button gloskin-ui1-cart-sheet__item-remove' in woo, 'mini-cart remove link lost Woo native delegated class')
-require('data-cart_item_key=' in woo, 'mini-cart remove link lost Woo cart item key')
-require("if ( wp_script_is( 'wc-add-to-cart', 'registered' ) )" in assets and "wp_enqueue_script( 'wc-add-to-cart' );" in assets, 'AssetService must enqueue Woo native add-to-cart/remove runtime when registered')
-require("remove_from_cart_button" in js and "removed_from_cart" in js, 'cart pending presentation must remain tied to Woo lifecycle')
-require('wc-ajax=remove_from_cart' not in js and "remove_from_cart'" not in js, 'Gloskin must not create a second cart removal request owner')
-
-# Wishlist count remains the existing localStorage owner.
-# Header V2 (canonical since prototype refresh) has one header row, so one
-# wishlist button with its badge lives in header.php (previously 3 in Header V1).
-require(header.count('data-gloskin-wishlist-count aria-hidden="true"') == 1, 'header wishlist control needs count badge')
-require(header.count('data-gloskin-wishlist-count-sr aria-live="polite"') == 1, 'header wishlist control needs accessible count reflection')
-require("var count = getIds().length;" in js, 'wishlist count must derive from existing getIds owner')
-require("document.querySelectorAll('[data-gloskin-wishlist-count]')" in js, 'wishlist visual count reflection missing')
-require("document.querySelectorAll('[data-gloskin-wishlist-count-sr]')" in js, 'wishlist accessible count reflection missing')
-require("localStorage.setItem(STORAGE_KEY" in js and js.count("var STORAGE_KEY = 'gloskin_wishlist'") == 1, 'wishlist must keep one localStorage owner')
-require('badge.hidden = count < 1;' in js, 'updateBadges() must hide the wishlist badge at count 0')
-require('[data-gloskin-wishlist-count][hidden]{display:none}' in css, 'wishlist-specific hidden-badge CSS rule missing')
-require('!important' not in css.split('[data-gloskin-wishlist-count][hidden]')[1][:40], 'wishlist hidden-badge rule must not use !important')
-require(css.count('[data-gloskin-wishlist-count][hidden]') == 1, 'wishlist hidden-badge rule must not duplicate/generalize to Cart badge')
-
-# Historical compatibility fallback remains only in canonical Woo adapter.
-require('private function products_paginated_unfiltered(' in woo, 'products_paginated() must keep a dedicated unfiltered-branch owner')
-require("'post_type'      => 'product'" in woo and "'fields'         => 'ids'" in woo, 'unfiltered branch must resolve IDs via get_posts()')
-require('wc_get_product( $id )' in woo, 'unfiltered branch must hydrate each page slice with the existing single-product Woo lookup')
-require("return $this->products_paginated_unfiltered( $page, $per_page );" in woo, 'products_paginated() must delegate empty-category case to safe owner')
-
-require("'sanitize_callback' => 'sanitize_title'" not in template_service, "the /shop/catalog 'category' arg must never register sanitize_title() bare as a sanitize_callback again")
-
-header_version = re.search(r'\* Version:\s*([0-9.]+)', plugin).group(1)
-kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == '0.7.142', 'production version must be synchronized at 0.7.142')
-
+js=read('plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js'); shop_js=read('plugin/gloskin-site-core/assets/js/gloskin-ui1-shop-discovery.js'); shop_template=read('plugin/gloskin-site-core/templates/pages/shop.php'); css=read('plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css'); header=read('plugin/gloskin-site-core/templates/parts/header.php'); template_service=read('plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php'); woo=read('plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php'); woo_shop=read('plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter-shop-catalog.php'); shop_query=read('plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-query-trait.php'); assets=read('plugin/gloskin-site-core/includes/class-gloskin-site-core-asset-service.php'); plugin=read('plugin/gloskin-site-core/gloskin-site-core.php'); kernel=read('plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php')
+require("function publicRestGetOptions()" in js,'shared public REST GET transport helper missing')
+require("return { method: 'GET', credentials: 'same-origin' };" in js,'public GET helper must stay read-only/same-origin')
+require('X-WP-Nonce' not in js and 'restNonce' not in js,'public GET client must not send/read REST nonce')
+require("wp_create_nonce( 'wp_rest' )" not in header and 'restNonce' not in header,'header must not localize an unused public REST nonce')
+require(js.count('publicRestGetOptions()')==5,'core public GET helper declaration/call sites changed unexpectedly')
+for endpoint in ('search?q=','products/quick-add?id=','products/resolve?ids='): require(endpoint in js,f'public projection endpoint missing: {endpoint}')
+require("shop/catalog?" in shop_js,'active Shop catalog projection endpoint missing')
+require("window.fetch(config.addToCartAjaxUrl, { method: 'POST', credentials: 'same-origin', body: formData })" in js,'Woo add-to-cart mutation POST must remain untouched')
+for route in ("'/search'","'/shop/catalog'","'/products/resolve'","'/products/quick-add'"):
+    owner=template_service if route in ("'/search'","'/shop/catalog'") else woo; pos=owner.find(route); require(pos>=0,f'route missing: {route}'); block=owner[pos:pos+900]; require("'methods'             => 'GET'" in block,f'{route} must remain GET-only'); require("'permission_callback' => '__return_true'" in block,f'{route} must remain public/guest-readable')
+require('data-gloskin-shop-catalog-owner' in shop_template,'canonical Shop owner marker missing')
+require(re.search(r'\sdata-gloskin-shop-catalog(?:\s|>)',shop_template) is None,'legacy core Shop marker must be inactive')
+for invariant in ('var requestSequence = 0','new window.AbortController()','sequence !== requestSequence',"results.setAttribute('aria-busy', busy ? 'true' : 'false')",'showCatalogFailure(fallbackHref)',"document.dispatchEvent(new CustomEvent('gloskin:catalog-updated'"): require(invariant in shop_js,f'active Shop invariant missing: {invariant}')
+for field in ("category: String(state.category || '')","q: String(state.q || '')","min_price: String(state.min_price || '')","max_price: String(state.max_price || '')"): require(field in shop_js,f'canonical Shop state field missing: {field}')
+require(shop_js.count('function requestCatalog(')==1,'active Shop must have one request owner'); require(shop_js.count('return window.fetch(')==1,'active Shop must have one logical fetch path'); require(re.search(r'window\.fetch\s*=(?!=)',shop_js) is None,'Shop must not monkeypatch window.fetch'); require(re.search(r'(?:window\.)?history\.(?:pushState|replaceState)\s*=(?!=)',shop_js) is None,'Shop must not monkeypatch History API methods')
+require('Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog' in shop_query,'Shop Discovery must delegate to adapter-owned Shop catalog query'); require('products_paginated_filtered( $page, self::PER_PAGE, $filters )' in shop_query,'full Shop filter state must delegate through one adapter API'); require('WP_Query' not in shop_query and 'posts_clauses' not in shop_query,'Shop Discovery must own zero product query SQL'); require("'posts_per_page'              => $per_page" in woo_shop and 'min( 12, absint( $per_page ) )' in woo_shop,'adapter filtered path must stay bounded to 12'); require("'posts_per_page' => -1" not in woo_shop,'adapter filtered path must never use all-ID scan'); require('gloskin_price_lookup.max_price >= %f' in woo_shop and 'gloskin_price_lookup.min_price <= %f' in woo_shop,'variable-product price overlap semantics missing')
+require('remove_from_cart_button gloskin-ui1-cart-sheet__item-remove' in woo,'mini-cart remove link lost Woo native delegated class'); require('data-cart_item_key=' in woo,'mini-cart remove link lost Woo cart item key'); require("if ( wp_script_is( 'wc-add-to-cart', 'registered' ) )" in assets and "wp_enqueue_script( 'wc-add-to-cart' );" in assets,'AssetService must enqueue Woo native add-to-cart/remove runtime when registered'); require("remove_from_cart_button" in js and "removed_from_cart" in js,'cart pending presentation must remain tied to Woo lifecycle'); require('wc-ajax=remove_from_cart' not in js and "remove_from_cart'" not in js,'Gloskin must not create a second cart removal request owner')
+require(header.count('data-gloskin-wishlist-count aria-hidden="true"')==1,'header wishlist control needs count badge'); require(header.count('data-gloskin-wishlist-count-sr aria-live="polite"')==1,'header wishlist control needs accessible count reflection'); require("var count = getIds().length;" in js,'wishlist count must derive from existing getIds owner'); require("document.querySelectorAll('[data-gloskin-wishlist-count]')" in js,'wishlist visual count reflection missing'); require("document.querySelectorAll('[data-gloskin-wishlist-count-sr]')" in js,'wishlist accessible count reflection missing'); require("localStorage.setItem(STORAGE_KEY" in js and js.count("var STORAGE_KEY = 'gloskin_wishlist'")==1,'wishlist must keep one localStorage owner'); require('badge.hidden = count < 1;' in js,'updateBadges() must hide the wishlist badge at count 0'); require('[data-gloskin-wishlist-count][hidden]{display:none}' in css,'wishlist-specific hidden-badge CSS rule missing'); require('!important' not in css.split('[data-gloskin-wishlist-count][hidden]')[1][:40],'wishlist hidden-badge rule must not use !important'); require(css.count('[data-gloskin-wishlist-count][hidden]')==1,'wishlist hidden-badge rule must not duplicate/generalize to Cart badge')
+require('private function products_paginated_unfiltered(' in woo,'products_paginated() must keep a dedicated unfiltered-branch owner'); require("'post_type'      => 'product'" in woo and "'fields'         => 'ids'" in woo,'unfiltered branch must resolve IDs via get_posts()'); require('wc_get_product( $id )' in woo,'unfiltered branch must hydrate each page slice with the existing single-product Woo lookup'); require("return $this->products_paginated_unfiltered( $page, $per_page );" in woo,'products_paginated() must delegate empty-category case to safe owner'); require("'sanitize_callback' => 'sanitize_title'" not in template_service,"the /shop/catalog 'category' arg must never register sanitize_title() bare as a sanitize_callback again")
+header_version=re.search(r'\* Version:\s*([0-9.]+)',plugin).group(1); kernel_version=re.search(r"const VERSION = '([^']+)'",kernel).group(1); require(header_version==kernel_version=='0.7.143','production version must be synchronized at 0.7.143')
 print('storefront regression contract: OK')
