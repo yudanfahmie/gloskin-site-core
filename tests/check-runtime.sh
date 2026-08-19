@@ -77,6 +77,9 @@ php tests/final-migration-preflight-reset-contract.php
 php tests/final-migration-error-contract.php
 php tests/final-closure-contract.php
 php tests/final-hardening-contract.php
+php tests/final-preflight-safety-contract.php
+php tests/final-migration-partial-roster-resume.php
+php tests/final-migration-render-fixture.php
 php tests/managed-record-ordering-contract.php
 php tests/description-consolidation-contract.php
 php tests/hero-video-contract.php
@@ -109,7 +112,21 @@ GL_TEST_ADMIN=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php
 GL_TEST_WOO=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
 GL_TEST_WOO_LATE=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
 
-if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/null 2>&1; then
+# Browser suites use Playwright-managed Chromium. A system `chromium` binary is
+# not required; the executable_path must exist and launchable by Playwright.
+if python - <<'PY'
+try:
+    from pathlib import Path
+    from playwright.sync_api import sync_playwright
+    pw = sync_playwright().start()
+    executable = Path(pw.chromium.executable_path)
+    ok = executable.is_file()
+    pw.stop()
+    raise SystemExit(0 if ok else 1)
+except Exception:
+    raise SystemExit(1)
+PY
+then
   python tests/font-browser-smoke.py
   python tests/browser-smoke.py
   python tests/zero-placeholder-browser-smoke.py
@@ -133,7 +150,7 @@ if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/nu
   python tests/cart-block-mobile-regression.py
   python tests/checkout-block-presentation-regression.py
 else
-  echo "browser smoke skipped: Chromium/Playwright unavailable"
+  echo "browser smoke skipped: Playwright-managed Chromium unavailable"
 fi
 
 # Immutability contract: the full test run must leave the working tree clean.
