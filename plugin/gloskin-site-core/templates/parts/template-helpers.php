@@ -678,6 +678,37 @@ if ( ! function_exists( 'gloskin_ui1_render_managed_promo_carousel' ) ) {
 							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M7 4L13 10L7 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
 						</button>
 					</div>
+					<?php
+					/* Thumbnail/poster selector strip — rendered when at least one record
+					 * has a Featured Image. Selecting a thumbnail activates the exact slide.
+					 * Synced by initPromoCarousel() JS; keyboard accessible via role=tab.
+					 */
+					$promos_with_images = array_filter( $promos, static function ( $p ) { return absint( $p['image_id'] ) > 0; } );
+					if ( count( $promos_with_images ) > 0 ) :
+					?>
+					<div class="gloskin-ui1-promo-carousel__thumbs" role="tablist" aria-label="<?php echo esc_attr__( 'Pilih poster promo', 'gloskin-site-core' ); ?>">
+						<?php foreach ( $promos as $thumb_index => $thumb_promo ) :
+							$thumb_img_id = absint( $thumb_promo['image_id'] );
+							$thumb_title  = (string) $thumb_promo['title'];
+						?>
+						<button
+							type="button"
+							class="gloskin-ui1-promo-carousel__thumb<?php echo 0 === $thumb_index ? ' is-active' : ''; ?>"
+							role="tab"
+							data-gloskin-promo-thumb="<?php echo esc_attr( (string) $thumb_index ); ?>"
+							aria-selected="<?php echo 0 === $thumb_index ? 'true' : 'false'; ?>"
+							tabindex="<?php echo 0 === $thumb_index ? '0' : '-1'; ?>"
+							aria-label="<?php echo esc_attr( sprintf( /* translators: %1$d: poster number; %2$s: promo title. */ __( 'Poster %1$d: %2$s', 'gloskin-site-core' ), $thumb_index + 1, $thumb_title ) ); ?>"
+						>
+							<?php if ( $thumb_img_id ) : ?>
+								<?php echo wp_get_attachment_image( $thumb_img_id, array( 80, 60 ), false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-promo-carousel__thumb-img', 'alt' => '' ) ); ?>
+							<?php else : ?>
+								<span class="gloskin-ui1-promo-carousel__thumb-num" aria-hidden="true"><?php echo esc_html( (string) ( $thumb_index + 1 ) ); ?></span>
+							<?php endif; ?>
+						</button>
+						<?php endforeach; ?>
+					</div>
+					<?php endif; ?>
 				<?php endif; ?>
 			</div>
 		</section>

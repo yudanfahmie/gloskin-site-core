@@ -10,7 +10,7 @@ Asserts:
   4. PHP CTA href uses /treatments/?path=<id>#consultation pattern.
   5. No Unsplash runtime URLs remain in gloskin_ui1_editorial_media_catalog().
   6. No images.unsplash.com URLs remain in template helpers.
-  7. Plugin / Kernel version synchronized at 0.7.137.
+  7. Plugin / Kernel version synchronized at 0.7.138.
 """
 
 import re, sys, os
@@ -59,12 +59,12 @@ require(
 require('https://images.unsplash.com' not in helpers, 'No https://images.unsplash.com runtime URLs allowed in template-helpers.php')
 
 # 7. Version sync
-require("Version: 0.7.137" in plugin_h, "plugin header must be 0.7.137")
-require("const VERSION = '0.7.137';" in kernel, "Kernel VERSION must be 0.7.137")
+require("Version: 0.7.138" in plugin_h, "plugin header must be 0.7.138")
+require("const VERSION = '0.7.138';" in kernel, "Kernel VERSION must be 0.7.138")
 
 if failures:
     for f in failures:
         print('FAIL:', f)
     sys.exit(1)
 
-print('treatment-band-consultation-contract.py: OK (0.7.137)')
+print('treatment-band-consultation-contract.py: OK (0.7.138)')

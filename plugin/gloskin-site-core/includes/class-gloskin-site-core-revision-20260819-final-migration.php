@@ -84,18 +84,19 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 		$state    = get_option( self::STATE_OPTION, array() );
 		$state    = is_array( $state ) ? $state : array();
 		$defaults = array(
-			'revision'          => self::REVISION,
-			'status'            => 'pending',
-			'next_step_index'   => 0,
-			'processed_steps'   => 0,
-			'total_steps'       => count( $this->steps() ),
-			'current_step'      => 'Siap dijalankan',
-			'last_error'        => '',
-			'doctor_matches'    => array(),
-			'doctor_audit'      => array(),
-			'demo_audit'        => array(),
-			'commerce_snapshot' => array(),
-			'updated_at'        => 0,
+			'revision'            => self::REVISION,
+			'status'              => 'pending',
+			'next_step_index'     => 0,
+			'processed_steps'     => 0,
+			'total_steps'         => count( $this->steps() ),
+			'current_step'        => 'Siap dijalankan',
+			'last_error'          => '',
+			'doctor_matches'      => array(),
+			'doctor_audit'        => array(),
+			'demo_audit'          => array(),
+			'commerce_snapshot'   => array(),
+			'doctor_all_snapshot' => array(), /* doctor_id => thumbnail_id snapshot before any mutation */
+			'updated_at'          => 0,
 		);
 		$state = array_merge( $defaults, $state );
 		if ( self::REVISION !== (string) $state['revision'] ) {
@@ -180,7 +181,9 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 
 			switch ( $steps[ $index ]['key'] ) {
 				case 'preflight':
-					$state['doctor_matches']    = $this->run_preflight();
+					$preflight_result           = $this->run_preflight();
+					$state['doctor_matches']    = $preflight_result['matches'];
+					$state['doctor_all_snapshot'] = $preflight_result['all_snapshot'];
 					$state['commerce_snapshot'] = $this->commerce_page_snapshot();
 					break;
 				case 'managed_content':
@@ -237,8 +240,10 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 
 	/**
 	 * Preflight: load manifest, precompute doctor matches, verify assets.
+	 * Also snapshots every canonical doctor's current thumbnail ID so that
+	 * run_verify() can assert non-target doctors are untouched.
 	 *
-	 * @return array<string,array<string,mixed>>
+	 * @return array{matches:array<string,array<string,mixed>>,all_snapshot:array<int,int>}
 	 * @throws RuntimeException On any preflight failure.
 	 */
 	private function run_preflight() {
@@ -322,7 +327,26 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 			);
 		}
 
-		return $matches;
+		/*
+		 * Snapshot ALL canonical doctor thumbnail IDs before any mutation.
+		 * Stored as doctor_id => current_thumbnail_id (0 if none).
+		 * run_verify() uses this to assert non-target doctors are untouched.
+		 */
+		$all_doctor_posts = get_posts( array(
+			'post_type'      => Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE,
+			'post_status'    => array( 'publish', 'draft', 'pending', 'private' ),
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+		) );
+		$all_snapshot = array();
+		foreach ( $all_doctor_posts as $did ) {
+			$all_snapshot[ absint( $did ) ] = absint( get_post_thumbnail_id( $did ) );
+		}
+
+		return array(
+			'matches'      => $matches,
+			'all_snapshot' => $all_snapshot,
+		);
 	}
 
 	/**
@@ -866,6 +890,29 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 					throw new RuntimeException(
 						'Verify: SHA-256 attachment #' . $expected_att . ' untuk dokter ' . $match['doctor_title']
 						. ' tidak cocok dengan manifest. expected=' . $match['sha256'] . ' stored=' . $stored_sha
+					);
+				}
+			}
+		}
+
+		/* Non-target doctor preservation: every doctor NOT in the target set
+		 * must retain the exact thumbnail_id captured at preflight. */
+		$all_snapshot = isset( $state['doctor_all_snapshot'] ) ? (array) $state['doctor_all_snapshot'] : array();
+		if ( ! empty( $all_snapshot ) ) {
+			$target_doctor_ids = array();
+			foreach ( $matches as $match ) {
+				$target_doctor_ids[] = absint( $match['doctor_id'] );
+			}
+			foreach ( $all_snapshot as $snap_doctor_id => $snap_thumb_id ) {
+				$snap_doctor_id = absint( $snap_doctor_id );
+				if ( in_array( $snap_doctor_id, $target_doctor_ids, true ) ) {
+					continue; /* target doctors are verified by the per-doctor loop above */
+				}
+				$current_thumb = absint( get_post_thumbnail_id( $snap_doctor_id ) );
+				if ( $current_thumb !== absint( $snap_thumb_id ) ) {
+					throw new RuntimeException(
+						'Verify: thumbnail dokter non-target #' . $snap_doctor_id
+						. ' berubah selama migrasi. before=' . $snap_thumb_id . ' after=' . $current_thumb
 					);
 				}
 			}

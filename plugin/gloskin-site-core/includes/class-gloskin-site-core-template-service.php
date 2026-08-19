@@ -112,11 +112,9 @@ final class Gloskin_Site_Core_Template_Service {
 			$context = $this->build_context( $view );
 		}
 
-		$context['view']           = $view;
-		$context['navigation']     = $this->navigation->tree();
-		$context['design_variant'] = $this->design_variant();
-		$context['header_variant'] = $this->header_variant();
-		$context['clinic_links']   = $this->static_clinic_links();
+		$context['view']         = $view;
+		$context['navigation']   = $this->navigation->tree();
+		$context['clinic_links'] = $this->static_clinic_links();
 		$context['site_name']      = 'Gloskin';
 		$context['commerce']       = $this->commerce_header_context();
 		$context['logo_url']       = $this->image_url( 'gloskin-logotext.svg' );
@@ -606,12 +604,54 @@ final class Gloskin_Site_Core_Template_Service {
 
 	/** @return array<string,mixed> */
 	private function skincare_context() {
-		$page = $this->content_page( 'skincare' );
+		$page     = $this->content_page( 'skincare' );
+		$mappings = $this->skincare_mappings();
+
+		/*
+		 * Fetch products per Woo category; deduplicate by product ID; accumulate
+		 * space-separated category slugs for client-side chip filtering.
+		 * No second catalog owner: woocommerce adapter remains the sole query source.
+		 */
+		$product_map = array(); // product_id => product array with 'category_slugs' key
+		foreach ( $mappings as $mapping ) {
+			if ( ! $mapping['category_exists'] ) {
+				continue;
+			}
+			$cat_products = $this->woocommerce->products_for_category( $mapping['woo_slug'] );
+			foreach ( $cat_products as $product ) {
+				$pid = absint( $product['id'] );
+				if ( isset( $product_map[ $pid ] ) ) {
+					$existing = explode( ' ', (string) $product_map[ $pid ]['category_slugs'] );
+					if ( ! in_array( $mapping['slug'], $existing, true ) ) {
+						$existing[] = $mapping['slug'];
+						$product_map[ $pid ]['category_slugs'] = implode( ' ', array_filter( $existing ) );
+					}
+				} else {
+					$product['category_slugs'] = $mapping['slug'];
+					$product_map[ $pid ]       = $product;
+				}
+			}
+		}
+
+		$products = array_values( $product_map );
+
+		/*
+		 * No-JS/no-category-match fallback: show all products without category
+		 * tagging so the page is always useful even without classified products.
+		 */
+		if ( empty( $products ) && $this->woocommerce->available() ) {
+			$products = $this->woocommerce->products( 8 );
+			foreach ( $products as &$p ) {
+				$p['category_slugs'] = '';
+			}
+			unset( $p );
+		}
+
 		return array(
-			'page' => $page,
-			'hero' => $this->hero_context( $page, __( 'Skincare', 'gloskin-site-core' ), __( 'Jelajahi kategori skincare Gloskin untuk perawatan harian.', 'gloskin-site-core' ) ),
-			'mappings' => $this->skincare_mappings(),
-			'products' => $this->woocommerce->products( 8 ),
+			'page'      => $page,
+			'hero'      => $this->hero_context( $page, __( 'Skincare', 'gloskin-site-core' ), __( 'Jelajahi produk skincare Gloskin — pilih kategori untuk mempersempit pilihan.', 'gloskin-site-core' ) ),
+			'mappings'  => $mappings,
+			'products'  => $products,
 			'woo_ready' => $this->woocommerce->available(),
 		);
 	}
@@ -1256,20 +1296,6 @@ final class Gloskin_Site_Core_Template_Service {
 			$links[] = array( 'label' => $label, 'url' => home_url( '/clinics/' . $slug . '/' ) );
 		}
 		return $links;
-	}
-
-	/** @return string */
-	private function design_variant() {
-		$settings = get_option( Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION, array() );
-		$value = isset( $settings['design_variant'] ) ? sanitize_key( $settings['design_variant'] ) : 'medical';
-		return in_array( $value, array( 'medical', 'modern', 'luxury' ), true ) ? $value : 'medical';
-	}
-
-	/** @return string */
-	private function header_variant() {
-		$settings = get_option( Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION, array() );
-		$value = isset( $settings['header_variant'] ) ? sanitize_key( $settings['header_variant'] ) : 'header-1';
-		return in_array( $value, array( 'header-1', 'header-2' ), true ) ? $value : 'header-1';
 	}
 
 	/**

@@ -117,13 +117,11 @@ final class Gloskin_Site_Core_Admin_Service {
 	 * Single source of truth for this one settings option's shape/defaults,
 	 * reused by both the registration default and every read fallback below.
 	 *
-	 * @return array{design_variant:string,form_shortcode:string,header_variant:string,hero_video_media_id:int}
+	 * @return array{form_shortcode:string,hero_video_media_id:int}
 	 */
 	public static function settings_defaults() {
 		return array(
-			'design_variant' => 'medical',
 			'form_shortcode' => '',
-			'header_variant' => 'header-1',
 			/* Home video-only mode's native background video:
 			 * a WordPress Media Library attachment ID, resolved by
 			 * Template_Service::hero_background_video(). Unset (0) is the
@@ -198,16 +196,8 @@ final class Gloskin_Site_Core_Admin_Service {
 
 	public function sanitize_settings( $value ) {
 		$value = is_array( $value ) ? $value : array();
-		$variant = isset( $value['design_variant'] ) ? sanitize_key( $value['design_variant'] ) : 'medical';
-		$header_variant = isset( $value['header_variant'] ) ? sanitize_key( $value['header_variant'] ) : 'header-1';
 		return array(
-			'design_variant' => in_array( $variant, array( 'medical', 'modern', 'luxury' ), true ) ? $variant : 'medical',
 			'form_shortcode' => isset( $value['form_shortcode'] ) ? sanitize_text_field( $value['form_shortcode'] ) : '',
-			/* Strict allowlist, same shape as design_variant above: anything
-			 * outside the two known header layouts (including a missing/
-			 * tampered value) always falls back to the default production
-			 * header, never a partial/unknown composition. */
-			'header_variant' => in_array( $header_variant, array( 'header-1', 'header-2' ), true ) ? $header_variant : 'header-1',
 			/* Plain attachment ID only; Template_Service::hero_background_video()
 			 * re-resolves and mime-checks it at render time, so an ID that no
 			 * longer points at an MP4/WebM safely yields a white Home hero. */
@@ -230,64 +220,15 @@ final class Gloskin_Site_Core_Admin_Service {
 		}
 	}
 
-	/**
-	 * @return array{header-1:string,header-2:string} Preview image URLs, keyed by variant.
-	 */
-	private function header_variant_previews() {
-		if ( '' === $this->plugin_file ) { return array( 'header-1' => '', 'header-2' => '' ); }
-		return array(
-			'header-1' => plugins_url( 'assets/admin/header-type-1.png', $this->plugin_file ),
-			'header-2' => plugins_url( 'assets/admin/header-type-2.png', $this->plugin_file ),
-		);
-	}
-
-	/**
-	 * One radio-selectable preview card for a Header Type. A real <input
-	 * type="radio"> stays the sole canonical control; the surrounding
-	 * <label> lets the whole card (including the decorative preview image)
-	 * activate it without any JS. The image itself carries alt="" -- the
-	 * adjacent title/description text is the accessible description, so the
-	 * image stays presentation-only rather than a duplicate announcement.
-	 *
-	 * @param string $value Option value (header-1|header-2).
-	 * @param string $current Currently-saved header_variant value.
-	 * @param string $title Card title.
-	 * @param string $description Card description.
-	 * @param string $preview_url Preview PNG URL.
-	 * @param int    $preview_width Preview PNG intrinsic width (avoids layout shift).
-	 * @param int    $preview_height Preview PNG intrinsic height (avoids layout shift).
-	 * @return void
-	 */
-	private function render_header_variant_card( $value, $current, $title, $description, $preview_url, $preview_width, $preview_height ) {
-		$field_id = 'gloskin-header-variant-' . $value;
-		?>
-		<label class="gloskin-admin-header-card<?php echo $current === $value ? ' is-selected' : ''; ?>" for="<?php echo esc_attr( $field_id ); ?>">
-			<input class="gloskin-admin-header-card__radio" type="radio" id="<?php echo esc_attr( $field_id ); ?>" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[header_variant]" value="<?php echo esc_attr( $value ); ?>" <?php checked( $current, $value ); ?> />
-			<?php if ( '' !== $preview_url ) : ?><span class="gloskin-admin-header-card__preview"><img src="<?php echo esc_url( $preview_url ); ?>" alt="" loading="lazy" width="<?php echo esc_attr( (string) $preview_width ); ?>" height="<?php echo esc_attr( (string) $preview_height ); ?>" /></span><?php endif; ?>
-			<span class="gloskin-admin-header-card__body">
-				<strong class="gloskin-admin-header-card__title"><?php echo esc_html( $title ); ?></strong>
-				<span class="gloskin-admin-header-card__desc"><?php echo esc_html( $description ); ?></span>
-			</span>
-		</label>
-		<?php
-	}
-
 	public function render_settings_page() {
 		if ( ! current_user_can( 'manage_options' ) ) { return; }
 		/* get_option()'s own $default is only ever used when the option row
-		 * is entirely absent -- an existing site's already-saved option
-		 * (design_variant/header_variant saved by earlier tasks, here
-		 * genuinely missing the two new hero_video_* keys) returns exactly
-		 * its stored shape, silently ignoring self::settings_defaults()
-		 * below. Missing keys are merged against those defaults explicitly
-		 * so an existing site's Settings screen reflects the real
-		 * recommended defaults (enabled=true, the supplied URL) instead of
-		 * an unintentional blank/unchecked state -- proven live on staging. */
+		 * is entirely absent. Missing keys are merged against those defaults
+		 * explicitly so the Settings screen reflects the real recommended
+		 * defaults rather than an unintentional blank/unchecked state. */
 		$defaults          = self::settings_defaults();
 		$settings          = array_merge( $defaults, get_option( self::SETTINGS_OPTION, $defaults ) );
-		$variant           = isset( $settings['design_variant'] ) ? $settings['design_variant'] : 'medical';
 		$shortcode         = isset( $settings['form_shortcode'] ) ? $settings['form_shortcode'] : '';
-		$header_variant    = isset( $settings['header_variant'] ) ? $settings['header_variant'] : 'header-1';
 		$hero_video_media_id = isset( $settings['hero_video_media_id'] ) ? absint( $settings['hero_video_media_id'] ) : 0;
 		$hero_video_filename = '';
 		$hero_video_warning  = '';
@@ -301,7 +242,6 @@ final class Gloskin_Site_Core_Admin_Service {
 				$hero_video_warning = __( 'Attachment video tidak dapat ditemukan. Home akan tetap menggunakan latar putih.', 'gloskin-site-core' );
 			}
 		}
-		$previews          = $this->header_variant_previews();
 		$tabs              = array(
 			'brand'   => __( 'Brand', 'gloskin-site-core' ),
 			'header'  => __( 'Header', 'gloskin-site-core' ),
@@ -329,16 +269,12 @@ final class Gloskin_Site_Core_Admin_Service {
 						<section class="gloskin-admin-card" id="gloskin-admin-panel-brand" role="tabpanel" aria-labelledby="gloskin-admin-tab-brand" data-gloskin-admin-panel="brand">
 							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Design direction', 'gloskin-site-core' ); ?></h2>
 							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Arah palet dan tone visual global Gloskin.', 'gloskin-site-core' ); ?></p>
-							<div class="notice notice-info inline"><p><?php echo esc_html__( 'Design direction is now fixed to Medical Professional and is no longer editor-selectable. Contact the developer to change the visual direction.', 'gloskin-site-core' ); ?></p></div>
-							<?php /* design_variant hidden: keep field name for settings sanitization contract */ ?>
-							<input type="hidden" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[design_variant]" value="<?php echo esc_attr( $variant ); ?>" />
+							<div class="notice notice-info inline"><p><?php echo esc_html__( 'Design direction is fixed to Medical Professional and managed by the developer. No editor setting is available.', 'gloskin-site-core' ); ?></p></div>
 						</section>
 						<section class="gloskin-admin-card" id="gloskin-admin-panel-header" role="tabpanel" aria-labelledby="gloskin-admin-tab-header" data-gloskin-admin-panel="header">
 							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Header layout', 'gloskin-site-core' ); ?></h2>
-							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Komposisi header saat ini ditetapkan dan tidak dapat diubah melalui admin. Hubungi developer untuk mengubah header variant.', 'gloskin-site-core' ); ?></p>
-							<div class="notice notice-info inline"><p><?php echo esc_html__( 'Header layout selection has been retired. The active layout is fixed and managed by the developer.', 'gloskin-site-core' ); ?></p></div>
-							<?php /* header_variant hidden: keep field name for settings sanitization contract */ ?>
-							<input type="hidden" name="<?php echo esc_attr( self::SETTINGS_OPTION ); ?>[header_variant]" value="<?php echo esc_attr( $header_variant ); ?>" />
+							<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Komposisi header ditetapkan oleh developer. Tidak ada pengaturan yang tersedia di sini.', 'gloskin-site-core' ); ?></p>
+							<div class="notice notice-info inline"><p><?php echo esc_html__( 'Header layout is fixed and managed by the developer. No editor setting is available.', 'gloskin-site-core' ); ?></p></div>
 						</section>
 						<section class="gloskin-admin-card" id="gloskin-admin-panel-hero" role="tabpanel" aria-labelledby="gloskin-admin-tab-hero" data-gloskin-admin-panel="hero">
 							<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Home hero video', 'gloskin-site-core' ); ?></h2>

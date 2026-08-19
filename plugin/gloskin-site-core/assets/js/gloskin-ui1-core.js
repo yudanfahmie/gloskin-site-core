@@ -2525,9 +2525,55 @@
 	}
 
 	/**
+	 * Skincare product chip filter.
+	 * Filters [data-gloskin-product-card] elements by their data-category-slugs attribute
+	 * using chip buttons from [data-gloskin-chip-filter].
+	 * No-JS: all products visible; chip "" (Semua) shows all.
+	 */
+	function initSkincareChips() {
+		var bar = document.querySelector('[data-gloskin-chip-filter]');
+		if (!bar) { return; }
+		var chips = bar.querySelectorAll('[data-gloskin-chip]');
+		var grid = document.querySelector('[data-gloskin-product-grid]');
+		if (!grid || !chips.length) { return; }
+		var cards = grid.querySelectorAll('[data-gloskin-product-card]');
+
+		function activateChip(chip) {
+			var slug = chip.getAttribute('data-gloskin-chip') || '';
+			for (var i = 0; i < chips.length; i++) {
+				var isActive = chips[i] === chip;
+				chips[i].setAttribute('aria-selected', isActive ? 'true' : 'false');
+				chips[i].setAttribute('tabindex', isActive ? '0' : '-1');
+				if (isActive) { chips[i].classList.add('is-active'); }
+				else { chips[i].classList.remove('is-active'); }
+			}
+			for (var j = 0; j < cards.length; j++) {
+				if ('' === slug) {
+					cards[j].hidden = false;
+				} else {
+					var catSlugs = (cards[j].getAttribute('data-category-slugs') || '').split(' ');
+					cards[j].hidden = catSlugs.indexOf(slug) === -1;
+				}
+			}
+		}
+
+		for (var ci = 0; ci < chips.length; ci++) {
+			(function (chip) {
+				chip.addEventListener('click', function () { activateChip(chip); });
+				chip.addEventListener('keydown', function (e) {
+					if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activateChip(chip); }
+				});
+			}(chips[ci]));
+		}
+		/* Initial state: first chip ("Semua") is already marked active in PHP; show all. */
+		for (var k = 0; k < cards.length; k++) { cards[k].hidden = false; }
+	}
+
+	/**
 	 * Promo carousel controller.
-	 * Activates prev/next buttons and dot indicators on [data-gloskin-promo-carousel].
-	 * No autoplay. Keyboard-accessible. Reduced-motion: instant transitions.
+	 * Activates prev/next buttons, dot indicators, and poster thumbnail selectors
+	 * on [data-gloskin-promo-carousel]. No autoplay. Keyboard-accessible.
+	 * Reduced-motion: instant transitions.
 	 */
 	function initPromoCarousel() {
 		var carousels = document.querySelectorAll('[data-gloskin-promo-carousel]');
@@ -2535,6 +2581,7 @@
 			(function (root) {
 				var slides = root.querySelectorAll('[data-gloskin-promo-slide]');
 				var dots   = root.querySelectorAll('[data-gloskin-promo-dot]');
+				var thumbs = root.querySelectorAll('[data-gloskin-promo-thumb]');
 				var prev   = root.querySelector('[data-gloskin-promo-prev]');
 				var next   = root.querySelector('[data-gloskin-promo-next]');
 				if (!slides.length) { return; }
@@ -2555,6 +2602,13 @@
 						if (dotActive) { dots[j].classList.add('is-active'); }
 						else { dots[j].classList.remove('is-active'); }
 					}
+					for (var t = 0; t < thumbs.length; t++) {
+						var thumbActive = t === index;
+						thumbs[t].setAttribute('aria-selected', thumbActive ? 'true' : 'false');
+						thumbs[t].setAttribute('tabindex', thumbActive ? '0' : '-1');
+						if (thumbActive) { thumbs[t].classList.add('is-active'); }
+						else { thumbs[t].classList.remove('is-active'); }
+					}
 					current = index;
 				}
 
@@ -2567,6 +2621,14 @@
 							if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(idx); }
 						});
 					}(dots[di], di));
+				}
+				for (var ti = 0; ti < thumbs.length; ti++) {
+					(function (thumb, idx) {
+						thumb.addEventListener('click', function () { activate(idx); });
+						thumb.addEventListener('keydown', function (e) {
+							if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(idx); }
+						});
+					}(thumbs[ti], ti));
 				}
 				activate(0);
 			}(carousels[ci]));
@@ -2697,6 +2759,7 @@
 		initPromoCarousel();
 		initTestimonials();
 		initTreatmentBands();
+		initSkincareChips();
 	}
 
 	if (typeof document !== 'undefined') {
@@ -2733,7 +2796,8 @@
 			initHeroBackgroundVideo: initHeroBackgroundVideo,
 			initPromoCarousel: initPromoCarousel,
 			initTestimonials: initTestimonials,
-			initTreatmentBands: initTreatmentBands
+			initTreatmentBands: initTreatmentBands,
+			initSkincareChips: initSkincareChips
 		};
 	}
 }());

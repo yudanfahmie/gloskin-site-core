@@ -51,12 +51,15 @@ for legacy_class in ("gloskin-ui1--medical", "gloskin-ui1--modern", "gloskin-ui1
     require(legacy_class not in shell, f"legacy public design class remains reachable: {legacy_class}")
 require("gloskin-ui1--home" in shell, "Home-specific non-variant state class must remain")
 
-# Legacy keys are intentionally allowed to remain stored/admin-visible during
-# this final hygiene pass; the important invariant is that neither public
-# renderer consumes them. No settings migration is introduced for presentation.
-require("'header_variant'" in admin and "'design_variant'" in admin, "historical setting compatibility unexpectedly removed")
-require("private function header_variant()" in template_service and "private function design_variant()" in template_service,
-        "historical readers may remain for compatibility until a later cleanup")
+# Presentation variant settings are fully retired in v0.7.138:
+# - No private methods in template-service that read design/header variant
+# - No context projection of design_variant / header_variant
+# - No hidden inputs in admin settings UI
+# The important invariant: neither public renderer consumes them.
+require("private function design_variant()" not in template_service, "design_variant() private method must be fully removed from template-service")
+require("private function header_variant()" not in template_service, "header_variant() private method must be fully removed from template-service")
+require("$context['design_variant']" not in template_service, "design_variant must not be projected into context")
+require("$context['header_variant']" not in template_service, "header_variant must not be projected into context")
 require("header_variant" not in header and "design_variant" not in shell,
         "historical settings must terminate before public rendering")
 
@@ -114,8 +117,8 @@ for test_command in (
 
 # Release/cache version must move coherently; migration schema is intentionally
 # unrelated and therefore not asserted/changed here.
-require("Version: 0.7.137" in plugin, "plugin header must be 0.7.137")
-require("const VERSION = '0.7.137';" in kernel, "Kernel VERSION must be 0.7.137")
-require("0.7.135" not in plugin and "0.7.135" not in kernel, "stale active release version remains")
+require("Version: 0.7.138" in plugin, "plugin header must be 0.7.138")
+require("const VERSION = '0.7.138';" in kernel, "Kernel VERSION must be 0.7.138")
+require("0.7.137" not in plugin and "0.7.137" not in kernel, "stale active release version remains")
 
 print("header-admin-contract: OK (canonical prototype header)")

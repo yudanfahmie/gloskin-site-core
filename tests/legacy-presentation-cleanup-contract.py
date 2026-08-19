@@ -5,18 +5,18 @@ Static contract test: retired presentation surfaces and external asset removal.
 
 Asserts:
   1.  design_variant <select> is removed from admin settings brand tab HTML.
-  2.  design_variant string literal is still preserved in admin code (contract compat).
+  2.  design_variant hidden input is removed from admin settings (fully retired).
   3.  header_variant picker cards are removed from admin settings header tab HTML.
-  4.  header_variant string literal is still preserved in admin code (contract compat).
-  5.  private function header_variant() still present in template-service (contract compat).
-  6.  private function design_variant() still present in template-service (contract compat).
+  4.  header_variant hidden input is removed from admin settings (fully retired).
+  5.  private function header_variant() fully removed from template-service.
+  6.  private function design_variant() fully removed from template-service.
   7.  No images.unsplash.com runtime URLs in template-helpers.php.
   8.  gloskin_ui1_render_editorial_media() calls gloskin_ui1_render_presentation_media (no Unsplash).
   9.  gloskin_ui1_editorial_media_catalog() returns empty array (no URLs).
   10. Why Gloskin meta box renders for 'home' page in admin service.
   11. Why Gloskin keys in admin save_schema() page strings.
   12. List-table column hooks for Promo, Testimonial, Achievement CPTs registered.
-  13. Plugin / Kernel version synchronized at 0.7.137.
+  13. Plugin / Kernel version synchronized at 0.7.138.
 """
 
 import re, sys, os
@@ -49,8 +49,15 @@ require(
     'id="gloskin-design-variant" select must be removed from admin UI'
 )
 
-# 2. design_variant string literal preserved for contract compat
-require("'design_variant'" in admin, "String literal 'design_variant' must remain in admin code for contract compat")
+# 2. design_variant hidden input fully removed; settings_defaults() no longer declares it
+require(
+    'design_variant]"' not in admin,
+    'design_variant input name must not appear in admin form (hidden input fully retired)'
+)
+require(
+    "'design_variant' => 'medical'" not in admin,
+    "design_variant must be removed from settings_defaults()"
+)
 
 # 3. header_variant picker cards removed from header tab
 require(
@@ -63,19 +70,26 @@ require(
     'header_variant picker card render calls must be removed from active settings rendering'
 )
 
-# 4. header_variant string literal preserved
-require("'header_variant'" in admin, "String literal 'header_variant' must remain in admin code for contract compat")
-
-# 5. header_variant() method in template-service (contract compat)
+# 4. header_variant hidden input fully removed; settings_defaults() no longer declares it
 require(
-    'function header_variant' in tmpl_svc or 'private function header_variant' in tmpl_svc,
-    'private function header_variant() must still exist in template-service (contract compat)'
+    'header_variant]"' not in admin,
+    'header_variant input name must not appear in admin form (hidden input fully retired)'
+)
+require(
+    "'header_variant' => 'header-1'" not in admin,
+    "header_variant must be removed from settings_defaults()"
 )
 
-# 6. design_variant() method in template-service (contract compat)
+# 5. header_variant() private method fully removed from template-service
 require(
-    'function design_variant' in tmpl_svc or 'private function design_variant' in tmpl_svc,
-    'private function design_variant() must still exist in template-service (contract compat)'
+    'private function header_variant()' not in tmpl_svc and 'function header_variant(' not in tmpl_svc,
+    'private function header_variant() must be fully removed from template-service'
+)
+
+# 6. design_variant() private method fully removed from template-service
+require(
+    'private function design_variant()' not in tmpl_svc and 'function design_variant(' not in tmpl_svc,
+    'private function design_variant() must be fully removed from template-service'
 )
 
 # 7. No Unsplash runtime URLs in helpers (doc comments may mention host in text; check for URL scheme)
@@ -121,12 +135,12 @@ require(
 )
 
 # 13. Version sync
-require("Version: 0.7.137" in plugin_h, "plugin header must be 0.7.137")
-require("const VERSION = '0.7.137';" in kernel, "Kernel VERSION must be 0.7.137")
+require("Version: 0.7.138" in plugin_h, "plugin header must be 0.7.138")
+require("const VERSION = '0.7.138';" in kernel, "Kernel VERSION must be 0.7.138")
 
 if failures:
     for f in failures:
         print('FAIL:', f)
     sys.exit(1)
 
-print('legacy-presentation-cleanup-contract.py: OK (0.7.137)')
+print('legacy-presentation-cleanup-contract.py: OK (0.7.138)')

@@ -19,8 +19,8 @@ declare(strict_types=1);
  *   10. Admin SLUG is distinct from prior revision's slug.
  *   11. Admin POST_ACTION is distinct from prior revision's action.
  *   12. Kernel registers the final migration admin (not the old one).
- *   13. Kernel VERSION = 0.7.137.
- *   14. Plugin header Version = 0.7.137.
+ *   13. Kernel VERSION = 0.7.138.
+ *   14. Plugin header Version = 0.7.138.
  *   15. CONSERVATIVE matching: no fuzzy/Levenshtein/AI in migration class.
  *   16. No WooCommerce data touch: migration does not call wp_delete_post on products.
  *   17. Demo records default to draft on production (environment check present).
@@ -96,10 +96,10 @@ ok( str_contains( $kernel, 'Gloskin_Site_Core_Revision_20260819_Final_Migration_
 ok( ! str_contains( $kernel, 'class-gloskin-site-core-revision-20260819-migration-admin.php' ), 'Kernel must not require the old (non-final) migration admin' );
 
 /* 13. Kernel VERSION */
-ok( (bool) preg_match( "/const VERSION\s*=\s*'0\.7\.137'/", $kernel ), "Kernel VERSION must be 0.7.137" );
+ok( (bool) preg_match( "/const VERSION\s*=\s*'0\.7\.138'/", $kernel ), "Kernel VERSION must be 0.7.138" );
 
 /* 14. Plugin header */
-ok( (bool) preg_match( '/^ \* Version: 0\.7\.137$/m', $plugin_h ), "Plugin header Version must be 0.7.137" );
+ok( (bool) preg_match( '/^ \* Version: 0\.7\.138$/m', $plugin_h ), "Plugin header Version must be 0.7.138" );
 
 /* 15. CONSERVATIVE matching (no fuzzy function calls: levenshtein(), soundex(), similar_text()) */
 ok( ! preg_match( '/\blevenshtein\s*\(/', $migration ) && ! preg_match( '/\bsoundex\s*\(/', $migration ) && ! preg_match( '/\bsimilar_text\s*\(/', $migration ),

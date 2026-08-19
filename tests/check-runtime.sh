@@ -39,6 +39,15 @@ node tests/shop-catalog-controller.test.js
 python tests/storefront-regression-contract.py
 php tests/rest-sanitize-callback-contract.php
 python tests/header-admin-contract.py
+python tests/legacy-presentation-cleanup-contract.py
+python tests/treatment-band-consultation-contract.py
+python tests/promo-date-order-contract.py
+python tests/skincare-filter-contract.py
+python tests/promo-thumbnail-contract.py
+python tests/no-active-variant-context-contract.py
+python tests/single-migration-action-contract.py
+php tests/doctor-snapshot-contract.php
+php tests/final-migration-contract.php
 php tests/description-consolidation-contract.php
 php tests/hero-video-contract.php
 GL_TEST_MODE=success php tests/description-consolidation-bootstrap-contract.php

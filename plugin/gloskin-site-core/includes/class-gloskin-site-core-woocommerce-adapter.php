@@ -353,14 +353,9 @@ final class Gloskin_Site_Core_WooCommerce_Adapter {
 			return $classes;
 		}
 
-		$settings = get_option( Gloskin_Site_Core_Form_Adapter::SETTINGS_OPTION, array() );
-		$variant  = isset( $settings['design_variant'] ) ? sanitize_key( $settings['design_variant'] ) : 'medical';
-		if ( ! in_array( $variant, array( 'medical', 'modern', 'luxury' ), true ) ) {
-			$variant = 'medical';
-		}
-
+		/* Design direction is fixed to Medical Professional; no DB read needed. */
 		$classes[] = 'gloskin-ui1';
-		$classes[] = 'gloskin-ui1--' . $variant;
+		$classes[] = 'gloskin-ui1--medical';
 		return array_values( array_unique( $classes ) );
 	}
 
