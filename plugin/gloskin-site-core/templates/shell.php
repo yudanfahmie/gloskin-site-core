@@ -19,10 +19,10 @@ $gloskin_view_file        = __DIR__ . '/pages/' . $gloskin_view . '.php';
 $gloskin_commerce_native  = ! empty( $gloskin_context['commerce_native'] );
 $gloskin_commerce_render  = isset( $gloskin_context['commerce_render_mode'] ) ? sanitize_key( $gloskin_context['commerce_render_mode'] ) : '';
 
-require __DIR__ . '/parts/template-helpers.php';
-require __DIR__ . '/parts/readiness-helpers.php';
-require __DIR__ . '/parts/composition-helpers.php';
-require __DIR__ . '/parts/product-description-boundary.php';
+require_once __DIR__ . '/parts/template-helpers.php';
+require_once __DIR__ . '/parts/readiness-helpers.php';
+require_once __DIR__ . '/parts/composition-helpers.php';
+require_once __DIR__ . '/parts/product-description-boundary.php';
 /* The approved prototype is now the only public presentation. Historical
  * presentation settings may remain stored for backward compatibility, but the
  * public shell intentionally never reads or projects them into CSS. */
