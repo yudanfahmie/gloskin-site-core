@@ -352,11 +352,11 @@ final class Gloskin_Site_Core_Template_Service {
 		if ( ! post_type_exists( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE ) ) {
 			return array();
 		}
-		/* Fetch a generous pool so we can filter by date and apply explicit order */
+		/* Managed CPT datasets are intentionally small: fetch all eligible published records, then filter/sort/slice. */
 		$posts = get_posts( array(
 			'post_type'      => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE,
 			'post_status'    => 'publish',
-			'posts_per_page' => max( $limit * 4, 40 ),
+			'posts_per_page' => -1,
 			'orderby'        => 'ID',
 			'order'          => 'ASC',
 			'meta_query'     => array(
@@ -371,19 +371,13 @@ final class Gloskin_Site_Core_Template_Service {
 		/* Filter by date eligibility */
 		$now   = function_exists( 'current_datetime' ) ? current_datetime() : new DateTimeImmutable( 'now', wp_timezone() );
 		$posts = array_values( array_filter( $posts, function ( $post ) use ( $now ) {
+			if ( '' !== (string) get_post_meta( $post->ID, '_gloskin_demo_identity', true ) ) { return false; }
 			return $this->is_promo_date_eligible( $post->ID, $now );
 		} ) );
 
 		/* Sort by explicit gloskin_promo_order — blank/zero sorts after explicitly ordered */
 		usort( $posts, function ( $a, $b ) {
-			$ao = (int) get_post_meta( $a->ID, 'gloskin_promo_order', true );
-			$bo = (int) get_post_meta( $b->ID, 'gloskin_promo_order', true );
-			$ah = $ao > 0;
-			$bh = $bo > 0;
-			if ( $ah && ! $bh ) { return -1; }
-			if ( ! $ah && $bh ) { return 1; }
-			if ( $ao !== $bo ) { return $ao <=> $bo; }
-			return strcmp( (string) $a->post_title, (string) $b->post_title );
+			return $this->compare_managed_posts( $a, $b, 'gloskin_promo_order' );
 		} );
 
 		$posts   = array_slice( $posts, 0, $limit );
@@ -480,25 +474,19 @@ final class Gloskin_Site_Core_Template_Service {
 		$posts = get_posts( array(
 			'post_type'      => $post_type,
 			'post_status'    => 'publish',
-			'posts_per_page' => max( $limit * 4, 40 ),
+			'posts_per_page' => -1,
 			'orderby'        => 'ID',
 			'order'          => 'ASC',
 			'meta_query'     => $meta_query,
 		) );
+		$posts = array_values( array_filter( $posts, static function ( $post ) {
+			return '' === (string) get_post_meta( $post->ID, '_gloskin_demo_identity', true );
+		} ) );
 
 		/* Sort by explicit order meta — blank/zero sorts last */
-		if ( '' !== $order_meta_key ) {
-			usort( $posts, function ( $a, $b ) use ( $order_meta_key ) {
-				$ao = (int) get_post_meta( $a->ID, $order_meta_key, true );
-				$bo = (int) get_post_meta( $b->ID, $order_meta_key, true );
-				$ah = $ao > 0;
-				$bh = $bo > 0;
-				if ( $ah && ! $bh ) { return -1; }
-				if ( ! $ah && $bh ) { return 1; }
-				if ( $ao !== $bo ) { return $ao <=> $bo; }
-				return strcmp( (string) $a->post_title, (string) $b->post_title );
-			} );
-		}
+		usort( $posts, function ( $a, $b ) use ( $order_meta_key ) {
+			return $this->compare_managed_posts( $a, $b, $order_meta_key );
+		} );
 
 		$posts   = array_slice( $posts, 0, $limit );
 		$records = array();
@@ -517,6 +505,20 @@ final class Gloskin_Site_Core_Template_Service {
 			);
 		}
 		return $records;
+	}
+
+
+	/** @return int */
+	private function compare_managed_posts( $a, $b, $order_meta_key ) {
+		$ao = '' !== (string) $order_meta_key ? (int) get_post_meta( $a->ID, $order_meta_key, true ) : 0;
+		$bo = '' !== (string) $order_meta_key ? (int) get_post_meta( $b->ID, $order_meta_key, true ) : 0;
+		$ah = $ao > 0;
+		$bh = $bo > 0;
+		if ( $ah && ! $bh ) { return -1; }
+		if ( ! $ah && $bh ) { return 1; }
+		if ( $ao !== $bo ) { return $ao <=> $bo; }
+		$title_cmp = strcmp( (string) $a->post_title, (string) $b->post_title );
+		return 0 !== $title_cmp ? $title_cmp : ( (int) $a->ID <=> (int) $b->ID );
 	}
 
 	/** @return array{paths:array<int,array<string,mixed>>,products:array<int,array<string,mixed>>,disclaimer:string} */

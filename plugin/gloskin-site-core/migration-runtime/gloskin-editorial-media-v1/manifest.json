@@ -13,7 +13,21 @@
       "file": "home_why.jpg",
       "sha256": "e6b999d03074eca1e3b46fe9f6b1688e063df225c39437485626385247f6339b",
       "bytes": 126751,
-      "provenance": "First-party Gloskin website editorial source; bundled locally for this site migration."
+      "provenance": "First-party Gloskin website editorial source; bundled locally for this site migration.",
+      "width": 1280,
+      "height": 1280,
+      "mime": "image/jpeg",
+      "semantic_role": "Home — Why Gloskin",
+      "source_type": "first-party-gloskin",
+      "decorative": false,
+      "alt": "Perawatan Gloskin",
+      "optimization": {
+        "method": "source-retained",
+        "original_bytes": 126751,
+        "optimized_bytes": 126751,
+        "psnr_db": null,
+        "dimensions_preserved": true
+      }
     },
     {
       "key": "home_brand_story",
@@ -24,7 +38,21 @@
       "file": "home_brand_story.jpg",
       "sha256": "b6d9ab6cb9626b9f521d33b838839fca0578b7af5a7f095891aa86f541c8004b",
       "bytes": 159328,
-      "provenance": "First-party Gloskin website editorial source; bundled locally for this site migration."
+      "provenance": "First-party Gloskin website editorial source; bundled locally for this site migration.",
+      "width": 1280,
+      "height": 1280,
+      "mime": "image/jpeg",
+      "semantic_role": "Home — brand story transition",
+      "source_type": "first-party-gloskin",
+      "decorative": false,
+      "alt": "Gloskin",
+      "optimization": {
+        "method": "source-retained",
+        "original_bytes": 159328,
+        "optimized_bytes": 159328,
+        "psnr_db": null,
+        "dimensions_preserved": true
+      }
     },
     {
       "key": "treatment_discovery",
@@ -35,7 +63,21 @@
       "file": "treatment_discovery.png",
       "sha256": "533cf1a278a0d522953b3d6198c70eab7d3e047d46745e42965e81512b97e598",
       "bytes": 455760,
-      "provenance": "First-party Gloskin website editorial source; bundled locally for this site migration."
+      "provenance": "First-party Gloskin website editorial source; bundled locally for this site migration.",
+      "width": 1280,
+      "height": 815,
+      "mime": "image/png",
+      "semantic_role": "Treatment discovery — general",
+      "source_type": "first-party-gloskin",
+      "decorative": false,
+      "alt": "Perawatan di Gloskin",
+      "optimization": {
+        "method": "source-retained",
+        "original_bytes": 455760,
+        "optimized_bytes": 455760,
+        "psnr_db": null,
+        "dimensions_preserved": true
+      }
     },
     {
       "key": "treatment_clinical",
@@ -46,7 +88,21 @@
       "file": "treatment_clinical.png",
       "sha256": "857af105207a467124420cdc172e737d2a411238cb62f012c9631fb81d02611f",
       "bytes": 418909,
-      "provenance": "First-party Gloskin website editorial source; bundled locally for this site migration."
+      "provenance": "First-party Gloskin website editorial source; bundled locally for this site migration.",
+      "width": 1280,
+      "height": 815,
+      "mime": "image/png",
+      "semantic_role": "Treatment discovery — clinical procedure",
+      "source_type": "first-party-gloskin",
+      "decorative": false,
+      "alt": "Prosedur perawatan di Gloskin",
+      "optimization": {
+        "method": "source-retained",
+        "original_bytes": 418909,
+        "optimized_bytes": 418909,
+        "psnr_db": null,
+        "dimensions_preserved": true
+      }
     },
     {
       "key": "skincare_editorial",
@@ -54,10 +110,24 @@
       "role": "Skincare editorial discovery",
       "source_page": "https://gloskin.id/serum",
       "source_asset_url": "https://assets.zyrosite.com/cdn-cgi/image/format%3Dwebp%2Cw%3D1280%2Ch%3D855%2Cfit%3Dcrop/NNlEVZXDhMFiG6pt/serum-f5ZNuylGu6zQrMrr.png",
-      "file": "skincare_editorial.png",
-      "sha256": "33caba72c3ea4b94f66cace3f5ec722a11a6415b568b8b1f112daffe1462f462",
-      "bytes": 735079,
-      "provenance": "First-party Gloskin website editorial source; bundled locally for this site migration."
+      "file": "skincare_editorial.webp",
+      "sha256": "ca991c539b428722286e4ba696df37a667afb8a66acc4cbb0d90dc835eaf0ad5",
+      "bytes": 37548,
+      "provenance": "First-party Gloskin website editorial source; bundled locally for this site migration.",
+      "width": 1169,
+      "height": 826,
+      "mime": "image/webp",
+      "semantic_role": "Skincare editorial discovery",
+      "source_type": "first-party-gloskin",
+      "decorative": false,
+      "alt": "Skincare Gloskin",
+      "optimization": {
+        "method": "webp-q82-psnr40",
+        "original_bytes": 735079,
+        "optimized_bytes": 37548,
+        "psnr_db": 40.84,
+        "dimensions_preserved": true
+      }
     },
     {
       "key": "about_story",
@@ -68,7 +138,22 @@
       "file": "about_story.jpg",
       "sha256": "e91aba0d89f523528cb786e0a43fde96bca8c8f0107a12d7b72e39b50e2df336",
       "bytes": 96430,
-      "provenance": "First-party Gloskin website editorial source; bundled locally for this site migration."
+      "provenance": "First-party Gloskin website editorial source; bundled locally for this site migration.",
+      "width": 1280,
+      "height": 932,
+      "mime": "image/jpeg",
+      "semantic_role": "About / brand story",
+      "source_type": "first-party-gloskin",
+      "decorative": false,
+      "alt": "Gloskin",
+      "optimization": {
+        "method": "source-retained",
+        "original_bytes": 96430,
+        "optimized_bytes": 96430,
+        "psnr_db": null,
+        "dimensions_preserved": true
+      }
     }
-  ]
+  ],
+  "metadata_policy": "first-party-local; dimensions/mime/bytes/provenance/semantic-alt explicit"
 }

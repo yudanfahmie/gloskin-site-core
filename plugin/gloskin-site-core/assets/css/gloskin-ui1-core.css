@@ -1000,3 +1000,9 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.ca
    conflicting declaration. */
 .gloskin-ui1 .woocommerce table.shop_table{border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);border-collapse:separate;overflow:hidden;background:var(--gloskin-bg)}
 .gloskin-ui1 .woocommerce table.shop_table th,.gloskin-ui1 .woocommerce table.shop_table td{padding:13px 14px;border-color:var(--gloskin-border);vertical-align:middle}
+.gloskin-ui1-detail-hero__grid--text-first{grid-template-columns:minmax(0,1fr)}
+
+/* Factual identity cards without factual media intentionally become text-first. */
+.gloskin-ui1-card--text-first .gloskin-ui1-card__body{padding-top:clamp(20px,3vw,30px)}
+.gloskin-ui1-card__text-first-utility{position:relative;min-height:56px}
+

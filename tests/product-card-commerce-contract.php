@@ -150,7 +150,7 @@ foreach ( array( 'wishlist', 'add_to_cart', 'ajax_add_to_cart', 'product_type_',
 }
 
 $fallback = render_card( array_merge( $consultation, array( 'image_id' => 0 ) ), 'consultation' );
-ok( false !== strpos( $fallback, 'class="gloskin-ui1-consultation-card__image--decorative"' ) || false !== strpos( $fallback, 'gloskin-ui1-consultation-card__image gloskin-ui1-consultation-card__image--decorative' ), 'consultation: missing Woo image uses CSS-only decorative presentation fallback' );
-ok( false !== strpos( $fallback, 'aria-hidden="true"' ), 'consultation: editorial fallback remains decorative' );
+ok( false !== strpos( $fallback, 'gloskin-ui1-card--text-first' ), 'consultation: missing Woo image degrades to text-first card' );
+ok( false === strpos( $fallback, 'gloskin-ui1-consultation-card__media' ), 'consultation: missing Woo image renders no media shell' );
 
 echo "product card commerce contract: OK\n";

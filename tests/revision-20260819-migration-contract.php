@@ -341,7 +341,7 @@ $kernel_src    = (string) file_get_contents( $plugin_dir . '/includes/class-glos
 preg_match( '/^ \* Version: ([0-9]+\.[0-9]+\.[0-9]+)$/m', $plugin_header, $hm );
 preg_match( "/const VERSION = '([0-9]+\\.[0-9]+\\.[0-9]+)';/", $kernel_src, $km );
 
-ok( isset( $hm[1] ) && '0.7.141' === $hm[1], "Plugin header version must be 0.7.141, got " . ( $hm[1] ?? 'none' ) );
-ok( isset( $km[1] ) && '0.7.141' === $km[1], "Kernel VERSION must be 0.7.141, got " . ( $km[1] ?? 'none' ) );
+ok( isset( $hm[1] ) && '0.7.142' === $hm[1], "Plugin header version must be 0.7.142, got " . ( $hm[1] ?? 'none' ) );
+ok( isset( $km[1] ) && '0.7.142' === $km[1], "Kernel VERSION must be 0.7.142, got " . ( $km[1] ?? 'none' ) );
 
 echo "revision-20260819-migration-contract: OK\n";

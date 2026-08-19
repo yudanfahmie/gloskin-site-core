@@ -79,11 +79,11 @@ if ! grep -q 'function gloskin_ui1_render_pathway_grid' "$composition_helpers" \
   echo "reusable page-richness composition helpers missing" >&2
   exit 1
 fi
-if ! grep -q "array( 'clinic', 'doctor' )" "$helpers" \
-  || ! grep -q "gloskin_ui1_render_presentation_media( 'product'" "$helpers" \
-  || ! grep -q "gloskin_ui1_render_presentation_media( 'doctor'" "$templates/pages/doctor.php" \
-  || ! grep -q "gloskin_ui1_render_presentation_media( 'clinic'" "$templates/pages/clinic.php"; then
-  echo "safe factual doctor/clinic/product empty-state boundary missing" >&2
+if ! grep -q "gloskin-ui1-card--text-first" "$helpers" \
+  || grep -q "gloskin_ui1_render_presentation_media( 'product'" "$helpers" \
+  || grep -q "gloskin_ui1_render_presentation_media( 'doctor'" "$templates/pages/doctor.php" \
+  || grep -q "gloskin_ui1_render_presentation_media( 'clinic'" "$templates/pages/clinic.php"; then
+  echo "factual doctor/clinic/product empty states must be text-first with no abstract placeholder" >&2
   exit 1
 fi
 # Editorial staging media has no external image dependency in the protected

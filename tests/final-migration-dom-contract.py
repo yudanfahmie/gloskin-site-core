@@ -1,7 +1,7 @@
 """
 final-migration-dom-contract.py
 
-Static contract: admin render and asset wiring for v0.7.141 AJAX flow.
+Static contract: admin render and asset wiring for v0.7.142 AJAX flow.
 
 Asserts:
   1.  Admin render contains data-gloskin-final-migration attribute on root div.
@@ -17,7 +17,7 @@ Asserts:
   11. New JS targets [data-gloskin-final-migration] root selector.
   12. New JS reads data-ajax / data-action / data-nonce from root element.
   13. Old [data-gloskin-sample-import] and [data-gloskin-ia-migration] selectors absent from new JS.
-  14. Plugin / Kernel version synchronized at 0.7.141.
+  14. Plugin / Kernel version synchronized at 0.7.142.
 """
 
 import os, re, sys
@@ -142,12 +142,12 @@ require(
 )
 
 # 14. Version sync
-require("Version: 0.7.141" in plugin_h, "Plugin header must be 0.7.141")
-require("const VERSION = '0.7.141';" in kernel, "Kernel VERSION must be 0.7.141")
+require("Version: 0.7.142" in plugin_h, "Plugin header must be 0.7.142")
+require("const VERSION = '0.7.142';" in kernel, "Kernel VERSION must be 0.7.142")
 
 if failures:
     for f in failures:
         print('FAIL:', f)
     sys.exit(1)
 
-print('final-migration-dom-contract.py: OK (0.7.141)')
+print('final-migration-dom-contract.py: OK (0.7.142)')

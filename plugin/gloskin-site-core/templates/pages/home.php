@@ -33,11 +33,17 @@ gloskin_ui1_render_hero( $gloskin_context['hero'] );
 	<p class="gloskin-ui1-section__action"><a class="gloskin-ui1-text-link" href="<?php echo esc_url( home_url( '/skincare/' ) ); ?>"><?php echo esc_html__( 'Jelajahi Skincare', 'gloskin-site-core' ); ?> →</a><?php if ( $gloskin_context['products'] ) : ?> <span aria-hidden="true">·</span> <a class="gloskin-ui1-text-link" href="<?php echo esc_url( home_url( '/shop/' ) ); ?>"><?php echo esc_html__( 'Lihat Semua Produk', 'gloskin-site-core' ); ?> →</a><?php endif; ?></p>
 </div></section>
 <?php gloskin_ui1_render_testimonials( $gloskin_context['testimonials'] ); ?>
-<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?>
 <section class="gloskin-ui1-section gloskin-ui1-home-brand-story" data-gloskin-section="home-brand-story"><div class="gloskin-ui1-container gloskin-ui1-home-brand-story__grid">
-	<div class="gloskin-ui1-home-brand-story__content"><p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Tentang Gloskin', 'gloskin-site-core' ); ?></p><?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?></div>
+	<div class="gloskin-ui1-home-brand-story__content">
+		<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Tentang Gloskin', 'gloskin-site-core' ); ?></p>
+		<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?>
+			<?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?>
+		<?php else : ?>
+			<p><?php echo esc_html__( 'Kenali Gloskin melalui informasi perawatan, skincare, dokter, dan jaringan klinik yang tersedia di kanal resmi kami.', 'gloskin-site-core' ); ?></p>
+			<p><a class="gloskin-ui1-text-link" href="<?php echo esc_url( home_url( '/about/' ) ); ?>"><?php echo esc_html__( 'Tentang Gloskin', 'gloskin-site-core' ); ?> →</a></p>
+		<?php endif; ?>
+	</div>
 	<div class="gloskin-ui1-home-brand-story__media"><?php gloskin_ui1_render_editorial_media( 'editorial', 'home_brand_story', 'gloskin-ui1-home-brand-story__image' ); ?></div>
 </div></section>
-<?php endif; ?>
 <?php gloskin_ui1_render_achievements( $gloskin_context['achievements'], 'compact' ); ?>
 <section class="gloskin-ui1-section gloskin-ui1-section--cta" data-gloskin-section="home-closing"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_closing_cta( __( 'Konsultasi', 'gloskin-site-core' ), __( 'Siap membicarakan kebutuhan kulit Anda?', 'gloskin-site-core' ), __( 'Pilih klinik Gloskin terdekat atau hubungi tim kami untuk menjadwalkan konsultasi.', 'gloskin-site-core' ), __( 'Pilih Klinik', 'gloskin-site-core' ), home_url( '/clinics/' ), __( 'Hubungi Kami', 'gloskin-site-core' ), home_url( '/contact/' ) ); ?></div></section>

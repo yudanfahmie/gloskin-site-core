@@ -45,6 +45,7 @@ if ( ! function_exists( 'gloskin_ui1_render_presentation_media' ) ) {
 	function gloskin_ui1_render_presentation_media( $kind = 'editorial', $seed = 'gloskin', $class = '' ) {
 		$allowed = array( 'hero', 'clinic', 'treatment', 'doctor', 'skincare', 'product', 'editorial' );
 		$kind    = in_array( $kind, $allowed, true ) ? $kind : 'editorial';
+		if ( in_array( $kind, array( 'doctor', 'clinic', 'product' ), true ) ) { return; }
 		$hash    = sprintf( '%u', crc32( $kind . '|' . $seed ) );
 		$variant = 1 + ( (int) $hash % 4 );
 		$classes = trim( 'gloskin-ui1-media gloskin-ui1-media--' . $kind . ' gloskin-ui1-media--v' . $variant . ' ' . $class );
@@ -106,14 +107,18 @@ if ( ! function_exists( 'gloskin_ui1_resolve_editorial_media' ) ) {
 if ( ! function_exists( 'gloskin_ui1_render_editorial_media' ) ) {
 	/** Render local editorial media, falling back to abstract media only if the migration bundle is unavailable. */
 	function gloskin_ui1_render_editorial_media( $kind = 'editorial', $seed = 'gloskin', $class = '', $eager = false ) {
+		if ( in_array( (string) $kind, array( 'doctor', 'clinic', 'product' ), true ) ) { return; }
 		$resolved = gloskin_ui1_resolve_editorial_media( $kind, $seed );
 		$attachment_id = absint( $resolved['attachment_id'] ?? 0 );
 		if ( $attachment_id ) {
-			$attrs = array( 'class' => trim( (string) $class ), 'decoding' => 'async', 'loading' => $eager ? 'eager' : 'lazy' );
+			$decorative = ! empty( $resolved['decorative'] );
+			$alt = $decorative ? '' : trim( (string) ( $resolved['alt'] ?? '' ) );
+			$attrs = array( 'class' => trim( (string) $class ), 'decoding' => 'async', 'loading' => $eager ? 'eager' : 'lazy', 'alt' => $alt );
 			if ( $eager ) { $attrs['fetchpriority'] = 'high'; }
 			$image = wp_get_attachment_image( $attachment_id, 'large', false, $attrs );
 			if ( is_string( $image ) && '' !== $image ) { echo $image; return; } // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
+		/* Catastrophic editorial resilience only: successful migration verifies local catalog ownership. */
 		gloskin_ui1_render_presentation_media( $kind, $seed, $class );
 	}
 }
@@ -293,17 +298,19 @@ if ( ! function_exists( 'gloskin_ui1_render_card' ) ) {
 		} else {
 			$copy = isset( $card['excerpt'] ) ? (string) $card['excerpt'] : '';
 		}
+		$identity_without_media = ! $image_id && in_array( $kind, array( 'clinic', 'doctor' ), true );
+		$article_classes = 'gloskin-ui1-card gloskin-ui1-card--' . $kind . ( $identity_without_media ? ' gloskin-ui1-card--text-first' : '' );
 		?>
-		<article class="gloskin-ui1-card gloskin-ui1-card--<?php echo esc_attr( $kind ); ?>">
-			<?php if ( '' !== $url ) : ?><a class="gloskin-ui1-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true"><?php endif; ?>
-				<?php if ( $image_id ) : ?>
-					<?php echo wp_get_attachment_image( $image_id, 'medium_large', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-card__image' ) ); ?>
-				<?php elseif ( in_array( $kind, array( 'clinic', 'doctor' ), true ) ) : ?>
-					<?php gloskin_ui1_render_presentation_media( $kind, $title, 'gloskin-ui1-card__abstract' ); ?>
-				<?php else : ?>
-					<?php gloskin_ui1_render_editorial_media( 'treatment' === $kind ? 'treatment' : 'insight', $title, 'gloskin-ui1-card__image gloskin-ui1-card__image--editorial' ); ?>
-				<?php endif; ?>
-			<?php if ( '' !== $url ) : ?></a><?php endif; ?>
+		<article class="<?php echo esc_attr( $article_classes ); ?>">
+			<?php if ( $image_id || ! $identity_without_media ) : ?>
+				<?php if ( '' !== $url ) : ?><a class="gloskin-ui1-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true"><?php endif; ?>
+					<?php if ( $image_id ) : ?>
+						<?php echo wp_get_attachment_image( $image_id, 'medium_large', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-card__image', 'alt' => $title ) ); ?>
+					<?php else : ?>
+						<?php gloskin_ui1_render_editorial_media( 'treatment' === $kind ? 'treatment' : 'insight', $title, 'gloskin-ui1-card__image gloskin-ui1-card__image--editorial' ); ?>
+					<?php endif; ?>
+				<?php if ( '' !== $url ) : ?></a><?php endif; ?>
+			<?php endif; ?>
 			<div class="gloskin-ui1-card__body">
 				<h3 class="gloskin-ui1-card__title"><?php if ( '' !== $url ) : ?><a href="<?php echo esc_url( $url ); ?>"><?php endif; ?><?php echo esc_html( $title ); ?><?php if ( '' !== $url ) : ?></a><?php endif; ?></h3>
 				<?php if ( '' !== trim( $copy ) ) : ?><p class="gloskin-ui1-card__copy"><?php echo esc_html( wp_trim_words( wp_strip_all_tags( $copy ), 28 ) ); ?></p><?php endif; ?>
@@ -356,16 +363,12 @@ if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
 			/* translators: %s: Treatment Product name. */
 			$detail_label = sprintf( __( 'Lihat detail %s', 'gloskin-site-core' ), $name );
 			?>
-			<article class="gloskin-ui1-card gloskin-ui1-card--product gloskin-ui1-card--consultation">
+			<article class="gloskin-ui1-card gloskin-ui1-card--product gloskin-ui1-card--consultation<?php echo $image_id ? '' : ' gloskin-ui1-card--text-first'; ?>">
 				<a class="gloskin-ui1-consultation-card" href="<?php echo esc_url( $url ); ?>" aria-label="<?php echo esc_attr( $detail_label ); ?>">
 					<span class="gloskin-ui1-consultation-card__main">
-						<span class="gloskin-ui1-consultation-card__media">
-							<?php if ( $image_id ) : ?>
-								<?php echo wp_get_attachment_image( $image_id, 'woocommerce_thumbnail', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-consultation-card__image' ) ); ?>
-							<?php else : ?>
-								<?php gloskin_ui1_render_editorial_media( 'treatment', $name, 'gloskin-ui1-consultation-card__image gloskin-ui1-consultation-card__image--decorative' ); ?>
-							<?php endif; ?>
-						</span>
+						<?php if ( $image_id ) : ?>
+							<span class="gloskin-ui1-consultation-card__media"><?php echo wp_get_attachment_image( $image_id, 'woocommerce_thumbnail', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-consultation-card__image', 'alt' => $name ) ); ?></span>
+						<?php endif; ?>
 						<span class="gloskin-ui1-consultation-card__content">
 							<span class="gloskin-ui1-consultation-card__title"><?php echo esc_html( $name ); ?></span>
 							<?php if ( '' !== $description ) : ?><span class="gloskin-ui1-consultation-card__copy"><?php echo esc_html( $description ); ?></span><?php endif; ?>
@@ -385,17 +388,15 @@ if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
 		$can_purchase = ! empty( $product['purchasable'] ) && ! empty( $product['in_stock'] );
 		$action_url = $is_variable ? $url : ( isset( $product['add_to_cart_url'] ) ? (string) $product['add_to_cart_url'] : '' );
 		?>
-		<article class="gloskin-ui1-card gloskin-ui1-card--product">
-			<div class="gloskin-ui1-card__media-wrap">
-				<a class="gloskin-ui1-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true">
-					<?php if ( $image_id ) : ?>
-						<?php echo wp_get_attachment_image( $image_id, 'woocommerce_thumbnail', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-card__image' ) ); ?>
-					<?php else : ?>
-						<?php gloskin_ui1_render_presentation_media( 'product', $name, 'gloskin-ui1-card__abstract' ); ?>
-					<?php endif; ?>
-				</a>
-				<?php gloskin_ui1_render_wishlist_toggle( $id, $name ); ?>
-			</div>
+		<article class="gloskin-ui1-card gloskin-ui1-card--product<?php echo $image_id ? '' : ' gloskin-ui1-card--text-first'; ?>">
+			<?php if ( $image_id ) : ?>
+				<div class="gloskin-ui1-card__media-wrap">
+					<a class="gloskin-ui1-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true"><?php echo wp_get_attachment_image( $image_id, 'woocommerce_thumbnail', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-card__image', 'alt' => $name ) ); ?></a>
+					<?php gloskin_ui1_render_wishlist_toggle( $id, $name ); ?>
+				</div>
+			<?php else : ?>
+				<div class="gloskin-ui1-card__text-first-utility"><?php gloskin_ui1_render_wishlist_toggle( $id, $name ); ?></div>
+			<?php endif; ?>
 			<div class="gloskin-ui1-card__body">
 				<h3 class="gloskin-ui1-card__title"><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $name ); ?></a></h3>
 				<?php if ( ! empty( $product['price_html'] ) ) : ?><div class="gloskin-ui1-product-price"><?php echo wp_kses_post( (string) $product['price_html'] ); ?></div><?php endif; ?>
