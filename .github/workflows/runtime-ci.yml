@@ -35,7 +35,12 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Run check-runtime.sh (read-only)
+      - name: Install Playwright Chromium
+        run: |
+          python -m pip install --disable-pip-version-check playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Run check-runtime.sh (read-only, including browser smoke)
         run: bash tests/check-runtime.sh
 
       - name: Verify working tree is clean after tests
@@ -51,12 +56,17 @@ jobs:
           fi
           echo "Working tree is clean — immutability contract satisfied"
 
-      - name: Browser smoke (Playwright/Chromium)
-        if: false
-        # Browser smoke tests require a live staging environment; they are run
-        # manually via check-runtime.sh when Chromium/Playwright are available.
-        # This step is intentionally disabled in CI and reported as SKIP below.
-        run: python tests/font-browser-smoke.py
-
-      - name: Report browser SKIP
-        run: echo "browser smoke skipped in CI (Chromium/Playwright not available)"
+      - name: Report browser environment
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          pw = sync_playwright().start()
+          executable = Path(pw.chromium.executable_path)
+          print(f"Playwright Chromium executable: {executable}")
+          print(f"Playwright Chromium available: {executable.is_file()}")
+          pw.stop()
+          if not executable.is_file():
+              raise SystemExit(1)
+          PY
+          echo "Browser suites executed through tests/check-runtime.sh"
