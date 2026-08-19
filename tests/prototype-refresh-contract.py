@@ -18,6 +18,7 @@ consultation_rules = re.sub(r"/\*.*?\*/", "", consultation_css, flags=re.S)
 assets = read("plugin/gloskin-site-core/config/assets.php")
 fonts = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-fonts.css")
 home = read("plugin/gloskin-site-core/templates/pages/home.php")
+home_why = read("plugin/gloskin-site-core/templates/parts/home-why-local-media.php")
 promo = read("plugin/gloskin-site-core/templates/pages/promo.php")
 about = read("plugin/gloskin-site-core/templates/pages/about.php")
 skincare = read("plugin/gloskin-site-core/templates/pages/skincare.php")
@@ -64,8 +65,12 @@ require("gloskin_ui1_render_achievements( $gloskin_context['achievements'], 'com
         "Home factual achievements helper must remain context-driven")
 for fabricated in ("piagam", "award", "penghargaan"):
     require(fabricated not in home.lower(), f"Home must not hardcode fabricated {fabricated} content")
-require("gloskin_ui1_render_why_gloskin( $gloskin_context['page'] );" in home,
-        "Home protected Why Gloskin/About transition missing")
+require("home-why-local-media.php" in home,
+        "Home protected Why Gloskin/About transition must use the local-media bridge")
+require("gloskin_ui1_render_why_gloskin( $gloskin_context['page'] );" in home_why,
+        "Home Why bridge must preserve the approved Why Gloskin composition")
+require("gloskin_ui1_render_editorial_media( 'editorial', 'home_why'" in home_why,
+        "Home Why bridge must resolve the migration-owned local home_why asset")
 home_context = template_service.split("private function home_context()", 1)[1].split("private function about_context()", 1)[0]
 require("$hero['mode'] = 'campaign';" in home_context, "Home must use visible campaign hero mode")
 require("'video-only'" not in home_context, "strict video-only Home authority must remain retired")
