@@ -41,6 +41,7 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 	const LOCK_TTL       = 300;
 	const BUNDLE_DIR     = 'gloskin-doctor-photos-v2';
 	const BUNDLE_ID      = 'gloskin-doctor-photos-v2';
+	const BATCH_SIZE     = 3; /* Doctor photos processed per AJAX request */
 
 	/* Attachment provenance meta keys (shared with prior revision for reuse) */
 	const ATTACH_REVISION_META = '_gloskin_photo_migration_revision';
@@ -61,8 +62,8 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 	/** @param string $plugin_file Main plugin file path. */
 	public function __construct( $plugin_file ) {
 		$this->plugin_file = $plugin_file;
-		$this->runtime_dir = dirname( dirname( $plugin_file ) )
-			. '/migration-runtime/' . self::BUNDLE_DIR;
+		$plugin_root       = plugin_dir_path( $plugin_file );
+		$this->runtime_dir = trailingslashit( $plugin_root ) . 'migration-runtime/' . self::BUNDLE_DIR;
 	}
 
 	/** @return array<int,array{key:string,label:string}> */
@@ -96,6 +97,7 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 			'demo_audit'          => array(),
 			'commerce_snapshot'   => array(),
 			'doctor_all_snapshot' => array(), /* doctor_id => thumbnail_id snapshot before any mutation */
+			'doctor_cursor'       => 0,      /* batch resume index into ordered doctor_matches */
 			'updated_at'          => 0,
 		);
 		$state = array_merge( $defaults, $state );
@@ -117,7 +119,7 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 	 */
 	public function run_to_completion() {
 		$state = $this->advance( 'start' );
-		$limit = count( $this->steps() ) + 3;
+		$limit = count( $this->steps() ) + 20; /* +20 covers doctor photo batching (BATCH_SIZE=3, up to 60 doctors) */
 		for ( $i = 0; $i < $limit && 'consumed' !== $state['status']; $i++ ) {
 			$state = $this->advance( 'continue' );
 		}
@@ -179,12 +181,16 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 			$state['current_step'] = $steps[ $index ]['label'];
 			$this->save_state( $state );
 
+			$step_complete = true;
+
 			switch ( $steps[ $index ]['key'] ) {
 				case 'preflight':
-					$preflight_result           = $this->run_preflight();
-					$state['doctor_matches']    = $preflight_result['matches'];
+					$preflight_result             = $this->run_preflight();
+					$state['doctor_matches']      = $preflight_result['matches'];
 					$state['doctor_all_snapshot'] = $preflight_result['all_snapshot'];
-					$state['commerce_snapshot'] = $this->commerce_page_snapshot();
+					$state['doctor_cursor']       = 0;  /* reset cursor in case of re-run */
+					$state['doctor_audit']        = array();
+					$state['commerce_snapshot']   = $this->commerce_page_snapshot();
 					break;
 				case 'managed_content':
 					$this->run_managed_content();
@@ -193,7 +199,13 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 					$state['demo_audit'] = $this->run_demo_seed();
 					break;
 				case 'doctor_photos':
-					$state['doctor_audit'] = $this->run_doctor_photos( (array) $state['doctor_matches'] );
+					$batch                  = $this->run_doctor_photos_batch( $state );
+					$state['doctor_audit']  = $batch['doctor_audit'];
+					$state['doctor_cursor'] = $batch['cursor'];
+					if ( ! $batch['complete'] ) {
+						$step_complete         = false;
+						$state['current_step'] = 'Mengimpor foto dokter (' . $batch['cursor'] . '/' . $batch['total'] . ')';
+					}
 					break;
 				case 'normalize':
 					$this->run_normalize();
@@ -211,11 +223,13 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 					break;
 			}
 
-			$state['next_step_index'] = $index + 1;
-			$state['processed_steps'] = min( count( $steps ), $index + 1 );
-			$state['current_step']    = 'consumed' === $state['status']
-				? 'Selesai'
-				: $this->step_label( (int) $state['next_step_index'] );
+			if ( $step_complete ) {
+				$state['next_step_index'] = $index + 1;
+				$state['processed_steps'] = min( count( $steps ), $index + 1 );
+				$state['current_step']    = 'consumed' === $state['status']
+					? 'Selesai'
+					: $this->step_label( (int) $state['next_step_index'] );
+			}
 			$state['last_error']  = '';
 			$state['updated_at']  = time();
 			$this->save_state( $state );
@@ -308,13 +322,13 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 
 		$errors = array();
 		if ( $missing_file ) {
-			$errors[] = 'Aset foto tidak valid/korup: ' . implode( '; ', $missing_file );
+			$errors[] = 'bundle_invalid: Aset foto tidak valid/korup: ' . implode( '; ', $missing_file );
 		}
 		if ( $unmatched ) {
-			$errors[] = 'Dokter tidak ditemukan (tidak ada kecocokan alias): ' . implode( '; ', $unmatched );
+			$errors[] = 'doctor_unmatched: Dokter tidak ditemukan (tidak ada kecocokan alias): ' . implode( '; ', $unmatched );
 		}
 		if ( $ambiguous ) {
-			$errors[] = 'Dokter ambigu (lebih dari satu kecocokan): ' . implode( '; ', $ambiguous );
+			$errors[] = 'doctor_ambiguous: Dokter ambigu (lebih dari satu kecocokan): ' . implode( '; ', $ambiguous );
 		}
 		if ( $errors ) {
 			throw new RuntimeException( 'Preflight gagal. ' . implode( ' | ', $errors ) );
@@ -671,6 +685,106 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 	}
 
 	/**
+	 * Process one BATCH_SIZE batch of doctor photos, resuming from doctor_cursor.
+	 * Merges results into any existing doctor_audit from prior batches.
+	 * Caller in advance() must NOT increment next_step_index when complete=false.
+	 *
+	 * @param array<string,mixed> $state Current migration state.
+	 * @return array{doctor_audit:array<string,mixed>,cursor:int,total:int,complete:bool}
+	 * @throws RuntimeException On import or thumbnail-apply failure.
+	 */
+	private function run_doctor_photos_batch( array $state ) {
+		$matches = array_values( (array) $state['doctor_matches'] );
+		$total   = count( $matches );
+
+		if ( 0 === $total ) {
+			throw new RuntimeException( 'Doctor photo matches kosong — jalankan ulang preflight.' );
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+
+		$cursor = max( 0, (int) ( isset( $state['doctor_cursor'] ) ? $state['doctor_cursor'] : 0 ) );
+
+		/* Validate upload directory before the first batch only */
+		if ( 0 === $cursor ) {
+			$upload = wp_upload_dir();
+			if ( ! empty( $upload['error'] ) ) {
+				throw new RuntimeException( 'upload_unavailable: ' . $upload['error'] );
+			}
+		}
+
+		/* Merge existing audit from prior batches */
+		$existing = isset( $state['doctor_audit'] ) ? (array) $state['doctor_audit'] : array();
+		$applied  = isset( $existing['applied'] ) ? (array) $existing['applied'] : array();
+		$reused   = isset( $existing['reused'] )  ? (array) $existing['reused']  : array();
+
+		$batch_end = min( $cursor + self::BATCH_SIZE, $total );
+
+		for ( $i = $cursor; $i < $batch_end; $i++ ) {
+			$match        = $matches[ $i ];
+			$doctor_id    = absint( $match['doctor_id'] );
+			$sha256       = (string) $match['sha256'];
+			$asset_path   = (string) $match['asset_path'];
+			$webp_file    = (string) $match['webp_file'];
+			$source_label = (string) $match['source_label'];
+
+			/* Find or create attachment (reuse by canonical SHA) */
+			$attachment_id = $this->find_attachment_by_sha( $sha256 );
+			$was_reused    = (bool) $attachment_id;
+			if ( ! $attachment_id ) {
+				$attachment_id = $this->import_doctor_photo( $asset_path, $webp_file, $sha256, $source_label );
+			}
+
+			/* Snapshot previous thumbnail once — idempotent on resume */
+			if ( '' === (string) get_post_meta( $doctor_id, self::PREV_THUMBNAIL_META, true ) ) {
+				$prev_thumb = absint( get_post_thumbnail_id( $doctor_id ) );
+				update_post_meta( $doctor_id, self::PREV_THUMBNAIL_META, $prev_thumb );
+			}
+
+			/* Set featured image */
+			$set_result = set_post_thumbnail( $doctor_id, $attachment_id );
+			if ( ! $set_result ) {
+				throw new RuntimeException(
+					'set_post_thumbnail() gagal untuk dokter #' . $doctor_id . ' (' . $match['doctor_title'] . ').'
+				);
+			}
+
+			/* Immediate per-doctor thumbnail assertion */
+			$final_thumb = absint( get_post_thumbnail_id( $doctor_id ) );
+			if ( $final_thumb !== $attachment_id ) {
+				throw new RuntimeException(
+					'verification_failed: Verifikasi thumbnail gagal untuk dokter #' . $doctor_id
+					. ' (' . $match['doctor_title'] . ')'
+					. ': expected=' . $attachment_id . ' got=' . $final_thumb
+				);
+			}
+
+			$entry = array(
+				'doctor_id'     => $doctor_id,
+				'doctor_title'  => $match['doctor_title'],
+				'attachment_id' => $attachment_id,
+				'sha256'        => $sha256,
+			);
+			if ( $was_reused ) {
+				$reused[] = $entry;
+			} else {
+				$applied[] = $entry;
+			}
+		}
+
+		$new_cursor = $batch_end;
+
+		return array(
+			'doctor_audit' => array( 'applied' => $applied, 'reused' => $reused ),
+			'cursor'       => $new_cursor,
+			'total'        => $total,
+			'complete'     => $new_cursor >= $total,
+		);
+	}
+
+	/**
 	 * Find an existing attachment by canonical SHA-256.
 	 *
 	 * Searches both this revision's meta and the prior revision's meta so that
@@ -959,15 +1073,15 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 	private function load_bundle_manifest() {
 		$manifest_path = $this->runtime_dir . '/manifest.json';
 		if ( ! is_readable( $manifest_path ) ) {
-			throw new RuntimeException( 'Bundle manifest tidak ditemukan: ' . $manifest_path );
+			throw new RuntimeException( 'bundle_unavailable: Bundle manifest tidak ditemukan di ' . $manifest_path );
 		}
 		$json     = file_get_contents( $manifest_path );
 		$manifest = json_decode( (string) $json, true );
 		if ( ! is_array( $manifest ) ) {
-			throw new RuntimeException( 'Bundle manifest tidak valid (JSON error).' );
+			throw new RuntimeException( 'bundle_invalid: Bundle manifest tidak valid (JSON error).' );
 		}
 		if ( ( (string) ( $manifest['bundle_id'] ?? '' ) ) !== self::BUNDLE_ID ) {
-			throw new RuntimeException( 'Bundle ID tidak cocok.' );
+			throw new RuntimeException( 'bundle_invalid: Bundle ID tidak cocok.' );
 		}
 		return $manifest;
 	}

@@ -380,6 +380,25 @@ final class Gloskin_Site_Core_Asset_Service {
 	}
 
 	/**
+	 * Enqueue the final-migration AJAX controller.
+	 * Reads action/nonce from data-* attributes on the root DOM element — no
+	 * wp_localize_script() needed.
+	 *
+	 * @param string $action Authenticated AJAX action (baked into admin render).
+	 * @param string $nonce  Nonce value (baked into admin render).
+	 * @return void
+	 */
+	public function enqueue_admin_final_migration( $action, $nonce ) {
+		$registry = $this->registry();
+		if ( empty( $registry['admin_scripts']['gloskin-ui1-final-migration'] ) ) { return; }
+		$asset = $registry['admin_scripts']['gloskin-ui1-final-migration'];
+		wp_register_script( 'gloskin-ui1-final-migration', plugins_url( $asset['src'], $this->plugin_file ), $asset['deps'], $this->version, true );
+		wp_enqueue_script( 'gloskin-ui1-final-migration' );
+		// action/nonce are read from data-* on the root DOM element; nothing to localize.
+		unset( $action, $nonce ); // accepted for API symmetry
+	}
+
+	/**
 	 * @return array<string, array<string, array<string, mixed>>>
 	 */
 	private function registry() {
