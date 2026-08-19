@@ -56,7 +56,23 @@ jobs:
 
       - name: Apply bounded hardening
         if: steps.scope.outputs.needs_patch == 'true'
-        run: python tools/final-hardening-0-7-142.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tools/final-hardening-0-7-142.py')
+          s = p.read_text(encoding='utf-8')
+          fixes = {
+              "\n\\t\\t$doctor_admin = new Gloskin_Site_Core_Doctor_Migration_Admin( $plugin_file );": "\n\\t\\t\\t$doctor_admin = new Gloskin_Site_Core_Doctor_Migration_Admin( $plugin_file );",
+              "\n\\t\\t$doctor_admin->register();": "\n\\t\\t\\t$doctor_admin->register();",
+              "\n\\t\\tself::$services[] = $doctor_admin;": "\n\\t\\t\\tself::$services[] = $doctor_admin;",
+          }
+          for old, new in fixes.items():
+              s = s.replace(old, new)
+          p.write_text(s, encoding='utf-8')
+          PY
+          python tools/final-hardening-0-7-142.py
 
       - name: Focused hardening gates
         if: steps.scope.outputs.needs_patch == 'true'
