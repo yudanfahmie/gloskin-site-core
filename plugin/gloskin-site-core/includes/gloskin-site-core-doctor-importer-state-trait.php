@@ -35,8 +35,8 @@ trait Gloskin_Site_Core_Doctor_Importer_State_Trait {
 	/**
 	 * Pure package validation before any roster mutation. Package A reuses the
 	 * canonical roster loader. When the importer is owned by the loaded Final
-	 * Migration, packages B/C are also validated before the importer lock or
-	 * any upsert is reached.
+	 * Migration, packages B/C and roster<->photo exact alias compatibility are
+	 * also validated before the importer lock or any upsert is reached.
 	 *
 	 * @return array{manifest:array<string,mixed>,doctors:array<int,array<string,string>>}
 	 */
@@ -44,7 +44,7 @@ trait Gloskin_Site_Core_Doctor_Importer_State_Trait {
 		$payload = $this->bundle->load(); // A. gloskin-doctors-v1.
 		if ( class_exists( 'Gloskin_Site_Core_Revision_20260819_Final_Migration', false ) ) {
 			require_once __DIR__ . '/class-gloskin-site-core-final-package-validator.php';
-			( new Gloskin_Site_Core_Final_Package_Validator( $this->plugin_file ) )->validate_after_roster_bundle(); // B then C.
+			( new Gloskin_Site_Core_Final_Package_Validator( $this->plugin_file ) )->validate_after_roster_bundle( $payload ); // B then C + exact cross-package compatibility.
 		}
 		return $payload;
 	}
