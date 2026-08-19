@@ -1,7 +1,7 @@
 """
 final-migration-js-behavior-contract.py
 
-Static contract: JS-level behaviors for the v0.7.140 AJAX migration controller.
+Static contract: JS-level behaviors for the v0.7.141 AJAX migration controller.
 
 Asserts:
   1.  JS exits early if [data-gloskin-final-migration] root is not found.
@@ -18,7 +18,7 @@ Asserts:
   12. AJAX uses fetch() with application/x-www-form-urlencoded Content-Type.
   13. state.processed_steps used (not processed_products) for progress bar.
   14. state.total_steps used (not expected_products or hardcoded 13).
-  15. Plugin / Kernel version synchronized at 0.7.140.
+  15. Plugin / Kernel version synchronized at 0.7.141.
 """
 
 import os, re, sys
@@ -164,12 +164,12 @@ require(
 )
 
 # 15. Version sync
-require("Version: 0.7.140" in plugin_h, "Plugin header must be 0.7.140")
-require("const VERSION = '0.7.140';" in kernel, "Kernel VERSION must be 0.7.140")
+require("Version: 0.7.141" in plugin_h, "Plugin header must be 0.7.141")
+require("const VERSION = '0.7.141';" in kernel, "Kernel VERSION must be 0.7.141")
 
 if failures:
     for f in failures:
         print('FAIL:', f)
     sys.exit(1)
 
-print('final-migration-js-behavior-contract.py: OK (0.7.140)')
+print('final-migration-js-behavior-contract.py: OK (0.7.141)')

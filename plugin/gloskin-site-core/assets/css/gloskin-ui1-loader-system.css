@@ -233,6 +233,55 @@ body.woocommerce-cart:has(.wp-block-woocommerce-cart.is-loading) .gloskin-ui1-co
 	}
 }
 
+/* Page-to-page cross-document transition overlay.
+   This overlay is presentation-only: JS owns the is-active lifecycle, BFCache
+   cleanup runs on pageshow, and a hard timeout prevents permanent lockout.
+   Woo AJAX/cart/checkout/modal flows are explicitly excluded in initPageTransitions(). */
+:root{
+	--gl-transition-bg:rgba(255,255,255,0.97);
+	--gl-transition-jelly:#DE1D34;
+	--gl-transition-duration:360ms;
+	--gl-transition-g-size:88px;
+}
+.gloskin-ui1-page-transition{
+	position:fixed;
+	inset:0;
+	z-index:9990;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	background:var(--gl-transition-bg);
+	pointer-events:none;
+	opacity:0;
+	transition:opacity var(--gl-transition-duration) cubic-bezier(.22,1,.36,1);
+}
+.gloskin-ui1-page-transition.is-active{
+	pointer-events:all;
+	opacity:1;
+}
+.gloskin-ui1-page-transition__blob{
+	width:var(--gl-transition-g-size);
+	height:var(--gl-transition-g-size);
+	background:var(--gl-transition-jelly);
+	border-radius:60% 40% 55% 45%/50% 60% 40% 50%;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	animation:gloskin-ui1-transition-blob 2.6s ease-in-out infinite;
+	will-change:border-radius;
+}
+.gloskin-ui1-page-transition__g{
+	width:54%;
+	height:54%;
+	display:block;
+}
+@keyframes gloskin-ui1-transition-blob{
+	0%{border-radius:60% 40% 55% 45%/50% 60% 40% 50%}
+	33%{border-radius:40% 60% 45% 55%/60% 40% 55% 45%}
+	66%{border-radius:55% 45% 60% 40%/45% 55% 50% 50%}
+	100%{border-radius:60% 40% 55% 45%/50% 60% 40% 50%}
+}
+
 @media (prefers-reduced-motion:reduce){
 	body.woocommerce-cart:has(.wp-block-woocommerce-cart.is-loading) .gloskin-ui1-commerce-handoff__blob,
 	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,
@@ -254,4 +303,6 @@ body.woocommerce-cart:has(.wp-block-woocommerce-cart.is-loading) .gloskin-ui1-co
 		animation:none;
 		will-change:auto;
 	}
+	.gloskin-ui1-page-transition{transition:none}
+	.gloskin-ui1-page-transition__blob{animation:none;will-change:auto}
 }

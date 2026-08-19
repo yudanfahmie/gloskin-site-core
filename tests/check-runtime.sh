@@ -99,6 +99,7 @@ php tests/navigation-fallback-contract.php
 php tests/lifecycle-shop-page-alignment-contract.php
 php tests/prototype-ia-migration-contract.php
 python tests/prototype-ia-loader-contract.py
+python tests/page-transition-contract.py
 php tests/admin-navigation-smoke.php
 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
 GL_TEST_ADMIN=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php

@@ -2739,6 +2739,109 @@
 		}
 	}
 
+	/* Page-to-page cross-document transition.
+	 * Safety constraints:
+	 * - No beforeunload/unload (BFCache safe).
+	 * - pageshow clears the overlay if page was restored from BFCache.
+	 * - Hard timeout (3s) prevents permanent lockout on slow navigations.
+	 * - Skips: modifier keys, new-tab targets, external hosts, same-path hashes,
+	 *   Woo AJAX/cart/checkout/admin/REST paths, and [data-gloskin-no-transition].
+	 * - Skips entirely when prefers-reduced-motion is set. */
+	function initPageTransitions() {
+		if (typeof window.matchMedia === 'function' &&
+			window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
+		var overlay = document.querySelector('[data-gloskin-page-transition]');
+		if (!overlay) { return; }
+
+		var SESSION_KEY = 'gloskin_pt';
+		var HARD_TIMEOUT_MS = 3000;
+		var navigated = false;
+
+		/* BFCache: if page is restored from history cache, remove overlay immediately. */
+		window.addEventListener('pageshow', function (e) {
+			if (e.persisted) {
+				overlay.classList.remove('is-active');
+				navigated = false;
+				sessionStorage.removeItem(SESSION_KEY);
+			}
+		});
+
+		/* Clean up any stale marker left by a previous transition. */
+		sessionStorage.removeItem(SESSION_KEY);
+
+		function getTransitionDurationMs() {
+			var raw = getComputedStyle(document.documentElement)
+				.getPropertyValue('--gl-transition-duration').trim();
+			/* Value is like "360ms" or "0.36s" */
+			if (raw.indexOf('ms') !== -1) { return parseInt(raw, 10) || 360; }
+			if (raw.indexOf('s') !== -1) { return Math.round(parseFloat(raw) * 1000) || 360; }
+			return 360;
+		}
+
+		var SKIP_HREF_PATTERNS = [
+			'add-to-cart=',
+			'?wc-ajax=',
+			'/cart/',
+			'/checkout/',
+			'/wp-admin/',
+			'wp-json/',
+			'/wp-login',
+		];
+
+		document.addEventListener('click', function (e) {
+			if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) { return; }
+			if (e.button !== 0) { return; }
+			if (navigated) { return; }
+
+			/* Walk up to find anchor. */
+			var node = e.target;
+			var link = null;
+			while (node && node !== document.body) {
+				if (node.tagName === 'A' && node.href) { link = node; break; }
+				node = node.parentElement;
+			}
+			if (!link) { return; }
+
+			var href = link.href;
+			/* Skip non-http schemes and download anchors. */
+			if (!/^https?:\/\//.test(href)) { return; }
+			if (link.hasAttribute('download')) { return; }
+			/* Skip new-tab targets. */
+			var target = link.getAttribute('target') || '';
+			if (target === '_blank' || target === '_new') { return; }
+			/* Skip opt-out marker. */
+			if (link.hasAttribute('data-gloskin-no-transition')) { return; }
+
+			/* Same-origin check. */
+			try {
+				var url = new URL(href);
+				if (url.host !== location.host) { return; }
+				/* Hash-only change on same path: browser handles natively. */
+				if (url.hash && url.pathname === location.pathname && url.search === location.search) { return; }
+				/* Already on this exact URL. */
+				if (href === location.href) { return; }
+			} catch (ex) { return; }
+
+			/* Skip Woo and admin paths. */
+			for (var i = 0; i < SKIP_HREF_PATTERNS.length; i++) {
+				if (href.indexOf(SKIP_HREF_PATTERNS[i]) !== -1) { return; }
+			}
+
+			/* All guards passed — start transition. */
+			e.preventDefault();
+			navigated = true;
+			overlay.classList.add('is-active');
+			sessionStorage.setItem(SESSION_KEY, '1');
+
+			var duration = getTransitionDurationMs();
+			var doNavigate = function () { location.href = href; };
+
+			/* Navigate after the overlay fades in, with a hard timeout backstop. */
+			setTimeout(doNavigate, Math.min(Math.max(duration, 80), HARD_TIMEOUT_MS));
+			setTimeout(doNavigate, HARD_TIMEOUT_MS);
+		});
+	}
+
 	function init() {
 		initializeCommerceBadgeCounts();
 		initOverlayCloseButtons();
@@ -2760,6 +2863,7 @@
 		initTestimonials();
 		initTreatmentBands();
 		initSkincareChips();
+		initPageTransitions();
 	}
 
 	if (typeof document !== 'undefined') {
@@ -2797,7 +2901,8 @@
 			initPromoCarousel: initPromoCarousel,
 			initTestimonials: initTestimonials,
 			initTreatmentBands: initTreatmentBands,
-			initSkincareChips: initSkincareChips
+			initSkincareChips: initSkincareChips,
+			initPageTransitions: initPageTransitions
 		};
 	}
 }());

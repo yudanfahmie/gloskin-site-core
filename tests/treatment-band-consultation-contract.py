@@ -59,12 +59,12 @@ require(
 require('https://images.unsplash.com' not in helpers, 'No https://images.unsplash.com runtime URLs allowed in template-helpers.php')
 
 # 7. Version sync
-require("Version: 0.7.140" in plugin_h, "plugin header must be 0.7.140")
-require("const VERSION = '0.7.140';" in kernel, "Kernel VERSION must be 0.7.140")
+require("Version: 0.7.141" in plugin_h, "plugin header must be 0.7.141")
+require("const VERSION = '0.7.141';" in kernel, "Kernel VERSION must be 0.7.141")
 
 if failures:
     for f in failures:
         print('FAIL:', f)
     sys.exit(1)
 
-print('treatment-band-consultation-contract.py: OK (0.7.140)')
+print('treatment-band-consultation-contract.py: OK (0.7.141)')

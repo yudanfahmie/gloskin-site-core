@@ -5,7 +5,7 @@ declare(strict_types=1);
  * final-migration-state-contract.php
  *
  * Static contract: response-state keys, error classification, and failed-state
- * resume path for the v0.7.140 hotfix.
+ * resume path for the v0.7.141 hotfix.
  *
  * Asserts:
  *   1.  response_state() returns 'processed_steps' (not 'processed_products').
@@ -119,8 +119,8 @@ ok_state(
 );
 
 /* 15. Version sync */
-ok_state( (bool) preg_match( "/const VERSION\s*=\s*'0\.7\.140'/", $kernel ), 'Kernel VERSION must be 0.7.140' );
-ok_state( (bool) preg_match( '/^ \* Version: 0\.7\.140$/m', $plugin_h ), 'Plugin header Version must be 0.7.140' );
+ok_state( (bool) preg_match( "/const VERSION\s*=\s*'0\.7\.141'/", $kernel ), 'Kernel VERSION must be 0.7.141' );
+ok_state( (bool) preg_match( '/^ \* Version: 0\.7\.141$/m', $plugin_h ), 'Plugin header Version must be 0.7.141' );
 
 echo "\nfinal-migration-state-contract.php: {$passed} passed, {$failed} failed\n";
 exit( $failed > 0 ? 1 : 0 );
