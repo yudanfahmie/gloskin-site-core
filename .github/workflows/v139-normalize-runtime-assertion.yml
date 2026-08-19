@@ -25,6 +25,7 @@ jobs:
           coverage: none
 
       - name: Correct stale runtime harness contracts
+        id: patch
         shell: bash
         run: |
           set -euo pipefail
@@ -118,6 +119,7 @@ jobs:
         run: GL_TEST_WOO_LATE=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
 
       - name: Detect browser capability
+        id: browser_capability
         shell: bash
         run: |
           if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/null 2>&1; then
@@ -131,16 +133,18 @@ jobs:
         run: bash tests/check-runtime.sh
 
       - name: Publish failure diagnostic
-        if: failure() && steps.closure_commit.outcome == 'success'
+        if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           sha='${{ steps.closure_commit.outputs.sha }}'
+          if [[ -z "$sha" ]]; then sha="$GITHUB_SHA"; fi
+          description="FAIL: patch=${{ steps.patch.outcome }} commit=${{ steps.closure_commit.outcome }} arch=${{ steps.architecture.outcome }} full=${{ steps.full_runtime.outcome }}"
           gh api -X POST "repos/${GITHUB_REPOSITORY}/statuses/${sha}" \
             -f state=failure \
             -f context='v139/closure-verification' \
-            -f description='FAIL: v0.7.139 closure verification' >/dev/null
+            -f description="$description" >/dev/null
 
       - name: Publish final v139 diagnostic statuses
         if: success()
