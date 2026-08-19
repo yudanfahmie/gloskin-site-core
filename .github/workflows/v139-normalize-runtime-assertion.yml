@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   closure:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -57,9 +56,10 @@ jobs:
 \t\texit( 1 );
 \t}
 """
-          if src.count(home_old) != 1:
-              raise SystemExit(f'expected exactly one Home context assertion block, found {src.count(home_old)}')
-          src = src.replace(home_old, home_new, 1)
+          if src.count(home_old) == 1:
+              src = src.replace(home_old, home_new, 1)
+          elif '$expected_clinic_links = array();' not in src:
+              raise SystemExit('Home runtime assertion is neither stale nor normalized')
 
           route_old = """\t\tif ( ( $context['view'] ?? '' ) !== $case[0] ) {
 \t\t\tfwrite( STDERR, 'Route context failed for ' . $case[0] . \"\\n\" ); exit( 1 );
@@ -70,21 +70,25 @@ jobs:
 \t\t\tfwrite( STDERR, 'Full clinic records missing for ' . $case[0] . \"\\n\" ); exit( 1 );
 \t\t}
 """
-          if src.count(route_old) != 1:
-              raise SystemExit(f'expected exactly one route assertion block, found {src.count(route_old)}')
-          src = src.replace(route_old, route_new, 1)
+          if 'Full clinic records missing for ' not in src:
+              if src.count(route_old) != 1:
+                  raise SystemExit(f'expected exactly one route assertion block, found {src.count(route_old)}')
+              src = src.replace(route_old, route_new, 1)
           runtime.write_text(src, encoding='utf-8')
 
           sample = Path('tests/sample-product-migration-contract.py')
           sample_src = sample.read_text(encoding='utf-8')
           stale = "const VERSION = '0.7.138'"
-          if sample_src.count(stale) != 1:
-              raise SystemExit(f'expected exactly one stale sample-product version assertion, found {sample_src.count(stale)}')
-          sample.write_text(sample_src.replace(stale, "const VERSION = '0.7.139'", 1), encoding='utf-8')
+          current = "const VERSION = '0.7.139'"
+          if sample_src.count(stale) == 1:
+              sample_src = sample_src.replace(stale, current, 1)
+          elif current not in sample_src:
+              raise SystemExit('sample-product version assertion is neither v0.7.138 nor v0.7.139')
+          sample.write_text(sample_src, encoding='utf-8')
           PY
           git diff --check
 
-      - name: Commit corrected test harness to main
+      - name: Persist corrected test harness when needed
         id: closure_commit
         shell: bash
         run: |
@@ -93,10 +97,14 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add tests/runtime-smoke.php tests/sample-product-migration-contract.py
           git diff --cached --check
-          git diff --cached --quiet && { echo 'no closure changes to commit' >&2; exit 1; }
-          git commit -m 'Close v0.7.139 runtime test harness'
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          git push origin HEAD:main
+          if git diff --cached --quiet; then
+            echo "sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+            echo 'test harness already normalized'
+          else
+            git commit -m 'Close v0.7.139 runtime test harness'
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            git push origin HEAD:main
+          fi
 
       - name: Architecture
         id: architecture
@@ -119,7 +127,6 @@ jobs:
         run: GL_TEST_WOO_LATE=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
 
       - name: Detect browser capability
-        id: browser_capability
         shell: bash
         run: |
           if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/null 2>&1; then
@@ -140,11 +147,9 @@ jobs:
         run: |
           sha='${{ steps.closure_commit.outputs.sha }}'
           if [[ -z "$sha" ]]; then sha="$GITHUB_SHA"; fi
-          description="FAIL: patch=${{ steps.patch.outcome }} commit=${{ steps.closure_commit.outcome }} arch=${{ steps.architecture.outcome }} full=${{ steps.full_runtime.outcome }}"
+          description="FAIL: patch=${{ steps.patch.outcome }} persist=${{ steps.closure_commit.outcome }} arch=${{ steps.architecture.outcome }} full=${{ steps.full_runtime.outcome }}"
           gh api -X POST "repos/${GITHUB_REPOSITORY}/statuses/${sha}" \
-            -f state=failure \
-            -f context='v139/closure-verification' \
-            -f description="$description" >/dev/null
+            -f state=failure -f context='v139/closure-verification' -f description="$description" >/dev/null
 
       - name: Publish final v139 diagnostic statuses
         if: success()
