@@ -1,0 +1,95 @@
+name: final-closure-executor-v2
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  apply-final-closure:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Prove continuation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=35776f3f42f5bf40b42ec3db845387b912173edc
+          git merge-base --is-ancestor "$BASE" HEAD
+          unexpected="$(git diff --name-only "$BASE"..HEAD | grep -Ev '^(tools/final-closure-patch.py|tools/final-closure-trigger.txt|tools/final-closure-normalize-contracts.py|\.github/workflows/final-closure-once.yml|\.github/workflows/final-closure-executor-v2.yml)$' || true)"
+          test -z "$unexpected" || { printf 'Unexpected continuation diff:\n%s\n' "$unexpected" >&2; exit 1; }
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: gd, mbstring, intl
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Apply closure and normalize superseded contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i 's/format%3Dauto/format%3Dwebp/g' tools/final-closure-patch.py
+          python tools/final-closure-patch.py
+          python tools/final-closure-normalize-contracts.py
+
+      - name: Focused closure gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l plugin/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration.php
+          php -l plugin/gloskin-site-core/includes/class-gloskin-site-core-final-ia-normalizer.php
+          php -l plugin/gloskin-site-core/includes/class-gloskin-site-core-editorial-media-bundle.php
+          php tests/final-closure-contract.php
+          python tests/page-transition-contract.py
+          ./tests/check-presentation.sh
+
+      - name: Commit final release tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            tools/final-closure-patch.py \
+            tools/final-closure-trigger.txt \
+            tools/final-closure-normalize-contracts.py \
+            .github/workflows/final-closure-once.yml \
+            .github/workflows/final-closure-executor-v2.yml \
+            FINAL_CLOSURE_FAILURE.log
+          git config user.name 'gloskin-final-closure'
+          git config user.email '57941518+yudanfahmie@users.noreply.github.com'
+          git add -A
+          git commit -m 'Complete v0.7.141 final closure'
+          echo "FINAL_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Exact committed runtime suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash tests/check-runtime.sh
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+          grep -q "const VERSION.*0.7.141" plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php
+          grep -q "2026-08-19-final" plugin/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration.php
+          grep -q "gloskin_site_core_revision_20260819f_state" plugin/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration.php
+
+      - name: Push exact tested commit to PR branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          echo "pushed $FINAL_SHA"
