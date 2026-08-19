@@ -1,0 +1,103 @@
+name: final-closure-once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - tools/final-closure-patch.py
+      - .github/workflows/final-closure-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-final-closure:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact preparation tree
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prove continuation base and preparation-only diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=35776f3f42f5bf40b42ec3db845387b912173edc
+          git merge-base --is-ancestor "$BASE" HEAD
+          unexpected="$(git diff --name-only "$BASE"..HEAD | grep -Ev '^(tools/final-closure-patch.py|\.github/workflows/final-closure-once.yml)$' || true)"
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected files changed since required continuation HEAD:" >&2
+            echo "$unexpected" >&2
+            exit 1
+          fi
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: gd, mbstring, intl
+          coverage: none
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Apply bounded final closure
+        run: python tools/final-closure-patch.py
+
+      - name: Normalize generated contract literal anchors
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('tests/final-closure-contract.php')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('"[\'editorial_audit\'] = $this->run_managed_content()"', '"[\'editorial_audit\'] = \\$this->run_managed_content()"')
+          s = s.replace('"[\'ia_audit\'] = $this->run_normalize()"', '"[\'ia_audit\'] = \\$this->run_normalize()"')
+          p.write_text(s, encoding='utf-8')
+
+      - name: Precommit syntax and focused contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l plugin/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration.php
+          php -l plugin/gloskin-site-core/includes/class-gloskin-site-core-final-ia-normalizer.php
+          php -l plugin/gloskin-site-core/includes/class-gloskin-site-core-editorial-media-bundle.php
+          php tests/final-closure-contract.php
+          python tests/page-transition-contract.py
+
+      - name: Commit final release tree without temporary writer
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f tools/final-closure-patch.py .github/workflows/final-closure-once.yml
+          git config user.name 'gloskin-final-closure'
+          git config user.email '57941518+yudanfahmie@users.noreply.github.com'
+          git add -A
+          git commit -m 'Complete v0.7.141 final closure'
+          echo "FINAL_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Exact committed runtime suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash tests/check-runtime.sh
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+          test "$(git show HEAD:plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php | grep -c "const VERSION.*0.7.141")" -ge 1
+          test "$(git show HEAD:plugin/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration.php | grep -c "2026-08-19-final")" -ge 1
+          test "$(git show HEAD:plugin/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration.php | grep -c "gloskin_site_core_revision_20260819f_state")" -ge 1
+
+      - name: Push exact tested commit to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push origin HEAD:main
+          echo "pushed $FINAL_SHA"
