@@ -79,6 +79,15 @@ replace_once(
     '    "plugin/gloskin-site-core/templates/pages/contact.php",\n    "plugin/gloskin-site-core/templates/pages/about.php",',
 )
 
+# The editorial resolver is loaded by a few isolated renderer contracts without a
+# full WordPress bootstrap. Do not make generic media-kind normalization depend on
+# sanitize_key(); the accepted alphabet is intentionally smaller and local.
+replace_once(
+    'plugin/gloskin-site-core/templates/parts/template-helpers.php',
+    "$kind = sanitize_key( (string) $kind );",
+    "$kind = strtolower( (string) preg_replace( '/[^a-z0-9_-]+/i', '', (string) $kind ) );",
+)
+
 # The page-transition router may acknowledge the existing Cart<->Checkout handoff,
 # but it must not couple itself to Woo block cart markup. Keep cart-table polish CSS-only.
 replace_once(
