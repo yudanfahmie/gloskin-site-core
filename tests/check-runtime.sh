@@ -21,6 +21,7 @@ if ! ./tests/check-presentation.sh >"$presentation_log" 2>&1; then
   false "presentation-${presentation_detail:-unknown}"
 fi
 rm -f "$presentation_log"
+python tests/v139-prototype-refresh-baseline-contract.py
 python tests/prototype-refresh-contract.py
 python tests/width-doctor-grid-contract.py
 python tests/prototype-authority-contract.py
