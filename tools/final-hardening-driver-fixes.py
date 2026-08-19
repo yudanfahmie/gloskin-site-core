@@ -75,4 +75,12 @@ replace_once(
     "expect(variant.includes(\"'woocommerce_thumbnail'\") && !variant.includes('gloskin_ui1_render_editorial_media') && variant.includes('gloskin-ui1-card--text-first'), 'Consultation image must use factual Woo media only and degrade text-first when absent');",
 )
 
+# The main driver updates literal version strings. Normalize regex-escaped legacy
+# version expectations as well so contracts inspect 0.7.142 rather than 0.7.141.
+for test in Path('tests').iterdir():
+    if test.is_file() and test.suffix in {'.php', '.py', '.sh', '.js'}:
+        text = test.read_text(encoding='utf-8')
+        if r'0\.7\.141' in text:
+            test.write_text(text.replace(r'0\.7\.141', r'0\.7\.142'), encoding='utf-8')
+
 print('final-hardening-driver-fixes: OK')
