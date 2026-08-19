@@ -80,12 +80,17 @@ replace_once(
 )
 
 # The editorial resolver is loaded by a few isolated renderer contracts without a
-# full WordPress bootstrap. Do not make generic media-kind normalization depend on
-# sanitize_key(); the accepted alphabet is intentionally smaller and local.
+# full WordPress bootstrap. Keep normalization local and fail closed when the WP
+# option API is absent; real WordPress runtime still reads the migration catalog.
 replace_once(
     'plugin/gloskin-site-core/templates/parts/template-helpers.php',
     "$kind = sanitize_key( (string) $kind );",
     "$kind = strtolower( (string) preg_replace( '/[^a-z0-9_-]+/i', '', (string) $kind ) );",
+)
+replace_once(
+    'plugin/gloskin-site-core/templates/parts/template-helpers.php',
+    "$catalog = get_option( 'gloskin_site_core_editorial_media_v1', array() );",
+    "$catalog = function_exists( 'get_option' ) ? get_option( 'gloskin_site_core_editorial_media_v1', array() ) : array();",
 )
 
 # The page-transition router may acknowledge the existing Cart<->Checkout handoff,
