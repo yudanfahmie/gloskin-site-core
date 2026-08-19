@@ -10,6 +10,7 @@ on:
 permissions:
   contents: write
 
+# Temporary one-shot writer. The successful final commit removes this workflow.
 jobs:
   apply-final-closure:
     if: github.actor != 'github-actions[bot]'
