@@ -3,139 +3,23 @@
 from pathlib import Path
 import re
 import sys
-
-ROOT = Path(__file__).resolve().parents[1]
-PLUGIN = ROOT / "plugin" / "gloskin-site-core"
-
-def read(rel):
-    return (ROOT / rel).read_text(encoding="utf-8")
-
-def require(cond, message):
-    if not cond:
-        raise AssertionError(message)
-
-production = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-production.css")
-css = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css") + "\n" + read("plugin/gloskin-site-core/assets/css/gloskin-ui1-readiness.css") + "\n" + production
-js = read("plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js")
-helper = read("plugin/gloskin-site-core/templates/parts/readiness-helpers.php")
-shell = read("plugin/gloskin-site-core/templates/shell.php")
-description_boundary = read("plugin/gloskin-site-core/templates/parts/product-description-boundary.php")
-adapter = read("plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php")
-mobile = read("plugin/gloskin-site-core/templates/parts/mobile-drawer.php")
-header = read("plugin/gloskin-site-core/templates/parts/header.php")
-main_plugin = read("plugin/gloskin-site-core/gloskin-site-core.php")
-kernel = read("plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php")
-assets = read("plugin/gloskin-site-core/config/assets.php")
-runner = read("tests/check-runtime.sh")
-
-# Asset chain keeps one owner while loading the readiness layer before production polish.
-require("gloskin-ui1-readiness" in assets and "assets/css/gloskin-ui1-readiness.css" in assets, "readiness stylesheet must be registered by the canonical asset owner")
-require("array( 'gloskin-ui1-readiness' )" in assets, "production CSS must depend on readiness layer")
-
-# Search geometry and dynamic zero/error copy.
-require(".gloskin-ui1-search-overlay__body{margin-top:0;min-height:0}" in css, "search body must collapse when empty")
-require(".gloskin-ui1-search-overlay__body:not(:empty){margin-top:20px}" in css, "search spacing must be state-driven")
-require("Tidak menemukan hasil yang sesuai" in js, "search zero-state title missing")
-require("Coba kata lain atau gunakan istilah yang lebih singkat." in js, "search zero-state copy missing")
-require("Pencarian belum dapat dimuat" in js and "Buka pencarian biasa" in js, "search error fallback missing")
-require("AbortController" in js and "220" in js, "search debounce/abort behavior must remain")
-require("price_html" in adapter and "get_price_html()" in adapter[adapter.index("public function search_products"):], "product search must use live Woo price_html")
-
-# Breadcrumb ownership and SEO/GEO non-ownership.
-require("function_exists( 'rank_math_the_breadcrumbs' )" in helper, "Rank Math must be provider-first")
-require("rank_math_the_breadcrumbs();" in helper, "Rank Math frontend breadcrumb function missing")
-require("$provider_html" in helper and "'' !== $provider_html" in helper, "breadcrumb provider must be proven non-empty (function existing is not enough) before the slot claims it as owner")
-require('aria-label="Breadcrumb"' in helper and 'aria-current="page"' in helper, "fallback breadcrumb accessibility missing")
-require("'home' === $view" in helper, "homepage breadcrumb suppression missing")
-require("remove_action( 'woocommerce_before_main_content', 'woocommerce_breadcrumb', 20 )" in shell, "Woo duplicate breadcrumb suppression missing")
-require("remove_action( 'woocommerce_cart_is_empty', 'wc_empty_cart_message', 10 )" in shell and "gloskin_ui1_render_native_cart_empty_state" in helper, "native empty cart must use shared Gloskin zero state")
-for forbidden in ("BreadcrumbList", "application/ld+json", 'rel="canonical"', "wp_head", "meta name=", "og:"):
-    require(forbidden not in helper, f"readiness helper must not own SEO metadata/schema: {forbidden}")
-
-# Single-product Description remains Woo-owned content but has a stable presentation boundary.
-require("product-description-boundary.php" in shell, "single-product Description boundary must be loaded by the canonical shell")
-require("gloskin_ui1_register_product_description_boundary();" in shell, "single-product Description boundary must be registered before Woo renders")
-require("woocommerce_product_tabs" in description_boundary, "Description boundary must replace only Woo's Description tab callback")
-require("apply_filters( 'the_content'" not in description_boundary and "the_content()" not in description_boundary, "Description boundary must never execute the global the_content chain")
-require("shortcode_tags['product_page']" in description_boundary and "woocommerce/single-product" in description_boundary, "Description boundary must block recursive full-product embeds")
-require("single-product-description-boundary-contract.php" in runner, "Description boundary regression must run through tests/check-runtime.sh")
-
-# Shared empty-state contract and truthful collection rendering.
-require("gloskin_ui1_render_empty_state" in helper and "gloskin_ui1_empty_state_icon" in helper, "shared empty-state helper missing")
-require('aria-hidden="true" focusable="false"' in helper, "empty SVG must be decorative")
-require("gloskin-empty-settle 220ms" in css and "prefers-reduced-motion:reduce" in css, "empty-state motion/reduced-motion contract missing")
-for rel in (
-    "plugin/gloskin-site-core/templates/pages/clinics.php",
-    "plugin/gloskin-site-core/templates/pages/contact.php",
-    "plugin/gloskin-site-core/templates/pages/about.php",
-):
-    require("gloskin_ui1_real_cards" in read(rel), f"{rel} must not present synthetic clinic placeholders as records")
-for rel in (
-    "plugin/gloskin-site-core/templates/pages/clinics.php",
-    "plugin/gloskin-site-core/templates/pages/doctors.php",
-    "plugin/gloskin-site-core/templates/pages/insights.php",
-    "plugin/gloskin-site-core/templates/pages/skincare-category.php",
-):
-    require("gloskin_ui1_render_empty_state" in read(rel), f"meaningful zero state missing in {rel}")
-require('data-gloskin-section="treatments-closing"' in read("plugin/gloskin-site-core/templates/pages/treatments.php"), "Treatments must retain its closing consultation path when finder data is unavailable")
-require("gloskin_ui1_render_empty_state" in read("plugin/gloskin-site-core/templates/parts/shop-results.php"), "meaningful Shop zero state must live in the shared SSR/AJAX renderer")
-
-# Native Woo My Account/auth ownership and real shell lifecycle.
-require("woocommerce-MyAccount-navigation" in css and "woocommerce-MyAccount-content" in css, "native My Account workspace styling missing")
-require(".woocommerce-account.logged-in .gloskin-ui1-commerce-native{display:block}" in css, "logged-in My Account outer wrapper must stay on its compact width owner")
-require(".woocommerce-account.logged-in .gloskin-ui1-commerce-native>.woocommerce{display:block;width:100%;max-width:none;margin:0}" in css, "only the inner Woo wrapper may expand to the compact workspace width")
-require(".woocommerce-account .gloskin-ui1-commerce-heading>.gloskin-ui1-container,.woocommerce-account .gloskin-ui1-commerce-native{width:calc(100% - 40px);max-width:980px" in css, "My Account heading and workspace must share the compact 980px measure")
-require(".gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation{float:none;width:100%;position:static;overflow-x:auto" in css, "My Account navigation must neutralize Woo float/width and own the horizontal tab strip")
-require("display:flex;align-items:flex-end;min-width:max-content" in css, "My Account endpoints must remain responsive horizontal tabs")
-require(".gloskin-ui1-commerce-native .woocommerce-MyAccount-content{float:none;clear:both;width:100%" in css, "My Account content must neutralize Woo float/width and stay full-width below tabs")
-require(".woocommerce-account .gloskin-ui1-commerce-heading h1{font-size:clamp(2.2rem,3.1vw,2.9rem)}" in css, "My Account H1 must stay compact against the later generic heading scale")
-require(".woocommerce-MyAccount-content a:not(.button){color:var(--gloskin-accent-readable)}" in css, "My Account inline-link color must not override Woo action buttons")
-require(".woocommerce-info .button" in css and "float:none" in css and "color:#fff" in css and "margin:0 0 0 auto" in css, "My Account notice action must neutralize Woo float and keep readable button foreground")
-require(".woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login" in production and "grid-template-columns:repeat(2,minmax(0,1fr))" in production, "native logged-out My Account must own a stable two-column auth grid")
-require("#customer_login>.u-column1.col-1" in production and "#customer_login>.u-column2.col-2" in production and "float:none" in production and "width:100%" in production, "native logged-out auth columns must neutralize Woo/theme floats and widths")
-require("form.woocommerce-form-login.login" in production and "form.woocommerce-form-register.register" in production and "border:0" in production and "padding:0" in production, "native My Account forms must override Woo form.login/register chrome with higher specificity")
-require(".woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native>.woocommerce" in production and "background:transparent" in production, "logged-out native account must not keep the oversized outer Woo card")
-require("@media (max-width:782px)" in production and "grid-template-columns:1fr" in production, "native logged-out auth must collapse to one column responsively")
-require("wc_get_template( 'myaccount/form-login.php' )" in adapter, "quick auth must render Woo native form template")
-require("woocommerce_enable_myaccount_registration" in adapter, "Woo registration setting must control switch")
-require("should_render_quick_auth" in adapter and "is_account_page()" in adapter, "native account page must suppress duplicate overlay form")
-require('data-gloskin-overlay="auth"' in adapter, "auth must use unified overlay state")
-require("add_action( 'gloskin_site_core_shell_footer', array( $this, 'render_quick_auth_overlay' ), 10 )" in adapter, "quick auth must bind to the Gloskin shell lifecycle")
-require("do_action( 'gloskin_site_core_shell_footer' );" in shell, "shell auth integration hook missing")
-require("add_action( 'wp_footer', array( $this, 'render_quick_auth_overlay'" not in adapter, "quick auth must not depend on generic footer rendering")
-require("initAuth()" in js and "overlay.open('auth')" in js, "auth must use existing overlay controller")
-require("data-gloskin-auth-open-from-drawer" in mobile and "data-gloskin-auth-open-from-drawer" in js, "mobile quick-auth path missing")
-for forbidden in ("wp_ajax_nopriv", "wp_ajax_", "register_rest_route( 'gloskin/v1', '/login", "localStorage.setItem('password", "sessionStorage"):
-    require(forbidden not in adapter + js, f"custom credential/auth path forbidden: {forbidden}")
-require(js.count("fetch(") == 5, "unexpected frontend fetch path added (expected: search, wishlist resolve, Woo-owned add_to_cart AJAX, Quick Add read-only projection, Shop read-only catalog projection)")
-
-# Final shell/header/drawer/footer polish stays scoped to existing presentation owners.
-require(".gloskin-ui1-sheet{top:var(--gloskin-ui1-admin-bar-height)}" in production, "commerce sheets must reuse the canonical admin-bar offset")
-require(".gloskin-ui1-badge{background:var(--gloskin-accent);color:#fff;opacity:1}" in production, "header utility count bubble must stay accent-branded even at zero")
-require(".gloskin-ui1-section__action{" in production and "justify-content:flex-end;" in production and "padding-top:16px;" in production and "border-top:1px solid" in production, "section see-more action must close the card group with deliberate spacing/alignment")
-require('class="gloskin-ui1-nav__bubble"' in header, "desktop nav must render the single shared bubble indicator element")
-require(".gloskin-ui1-nav__bubble" in production and ".is-bubbled" in production, "desktop top-level nav bubble indicator styling missing")
-require("body.gloskin-ui1 .gloskin-ui1-nav--desktop" in production and "gloskin-ui1-nav__link.is-bubbled" in production and "color:#fff" in production and "transition-duration:0s" in production, "bubbled desktop nav foreground must snap to pure white under the explicit bubble state")
-require(".gloskin-ui1-nav__row:hover>.gloskin-ui1-nav__link" not in production and ".gloskin-ui1-nav__row:focus-within>.gloskin-ui1-nav__link" not in production, "desktop nav foreground must not be repaired by a second row-hover CSS state owner")
-require("target.row.addEventListener('mouseenter'" in js and "target.row.addEventListener('focusin'" in js, "desktop nav bubble must use the whole top-level row as its mouse/focus hit area")
-require("link.addEventListener('mouseenter'" not in js, "desktop nav bubble must not keep a competing link-only mouse owner")
-require("justify-content:stretch" in production and "justify-items:stretch" in production and "align-items:stretch" in production, "desktop submenu list must stretch inside its wrapper instead of inheriting centered nav-row alignment")
-require(".gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__list" in production and "margin:0;" in production and "padding:0;" in production, "desktop submenu list must own zero list spacing over the global content-list rule")
-require(".gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__link:hover" in production and "background:var(--gloskin-accent)" in production, "desktop submenu hover must use the accent background instead of the generic gray nav hover")
-require("gloskin-ui1-nav__toggle:hover" in production and "background:transparent" in production, "desktop parent-menu chevron hover must stay visually naked")
-require("initNavBubble" in js and "is-visible" in js and "is-bubbled" in js, "desktop nav bubble must be positioned/toggled by the shared JS controller")
-require(".gloskin-ui1-footer__brand::after" in production and ".gloskin-ui1-footer__grid>div:not(.gloskin-ui1-footer__brand)" in production, "footer hierarchy polish missing")
-require("--gloskin-ui1-brand-primary-height:clamp(44px,6vw,80px)" in production and ".gloskin-ui1-header__inner img.gloskin-ui1-brand__image" in production and ".gloskin-ui1-footer img.gloskin-ui1-brand__image--footer" in production, "header primary and footer logos must share one responsive display-size token")
-require('[data-gloskin-header="header-2"]:not(.is-compact-sticky){--gloskin-ui1-brand-primary-height:60px}' in production, "Header Type 2 initial logo height must stay exactly 60px without changing compact sticky sizing")
-require(".gloskin-ui1-footer .gloskin-ui1-brand--footer{grid-column:auto;justify-self:start;align-self:start;margin:0}" in production and ".gloskin-ui1-footer__brand{justify-items:start;text-align:left}" in production, "footer brand must cancel the global centered grid-column and remain left-aligned")
-require(".gloskin-ui1-footer__clinics{grid-template-columns:repeat(2,max-content)" in production and ".gloskin-ui1-footer__clinics li,.gloskin-ui1-footer__clinics a{white-space:nowrap}" in production and "@media (max-width:420px){.gloskin-ui1-footer__clinics{grid-template-columns:1fr}}" in production, "footer clinic labels must stay one-line with a narrow-phone safe column")
-for required in ("readiness-contract-smoke.py", "readiness-php-smoke.php", "readiness-browser-smoke.py", "rendered-shell-auth-smoke.php", "micro-interactions-contract.sh"):
-    require(required in runner, f"{required} must run through tests/check-runtime.sh")
-
-# Woo/account page heading and version sync.
-require("gloskin_ui1_render_commerce_page_heading" in shell, "cart/checkout/account H1 owner missing")
-header_version = re.search(r"\* Version:\s*([0-9.]+)", main_plugin).group(1)
-kernel_version = re.search(r"const VERSION = '([^']+)'", kernel).group(1)
-require(header_version == kernel_version == "0.7.142", "plugin/kernel version mismatch")
-
-print("readiness-contract-smoke: OK")
+ROOT=Path(__file__).resolve().parents[1]
+def read(rel):return (ROOT/rel).read_text(encoding='utf-8')
+def require(cond,message):
+    if not cond:raise AssertionError(message)
+production=read('plugin/gloskin-site-core/assets/css/gloskin-ui1-production.css');css=read('plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css')+'\n'+read('plugin/gloskin-site-core/assets/css/gloskin-ui1-readiness.css')+'\n'+production;js=read('plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js');helper=read('plugin/gloskin-site-core/templates/parts/readiness-helpers.php');shell=read('plugin/gloskin-site-core/templates/shell.php');description_boundary=read('plugin/gloskin-site-core/templates/parts/product-description-boundary.php');adapter=read('plugin/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php');mobile=read('plugin/gloskin-site-core/templates/parts/mobile-drawer.php');header=read('plugin/gloskin-site-core/templates/parts/header.php');main_plugin=read('plugin/gloskin-site-core/gloskin-site-core.php');kernel=read('plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php');assets=read('plugin/gloskin-site-core/config/assets.php');runner=read('tests/check-runtime.sh')
+require('gloskin-ui1-readiness' in assets and 'assets/css/gloskin-ui1-readiness.css' in assets,'readiness stylesheet must be registered by the canonical asset owner');require("array( 'gloskin-ui1-readiness' )" in assets,'production CSS must depend on readiness layer');require('.gloskin-ui1-search-overlay__body{margin-top:0;min-height:0}' in css,'search body must collapse when empty');require('.gloskin-ui1-search-overlay__body:not(:empty){margin-top:20px}' in css,'search spacing must be state-driven');require('Tidak menemukan hasil yang sesuai' in js,'search zero-state title missing');require('Coba kata lain atau gunakan istilah yang lebih singkat.' in js,'search zero-state copy missing');require('Pencarian belum dapat dimuat' in js and 'Buka pencarian biasa' in js,'search error fallback missing');require('AbortController' in js and '220' in js,'search debounce/abort behavior must remain');require('price_html' in adapter and 'get_price_html()' in adapter[adapter.index('public function search_products'):],'product search must use live Woo price_html')
+require("function_exists( 'rank_math_the_breadcrumbs' )" in helper,'Rank Math must be provider-first');require('rank_math_the_breadcrumbs();' in helper,'Rank Math frontend breadcrumb function missing');require('$provider_html' in helper and "'' !== $provider_html" in helper,'breadcrumb provider must be proven non-empty (function existing is not enough) before the slot claims it as owner');require('aria-label="Breadcrumb"' in helper and 'aria-current="page"' in helper,'fallback breadcrumb accessibility missing');require("'home' === $view" in helper,'homepage breadcrumb suppression missing');require("remove_action( 'woocommerce_before_main_content', 'woocommerce_breadcrumb', 20 )" in shell,'Woo duplicate breadcrumb suppression missing');require("remove_action( 'woocommerce_cart_is_empty', 'wc_empty_cart_message', 10 )" in shell and 'gloskin_ui1_render_native_cart_empty_state' in helper,'native empty cart must use shared Gloskin zero state')
+for forbidden in ('BreadcrumbList','application/ld+json','rel="canonical"','wp_head','meta name=','og:'):require(forbidden not in helper,f'readiness helper must not own SEO metadata/schema: {forbidden}')
+require('product-description-boundary.php' in shell,'single-product Description boundary must be loaded by the canonical shell');require('gloskin_ui1_register_product_description_boundary();' in shell,'single-product Description boundary must be registered before Woo renders');require('woocommerce_product_tabs' in description_boundary,"Description boundary must replace only Woo's Description tab callback");require("apply_filters( 'the_content'" not in description_boundary and 'the_content()' not in description_boundary,'Description boundary must never execute the global the_content chain');require("shortcode_tags['product_page']" in description_boundary and 'woocommerce/single-product' in description_boundary,'Description boundary must block recursive full-product embeds');require('single-product-description-boundary-contract.php' in runner,'Description boundary regression must run through tests/check-runtime.sh')
+require('gloskin_ui1_render_empty_state' in helper and 'gloskin_ui1_empty_state_icon' in helper,'shared empty-state helper missing');require('aria-hidden="true" focusable="false"' in helper,'empty SVG must be decorative');require('gloskin-empty-settle 220ms' in css and 'prefers-reduced-motion:reduce' in css,'empty-state motion/reduced-motion contract missing')
+for rel in ('plugin/gloskin-site-core/templates/pages/clinics.php','plugin/gloskin-site-core/templates/pages/contact.php','plugin/gloskin-site-core/templates/pages/about.php'):require('gloskin_ui1_real_cards' in read(rel),f'{rel} must not present synthetic clinic placeholders as records')
+for rel in ('plugin/gloskin-site-core/templates/pages/clinics.php','plugin/gloskin-site-core/templates/pages/doctors.php','plugin/gloskin-site-core/templates/pages/insights.php','plugin/gloskin-site-core/templates/pages/skincare-category.php'):require('gloskin_ui1_render_empty_state' in read(rel),f'meaningful zero state missing in {rel}')
+require('data-gloskin-section="treatments-closing"' in read('plugin/gloskin-site-core/templates/pages/treatments.php'),'Treatments must retain its closing consultation path when finder data is unavailable');require('gloskin_ui1_render_empty_state' in read('plugin/gloskin-site-core/templates/parts/shop-results.php'),'meaningful Shop zero state must live in the shared SSR/AJAX renderer')
+require('woocommerce-MyAccount-navigation' in css and 'woocommerce-MyAccount-content' in css,'native My Account workspace styling missing');require('.woocommerce-account.logged-in .gloskin-ui1-commerce-native{display:block}' in css,'logged-in My Account outer wrapper must stay on its compact width owner');require('.woocommerce-account.logged-in .gloskin-ui1-commerce-native>.woocommerce{display:block;width:100%;max-width:none;margin:0}' in css,'only the inner Woo wrapper may expand to the compact workspace width');require('.woocommerce-account .gloskin-ui1-commerce-heading>.gloskin-ui1-container,.woocommerce-account .gloskin-ui1-commerce-native{width:calc(100% - 40px);max-width:980px' in css,'My Account heading and workspace must share the compact 980px measure');require('.gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation{float:none;width:100%;position:static;overflow-x:auto' in css,'My Account navigation must neutralize Woo float/width and own the horizontal tab strip');require('display:flex;align-items:flex-end;min-width:max-content' in css,'My Account endpoints must remain responsive horizontal tabs');require('.gloskin-ui1-commerce-native .woocommerce-MyAccount-content{float:none;clear:both;width:100%' in css,'My Account content must neutralize Woo float/width and stay full-width below tabs');require('.woocommerce-account .gloskin-ui1-commerce-heading h1{font-size:clamp(2.2rem,3.1vw,2.9rem)}' in css,'My Account H1 must stay compact against the later generic heading scale');require('.woocommerce-MyAccount-content a:not(.button){color:var(--gloskin-accent-readable)}' in css,'My Account inline-link color must not override Woo action buttons');require('.woocommerce-info .button' in css and 'float:none' in css and 'color:#fff' in css and 'margin:0 0 0 auto' in css,'My Account notice action must neutralize Woo float and keep readable button foreground');require('.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login' in production and 'grid-template-columns:repeat(2,minmax(0,1fr))' in production,'native logged-out My Account must own a stable two-column auth grid');require('#customer_login>.u-column1.col-1' in production and '#customer_login>.u-column2.col-2' in production and 'float:none' in production and 'width:100%' in production,'native logged-out auth columns must neutralize Woo/theme floats and widths');require('form.woocommerce-form-login.login' in production and 'form.woocommerce-form-register.register' in production and 'border:0' in production and 'padding:0' in production,'native My Account forms must override Woo form.login/register chrome with higher specificity');require('.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native>.woocommerce' in production and 'background:transparent' in production,'logged-out native account must not keep the oversized outer Woo card');require('@media (max-width:782px)' in production and 'grid-template-columns:1fr' in production,'native logged-out auth must collapse to one column responsively');require("wc_get_template( 'myaccount/form-login.php' )" in adapter,'quick auth must render Woo native form template');require('woocommerce_enable_myaccount_registration' in adapter,'Woo registration setting must control switch');require('should_render_quick_auth' in adapter and 'is_account_page()' in adapter,'native account page must suppress duplicate overlay form');require('data-gloskin-overlay="auth"' in adapter,'auth must use unified overlay state');require("add_action( 'gloskin_site_core_shell_footer', array( $this, 'render_quick_auth_overlay' ), 10 )" in adapter,'quick auth must bind to the Gloskin shell lifecycle');require("do_action( 'gloskin_site_core_shell_footer' );" in shell,'shell auth integration hook missing');require("add_action( 'wp_footer', array( $this, 'render_quick_auth_overlay'" not in adapter,'quick auth must not depend on generic footer rendering');require('initAuth()' in js and "overlay.open('auth')" in js,'auth must use existing overlay controller');require('data-gloskin-auth-open-from-drawer' in mobile and 'data-gloskin-auth-open-from-drawer' in js,'mobile quick-auth path missing')
+for forbidden in ('wp_ajax_nopriv','wp_ajax_','register_rest_route( \'gloskin/v1\', \'/login',"localStorage.setItem('password",'sessionStorage'):require(forbidden not in adapter+js,f'custom credential/auth path forbidden: {forbidden}')
+require(js.count('fetch(')==5,'unexpected frontend fetch path added (expected: search, wishlist resolve, Woo-owned add_to_cart AJAX, Quick Add read-only projection, Shop read-only catalog projection)')
+require('.gloskin-ui1-sheet{top:var(--gloskin-ui1-admin-bar-height)}' in production,'commerce sheets must reuse the canonical admin-bar offset');require('.gloskin-ui1-badge{background:var(--gloskin-accent);color:#fff;opacity:1}' in production,'header utility count bubble must stay accent-branded even at zero');require('.gloskin-ui1-section__action{' in production and 'justify-content:flex-end;' in production and 'padding-top:16px;' in production and 'border-top:1px solid' in production,'section see-more action must close the card group with deliberate spacing/alignment');require('class="gloskin-ui1-nav__bubble"' in header,'desktop nav must render the single shared bubble indicator element');require('.gloskin-ui1-nav__bubble' in production and '.is-bubbled' in production,'desktop top-level nav bubble indicator styling missing');require('body.gloskin-ui1 .gloskin-ui1-nav--desktop' in production and 'gloskin-ui1-nav__link.is-bubbled' in production and 'color:#fff' in production and 'transition-duration:0s' in production,'bubbled desktop nav foreground must snap to pure white under the explicit bubble state');require('.gloskin-ui1-nav__row:hover>.gloskin-ui1-nav__link' not in production and '.gloskin-ui1-nav__row:focus-within>.gloskin-ui1-nav__link' not in production,'desktop nav foreground must not be repaired by a second row-hover CSS state owner');require("target.row.addEventListener('mouseenter'" in js and "target.row.addEventListener('focusin'" in js,'desktop nav bubble must use the whole top-level row as its mouse/focus hit area');require("link.addEventListener('mouseenter'" not in js,'desktop nav bubble must not keep a competing link-only mouse owner');require('justify-content:stretch' in production and 'justify-items:stretch' in production and 'align-items:stretch' in production,'desktop submenu list must stretch inside its wrapper instead of inheriting centered nav-row alignment');require('.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__list' in production and 'margin:0;' in production and 'padding:0;' in production,'desktop submenu list must own zero list spacing over the global content-list rule');require('.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__link:hover' in production and 'background:var(--gloskin-accent)' in production,'desktop submenu hover must use the accent background instead of the generic gray nav hover');require('gloskin-ui1-nav__toggle:hover' in production and 'background:transparent' in production,'desktop parent-menu chevron hover must stay visually naked');require('initNavBubble' in js and 'is-visible' in js and 'is-bubbled' in js,'desktop nav bubble must be positioned/toggled by the shared JS controller');require('.gloskin-ui1-footer__brand::after' in production and '.gloskin-ui1-footer__grid>div:not(.gloskin-ui1-footer__brand)' in production,'footer hierarchy polish missing');require('--gloskin-ui1-brand-primary-height:clamp(44px,6vw,80px)' in production and '.gloskin-ui1-header__inner img.gloskin-ui1-brand__image' in production and '.gloskin-ui1-footer img.gloskin-ui1-brand__image--footer' in production,'header primary and footer logos must share one responsive display-size token');require('[data-gloskin-header="header-2"]:not(.is-compact-sticky){--gloskin-ui1-brand-primary-height:60px}' in production,'Header Type 2 initial logo height must stay exactly 60px without changing compact sticky sizing');require('.gloskin-ui1-footer .gloskin-ui1-brand--footer{grid-column:auto;justify-self:start;align-self:start;margin:0}' in production and '.gloskin-ui1-footer__brand{justify-items:start;text-align:left}' in production,'footer brand must cancel the global centered grid-column and remain left-aligned');require('.gloskin-ui1-footer__clinics{grid-template-columns:repeat(2,max-content)' in production and '.gloskin-ui1-footer__clinics li,.gloskin-ui1-footer__clinics a{white-space:nowrap}' in production and '@media (max-width:420px){.gloskin-ui1-footer__clinics{grid-template-columns:1fr}}' in production,'footer clinic labels must stay one-line with a narrow-phone safe column')
+for required in ('readiness-contract-smoke.py','readiness-php-smoke.php','readiness-browser-smoke.py','rendered-shell-auth-smoke.php','micro-interactions-contract.sh'):require(required in runner,f'{required} must run through tests/check-runtime.sh')
+require('gloskin_ui1_render_commerce_page_heading' in shell,'cart/checkout/account H1 owner missing');header_version=re.search(r'\* Version:\s*([0-9.]+)',main_plugin).group(1);kernel_version=re.search(r"const VERSION = '([^']+)'",kernel).group(1);require(header_version==kernel_version=='0.7.143','plugin/kernel version mismatch')
+print('readiness-contract-smoke: OK')
