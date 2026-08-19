@@ -79,7 +79,7 @@ php tests/final-closure-contract.php
 php tests/final-hardening-contract.php
 php tests/final-preflight-safety-contract.php
 php tests/final-migration-partial-roster-resume.php
-php tests/final-migration-render-fixture.php
+php tests/final-migration-render-fixture-runner.php
 php tests/managed-record-ordering-contract.php
 php tests/description-consolidation-contract.php
 php tests/hero-video-contract.php
