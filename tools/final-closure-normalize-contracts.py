@@ -37,6 +37,13 @@ grep -Fq 'wp_get_attachment_image( $attachment_id' \"$helpers\" \\
   || { echo \"local WordPress editorial attachment rendering missing\" >&2; exit 1; }""",
 )
 
+# The final Home requirement intentionally unifies Skincare and Product Discovery.
+replace_once(
+    'tests/product-grid-contract.php',
+    "$ok( false !== strpos( $home, 'data-gloskin-section=\"home-products\"' ), 'Homepage product section missing' );",
+    "$ok( false !== strpos( $home, 'data-gloskin-section=\"home-discovery\"' ), 'Unified Homepage skincare/product discovery section missing' );",
+)
+
 # The page-transition router may acknowledge the existing Cart<->Checkout handoff,
 # but it must not couple itself to Woo block cart markup. Keep cart-table polish CSS-only.
 replace_once(
