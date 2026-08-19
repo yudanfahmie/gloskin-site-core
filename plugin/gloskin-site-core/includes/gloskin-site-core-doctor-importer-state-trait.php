@@ -4,9 +4,13 @@ trait Gloskin_Site_Core_Doctor_Importer_State_Trait {
 	/** @var Gloskin_Site_Core_Doctor_Bundle */
 	private $bundle;
 
+	/** @var string */
+	private $plugin_file;
+
 	/** @param string $plugin_file Main plugin file. */
 	public function __construct( $plugin_file ) {
-		$this->bundle = new Gloskin_Site_Core_Doctor_Bundle( $plugin_file );
+		$this->plugin_file = (string) $plugin_file;
+		$this->bundle      = new Gloskin_Site_Core_Doctor_Bundle( $plugin_file );
 	}
 
 	/** @return array<string,mixed> */
@@ -29,14 +33,20 @@ trait Gloskin_Site_Core_Doctor_Importer_State_Trait {
 	}
 
 	/**
-	 * Pure package validation for callers that must prove the roster bundle
-	 * before any WordPress mutation. This intentionally reuses the canonical
-	 * bundle loader instead of duplicating importer validation rules.
+	 * Pure package validation before any roster mutation. Package A reuses the
+	 * canonical roster loader. When the importer is owned by the loaded Final
+	 * Migration, packages B/C are also validated before the importer lock or
+	 * any upsert is reached.
 	 *
 	 * @return array{manifest:array<string,mixed>,doctors:array<int,array<string,string>>}
 	 */
 	public function validate_bundle() {
-		return $this->bundle->load();
+		$payload = $this->bundle->load(); // A. gloskin-doctors-v1.
+		if ( class_exists( 'Gloskin_Site_Core_Revision_20260819_Final_Migration', false ) ) {
+			require_once __DIR__ . '/class-gloskin-site-core-final-package-validator.php';
+			( new Gloskin_Site_Core_Final_Package_Validator( $this->plugin_file ) )->validate_after_roster_bundle(); // B then C.
+		}
+		return $payload;
 	}
 
 	/** @return bool */
@@ -65,7 +75,7 @@ trait Gloskin_Site_Core_Doctor_Importer_State_Trait {
 			throw new RuntimeException( __( 'Doctor migration sudah dimulai; gunakan Continue.', 'gloskin-site-core' ) );
 		}
 
-		$payload = $this->validate_bundle(); // Validate entire bundle before any mutation.
+		$payload = $this->validate_bundle(); // Pure A -> B -> C validation before lock/upsert.
 		$token   = $this->acquire_lock();
 		try {
 			$state = $this->state();
