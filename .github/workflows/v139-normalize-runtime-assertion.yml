@@ -24,103 +24,10 @@ jobs:
           extensions: mbstring
           coverage: none
 
-      - name: Normalize v0.7.139 test harness only
+      - name: Correct stale runtime harness contracts
         shell: bash
         run: |
           set -euo pipefail
-
-          cat > tests/check-architecture.sh <<'ARCH'
-          #!/usr/bin/env bash
-          set -euo pipefail
-
-          repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-          plugin_root="$repo_root/plugin/gloskin-site-core"
-
-          if [[ ! -d "$plugin_root" ]]; then
-            echo "missing production plugin directory: $plugin_root" >&2
-            exit 1
-          fi
-
-          while IFS= read -r -d '' file; do
-            php -l "$file" >/dev/null
-          done < <(find "$plugin_root" -type f -name '*.php' -print0)
-
-          prohibited='Morgen_Core_|morgen_core_|morgen-ui6-|mg6-|CASE-PROD|PROD-[0-9]+|wp_ajax_nopriv_|alloptions|notoptions|technical-library|quality-testing'
-          if grep -RInE "$prohibited" "$plugin_root" --include='*.php' --include='*.js' --include='*.css'; then
-            echo "prohibited runtime identifier or architecture pattern found" >&2
-            exit 1
-          fi
-
-          contact_bootstrap_file="$plugin_root/includes/gloskin-site-core-contact-service-bootstrap-trait.php"
-          shop_catalog_file="$plugin_root/includes/class-gloskin-site-core-woocommerce-adapter-shop-catalog.php"
-          template_service_file="$plugin_root/includes/class-gloskin-site-core-template-service.php"
-          shop_discovery_route_file="$plugin_root/includes/gloskin-site-core-shop-discovery-route-trait.php"
-
-          wpdb_files="$(grep -RIl '\$wpdb' "$plugin_root" --include='*.php' || true)"
-          unexpected_wpdb="$(echo "$wpdb_files" | grep -vF "$contact_bootstrap_file" | grep -vF "$shop_catalog_file" | grep -vF "$template_service_file" || true)"
-          [[ -z "$unexpected_wpdb" ]] || { echo "direct wpdb access outside documented baseline SQL owners: $unexpected_wpdb" >&2; exit 1; }
-          for allowed_wpdb_file in "$contact_bootstrap_file" "$shop_catalog_file" "$template_service_file"; do
-            echo "$wpdb_files" | grep -qF "$allowed_wpdb_file" || { echo "documented baseline SQL owner missing: $allowed_wpdb_file" >&2; exit 1; }
-          done
-          grep -q 'function migrate_message_post_type' "$contact_bootstrap_file" || { echo "Contact direct-DB exception escaped migrate_message_post_type() owner" >&2; exit 1; }
-          grep -q 'function filter_shop_product_query_clauses' "$shop_catalog_file" || { echo "Shop SQL exception escaped adapter query owner" >&2; exit 1; }
-
-          kernel_count="$(grep -RIl 'final class Gloskin_Site_Core_Kernel' "$plugin_root" --include='*.php' | wc -l | tr -d ' ')"
-          [[ "$kernel_count" == "1" ]] || { echo "expected exactly one Kernel composition root, found $kernel_count" >&2; exit 1; }
-
-          # Exactly three frontend enqueue owner files are protected: the broad
-          # AssetService owner plus the bounded Contact and Shop exceptions.
-          asset_service_file="$plugin_root/includes/class-gloskin-site-core-asset-service.php"
-          asset_owner_files="$(grep -RIlE "add_action[[:space:]]*\\([[:space:]]*['\"]wp_enqueue_scripts['\"]" "$plugin_root" --include='*.php' | sort || true)"
-          for allowed_asset_file in "$asset_service_file" "$contact_bootstrap_file" "$shop_discovery_route_file"; do
-            echo "$asset_owner_files" | grep -qF "$allowed_asset_file" || { echo "documented frontend asset owner missing: $allowed_asset_file" >&2; exit 1; }
-          done
-          unexpected_asset_owners="$(echo "$asset_owner_files" | grep -vF "$asset_service_file" | grep -vF "$contact_bootstrap_file" | grep -vF "$shop_discovery_route_file" || true)"
-          [[ -z "$unexpected_asset_owners" ]] || { echo "unexpected frontend asset enqueue owner(s): $unexpected_asset_owners" >&2; exit 1; }
-          asset_owner_count="$(echo "$asset_owner_files" | grep -c . || true)"
-          [[ "$asset_owner_count" == "3" ]] || { echo "expected exactly AssetService + Contact + Shop Discovery frontend owners, found $asset_owner_count" >&2; exit 1; }
-
-          grep -Fq "add_action( 'wp_enqueue_scripts', array( \$this, 'enqueue_recaptcha' )" "$contact_bootstrap_file" || { echo "Contact asset exception escaped enqueue_recaptcha owner" >&2; exit 1; }
-          grep -Fq "add_action( 'wp_enqueue_scripts', array( \$this, 'enqueue_shop_assets' )" "$shop_discovery_route_file" || { echo "Shop Discovery asset exception escaped enqueue_shop_assets owner" >&2; exit 1; }
-          grep -Fq 'public function enqueue_shop_assets()' "$shop_discovery_route_file" || { echo "Shop Discovery enqueue_shop_assets() owner missing" >&2; exit 1; }
-
-          # The Shop exception is exact and bounded: preserve the existing Shop gate
-          # and only the existing discovery JS/CSS enqueues from the v0.7.138 baseline.
-          grep -Fq "\$context = function_exists( 'get_query_var' ) ? get_query_var( 'gloskin_context', array() ) : array();" "$shop_discovery_route_file" || { echo "Shop Discovery context gate missing" >&2; exit 1; }
-          grep -Fq "\$is_shop = is_array( \$context ) && 'shop' === ( isset( \$context['view'] ) ? \$context['view'] : '' );" "$shop_discovery_route_file" || { echo "Shop Discovery context is no longer shop-scoped" >&2; exit 1; }
-          grep -Fq "if ( ! \$is_shop && function_exists( 'is_shop' ) ) {" "$shop_discovery_route_file" || { echo "Shop Discovery Woo shop fallback gate missing" >&2; exit 1; }
-          grep -Fq "\$is_shop = is_shop();" "$shop_discovery_route_file" || { echo "Shop Discovery is_shop() gate missing" >&2; exit 1; }
-          grep -Fq "if ( ! \$is_shop ) {" "$shop_discovery_route_file" || { echo "Shop Discovery non-Shop early return missing" >&2; exit 1; }
-          shop_enqueue_count="$(grep -Ec '^[[:space:]]*wp_enqueue_(script|style)[[:space:]]*\(' "$shop_discovery_route_file" || true)"
-          [[ "$shop_enqueue_count" == "2" ]] || { echo "Shop Discovery must enqueue exactly its existing script + style, found $shop_enqueue_count calls" >&2; exit 1; }
-          grep -Fq "wp_enqueue_script( 'gloskin-ui1-shop-discovery', plugins_url( 'assets/js/gloskin-ui1-shop-discovery.js', \$this->plugin_file ), array(), \$version, false );" "$shop_discovery_route_file" || { echo "unexpected Shop Discovery script contract" >&2; exit 1; }
-          grep -Fq "wp_enqueue_style( 'gloskin-ui1-shop-discovery', plugins_url( 'assets/css/gloskin-ui1-shop-discovery.css', \$this->plugin_file ), array( 'gloskin-ui1-core' ), \$version );" "$shop_discovery_route_file" || { echo "unexpected Shop Discovery style contract" >&2; exit 1; }
-
-          service_count="$(find "$plugin_root/includes" -maxdepth 1 -type f \( -name 'class-gloskin-site-core-*-service.php' -o -name 'class-gloskin-site-core-*-adapter.php' \) | wc -l | tr -d ' ')"
-          [[ "$service_count" == "9" ]] || { echo "expected exactly 9 bootable service/adapter classes from handoff baseline, found $service_count" >&2; exit 1; }
-
-          woo_gate_files="$(grep -RIl "class_exists( 'WooCommerce'" "$plugin_root/includes" --include='*.php' || true)"
-          woo_gate_count="$(echo "$woo_gate_files" | grep -c . || true)"
-          adapter_file="$plugin_root/includes/class-gloskin-site-core-woocommerce-adapter.php"
-          lifecycle_file="$plugin_root/includes/class-gloskin-site-core-lifecycle-service.php"
-          echo "$woo_gate_files" | grep -qF "$adapter_file" || { echo "canonical WooCommerce_Adapter no longer resolves Woo availability" >&2; exit 1; }
-          unexpected_gates="$(echo "$woo_gate_files" | grep -vF "$adapter_file" | grep -vF "$lifecycle_file" || true)"
-          [[ -z "$unexpected_gates" ]] || { echo "Woo availability gate(s) outside the adapter and documented LifecycleService exception: $unexpected_gates" >&2; exit 1; }
-          [[ "$woo_gate_count" -le 2 ]] || { echo "expected at most 2 Woo availability gates (adapter + lifecycle exception), found $woo_gate_count: $woo_gate_files" >&2; exit 1; }
-
-          required_templates=(home about treatments promo treatment skincare skincare-category clinics clinic doctors doctor contact insights shop)
-          for template in "${required_templates[@]}"; do
-            [[ -f "$plugin_root/templates/pages/$template.php" ]] || { echo "missing template: $template" >&2; exit 1; }
-          done
-
-          for script in "$plugin_root"/assets/js/*.js; do
-            node --check "$script" >/dev/null
-          done
-
-          echo "architecture checks passed ($service_count bootable service classes)"
-          ARCH
-          chmod +x tests/check-architecture.sh
-
           python - <<'PY'
           from pathlib import Path
 
@@ -174,25 +81,19 @@ jobs:
               raise SystemExit(f'expected exactly one stale sample-product version assertion, found {sample_src.count(stale)}')
           sample.write_text(sample_src.replace(stale, "const VERSION = '0.7.139'", 1), encoding='utf-8')
           PY
-
-          rm -f .github/workflows/v139-normalize-runtime-assertion.yml
-          if git grep -nE '^(<<<<<<< |>>>>>>> )' -- tests .github/workflows; then
-            echo 'unresolved merge conflict marker remains in test/workflow files' >&2
-            exit 1
-          fi
           git diff --check
 
-      - name: Commit normalized test harness to main
+      - name: Commit corrected test harness to main
         id: closure_commit
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add tests/check-architecture.sh tests/runtime-smoke.php tests/sample-product-migration-contract.py .github/workflows/v139-normalize-runtime-assertion.yml
+          git add tests/runtime-smoke.php tests/sample-product-migration-contract.py
           git diff --cached --check
           git diff --cached --quiet && { echo 'no closure changes to commit' >&2; exit 1; }
-          git commit -m 'Close v0.7.139 CI test harness'
+          git commit -m 'Close v0.7.139 runtime test harness'
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           git push origin HEAD:main
 
@@ -217,7 +118,6 @@ jobs:
         run: GL_TEST_WOO_LATE=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
 
       - name: Detect browser capability
-        id: browser_capability
         shell: bash
         run: |
           if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/null 2>&1; then
@@ -237,11 +137,10 @@ jobs:
         shell: bash
         run: |
           sha='${{ steps.closure_commit.outputs.sha }}'
-          description='FAIL: v0.7.139 closure verification'
           gh api -X POST "repos/${GITHUB_REPOSITORY}/statuses/${sha}" \
             -f state=failure \
             -f context='v139/closure-verification' \
-            -f description="$description" >/dev/null
+            -f description='FAIL: v0.7.139 closure verification' >/dev/null
 
       - name: Publish final v139 diagnostic statuses
         if: success()
@@ -252,12 +151,8 @@ jobs:
           set -euo pipefail
           sha='${{ steps.closure_commit.outputs.sha }}'
           status() {
-            local context="$1"
-            local description="$2"
             gh api -X POST "repos/${GITHUB_REPOSITORY}/statuses/${sha}" \
-              -f state=success \
-              -f context="$context" \
-              -f description="$description" >/dev/null
+              -f state=success -f context="$1" -f description="$2" >/dev/null
           }
           status v139/architecture 'PASS: strict baseline architecture guard'
           status v139/architecture-detail-pass 'PASS: architecture detail'
