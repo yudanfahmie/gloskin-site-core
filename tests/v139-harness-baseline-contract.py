@@ -96,9 +96,6 @@ grep -Fq 'gloskin_ui1_render_presentation_media( $kind, $seed, $class );' \"$hel
     elif "editorial staging media must not depend on external Unsplash runtime URLs" not in src:
         raise SystemExit("check-presentation: Unsplash guard is neither known stale nor normalized")
 
-    # v0.7.138/current production already use Graphik + Felix Titling. The old
-    # test section still asserts retired Marcellus/Mulish and fallback/no-italic
-    # rules. Replace only that bounded test section; never touch runtime fonts.
     stale_font_start = 'if [[ ! -f "$production_css" ]]'
     favicon_marker = "# Favicon derivatives: all sizes must exist and derive from the same master,\n"
     corrected_font_marker = "Graphik/Felix production typography layer missing"
@@ -165,6 +162,35 @@ grep -qF "add_action( 'wp_head', array( \$this, 'print_font_preload' )" "$asset_
 
 '''
         src = src[:start] + corrected_fonts + src[end:]
+
+    stale_sql = r'''if grep -qF '$wpdb' "$adapter" "$template_service"; then
+  echo "raw \$wpdb product query found; WooCommerce must remain the sole catalog query owner" >&2
+  exit 1
+fi
+'''
+    corrected_sql = r'''# v0.7.138 already owns one bounded TemplateService price-range projection via
+# wc_product_meta_lookup. Keep the adapter free of raw DB access and ensure every
+# TemplateService $wpdb occurrence stays inside that exact shop_price_bounds().
+if grep -qF '$wpdb' "$adapter"; then
+  echo "raw \$wpdb product query escaped into the Woo adapter" >&2
+  exit 1
+fi
+shop_price_block="$(awk '/private function shop_price_bounds\(\)/,/^\t\}$/' "$template_service")"
+[[ -n "$shop_price_block" ]] || { echo "bounded shop_price_bounds() SQL owner missing" >&2; exit 1; }
+template_wpdb_total="$(grep -cF '$wpdb' "$template_service" || true)"
+shop_price_wpdb_total="$(printf '%s\n' "$shop_price_block" | grep -cF '$wpdb' || true)"
+[[ "$template_wpdb_total" -gt 0 && "$template_wpdb_total" == "$shop_price_wpdb_total" ]] \
+  || { echo "TemplateService raw DB access escaped shop_price_bounds()" >&2; exit 1; }
+printf '%s\n' "$shop_price_block" | grep -qF "wc_product_meta_lookup" \
+  && printf '%s\n' "$shop_price_block" | grep -qF 'SELECT MIN(l.min_price) AS avail_min, MAX(l.max_price) AS avail_max' \
+  || { echo "bounded shop price SQL projection changed" >&2; exit 1; }
+'''
+    if stale_sql in src:
+        if src.count(stale_sql) != 1:
+            raise SystemExit("check-presentation: expected one exact stale raw-DB guard")
+        src = src.replace(stale_sql, corrected_sql, 1)
+    elif "TemplateService raw DB access escaped shop_price_bounds()" not in src:
+        raise SystemExit("check-presentation: raw-DB guard is neither known stale nor normalized")
 
     PRESENTATION.write_text(src, encoding="utf-8")
 
