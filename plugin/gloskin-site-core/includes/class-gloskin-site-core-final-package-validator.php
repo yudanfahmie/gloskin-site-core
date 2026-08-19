@@ -25,12 +25,15 @@ final class Gloskin_Site_Core_Final_Package_Validator {
 
 	/**
 	 * Validate immutable packages B and C after the importer has already
-	 * validated roster package A. This method performs no WordPress mutation.
+	 * validated roster package A. Cross-package aliases are also proven to map
+	 * exactly one photo to exactly one roster identity. No WordPress mutation.
 	 *
+	 * @param array<string,mixed> $roster_payload Validated doctors-v1 payload.
 	 * @return array<string,mixed>
 	 */
-	public function validate_after_roster_bundle() {
+	public function validate_after_roster_bundle( array $roster_payload ) {
 		$photos = $this->validate_doctor_photos();
+		$this->validate_roster_photo_compatibility( $roster_payload, $photos );
 		require_once __DIR__ . '/class-gloskin-site-core-editorial-media-bundle.php';
 		$editorial = ( new Gloskin_Site_Core_Editorial_Media_Bundle( $this->plugin_file ) )->preflight();
 		return array(
@@ -98,5 +101,57 @@ final class Gloskin_Site_Core_Final_Package_Validator {
 			$seen_shas[ $sha ] = true;
 		}
 		return $manifest;
+	}
+
+	/**
+	 * Prove exact roster/photo referential compatibility using package data only.
+	 * This intentionally performs no DB query and no fuzzy/similarity matching.
+	 *
+	 * @param array<string,mixed> $roster_payload Validated roster bundle.
+	 * @param array<string,mixed> $photo_manifest Validated photo manifest.
+	 * @return void
+	 */
+	private function validate_roster_photo_compatibility( array $roster_payload, array $photo_manifest ) {
+		$roster = isset( $roster_payload['doctors'] ) && is_array( $roster_payload['doctors'] ) ? array_values( $roster_payload['doctors'] ) : array();
+		$photos = isset( $photo_manifest['doctors'] ) && is_array( $photo_manifest['doctors'] ) ? array_values( $photo_manifest['doctors'] ) : array();
+		$identity_map = array();
+		foreach ( $roster as $doctor ) {
+			if ( ! is_array( $doctor ) ) { continue; }
+			$source_id = (string) ( $doctor['source_id'] ?? '' );
+			foreach ( array( (string) ( $doctor['post_title'] ?? '' ), str_replace( '-', ' ', (string) ( $doctor['slug'] ?? '' ) ) ) as $candidate ) {
+				$normalized = $this->normalize_identity( $candidate );
+				if ( '' !== $normalized && '' !== $source_id ) { $identity_map[ $normalized ][ $source_id ] = true; }
+			}
+		}
+
+		$used_roster_ids = array();
+		foreach ( $photos as $photo ) {
+			$label   = (string) ( $photo['source_label'] ?? '' );
+			$aliases = isset( $photo['match_aliases'] ) && is_array( $photo['match_aliases'] ) ? $photo['match_aliases'] : array();
+			$matched = array();
+			foreach ( $aliases as $alias ) {
+				$normalized = $this->normalize_identity( (string) $alias );
+				foreach ( array_keys( $identity_map[ $normalized ] ?? array() ) as $source_id ) { $matched[ $source_id ] = true; }
+			}
+			if ( 1 !== count( $matched ) ) {
+				throw new RuntimeException( 'bundle_invalid: Doctor photo alias must resolve exactly one doctors-v1 identity before mutation: ' . $label );
+			}
+			$source_id = (string) array_key_first( $matched );
+			if ( isset( $used_roster_ids[ $source_id ] ) ) {
+				throw new RuntimeException( 'bundle_invalid: Multiple doctor photos resolve to one doctors-v1 identity before mutation: ' . $source_id );
+			}
+			$used_roster_ids[ $source_id ] = true;
+		}
+	}
+
+	/** @param string $name @return string */
+	private function normalize_identity( $name ) {
+		$name = mb_strtolower( (string) $name, 'UTF-8' );
+		$name = trim( $name );
+		$name = (string) preg_replace( '/[^\p{L}\p{N}\s]/u', ' ', $name );
+		$name = (string) preg_replace( '/\s+/', ' ', $name );
+		$name = trim( $name );
+		if ( preg_match( '/^dr\s+(.+)$/u', $name, $matches ) ) { $name = trim( $matches[1] ); }
+		return $name;
 	}
 }
