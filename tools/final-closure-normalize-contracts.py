@@ -71,6 +71,14 @@ replace_once(
     "$ok( false !== strpos( $home, 'data-gloskin-section=\"home-discovery\"' ), 'Unified Homepage skincare/product discovery section missing' );",
 )
 
+# Home no longer renders the early orientation/clinic collection. Keep the
+# truthful-record assertion on the public views that still render clinic cards.
+replace_once(
+    'tests/readiness-contract-smoke.py',
+    '    "plugin/gloskin-site-core/templates/pages/contact.php",\n    "plugin/gloskin-site-core/templates/pages/home.php",\n    "plugin/gloskin-site-core/templates/pages/about.php",',
+    '    "plugin/gloskin-site-core/templates/pages/contact.php",\n    "plugin/gloskin-site-core/templates/pages/about.php",',
+)
+
 # The page-transition router may acknowledge the existing Cart<->Checkout handoff,
 # but it must not couple itself to Woo block cart markup. Keep cart-table polish CSS-only.
 replace_once(
