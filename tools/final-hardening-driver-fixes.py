@@ -67,12 +67,18 @@ rule = '.gloskin-ui1-detail-hero__grid--text-first{grid-template-columns:minmax(
 if rule not in css_text:
     css.write_text(css_text.rstrip() + '\n' + rule + '\n', encoding='utf-8')
 
-# Superseded contract: product consultation may not fabricate an editorial identity image.
+# Superseded contracts: product consultation may not fabricate an editorial identity image.
 consultation_contract = Path('tests/consultation-source-contract.test.js')
 replace_once(
     consultation_contract,
     "expect(variant.includes('gloskin_ui1_render_editorial_media') && variant.includes(\"'woocommerce_thumbnail'\"), 'Consultation image must prefer Woo media and retain deterministic editorial fallback');",
     "expect(variant.includes(\"'woocommerce_thumbnail'\") && !variant.includes('gloskin_ui1_render_editorial_media') && variant.includes('gloskin-ui1-card--text-first'), 'Consultation image must use factual Woo media only and degrade text-first when absent');",
+)
+product_contract = Path('tests/product-card-commerce-contract.php')
+replace_once(
+    product_contract,
+    "ok( false !== strpos( $fallback, 'class=\"gloskin-ui1-consultation-card__image--decorative\"' ) || false !== strpos( $fallback, 'gloskin-ui1-consultation-card__image gloskin-ui1-consultation-card__image--decorative' ), 'consultation: missing Woo image uses CSS-only decorative presentation fallback' );\nok( false !== strpos( $fallback, 'aria-hidden=\"true\"' ), 'consultation: editorial fallback remains decorative' );",
+    "ok( false !== strpos( $fallback, 'gloskin-ui1-card--text-first' ), 'consultation: missing Woo image degrades to text-first card' );\nok( false === strpos( $fallback, 'gloskin-ui1-consultation-card__media' ), 'consultation: missing Woo image renders no media shell' );",
 )
 
 # The main driver updates literal version strings. Normalize regex-escaped legacy
