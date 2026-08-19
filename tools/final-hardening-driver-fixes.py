@@ -33,7 +33,7 @@ p.write_text(s, encoding='utf-8')
 def replace_once(path: Path, old: str, new: str) -> None:
     text = path.read_text(encoding='utf-8')
     if text.count(old) != 1:
-        raise SystemExit(f'{path}: factual detail target count={text.count(old)}')
+        raise SystemExit(f'{path}: replacement target count={text.count(old)}')
     path.write_text(text.replace(old, new, 1), encoding='utf-8')
 
 # Normal factual detail pages are text-first when identity media is absent.
@@ -66,5 +66,13 @@ css_text = css.read_text(encoding='utf-8')
 rule = '.gloskin-ui1-detail-hero__grid--text-first{grid-template-columns:minmax(0,1fr)}'
 if rule not in css_text:
     css.write_text(css_text.rstrip() + '\n' + rule + '\n', encoding='utf-8')
+
+# Superseded contract: product consultation may not fabricate an editorial identity image.
+consultation_contract = Path('tests/consultation-source-contract.test.js')
+replace_once(
+    consultation_contract,
+    "expect(variant.includes('gloskin_ui1_render_editorial_media') && variant.includes(\"'woocommerce_thumbnail'\"), 'Consultation image must prefer Woo media and retain deterministic editorial fallback');",
+    "expect(variant.includes(\"'woocommerce_thumbnail'\") && !variant.includes('gloskin_ui1_render_editorial_media') && variant.includes('gloskin-ui1-card--text-first'), 'Consultation image must use factual Woo media only and degrade text-first when absent');",
+)
 
 print('final-hardening-driver-fixes: OK')
