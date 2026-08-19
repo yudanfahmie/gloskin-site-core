@@ -7,8 +7,9 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 final class Gloskin_Site_Core_Final_Package_Validator {
-	const PHOTO_BUNDLE_ID = 'gloskin-doctor-photos-v2';
-	const PHOTO_EXPECTED   = 12;
+	const PHOTO_BUNDLE_ID       = 'gloskin-doctor-photos-v2';
+	const PHOTO_BUNDLE_REVISION = '2026-08-19-remastered';
+	const PHOTO_EXPECTED        = 12;
 
 	/** @var string */
 	private $plugin_file;
@@ -49,8 +50,10 @@ final class Gloskin_Site_Core_Final_Package_Validator {
 			throw new RuntimeException( 'bundle_unavailable: Doctor photo manifest missing.' );
 		}
 		$manifest = json_decode( (string) file_get_contents( $manifest_path ), true );
-		if ( ! is_array( $manifest ) || self::PHOTO_BUNDLE_ID !== (string) ( $manifest['bundle_id'] ?? '' ) ) {
-			throw new RuntimeException( 'bundle_invalid: Doctor photo manifest invalid.' );
+		if ( ! is_array( $manifest )
+			|| self::PHOTO_BUNDLE_ID !== (string) ( $manifest['bundle_id'] ?? '' )
+			|| self::PHOTO_BUNDLE_REVISION !== (string) ( $manifest['bundle_revision'] ?? '' ) ) {
+			throw new RuntimeException( 'bundle_invalid: Doctor photo manifest identity/revision invalid.' );
 		}
 		$doctors = isset( $manifest['doctors'] ) && is_array( $manifest['doctors'] ) ? array_values( $manifest['doctors'] ) : array();
 		if ( self::PHOTO_EXPECTED !== count( $doctors ) ) {
@@ -63,11 +66,14 @@ final class Gloskin_Site_Core_Final_Package_Validator {
 			if ( ! is_array( $doctor ) ) {
 				throw new RuntimeException( 'bundle_invalid: Doctor photo entry #' . $index . ' invalid.' );
 			}
-			$file = (string) ( $doctor['primary_webp'] ?? '' );
-			$sha  = strtolower( (string) ( $doctor['primary_sha256'] ?? '' ) );
-			$label = trim( (string) ( $doctor['source_label'] ?? '' ) );
+			$file    = (string) ( $doctor['primary_webp'] ?? '' );
+			$sha     = strtolower( (string) ( $doctor['primary_sha256'] ?? '' ) );
+			$label   = trim( (string) ( $doctor['source_label'] ?? '' ) );
 			$aliases = isset( $doctor['match_aliases'] ) && is_array( $doctor['match_aliases'] ) ? $doctor['match_aliases'] : array();
-			if ( '' === $label || ! $aliases || '' === $file || basename( $file ) !== $file || ! preg_match( '/^[a-f0-9]{64}$/', $sha ) ) {
+			$width   = absint( $doctor['width'] ?? 0 );
+			$height  = absint( $doctor['height'] ?? 0 );
+			$bytes   = absint( $doctor['bytes'] ?? 0 );
+			if ( '' === $label || ! $aliases || '' === $file || basename( $file ) !== $file || ! preg_match( '/^[a-f0-9]{64}$/', $sha ) || $width < 1 || $height < 1 || $bytes < 1 ) {
 				throw new RuntimeException( 'bundle_invalid: Doctor photo entry #' . $index . ' incomplete.' );
 			}
 			if ( isset( $seen_files[ $file ] ) || isset( $seen_shas[ $sha ] ) ) {
@@ -76,6 +82,13 @@ final class Gloskin_Site_Core_Final_Package_Validator {
 			$path = $this->photo_dir . '/' . $file;
 			if ( ! is_readable( $path ) ) {
 				throw new RuntimeException( 'bundle_invalid: Doctor photo primary file unreadable: ' . $file );
+			}
+			$actual_size = filesize( $path );
+			$actual_info = @getimagesize( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- false is handled as invalid input.
+			if ( false === $actual_size || $bytes !== (int) $actual_size || false === $actual_info
+				|| $width !== (int) $actual_info[0] || $height !== (int) $actual_info[1]
+				|| 'image/webp' !== (string) ( $actual_info['mime'] ?? '' ) ) {
+				throw new RuntimeException( 'bundle_invalid: Doctor photo primary dimensions/bytes/mime mismatch: ' . $file );
 			}
 			$actual = hash_file( 'sha256', $path );
 			if ( ! is_string( $actual ) || ! hash_equals( $sha, strtolower( $actual ) ) ) {
