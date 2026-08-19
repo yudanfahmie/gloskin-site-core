@@ -5,6 +5,7 @@ cd "$repo_root"
 
 ./tests/check-architecture.sh
 python tests/v139-harness-baseline-contract.py
+python tests/v139-presentation-followup-contract.py
 php tests/core-auth-boundary-contract.php
 python tests/check-language.py
 python tests/sample-product-migration-contract.py
