@@ -24,8 +24,10 @@ $lock_pos = strpos( $state, '$token   = $this->acquire_lock();' );
 $upsert_pos = strpos( $state, '$doctor_id = $this->upsert_doctor' );
 fp_ok( false !== $validate_pos && false !== $bc_pos && false !== $lock_pos && false !== $upsert_pos && $validate_pos < $bc_pos && $bc_pos < $lock_pos && $lock_pos < $upsert_pos, 'Final Migration roster path validates A -> B -> C before lock/upsert' );
 fp_ok( false !== strpos( $state, "class_exists( 'Gloskin_Site_Core_Revision_20260819_Final_Migration', false )" ), 'cross-package validation is scoped to loaded Final Migration ownership' );
-fp_ok( false !== strpos( $validator, "const PHOTO_BUNDLE_ID = 'gloskin-doctor-photos-v2';" ) && false !== strpos( $validator, 'PHOTO_EXPECTED   = 12' ), 'photo validator owns exact immutable bundle/count' );
+fp_ok( (bool) preg_match( "/const PHOTO_BUNDLE_ID\\s*=\\s*'gloskin-doctor-photos-v2'/", $validator ) && (bool) preg_match( '/const PHOTO_EXPECTED\s*=\s*12/', $validator ), 'photo validator owns exact immutable bundle/count' );
+fp_ok( false !== strpos( $validator, "const PHOTO_BUNDLE_REVISION = '2026-08-19-remastered';" ), 'doctor photo bundle revision remains exact and validated' );
 fp_ok( false !== strpos( $validator, 'is_readable( $manifest_path )' ) && false !== strpos( $validator, "hash_file( 'sha256', $path )" ) && false !== strpos( $validator, 'basename( $file ) !== $file' ), 'photo validation proves manifest/readability/path/SHA before mutation' );
+fp_ok( false !== strpos( $validator, "'image/webp' !==" ) && false !== strpos( $validator, 'filesize( $path )' ) && false !== strpos( $validator, 'getimagesize( $path )' ), 'photo validation proves primary bytes/dimensions/mime' );
 fp_ok( false !== strpos( $validator, 'Gloskin_Site_Core_Editorial_Media_Bundle' ) && false !== strpos( $validator, '->preflight()' ), 'editorial validation reuses canonical dimensions/mime/provenance preflight' );
 
 $advance = strpos( $final, 'private function advance_doctor_roster()' );
