@@ -93,8 +93,10 @@ if grep -Eq 'source\.unsplash\.com|https://images\.unsplash\.com/' "$helpers"; t
   echo "editorial staging media must not depend on external Unsplash runtime URLs" >&2
   exit 1
 fi
-grep -Fq 'return array(); /* No external image catalog' "$helpers" \
-  || { echo "empty editorial media catalog contract missing" >&2; exit 1; }
+grep -Fq "get_option( 'gloskin_site_core_editorial_media_v1', array() )" "$helpers" \
+  || { echo "bounded local editorial media catalog contract missing" >&2; exit 1; }
+grep -Fq 'wp_get_attachment_image( $attachment_id' "$helpers" \
+  || { echo "local WordPress editorial attachment rendering missing" >&2; exit 1; }
 grep -Fq 'gloskin_ui1_render_presentation_media( $kind, $seed, $class );' "$helpers" \
   || { echo "CSS-only editorial presentation fallback missing" >&2; exit 1; }
 if grep -RInE "url\([\"']?https?://" "$plugin_root/assets" --include='*.css' --include='*.js'; then

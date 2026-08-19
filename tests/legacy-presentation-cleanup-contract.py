@@ -12,7 +12,7 @@ Asserts:
   6.  private function design_variant() fully removed from template-service.
   7.  No images.unsplash.com runtime URLs in template-helpers.php.
   8.  gloskin_ui1_render_editorial_media() calls gloskin_ui1_render_presentation_media (no Unsplash).
-  9.  gloskin_ui1_editorial_media_catalog() returns empty array (no URLs).
+  9.  editorial_media_catalog() reads only the local migration-owned WordPress option (no runtime URLs).
   10. Why Gloskin meta box renders for 'home' page in admin service.
   11. Why Gloskin keys in admin save_schema() page strings.
   12. List-table column hooks for Promo, Testimonial, Achievement CPTs registered.
@@ -101,10 +101,14 @@ require(
     'gloskin_ui1_render_editorial_media() must delegate to gloskin_ui1_render_presentation_media()'
 )
 
-# 9. editorial_media_catalog returns empty array
+# 9. editorial_media_catalog reads the bounded local attachment catalog only
 require(
-    re.search(r'gloskin_ui1_editorial_media_catalog\b[^{]*\{[^}]*return\s+array\s*\(\s*\)', helpers, re.DOTALL),
-    'gloskin_ui1_editorial_media_catalog() must return empty array()'
+    "get_option( 'gloskin_site_core_editorial_media_v1', array() )" in helpers,
+    'gloskin_ui1_editorial_media_catalog() must read the bounded local migration catalog'
+)
+require(
+    'https://assets.zyrosite.com' not in helpers and 'http://' not in helpers,
+    'template-helpers must not contain runtime editorial hotlinks'
 )
 
 # 10. Why Gloskin meta box for home page

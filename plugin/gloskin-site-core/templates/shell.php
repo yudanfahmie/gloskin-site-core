@@ -83,6 +83,7 @@ if ( 'home' === $gloskin_view ) {
 		if ( $gloskin_commerce_journey_loader ) {
 			echo '<div class="gloskin-ui1-commerce-handoff" data-gloskin-commerce-handoff aria-hidden="true">';
 			echo '<div class="gloskin-ui1-commerce-handoff__goo"><span class="gloskin-ui1-commerce-handoff__blob"></span><span class="gloskin-ui1-commerce-handoff__blob"></span><span class="gloskin-ui1-commerce-handoff__blob"></span><span class="gloskin-ui1-commerce-handoff__blob"></span></div>';
+			echo '<svg class="gloskin-ui1-commerce-handoff__g" viewBox="82 74 185 232" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M647 271H415V239H528V120C528 102 527 88 523 80C520 69 501 56 466 44C428 29 392 21 357 22C300 23 255 53 221 112C187 172 170 249 170 345C170 555 235 665 365 673C481 679 530 624 539 510H569V667C531 682 506 690 495 692C462 700 417 704 360 704C275 704 204 672 145 607C86 539 56 453 55 345C54 246 83 161 142 90C204 21 275 -14 360 -14C419 -14 468 -8 509 2C544 13 578 25 613 35V239H647Z" fill="#fff" transform="translate(65,300) scale(0.3117268,-0.32)"/></svg>';
 			echo '</div>';
 		}
 

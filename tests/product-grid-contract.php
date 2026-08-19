@@ -23,7 +23,7 @@ $assets     = $read( 'plugin/gloskin-site-core/config/assets.php' );
 
 /* Homepage opts only its real product collection into the dedicated geometry. */
 $ok( false !== strpos( $home, "if ( \$gloskin_context['products'] )" ), 'Homepage product section must remain payload-driven' );
-$ok( false !== strpos( $home, 'data-gloskin-section="home-products"' ), 'Homepage product section missing' );
+$ok( false !== strpos( $home, 'data-gloskin-section="home-discovery"' ), 'Unified Homepage skincare/product discovery section missing' );
 $ok( false !== strpos( $home, 'gloskin-ui1-grid--cards gloskin-ui1-product-grid" data-gloskin-product-grid' ), 'Homepage products must opt into shared product grid' );
 $ok( 1 === substr_count( $home, 'data-gloskin-product-grid' ), 'Homepage must expose exactly one product-grid owner marker' );
 $ok( false === strpos( $productcss, '.gloskin-ui1-grid--cards{' ), 'shared product geometry must not override generic editorial card grids' );

@@ -2740,57 +2740,62 @@
 	}
 
 	/* Page-to-page cross-document transition.
-	 * Safety constraints:
-	 * - No beforeunload/unload (BFCache safe).
-	 * - pageshow clears the overlay if page was restored from BFCache.
-	 * - Hard timeout (3s) prevents permanent lockout on slow navigations.
-	 * - Skips: modifier keys, new-tab targets, external hosts, same-path hashes,
-	 *   Woo AJAX/cart/checkout/admin/REST paths, and [data-gloskin-no-transition].
-	 * - Skips entirely when prefers-reduced-motion is set. */
+	 * Navigation timing is intentionally independent from CSS motion. The jelly
+	 * paints immediately, receives up to two RAF opportunities, and document
+	 * navigation is attempted exactly once inside a <=120ms intentional budget.
+	 * Woo mutation/action controls remain native; ordinary same-origin document
+	 * links (including /cart/ and /checkout/ outside the protected commerce
+	 * handoff lifecycle) stay eligible. */
 	function initPageTransitions() {
 		if (typeof window.matchMedia === 'function' &&
 			window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
 		var overlay = document.querySelector('[data-gloskin-page-transition]');
 		if (!overlay) { return; }
 
-		var HARD_TIMEOUT_MS = 3000;
+		var EXIT_NAV_DELAY_MS = 96;
+		var STALE_UI_TIMEOUT_MS = 3000;
 		var navigated = false;
+		var staleTimer = 0;
 
-		/* BFCache: if page is restored from history cache, remove overlay immediately.
-		 * The overlay starts hidden (opacity:0 in CSS), so new pages always begin
-		 * clean — this guard handles only the BFCache back/forward restore edge case. */
-		window.addEventListener('pageshow', function (e) {
-			if (e.persisted) {
-				overlay.classList.remove('is-active');
-				navigated = false;
+		function clearTransitionState() {
+			overlay.classList.remove('is-active');
+			overlay.style.pointerEvents = '';
+			navigated = false;
+			if (staleTimer) {
+				window.clearTimeout(staleTimer);
+				staleTimer = 0;
 			}
-		});
-
-		function getTransitionDurationMs() {
-			var raw = getComputedStyle(document.documentElement)
-				.getPropertyValue('--gl-transition-duration').trim();
-			/* Value is like "360ms" or "0.36s" */
-			if (raw.indexOf('ms') !== -1) { return parseInt(raw, 10) || 360; }
-			if (raw.indexOf('s') !== -1) { return Math.round(parseFloat(raw) * 1000) || 360; }
-			return 360;
 		}
 
-		var SKIP_HREF_PATTERNS = [
-			'add-to-cart=',
-			'?wc-ajax=',
-			'/cart/',
-			'/checkout/',
-			'/wp-admin/',
-			'wp-json/',
-			'/wp-login',
-		];
+		/* BFCache only: a restored document must never retain outgoing UI state. */
+		window.addEventListener('pageshow', function (e) {
+			if (e.persisted) { clearTransitionState(); }
+		});
+
+		function hasClass(link, className) {
+			return link.classList && link.classList.contains(className);
+		}
+
+		function isWooActionLink(link, url) {
+			var rawHref = link.getAttribute('href') || '';
+			if (rawHref.indexOf('add-to-cart=') !== -1 || rawHref.indexOf('wc-ajax=') !== -1) { return true; }
+			if (hasClass(link, 'ajax_add_to_cart') || hasClass(link, 'remove_from_cart_button') || hasClass(link, 'reset_variations')) { return true; }
+			if (link.hasAttribute('data-gloskin-wishlist-toggle') || link.hasAttribute('data-gloskin-quickadd-open')) { return true; }
+			if (link.closest('[data-gloskin-modal], [data-gloskin-wishlist], .quantity, .variations, form.checkout, form.woocommerce-cart-form, [class*="cart-item__quantity"]')) { return true; }
+			return url.searchParams.has('wc-ajax') || url.searchParams.has('add-to-cart');
+		}
+
+		function commerceHandoffOwns(link, url) {
+			var body = document.body;
+			if (!body) { return false; }
+			var isJourneyPage = body.classList.contains('woocommerce-cart') || body.classList.contains('woocommerce-checkout');
+			if (!isJourneyPage) { return false; }
+			var path = url.pathname.replace(/\/+$/, '') || '/';
+			return (path === '/cart' || path === '/checkout') && !!link.closest('.woocommerce');
+		}
 
 		document.addEventListener('click', function (e) {
-			if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) { return; }
-			if (e.button !== 0) { return; }
-			if (navigated) { return; }
-
-			/* Walk up to find anchor. */
+			if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0 || navigated) { return; }
 			var node = e.target;
 			var link = null;
 			while (node && node !== document.body) {
@@ -2798,43 +2803,45 @@
 				node = node.parentElement;
 			}
 			if (!link) { return; }
-
 			var href = link.href;
-			/* Skip non-http schemes and download anchors. */
-			if (!/^https?:\/\//.test(href)) { return; }
-			if (link.hasAttribute('download')) { return; }
-			/* Skip new-tab targets. */
+			if (!/^https?:\/\//.test(href) || link.hasAttribute('download')) { return; }
 			var target = link.getAttribute('target') || '';
-			if (target === '_blank' || target === '_new') { return; }
-			/* Skip opt-out marker. */
-			if (link.hasAttribute('data-gloskin-no-transition')) { return; }
+			if (target === '_blank' || target === '_new' || link.hasAttribute('data-gloskin-no-transition')) { return; }
 
-			/* Same-origin check. */
+			var url;
 			try {
-				var url = new URL(href);
+				url = new URL(href);
 				if (url.host !== location.host) { return; }
-				/* Hash-only change on same path: browser handles natively. */
 				if (url.hash && url.pathname === location.pathname && url.search === location.search) { return; }
-				/* Already on this exact URL. */
 				if (href === location.href) { return; }
 			} catch (ex) { return; }
+			if (url.pathname.indexOf('/wp-admin/') !== -1 || url.pathname.indexOf('/wp-login') !== -1 || url.pathname.indexOf('/wp-json/') !== -1) { return; }
+			if (isWooActionLink(link, url) || commerceHandoffOwns(link, url)) { return; }
 
-			/* Skip Woo and admin paths. */
-			for (var i = 0; i < SKIP_HREF_PATTERNS.length; i++) {
-				if (href.indexOf(SKIP_HREF_PATTERNS[i]) !== -1) { return; }
-			}
-
-			/* All guards passed — start transition. */
 			e.preventDefault();
 			navigated = true;
 			overlay.classList.add('is-active');
+			var startedAt = Date.now();
+			var attempted = false;
+			var navigateOnce = function () {
+				if (attempted) { return; }
+				attempted = true;
+				location.href = href;
+			};
 
-			var duration = getTransitionDurationMs();
-			var doNavigate = function () { location.href = href; };
+			/* Paint the outgoing jelly first, but never couple navigation to its CSS duration. */
+			window.requestAnimationFrame(function () {
+				window.requestAnimationFrame(function () {
+					var elapsed = Date.now() - startedAt;
+					window.setTimeout(navigateOnce, Math.max(0, EXIT_NAV_DELAY_MS - elapsed));
+				});
+			});
 
-			/* Navigate after the overlay fades in, with a hard timeout backstop. */
-			setTimeout(doNavigate, Math.min(Math.max(duration, 80), HARD_TIMEOUT_MS));
-			setTimeout(doNavigate, HARD_TIMEOUT_MS);
+			/* Recovery only. If the same document survives a failed navigation, unlock it.
+			 * This timer never performs a second redirect. */
+			staleTimer = window.setTimeout(function () {
+				if (document.documentElement && overlay.isConnected) { clearTransitionState(); }
+			}, STALE_UI_TIMEOUT_MS);
 		});
 	}
 
