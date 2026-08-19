@@ -144,7 +144,7 @@ grep -qF 'font-family:"Graphik"' "$fonts_css" \
   && grep -qF 'font-weight:600;' "$fonts_css" \
   && grep -qF 'font-weight:700;' "$fonts_css" \
   || { echo "Graphik @font-face family/weight contract regressed" >&2; exit 1; }
-[[ "$(grep -c '@font-face' "$fonts_css")" -eq 9 ]] \
+[[ "$(grep -c '^@font-face{' "$fonts_css")" -eq 9 ]] \
   || { echo "protected baseline must expose exactly nine local @font-face rules" >&2; exit 1; }
 [[ "$(grep -c 'font-display:swap' "$fonts_css")" -eq 9 ]] \
   || { echo "protected baseline font-display:swap policy regressed" >&2; exit 1; }
