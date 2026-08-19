@@ -45,8 +45,6 @@ jobs:
             php -l "$file" >/dev/null
           done < <(find "$plugin_root" -type f -name '*.php' -print0)
 
-          # Broad architecture guard. Pre-existing, file-scoped compatibility/query
-          # owners are checked separately below instead of weakening the prohibition.
           prohibited='Morgen_Core_|morgen_core_|morgen-ui6-|mg6-|CASE-PROD|PROD-[0-9]+|wp_ajax_nopriv_|alloptions|notoptions|technical-library|quality-testing'
           if grep -RInE "$prohibited" "$plugin_root" --include='*.php' --include='*.js' --include='*.css'; then
             echo "prohibited runtime identifier or architecture pattern found" >&2
@@ -58,10 +56,6 @@ jobs:
           template_service_file="$plugin_root/includes/class-gloskin-site-core-template-service.php"
           shop_discovery_route_file="$plugin_root/includes/gloskin-site-core-shop-discovery-route-trait.php"
 
-          # Direct $wpdb access remains prohibited except for the exact three SQL owners
-          # already present in the handoff baseline: Contact post-type compatibility,
-          # adapter-owned bounded Shop query SQL, and Template Service's existing query
-          # projection. A fourth owner anywhere else fails.
           wpdb_files="$(grep -RIl '\$wpdb' "$plugin_root" --include='*.php' || true)"
           unexpected_wpdb="$(echo "$wpdb_files" | grep -vF "$contact_bootstrap_file" | grep -vF "$shop_catalog_file" | grep -vF "$template_service_file" || true)"
           [[ -z "$unexpected_wpdb" ]] || { echo "direct wpdb access outside documented baseline SQL owners: $unexpected_wpdb" >&2; exit 1; }
@@ -74,9 +68,8 @@ jobs:
           kernel_count="$(grep -RIl 'final class Gloskin_Site_Core_Kernel' "$plugin_root" --include='*.php' | wc -l | tr -d ' ')"
           [[ "$kernel_count" == "1" ]] || { echo "expected exactly one Kernel composition root, found $kernel_count" >&2; exit 1; }
 
-          # AssetService is the canonical broad owner. Contact reCAPTCHA and Shop
-          # Discovery are the two exact bounded baseline exceptions. Discover owners
-          # with a spacing/quote-tolerant hook pattern, then reject any fourth file.
+          # Exactly three frontend enqueue owner files are protected: the broad
+          # AssetService owner plus the bounded Contact and Shop exceptions.
           asset_service_file="$plugin_root/includes/class-gloskin-site-core-asset-service.php"
           asset_owner_files="$(grep -RIlE "add_action[[:space:]]*\\([[:space:]]*['\"]wp_enqueue_scripts['\"]" "$plugin_root" --include='*.php' | sort || true)"
           for allowed_asset_file in "$asset_service_file" "$contact_bootstrap_file" "$shop_discovery_route_file"; do
@@ -91,9 +84,8 @@ jobs:
           grep -Fq "add_action( 'wp_enqueue_scripts', array( \$this, 'enqueue_shop_assets' )" "$shop_discovery_route_file" || { echo "Shop Discovery asset exception escaped enqueue_shop_assets owner" >&2; exit 1; }
           grep -Fq 'public function enqueue_shop_assets()' "$shop_discovery_route_file" || { echo "Shop Discovery enqueue_shop_assets() owner missing" >&2; exit 1; }
 
-          # Shop Discovery exception stays Shop-scoped and may enqueue only its two
-          # pre-existing discovery assets. These assertions intentionally model the
-          # exact v0.7.138 protected baseline rather than creating a broad exception.
+          # The Shop exception is exact and bounded: preserve the existing Shop gate
+          # and only the existing discovery JS/CSS enqueues from the v0.7.138 baseline.
           grep -Fq "\$context = function_exists( 'get_query_var' ) ? get_query_var( 'gloskin_context', array() ) : array();" "$shop_discovery_route_file" || { echo "Shop Discovery context gate missing" >&2; exit 1; }
           grep -Fq "\$is_shop = is_array( \$context ) && 'shop' === ( isset( \$context['view'] ) ? \$context['view'] : '' );" "$shop_discovery_route_file" || { echo "Shop Discovery context is no longer shop-scoped" >&2; exit 1; }
           grep -Fq "if ( ! \$is_shop && function_exists( 'is_shop' ) ) {" "$shop_discovery_route_file" || { echo "Shop Discovery Woo shop fallback gate missing" >&2; exit 1; }
@@ -104,14 +96,9 @@ jobs:
           grep -Fq "wp_enqueue_script( 'gloskin-ui1-shop-discovery', plugins_url( 'assets/js/gloskin-ui1-shop-discovery.js', \$this->plugin_file ), array(), \$version, false );" "$shop_discovery_route_file" || { echo "unexpected Shop Discovery script contract" >&2; exit 1; }
           grep -Fq "wp_enqueue_style( 'gloskin-ui1-shop-discovery', plugins_url( 'assets/css/gloskin-ui1-shop-discovery.css', \$this->plugin_file ), array( 'gloskin-ui1-core' ), \$version );" "$shop_discovery_route_file" || { echo "unexpected Shop Discovery style contract" >&2; exit 1; }
 
-          # The handoff baseline already contains exactly nine bootable service/adapter
-          # class files. Assert that exact count so a new service still fails without
-          # falsely rejecting the existing architecture.
           service_count="$(find "$plugin_root/includes" -maxdepth 1 -type f \( -name 'class-gloskin-site-core-*-service.php' -o -name 'class-gloskin-site-core-*-adapter.php' \) | wc -l | tr -d ' ')"
           [[ "$service_count" == "9" ]] || { echo "expected exactly 9 bootable service/adapter classes from handoff baseline, found $service_count" >&2; exit 1; }
 
-          # Woo availability must resolve through the canonical adapter plus the exact
-          # pre-existing lifecycle exception documented by the baseline contract.
           woo_gate_files="$(grep -RIl "class_exists( 'WooCommerce'" "$plugin_root/includes" --include='*.php' || true)"
           woo_gate_count="$(echo "$woo_gate_files" | grep -c . || true)"
           adapter_file="$plugin_root/includes/class-gloskin-site-core-woocommerce-adapter.php"
@@ -139,7 +126,6 @@ jobs:
 
           runtime = Path('tests/runtime-smoke.php')
           src = runtime.read_text(encoding='utf-8')
-
           home_old = """\t$context = get_query_var( 'gloskin_context', array() );
 \tif ( ( $context['view'] ?? '' ) !== 'home' || count( $context['skincare'] ?? array() ) !== 7 ) {
 \t\tfwrite( STDERR, \"Home context failed\\n\" );
@@ -190,41 +176,14 @@ jobs:
           PY
 
           rm -f .github/workflows/v139-normalize-runtime-assertion.yml
-
           if git grep -nE '^(<<<<<<< |>>>>>>> )' -- tests .github/workflows; then
             echo 'unresolved merge conflict marker remains in test/workflow files' >&2
             exit 1
           fi
           git diff --check
 
-      - name: Architecture
-        run: ./tests/check-architecture.sh
-
-      - name: Normal runtime smoke
-        run: php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
-
-      - name: Admin runtime smoke
-        run: GL_TEST_ADMIN=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
-
-      - name: Woo runtime smoke
-        run: GL_TEST_WOO=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
-
-      - name: Late Woo runtime smoke
-        run: GL_TEST_WOO_LATE=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
-
-      - name: Detect browser capability
-        shell: bash
-        run: |
-          if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/null 2>&1; then
-            echo 'BROWSER_RESULT=PASS' >> "$GITHUB_ENV"
-          else
-            echo 'BROWSER_RESULT=SKIP' >> "$GITHUB_ENV"
-          fi
-
-      - name: Full runtime suite
-        run: bash tests/check-runtime.sh
-
-      - name: Commit test-harness closure directly to main
+      - name: Commit normalized test harness to main
+        id: closure_commit
         shell: bash
         run: |
           set -euo pipefail
@@ -234,15 +193,64 @@ jobs:
           git diff --cached --check
           git diff --cached --quiet && { echo 'no closure changes to commit' >&2; exit 1; }
           git commit -m 'Close v0.7.139 CI test harness'
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           git push origin HEAD:main
 
+      - name: Architecture
+        id: architecture
+        run: ./tests/check-architecture.sh
+
+      - name: Normal runtime smoke
+        id: runtime_normal
+        run: php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
+
+      - name: Admin runtime smoke
+        id: runtime_admin
+        run: GL_TEST_ADMIN=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
+
+      - name: Woo runtime smoke
+        id: runtime_woo
+        run: GL_TEST_WOO=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
+
+      - name: Late Woo runtime smoke
+        id: runtime_woo_late
+        run: GL_TEST_WOO_LATE=1 php -d auto_prepend_file=tests/runtime-smoke-wordpress-stubs.php tests/runtime-smoke.php
+
+      - name: Detect browser capability
+        id: browser_capability
+        shell: bash
+        run: |
+          if command -v chromium >/dev/null 2>&1 && python -c 'import playwright' >/dev/null 2>&1; then
+            echo 'BROWSER_RESULT=PASS' >> "$GITHUB_ENV"
+          else
+            echo 'BROWSER_RESULT=SKIP' >> "$GITHUB_ENV"
+          fi
+
+      - name: Full runtime suite
+        id: full_runtime
+        run: bash tests/check-runtime.sh
+
+      - name: Publish failure diagnostic
+        if: failure() && steps.closure_commit.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          sha='${{ steps.closure_commit.outputs.sha }}'
+          description='FAIL: v0.7.139 closure verification'
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/statuses/${sha}" \
+            -f state=failure \
+            -f context='v139/closure-verification' \
+            -f description="$description" >/dev/null
+
       - name: Publish final v139 diagnostic statuses
+        if: success()
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          sha="$(git rev-parse HEAD)"
+          sha='${{ steps.closure_commit.outputs.sha }}'
           status() {
             local context="$1"
             local description="$2"
@@ -251,7 +259,6 @@ jobs:
               -f context="$context" \
               -f description="$description" >/dev/null
           }
-
           status v139/architecture 'PASS: strict baseline architecture guard'
           status v139/architecture-detail-pass 'PASS: architecture detail'
           status v139/path-contract 'PASS: final migration path contract'
@@ -268,7 +275,6 @@ jobs:
           status v139/woo-runtime-smoke 'PASS: GL_TEST_WOO runtime smoke'
           status v139/runtime-detail-pass 'PASS: runtime smoke matrix'
           status v139/full-runtime 'PASS: bash tests/check-runtime.sh'
-
           if [[ "${BROWSER_RESULT}" == 'PASS' ]]; then
             status v139/browser-pass 'PASS: Chromium/Playwright browser suite'
           else
