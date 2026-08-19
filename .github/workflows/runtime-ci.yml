@@ -39,8 +39,11 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Report stale release literals
-        run: grep -RIn --exclude='*.md' '0\.7\.142' tests || true
+      - name: Focused final migration acceptance
+        run: |
+          php tests/final-preflight-safety-contract.php
+          php tests/final-migration-partial-roster-resume.php
+          php tests/final-migration-render-fixture-runner.php
 
       - name: Install Playwright Chromium
         run: |
