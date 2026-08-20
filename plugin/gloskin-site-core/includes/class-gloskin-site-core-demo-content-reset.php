@@ -34,18 +34,25 @@ final class Gloskin_Site_Core_Demo_Content_Reset {
 	 * Meta key shared with the migration — used to identify and clean up
 	 * all demo-seeded posts regardless of which tool created them.
 	 */
-	const DEMO_META  = '_gloskin_demo_identity';
+	const DEMO_META      = '_gloskin_demo_identity';
+	const COMPLETED_OPT  = 'gloskin_demo_reset_completed';
 
 	/** @return void */
 	public function register() {
-		add_action( 'admin_menu',                     array( $this, 'register_page' ) );
+		add_action( 'admin_menu',                      array( $this, 'register_page' ) );
 		add_action( 'admin_post_' . self::POST_ACTION, array( $this, 'handle_reset' ) );
 	}
 
 	/** @return void */
 	public function register_page() {
+		$completed = (bool) get_option( self::COMPLETED_OPT );
+		/*
+		 * Once the reset has run, detach from the visible menu (parent_slug = null)
+		 * so "Reset Demo" disappears and admins are not confused about re-running it.
+		 * The page remains accessible directly via URL for any post-reset review.
+		 */
 		add_submenu_page(
-			Gloskin_Site_Core_Content_Service::ADMIN_MENU_SLUG,
+			$completed ? null : Gloskin_Site_Core_Content_Service::ADMIN_MENU_SLUG,
 			'Reset Konten Demo',
 			'Reset Demo',
 			self::CAPABILITY,
@@ -59,8 +66,9 @@ final class Gloskin_Site_Core_Demo_Content_Reset {
 		if ( ! current_user_can( self::CAPABILITY ) ) {
 			return;
 		}
-		$counts = $this->current_demo_counts();
-		$done   = isset( $_GET['reset_done'] ) ? absint( $_GET['reset_done'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$completed = (bool) get_option( self::COMPLETED_OPT );
+		$counts    = $this->current_demo_counts();
+		$done      = isset( $_GET['reset_done'] ) ? absint( $_GET['reset_done'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		?>
 		<div class="wrap">
 			<h1>Reset Konten Demo Gloskin</h1>
@@ -68,10 +76,15 @@ final class Gloskin_Site_Core_Demo_Content_Reset {
 			<?php if ( $done ) : ?>
 			<div class="notice notice-success inline"><p>
 				<strong>Selesai.</strong> <?php echo $done; ?> konten demo realistis berhasil dibuat dan dipublikasikan.
+				Menu <em>Reset Demo</em> telah dihapus dari navigasi — konten sudah siap.
+			</p></div>
+			<?php elseif ( $completed ) : ?>
+			<div class="notice notice-info inline"><p>
+				Reset telah dijalankan sebelumnya. Gunakan tombol di bawah hanya jika ingin menghapus dan membuat ulang konten demo.
 			</p></div>
 			<?php endif; ?>
 
-			<p>Tool ini <strong>menghapus permanen</strong> semua konten demo lama (yang dibuat oleh Finalisasi Prototype atau tool ini sebelumnya) dan membuat ulang data realistis dalam status <strong>published + active</strong> siap presentasi.</p>
+			<p>Tool ini <strong>menghapus permanen</strong> semua konten demo lama dan membuat ulang data realistis dalam status <strong>published + active</strong> siap presentasi.</p>
 			<p>Konten yang dibuat: 3 promo, 3 testimonial, 3 pencapaian.</p>
 
 			<table class="widefat" style="max-width:360px;margin:16px 0">
@@ -105,6 +118,9 @@ final class Gloskin_Site_Core_Demo_Content_Reset {
 
 		$this->delete_all_demo_posts();
 		$count = $this->seed_realistic_content();
+
+		/* Mark as completed — hides the menu item on next page load. */
+		update_option( self::COMPLETED_OPT, time(), false );
 
 		wp_safe_redirect( admin_url( 'admin.php?page=' . self::SLUG . '&reset_done=' . $count ) );
 		exit;
@@ -317,8 +333,8 @@ final class Gloskin_Site_Core_Demo_Content_Reset {
 				'meta'      => array(
 					'gloskin_achievement_issuer'          => 'Kementerian Kesehatan Republik Indonesia',
 					'gloskin_achievement_year'            => '2023',
-					'gloskin_achievement_feature_on_home' => '0',
-					'gloskin_achievement_active'          => '0',
+					'gloskin_achievement_feature_on_home' => '1',
+					'gloskin_achievement_active'          => '1',
 					'gloskin_achievement_order'           => '3',
 				),
 			),
