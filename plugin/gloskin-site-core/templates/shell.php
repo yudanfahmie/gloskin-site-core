@@ -28,9 +28,8 @@ require_once __DIR__ . '/parts/product-description-boundary.php';
  * public shell intentionally never reads or projects them into CSS. */
 $gloskin_body_classes = array( 'gloskin-ui1' );
 if ( 'home' === $gloskin_view ) {
-	/* Home-only header entrance owner (see gloskin-ui1-core-base.css). No
-	 * second view/body-class owner is introduced -- $gloskin_view is the
-	 * same canonical value gloskin_ui1_render_breadcrumbs() already reads. */
+	/* Home-only header entrance owner (see gloskin-ui1-core-base.css). The
+	 * canonical query-context view remains the sole route presentation input. */
 	$gloskin_body_classes[] = 'gloskin-ui1--home';
 }
 ?><!doctype html>
@@ -53,12 +52,11 @@ if ( 'home' === $gloskin_view ) {
 <svg class="gloskin-ui1-goo-loader-defs" xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs><filter id="gloskin-ui1-commerce-handoff-goo" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur"/><feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10" result="goo"/></filter></defs></svg>
 <?php require __DIR__ . '/parts/header.php'; ?>
 <main id="gloskin-main" class="gloskin-ui1-main">
-	<?php gloskin_ui1_render_breadcrumbs( $gloskin_context ); ?>
 	<?php
 	if ( $gloskin_commerce_native ) {
-		/* The shell/provider breadcrumb is the visible owner on Gloskin-owned
-		 * Woo requests. Suppress Woo's classic visible breadcrumb only for this
-		 * request; Woo remains untouched outside this shell. */
+		/* Gloskin intentionally renders no visible breadcrumb. Keep suppressing
+		 * WooCommerce's classic breadcrumb on Gloskin-owned commerce requests so
+		 * removing the shell breadcrumb cannot reveal a second native owner. */
 		if ( function_exists( 'remove_action' ) ) {
 			remove_action( 'woocommerce_before_main_content', 'woocommerce_breadcrumb', 20 );
 		}
