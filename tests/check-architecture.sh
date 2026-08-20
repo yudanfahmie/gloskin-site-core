@@ -69,7 +69,7 @@ grep -Fq "if ( ! \$is_shop ) {" "$shop_discovery_route_file" || { echo "Shop Dis
 shop_enqueue_count="$(grep -Ec '^[[:space:]]*wp_enqueue_(script|style)[[:space:]]*\(' "$shop_discovery_route_file" || true)"
 [[ "$shop_enqueue_count" == "2" ]] || { echo "Shop Discovery must enqueue exactly its existing script + style, found $shop_enqueue_count calls" >&2; exit 1; }
 grep -Fq "wp_enqueue_script( 'gloskin-ui1-shop-discovery', plugins_url( 'assets/js/gloskin-ui1-shop-discovery.js', \$this->plugin_file ), array(), \$version, false );" "$shop_discovery_route_file" || { echo "unexpected Shop Discovery script contract" >&2; exit 1; }
-grep -Fq "wp_enqueue_style( 'gloskin-ui1-shop-discovery', plugins_url( 'assets/css/gloskin-ui1-shop-discovery.css', \$this->plugin_file ), array( 'gloskin-ui1-core' ), \$version );" "$shop_discovery_route_file" || { echo "unexpected Shop Discovery style contract" >&2; exit 1; }
+grep -Fq "wp_enqueue_style( 'gloskin-ui1-shop-discovery', plugins_url( 'assets/css/gloskin-ui1-shop-discovery.css', \$this->plugin_file ), array( 'gloskin-ui1-prototype-refresh' ), \$version );" "$shop_discovery_route_file" || { echo "unexpected Shop Discovery style contract" >&2; exit 1; }
 
 # The handoff baseline already contains exactly nine bootable service/adapter
 # class files. Assert that exact count so a new service still fails without

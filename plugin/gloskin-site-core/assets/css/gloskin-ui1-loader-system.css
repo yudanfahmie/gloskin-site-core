@@ -163,10 +163,10 @@ body.woocommerce-cart:has(.wp-block-woocommerce-cart.is-loading) .gloskin-ui1-co
 	display:block;
 	width:var(--gloskin-goo-loader-size);
 	height:var(--gloskin-goo-loader-size);
-	margin:18px auto;
 	color:transparent;
 	filter:url("#gloskin-ui1-commerce-handoff-goo");
 }
+.gloskin-ui1-quickadd__loading{margin:18px auto}
 .gloskin-ui1-quickadd__loading>span,
 .gloskin-ui1-shop-skeleton__goo>span{
 	position:absolute;

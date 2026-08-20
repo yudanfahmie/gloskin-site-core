@@ -68,6 +68,6 @@ require(core_js.count("function initSkincareChips()") == 1,
         "there must be no second Skincare filtering implementation")
 require("!important" not in css, "final presentation owner must not introduce !important")
 
-require("Version: 0.7.162" in plugin and "const VERSION = '0.7.162';" in kernel,
+require("Version: 0.7.163" in plugin and "const VERSION = '0.7.163';" in kernel,
         "plugin and Kernel version must be synchronized")
-print("shared-section-skincare-contract.py: OK (0.7.162)")
+print("shared-section-skincare-contract.py: OK (0.7.163)")

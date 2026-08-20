@@ -20,7 +20,6 @@
    .woocommerce a.remove geometry without removing the native class/lifecycle.
    The shared mask remains one primitive; only its paint color is decoupled
    from Woo's currentColor ownership. */
-.gloskin-ui1-icon-remove{background-color:var(--gloskin-remove-icon-color,currentColor)}
 body.gloskin-ui1 .woocommerce a.gloskin-ui1-cart-sheet__item-remove{
 	--gloskin-remove-icon-color:var(--gloskin-inverse);
 	display:grid;
@@ -306,10 +305,6 @@ html.gloskin-ui1-commerce-journey-leaving [data-gloskin-commerce-progress]{point
 	.gloskin-ui1-commerce-handoff{
 		transition:none;
 	}
-	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,
-	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob,
-	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,
-	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob{animation:none}
 	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(1),
 	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(1),
 	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(1),

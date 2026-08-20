@@ -1,48 +1,9 @@
 /*
  * Gloskin UI v1 production visual layer.
  * Structural component CSS remains in gloskin-ui1-core.css; this file owns the
- * selected production typography and editorial-photo presentation.
+ * navigation typography, footer geometry, and editorial-photo presentation.
  */
-/* Font custom-property owners.
- * The prototype-refresh convergence layer (gloskin-ui1-prototype-refresh.css,
- * loaded after this file) re-declares these with the canonical Graphik/Felix
- * Titling values. The declarations here serve as the in-layer baseline and are
- * intentionally overridden; they are kept for layer-order clarity only.
- * Marcellus, Mulish and DM Sans are retired as active Gloskin production fonts. */
-:root{
-	--gloskin-font-body:"Graphik","Helvetica Neue",Arial,sans-serif;
-	--gloskin-font-heading:"Felix Titling",Georgia,"Times New Roman",serif;
-	/* Navigation uses the same Graphik body family — one geometric sans family
-	 * site-wide, weight differentiated per role (see prototype-refresh.css). */
-	--gloskin-font-nav:var(--gloskin-font-body);
-	--gloskin-copy-ink:var(--gloskin-brand-charcoal);
-	--gloskin-text-secondary:var(--gloskin-muted);
-}
-.gloskin-ui1--modern{--gloskin-font-heading:"Felix Titling",Georgia,"Times New Roman",serif}
-body.gloskin-ui1{
-	font-family:var(--gloskin-font-body);
-	font-weight:400;
-	line-height:1.62;
-}
-.gloskin-ui1 h1,
-.gloskin-ui1 h2,
-.gloskin-ui1 h3,
-.gloskin-ui1 h4{
-	font-family:var(--gloskin-font-heading);
-	font-weight:400;
-	letter-spacing:-0.012em;
-	line-height:1.12;
-}
-.gloskin-ui1 h1{font-size:clamp(2.5rem,6.4vw,5.25rem)}
-.gloskin-ui1 h2{font-size:clamp(1.95rem,3.7vw,3.2rem)}
-.gloskin-ui1 h3{font-size:clamp(1.18rem,1.8vw,1.5rem)}
-.gloskin-ui1-brand{
-	font-family:var(--gloskin-font-heading);
-	font-size:1.62rem;
-	font-weight:400;
-	letter-spacing:.005em;
-}
-/* ONE canonical navigation font owner: both Header 1 desktop/sticky and
+/* ONE canonical navigation component owner: both Header 1 desktop/sticky and
  * Header 2 desktop use <nav class="gloskin-ui1-nav gloskin-ui1-nav--desktop">;
  * the mobile drawer uses <nav class="gloskin-ui1-nav gloskin-ui1-nav--mobile">.
  * Setting font-family here lets every nav descendant inherit Graphik without
@@ -50,27 +11,20 @@ body.gloskin-ui1{
 .gloskin-ui1-nav{
 	font-family:var(--gloskin-font-nav);
 }
-/* Nav link base values — overridden by prototype-refresh.css for the
- * canonical Graphik-era nav appearance (size/weight/letter-spacing/case). */
 .gloskin-ui1-nav__link{
-	padding-inline:8px;
+	min-height:40px;
+	padding:8px 13px;
+	border-radius:999px;
 	font-size:.91rem;
 	font-weight:400;
+	letter-spacing:.075em;
+	text-transform:uppercase;
 }
-.gloskin-ui1-button,
-.gloskin-ui1-text-link,
-.gloskin-ui1-form button,
-.gloskin-ui1-form input[type="submit"],
-.gloskin-ui1 .woocommerce a.button,
-.gloskin-ui1 .woocommerce button.button,
-.gloskin-ui1 .woocommerce input.button{font-family:var(--gloskin-font-body);font-weight:700}
-.gloskin-ui1-eyebrow{font-family:var(--gloskin-font-body);font-weight:800;letter-spacing:.145em}
 .gloskin-ui1-search-overlay__input{font-family:var(--gloskin-font-body)}
 .gloskin-ui1-search-results__label{font-family:var(--gloskin-font-body)}
 .gloskin-ui1-search-results__title{font-family:var(--gloskin-font-body)}
 .gloskin-ui1-sheet__head{font-family:var(--gloskin-font-heading);font-weight:400;letter-spacing:-.008em}
 .gloskin-ui1-badge{font-family:var(--gloskin-font-body)}
-.gloskin-ui1-hero__title{max-width:13.5ch;line-height:1.04}
 .gloskin-ui1-hero__copy,.gloskin-ui1-lead{line-height:1.58}
 .gloskin-ui1-card__title{line-height:1.18}
 .gloskin-ui1-category-card__label,
@@ -90,7 +44,6 @@ body.gloskin-ui1{
 .gloskin-ui1-card__image--editorial{aspect-ratio:4/3}
 .gloskin-ui1-category-card__media{
 	width:100%;
-	aspect-ratio:4/3;
 	object-fit:cover;
 	border:0;
 	border-radius:0;
@@ -99,20 +52,11 @@ body.gloskin-ui1{
 	width:100%;
 	aspect-ratio:4/3;
 	object-fit:cover;
-	border-radius:var(--gloskin-radius-lg);
-	box-shadow:var(--gloskin-shadow);
-}
-@media (min-width:1800px){
-	.gloskin-ui1-hero__title{max-width:14ch;font-size:clamp(4.55rem,4.7vw,6rem)}
 }
 @media (max-width:760px){
-	.gloskin-ui1 h1{font-size:clamp(2.35rem,11vw,3.9rem)}
-	.gloskin-ui1 h2{font-size:clamp(1.85rem,8vw,2.8rem)}
-	.gloskin-ui1-hero__title{max-width:14ch}
 	.gloskin-ui1-brand{font-size:1.5rem}
 }
 @media (max-width:480px){
-	.gloskin-ui1 h1{font-size:clamp(2.2rem,10.5vw,3.25rem)}
 	.gloskin-ui1-nav--mobile .gloskin-ui1-nav__link{font-size:.96rem}
 }
 
@@ -120,7 +64,7 @@ body.gloskin-ui1{
 .gloskin-ui1-sheet{top:var(--gloskin-ui1-admin-bar-height)}
 
 /* Utility counters remain visibly branded even when the count is zero. */
-.gloskin-ui1-badge{background:var(--gloskin-accent);color:#fff;opacity:1}
+.gloskin-ui1-badge{background:var(--gloskin-accent);color:var(--gloskin-refresh-blush);opacity:1}
 
 /* Section-level "see more" links close the card group instead of floating
    directly under the final card row. */
@@ -195,9 +139,9 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 	top:calc(100% + 8px);
 	padding:8px;
 	border:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);
-	border-radius:var(--gloskin-radius-md);
-	background:var(--gloskin-bg);
-	box-shadow:0 18px 42px color-mix(in srgb,var(--gloskin-text) 10%,transparent);
+	border-radius:18px;
+	background:var(--gloskin-refresh-blush);
+	box-shadow:var(--gloskin-shadow);
 }
 .gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__list{
 	width:100%;
@@ -226,7 +170,6 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 .gloskin-ui1-footer__brand::after{
 	width:72px;
 	height:1px;
-	background:var(--gloskin-accent);
 	content:"";
 	opacity:.65;
 }
@@ -238,7 +181,7 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 .gloskin-ui1-footer h3{margin-bottom:18px}
 .gloskin-ui1-footer ul{gap:12px}
 .gloskin-ui1-footer__grid a{transition:color 140ms ease}
-.gloskin-ui1-footer__grid a:hover{color:var(--gloskin-accent-readable);text-decoration:none}
+.gloskin-ui1-footer__grid a:hover{text-decoration:none}
 .gloskin-ui1-footer__bottom{padding-block:22px 30px}
 
 /* Native logged-out My Account: page-only owner that neutralizes Woo's
@@ -708,8 +651,7 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::af
 .gloskin-ui1-hero-bg-video{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;border-radius:0;box-shadow:none;background:transparent}
 .gloskin-ui1-hero-bg-video__media{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto;object-fit:cover;object-position:center center;border-radius:0;box-shadow:none;pointer-events:none}
 .gloskin-ui1-hero-bg-video,
-.gloskin-ui1-hero-bg-video__media,
-.gloskin-ui1-hero-bg-video__loader{pointer-events:none}
+.gloskin-ui1-hero-bg-video__media{pointer-events:none}
 
 /* White preparing state: the video stays invisible (opacity:0) until JS
    (initHeroBackgroundVideo() in gloskin-ui1-core.js) proves real playback
@@ -719,8 +661,7 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::af
    leaving a clean white hero rather than a broken/black state. */
 .gloskin-ui1-hero-bg-video__media{opacity:0;transition:opacity 360ms ease}
 .gloskin-ui1-hero--video-only.is-video-ready .gloskin-ui1-hero-bg-video__media{opacity:1}
-.gloskin-ui1-hero-bg-video__loader{position:absolute;inset:0;display:grid;place-items:center;opacity:1;transition:opacity 280ms ease}
-.gloskin-ui1-hero-bg-video__loader-dot{width:34px;height:34px;border-radius:999px;border:3px solid color-mix(in srgb,var(--gloskin-accent) 20%,transparent);border-top-color:var(--gloskin-accent);animation:gloskin-hero-bg-video-spin 900ms linear infinite}
+.gloskin-ui1-hero-bg-video__loader{transition:opacity 280ms ease}
 .gloskin-ui1-hero--video-only.is-video-ready .gloskin-ui1-hero-bg-video__loader,
 .gloskin-ui1-hero--video-only.is-video-failed .gloskin-ui1-hero-bg-video__loader{opacity:0;pointer-events:none}
 @keyframes gloskin-hero-bg-video-spin{to{transform:rotate(360deg)}}
@@ -729,11 +670,11 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::af
    so the video dissolves naturally into the first Home content section
    instead of a hard edge. A plain absolutely-positioned, aria-hidden,
    presentation-only layer (not a layout-height trick, not a hard band). */
-.gloskin-ui1-hero__fade{position:absolute;left:0;right:0;bottom:0;height:clamp(80px,14vh,180px);background:linear-gradient(to bottom,transparent,var(--gloskin-bg));pointer-events:none}
+.gloskin-ui1-hero__fade{position:absolute;left:0;right:0;bottom:0;height:clamp(80px,14vh,180px);pointer-events:none}
 
 /* One lower-center semantic scroll indicator: small pulsing bubble +
    downward chevron, a real focusable <button>. */
-.gloskin-ui1-hero__scroll-cue{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);z-index:1;display:grid;justify-items:center;gap:6px;border:0;background:transparent;color:var(--gloskin-accent-strong);cursor:pointer;padding:8px}
+.gloskin-ui1-hero__scroll-cue{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);z-index:1;display:grid;justify-items:center;gap:6px;border:0;background:transparent;cursor:pointer;padding:8px}
 .gloskin-ui1-hero__scroll-cue-dot{width:8px;height:8px;border-radius:999px;background:currentColor;opacity:.85;animation:gloskin-hero-scroll-cue-pulse 1.8s ease-in-out infinite}
 .gloskin-ui1-hero__scroll-cue-chevron{animation:gloskin-hero-scroll-cue-bounce 1.8s ease-in-out infinite}
 @keyframes gloskin-hero-scroll-cue-pulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}

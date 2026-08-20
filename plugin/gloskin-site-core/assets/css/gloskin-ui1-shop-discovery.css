@@ -47,8 +47,8 @@
 	top: calc(var(--gloskin-ui1-nav-sticky-top) + var(--gloskin-shop-rail-sticky-clearance));
 }
 
-/* Neutralize the older category-only structural defaults from core.css.
-   Discovery CSS is loaded after core.css and owns the complete filter rail. */
+/* Shop Discovery loads after the global prototype chain and owns the complete
+   route-specific filter rail without neutralizing a shared core component. */
 .gloskin-ui1-shop-categories {
 	position: static;
 	top: auto;

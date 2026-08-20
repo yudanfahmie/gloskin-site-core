@@ -1,0 +1,402 @@
+{
+  "stylesheets": [
+    {
+      "order": 0,
+      "handle": "gloskin-ui1-fonts",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-fonts.css",
+      "deps": [],
+      "condition": "global"
+    },
+    {
+      "order": 1,
+      "handle": "gloskin-ui1-core-base",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-core-base.css",
+      "deps": [
+        "gloskin-ui1-fonts"
+      ],
+      "condition": "global"
+    },
+    {
+      "order": 2,
+      "handle": "gloskin-ui1-core",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css",
+      "deps": [
+        "gloskin-ui1-core-base"
+      ],
+      "condition": "global"
+    },
+    {
+      "order": 3,
+      "handle": "gloskin-ui1-single-product-geometry",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-single-product-geometry.css",
+      "deps": [
+        "gloskin-ui1-core"
+      ],
+      "condition": "global"
+    },
+    {
+      "order": 4,
+      "handle": "gloskin-ui1-readiness",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-readiness.css",
+      "deps": [
+        "gloskin-ui1-single-product-geometry"
+      ],
+      "condition": "global"
+    },
+    {
+      "order": 5,
+      "handle": "gloskin-ui1-production",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-production.css",
+      "deps": [
+        "gloskin-ui1-readiness",
+        "registered Woo styles"
+      ],
+      "condition": "global"
+    },
+    {
+      "order": 6,
+      "handle": "gloskin-ui1-quickadd-polish",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-quickadd-polish.css",
+      "deps": [
+        "gloskin-ui1-production"
+      ],
+      "condition": "global"
+    },
+    {
+      "order": 7,
+      "handle": "gloskin-ui1-commerce-polish",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-commerce-polish.css",
+      "deps": [
+        "gloskin-ui1-quickadd-polish"
+      ],
+      "condition": "global"
+    },
+    {
+      "order": 8,
+      "handle": "gloskin-ui1-loader-system",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-loader-system.css",
+      "deps": [
+        "gloskin-ui1-commerce-polish"
+      ],
+      "condition": "global"
+    },
+    {
+      "order": 9,
+      "handle": "gloskin-ui1-brand-purchase-polish",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-brand-purchase-polish.css",
+      "deps": [
+        "gloskin-ui1-loader-system"
+      ],
+      "condition": "global"
+    },
+    {
+      "order": 10,
+      "handle": "gloskin-ui1-editorial",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-editorial.css",
+      "deps": [
+        "gloskin-ui1-brand-purchase-polish"
+      ],
+      "condition": "global"
+    },
+    {
+      "order": 11,
+      "handle": "gloskin-ui1-product-grid",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-product-grid.css",
+      "deps": [
+        "gloskin-ui1-editorial"
+      ],
+      "condition": "global"
+    },
+    {
+      "order": 12,
+      "handle": "gloskin-ui1-prototype-refresh",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-prototype-refresh.css",
+      "deps": [
+        "gloskin-ui1-product-grid"
+      ],
+      "condition": "global"
+    },
+    {
+      "order": 13,
+      "handle": "gloskin-ui1-consultation",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-consultation.css",
+      "deps": [
+        "gloskin-ui1-prototype-refresh"
+      ],
+      "condition": "Treatments Hub only"
+    },
+    {
+      "order": 14,
+      "handle": "gloskin-ui1-shop-discovery",
+      "source": "plugin/gloskin-site-core/assets/css/gloskin-ui1-shop-discovery.css",
+      "deps": [
+        "gloskin-ui1-prototype-refresh"
+      ],
+      "condition": "Shop only"
+    }
+  ],
+  "ownership_map": {
+    "tokens_and_foundations": "gloskin-ui1-core-base.css",
+    "structural_interactions": "gloskin-ui1-core.css",
+    "pdp_geometry": "gloskin-ui1-single-product-geometry.css",
+    "navigation_typography_and_footer_geometry": "gloskin-ui1-production.css",
+    "quick_add": "gloskin-ui1-quickadd-polish.css",
+    "shared_loader": "gloskin-ui1-loader-system.css",
+    "purchase_brand_skin": "gloskin-ui1-brand-purchase-polish.css",
+    "product_grid": "gloskin-ui1-product-grid.css",
+    "shared_cards_sections_and_body_copy": "gloskin-ui1-prototype-refresh.css",
+    "treatments_consultation": "gloskin-ui1-consultation.css",
+    "shop_discovery": "gloskin-ui1-shop-discovery.css"
+  },
+  "baseline_summary": {
+    "declarations": 7794,
+    "exact_conflicts": 232,
+    "practical_conflicts": 258,
+    "identical_cross_file_duplicates": 110,
+    "important_declarations": 42
+  },
+  "summary": {
+    "stylesheets": 15,
+    "declarations": 7206,
+    "exact_conflicts": 0,
+    "practical_conflicts": 0,
+    "identical_cross_file_duplicates": 0,
+    "important_declarations": 14
+  },
+  "reduction": {
+    "declarations": 588,
+    "exact_conflicts": 232,
+    "practical_conflicts": 258,
+    "identical_cross_file_duplicates": 110,
+    "important_declarations": 28
+  },
+  "exact_conflicts": [],
+  "practical_conflicts": [],
+  "identical_cross_file_duplicates": [],
+  "important_declarations": [
+    {
+      "selector": ".gloskin-ui1 .screen-reader-text",
+      "property": "position",
+      "value": "absolute !important",
+      "context": "global",
+      "specificity": [
+        0,
+        2,
+        0
+      ],
+      "order": 1,
+      "handle": "gloskin-ui1-core-base",
+      "source": "gloskin-ui1-core-base.css",
+      "line": 70,
+      "allowlist_reason": "WordPress accessibility utility must beat theme/plugin display helpers."
+    },
+    {
+      "selector": ".gloskin-ui1 *",
+      "property": "scroll-behavior",
+      "value": "auto !important",
+      "context": "@media (prefers-reduced-motion:reduce)",
+      "specificity": [
+        0,
+        1,
+        0
+      ],
+      "order": 1,
+      "handle": "gloskin-ui1-core-base",
+      "source": "gloskin-ui1-core-base.css",
+      "line": 598,
+      "allowlist_reason": "Global accessibility override must suppress motion regardless of component specificity."
+    },
+    {
+      "selector": ".gloskin-ui1 *",
+      "property": "animation-duration",
+      "value": "0.01ms !important",
+      "context": "@media (prefers-reduced-motion:reduce)",
+      "specificity": [
+        0,
+        1,
+        0
+      ],
+      "order": 1,
+      "handle": "gloskin-ui1-core-base",
+      "source": "gloskin-ui1-core-base.css",
+      "line": 598,
+      "allowlist_reason": "Global accessibility override must suppress motion regardless of component specificity."
+    },
+    {
+      "selector": ".gloskin-ui1 *",
+      "property": "animation-iteration-count",
+      "value": "1 !important",
+      "context": "@media (prefers-reduced-motion:reduce)",
+      "specificity": [
+        0,
+        1,
+        0
+      ],
+      "order": 1,
+      "handle": "gloskin-ui1-core-base",
+      "source": "gloskin-ui1-core-base.css",
+      "line": 598,
+      "allowlist_reason": "Global accessibility override must suppress motion regardless of component specificity."
+    },
+    {
+      "selector": ".gloskin-ui1 *",
+      "property": "transition-duration",
+      "value": "0.01ms !important",
+      "context": "@media (prefers-reduced-motion:reduce)",
+      "specificity": [
+        0,
+        1,
+        0
+      ],
+      "order": 1,
+      "handle": "gloskin-ui1-core-base",
+      "source": "gloskin-ui1-core-base.css",
+      "line": 598,
+      "allowlist_reason": "Global accessibility override must suppress motion regardless of component specificity."
+    },
+    {
+      "selector": ".gloskin-ui1 *::before",
+      "property": "scroll-behavior",
+      "value": "auto !important",
+      "context": "@media (prefers-reduced-motion:reduce)",
+      "specificity": [
+        0,
+        2,
+        0
+      ],
+      "order": 1,
+      "handle": "gloskin-ui1-core-base",
+      "source": "gloskin-ui1-core-base.css",
+      "line": 598,
+      "allowlist_reason": "Global accessibility override must suppress motion regardless of component specificity."
+    },
+    {
+      "selector": ".gloskin-ui1 *::before",
+      "property": "animation-duration",
+      "value": "0.01ms !important",
+      "context": "@media (prefers-reduced-motion:reduce)",
+      "specificity": [
+        0,
+        2,
+        0
+      ],
+      "order": 1,
+      "handle": "gloskin-ui1-core-base",
+      "source": "gloskin-ui1-core-base.css",
+      "line": 598,
+      "allowlist_reason": "Global accessibility override must suppress motion regardless of component specificity."
+    },
+    {
+      "selector": ".gloskin-ui1 *::before",
+      "property": "animation-iteration-count",
+      "value": "1 !important",
+      "context": "@media (prefers-reduced-motion:reduce)",
+      "specificity": [
+        0,
+        2,
+        0
+      ],
+      "order": 1,
+      "handle": "gloskin-ui1-core-base",
+      "source": "gloskin-ui1-core-base.css",
+      "line": 598,
+      "allowlist_reason": "Global accessibility override must suppress motion regardless of component specificity."
+    },
+    {
+      "selector": ".gloskin-ui1 *::before",
+      "property": "transition-duration",
+      "value": "0.01ms !important",
+      "context": "@media (prefers-reduced-motion:reduce)",
+      "specificity": [
+        0,
+        2,
+        0
+      ],
+      "order": 1,
+      "handle": "gloskin-ui1-core-base",
+      "source": "gloskin-ui1-core-base.css",
+      "line": 598,
+      "allowlist_reason": "Global accessibility override must suppress motion regardless of component specificity."
+    },
+    {
+      "selector": ".gloskin-ui1 *::after",
+      "property": "scroll-behavior",
+      "value": "auto !important",
+      "context": "@media (prefers-reduced-motion:reduce)",
+      "specificity": [
+        0,
+        2,
+        0
+      ],
+      "order": 1,
+      "handle": "gloskin-ui1-core-base",
+      "source": "gloskin-ui1-core-base.css",
+      "line": 598,
+      "allowlist_reason": "Global accessibility override must suppress motion regardless of component specificity."
+    },
+    {
+      "selector": ".gloskin-ui1 *::after",
+      "property": "animation-duration",
+      "value": "0.01ms !important",
+      "context": "@media (prefers-reduced-motion:reduce)",
+      "specificity": [
+        0,
+        2,
+        0
+      ],
+      "order": 1,
+      "handle": "gloskin-ui1-core-base",
+      "source": "gloskin-ui1-core-base.css",
+      "line": 598,
+      "allowlist_reason": "Global accessibility override must suppress motion regardless of component specificity."
+    },
+    {
+      "selector": ".gloskin-ui1 *::after",
+      "property": "animation-iteration-count",
+      "value": "1 !important",
+      "context": "@media (prefers-reduced-motion:reduce)",
+      "specificity": [
+        0,
+        2,
+        0
+      ],
+      "order": 1,
+      "handle": "gloskin-ui1-core-base",
+      "source": "gloskin-ui1-core-base.css",
+      "line": 598,
+      "allowlist_reason": "Global accessibility override must suppress motion regardless of component specificity."
+    },
+    {
+      "selector": ".gloskin-ui1 *::after",
+      "property": "transition-duration",
+      "value": "0.01ms !important",
+      "context": "@media (prefers-reduced-motion:reduce)",
+      "specificity": [
+        0,
+        2,
+        0
+      ],
+      "order": 1,
+      "handle": "gloskin-ui1-core-base",
+      "source": "gloskin-ui1-core-base.css",
+      "line": 598,
+      "allowlist_reason": "Global accessibility override must suppress motion regardless of component specificity."
+    },
+    {
+      "selector": ".gloskin-ui1 .select2-container",
+      "property": "width",
+      "value": "100% !important",
+      "context": "global",
+      "specificity": [
+        0,
+        2,
+        0
+      ],
+      "order": 2,
+      "handle": "gloskin-ui1-core",
+      "source": "gloskin-ui1-core.css",
+      "line": 281,
+      "allowlist_reason": "Select2 writes an inline width; the scoped form adapter must retain fluid width."
+    }
+  ]
+}

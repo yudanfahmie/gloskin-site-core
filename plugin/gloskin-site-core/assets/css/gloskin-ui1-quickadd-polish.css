@@ -198,16 +198,6 @@
 .gloskin-ui1-quickadd__loading{
 	gap:10px;
 }
-.gloskin-ui1-quickadd__loading::before{
-	content:"";
-	flex:0 0 18px;
-	width:18px;
-	height:18px;
-	border:2px solid currentColor;
-	border-right-color:transparent;
-	border-radius:999px;
-	animation:gloskin-atc-spin 650ms linear infinite;
-}
 .gloskin-ui1-quickadd__image--placeholder{
 	display:block;
 	background:var(--gloskin-surface-soft,#fbf8f1);
@@ -495,7 +485,6 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloski
 		animation:none;
 		transform:none;
 	}
-	.gloskin-ui1-quickadd__loading::before,
 	.gloskin-ui1-variable-modal__cta.is-loading::before{
 		animation:none;
 	}

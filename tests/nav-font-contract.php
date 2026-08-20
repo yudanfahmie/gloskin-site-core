@@ -109,31 +109,30 @@ foreach ( array( '"DM Sans"', '"Marcellus"', '"Mulish"' ) as $legacy_family ) {
 
 // ── CSS TOKEN AND OWNERSHIP ARCHITECTURE ────────────────────────────────────
 
-// Exactly one --gloskin-font-nav token definition across all CSS files.
-// The prototype-refresh layer ALSO defines it; check only the production layer.
-$token_in_production = substr_count( $production, '--gloskin-font-nav:' );
-if ( 0 === $token_in_production ) {
-	fwrite( STDERR, "nav-font-contract: --gloskin-font-nav must be defined in gloskin-ui1-production.css\n" );
+// Foundation tokens have one owner; component typography lives in production.
+$token_in_base = substr_count( $base, '--gloskin-font-nav:' );
+if ( 1 !== $token_in_base ) {
+	fwrite( STDERR, "nav-font-contract: --gloskin-font-nav must have one core-base owner\n" );
 	exit( 1 );
 }
 
 // body and heading font tokens must remain present.
-if ( false === strpos( $production, '--gloskin-font-body:' ) ) {
-	fwrite( STDERR, "nav-font-contract: --gloskin-font-body must remain defined in production.css\n" );
+if ( false === strpos( $base, '--gloskin-font-body:' ) ) {
+	fwrite( STDERR, "nav-font-contract: --gloskin-font-body must remain defined in core-base.css\n" );
 	exit( 1 );
 }
-if ( false === strpos( $production, '--gloskin-font-heading:' ) ) {
-	fwrite( STDERR, "nav-font-contract: --gloskin-font-heading must remain defined in production.css\n" );
+if ( false === strpos( $base, '--gloskin-font-heading:' ) ) {
+	fwrite( STDERR, "nav-font-contract: --gloskin-font-heading must remain defined in core-base.css\n" );
 	exit( 1 );
 }
 
 // Font tokens must reference the Graphik / Felix Titling family names.
-if ( ! preg_match( '/--gloskin-font-body:\s*"Graphik"/', $production ) ) {
-	fwrite( STDERR, "nav-font-contract: --gloskin-font-body must begin with \"Graphik\" in production.css\n" );
+if ( ! preg_match( '/--gloskin-font-body:\s*"Graphik"/', $base ) ) {
+	fwrite( STDERR, "nav-font-contract: --gloskin-font-body must begin with \"Graphik\" in core-base.css\n" );
 	exit( 1 );
 }
-if ( ! preg_match( '/--gloskin-font-heading:\s*"Felix Titling"/', $production ) ) {
-	fwrite( STDERR, "nav-font-contract: --gloskin-font-heading must begin with \"Felix Titling\" in production.css\n" );
+if ( ! preg_match( '/--gloskin-font-heading:\s*"Felix Titling"/', $base ) ) {
+	fwrite( STDERR, "nav-font-contract: --gloskin-font-heading must begin with \"Felix Titling\" in core-base.css\n" );
 	exit( 1 );
 }
 
@@ -152,13 +151,14 @@ if ( preg_match( '/\.gloskin-ui1-nav__link\s*\{[^}]*font-family/s', $production 
 	exit( 1 );
 }
 
-// Production and the final refresh owner must both keep desktop, mobile and
-// submenu links on Graphik Regular rather than reintroducing a bold cascade.
-foreach ( array( 'production' => $production, 'prototype refresh' => $refresh ) as $layer => $css ) {
-	if ( ! preg_match( '/\.gloskin-ui1-nav__link\s*\{[^}]*font-weight\s*:\s*400/s', $css ) ) {
-		fwrite( STDERR, "nav-font-contract: {$layer} nav link owner must use font-weight:400\n" );
-		exit( 1 );
-	}
+// One production declaration covers desktop, mobile and submenu descendants.
+if ( ! preg_match( '/\.gloskin-ui1-nav__link\s*\{[^}]*font-weight\s*:\s*400/s', $production ) ) {
+	fwrite( STDERR, "nav-font-contract: production nav link owner must use font-weight:400\n" );
+	exit( 1 );
+}
+if ( preg_match( '/\.gloskin-ui1-nav__link\s*\{[^}]*font-weight/s', $base . $core . $refresh ) ) {
+	fwrite( STDERR, "nav-font-contract: nav link weight must not have a competing owner\n" );
+	exit( 1 );
 }
 
 // ── NO !important IN NAV FONT RULES ─────────────────────────────────────────

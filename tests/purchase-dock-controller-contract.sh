@@ -6,6 +6,8 @@ dock_js="$plugin/assets/js/gloskin-ui1-purchase-dock.js"
 assets="$plugin/config/assets.php"
 core_css="$plugin/assets/css/gloskin-ui1-core.css"
 geometry="$plugin/assets/css/gloskin-ui1-single-product-geometry.css"
+quickadd_css="$plugin/assets/css/gloskin-ui1-quickadd-polish.css"
+purchase_skin="$plugin/assets/css/gloskin-ui1-brand-purchase-polish.css"
 adapter="$plugin/includes/class-gloskin-site-core-woocommerce-adapter.php"
 fail(){ echo "$1" >&2; exit 1; }
 
@@ -233,8 +235,9 @@ grep -qF '.gloskin-ui1-purchase-dock__form{display:grid;width:100%;max-width:non
 grep -qF '.gloskin-ui1-purchase-dock__product{display:flex;align-items:center' "$geometry" || fail "left product/variant region missing"
 grep -qF '.gloskin-ui1-purchase-dock__action{display:flex;align-items:center;justify-content:flex-end' "$geometry" || fail "right purchase-action region missing"
 grep -qF '.gloskin-ui1-purchase-dock__variants select{width:auto;flex:1 1 auto;max-width:100%;min-width:0;min-height:46px;background:var(--gloskin-bg);color:var(--gloskin-text)}' "$geometry" || fail "native variation select lost its light field surface"
-grep -qF '.gloskin-ui1-purchase-dock__submit{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;min-height:46px;padding:10px 18px;background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}' "$geometry" || fail "on-accent inverse CTA treatment missing"
-grep -qF '.gloskin-ui1-purchase-dock__qty-control{display:flex' "$geometry" || fail "qty-control pill shell missing"
+grep -qF '.gloskin-ui1-purchase-dock__submit{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;padding-inline:18px;background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}' "$geometry" || fail "on-accent inverse CTA treatment missing"
+grep -qF 'min-height:var(--gloskin-purchase-action-height);' "$purchase_skin" || fail "canonical purchase action-height owner missing"
+grep -qF '.gloskin-ui1-purchase-dock__qty-control{' "$quickadd_css" || fail "qty-control pill shell missing from canonical owner"
 grep -qF '.gloskin-ui1-purchase-dock__qty-minus,' "$geometry" || fail "qty-minus button styling missing"
 grep -qF '.gloskin-ui1-purchase-dock__qty-plus{' "$geometry" || fail "qty-plus button styling missing"
 # Proven live against the real hydrated staging PDP: WooCommerce's own

@@ -15,6 +15,7 @@ def require(condition, message):
 
 
 base = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-core-base.css")
+base_compact = "".join(base.split())
 refresh = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-prototype-refresh.css")
 core = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-core.css")
 product_grid = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-product-grid.css")
@@ -30,14 +31,15 @@ content_service = read("plugin/gloskin-site-core/includes/class-gloskin-site-cor
 require("--gloskin-container:1320px" in base, "canonical desktop container must be 1320px")
 require("--gloskin-container:1180px" not in base, "old 1180px canonical container must be retired")
 require("--gloskin-reading:760px" in base, "base editorial reading measure must remain 760px")
-require(".gloskin-ui1-container--narrow{max-width:var(--gloskin-reading)}" in base, "narrow reading container must remain token-bound")
-require("@media (min-width:1800px){:root{--gloskin-container:1480px" in base, "1800px wide-screen container behavior must remain")
-require("@media (min-width:2300px){:root{--gloskin-container:1680px" in base, "2300px large-screen container behavior must remain")
+require(".gloskin-ui1-container--narrow{max-width:var(--gloskin-reading)}" in base_compact, "narrow reading container must remain token-bound")
+require("@media(min-width:1800px){:root{--gloskin-container:1480px" in base_compact, "1800px wide-screen container behavior must remain")
+require("@media(min-width:2300px){:root{--gloskin-container:1680px" in base_compact, "2300px large-screen container behavior must remain")
 require("--gloskin-ui1-content-max" not in refresh, "prototype layer must not keep a second container-width owner")
 require("1180px" not in refresh, "prototype refresh/header must not hardcode competing 1180px width")
-require(".gloskin-ui1 .gloskin-ui1-container{max-width:var(--gloskin-container)}" in refresh, "prototype container must consume canonical token")
+require(".gloskin-ui1 .gloskin-ui1-container{max-width:var(--gloskin-container)}" not in refresh,
+        "prototype layer must not duplicate the canonical base container owner")
 require(".gloskin-ui1-header__inner{max-width:var(--gloskin-container);" in refresh, "Header V2 must consume canonical token")
-require(".gloskin-ui1 .woocommerce{width:min(calc(100% - (2 * var(--gloskin-gutter))),var(--gloskin-container))" in base,
+require(".gloskin-ui1.woocommerce{width:min(calc(100%-(2*var(--gloskin-gutter))),var(--gloskin-container))" in base_compact,
         "Woo wrapper must continue consuming shared container token")
 require("max-width:980px" in production or "max-width:900px" in production,
         "My Account/commerce inner constraint must remain bounded after global widening")
@@ -76,9 +78,9 @@ require("@media (max-width:1099px)" in refresh and "repeat(2,minmax(0,1fr))" in 
         "doctor tablet grid must be two columns")
 require("@media (max-width:759px)" in refresh and "grid-template-columns:1fr" in refresh,
         "doctor mobile grid must be one column")
-require(".gloskin-ui1-card--doctor .gloskin-ui1-card__image{aspect-ratio:4/5}" in base,
+require(".gloskin-ui1-card--doctor.gloskin-ui1-card__image{aspect-ratio:4/5}" in base_compact,
         "doctor factual image aspect ratio must remain 4:5")
-require(".gloskin-ui1-grid--cards{grid-template-columns:repeat(3,minmax(0,1fr))}" in base,
+require(".gloskin-ui1-grid--cards{grid-template-columns:repeat(3,minmax(0,1fr))}" in base_compact,
         "generic card grid must remain three columns at base desktop")
 require(".gloskin-ui1-product-grid,\n.gloskin-ui1-shop-skeleton__grid {" in product_grid,
         "canonical product-grid selector owner must remain unchanged")

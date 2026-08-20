@@ -44,7 +44,7 @@ require("font-weight:300" in heading_p,
         "desktop description must have font-weight:300")
 
 # Mobile: left-align
-mobile_block = css.split("@media (max-width:760px){", 1)[1]
+mobile_block = css.split("@media (max-width:1040px){", 1)[1].split("@media (max-width:759px){", 1)[0]
 require("text-align:left" in mobile_block,
         "mobile section-heading description must explicitly set text-align:left")
 
@@ -95,12 +95,12 @@ require("!important" not in css,
 
 # ── Version ──────────────────────────────────────────────────────────────────
 
-require("Version: 0.7.162" in plugin and "const VERSION = '0.7.162';" in kernel,
-        "plugin header and Kernel VERSION must both be 0.7.162")
+require("Version: 0.7.163" in plugin and "const VERSION = '0.7.163';" in kernel,
+        "plugin header and Kernel VERSION must both be 0.7.163")
 
 if failures:
     for f in failures:
         print("FAIL:", f)
     sys.exit(1)
 
-print("carousel-section-heading-contract.py: OK (0.7.162)")
+print("carousel-section-heading-contract.py: OK (0.7.163)")

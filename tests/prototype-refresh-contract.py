@@ -13,6 +13,7 @@ def require(condition, message):
         raise AssertionError(message)
 
 css = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-prototype-refresh.css")
+base_css = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-core-base.css")
 consultation_css = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-consultation.css")
 consultation_rules = re.sub(r"/\*.*?\*/", "", consultation_css, flags=re.S)
 assets = read("plugin/gloskin-site-core/config/assets.php")
@@ -27,11 +28,11 @@ template_service = read("plugin/gloskin-site-core/includes/class-gloskin-site-co
 page_matrix = read("docs/page-matrix.csv")
 
 for value in ("#CA050E", "#784F0C", "#F6D179", "#FBE2B2", "#FFEBBB", "#FFF2EB", "#000000"):
-    require(value in css, f"approved brand color missing: {value}")
-require("--gloskin-refresh-black:#000000" in css, "true dark-background token must remain black")
-require("--gloskin-copy-ink:var(--gloskin-brand-charcoal)" in css,
+    require(value in base_css, f"approved brand token missing from canonical base owner: {value}")
+require("--gloskin-refresh-black:#000000" in base_css, "true dark-background token must remain black")
+require("--gloskin-copy-ink:var(--gloskin-brand-charcoal)" in base_css,
         "solid warm-charcoal copy token missing")
-require("--gloskin-text-secondary:var(--gloskin-muted)" in css,
+require("--gloskin-text-secondary:var(--gloskin-muted)" in base_css,
         "secondary text token must be defined without flattening metadata into body copy")
 copy_rule = css.split("/* Public body copy:", 1)[1]
 for selector in (
@@ -52,8 +53,8 @@ for selector in (
     require(selector in copy_rule, f"public copy normalization missing selector: {selector}")
 require("color:var(--gloskin-copy-ink)" in copy_rule, "public copy must use the semantic solid ink")
 require("font-weight:300" in copy_rule, "public copy must use Graphik Light")
-require('"Graphik"' in css, "Graphik target role missing")
-require('"Felix Titling"' in css, "Felix Titling target role missing")
+require('"Graphik"' in base_css, "Graphik target role missing")
+require('"Felix Titling"' in base_css, "Felix Titling target role missing")
 require("!important" not in css, "prototype refresh must add zero !important declarations")
 require("@media (prefers-reduced-motion:reduce)" in css, "reduced-motion contract missing")
 require(":focus-visible" in css, "keyboard focus contract missing")

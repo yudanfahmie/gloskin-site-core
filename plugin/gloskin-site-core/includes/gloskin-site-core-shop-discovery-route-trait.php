@@ -60,6 +60,6 @@ trait Gloskin_Site_Core_Shop_Discovery_Route_Trait {
 		 * controller is the only active Shop request/state owner. It never
 		 * intercepts fetch or History API primitives. */
 		wp_enqueue_script( 'gloskin-ui1-shop-discovery', plugins_url( 'assets/js/gloskin-ui1-shop-discovery.js', $this->plugin_file ), array(), $version, false );
-		wp_enqueue_style( 'gloskin-ui1-shop-discovery', plugins_url( 'assets/css/gloskin-ui1-shop-discovery.css', $this->plugin_file ), array( 'gloskin-ui1-core' ), $version );
+		wp_enqueue_style( 'gloskin-ui1-shop-discovery', plugins_url( 'assets/css/gloskin-ui1-shop-discovery.css', $this->plugin_file ), array( 'gloskin-ui1-prototype-refresh' ), $version );
 	}
 }

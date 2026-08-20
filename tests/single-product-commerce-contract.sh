@@ -20,6 +20,7 @@ template_service="$includes/class-gloskin-site-core-template-service.php"
 core_js="$plugin_root/assets/js/gloskin-ui1-core.js"
 core_css="$plugin_root/assets/css/gloskin-ui1-core.css"
 geometry="$plugin_root/assets/css/gloskin-ui1-single-product-geometry.css"
+purchase_skin="$plugin_root/assets/css/gloskin-ui1-brand-purchase-polish.css"
 
 fail() { echo "$1" >&2; exit 1; }
 
@@ -232,8 +233,10 @@ grep -qF -- 'background:var(--gloskin-accent);color:var(--gloskin-inverse)' "$ge
 	|| fail "purchase dock: enhanced accent outer surface missing"
 grep -qF -- '.gloskin-ui1-purchase-dock__form{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1fr) auto' "$geometry" \
 	|| fail "purchase dock: enhanced one-row form composition missing"
-grep -qF -- '.gloskin-ui1-purchase-dock__submit{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;min-height:46px;padding:10px 18px;background:var(--gloskin-inverse)' "$geometry" \
+grep -qF -- '.gloskin-ui1-purchase-dock__submit{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;padding-inline:18px;background:var(--gloskin-inverse)' "$geometry" \
 	|| fail "purchase dock: inverse CTA on accent surface missing"
+grep -qF -- 'min-height:var(--gloskin-purchase-action-height);' "$purchase_skin" \
+	|| fail "purchase dock: canonical action-height owner missing"
 if grep -qE 'purchase-dock-home.*purchase-dock\.is-floating\{[^}]*background:var\(--gloskin-bg\)' "$geometry"; then
 	fail "purchase dock: floating outer background regressed to neutral/white"
 fi

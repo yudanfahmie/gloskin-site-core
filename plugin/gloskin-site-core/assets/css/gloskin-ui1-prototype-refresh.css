@@ -10,76 +10,6 @@
  * repository and declared by gloskin-ui1-fonts.css. Their presence documents
  * runtime implementation only; it does not establish redistribution rights.
  */
-:root,
-.gloskin-ui1--modern,
-.gloskin-ui1--luxury{
-	--gloskin-refresh-red:#CA050E;
-	--gloskin-refresh-brown:#784F0C;
-	--gloskin-refresh-gold:#F6D179;
-	--gloskin-refresh-cream:#FBE2B2;
-	--gloskin-refresh-light:#FFEBBB;
-	--gloskin-refresh-blush:#FFF2EB;
-	--gloskin-refresh-black:#000000;
-	--gloskin-font-body:"Graphik","Helvetica Neue",Arial,sans-serif;
-	--gloskin-font-heading:"Felix Titling",Georgia,"Times New Roman",serif;
-	--gloskin-font-nav:var(--gloskin-font-body);
-	--gloskin-copy-ink:var(--gloskin-brand-charcoal);
-	--gloskin-bg:var(--gloskin-refresh-blush);
-	--gloskin-surface:var(--gloskin-refresh-cream);
-	--gloskin-surface-strong:var(--gloskin-refresh-light);
-	--gloskin-text:var(--gloskin-refresh-black);
-	--gloskin-muted:color-mix(in srgb,var(--gloskin-refresh-black) 64%,transparent);
-	--gloskin-text-secondary:var(--gloskin-muted);
-	--gloskin-border:color-mix(in srgb,var(--gloskin-refresh-brown) 20%,transparent);
-	--gloskin-accent:var(--gloskin-refresh-red);
-	--gloskin-accent-strong:color-mix(in srgb,var(--gloskin-refresh-red) 82%,var(--gloskin-refresh-black));
-	--gloskin-accent-readable:var(--gloskin-refresh-red);
-	--gloskin-accent-soft:var(--gloskin-refresh-cream);
-	--gloskin-inverse:var(--gloskin-refresh-blush);
-	--gloskin-radius-sm:14px;
-	--gloskin-radius-md:18px;
-	--gloskin-radius-lg:28px;
-	--gloskin-shadow:0 22px 60px color-mix(in srgb,var(--gloskin-refresh-black) 10%,transparent);
-}
-
-html{scroll-behavior:smooth}
-body.gloskin-ui1{
-	background:var(--gloskin-refresh-blush);
-	color:var(--gloskin-refresh-black);
-	font-family:var(--gloskin-font-body);
-	font-size:16px;
-	font-weight:400;
-	line-height:1.62;
-}
-.gloskin-ui1 .gloskin-ui1-container{max-width:var(--gloskin-container)}
-.gloskin-ui1 h1,
-.gloskin-ui1 h2,
-.gloskin-ui1 h3,
-.gloskin-ui1 h4{
-	color:inherit;
-	font-family:var(--gloskin-font-heading);
-	font-weight:400;
-	letter-spacing:.01em;
-}
-/* Typography scale — pre-prototype production baseline, with minor Felix
- * Titling metric adjustment (Felix renders slightly more compact than Marcellus
- * at equivalent em values, so the max of the clamp is a touch higher than pure
- * Marcellus-era values to compensate without over-enlarging smaller viewports). */
-.gloskin-ui1 h1{font-size:clamp(2.6rem,7vw,5.6rem);line-height:.94}
-.gloskin-ui1 h2{font-size:clamp(2rem,4vw,3.4rem);line-height:1.02}
-.gloskin-ui1 h3{font-size:clamp(1.2rem,2vw,1.6rem);line-height:1.16}
-.gloskin-ui1 p{color:inherit}
-.gloskin-ui1 a{color:inherit}
-.gloskin-ui1 :focus-visible{outline:3px solid var(--gloskin-refresh-red);outline-offset:3px}
-.gloskin-ui1-eyebrow{
-	color:var(--gloskin-refresh-brown);
-	font-family:var(--gloskin-font-body);
-	font-size:.74rem;
-	font-weight:600;
-	letter-spacing:.16em;
-	text-transform:uppercase;
-}
-
 /* Global shell: light glass, restrained pill navigation, clear CTA hierarchy. */
 .gloskin-ui1-header{
 	border-bottom:1px solid color-mix(in srgb,var(--gloskin-refresh-brown) 16%,transparent);
@@ -89,50 +19,11 @@ body.gloskin-ui1{
 	-webkit-backdrop-filter:blur(18px);
 }
 .gloskin-ui1-header__inner{max-width:var(--gloskin-container);min-height:76px;gap:clamp(14px,2vw,30px)}
-.gloskin-ui1-brand{color:var(--gloskin-refresh-red);font-family:var(--gloskin-font-heading);letter-spacing:.03em}
-.gloskin-ui1-brand__image{max-width:150px}
-.gloskin-ui1-nav{font-family:var(--gloskin-font-nav)}
-.gloskin-ui1-nav__list{gap:4px}
-.gloskin-ui1-nav__link{
-	min-height:40px;
-	padding:8px 13px;
-	border-radius:999px;
-	/* Graphik is a geometric sans with naturally consistent spacing; .075em
-	 * uppercase letter-spacing remains appropriate and avoids over-tightening.
-	 * Size raised from the over-compressed .82rem to the readable production
-	 * baseline target (~0.91rem). */
-	font-size:.91rem;
-	font-weight:400;
-	letter-spacing:.075em;
-	text-transform:uppercase;
-}
-.gloskin-ui1-nav__link:hover,
-.gloskin-ui1-nav__item.is-active>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{background:var(--gloskin-refresh-cream);color:var(--gloskin-refresh-red)}
-.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu{
-	border-color:var(--gloskin-border);
-	border-radius:18px;
-	background:var(--gloskin-refresh-blush);
-	box-shadow:var(--gloskin-shadow);
-}
 .gloskin-ui1-header__utility,
 .gloskin-ui1-header__actions{gap:8px}
 .gloskin-ui1-header button,
 .gloskin-ui1-header a.gloskin-ui1-icon-button,
 .gloskin-ui1-header .gloskin-ui1-utility-button{min-width:44px;min-height:44px}
-.gloskin-ui1-badge{background:var(--gloskin-refresh-red);color:var(--gloskin-refresh-blush)}
-
-.gloskin-ui1-button{
-	min-height:44px;
-	border-radius:999px;
-	font-family:var(--gloskin-font-body);
-	font-weight:600;
-	letter-spacing:.02em;
-}
-.gloskin-ui1-button--primary{border-color:var(--gloskin-refresh-red);background:var(--gloskin-refresh-red);color:var(--gloskin-refresh-blush)}
-.gloskin-ui1-button--primary:hover{border-color:var(--gloskin-accent-strong);background:var(--gloskin-accent-strong);color:var(--gloskin-refresh-blush)}
-.gloskin-ui1-button--ghost{border-color:var(--gloskin-refresh-brown);background:transparent;color:var(--gloskin-refresh-brown)}
-.gloskin-ui1-text-link{color:var(--gloskin-refresh-red);font-weight:600;text-underline-offset:4px}
-
 /* One shared editorial hero. Home's `campaign` modifier only enhances the
  * media column with the existing native Media Library video/controller; its
  * visible H1/copy/CTA and fallback media remain the same hero authority. */
@@ -191,6 +82,10 @@ body.gloskin-ui1{
 .gloskin-ui1-section--soft{background:color-mix(in srgb,var(--gloskin-refresh-cream) 64%,var(--gloskin-refresh-blush))}
 .gloskin-ui1-section--contrast,
 .gloskin-ui1-section--cta{--gloskin-copy-ink:color-mix(in srgb,var(--gloskin-refresh-blush) 72%,transparent);background:var(--gloskin-refresh-black);color:var(--gloskin-refresh-blush)}
+.gloskin-ui1-section--contrast .gloskin-ui1-eyebrow,
+.gloskin-ui1-section--cta .gloskin-ui1-eyebrow,
+.gloskin-ui1-section--contrast .gloskin-ui1-text-link,
+.gloskin-ui1-section--cta .gloskin-ui1-text-link{color:var(--gloskin-refresh-gold)}
 .gloskin-ui1-section-heading{
 	display:grid;
 	grid-template-columns:repeat(2,minmax(0,1fr));
@@ -199,7 +94,7 @@ body.gloskin-ui1{
 	margin-bottom:clamp(34px,5vw,62px);
 }
 .gloskin-ui1-section-heading h2{max-width:none;margin:0;text-wrap:balance}
-.gloskin-ui1-section-heading p{max-width:40ch;margin:0 0 0 auto;justify-self:end;text-align:right;color:var(--gloskin-copy-ink);font-weight:300;line-height:1.65;text-wrap:pretty}
+.gloskin-ui1-section-heading p{max-width:40ch;margin:0 0 0 auto;justify-self:end;text-align:right;color:var(--gloskin-copy-ink);font-size:1.05rem;font-weight:300;line-height:1.65;text-wrap:pretty}
 .gloskin-ui1-section--contrast .gloskin-ui1-section-heading p,
 .gloskin-ui1-section--cta .gloskin-ui1-section-heading p{color:color-mix(in srgb,var(--gloskin-refresh-blush) 72%,transparent)}
 .gloskin-ui1-section__intro{margin-bottom:clamp(34px,5vw,62px)}
@@ -253,10 +148,10 @@ body.gloskin-ui1{
 .gloskin-ui1-card__title a:hover{color:var(--gloskin-refresh-red)}
 .gloskin-ui1-category-card{overflow:hidden;background:var(--gloskin-refresh-cream)}
 .gloskin-ui1-category-card__media{aspect-ratio:4/3}
-.gloskin-ui1-category-card__label{padding:18px 20px 22px;font-family:var(--gloskin-font-heading);font-size:1.2rem}
+.gloskin-ui1-category-card__label{padding:18px 20px 22px;font-size:1.2rem}
 .gloskin-ui1-pathway-grid{gap:18px}
 .gloskin-ui1-pathway-card{min-height:220px;padding:clamp(24px,3vw,34px);background:var(--gloskin-refresh-cream)}
-.gloskin-ui1-pathway-card strong{font-family:var(--gloskin-font-heading);font-size:clamp(1.35rem,2.3vw,2rem);line-height:1.08}
+.gloskin-ui1-pathway-card strong{font-size:clamp(1.35rem,2.3vw,2rem);line-height:1.08}
 
 /* Doctor directories/team only: all published factual doctors use a dedicated
  * 4/2/1 grid. Generic product/treatment/clinic grids keep their existing owners. */
@@ -309,7 +204,7 @@ body.gloskin-ui1{
 .gloskin-ui1-card--product .gloskin-ui1-card__media-wrap{background:var(--gloskin-refresh-cream)}
 .gloskin-ui1-card--product .gloskin-ui1-card__image{background:transparent}
 .gloskin-ui1-product-price{color:var(--gloskin-refresh-brown);font-weight:600}
-.gloskin-ui1-wishlist-toggle{border-color:var(--gloskin-border);background:color-mix(in srgb,var(--gloskin-refresh-blush) 88%,transparent);color:var(--gloskin-refresh-red)}
+.gloskin-ui1-wishlist-toggle{background:color-mix(in srgb,var(--gloskin-refresh-blush) 88%,transparent);color:var(--gloskin-refresh-red)}
 body.woocommerce-page .gloskin-ui1-commerce-heading,
 body.woocommerce-page .gloskin-ui1-commerce-native{background:var(--gloskin-refresh-blush)}
 .gloskin-ui1-drawer,
@@ -318,7 +213,6 @@ body.woocommerce-page .gloskin-ui1-commerce-native{background:var(--gloskin-refr
 .gloskin-ui1-drawer__panel,
 .gloskin-ui1-sheet__panel,
 .gloskin-ui1-search-overlay__panel{background:var(--gloskin-refresh-blush)}
-.gloskin-ui1-sheet__head{font-family:var(--gloskin-font-heading);font-weight:400}
 
 /* Closing CTA and footer adopt the prototype's strong black/red finish. */
 .gloskin-ui1-closing-cta{
@@ -363,8 +257,6 @@ body.woocommerce-page .gloskin-ui1-commerce-native{background:var(--gloskin-refr
 @media (max-width:760px){
 	/* Reverted from the oversized prototype-convergence mobile values.
 	 * These match the pre-prototype production density on narrow viewports. */
-	.gloskin-ui1 h1{font-size:clamp(2.2rem,11vw,3.6rem)}
-	.gloskin-ui1 h2{font-size:clamp(1.85rem,9vw,2.8rem)}
 	.gloskin-ui1-section{padding:clamp(58px,13vw,82px) 0}
 	.gloskin-ui1-section--tight{padding:clamp(38px,8vw,56px) 0}
 	.gloskin-ui1-chip-filter{max-width:100%;flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;overscroll-behavior-inline:contain;scrollbar-width:thin}
@@ -392,11 +284,6 @@ body.woocommerce-page .gloskin-ui1-commerce-native{background:var(--gloskin-refr
 	.gloskin-ui1-promo-campaign__poster--2{width:48%}
 }
 @media (prefers-reduced-motion:reduce){
-	html{scroll-behavior:auto}
-	.gloskin-ui1-card,
-	.gloskin-ui1-card__image,
-	.gloskin-ui1-nav__link,
-	.gloskin-ui1-button{transition:none}
 	.gloskin-ui1-card:hover,
 	.gloskin-ui1-card:hover .gloskin-ui1-card__image{transform:none}
 	.gloskin-ui1-promo-campaign__poster{transform:none}
@@ -468,10 +355,6 @@ body.woocommerce-page .gloskin-ui1-commerce-native{background:var(--gloskin-refr
 	position:absolute;width:1px;height:1px;padding:0;overflow:hidden;
 	clip:rect(0,0,0,0);white-space:nowrap;border:0;
 }
-@media (prefers-reduced-motion:reduce){
-	[data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{transition:none}
-}
-
 /* ── Why Gloskin (Scope C) ──────────────────────────────────────────────── */
 .gloskin-ui1-section--why{background:var(--gloskin-refresh-blush)}
 .gloskin-ui1-why__intro{text-align:center;max-width:680px;margin:0 auto clamp(48px,6vw,80px)}

@@ -181,7 +181,6 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloski
  * the SAME .quantity node __quantity already marks; the native input drops
  * its own standalone field border/radius so the pill reads as one control,
  * not a border nested inside another border. */
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control{display:flex;align-items:stretch;min-height:46px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-sm);overflow:hidden;background:var(--gloskin-bg)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .qty{width:44px;min-width:0;min-height:44px;padding:0;border:0;border-radius:0;background:transparent;text-align:center;-moz-appearance:textfield}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .qty::-webkit-inner-spin-button,
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .qty::-webkit-outer-spin-button{margin:0;-webkit-appearance:none}
@@ -193,16 +192,15 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloski
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-plus:hover{background:var(--gloskin-surface)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-minus:disabled,
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-plus:disabled{opacity:.4;cursor:not-allowed;background:transparent}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;min-height:46px;padding:10px 18px;background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;padding-inline:18px;background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit:hover{background:color-mix(in srgb,var(--gloskin-inverse) 92%,var(--gloskin-accent-soft));border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
 
 /* Buy Now: a JS-composed sibling of the SAME native submit button (never a
  * second form/mutation owner -- it triggers the real submit button's own
  * click, see gloskin-ui1-purchase-dock.js), styled as an outline CTA on
  * the same accent surface, sharing the one Action Kit radius token. */
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now{display:inline-flex;width:auto;min-width:clamp(140px,11vw,180px);max-width:220px;min-height:46px;align-items:center;justify-content:center;padding:10px 16px;border:1px solid var(--gloskin-inverse);border-radius:var(--gloskin-action-radius);background:transparent;color:var(--gloskin-inverse);font:inherit;font-weight:700;cursor:pointer;transition:background-color 140ms ease,color 140ms ease}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:hover{background:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:disabled{opacity:.5;cursor:not-allowed;background:transparent;color:var(--gloskin-inverse)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now{width:auto;min-width:clamp(140px,11vw,180px);max-width:220px;border-width:1px;border-style:solid;font-family:inherit;font-size:inherit;font-style:inherit;font-weight:700;cursor:pointer}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:disabled{cursor:not-allowed}
 
 @media (max-width:1040px){
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.summary{margin-top:clamp(24px,4vw,32px)}
