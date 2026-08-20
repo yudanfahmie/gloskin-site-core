@@ -40,9 +40,15 @@ final class Gloskin_Site_Core_Asset_Service {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend' ), 20 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin' ), 20 );
 		/* Unconditional registration (matches the rest of this codebase's
-		 * hook convention): wp_head never fires in wp-admin at all, and
-		 * print_font_preload() re-checks the same eligible-frontend gate
-		 * enqueue_frontend() uses, so this is inert everywhere it should be. */
+		 * hook convention): wp_head never fires in wp-admin at all, and each
+		 * font hook re-checks the same eligible-frontend gate enqueue_frontend()
+		 * uses, so both are inert everywhere they should be.
+		 *
+		 * Priority 0: inline @font-face with absolute plugin URLs — resolves
+		 * correctly even when a caching or CDN layer rewrites the CSS delivery
+		 * path and breaks the relative src() pointers in gloskin-ui1-fonts.css.
+		 * Priority 1: <link rel="preload"> for the critical WOFF faces. */
+		add_action( 'wp_head', array( $this, 'print_font_faces' ), 0 );
 		add_action( 'wp_head', array( $this, 'print_font_preload' ), 1 );
 	}
 
@@ -233,6 +239,49 @@ final class Gloskin_Site_Core_Asset_Service {
 		$context = function_exists( 'get_query_var' ) ? get_query_var( 'gloskin_context', array() ) : array();
 		$view    = is_array( $context ) && isset( $context['view'] ) ? (string) $context['view'] : '';
 		return in_array( $view, array( 'home', 'shop', 'skincare', 'skincare-category' ), true );
+	}
+
+	/**
+	 * Inline @font-face declarations in <head> using absolute plugin URLs.
+	 *
+	 * gloskin-ui1-fonts.css uses relative src() paths that resolve correctly
+	 * only when the CSS is served from its own plugin directory. Any caching,
+	 * CDN, or CSS-concat layer that rewrites the stylesheet URL breaks those
+	 * relative paths and silently drops all Graphik faces. Emitting the same
+	 * declarations inline via plugins_url() makes them immune to CSS delivery
+	 * path changes: the browser always resolves font src() against the page
+	 * origin for inline styles, and plugins_url() returns the canonical
+	 * absolute URL unconditionally.
+	 *
+	 * Hooked at wp_head priority 0 so these rules are parsed before the
+	 * <link rel="preload"> hints (priority 1) and before the enqueued
+	 * <link> stylesheet (output during wp_head later).
+	 *
+	 * The CSS file (gloskin-ui1-fonts.css) is still registered and enqueued
+	 * as a fallback and to satisfy the font-integrity-contract.
+	 *
+	 * @return void
+	 */
+	public function print_font_faces() {
+		if ( ! $this->should_enqueue_frontend() ) {
+			return;
+		}
+		$base  = trailingslashit( plugins_url( 'assets/fonts', $this->plugin_file ) );
+		$faces = array(
+			array( 'Felix Titling', 400, 'Felixti.woff2',        'woff2' ),
+			array( 'Graphik',       300, 'Graphik-Light.woff',   'woff'  ),
+			array( 'Graphik',       400, 'Graphik-Regular.woff', 'woff'  ),
+			array( 'Graphik',       500, 'Graphik-Medium.woff',  'woff'  ),
+			array( 'Graphik',       600, 'Graphik-Semibold.woff', 'woff' ),
+			array( 'Graphik',       700, 'Graphik-Bold.woff',    'woff'  ),
+		);
+		echo '<style id="gloskin-font-faces">' . "\n";
+		foreach ( $faces as $face ) {
+			list( $family, $weight, $file, $fmt ) = $face;
+			$url = esc_url( $base . $file );
+			echo '@font-face{font-family:"' . esc_attr( $family ) . '";src:url("' . $url . '") format("' . esc_attr( $fmt ) . '");font-style:normal;font-weight:' . absint( $weight ) . ';font-display:swap;}' . "\n";
+		}
+		echo '</style>' . "\n";
 	}
 
 	/**

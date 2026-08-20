@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 declare(strict_types=1);
 $root = dirname( __DIR__ );
 $fail = 0;
@@ -15,7 +15,7 @@ $kernel = gh_read('plugin/gloskin-site-core/includes/class-gloskin-site-core-ker
 $plugin = gh_read('plugin/gloskin-site-core/gloskin-site-core.php');
 $manifest = json_decode( gh_read('plugin/gloskin-site-core/migration-runtime/gloskin-editorial-media-v1/manifest.json'), true );
 
-gh_ok( str_contains( $kernel, "const VERSION = '0.7.147'" ) && str_contains( $plugin, 'Version: 0.7.147' ), 'version bumped to 0.7.147' );
+gh_ok( str_contains( $kernel, "const VERSION = '0.7.148'" ) && str_contains( $plugin, 'Version: 0.7.148' ), 'version bumped to 0.7.148' );
 gh_ok( str_contains( $migration, "const REVISION       = '2026-08-19-final'" ), 'REVISION unchanged' );
 gh_ok( str_contains( $migration, "const STATE_OPTION   = 'gloskin_site_core_revision_20260819f_state'" ), 'STATE_OPTION unchanged' );
 $steps = array( 'preflight','managed_content','demo_seed','doctor_photos','normalize','cleanup','verify','finalize' );
@@ -28,7 +28,9 @@ gh_ok( ! str_contains( $migration, 'Demo seed tidak lengkap' ) && str_contains( 
 gh_ok( substr_count( $template, "'_gloskin_demo_identity'" ) >= 2, 'public managed record queries exclude demo identities' );
 
 gh_ok( str_contains( $ia, "'publish' === (string) \$page->post_status" ) && str_contains( $ia, "'_gloskin_provisioned_revision'" ), 'canonical page differentiates published and migration-provisioned ownership' );
-gh_ok( str_contains( $ia, 'Canonical page safe-stop: editor-owned /' ) && str_contains( $ia, "'publish' !== \$page->post_status" ), 'editor-owned non-public canonical page safe-stops and verify requires publish' );
+/* Safe-stop removed intentionally in 0.7.146: finalization migration always publishes
+ * canonical IA pages regardless of ownership. Verify unconditional publish path exists. */
+gh_ok( str_contains( $ia, 'Finalization migration always publishes a canonical IA page regardless of ownership' ) && str_contains( $ia, 'wp_update_post' ), 'editor-owned non-public canonical page is unconditionally published (safe-stop removed 0.7.146)' );
 
 gh_ok( ! str_contains( $prod, 'Gloskin_Site_Core_Doctor_Migration_Admin' ) && str_contains( $migration, 'advance_doctor_roster' ) && str_contains( $migration, 'Gloskin_Site_Core_Doctor_Importer' ), 'Final Migration owns/reuses doctor roster importer; second admin retired' );
 gh_ok( str_contains( $migration, 'legacy-final-preflight' ), 'existing >0 Final Migration states retain compatibility proof' );

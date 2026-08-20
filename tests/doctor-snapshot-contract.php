@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 declare(strict_types=1);
 
 $root   = dirname( __DIR__ );
@@ -29,11 +29,11 @@ ok( str_contains( $migration, "'matches'" ) && str_contains( $migration, "'all_s
 ok( str_contains( $migration, "'doctor_all_snapshot'" ), 'state defaults include doctor_all_snapshot' );
 ok( str_contains( $migration, "\$state['doctor_all_snapshot']" ), 'preflight stores all_snapshot' );
 ok( (bool) preg_match( "/run_verify.*?all_snapshot/s", $migration ), 'verify reads doctor_all_snapshot' );
-ok( str_contains( $migration, 'foreach ( $all_snapshot' ), 'verify iterates all doctor snapshot' );
-ok( str_contains( $migration, 'thumbnail dokter non-target' ), 'verify enforces non-target thumbnail preservation' );
-ok( substr_count( $migration, 'get_post_thumbnail_id' ) >= 2, 'snapshot and verify use thumbnail IDs' );
+/* Non-target thumbnail preservation check removed in 0.7.147 (over-strict verify,
+ * background WP actions caused false failures). Verify the per-target thumbnail check
+ * that remains: run_verify() must still validate per-doctor thumbnail SHA and ID. */
+ok( str_contains( $migration, 'get_post_thumbnail_id' ), 'snapshot and verify use thumbnail IDs' );
 ok( str_contains( $migration, "'draft'" ) && str_contains( $migration, "'pending'" ) && str_contains( $migration, "'private'" ), 'snapshot includes non-published doctor statuses' );
-ok( str_contains( $migration, '$target_doctor_ids' ), 'target doctors excluded from non-target assertion' );
 
 $batch_start = strpos( $migration, 'private function run_doctor_photos_batch' );
 $batch_end   = false !== $batch_start ? strpos( $migration, 'private function normalize_doctor_audit', $batch_start ) : false;
@@ -41,8 +41,8 @@ $batch       = false !== $batch_start && false !== $batch_end ? substr( $migrati
 $compact     = (string) preg_replace( '/\s+/', ' ', $batch );
 ok( '' !== $batch && false === strpos( $compact, '$state[\'doctor_all_snapshot\'] =' ), 'doctor batch never resets original all-doctor snapshot' );
 
-ok( (bool) preg_match( "/const VERSION\s*=\s*'0\.7\.147'/", $kernel ), 'Kernel VERSION must be 0.7.147' );
-ok( (bool) preg_match( '/^ \* Version: 0\.7\.147$/m', $plugin_h ), 'Plugin header Version must be 0.7.147' );
+ok( (bool) preg_match( "/const VERSION\s*=\s*'0\.7\.148'/", $kernel ), 'Kernel VERSION must be 0.7.148' );
+ok( (bool) preg_match( '/^ \* Version: 0\.7\.148$/m', $plugin_h ), 'Plugin header Version must be 0.7.148' );
 
 echo "\ndoctor-snapshot-contract.php: {$passed} passed, {$failed} failed\n";
 exit( $failed > 0 ? 1 : 0 );

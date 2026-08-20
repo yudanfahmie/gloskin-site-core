@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 declare(strict_types=1);
 
 $root   = dirname( __DIR__ );
@@ -27,8 +27,8 @@ ok( str_contains( $admin, 'Finalisasi Prototype & Data' ), 'admin title preserve
 ok( str_contains( $admin, 'ADMIN_MENU_SLUG' ) && ( str_contains( $admin, 'wp_safe_redirect' ) || str_contains( $admin, 'wp_redirect' ) ), 'fallback redirects to Content Overview' );
 ok( str_contains( $kernel, 'class-gloskin-site-core-revision-20260819-final-migration-admin.php' ), 'kernel registers final migration admin' );
 ok( ! str_contains( $kernel, 'class-gloskin-site-core-revision-20260819-migration-admin.php' ), 'old migration admin not registered' );
-ok( (bool) preg_match( "/const VERSION\s*=\s*'0\.7\.147'/", $kernel ), 'Kernel VERSION must be 0.7.147' );
-ok( (bool) preg_match( '/^ \* Version: 0\.7\.147$/m', $plugin_h ), 'Plugin header Version must be 0.7.147' );
+ok( (bool) preg_match( "/const VERSION\s*=\s*'0\.7\.148'/", $kernel ), 'Kernel VERSION must be 0.7.148' );
+ok( (bool) preg_match( '/^ \* Version: 0\.7\.148$/m', $plugin_h ), 'Plugin header Version must be 0.7.148' );
 ok( ! preg_match( '/\blevenshtein\s*\(|\bsoundex\s*\(|\bsimilar_text\s*\(/', $migration ), 'no fuzzy doctor matching' );
 ok( ! preg_match( "/wp_delete_post\s*\([^)]*product/", $migration ), 'no Woo product deletion' );
 ok( str_contains( $migration, 'detect_environment' ) && str_contains( $migration, "'draft'" ), 'production demo status remains draft' );
