@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.7.181';
+	const VERSION = '0.7.182';
 
 	/** @var string */
 	private $plugin_file;
@@ -46,7 +46,6 @@ final class Gloskin_Site_Core_Kernel {
 			$this->services[] = $assets;
 
 			require_once __DIR__ . '/class-gloskin-site-core-admin-service.php';
-			require_once __DIR__ . '/class-gloskin-site-core-translation.php';
 			require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
 			require_once __DIR__ . '/class-gloskin-site-core-sample-media-compatibility.php';
 			require_once __DIR__ . '/class-gloskin-site-core-insight-migration-admin.php';
@@ -62,6 +61,8 @@ final class Gloskin_Site_Core_Kernel {
 
 			$translation = new Gloskin_Site_Core_Translation( $this->plugin_file, self::VERSION );
 			$translation->register_admin();
+			$language = new Gloskin_Site_Core_Language( $this->plugin_file );
+			$language->register_admin();
 
 			$insight_migration = new Gloskin_Site_Core_Insight_Migration_Admin( $this->plugin_file );
 			$insight_migration->register();
@@ -84,6 +85,7 @@ final class Gloskin_Site_Core_Kernel {
 			$this->services[] = $media_compatibility;
 			$this->services[] = $admin;
 			$this->services[] = $translation;
+			$this->services[] = $language;
 			$this->services[] = $insight_migration;
 			$this->services[] = $lifecycle;
 			$this->services[] = $revision_final_migration;
@@ -93,6 +95,10 @@ final class Gloskin_Site_Core_Kernel {
 			$this->boot_production_batch();
 			return;
 		}
+
+		$language = new Gloskin_Site_Core_Language( $this->plugin_file );
+		$language->register_frontend();
+		$this->services[] = $language;
 
 		require_once __DIR__ . '/class-gloskin-site-core-navigation-service.php';
 		require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php';
@@ -137,6 +143,8 @@ final class Gloskin_Site_Core_Kernel {
 		require_once __DIR__ . '/class-gloskin-site-core-content-service.php';
 		require_once __DIR__ . '/class-gloskin-site-core-asset-service.php';
 		require_once __DIR__ . '/class-gloskin-site-core-page-lookup.php';
+		require_once __DIR__ . '/class-gloskin-site-core-translation.php';
+		require_once __DIR__ . '/class-gloskin-site-core-language.php';
 	}
 
 	/**

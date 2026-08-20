@@ -27,6 +27,9 @@ final class Gloskin_Site_Core_Page_Lookup {
 		if ( ! ( $page instanceof WP_Post ) || 'page' !== (string) $page->post_type || $slug !== (string) $page->post_name ) {
 			return null;
 		}
+		if ( ! is_admin() && class_exists( 'Gloskin_Site_Core_Language' ) ) {
+			$page = Gloskin_Site_Core_Language::translate_post_object( $page );
+		}
 		return $page;
 	}
 }
