@@ -38,5 +38,5 @@ foreach ( array( "var attempts = 3", 'data-gloskin-diagnostic-spinner', 'respons
 	diagnostic_ok( str_contains( $javascript, $needle ), "AJAX loading/retry contract missing: {$needle}" );
 }
 
-diagnostic_ok( str_contains( $plugin, 'Version: 0.7.159' ) && str_contains( $kernel, "const VERSION = '0.7.159';" ), 'version must be synchronized at 0.7.159' );
-echo "diagnostic-export-contract.php: OK (0.7.159)\n";
+diagnostic_ok( str_contains( $plugin, 'Version: 0.7.175' ) && str_contains( $kernel, "const VERSION = '0.7.175';" ), 'version must be synchronized at 0.7.175' );
+echo "diagnostic-export-contract.php: OK (0.7.175)\n";

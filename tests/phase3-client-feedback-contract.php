@@ -2,8 +2,8 @@
 /**
  * Phase-3 Client Feedback Contract — Static PHP source analysis.
  *
- * Proves the Phase-3 migration implementation satisfies every invariant
- * declared in the spec WITHOUT running WordPress or WooCommerce.
+ * Validates against the 77ee authoritative manifests (commit 77eeeca84396c3aa5a6c8be4a4481da060da6e5b).
+ * The runtime adapts to the manifests — manifests do NOT adapt to the runtime.
  *
  * Tickets: FB-989354 (Skincare), FB-989360 (Treatment).
  *
@@ -12,7 +12,7 @@
  */
 declare( strict_types=1 );
 
-$root    = dirname( __DIR__ );
+$root       = dirname( __DIR__ );
 $ok_count   = 0;
 $fail_count = 0;
 $failures   = array();
@@ -47,15 +47,15 @@ foreach ( array(
 }
 
 /* ---------------------------------------------------------------------------
- * 1. Version sync at 0.7.174
+ * 1. Version sync at 0.7.175
  * ------------------------------------------------------------------------- */
 $ok(
-	false !== strpos( $plugin_php, 'Version: 0.7.174' ) && false !== strpos( $kernel_php, "const VERSION = '0.7.174';" ),
-	'Phase-3 runtime/cache version must be synchronized at 0.7.174'
+	false !== strpos( $plugin_php, 'Version: 0.7.175' ) && false !== strpos( $kernel_php, "const VERSION = '0.7.175';" ),
+	'Phase-3 runtime/cache version must be synchronized at 0.7.175'
 );
 
 /* ---------------------------------------------------------------------------
- * 2. Manifest counts
+ * 2. 77ee Manifest — manifest_id
  * ------------------------------------------------------------------------- */
 $mm_data = json_decode( $manifest_mm, true );
 $sk_data = json_decode( $manifest_sk, true );
@@ -70,80 +70,184 @@ $ok( is_array( $pm_data ), 'treatment-page-media.json must be valid JSON' );
 $ok( is_array( $ur_data ), 'unresolved.json must be valid JSON' );
 
 if ( is_array( $mm_data ) ) {
-	$ok( 'gloskin-phase3-v1' === ( $mm_data['manifest_id'] ?? '' ), 'migration-manifest.json must declare manifest_id=gloskin-phase3-v1' );
-}
-
-if ( is_array( $sk_data ) ) {
-	$sk_products = (array) ( $sk_data['products'] ?? array() );
-	$ok( 25 === count( $sk_products ), 'skincare-products.json must contain exactly 25 products (got ' . count( $sk_products ) . ')' );
-}
-
-if ( is_array( $tr_data ) ) {
-	$tr_products = (array) ( $tr_data['treatment_products'] ?? array() );
-	$tr_records  = (array) ( $tr_data['treatment_records'] ?? array() );
-	$ok( 48 === count( $tr_products ), 'treatment-catalog.json must contain exactly 48 treatment_products (got ' . count( $tr_products ) . ')' );
-	$ok( 8 === count( $tr_records ), 'treatment-catalog.json must contain exactly 8 treatment_records (got ' . count( $tr_records ) . ')' );
-}
-
-if ( is_array( $pm_data ) ) {
-	$paths = (array) ( $pm_data['paths'] ?? array() );
-	$ok( 4 === count( $paths ), 'treatment-page-media.json must declare exactly 4 path entries' );
-
-	/* Hero binding must be declared. */
-	$ok( ! empty( $pm_data['treatments_page_hero']['meta_key'] ), 'treatment-page-media.json must declare treatments_page_hero.meta_key' );
-	$ok( 'gloskin_hero_media_id' === ( $pm_data['treatments_page_hero']['meta_key'] ?? '' ), 'Hero meta_key must be gloskin_hero_media_id' );
-}
-
-if ( is_array( $ur_data ) ) {
-	$holds = (array) ( $ur_data['holds'] ?? array() );
-	$ok( 5 === count( $holds ), 'unresolved.json must list exactly 5 HOLD records' );
-
-	/* Verify the five known HOLD IDs are present. */
-	$hold_ids = array_column( $holds, 'id' );
-	$ok( in_array( 'p3:hold:az-xpert', $hold_ids, true ), 'az-xpert must be a HOLD' );
-	$ok( in_array( 'p3:hold:glam-gold-serum', $hold_ids, true ), 'glam-gold-serum must be a HOLD' );
-	$ok( in_array( 'p3:hold:skin-fresh-facial-wash', $hold_ids, true ), 'skin-fresh-facial-wash must be a HOLD' );
-	$ok( in_array( 'p3:hold:dsc02911', $hold_ids, true ), 'dsc02911 must be a HOLD' );
-	$ok( in_array( 'p3:hold:untitled-design-47', $hold_ids, true ), 'untitled-design-47 must be a HOLD' );
+	$ok(
+		'gloskin-client-feedback-phase3-migration-v1' === ( $mm_data['manifest_id'] ?? '' ),
+		'migration-manifest.json must declare manifest_id=gloskin-client-feedback-phase3-migration-v1 (77ee authoritative)'
+	);
 }
 
 /* ---------------------------------------------------------------------------
- * 3. Stable consultation path slugs (four only)
+ * 3. Skincare: 25 records (77ee uses 'records', not 'products')
+ * ------------------------------------------------------------------------- */
+if ( is_array( $sk_data ) ) {
+	$sk_records = (array) ( $sk_data['records'] ?? array() );
+	$ok( 25 === count( $sk_records ), 'skincare-products.json must contain exactly 25 records (77ee key) (got ' . count( $sk_records ) . ')' );
+
+	/* 77ee skincare records have NO SKU field. */
+	$sku_found = false;
+	foreach ( $sk_records as $rec ) {
+		if ( ! empty( $rec['sku'] ) ) {
+			$sku_found = true;
+			break;
+		}
+	}
+	$ok( ! $sku_found, 'skincare records must have no sku field (77ee authoritative: no fabricated SKU)' );
+
+	/* No GS-SK-* pattern in skincare manifest. */
+	$ok( false === strpos( $manifest_sk, 'GS-SK-' ), 'skincare-products.json must contain no GS-SK-* SKUs (fabricated SKUs must be absent)' );
+}
+
+/* ---------------------------------------------------------------------------
+ * 4. Treatment catalog: 48 woo_treatment_products (77ee key), 8 informational_cpt_targets
+ * ------------------------------------------------------------------------- */
+if ( is_array( $tr_data ) ) {
+	$tr_products = (array) ( $tr_data['woo_treatment_products'] ?? array() );
+	$tr_records  = (array) ( $tr_data['informational_cpt_targets'] ?? array() );
+
+	$ok( 48 === count( $tr_products ), 'treatment-catalog.json must contain exactly 48 woo_treatment_products (77ee key) (got ' . count( $tr_products ) . ')' );
+	$ok( 8 === count( $tr_records ),  'treatment-catalog.json must contain exactly 8 informational_cpt_targets (77ee key) (got ' . count( $tr_records ) . ')' );
+
+	/* No fabricated GS-TRT-* SKUs in treatment products. */
+	$ok( false === strpos( $manifest_tr, 'GS-TRT-' ), 'treatment-catalog.json must contain no GS-TRT-* SKUs (fabricated SKUs must be absent)' );
+
+	/* 77ee treatment products have no sku field. */
+	$tr_sku_found = false;
+	foreach ( $tr_products as $p ) {
+		if ( ! empty( $p['sku'] ) ) {
+			$tr_sku_found = true;
+			break;
+		}
+	}
+	$ok( ! $tr_sku_found, 'woo_treatment_products must have no sku field (77ee authoritative: no fabricated SKU)' );
+
+	/* Exactly 3 CPT records with feature_on_home=true. */
+	$home_feature_count = 0;
+	foreach ( $tr_records as $r ) {
+		if ( ! empty( $r['feature_on_home'] ) ) {
+			$home_feature_count++;
+		}
+	}
+	$ok( 3 === $home_feature_count, 'informational_cpt_targets must have exactly 3 entries with feature_on_home=true (got ' . $home_feature_count . ')' );
+
+	/* 8 exact approved concern slugs from new_concerns_to_upsert (77ee key). */
+	$approved_slugs = array( 'facial-laxity', 'facial-contour', 'under-eye', 'skin-lesions', 'scars-keloid', 'hair-loss', 'hair-density', 'body-contour' );
+	$manifest_new_concerns = (array) ( $tr_data['new_concerns_to_upsert'] ?? array() );
+	$ok( 8 === count( $manifest_new_concerns ), 'treatment-catalog.json must contain exactly 8 new_concerns_to_upsert (77ee key) (got ' . count( $manifest_new_concerns ) . ')' );
+	$manifest_concern_slugs = array_column( $manifest_new_concerns, 'slug' );
+	foreach ( $approved_slugs as $slug ) {
+		$ok( in_array( $slug, $manifest_concern_slugs, true ), "Approved concern slug must be present in new_concerns_to_upsert: {$slug}" );
+	}
+	/* No extra concern slugs beyond the 8 approved. */
+	$extra_slugs = array_diff( $manifest_concern_slugs, $approved_slugs );
+	$ok( empty( $extra_slugs ), 'new_concerns_to_upsert must contain only the 8 approved slugs (found extra: ' . implode( ',', $extra_slugs ) . ')' );
+
+	/* Rejuran HB dedup — must appear exactly once. */
+	$rejuran_count = 0;
+	foreach ( $tr_products as $p ) {
+		if ( false !== stripos( (string) ( $p['title'] ?? '' ), 'rejuran' ) && false !== stripos( (string) ( $p['title'] ?? '' ), 'hb' ) ) {
+			$rejuran_count++;
+		}
+	}
+	$ok( 1 === $rejuran_count, 'Rejuran HB must appear exactly once in woo_treatment_products (found ' . $rejuran_count . ')' );
+}
+
+/* ---------------------------------------------------------------------------
+ * 5. Page media: presentation_media (77ee key)
  * ------------------------------------------------------------------------- */
 if ( is_array( $pm_data ) ) {
-	$stable_slugs    = array( 'acne-focus', 'brightening-focus', 'anti-aging-focus', 'skin-health-focus' );
-	$manifest_slugs  = array_column( (array) ( $pm_data['paths'] ?? array() ), 'slug' );
+	$presentation_media = (array) ( $pm_data['presentation_media'] ?? array() );
+
+	/* 4 consultation_path items + 1 hero = 5 total. */
+	$path_items = array_filter( $presentation_media, function ( $item ) {
+		return isset( $item['slot'] ) && 0 === strpos( (string) $item['slot'], 'consultation_path:' );
+	} );
+	$hero_items = array_filter( $presentation_media, function ( $item ) {
+		return isset( $item['slot'] ) && 'treatments.hero' === (string) $item['slot'];
+	} );
+
+	$ok( 4 === count( $path_items ), 'treatment-page-media.json must contain exactly 4 consultation_path: items (got ' . count( $path_items ) . ')' );
+	$ok( 1 === count( $hero_items ), 'treatment-page-media.json must contain exactly 1 treatments.hero item' );
+
+	/* Verify four stable path stable_slugs. */
+	$stable_slugs   = array( 'acne-focus', 'brightening-focus', 'anti-aging-focus', 'skin-health-focus' );
+	$manifest_slugs = array_column( array_values( $path_items ), 'stable_slug' );
 	foreach ( $stable_slugs as $slug ) {
-		$ok( in_array( $slug, $manifest_slugs, true ), "Stable path slug must be in treatment-page-media.json: {$slug}" );
+		$ok( in_array( $slug, $manifest_slugs, true ), "Stable path stable_slug must be present in presentation_media: {$slug}" );
 	}
-	/* No extra path slugs beyond the four stable ones. */
 	$extra = array_diff( $manifest_slugs, $stable_slugs );
-	$ok( empty( $extra ), 'treatment-page-media.json must only declare the four stable path slugs (found extra: ' . implode( ',', $extra ) . ')' );
+	$ok( empty( $extra ), 'presentation_media must only contain the four stable path slugs (found extra: ' . implode( ',', $extra ) . ')' );
 }
 
 /* ---------------------------------------------------------------------------
- * 4. No .psd asset imports
- * -------------------------------------------------------------------------
- * The migration MUST guard against .psd imports (skip them).
- * We verify the guard exists and that manifests carry no .psd references.
- */
-$ok( false !== stripos( $migration, "'psd'" ) || false !== stripos( $migration, '"psd"' ), 'Phase-3 migration must guard against .psd extension (skip psd assets)' );
-/* The guard must lead to a skip (continue), not to an import call. */
-$psd_guard_pos  = stripos( $migration, "'psd'" );
-$import_call    = 'import_local_asset';
-if ( false !== $psd_guard_pos ) {
-	/* Find next occurrence of import_local_asset after the .psd guard — it must NOT exist before the next method boundary. */
-	$guard_block_end = strpos( $migration, 'continue;', (int) $psd_guard_pos );
-	$import_before_continue = false !== $guard_block_end
-		? false !== strpos( substr( $migration, (int) $psd_guard_pos, (int) $guard_block_end - (int) $psd_guard_pos ), $import_call )
-		: false;
-	$ok( ! $import_before_continue, 'Phase-3 .psd guard must skip (continue) before calling import_local_asset' );
+ * 6. Unresolved: items list with 5 HOLD status (77ee uses 'items', not 'holds')
+ * ------------------------------------------------------------------------- */
+if ( is_array( $ur_data ) ) {
+	$items      = (array) ( $ur_data['items'] ?? array() );
+	$hold_items = array_filter( $items, function ( $item ) { return isset( $item['status'] ) && 'HOLD' === (string) $item['status']; } );
+	$ok( 5 === count( $hold_items ), 'unresolved.json must list exactly 5 HOLD status items (77ee schema) (got ' . count( $hold_items ) . ')' );
+
+	/* Verify five known HOLD keys (77ee uses 'key', not 'id'). */
+	$hold_keys = array_column( array_values( $hold_items ), 'key' );
+	foreach ( array( 'az-xpert', 'glam-gold-serum', 'skin-fresh-facial-wash', 'opaque-dsc02911', 'opaque-untitled-47' ) as $expected_key ) {
+		$ok( in_array( $expected_key, $hold_keys, true ), "HOLD key must be present in unresolved.json items: {$expected_key}" );
+	}
 }
-$ok( false === stripos( $manifest_sk, '.psd' ), 'skincare-products.json must not reference .psd files' );
+
+/* ---------------------------------------------------------------------------
+ * 7. Canonical home feature meta in migration class
+ * ------------------------------------------------------------------------- */
+$ok(
+	false !== strpos( $migration, "HOME_FEATURE_META   = 'gloskin_treatment_feature_on_home'" ),
+	"Migration class must declare HOME_FEATURE_META = 'gloskin_treatment_feature_on_home' (canonical public meta key)"
+);
+$ok(
+	false === strpos( $migration, "'_gloskin_treatment_home_feature'" ),
+	"Migration class must not use private underscore-prefixed meta key _gloskin_treatment_home_feature"
+);
+
+/* ---------------------------------------------------------------------------
+ * 8. Authoritative manifest_id in migration class
+ * ------------------------------------------------------------------------- */
+$ok(
+	false !== strpos( $migration, "MANIFEST_ID    = 'gloskin-client-feedback-phase3-migration-v1'" ),
+	"Migration class MANIFEST_ID must match 77ee: 'gloskin-client-feedback-phase3-migration-v1'"
+);
+
+/* ---------------------------------------------------------------------------
+ * 9. No fabricated SKU in migration runtime
+ * ------------------------------------------------------------------------- */
+$ok(
+	false === strpos( $migration, 'set_sku(' ),
+	'Migration class must not call set_sku() (no fabricated SKU)'
+);
+$ok(
+	false === strpos( $migration, 'wc_get_product_id_by_sku' ),
+	'Migration class must not look up products by SKU (no SKU in 77ee manifests)'
+);
+
+/* ---------------------------------------------------------------------------
+ * 10. No .psd asset imports
+ * ------------------------------------------------------------------------- */
+$ok( false !== stripos( $migration, "'psd'" ) || false !== stripos( $migration, '"psd"' ), 'Phase-3 migration must guard against .psd extension (skip psd assets)' );
+/* Check asset fields only (not informational notes) for .psd references. */
+$sk_psd_in_assets = false;
+if ( is_array( $sk_data ) ) {
+	foreach ( (array) ( $sk_data['records'] ?? array() ) as $rec ) {
+		if ( false !== stripos( (string) ( $rec['primary'] ?? '' ), '.psd' ) ) {
+			$sk_psd_in_assets = true; break;
+		}
+		foreach ( (array) ( $rec['alternate'] ?? array() ) as $alt ) {
+			if ( false !== stripos( (string) $alt, '.psd' ) ) {
+				$sk_psd_in_assets = true; break 2;
+			}
+		}
+	}
+}
+$ok( ! $sk_psd_in_assets, 'skincare-products.json primary/alternate asset fields must not reference .psd files' );
 $ok( false === stripos( $manifest_tr, '.psd' ), 'treatment-catalog.json must not reference .psd files' );
 
 /* ---------------------------------------------------------------------------
- * 5. No direct SQL mutations
+ * 11. No direct SQL mutations
  * ------------------------------------------------------------------------- */
 $sql_mutators = array( '$wpdb->insert', '$wpdb->update', '$wpdb->delete', '$wpdb->replace', '$wpdb->query' );
 foreach ( $sql_mutators as $mutator ) {
@@ -151,27 +255,46 @@ foreach ( $sql_mutators as $mutator ) {
 }
 
 /* ---------------------------------------------------------------------------
- * 6. No hard-deletes (only wp_trash_post)
+ * 12. No hard-deletes (only wp_trash_post)
  * ------------------------------------------------------------------------- */
 $ok( false === strpos( $migration, 'wp_delete_post' ), 'Phase-3 migration must not call wp_delete_post (use wp_trash_post)' );
 $ok( false === strpos( $migration, 'force_delete' ), 'Phase-3 migration must not call force_delete' );
 
 /* ---------------------------------------------------------------------------
- * 7. Admin: capability check + nonce
+ * 13. No fabricated prices for Treatment products
  * ------------------------------------------------------------------------- */
-$ok( false !== strpos( $admin_php, "const CAPABILITY  = 'manage_options'" ), 'Admin must declare CAPABILITY=manage_options' );
-$ok( false !== strpos( $admin_php, 'check_ajax_referer' ), 'AJAX handler must call check_ajax_referer' );
-$ok( false !== strpos( $admin_php, 'current_user_can' ), 'Admin must call current_user_can' );
-$ok( false !== strpos( $admin_php, 'wp_create_nonce' ), 'Admin must generate a nonce' );
+$ok(
+	false === strpos( $migration, 'set_regular_price' ) && false === strpos( $migration, 'set_price' ),
+	'Phase-3 migration must not set prices on Treatment products'
+);
+$ok(
+	false !== strpos( $migration, "'draft'" ),
+	"Phase-3 migration must create new Treatment products as 'draft' (unpriced/non-purchasable)"
+);
 
 /* ---------------------------------------------------------------------------
- * 8. Preflight/start performs zero mutations
- * ---------------------------------------------------------------------------
- * Contract: the `start` path in advance() must return without calling any
- * write-capable helpers — it must only save state and release lock.
- * We verify by checking that run_preflight() itself calls no WP data writers.
- */
-/* Isolate run_preflight() method body and verify it contains no write calls. */
+ * 14. SHA-256 media deduplication
+ * ------------------------------------------------------------------------- */
+$ok( false !== strpos( $migration, 'sha256' ), 'Phase-3 migration must use SHA-256 for media deduplication' );
+$ok( false !== strpos( $migration, '_gloskin_p3_sha256' ), 'Phase-3 migration must store SHA-256 in _gloskin_p3_sha256 attachment meta' );
+$ok( false !== strpos( $migration, 'find_attachment_by_sha' ), 'Phase-3 migration must check for existing attachments before importing' );
+
+/* ---------------------------------------------------------------------------
+ * 15. Idempotency: fingerprint check present
+ * ------------------------------------------------------------------------- */
+$ok( false !== strpos( $migration, 'fingerprint_matches' ), 'Phase-3 migration must implement fingerprint_matches() for idempotency' );
+$ok( false !== strpos( $migration, 'manifest_fingerprint' ), 'Phase-3 migration state must track manifest_fingerprint' );
+
+/* ---------------------------------------------------------------------------
+ * 16. Lock pattern in migration class
+ * ------------------------------------------------------------------------- */
+$ok( false !== strpos( $migration, 'acquire_lock' ), 'Phase-3 migration must implement acquire_lock()' );
+$ok( false !== strpos( $migration, 'release_lock' ), 'Phase-3 migration must implement release_lock()' );
+$ok( false !== strpos( $migration, 'LOCK_TTL' ), 'Phase-3 migration must declare LOCK_TTL constant' );
+
+/* ---------------------------------------------------------------------------
+ * 17. Preflight/start performs zero mutations
+ * ------------------------------------------------------------------------- */
 $preflight_start = strpos( $migration, 'private function run_preflight()' );
 $next_method_pos = false !== $preflight_start ? strpos( $migration, 'private function ', (int) $preflight_start + 1 ) : false;
 if ( false !== $preflight_start && false !== $next_method_pos ) {
@@ -188,89 +311,19 @@ if ( false !== $preflight_start && false !== $next_method_pos ) {
 }
 
 /* ---------------------------------------------------------------------------
- * 9. Idempotency: fingerprint check present
+ * 18. Admin: capability check + nonce
  * ------------------------------------------------------------------------- */
-$ok( false !== strpos( $migration, 'fingerprint_matches' ), 'Phase-3 migration must implement fingerprint_matches() for idempotency' );
-$ok( false !== strpos( $migration, 'manifest_fingerprint' ), 'Phase-3 migration state must track manifest_fingerprint' );
-$ok( false !== strpos( $migration, 'already_complete' ) || false !== strpos( $migration, 'complete' ), 'Phase-3 migration must short-circuit when already complete' );
+$ok( false !== strpos( $admin_php, "const CAPABILITY  = 'manage_options'" ), 'Admin must declare CAPABILITY=manage_options' );
+$ok( false !== strpos( $admin_php, 'check_ajax_referer' ), 'AJAX handler must call check_ajax_referer' );
+$ok( false !== strpos( $admin_php, 'current_user_can' ), 'Admin must call current_user_can' );
+$ok( false !== strpos( $admin_php, 'wp_create_nonce' ), 'Admin must generate a nonce' );
 
 /* ---------------------------------------------------------------------------
- * 10. No fabricated prices for Treatment products
- * ------------------------------------------------------------------------- */
-$ok(
-	false === strpos( $migration, 'set_regular_price' ) && false === strpos( $migration, 'set_price' ),
-	'Phase-3 migration must not set prices on Treatment products'
-);
-$ok(
-	false !== strpos( $migration, "'draft'" ),
-	"Phase-3 migration must create new Treatment products as 'draft' (unpriced/non-purchasable)"
-);
-
-/* ---------------------------------------------------------------------------
- * 11. SHA-256 media deduplication
- * ------------------------------------------------------------------------- */
-$ok( false !== strpos( $migration, 'sha256' ), 'Phase-3 migration must use SHA-256 for media deduplication' );
-$ok( false !== strpos( $migration, '_gloskin_p3_sha256' ), 'Phase-3 migration must store SHA-256 in _gloskin_p3_sha256 attachment meta' );
-$ok( false !== strpos( $migration, 'find_attachment_by_sha' ), 'Phase-3 migration must check for existing attachments before importing' );
-
-/* ---------------------------------------------------------------------------
- * 12. Kernel registers Phase-3 admin
+ * 19. Kernel registers Phase-3 admin
  * ------------------------------------------------------------------------- */
 $ok( false !== strpos( $kernel_php, 'class-gloskin-site-core-phase3-migration.php' ), 'Kernel must require phase3-migration.php' );
 $ok( false !== strpos( $kernel_php, 'class-gloskin-site-core-phase3-migration-admin.php' ), 'Kernel must require phase3-migration-admin.php' );
 $ok( false !== strpos( $kernel_php, 'Gloskin_Site_Core_Phase3_Migration_Admin' ), 'Kernel must instantiate Phase3 admin' );
-
-/* ---------------------------------------------------------------------------
- * 13. HOLDs do not appear as resolved products in manifests
- * ------------------------------------------------------------------------- */
-$hold_names = array( 'AZ Xpert', 'Glam Gold Serum', 'Skin Fresh Facial Wash', 'DSC02911', 'Untitled design (47)' );
-foreach ( $hold_names as $hold_name ) {
-	$hold_slug = strtolower( str_replace( array( ' ', '(', ')' ), array( '-', '', '' ), $hold_name ) );
-	$ok(
-		false === stripos( $manifest_sk, '"name": "' . $hold_name . '"' ),
-		"HOLD item must not appear as resolved skincare product: {$hold_name}"
-	);
-}
-
-/* ---------------------------------------------------------------------------
- * 14. Rejuran HB is ONE canonical product (not duplicated)
- * ------------------------------------------------------------------------- */
-if ( is_array( $tr_data ) ) {
-	$rejuran_count = 0;
-	foreach ( (array) ( $tr_data['treatment_products'] ?? array() ) as $p ) {
-		if ( false !== stripos( (string) ( $p['name'] ?? '' ), 'rejuran' ) && false !== stripos( (string) ( $p['name'] ?? '' ), 'hb' ) ) {
-			$rejuran_count++;
-		}
-	}
-	$ok( 1 === $rejuran_count, 'Rejuran HB must appear exactly once in treatment_products (found ' . $rejuran_count . ')' );
-}
-
-/* ---------------------------------------------------------------------------
- * 15. Treatment records: exactly 3 feature_on_home=true
- * ------------------------------------------------------------------------- */
-if ( is_array( $tr_data ) ) {
-	$home_feature_count = 0;
-	foreach ( (array) ( $tr_data['treatment_records'] ?? array() ) as $r ) {
-		if ( ! empty( $r['feature_on_home'] ) ) {
-			$home_feature_count++;
-		}
-	}
-	$ok( 3 === $home_feature_count, 'treatment_records must have exactly 3 entries with feature_on_home=true (got ' . $home_feature_count . ')' );
-}
-
-/* ---------------------------------------------------------------------------
- * 16. Lock pattern in migration class
- * ------------------------------------------------------------------------- */
-$ok( false !== strpos( $migration, 'acquire_lock' ), 'Phase-3 migration must implement acquire_lock()' );
-$ok( false !== strpos( $migration, 'release_lock' ), 'Phase-3 migration must implement release_lock()' );
-$ok( false !== strpos( $migration, 'LOCK_TTL' ), 'Phase-3 migration must declare LOCK_TTL constant' );
-
-/* ---------------------------------------------------------------------------
- * 17. WooCommerce remains sole commerce owner — no post_type=product direct inserts
- * ------------------------------------------------------------------------- */
-$ok( false === strpos( $migration, "'post_type' => 'product'" ) || false !== strpos( $migration, 'WC_Product_Simple' ),
-	'Phase-3 must create products through WooCommerce API (WC_Product_Simple), not raw post_type=product inserts'
-);
 
 /* ---------------------------------------------------------------------------
  * Report

@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 final class Gloskin_Site_Core_Phase3_Migration {
 
-	const MANIFEST_ID    = 'gloskin-phase3-v1';
+	const MANIFEST_ID    = 'gloskin-client-feedback-phase3-migration-v1';
 	const STATE_OPTION   = 'gloskin_site_core_phase3_v1_state';
 	const LOCK_OPTION    = 'gloskin_site_core_phase3_v1_lock';
 	const LOCK_TTL       = 300;
@@ -369,29 +369,29 @@ final class Gloskin_Site_Core_Phase3_Migration {
 		$sk_manifest = $this->load_json( 'skincare-products.json' );
 		$tr_manifest = $this->load_json( 'treatment-catalog.json' );
 
-		foreach ( (array) ( $sk_manifest['products'] ?? array() ) as $product ) {
+		foreach ( (array) ( $sk_manifest['records'] ?? array() ) as $product ) {
 			$action = $this->resolve_product_action( $product );
 			$plan[] = array(
-				'id'     => $product['id'],
-				'name'   => $product['name'],
+				'id'     => $product['slug'],
+				'name'   => $product['title'],
 				'action' => $action,
 			);
 		}
 
-		foreach ( (array) ( $tr_manifest['treatment_products'] ?? array() ) as $product ) {
+		foreach ( (array) ( $tr_manifest['woo_treatment_products'] ?? array() ) as $product ) {
 			$action = $this->resolve_product_action( $product );
 			$plan[] = array(
-				'id'     => $product['id'],
-				'name'   => $product['name'],
+				'id'     => $product['slug'],
+				'name'   => $product['title'],
 				'action' => $action,
 			);
 		}
 
-		foreach ( (array) ( $tr_manifest['treatment_records'] ?? array() ) as $record ) {
+		foreach ( (array) ( $tr_manifest['informational_cpt_targets'] ?? array() ) as $record ) {
 			$existing = get_page_by_path( $record['slug'], OBJECT, Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE );
 			$plan[]   = array(
-				'id'     => $record['id'],
-				'name'   => $record['name'],
+				'id'     => $record['slug'],
+				'name'   => $record['title'],
 				'action' => $existing ? 'UPDATE' : 'CREATE',
 			);
 		}
@@ -406,28 +406,13 @@ final class Gloskin_Site_Core_Phase3_Migration {
 	 * @return string REUSE|UPDATE|CREATE|SUPERSEDE
 	 */
 	private function resolve_product_action( array $product ) {
-		/* 1. Explicit provenance. */
-		$by_provenance = $this->find_product_by_provenance( (string) $product['id'] );
+		/* 1. Explicit provenance (slug used as source ID in 77ee manifests). */
+		$by_provenance = $this->find_product_by_provenance( (string) ( $product['slug'] ?? '' ) );
 		if ( $by_provenance ) {
 			return 'REUSE';
 		}
 
-		/* 2. Exact SKU. */
-		if ( ! empty( $product['sku'] ) && function_exists( 'wc_get_product_id_by_sku' ) ) {
-			$sku_id = (int) wc_get_product_id_by_sku( $product['sku'] );
-			if ( $sku_id ) {
-				$existing = wc_get_product( $sku_id );
-				if ( $existing ) {
-					/* Provenance: is this a sample (synthetic) product? */
-					if ( '1' === (string) $existing->get_meta( self::SAMPLE_META, true ) ) {
-						return 'SUPERSEDE';
-					}
-					return 'UPDATE';
-				}
-			}
-		}
-
-		/* 3. Exact slug. */
+		/* 2. Exact slug. */
 		if ( ! empty( $product['slug'] ) ) {
 			$by_slug = get_page_by_path( $product['slug'], OBJECT, 'product' );
 			if ( $by_slug ) {
@@ -452,27 +437,33 @@ final class Gloskin_Site_Core_Phase3_Migration {
 		$tr_manifest  = $this->load_json( 'treatment-catalog.json' );
 		$page_manifest = $this->load_json( 'treatment-page-media.json' );
 
-		/* Collect all unique relative asset paths. */
-		$asset_paths = array();
+		/* Collect all unique absolute asset paths (77ee manifest schema). */
+		$asset_paths = array(); /* keyed by absolute path → true */
 
-		foreach ( (array) ( $sk_manifest['products'] ?? array() ) as $p ) {
-			$this->collect_assets( $asset_paths, $p );
-		}
-		foreach ( (array) ( $tr_manifest['treatment_products'] ?? array() ) as $p ) {
-			$this->collect_assets( $asset_paths, $p );
-		}
-		foreach ( (array) ( $tr_manifest['treatment_records'] ?? array() ) as $r ) {
-			if ( ! empty( $r['client_asset'] ) ) {
-				$asset_paths[ $r['client_asset'] ] = true;
+		foreach ( (array) ( $sk_manifest['records'] ?? array() ) as $p ) {
+			if ( ! empty( $p['primary'] ) ) {
+				$asset_paths[ $this->sk_asset( $p['primary'] ) ] = true;
+			}
+			foreach ( (array) ( $p['alternate'] ?? array() ) as $alt ) {
+				if ( '' !== $alt ) {
+					$asset_paths[ $this->sk_asset( $alt ) ] = true;
+				}
 			}
 		}
-		foreach ( (array) ( $page_manifest['paths'] ?? array() ) as $path ) {
-			if ( ! empty( $path['client_asset'] ) ) {
-				$asset_paths[ $path['client_asset'] ] = true;
+		foreach ( (array) ( $tr_manifest['woo_treatment_products'] ?? array() ) as $p ) {
+			if ( ! empty( $p['primary'] ) ) {
+				$asset_paths[ $this->tr_asset( $p['primary'] ) ] = true;
 			}
 		}
-		if ( ! empty( $page_manifest['treatments_page_hero']['client_asset'] ) ) {
-			$asset_paths[ $page_manifest['treatments_page_hero']['client_asset'] ] = true;
+		foreach ( (array) ( $tr_manifest['informational_cpt_targets'] ?? array() ) as $r ) {
+			if ( ! empty( $r['featured_asset'] ) ) {
+				$asset_paths[ $this->tr_asset( $r['featured_asset'] ) ] = true;
+			}
+		}
+		foreach ( (array) ( $page_manifest['presentation_media'] ?? array() ) as $item ) {
+			if ( ! empty( $item['asset'] ) ) {
+				$asset_paths[ $this->page_asset( $item['asset'] ) ] = true;
+			}
 		}
 
 		$sha_to_id      = array();
@@ -481,11 +472,12 @@ final class Gloskin_Site_Core_Phase3_Migration {
 		$skipped        = 0;
 		$skipped_assets = array();
 
-		foreach ( array_keys( $asset_paths ) as $rel_path ) {
-			$abs_path = $this->asset_path( $rel_path );
+		foreach ( array_keys( $asset_paths ) as $abs_path ) {
+			/* Keys are already absolute paths (resolved by sk_asset/tr_asset/page_asset). */
+			$rel_path = ltrim( str_replace( $this->assets_base, '', $abs_path ), '/\\' );
 
 			/* Skip non-readable or .psd assets. */
-			if ( 'psd' === strtolower( pathinfo( $rel_path, PATHINFO_EXTENSION ) ) ) {
+			if ( 'psd' === strtolower( pathinfo( $abs_path, PATHINFO_EXTENSION ) ) ) {
 				$skipped++;
 				$skipped_assets[] = $rel_path;
 				continue;
@@ -576,17 +568,17 @@ final class Gloskin_Site_Core_Phase3_Migration {
 
 		Gloskin_Site_Core_Content_Service::ensure_family_terms();
 
-		foreach ( (array) ( $manifest['products'] ?? array() ) as $product ) {
+		foreach ( (array) ( $manifest['records'] ?? array() ) as $product ) {
 			try {
 				$result = $this->reconcile_woo_product( $product, 'skincare', $sha_to_id );
 				$audit[ $result['action'] ]++;
 				if ( $result['woo_id'] > 0 ) {
-					$audit['id_map'][ $product['id'] ] = $result['woo_id'];
+					$audit['id_map'][ $product['slug'] ] = $result['woo_id'];
 				}
 			} catch ( Throwable $e ) {
 				/* Unresolved item must NOT fail the entire migration. */
 				$audit['skipped']++;
-				$audit['id_map'][ $product['id'] ] = 'SKIPPED:' . $e->getMessage();
+				$audit['id_map'][ $product['slug'] ?? 'unknown' ] = 'SKIPPED:' . $e->getMessage();
 			}
 		}
 
@@ -609,7 +601,7 @@ final class Gloskin_Site_Core_Phase3_Migration {
 
 		/* Create new Phase 3 concern terms. */
 		$tr_manifest  = $this->load_json( 'treatment-catalog.json' );
-		$new_concerns = (array) ( $tr_manifest['concern_terms']['phase3_new'] ?? array() );
+		$new_concerns = (array) ( $tr_manifest['new_concerns_to_upsert'] ?? array() );
 		foreach ( $new_concerns as $c ) {
 			$slug  = sanitize_key( (string) $c['slug'] );
 			$label = sanitize_text_field( (string) $c['label'] );
@@ -624,12 +616,18 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			}
 		}
 
-		/* Update four existing path terms. */
-		$page_manifest   = $this->load_json( 'treatment-page-media.json' );
-		$stable_slugs    = array( 'acne-focus', 'brightening-focus', 'anti-aging-focus', 'skin-health-focus' );
+		/* Update four existing path terms (extracted from presentation_media). */
+		$page_manifest = $this->load_json( 'treatment-page-media.json' );
+		$stable_slugs  = array( 'acne-focus', 'brightening-focus', 'anti-aging-focus', 'skin-health-focus' );
+		$path_items    = array_filter(
+			(array) ( $page_manifest['presentation_media'] ?? array() ),
+			function ( $item ) {
+				return isset( $item['slot'] ) && 0 === strpos( (string) $item['slot'], 'consultation_path:' );
+			}
+		);
 
-		foreach ( (array) ( $page_manifest['paths'] ?? array() ) as $path_def ) {
-			$slug = sanitize_key( (string) ( $path_def['slug'] ?? '' ) );
+		foreach ( $path_items as $path_def ) {
+			$slug = sanitize_key( (string) ( $path_def['stable_slug'] ?? '' ) );
 			if ( ! in_array( $slug, $stable_slugs, true ) ) {
 				/* Never create additional consultation paths. */
 				continue;
@@ -639,7 +637,7 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			if ( ! $term instanceof WP_Term ) {
 				/* Path term not yet created — create it now. */
 				$insert_result = wp_insert_term(
-					sanitize_text_field( (string) $path_def['display_label'] ),
+					sanitize_text_field( (string) $path_def['label'] ),
 					Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY,
 					array( 'slug' => $slug )
 				);
@@ -656,12 +654,12 @@ final class Gloskin_Site_Core_Phase3_Migration {
 
 			/* Update display label. */
 			wp_update_term( $term_id, Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY, array(
-				'name' => sanitize_text_field( (string) $path_def['display_label'] ),
+				'name' => sanitize_text_field( (string) $path_def['label'] ),
 			) );
 
 			/* Update baseline concerns term meta. */
 			$concern_ids = array();
-			foreach ( (array) ( $path_def['baseline_concern_slugs'] ?? array() ) as $c_slug ) {
+			foreach ( (array) ( $path_def['baseline_concerns'] ?? array() ) as $c_slug ) {
 				$c_term = get_term_by( 'slug', $c_slug, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY );
 				if ( $c_term instanceof WP_Term ) {
 					$concern_ids[] = (int) $c_term->term_id;
@@ -670,8 +668,8 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			update_term_meta( $term_id, Gloskin_Site_Core_Content_Service::PATH_META_BASELINE, $concern_ids );
 
 			/* Update path image from SHA map. */
-			$asset_rel = (string) ( $path_def['client_asset'] ?? '' );
-			$attach_id = $this->resolve_attachment_from_asset( $asset_rel, $sha_to_id );
+			$abs_asset = $this->page_asset( (string) ( $path_def['asset'] ?? '' ) );
+			$attach_id = $this->resolve_attachment_from_asset( $abs_asset, $sha_to_id );
 			if ( $attach_id > 0 ) {
 				update_term_meta( $term_id, Gloskin_Site_Core_Content_Service::PATH_META_IMAGE_ID, $attach_id );
 			}
@@ -695,7 +693,7 @@ final class Gloskin_Site_Core_Phase3_Migration {
 		$sha_to_id = (array) ( $state['sha_to_id'] ?? array() );
 		$audit     = array( 'created' => 0, 'updated' => 0, 'reused' => 0, 'trashed' => 0, 'skipped' => 0, 'id_map' => array() );
 
-		foreach ( (array) ( $manifest['treatment_products'] ?? array() ) as $product ) {
+		foreach ( (array) ( $manifest['woo_treatment_products'] ?? array() ) as $product ) {
 			try {
 				$result = $this->reconcile_woo_product( $product, 'treatment', $sha_to_id );
 				$action = $result['action'];
@@ -703,11 +701,11 @@ final class Gloskin_Site_Core_Phase3_Migration {
 					$audit[ $action ]++;
 				}
 				if ( $result['woo_id'] > 0 ) {
-					$audit['id_map'][ $product['id'] ] = $result['woo_id'];
+					$audit['id_map'][ $product['slug'] ] = $result['woo_id'];
 				}
 			} catch ( Throwable $e ) {
 				$audit['skipped']++;
-				$audit['id_map'][ $product['id'] ] = 'SKIPPED:' . $e->getMessage();
+				$audit['id_map'][ $product['slug'] ?? 'unknown' ] = 'SKIPPED:' . $e->getMessage();
 			}
 		}
 
@@ -729,13 +727,13 @@ final class Gloskin_Site_Core_Phase3_Migration {
 
 		$home_feature_count = 0; /* Only 3 records should have feature_on_home=true. */
 
-		foreach ( (array) ( $manifest['treatment_records'] ?? array() ) as $record ) {
+		foreach ( (array) ( $manifest['informational_cpt_targets'] ?? array() ) as $record ) {
 			try {
 				$slug     = sanitize_title( (string) ( $record['slug'] ?? '' ) );
-				$name     = sanitize_text_field( (string) ( $record['name'] ?? '' ) );
+				$name     = sanitize_text_field( (string) ( $record['title'] ?? '' ) );
 				$summary  = sanitize_text_field( (string) ( $record['summary'] ?? '' ) );
 				$feature  = ! empty( $record['feature_on_home'] );
-				$source   = sanitize_key( (string) ( $record['id'] ?? '' ) );
+				$source   = sanitize_key( (string) ( $record['slug'] ?? '' ) );
 
 				if ( '' === $slug || '' === $name ) {
 					$audit['skipped']++;
@@ -760,10 +758,10 @@ final class Gloskin_Site_Core_Phase3_Migration {
 					$audit['updated']++;
 				} else {
 					$post_id = (int) wp_insert_post( array(
-						'post_type'   => Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE,
-						'post_title'  => $name,
-						'post_name'   => $slug,
-						'post_status' => 'publish',
+						'post_type'    => Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE,
+						'post_title'   => $name,
+						'post_name'    => $slug,
+						'post_status'  => 'publish',
 						'post_excerpt' => $summary,
 					) );
 					if ( $post_id > 0 ) {
@@ -788,18 +786,18 @@ final class Gloskin_Site_Core_Phase3_Migration {
 					delete_post_meta( $post_id, self::HOME_FEATURE_META );
 				}
 
-				/* Set featured image from SHA map. */
-				$asset_rel = (string) ( $record['client_asset'] ?? '' );
-				$attach_id = $this->resolve_attachment_from_asset( $asset_rel, $sha_to_id );
+				/* Set featured image from SHA map (77ee: featured_asset field). */
+				$abs_asset = $this->tr_asset( (string) ( $record['featured_asset'] ?? '' ) );
+				$attach_id = $this->resolve_attachment_from_asset( $abs_asset, $sha_to_id );
 				if ( $attach_id > 0 ) {
 					set_post_thumbnail( $post_id, $attach_id );
 				}
 
-				$audit['id_map'][ $record['id'] ] = $post_id;
+				$audit['id_map'][ $record['slug'] ] = $post_id;
 
 			} catch ( Throwable $e ) {
 				$audit['skipped']++;
-				$audit['id_map'][ $record['id'] ?? 'unknown' ] = 'SKIPPED:' . $e->getMessage();
+				$audit['id_map'][ $record['slug'] ?? 'unknown' ] = 'SKIPPED:' . $e->getMessage();
 			}
 		}
 
@@ -819,14 +817,20 @@ final class Gloskin_Site_Core_Phase3_Migration {
 		$sha_to_id = (array) ( $state['sha_to_id'] ?? array() );
 		$audit     = array( 'hero_bound' => false, 'paths_bound' => 0, 'skipped' => 0 );
 
-		/* Bind Treatments page hero. */
-		$hero_def   = $manifest['treatments_page_hero'] ?? array();
-		$page_slug  = sanitize_key( (string) ( $hero_def['page_slug'] ?? 'treatments' ) );
-		$meta_key   = sanitize_key( (string) ( $hero_def['meta_key'] ?? 'gloskin_hero_media_id' ) );
-		$asset_rel  = (string) ( $hero_def['client_asset'] ?? '' );
+		$presentation_media = (array) ( $manifest['presentation_media'] ?? array() );
+
+		/* Bind Treatments page hero (77ee: slot = 'treatments.hero'). */
+		$hero_items = array_values( array_filter(
+			$presentation_media,
+			function ( $item ) { return isset( $item['slot'] ) && 'treatments.hero' === (string) $item['slot']; }
+		) );
+		$hero_def  = $hero_items[0] ?? array();
+		$page_slug = 'treatments'; /* Derived from manifest page field '/treatments/'. */
+		$meta_key  = 'gloskin_hero_media_id'; /* Hardcoded canonical key. */
 
 		$treatments_page = Gloskin_Site_Core_Page_Lookup::find( $page_slug );
-		$attach_id       = $this->resolve_attachment_from_asset( $asset_rel, $sha_to_id );
+		$abs_hero        = $this->page_asset( (string) ( $hero_def['asset'] ?? '' ) );
+		$attach_id       = $this->resolve_attachment_from_asset( $abs_hero, $sha_to_id );
 
 		if ( $treatments_page instanceof WP_Post && $attach_id > 0 ) {
 			update_post_meta( $treatments_page->ID, $meta_key, $attach_id );
@@ -835,11 +839,15 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			$audit['skipped']++;
 		}
 
-		/* Bind path term images (already updated labels/baseline in concerns_paths step,
-		 * but ensure image binding here as well for resumability). */
+		/* Bind path term images from presentation_media consultation_path items. */
 		$stable_slugs = array( 'acne-focus', 'brightening-focus', 'anti-aging-focus', 'skin-health-focus' );
-		foreach ( (array) ( $manifest['paths'] ?? array() ) as $path_def ) {
-			$slug = sanitize_key( (string) ( $path_def['slug'] ?? '' ) );
+		$path_items   = array_filter(
+			$presentation_media,
+			function ( $item ) { return isset( $item['slot'] ) && 0 === strpos( (string) $item['slot'], 'consultation_path:' ); }
+		);
+
+		foreach ( $path_items as $path_def ) {
+			$slug = sanitize_key( (string) ( $path_def['stable_slug'] ?? '' ) );
 			if ( ! in_array( $slug, $stable_slugs, true ) ) {
 				continue;
 			}
@@ -848,8 +856,8 @@ final class Gloskin_Site_Core_Phase3_Migration {
 				$audit['skipped']++;
 				continue;
 			}
-			$asset_rel = (string) ( $path_def['client_asset'] ?? '' );
-			$pid       = $this->resolve_attachment_from_asset( $asset_rel, $sha_to_id );
+			$abs_asset = $this->page_asset( (string) ( $path_def['asset'] ?? '' ) );
+			$pid       = $this->resolve_attachment_from_asset( $abs_asset, $sha_to_id );
 			if ( $pid > 0 ) {
 				update_term_meta( (int) $term->term_id, Gloskin_Site_Core_Content_Service::PATH_META_IMAGE_ID, $pid );
 				$audit['paths_bound']++;
@@ -920,14 +928,13 @@ final class Gloskin_Site_Core_Phase3_Migration {
 	 * @throws RuntimeException On hard failure.
 	 */
 	private function reconcile_woo_product( array $product, $family, array $sha_to_id ) {
-		$source_id = sanitize_key( (string) ( $product['id'] ?? '' ) );
-		$name      = sanitize_text_field( (string) ( $product['name'] ?? '' ) );
+		/* 77ee manifests use slug as source ID, title as display name; no sku field. */
+		$source_id = sanitize_key( (string) ( $product['slug'] ?? '' ) );
+		$name      = sanitize_text_field( (string) ( $product['title'] ?? '' ) );
 		$slug      = sanitize_title( (string) ( $product['slug'] ?? '' ) );
-		$sku       = sanitize_text_field( (string) ( $product['sku'] ?? '' ) );
-		$copy      = wp_kses_post( (string) ( $product['copy_short'] ?? '' ) );
 
 		if ( '' === $name ) {
-			throw new RuntimeException( 'Product name kosong untuk: ' . $source_id );
+			throw new RuntimeException( 'Product title kosong untuk: ' . $source_id );
 		}
 
 		$action     = 'created';
@@ -937,15 +944,7 @@ final class Gloskin_Site_Core_Phase3_Migration {
 		/* 1. Provenance lookup. */
 		$existing_id = $this->find_product_by_provenance( $source_id );
 
-		/* 2. SKU lookup. */
-		if ( ! $existing_id && '' !== $sku ) {
-			$sku_id = function_exists( 'wc_get_product_id_by_sku' ) ? (int) wc_get_product_id_by_sku( $sku ) : 0;
-			if ( $sku_id > 0 ) {
-				$existing_id = $sku_id;
-			}
-		}
-
-		/* 3. Slug lookup. */
+		/* 2. Slug lookup (no SKU in 77ee manifests — preserve existing real SKU untouched). */
 		if ( ! $existing_id && '' !== $slug ) {
 			$by_slug = get_page_by_path( $slug, OBJECT, 'product' );
 			if ( $by_slug instanceof WP_Post ) {
@@ -974,7 +973,7 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			$action = 'updated';
 		} else {
 			$woo_product = new WC_Product_Simple();
-			$action      = $superseded ? 'created' : 'created';
+			$action      = 'created';
 		}
 
 		/* Apply fields — NEVER mutate verified real SKU/price/stock. */
@@ -982,17 +981,7 @@ final class Gloskin_Site_Core_Phase3_Migration {
 		if ( '' !== $slug ) {
 			$woo_product->set_slug( $slug );
 		}
-		if ( '' !== $copy ) {
-			$woo_product->set_short_description( $copy );
-		}
-
-		/* Only set SKU if it's not already taken by another product. */
-		if ( '' !== $sku ) {
-			$sku_holder = function_exists( 'wc_get_product_id_by_sku' ) ? (int) wc_get_product_id_by_sku( $sku ) : 0;
-			if ( 0 === $sku_holder || $sku_holder === (int) $woo_product->get_id() ) {
-				$woo_product->set_sku( $sku );
-			}
-		}
+		/* No copy_short in 77ee manifests; never invent a short description. */
 
 		/* Treatment products: new products are draft/unpriced. Never invent a price. */
 		if ( 'treatment' === $family && ! $existing_id ) {
@@ -1029,20 +1018,26 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			}
 		}
 
-		/* Set featured image from SHA map. */
-		$asset_rel = (string) ( $product['client_asset'] ?? '' );
-		$attach_id = $this->resolve_attachment_from_asset( $asset_rel, $sha_to_id );
+		/* Set featured image from SHA map.
+		 * 77ee: skincare uses 'primary' → sk_asset(); treatment uses 'primary' → tr_asset(). */
+		$primary_rel = (string) ( $product['primary'] ?? '' );
+		$abs_primary = 'skincare' === $family ? $this->sk_asset( $primary_rel ) : $this->tr_asset( $primary_rel );
+		$attach_id   = '' !== $primary_rel ? $this->resolve_attachment_from_asset( $abs_primary, $sha_to_id ) : 0;
 		if ( $attach_id > 0 ) {
 			$woo_product = wc_get_product( $woo_id );
 			if ( $woo_product ) {
 				$woo_product->set_image_id( $attach_id );
 
-				/* Set gallery. */
+				/* Set gallery — 77ee: skincare only, from 'alternate' field. */
 				$gallery_ids = array();
-				foreach ( (array) ( $product['gallery_assets'] ?? array() ) as $ga ) {
-					$ga_id = $this->resolve_attachment_from_asset( (string) $ga, $sha_to_id );
-					if ( $ga_id > 0 ) {
-						$gallery_ids[] = $ga_id;
+				if ( 'skincare' === $family ) {
+					foreach ( (array) ( $product['alternate'] ?? array() ) as $ga ) {
+						if ( '' !== (string) $ga ) {
+							$ga_id = $this->resolve_attachment_from_asset( $this->sk_asset( (string) $ga ), $sha_to_id );
+							if ( $ga_id > 0 ) {
+								$gallery_ids[] = $ga_id;
+							}
+						}
 					}
 				}
 				if ( $gallery_ids ) {
@@ -1135,7 +1130,10 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			return 0;
 		}
 
-		$abs_path = $this->asset_path( $rel_path );
+		/* Accept both absolute paths (from sk_asset/tr_asset/page_asset helpers) and relative paths. */
+		$abs_path = ( 0 === strpos( $rel_path, $this->assets_base ) )
+			? $rel_path
+			: $this->asset_path( $rel_path );
 
 		/* If path is a directory, find first image file. */
 		if ( ! is_file( $abs_path ) && is_dir( $abs_path ) ) {
@@ -1285,6 +1283,38 @@ final class Gloskin_Site_Core_Phase3_Migration {
 	 */
 	private function asset_path( $rel_path ) {
 		return $this->assets_base . DIRECTORY_SEPARATOR . ltrim( str_replace( array( '/', '\\' ), DIRECTORY_SEPARATOR, $rel_path ), DIRECTORY_SEPARATOR );
+	}
+
+	/**
+	 * Resolve a skincare-bundle relative path (relative to skincare FOTO PRODUCT PNG/ folder).
+	 *
+	 * @param string $rel Relative path from 77ee skincare manifest 'primary'/'alternate' fields.
+	 * @return string Absolute path.
+	 */
+	private function sk_asset( $rel ) {
+		return $this->asset_path( 'FB-989354-skincare-page/FOTO PRODUCT PNG/' . ltrim( $rel, '/' ) );
+	}
+
+	/**
+	 * Resolve a treatment-bundle relative path (relative to FOTO TREATMENT/ folder).
+	 *
+	 * @param string $rel Relative path from 77ee treatment manifest 'primary'/'featured_asset' fields.
+	 * @return string Absolute path.
+	 */
+	private function tr_asset( $rel ) {
+		return $this->asset_path( 'FB-989360-treatment-page/FOTO TREATMENT/' . ltrim( $rel, '/' ) );
+	}
+
+	/**
+	 * Resolve a page-media asset path (77ee stores full repo-relative paths; strip the bundle prefix).
+	 *
+	 * @param string $full_path Full path from 77ee page-media manifest 'asset' fields.
+	 * @return string Absolute path.
+	 */
+	private function page_asset( $full_path ) {
+		$bundle_prefix = 'docs/feedback-cases-gloskin-20260820-154828/';
+		$rel = ltrim( str_replace( $bundle_prefix, '', $full_path ), '/' );
+		return $this->asset_path( $rel );
 	}
 
 	/* -----------------------------------------------------------------

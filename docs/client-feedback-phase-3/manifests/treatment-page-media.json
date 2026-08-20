@@ -1,43 +1,64 @@
 {
-  "version": "1.0",
-  "treatments_page_hero": {
-    "meta_key": "gloskin_hero_media_id",
-    "page_slug": "treatments",
-    "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/ULTRALIFT/ULTRALIFT.png",
-    "alt": "Perawatan Gloskin — Ultralift"
+  "manifest_id": "gloskin-client-feedback-phase3-treatment-page-media-v1",
+  "ticket": "FB-989360",
+  "generated_on": "2026-08-20",
+  "page": "/treatments/",
+  "copy": {
+    "hero_title": "Treatment",
+    "hero_copy": "Temukan treatment Gloskin berdasarkan kebutuhan kulit, rambut, dan kontur. Setiap pilihan sebaiknya dibahas melalui konsultasi agar sesuai dengan kondisi dan tujuan perawatan.",
+    "discovery_heading": "Temukan Perawatan yang Tepat",
+    "discovery_copy": "Pilih fokus utama dan keluhan yang ingin Anda eksplorasi. Hasil membantu menyiapkan pilihan sebelum konsultasi dan bukan diagnosis medis.",
+    "global_disclaimer": "Informasi ini membantu eksplorasi pilihan dan bukan diagnosis medis. Rencana treatment ditentukan setelah konsultasi dan evaluasi oleh tim medis Gloskin."
   },
-  "paths": [
+  "presentation_media": [
     {
-      "slug": "acne-focus",
-      "display_label": "Jerawat",
-      "copy": "Perawatan untuk jerawat aktif, bekas jerawat, dan kulit bermasalah.",
-      "baseline_concern_slugs": ["active-acne","acne-marks","large-pores","oily-skin"],
-      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/SYLFIRM X/SYLFIRM.jpg",
-      "alt": "Perawatan Jerawat — Sylfirm X"
+      "slot": "treatments.hero",
+      "action": "BIND_PRESENTATION_MEDIA",
+      "asset": "docs/feedback-cases-gloskin-20260820-154828/FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/DERMA OXY FACIAL THERAPY/GLOSKIN 0202993.JPG",
+      "rule": "Bind through the existing canonical Home/Page hero media owner; do not add a new hard-coded template image."
     },
     {
-      "slug": "brightening-focus",
-      "display_label": "Brightening",
-      "copy": "Perawatan untuk kulit kusam, flek, dan pigmentasi tidak merata.",
-      "baseline_concern_slugs": ["dullness","pigmentation","uneven-texture"],
-      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FLEK & PIGMENTASI/PICO LASER/GLOSKIN 0203043.JPG",
-      "alt": "Perawatan Brightening — Pico Laser"
+      "slot": "consultation_path:acne-focus",
+      "action": "UPDATE_PATH_TERM",
+      "stable_slug": "acne-focus",
+      "label": "Jerawat & Bekas Jerawat",
+      "copy": "Pilihan treatment untuk membantu membahas jerawat aktif, komedo, tekstur, dan bekas jerawat berdasarkan evaluasi kulit.",
+      "asset": "docs/feedback-cases-gloskin-20260820-154828/FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/ACNE ADVANCE PEELING/PEEL.png",
+      "baseline_concerns": ["active-acne", "acne-marks", "large-pores", "oily-skin", "scars-keloid"]
     },
     {
-      "slug": "anti-aging-focus",
-      "display_label": "Anti-Aging",
-      "copy": "Perawatan untuk garis halus, kerutan, dan tanda penuaan.",
-      "baseline_concern_slugs": ["fine-lines","uneven-texture","dry-dehydrated"],
-      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/AGING - KERUTAN/BOTOX/BTX.png",
-      "alt": "Perawatan Anti-Aging — Botox"
+      "slot": "consultation_path:brightening-focus",
+      "action": "UPDATE_PATH_TERM",
+      "stable_slug": "brightening-focus",
+      "label": "Flek & Pigmentasi",
+      "copy": "Pilihan treatment untuk membahas flek, melasma, noda, dan warna kulit tidak merata sesuai kondisi kulit.",
+      "asset": "docs/feedback-cases-gloskin-20260820-154828/FB-989360-treatment-page/FOTO TREATMENT/FLEK & PIGMENTASI/PICO LASER/PICO LASER.jpg",
+      "baseline_concerns": ["dullness", "pigmentation", "uneven-texture"]
     },
     {
-      "slug": "skin-health-focus",
-      "display_label": "Skin Health",
-      "copy": "Perawatan untuk kesehatan kulit menyeluruh, hidrasi, dan skin barrier.",
-      "baseline_concern_slugs": ["dry-dehydrated","sensitivity-redness","oily-skin","large-pores"],
-      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/SKIN BARIER FACIAL THERAPY/SKINBARIER.png",
-      "alt": "Perawatan Skin Health — Skin Barrier Facial Therapy"
+      "slot": "consultation_path:anti-aging-focus",
+      "action": "UPDATE_PATH_TERM",
+      "stable_slug": "anti-aging-focus",
+      "label": "Aging & Kontur",
+      "copy": "Pilihan treatment untuk membahas garis ekspresi, perubahan elastisitas, lifting, dan kontur wajah secara individual.",
+      "asset": "docs/feedback-cases-gloskin-20260820-154828/FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/ULTRALIFT/ULTRALIFT.png",
+      "baseline_concerns": ["fine-lines", "facial-laxity", "facial-contour", "under-eye"]
+    },
+    {
+      "slot": "consultation_path:skin-health-focus",
+      "action": "UPDATE_PATH_TERM",
+      "stable_slug": "skin-health-focus",
+      "label": "Skin Quality & Barrier",
+      "copy": "Pilihan treatment yang berfokus pada hidrasi, tekstur, kualitas kulit, dan dukungan skin barrier.",
+      "asset": "docs/feedback-cases-gloskin-20260820-154828/FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/5GF GLO BOOSTER/5gf.png",
+      "baseline_concerns": ["dry-dehydrated", "sensitivity-redness", "dullness", "uneven-texture"]
     }
-  ]
+  ],
+  "rules": {
+    "preserve_exactly_four_path_slugs": true,
+    "do_not_turn_folder_hierarchy_into_taxonomy": true,
+    "do_not_use_named_patient_before_after_as_generic_page_media": true,
+    "media_dedupe": "sha256",
+    "fallback": "if a chosen asset cannot be verified at runtime, fail/skip that slot; never substitute a random image"
+  }
 }

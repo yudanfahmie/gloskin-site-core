@@ -1,43 +1,15 @@
 {
-  "version": "1.0",
-  "policy": "HOLD items are skipped, audited, and do NOT block Phase 3 completion. Never replace uncertainty with an AI guess.",
-  "holds": [
-    {
-      "id": "p3:hold:az-xpert",
-      "reason": "Identity ambiguous — two asset filenames (AZ EXPERT.png / az xpert.png) suggest a product but no verified Woo match or SKU.",
-      "assets": [
-        "FB-989354-skincare-page/FOTO PRODUCT PNG/AZ EXPERT.png",
-        "FB-989354-skincare-page/FOTO PRODUCT PNG/az xpert.png"
-      ]
-    },
-    {
-      "id": "p3:hold:glam-gold-serum",
-      "reason": "Identity ambiguous — filename glam gold serum.png does not match any confirmed catalog entry or existing Woo SKU.",
-      "assets": [
-        "FB-989354-skincare-page/FOTO PRODUCT PNG/glam gold serum.png"
-      ]
-    },
-    {
-      "id": "p3:hold:skin-fresh-facial-wash",
-      "reason": "Identity ambiguous — Skin-Fresh-Facial-Wash-1.png and SKIN FRESH.png may refer to the same product but no Woo match verified.",
-      "assets": [
-        "FB-989354-skincare-page/FOTO PRODUCT PNG/Skin-Fresh-Facial-Wash-1.png",
-        "FB-989354-skincare-page/FOTO PRODUCT PNG/SKIN FRESH.png"
-      ]
-    },
-    {
-      "id": "p3:hold:dsc02911",
-      "reason": "Identity unknown — DSC02911.png is a camera filename with no product context, cannot be safely attributed to a product.",
-      "assets": [
-        "FB-989354-skincare-page/FOTO PRODUCT PNG/DSC02911.png"
-      ]
-    },
-    {
-      "id": "p3:hold:untitled-design-47",
-      "reason": "Identity unknown — Untitled design (47).png is a generic design-tool filename with no product attribution.",
-      "assets": [
-        "FB-989354-skincare-page/FOTO PRODUCT PNG/Untitled design (47).png"
-      ]
-    }
+  "manifest_id": "gloskin-client-feedback-phase3-unresolved-v1",
+  "generated_on": "2026-08-20",
+  "policy": "Unresolved records do not block the whole migration. Skip only the unresolved record/field, continue bounded work, and report it. Never guess.",
+  "items": [
+    {"scope":"skincare","key":"az-xpert","status":"HOLD","assets":["AZ EXPERT.png","az xpert.png"],"reason":"No authoritative current product identity verified."},
+    {"scope":"skincare","key":"glam-gold-serum","status":"HOLD","assets":["glam gold serum.png"],"reason":"No authoritative current product identity verified."},
+    {"scope":"skincare","key":"skin-fresh-facial-wash","status":"HOLD","assets":["Skin-Fresh-Facial-Wash-1.png"],"reason":"Potential legacy/client-only identity; do not conflate with Skin Fresh Toner."},
+    {"scope":"skincare","key":"opaque-dsc02911","status":"HOLD","assets":["DSC02911.png"],"reason":"Opaque filename."},
+    {"scope":"skincare","key":"opaque-untitled-47","status":"HOLD","assets":["Untitled design (47).png"],"reason":"Opaque filename."},
+    {"scope":"skincare","key":"glam-air-cushion-variation-model","status":"PARTIAL","assets":["NATURAL CUSHION.png","BEIGE CUSHION.png"],"reason":"Canonical product identity is verified; exact shade/variation model is not. Reuse current real Woo variation model if present; otherwise create/keep a simple product and gallery only."},
+    {"scope":"treatment","key":"service-prices","status":"HOLD_FIELD","reason":"Client asset bundle contains no approved service prices. Preserve verified existing prices; otherwise leave new treatment products unpriced/non-purchasable until approved."},
+    {"scope":"treatment","key":"client-only-service-claims","status":"SAFE_COPY_ONLY","reason":"Several client folder identities do not have a matching current official Gloskin detail page. Use group-level conservative copy; do not invent benefits, duration, downtime or contraindications."}
   ]
 }

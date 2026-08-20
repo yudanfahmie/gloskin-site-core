@@ -60,6 +60,6 @@ for needle in ("var attempts = 3", "data-gloskin-diagnostic-spinner", "response.
                "window.URL.createObjectURL", "window.URL.revokeObjectURL"):
     require(needle in javascript, f"missing AJAX loader/retry owner: {needle}")
 
-require("Version: 0.7.163" in plugin and "const VERSION = '0.7.163';" in kernel,
-        "version must be synchronized at 0.7.163")
-print("diagnostic-export-contract.py: OK (0.7.163)")
+require("Version: 0.7.175" in plugin and "const VERSION = '0.7.175';" in kernel,
+        "version must be synchronized at 0.7.175")
+print("diagnostic-export-contract.py: OK (0.7.175)")

@@ -101,6 +101,6 @@ foreach ( array( 'diskon', 'harga promo', 'berlaku sampai', 'syarat promo' ) as 
 }
 
 $ok( false === strpos( $css, '!important' ), 'Phase-2 canonical presentation owner must not add !important' );
-$ok( false !== strpos( $plugin, 'Version: 0.7.174' ) && false !== strpos( $kernel, "const VERSION = '0.7.174';" ), 'Phase-2 runtime/cache version must be synchronized at 0.7.174' );
+$ok( false !== strpos( $plugin, 'Version: 0.7.175' ) && false !== strpos( $kernel, "const VERSION = '0.7.175';" ), 'Phase-2 runtime/cache version must be synchronized at 0.7.175' );
 
 echo "phase2-client-feedback-contract.php: OK\n";
