@@ -3,75 +3,705 @@
   "treatment_product_count": 48,
   "treatment_record_count": 8,
   "concern_terms": {
-    "existing": ["active-acne","acne-marks","dullness","pigmentation","large-pores","oily-skin","dry-dehydrated","sensitivity-redness","fine-lines","uneven-texture"],
+    "existing": [
+      "active-acne",
+      "acne-marks",
+      "dullness",
+      "pigmentation",
+      "large-pores",
+      "oily-skin",
+      "dry-dehydrated",
+      "sensitivity-redness",
+      "fine-lines",
+      "uneven-texture"
+    ],
     "phase3_new": [
-      {"slug":"skin-barrier","label":"Skin Barrier & Kualitas"},
-      {"slug":"bioremodeling","label":"Bioremodeling & Regenerasi"},
-      {"slug":"contouring","label":"Kontur & Pengencangan Wajah"},
-      {"slug":"hair-restoration","label":"Kerontokan Rambut"},
-      {"slug":"body-wellness","label":"Kontur Tubuh & Wellness"},
-      {"slug":"aesthetic-correction","label":"Koreksi Detail Estetika"},
-      {"slug":"keloid-scar","label":"Keloid & Bekas Luka"}
+      {
+        "slug": "skin-barrier",
+        "label": "Skin Barrier & Kualitas"
+      },
+      {
+        "slug": "bioremodeling",
+        "label": "Bioremodeling & Regenerasi"
+      },
+      {
+        "slug": "contouring",
+        "label": "Kontur & Pengencangan Wajah"
+      },
+      {
+        "slug": "hair-restoration",
+        "label": "Kerontokan Rambut"
+      },
+      {
+        "slug": "body-wellness",
+        "label": "Kontur Tubuh & Wellness"
+      },
+      {
+        "slug": "aesthetic-correction",
+        "label": "Koreksi Detail Estetika"
+      },
+      {
+        "slug": "keloid-scar",
+        "label": "Keloid & Bekas Luka"
+      }
     ]
   },
   "treatment_products": [
-    {"id":"p3:trt:acne-advance-peeling","name":"Acne Advance Peeling","slug":"acne-advance-peeling","sku":"GS-TRT-AAP","concerns":["active-acne","acne-marks"],"umbrella_slug":"jerawat-bekas-jerawat","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/ACNE ADVANCE PEELING","copy_short":"Peeling lanjutan untuk mengatasi jerawat aktif dan bekas jerawat."},
-    {"id":"p3:trt:acne-bluelight-peel","name":"Acne Bluelight Peel","slug":"acne-bluelight-peel","sku":"GS-TRT-ABP","concerns":["active-acne","large-pores"],"umbrella_slug":"jerawat-bekas-jerawat","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/ACNE BLUELIGHT PEEL","copy_short":"Kombinasi blue light dan chemical peel untuk jerawat aktif."},
-    {"id":"p3:trt:cautery","name":"Cautery","slug":"cautery","sku":"GS-TRT-CAUTERY","concerns":["active-acne","aesthetic-correction"],"umbrella_slug":"jerawat-bekas-jerawat","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/CAUTERY/COUTER.png","copy_short":"Prosedur kauterisasi untuk lesi kulit dan jerawat."},
-    {"id":"p3:trt:korean-comedo-glowing-peel","name":"Korean Comedo Glowing Peel","slug":"korean-comedo-glowing-peel","sku":"GS-TRT-KCGP","concerns":["active-acne","large-pores","dullness"],"umbrella_slug":"jerawat-bekas-jerawat","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/KOREAN COMEDO GLOWING PEEL/GLOSKIN 0203027.JPG","copy_short":"Peeling Korean-style untuk komedo dan kulit bercahaya."},
-    {"id":"p3:trt:premium-prp","name":"Premium PRP","slug":"premium-prp","sku":"GS-TRT-PPRP","concerns":["acne-marks","bioremodeling"],"umbrella_slug":"jerawat-bekas-jerawat","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/PREMIUM PRP/GLOSKIN 0203064.JPG","copy_short":"Platelet-rich plasma premium untuk regenerasi kulit."},
-    {"id":"p3:trt:rejuran-hb","name":"Rejuran HB","slug":"rejuran-hb","sku":"GS-TRT-REJURAN","concerns":["active-acne","acne-marks","bioremodeling","skin-barrier"],"umbrella_slug":"jerawat-bekas-jerawat","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/REJURAN/REJURAN HB.png","copy_short":"Polynucleotide healer untuk regenerasi dan perbaikan kulit.","multi_context_slugs":["jerawat-bekas-jerawat","kusam-skin-barrier"],"note":"ONE canonical product with multiple context concerns."},
-    {"id":"p3:trt:subcision","name":"Subcision","slug":"subcision","sku":"GS-TRT-SUBCISION","concerns":["acne-marks"],"umbrella_slug":"jerawat-bekas-jerawat","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/SUBCISION","copy_short":"Prosedur subinsisi untuk bekas jerawat atrofi."},
-    {"id":"p3:trt:sylfirm-x","name":"Sylfirm X","slug":"sylfirm-x","sku":"GS-TRT-SYLFIRM","concerns":["acne-marks","active-acne","pigmentation"],"umbrella_slug":"jerawat-bekas-jerawat","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/SYLFIRM X/SYLFIRM.jpg","copy_short":"Teknologi RF mikroneedle untuk bekas jerawat dan pigmentasi."},
-    {"id":"p3:trt:vip-light","name":"VIP Light","slug":"vip-light","sku":"GS-TRT-VIPLIGHT","concerns":["active-acne","acne-marks","dullness"],"umbrella_slug":"jerawat-bekas-jerawat","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/VIP LIGHT/GLOSKIN 0203034.JPG","copy_short":"Terapi cahaya VIP untuk jerawat aktif dan kulit kusam."},
-    {"id":"p3:trt:keloid","name":"Keloid","slug":"keloid","sku":"GS-TRT-KELOID","concerns":["keloid-scar","acne-marks"],"umbrella_slug":"jerawat-bekas-jerawat","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/KELOID/KELOID.jpg","copy_short":"Penanganan keloid dan bekas luka.","multi_context_slugs":["jerawat-bekas-jerawat","detail-estetika"],"note":"ONE canonical product shared across Jerawat and Detail contexts."},
-    {"id":"p3:trt:4g-laser","name":"4G Laser","slug":"4g-laser","sku":"GS-TRT-4GL","concerns":["pigmentation","dullness"],"umbrella_slug":"flek-pigmentasi","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/FLEK & PIGMENTASI/4G LASER/4G LASER.png","copy_short":"Laser generasi keempat untuk flek dan hiperpigmentasi."},
-    {"id":"p3:trt:messoglow","name":"Messoglow","slug":"messoglow","sku":"GS-TRT-MGLOW","concerns":["pigmentation","dullness","bioremodeling"],"umbrella_slug":"flek-pigmentasi","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/FLEK & PIGMENTASI/MESSOGLOW/MESSOGLOW.png","copy_short":"Mesotherapy glow untuk kulit cerah dan bercahaya."},
-    {"id":"p3:trt:pico-laser","name":"Pico Laser","slug":"pico-laser","sku":"GS-TRT-PICO","concerns":["pigmentation","dullness"],"umbrella_slug":"flek-pigmentasi","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/FLEK & PIGMENTASI/PICO LASER/GLOSKIN 0203043.JPG","copy_short":"Laser pikosekond untuk flek dan pigmentasi."},
-    {"id":"p3:trt:xelarederm","name":"Xelarederm","slug":"xelarederm","sku":"GS-TRT-XELA","concerns":["pigmentation","bioremodeling"],"umbrella_slug":"flek-pigmentasi","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/FLEK & PIGMENTASI/XELAREDERM/xelarederm.png","copy_short":"Bioremodeling untuk pigmentasi dan kualitas kulit."},
-    {"id":"p3:trt:chroma","name":"Chroma","slug":"chroma","sku":"GS-TRT-CHROMA","concerns":["pigmentation","dullness","skin-barrier"],"umbrella_slug":"kusam-skin-barrier","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/CHROMA/chroma.png","copy_short":"Perawatan chroma untuk pigmentasi dan skin barrier."},
-    {"id":"p3:trt:ellanse","name":"Ellanse","slug":"ellanse","sku":"GS-TRT-ELLANSE","concerns":["bioremodeling","contouring"],"umbrella_slug":"kusam-skin-barrier","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/ELLANSE/ELLANSE.png","copy_short":"Dermal filler biostimulator untuk volume dan kontur wajah."},
-    {"id":"p3:trt:exxoskin","name":"Exxoskin","slug":"exxoskin","sku":"GS-TRT-EXXOSKIN","concerns":["skin-barrier","bioremodeling","dullness"],"umbrella_slug":"kusam-skin-barrier","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/EXXOSKIN/GLOSKIN 0203064.JPG","copy_short":"Perawatan exosom untuk pemulihan skin barrier."},
-    {"id":"p3:trt:juvelook","name":"Juvelook","slug":"juvelook","sku":"GS-TRT-JUVELOOK","concerns":["skin-barrier","bioremodeling","dry-dehydrated"],"umbrella_slug":"kusam-skin-barrier","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/JUVELOOK/JUVELOOK.png","copy_short":"PDLLA filler untuk hidrasi mendalam dan biostimulasi."},
-    {"id":"p3:trt:nucleofil","name":"Nucleofil","slug":"nucleofil","sku":"GS-TRT-NUCLEOFIL","concerns":["bioremodeling","skin-barrier"],"umbrella_slug":"kusam-skin-barrier","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/NUCLEOFIL/nucleofil.png","copy_short":"Perawatan polynucleotide untuk regenerasi kulit."},
-    {"id":"p3:trt:profhilo","name":"Profhilo","slug":"profhilo","sku":"GS-TRT-PROFHILO","concerns":["skin-barrier","bioremodeling","dry-dehydrated"],"umbrella_slug":"kusam-skin-barrier","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/PROFHILO/profhilo.png","copy_short":"Bioremodeling hyaluronic acid konsentrasi tinggi."},
-    {"id":"p3:trt:salmon-dna","name":"Salmon DNA","slug":"salmon-dna","sku":"GS-TRT-SALMON","concerns":["skin-barrier","bioremodeling","dullness"],"umbrella_slug":"kusam-skin-barrier","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/SALMON DNA/GLOSKIN 0203174.JPG","copy_short":"PDRN salmon untuk regenerasi dan pemulihan kulit."},
-    {"id":"p3:trt:skinvive","name":"Skinvive","slug":"skinvive","sku":"GS-TRT-SKINVIVE","concerns":["skin-barrier","bioremodeling","dry-dehydrated"],"umbrella_slug":"kusam-skin-barrier","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/SKINVIVE/skinvive.png","copy_short":"Microfiller HA untuk hidrasi intradermal."},
-    {"id":"p3:trt:chubbycheek-double-chin","name":"Chubbycheek & Double Chin","slug":"chubbycheek-double-chin","sku":"GS-TRT-CDCHIN","concerns":["contouring"],"umbrella_slug":"kontur-laxity-wajah","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/CHUBBYCHEEK & DOUBLE CHIN","copy_short":"Kontur wajah untuk pengurangan pipi chubby dan double chin."},
-    {"id":"p3:trt:hollywood-face-sculpting","name":"Hollywood Face Sculpting","slug":"hollywood-face-sculpting","sku":"GS-TRT-HFS","concerns":["contouring"],"umbrella_slug":"kontur-laxity-wajah","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/HOLLYWOOD FACE SCULPTING/EXILIS.png","copy_short":"Sculpting wajah non-invasif untuk kontur yang terdefinisi."},
-    {"id":"p3:trt:jawline-shaping","name":"Jawline Shaping","slug":"jawline-shaping","sku":"GS-TRT-JAWLINE","concerns":["contouring"],"umbrella_slug":"kontur-laxity-wajah","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/JAWLINE SHAPING","copy_short":"Pembentukan garis rahang untuk profil wajah yang lebih tajam."},
-    {"id":"p3:trt:juvederm","name":"Juvederm","slug":"juvederm","sku":"GS-TRT-JUVEDERM","concerns":["contouring","bioremodeling"],"umbrella_slug":"kontur-laxity-wajah","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/JUVEDERM/JUVEDERM.png","copy_short":"Filler hyaluronic acid premium untuk volume dan kontur."},
-    {"id":"p3:trt:radiofrequency","name":"Radiofrequency","slug":"radiofrequency","sku":"GS-TRT-RF","concerns":["contouring","body-wellness"],"umbrella_slug":"kontur-laxity-wajah","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/RADIOFREQUENCY","copy_short":"Pengencangan kulit berbasis radiofrequency untuk wajah dan tubuh.","multi_context_slugs":["kontur-laxity-wajah","body-wellness"],"note":"ONE canonical product shared across Kontur and Body Wellness contexts."},
-    {"id":"p3:trt:threadlift","name":"Threadlift","slug":"threadlift","sku":"GS-TRT-THREAD","concerns":["contouring"],"umbrella_slug":"kontur-laxity-wajah","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/THREADLIFT/THREADLIFT.png","copy_short":"Pengencangan wajah non-bedah dengan benang."},
-    {"id":"p3:trt:ultralift","name":"Ultralift","slug":"ultralift","sku":"GS-TRT-ULTRALIFT","concerns":["contouring"],"umbrella_slug":"kontur-laxity-wajah","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/ULTRALIFT/ULTRALIFT.png","copy_short":"Lifting non-invasif berbasis HIFU untuk pengencangan wajah."},
-    {"id":"p3:trt:botox","name":"Botox","slug":"botox","sku":"GS-TRT-BOTOX","concerns":["fine-lines","contouring"],"umbrella_slug":"aging-kerutan","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/AGING - KERUTAN/BOTOX/BTX.png","copy_short":"Relaksasi otot untuk mengurangi garis ekspresi dan kerutan."},
-    {"id":"p3:trt:derma-oxy-facial-therapy","name":"Derma Oxy Facial Therapy","slug":"derma-oxy-facial-therapy","sku":"GS-TRT-DOFT","concerns":["skin-barrier","dullness"],"umbrella_slug":"facial-therapy","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/DERMA OXY FACIAL THERAPY/GLOSKIN 0202993.JPG","copy_short":"Terapi facial oksigen untuk revitalisasi kulit kusam."},
-    {"id":"p3:trt:glowing-face-therapy","name":"Glowing Face Therapy","slug":"glowing-face-therapy","sku":"GS-TRT-GFT","concerns":["dullness","skin-barrier"],"umbrella_slug":"facial-therapy","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/GLOWING FACE THERAPY","copy_short":"Terapi wajah untuk kulit bercahaya."},
-    {"id":"p3:trt:hydra-glowing-luxury-facial","name":"Hydra Glowing Luxury Facial Therapy","slug":"hydra-glowing-luxury-facial-therapy","sku":"GS-TRT-HGLFT","concerns":["dry-dehydrated","dullness","skin-barrier"],"umbrella_slug":"facial-therapy","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/HYDRA GLOWING LUXURY FACIAL THERAPY/GLOSKIN 0202982.JPG","copy_short":"Facial therapy mewah untuk hidrasi mendalam dan kulit bercahaya."},
-    {"id":"p3:trt:lhala-peel","name":"Lhala Peel","slug":"lhala-peel","sku":"GS-TRT-LHALA","concerns":["dullness","uneven-texture","pigmentation"],"umbrella_slug":"facial-therapy","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/LHALA PEEL/LHALA PEEL - 2.jpg","copy_short":"Chemical peel khusus untuk tekstur dan kecerahan kulit."},
-    {"id":"p3:trt:luxury-face-therapy","name":"Luxury Face Therapy","slug":"luxury-face-therapy","sku":"GS-TRT-LFT","concerns":["dullness","skin-barrier"],"umbrella_slug":"facial-therapy","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/LUXURY FACE THERAPY/GLOSKIN 0203010.JPG","copy_short":"Perawatan wajah premium untuk kulit terawat optimal."},
-    {"id":"p3:trt:lymphatic-face-therapy","name":"Lymphatic Face Therapy","slug":"lymphatic-face-therapy","sku":"GS-TRT-LYMPHFT","concerns":["dullness","sensitivity-redness"],"umbrella_slug":"facial-therapy","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/LYMPHATIC FACE THERAPY/LYMPATIC FACE.png","copy_short":"Terapi limfatik wajah untuk drainase dan pengurangan kemerahan."},
-    {"id":"p3:trt:oxy-jet-light","name":"Oxy Jet Light","slug":"oxy-jet-light","sku":"GS-TRT-OJL","concerns":["active-acne","dullness"],"umbrella_slug":"facial-therapy","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/OXY JET LIGHT/LIGHT.png","copy_short":"Kombinasi oksigen jet dan terapi cahaya untuk kulit bersih."},
-    {"id":"p3:trt:skin-barrier-facial-therapy","name":"Skin Barrier Facial Therapy","slug":"skin-barrier-facial-therapy","sku":"GS-TRT-SBFT","concerns":["skin-barrier","sensitivity-redness"],"umbrella_slug":"facial-therapy","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/SKIN BARIER FACIAL THERAPY/SKINBARIER.png","copy_short":"Terapi facial untuk pemulihan dan penguatan skin barrier."},
-    {"id":"p3:trt:browlift","name":"Browlift","slug":"browlift","sku":"GS-TRT-BROWLIFT","concerns":["contouring"],"umbrella_slug":"dermatolift","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/DERMATOLIFT/BROWLIFT/copy_825548CC-C41A-488D-84E9-FC041EDBF255.PNG","copy_short":"Pengangkatan alis non-bedah untuk tampilan lebih segar."},
-    {"id":"p3:trt:buccal-fat","name":"Buccal Fat","slug":"buccal-fat","sku":"GS-TRT-BUCCALFAT","concerns":["contouring"],"umbrella_slug":"dermatolift","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/DERMATOLIFT/BUCCAL FAT/a803d560-edfc-4a5f-8071-9e04334351f6.JPG","copy_short":"Pengurangan lemak bukal untuk kontur wajah yang lebih tirus."},
-    {"id":"p3:trt:eyebag-removal","name":"Eyebag Removal","slug":"eyebag-removal","sku":"GS-TRT-EYEBAG","concerns":["contouring"],"umbrella_slug":"dermatolift","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/DERMATOLIFT/EYEBAG REMOVAL/5014af89-d629-4865-b5f6-d45f241219c3.JPG","copy_short":"Prosedur pengangkatan kantung mata untuk tampilan segar."},
-    {"id":"p3:trt:smaslift","name":"Smaslift","slug":"smaslift","sku":"GS-TRT-SMASLIFT","concerns":["contouring"],"umbrella_slug":"dermatolift","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/DERMATOLIFT/SMASLIFT","copy_short":"Lifting bedah lapisan SMAS untuk hasil pengencangan optimal."},
-    {"id":"p3:trt:upper-lower-eyelid","name":"Upper & Lower Eyelid","slug":"upper-lower-eyelid","sku":"GS-TRT-EYELID","concerns":["contouring"],"umbrella_slug":"dermatolift","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/DERMATOLIFT/UPPER - LOWER EYELID/f29901ff-a900-4878-80e9-56c1a3f07d76.JPG","copy_short":"Blepharoplasty atas dan bawah untuk tampilan kelopak mata lebih segar."},
-    {"id":"p3:trt:exxohair","name":"Exxohair","slug":"exxohair","sku":"GS-TRT-EXXOHAIR","concerns":["hair-restoration"],"umbrella_slug":"hair-restoration-category","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/HAIR RESTORATION/EXXOHAIR/GLOSKIN 0203076.JPG","copy_short":"Terapi exosom untuk rambut rontok dan penipisan."},
-    {"id":"p3:trt:hair-prp","name":"Hair PRP","slug":"hair-prp","sku":"GS-TRT-HAIRPRP","concerns":["hair-restoration"],"umbrella_slug":"hair-restoration-category","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/HAIR RESTORATION/HAIR PRP/DSCF3153.JPG.png","copy_short":"PRP untuk stimulasi pertumbuhan rambut alami."},
-    {"id":"p3:trt:hair-transplant","name":"Hair Transplant","slug":"hair-transplant","sku":"GS-TRT-HAIRTX","concerns":["hair-restoration"],"umbrella_slug":"hair-restoration-category","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/HAIR RESTORATION/HAIR TRANSPLANT/IMG_5259.PNG","copy_short":"Transplantasi rambut permanen untuk kebotakan."},
-    {"id":"p3:trt:a-line-body","name":"A Line Body","slug":"a-line-body","sku":"GS-TRT-ALINE","concerns":["body-wellness"],"umbrella_slug":"body-wellness","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/BODYCONTOUR & WELLNESS/A LINE BODY","copy_short":"Kontur tubuh untuk bentuk tubuh ideal."},
-    {"id":"p3:trt:hollywood-body-sculpting","name":"Hollywood Body Sculpting","slug":"hollywood-body-sculpting","sku":"GS-TRT-HBS","concerns":["body-wellness","contouring"],"umbrella_slug":"body-wellness","client_asset":"FB-989360-treatment-page/FOTO TREATMENT/BODYCONTOUR & WELLNESS/HOLLYWOOD BODY SCULPTING/HOLLYWOOD BODY SCULPTING.jpg","copy_short":"Sculpting tubuh Hollywood untuk lekuk tubuh yang terdefinisi."}
+    {
+      "id": "p3:trt:acne-advance-peeling",
+      "name": "Acne Advance Peeling",
+      "slug": "acne-advance-peeling",
+      "concerns": [
+        "active-acne",
+        "acne-marks"
+      ],
+      "umbrella_slug": "jerawat-bekas-jerawat",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/ACNE ADVANCE PEELING",
+      "copy_short": "Peeling lanjutan untuk mengatasi jerawat aktif dan bekas jerawat."
+    },
+    {
+      "id": "p3:trt:acne-bluelight-peel",
+      "name": "Acne Bluelight Peel",
+      "slug": "acne-bluelight-peel",
+      "concerns": [
+        "active-acne",
+        "large-pores"
+      ],
+      "umbrella_slug": "jerawat-bekas-jerawat",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/ACNE BLUELIGHT PEEL",
+      "copy_short": "Kombinasi blue light dan chemical peel untuk jerawat aktif."
+    },
+    {
+      "id": "p3:trt:cautery",
+      "name": "Cautery",
+      "slug": "cautery",
+      "concerns": [
+        "active-acne",
+        "aesthetic-correction"
+      ],
+      "umbrella_slug": "jerawat-bekas-jerawat",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/CAUTERY/COUTER.png",
+      "copy_short": "Prosedur kauterisasi untuk lesi kulit dan jerawat."
+    },
+    {
+      "id": "p3:trt:korean-comedo-glowing-peel",
+      "name": "Korean Comedo Glowing Peel",
+      "slug": "korean-comedo-glowing-peel",
+      "concerns": [
+        "active-acne",
+        "large-pores",
+        "dullness"
+      ],
+      "umbrella_slug": "jerawat-bekas-jerawat",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/KOREAN COMEDO GLOWING PEEL/GLOSKIN 0203027.JPG",
+      "copy_short": "Peeling Korean-style untuk komedo dan kulit bercahaya."
+    },
+    {
+      "id": "p3:trt:premium-prp",
+      "name": "Premium PRP",
+      "slug": "premium-prp",
+      "concerns": [
+        "acne-marks",
+        "bioremodeling"
+      ],
+      "umbrella_slug": "jerawat-bekas-jerawat",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/PREMIUM PRP/GLOSKIN 0203064.JPG",
+      "copy_short": "Platelet-rich plasma premium untuk regenerasi kulit."
+    },
+    {
+      "id": "p3:trt:rejuran-hb",
+      "name": "Rejuran HB",
+      "slug": "rejuran-hb",
+      "concerns": [
+        "active-acne",
+        "acne-marks",
+        "bioremodeling",
+        "skin-barrier"
+      ],
+      "umbrella_slug": "jerawat-bekas-jerawat",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/REJURAN/REJURAN HB.png",
+      "copy_short": "Polynucleotide healer untuk regenerasi dan perbaikan kulit.",
+      "multi_context_slugs": [
+        "jerawat-bekas-jerawat",
+        "kusam-skin-barrier"
+      ],
+      "note": "ONE canonical product with multiple context concerns."
+    },
+    {
+      "id": "p3:trt:subcision",
+      "name": "Subcision",
+      "slug": "subcision",
+      "concerns": [
+        "acne-marks"
+      ],
+      "umbrella_slug": "jerawat-bekas-jerawat",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/SUBCISION",
+      "copy_short": "Prosedur subinsisi untuk bekas jerawat atrofi."
+    },
+    {
+      "id": "p3:trt:sylfirm-x",
+      "name": "Sylfirm X",
+      "slug": "sylfirm-x",
+      "concerns": [
+        "acne-marks",
+        "active-acne",
+        "pigmentation"
+      ],
+      "umbrella_slug": "jerawat-bekas-jerawat",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/SYLFIRM X/SYLFIRM.jpg",
+      "copy_short": "Teknologi RF mikroneedle untuk bekas jerawat dan pigmentasi."
+    },
+    {
+      "id": "p3:trt:vip-light",
+      "name": "VIP Light",
+      "slug": "vip-light",
+      "concerns": [
+        "active-acne",
+        "acne-marks",
+        "dullness"
+      ],
+      "umbrella_slug": "jerawat-bekas-jerawat",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/VIP LIGHT/GLOSKIN 0203034.JPG",
+      "copy_short": "Terapi cahaya VIP untuk jerawat aktif dan kulit kusam."
+    },
+    {
+      "id": "p3:trt:keloid",
+      "name": "Keloid",
+      "slug": "keloid",
+      "concerns": [
+        "keloid-scar",
+        "acne-marks"
+      ],
+      "umbrella_slug": "jerawat-bekas-jerawat",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/KELOID/KELOID.jpg",
+      "copy_short": "Penanganan keloid dan bekas luka.",
+      "multi_context_slugs": [
+        "jerawat-bekas-jerawat",
+        "detail-estetika"
+      ],
+      "note": "ONE canonical product shared across Jerawat and Detail contexts."
+    },
+    {
+      "id": "p3:trt:4g-laser",
+      "name": "4G Laser",
+      "slug": "4g-laser",
+      "concerns": [
+        "pigmentation",
+        "dullness"
+      ],
+      "umbrella_slug": "flek-pigmentasi",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FLEK & PIGMENTASI/4G LASER/4G LASER.png",
+      "copy_short": "Laser generasi keempat untuk flek dan hiperpigmentasi."
+    },
+    {
+      "id": "p3:trt:messoglow",
+      "name": "Messoglow",
+      "slug": "messoglow",
+      "concerns": [
+        "pigmentation",
+        "dullness",
+        "bioremodeling"
+      ],
+      "umbrella_slug": "flek-pigmentasi",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FLEK & PIGMENTASI/MESSOGLOW/MESSOGLOW.png",
+      "copy_short": "Mesotherapy glow untuk kulit cerah dan bercahaya."
+    },
+    {
+      "id": "p3:trt:pico-laser",
+      "name": "Pico Laser",
+      "slug": "pico-laser",
+      "concerns": [
+        "pigmentation",
+        "dullness"
+      ],
+      "umbrella_slug": "flek-pigmentasi",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FLEK & PIGMENTASI/PICO LASER/GLOSKIN 0203043.JPG",
+      "copy_short": "Laser pikosekond untuk flek dan pigmentasi."
+    },
+    {
+      "id": "p3:trt:xelarederm",
+      "name": "Xelarederm",
+      "slug": "xelarederm",
+      "concerns": [
+        "pigmentation",
+        "bioremodeling"
+      ],
+      "umbrella_slug": "flek-pigmentasi",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FLEK & PIGMENTASI/XELAREDERM/xelarederm.png",
+      "copy_short": "Bioremodeling untuk pigmentasi dan kualitas kulit."
+    },
+    {
+      "id": "p3:trt:chroma",
+      "name": "Chroma",
+      "slug": "chroma",
+      "concerns": [
+        "pigmentation",
+        "dullness",
+        "skin-barrier"
+      ],
+      "umbrella_slug": "kusam-skin-barrier",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/CHROMA/chroma.png",
+      "copy_short": "Perawatan chroma untuk pigmentasi dan skin barrier."
+    },
+    {
+      "id": "p3:trt:ellanse",
+      "name": "Ellanse",
+      "slug": "ellanse",
+      "concerns": [
+        "bioremodeling",
+        "contouring"
+      ],
+      "umbrella_slug": "kusam-skin-barrier",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/ELLANSE/ELLANSE.png",
+      "copy_short": "Dermal filler biostimulator untuk volume dan kontur wajah."
+    },
+    {
+      "id": "p3:trt:exxoskin",
+      "name": "Exxoskin",
+      "slug": "exxoskin",
+      "concerns": [
+        "skin-barrier",
+        "bioremodeling",
+        "dullness"
+      ],
+      "umbrella_slug": "kusam-skin-barrier",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/EXXOSKIN/GLOSKIN 0203064.JPG",
+      "copy_short": "Perawatan exosom untuk pemulihan skin barrier."
+    },
+    {
+      "id": "p3:trt:juvelook",
+      "name": "Juvelook",
+      "slug": "juvelook",
+      "concerns": [
+        "skin-barrier",
+        "bioremodeling",
+        "dry-dehydrated"
+      ],
+      "umbrella_slug": "kusam-skin-barrier",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/JUVELOOK/JUVELOOK.png",
+      "copy_short": "PDLLA filler untuk hidrasi mendalam dan biostimulasi."
+    },
+    {
+      "id": "p3:trt:nucleofil",
+      "name": "Nucleofil",
+      "slug": "nucleofil",
+      "concerns": [
+        "bioremodeling",
+        "skin-barrier"
+      ],
+      "umbrella_slug": "kusam-skin-barrier",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/NUCLEOFIL/nucleofil.png",
+      "copy_short": "Perawatan polynucleotide untuk regenerasi kulit."
+    },
+    {
+      "id": "p3:trt:profhilo",
+      "name": "Profhilo",
+      "slug": "profhilo",
+      "concerns": [
+        "skin-barrier",
+        "bioremodeling",
+        "dry-dehydrated"
+      ],
+      "umbrella_slug": "kusam-skin-barrier",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/PROFHILO/profhilo.png",
+      "copy_short": "Bioremodeling hyaluronic acid konsentrasi tinggi."
+    },
+    {
+      "id": "p3:trt:salmon-dna",
+      "name": "Salmon DNA",
+      "slug": "salmon-dna",
+      "concerns": [
+        "skin-barrier",
+        "bioremodeling",
+        "dullness"
+      ],
+      "umbrella_slug": "kusam-skin-barrier",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/SALMON DNA/GLOSKIN 0203174.JPG",
+      "copy_short": "PDRN salmon untuk regenerasi dan pemulihan kulit."
+    },
+    {
+      "id": "p3:trt:skinvive",
+      "name": "Skinvive",
+      "slug": "skinvive",
+      "concerns": [
+        "skin-barrier",
+        "bioremodeling",
+        "dry-dehydrated"
+      ],
+      "umbrella_slug": "kusam-skin-barrier",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/SKINVIVE/skinvive.png",
+      "copy_short": "Microfiller HA untuk hidrasi intradermal."
+    },
+    {
+      "id": "p3:trt:chubbycheek-double-chin",
+      "name": "Chubbycheek & Double Chin",
+      "slug": "chubbycheek-double-chin",
+      "concerns": [
+        "contouring"
+      ],
+      "umbrella_slug": "kontur-laxity-wajah",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/CHUBBYCHEEK & DOUBLE CHIN",
+      "copy_short": "Kontur wajah untuk pengurangan pipi chubby dan double chin."
+    },
+    {
+      "id": "p3:trt:hollywood-face-sculpting",
+      "name": "Hollywood Face Sculpting",
+      "slug": "hollywood-face-sculpting",
+      "concerns": [
+        "contouring"
+      ],
+      "umbrella_slug": "kontur-laxity-wajah",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/HOLLYWOOD FACE SCULPTING/EXILIS.png",
+      "copy_short": "Sculpting wajah non-invasif untuk kontur yang terdefinisi."
+    },
+    {
+      "id": "p3:trt:jawline-shaping",
+      "name": "Jawline Shaping",
+      "slug": "jawline-shaping",
+      "concerns": [
+        "contouring"
+      ],
+      "umbrella_slug": "kontur-laxity-wajah",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/JAWLINE SHAPING",
+      "copy_short": "Pembentukan garis rahang untuk profil wajah yang lebih tajam."
+    },
+    {
+      "id": "p3:trt:juvederm",
+      "name": "Juvederm",
+      "slug": "juvederm",
+      "concerns": [
+        "contouring",
+        "bioremodeling"
+      ],
+      "umbrella_slug": "kontur-laxity-wajah",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/JUVEDERM/JUVEDERM.png",
+      "copy_short": "Filler hyaluronic acid premium untuk volume dan kontur."
+    },
+    {
+      "id": "p3:trt:radiofrequency",
+      "name": "Radiofrequency",
+      "slug": "radiofrequency",
+      "concerns": [
+        "contouring",
+        "body-wellness"
+      ],
+      "umbrella_slug": "kontur-laxity-wajah",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/RADIOFREQUENCY",
+      "copy_short": "Pengencangan kulit berbasis radiofrequency untuk wajah dan tubuh.",
+      "multi_context_slugs": [
+        "kontur-laxity-wajah",
+        "body-wellness"
+      ],
+      "note": "ONE canonical product shared across Kontur and Body Wellness contexts."
+    },
+    {
+      "id": "p3:trt:threadlift",
+      "name": "Threadlift",
+      "slug": "threadlift",
+      "concerns": [
+        "contouring"
+      ],
+      "umbrella_slug": "kontur-laxity-wajah",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/THREADLIFT/THREADLIFT.png",
+      "copy_short": "Pengencangan wajah non-bedah dengan benang."
+    },
+    {
+      "id": "p3:trt:ultralift",
+      "name": "Ultralift",
+      "slug": "ultralift",
+      "concerns": [
+        "contouring"
+      ],
+      "umbrella_slug": "kontur-laxity-wajah",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/ULTRALIFT/ULTRALIFT.png",
+      "copy_short": "Lifting non-invasif berbasis HIFU untuk pengencangan wajah."
+    },
+    {
+      "id": "p3:trt:botox",
+      "name": "Botox",
+      "slug": "botox",
+      "concerns": [
+        "fine-lines",
+        "contouring"
+      ],
+      "umbrella_slug": "aging-kerutan",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/AGING - KERUTAN/BOTOX/BTX.png",
+      "copy_short": "Relaksasi otot untuk mengurangi garis ekspresi dan kerutan."
+    },
+    {
+      "id": "p3:trt:derma-oxy-facial-therapy",
+      "name": "Derma Oxy Facial Therapy",
+      "slug": "derma-oxy-facial-therapy",
+      "concerns": [
+        "skin-barrier",
+        "dullness"
+      ],
+      "umbrella_slug": "facial-therapy",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/DERMA OXY FACIAL THERAPY/GLOSKIN 0202993.JPG",
+      "copy_short": "Terapi facial oksigen untuk revitalisasi kulit kusam."
+    },
+    {
+      "id": "p3:trt:glowing-face-therapy",
+      "name": "Glowing Face Therapy",
+      "slug": "glowing-face-therapy",
+      "concerns": [
+        "dullness",
+        "skin-barrier"
+      ],
+      "umbrella_slug": "facial-therapy",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/GLOWING FACE THERAPY",
+      "copy_short": "Terapi wajah untuk kulit bercahaya."
+    },
+    {
+      "id": "p3:trt:hydra-glowing-luxury-facial",
+      "name": "Hydra Glowing Luxury Facial Therapy",
+      "slug": "hydra-glowing-luxury-facial-therapy",
+      "concerns": [
+        "dry-dehydrated",
+        "dullness",
+        "skin-barrier"
+      ],
+      "umbrella_slug": "facial-therapy",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/HYDRA GLOWING LUXURY FACIAL THERAPY/GLOSKIN 0202982.JPG",
+      "copy_short": "Facial therapy mewah untuk hidrasi mendalam dan kulit bercahaya."
+    },
+    {
+      "id": "p3:trt:lhala-peel",
+      "name": "Lhala Peel",
+      "slug": "lhala-peel",
+      "concerns": [
+        "dullness",
+        "uneven-texture",
+        "pigmentation"
+      ],
+      "umbrella_slug": "facial-therapy",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/LHALA PEEL/LHALA PEEL - 2.jpg",
+      "copy_short": "Chemical peel khusus untuk tekstur dan kecerahan kulit."
+    },
+    {
+      "id": "p3:trt:luxury-face-therapy",
+      "name": "Luxury Face Therapy",
+      "slug": "luxury-face-therapy",
+      "concerns": [
+        "dullness",
+        "skin-barrier"
+      ],
+      "umbrella_slug": "facial-therapy",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/LUXURY FACE THERAPY/GLOSKIN 0203010.JPG",
+      "copy_short": "Perawatan wajah premium untuk kulit terawat optimal."
+    },
+    {
+      "id": "p3:trt:lymphatic-face-therapy",
+      "name": "Lymphatic Face Therapy",
+      "slug": "lymphatic-face-therapy",
+      "concerns": [
+        "dullness",
+        "sensitivity-redness"
+      ],
+      "umbrella_slug": "facial-therapy",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/LYMPHATIC FACE THERAPY/LYMPATIC FACE.png",
+      "copy_short": "Terapi limfatik wajah untuk drainase dan pengurangan kemerahan."
+    },
+    {
+      "id": "p3:trt:oxy-jet-light",
+      "name": "Oxy Jet Light",
+      "slug": "oxy-jet-light",
+      "concerns": [
+        "active-acne",
+        "dullness"
+      ],
+      "umbrella_slug": "facial-therapy",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/OXY JET LIGHT/LIGHT.png",
+      "copy_short": "Kombinasi oksigen jet dan terapi cahaya untuk kulit bersih."
+    },
+    {
+      "id": "p3:trt:skin-barrier-facial-therapy",
+      "name": "Skin Barrier Facial Therapy",
+      "slug": "skin-barrier-facial-therapy",
+      "concerns": [
+        "skin-barrier",
+        "sensitivity-redness"
+      ],
+      "umbrella_slug": "facial-therapy",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/SKIN BARIER FACIAL THERAPY/SKINBARIER.png",
+      "copy_short": "Terapi facial untuk pemulihan dan penguatan skin barrier."
+    },
+    {
+      "id": "p3:trt:browlift",
+      "name": "Browlift",
+      "slug": "browlift",
+      "concerns": [
+        "contouring"
+      ],
+      "umbrella_slug": "dermatolift",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/DERMATOLIFT/BROWLIFT/copy_825548CC-C41A-488D-84E9-FC041EDBF255.PNG",
+      "copy_short": "Pengangkatan alis non-bedah untuk tampilan lebih segar."
+    },
+    {
+      "id": "p3:trt:buccal-fat",
+      "name": "Buccal Fat",
+      "slug": "buccal-fat",
+      "concerns": [
+        "contouring"
+      ],
+      "umbrella_slug": "dermatolift",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/DERMATOLIFT/BUCCAL FAT/a803d560-edfc-4a5f-8071-9e04334351f6.JPG",
+      "copy_short": "Pengurangan lemak bukal untuk kontur wajah yang lebih tirus."
+    },
+    {
+      "id": "p3:trt:eyebag-removal",
+      "name": "Eyebag Removal",
+      "slug": "eyebag-removal",
+      "concerns": [
+        "contouring"
+      ],
+      "umbrella_slug": "dermatolift",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/DERMATOLIFT/EYEBAG REMOVAL/5014af89-d629-4865-b5f6-d45f241219c3.JPG",
+      "copy_short": "Prosedur pengangkatan kantung mata untuk tampilan segar."
+    },
+    {
+      "id": "p3:trt:smaslift",
+      "name": "Smaslift",
+      "slug": "smaslift",
+      "concerns": [
+        "contouring"
+      ],
+      "umbrella_slug": "dermatolift",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/DERMATOLIFT/SMASLIFT",
+      "copy_short": "Lifting bedah lapisan SMAS untuk hasil pengencangan optimal."
+    },
+    {
+      "id": "p3:trt:upper-lower-eyelid",
+      "name": "Upper & Lower Eyelid",
+      "slug": "upper-lower-eyelid",
+      "concerns": [
+        "contouring"
+      ],
+      "umbrella_slug": "dermatolift",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/DERMATOLIFT/UPPER - LOWER EYELID/f29901ff-a900-4878-80e9-56c1a3f07d76.JPG",
+      "copy_short": "Blepharoplasty atas dan bawah untuk tampilan kelopak mata lebih segar."
+    },
+    {
+      "id": "p3:trt:exxohair",
+      "name": "Exxohair",
+      "slug": "exxohair",
+      "concerns": [
+        "hair-restoration"
+      ],
+      "umbrella_slug": "hair-restoration-category",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/HAIR RESTORATION/EXXOHAIR/GLOSKIN 0203076.JPG",
+      "copy_short": "Terapi exosom untuk rambut rontok dan penipisan."
+    },
+    {
+      "id": "p3:trt:hair-prp",
+      "name": "Hair PRP",
+      "slug": "hair-prp",
+      "concerns": [
+        "hair-restoration"
+      ],
+      "umbrella_slug": "hair-restoration-category",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/HAIR RESTORATION/HAIR PRP/DSCF3153.JPG.png",
+      "copy_short": "PRP untuk stimulasi pertumbuhan rambut alami."
+    },
+    {
+      "id": "p3:trt:hair-transplant",
+      "name": "Hair Transplant",
+      "slug": "hair-transplant",
+      "concerns": [
+        "hair-restoration"
+      ],
+      "umbrella_slug": "hair-restoration-category",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/HAIR RESTORATION/HAIR TRANSPLANT/IMG_5259.PNG",
+      "copy_short": "Transplantasi rambut permanen untuk kebotakan."
+    },
+    {
+      "id": "p3:trt:a-line-body",
+      "name": "A Line Body",
+      "slug": "a-line-body",
+      "concerns": [
+        "body-wellness"
+      ],
+      "umbrella_slug": "body-wellness",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/BODYCONTOUR & WELLNESS/A LINE BODY",
+      "copy_short": "Kontur tubuh untuk bentuk tubuh ideal."
+    },
+    {
+      "id": "p3:trt:hollywood-body-sculpting",
+      "name": "Hollywood Body Sculpting",
+      "slug": "hollywood-body-sculpting",
+      "concerns": [
+        "body-wellness",
+        "contouring"
+      ],
+      "umbrella_slug": "body-wellness",
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/BODYCONTOUR & WELLNESS/HOLLYWOOD BODY SCULPTING/HOLLYWOOD BODY SCULPTING.jpg",
+      "copy_short": "Sculpting tubuh Hollywood untuk lekuk tubuh yang terdefinisi."
+    }
   ],
   "treatment_records": [
-    {"id":"p3:rec:jerawat-bekas-jerawat","slug":"jerawat-bekas-jerawat","name":"Jerawat & Bekas Jerawat","feature_on_home":true,"client_asset":"FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/SYLFIRM X/SYLFIRM.jpg","summary":"Informasi perawatan untuk jerawat aktif dan bekas jerawat."},
-    {"id":"p3:rec:flek-pigmentasi","slug":"flek-pigmentasi","name":"Flek & Pigmentasi","feature_on_home":false,"client_asset":"FB-989360-treatment-page/FOTO TREATMENT/FLEK & PIGMENTASI/PICO LASER/GLOSKIN 0203043.JPG","summary":"Informasi perawatan untuk flek dan hiperpigmentasi kulit."},
-    {"id":"p3:rec:kusam-skin-barrier","slug":"kusam-skin-barrier","name":"Kusam, Skin Barrier & Kualitas","feature_on_home":true,"client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/PROFHILO/profhilo.png","summary":"Informasi perawatan untuk kulit kusam, skin barrier, dan kualitas kulit."},
-    {"id":"p3:rec:kontur-laxity-wajah","slug":"kontur-laxity-wajah","name":"Kontur & Laxity Wajah","feature_on_home":true,"client_asset":"FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/ULTRALIFT/ULTRALIFT.png","summary":"Informasi perawatan untuk kontur dan kekencangan wajah."},
-    {"id":"p3:rec:aging-kerutan","slug":"aging-kerutan","name":"Aging & Kerutan","feature_on_home":false,"client_asset":"FB-989360-treatment-page/FOTO TREATMENT/AGING - KERUTAN/BOTOX/BTX.png","summary":"Informasi perawatan untuk tanda-tanda penuaan dan kerutan."},
-    {"id":"p3:rec:facial-therapy","slug":"facial-therapy","name":"Facial Therapy","feature_on_home":false,"client_asset":"FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/HYDRA GLOWING LUXURY FACIAL THERAPY/GLOSKIN 0202982.JPG","summary":"Informasi layanan facial therapy untuk perawatan kulit menyeluruh."},
-    {"id":"p3:rec:dermatolift","slug":"dermatolift","name":"Dermatolift","feature_on_home":false,"client_asset":"FB-989360-treatment-page/FOTO TREATMENT/DERMATOLIFT/BROWLIFT/copy_825548CC-C41A-488D-84E9-FC041EDBF255.PNG","summary":"Informasi prosedur dermatolift untuk pengencangan wajah."},
-    {"id":"p3:rec:hair-restoration-category","slug":"hair-restoration-category","name":"Hair Restoration","feature_on_home":false,"client_asset":"FB-989360-treatment-page/FOTO TREATMENT/HAIR RESTORATION/EXXOHAIR/GLOSKIN 0203076.JPG","summary":"Informasi perawatan untuk kerontokan dan penipisan rambut."}
+    {
+      "id": "p3:rec:jerawat-bekas-jerawat",
+      "slug": "jerawat-bekas-jerawat",
+      "name": "Jerawat & Bekas Jerawat",
+      "feature_on_home": true,
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/SYLFIRM X/SYLFIRM.jpg",
+      "summary": "Informasi perawatan untuk jerawat aktif dan bekas jerawat."
+    },
+    {
+      "id": "p3:rec:flek-pigmentasi",
+      "slug": "flek-pigmentasi",
+      "name": "Flek & Pigmentasi",
+      "feature_on_home": false,
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FLEK & PIGMENTASI/PICO LASER/GLOSKIN 0203043.JPG",
+      "summary": "Informasi perawatan untuk flek dan hiperpigmentasi kulit."
+    },
+    {
+      "id": "p3:rec:kusam-skin-barrier",
+      "slug": "kusam-skin-barrier",
+      "name": "Kusam, Skin Barrier & Kualitas",
+      "feature_on_home": true,
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KUSAM, SKIN BARIER & QUALITY/PROFHILO/profhilo.png",
+      "summary": "Informasi perawatan untuk kulit kusam, skin barrier, dan kualitas kulit."
+    },
+    {
+      "id": "p3:rec:kontur-laxity-wajah",
+      "slug": "kontur-laxity-wajah",
+      "name": "Kontur & Laxity Wajah",
+      "feature_on_home": true,
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/KONTUR & LAXITY WAJAH/ULTRALIFT/ULTRALIFT.png",
+      "summary": "Informasi perawatan untuk kontur dan kekencangan wajah."
+    },
+    {
+      "id": "p3:rec:aging-kerutan",
+      "slug": "aging-kerutan",
+      "name": "Aging & Kerutan",
+      "feature_on_home": false,
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/AGING - KERUTAN/BOTOX/BTX.png",
+      "summary": "Informasi perawatan untuk tanda-tanda penuaan dan kerutan."
+    },
+    {
+      "id": "p3:rec:facial-therapy",
+      "slug": "facial-therapy",
+      "name": "Facial Therapy",
+      "feature_on_home": false,
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/FACIAL THERAPY/HYDRA GLOWING LUXURY FACIAL THERAPY/GLOSKIN 0202982.JPG",
+      "summary": "Informasi layanan facial therapy untuk perawatan kulit menyeluruh."
+    },
+    {
+      "id": "p3:rec:dermatolift",
+      "slug": "dermatolift",
+      "name": "Dermatolift",
+      "feature_on_home": false,
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/DERMATOLIFT/BROWLIFT/copy_825548CC-C41A-488D-84E9-FC041EDBF255.PNG",
+      "summary": "Informasi prosedur dermatolift untuk pengencangan wajah."
+    },
+    {
+      "id": "p3:rec:hair-restoration-category",
+      "slug": "hair-restoration-category",
+      "name": "Hair Restoration",
+      "feature_on_home": false,
+      "client_asset": "FB-989360-treatment-page/FOTO TREATMENT/HAIR RESTORATION/EXXOHAIR/GLOSKIN 0203076.JPG",
+      "summary": "Informasi perawatan untuk kerontokan dan penipisan rambut."
+    }
   ]
 }

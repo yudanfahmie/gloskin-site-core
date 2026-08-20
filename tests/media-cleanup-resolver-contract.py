@@ -244,7 +244,7 @@ require(classify() == "confirmed-unused",            "clean old image must be 'c
 
 # ── Version synchronized ──────────────────────────────────────────────────────
 require(
-    "Version: 0.7.173" in plugin and "const VERSION = '0.7.173';" in kernel,
-    "plugin and Kernel patch versions must be synchronized at 0.7.173"
+    "Version: 0.7.174" in plugin and "const VERSION = '0.7.174';" in kernel,
+    "plugin and Kernel patch versions must be synchronized at 0.7.174"
 )
-print("media-cleanup-resolver-contract.py: OK (0.7.173)")
+print("media-cleanup-resolver-contract.py: OK (0.7.174)")

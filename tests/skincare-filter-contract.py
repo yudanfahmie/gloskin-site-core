@@ -17,7 +17,7 @@ Asserts:
   11. JS chip filter reads data-category-slugs from product card containers.
   12. No-JS: products are visible without chip interaction (no initial hidden state applied by PHP).
   13. Skincare intro copy no longer says "Pilih kategori, lalu..." (old gating copy removed).
-  14. Plugin / Kernel version synchronized at 0.7.173.
+  14. Plugin / Kernel version synchronized at 0.7.174.
 """
 
 import re, sys, os
@@ -57,12 +57,12 @@ require("data-gloskin-chip" in js,'JS chip filter must read data-gloskin-chip at
 require("'data-category-slugs'" in js or '"data-category-slugs"' in js,'JS chip filter must read data-category-slugs from product card containers')
 require('data-gloskin-product-card hidden' not in skincare,'PHP must not initially hide product cards; no-JS state must show all products')
 require('Pilih kategori, lalu lihat produk' not in skincare,'Old "Pilih kategori, lalu..." intro copy must be removed from skincare template')
-require("Version: 0.7.173" in plugin_h, "plugin header must be 0.7.173")
-require("const VERSION = '0.7.173';" in kernel, "Kernel VERSION must be 0.7.173")
+require("Version: 0.7.174" in plugin_h, "plugin header must be 0.7.174")
+require("const VERSION = '0.7.174';" in kernel, "Kernel VERSION must be 0.7.174")
 
 if failures:
     for f in failures:
         print('FAIL:', f)
     sys.exit(1)
 
-print('skincare-filter-contract.py: OK (0.7.173)')
+print('skincare-filter-contract.py: OK (0.7.174)')

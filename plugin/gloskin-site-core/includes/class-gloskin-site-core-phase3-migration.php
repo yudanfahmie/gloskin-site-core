@@ -39,7 +39,7 @@ final class Gloskin_Site_Core_Phase3_Migration {
 
 	/* Product/post provenance meta. */
 	const POST_SOURCE_META    = '_gloskin_p3_source';
-	const HOME_FEATURE_META   = '_gloskin_treatment_home_feature';
+	const HOME_FEATURE_META   = 'gloskin_treatment_feature_on_home';
 
 	/* Sample product provenance keys (inherited from existing bundle). */
 	const SAMPLE_META         = '_gloskin_sample_data';
