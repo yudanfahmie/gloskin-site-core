@@ -16,10 +16,11 @@ $fonts_dir  = $root . '/plugin/gloskin-site-core/assets/fonts';
 $css_dir    = $root . '/plugin/gloskin-site-core/assets/css';
 $fonts_css  = file_get_contents( $css_dir . '/gloskin-ui1-fonts.css' );
 $production = file_get_contents( $css_dir . '/gloskin-ui1-production.css' );
+$refresh    = file_get_contents( $css_dir . '/gloskin-ui1-prototype-refresh.css' );
 $base       = file_get_contents( $css_dir . '/gloskin-ui1-core-base.css' );
 $core       = file_get_contents( $css_dir . '/gloskin-ui1-core.css' );
 
-if ( false === $fonts_css || false === $production || false === $base || false === $core ) {
+if ( false === $fonts_css || false === $production || false === $refresh || false === $base || false === $core ) {
 	fwrite( STDERR, "nav-font-contract: unable to read required CSS files\n" );
 	exit( 1 );
 }
@@ -151,9 +152,18 @@ if ( preg_match( '/\.gloskin-ui1-nav__link\s*\{[^}]*font-family/s', $production 
 	exit( 1 );
 }
 
+// Production and the final refresh owner must both keep desktop, mobile and
+// submenu links on Graphik Regular rather than reintroducing a bold cascade.
+foreach ( array( 'production' => $production, 'prototype refresh' => $refresh ) as $layer => $css ) {
+	if ( ! preg_match( '/\.gloskin-ui1-nav__link\s*\{[^}]*font-weight\s*:\s*400/s', $css ) ) {
+		fwrite( STDERR, "nav-font-contract: {$layer} nav link owner must use font-weight:400\n" );
+		exit( 1 );
+	}
+}
+
 // ── NO !important IN NAV FONT RULES ─────────────────────────────────────────
 
-$all_css = $fonts_css . $base . $core . $production;
+$all_css = $fonts_css . $base . $core . $production . $refresh;
 if ( preg_match( '/\.gloskin-ui1-nav[^}]*font-family[^}]*!important/s', $all_css ) ) {
 	fwrite( STDERR, "nav-font-contract: nav font-family must not use !important\n" );
 	exit( 1 );

@@ -15,6 +15,8 @@
 	/* Navigation uses the same Graphik body family — one geometric sans family
 	 * site-wide, weight differentiated per role (see prototype-refresh.css). */
 	--gloskin-font-nav:var(--gloskin-font-body);
+	--gloskin-copy-ink:var(--gloskin-brand-charcoal);
+	--gloskin-text-secondary:var(--gloskin-muted);
 }
 .gloskin-ui1--modern{--gloskin-font-heading:"Felix Titling",Georgia,"Times New Roman",serif}
 body.gloskin-ui1{
@@ -43,7 +45,7 @@ body.gloskin-ui1{
 /* ONE canonical navigation font owner: both Header 1 desktop/sticky and
  * Header 2 desktop use <nav class="gloskin-ui1-nav gloskin-ui1-nav--desktop">;
  * the mobile drawer uses <nav class="gloskin-ui1-nav gloskin-ui1-nav--mobile">.
- * Setting font-family here lets every nav descendant inherit DM Sans without
+ * Setting font-family here lets every nav descendant inherit Graphik without
  * repeating the declaration on __link, __toggle, submenu, or mobile variants. */
 .gloskin-ui1-nav{
 	font-family:var(--gloskin-font-nav);
@@ -53,7 +55,7 @@ body.gloskin-ui1{
 .gloskin-ui1-nav__link{
 	padding-inline:8px;
 	font-size:.91rem;
-	font-weight:500;
+	font-weight:400;
 }
 .gloskin-ui1-button,
 .gloskin-ui1-text-link,
