@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gloskin Home & Promo Wireframe Reference</title>
+<style>
+  :root{
+    --bg:#f4f4f4; --panel:#fff; --line:#222; --muted:#666; --soft:#e8e8e8;
+    --gap:18px; --radius:10px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:#111}
+  .page{max-width:1180px;margin:0 auto;padding:28px 18px 60px}
+  h1{margin:0 0 8px;text-align:center;font-size:28px}
+  .lead{text-align:center;color:var(--muted);margin:0 0 28px}
+  .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:start}
+  .browser{background:var(--panel);border:1px solid #cfcfcf;border-radius:var(--radius);overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.08)}
+  .browserbar{height:28px;background:#efefef;border-bottom:1px solid #d0d0d0;display:flex;align-items:center;padding:0 10px;gap:6px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#bbb}
+  .address{height:10px;width:44%;background:#fff;border:1px solid #d7d7d7;border-radius:4px;margin-left:8px}
+  .nav{display:flex;align-items:center;gap:16px;padding:11px 16px;border-bottom:1px solid #ddd;font-size:12px;white-space:nowrap}
+  .brand{font-size:20px;margin-right:auto}
+  .hero{aspect-ratio:16/7;background:#aaa;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:700}
+  .section{padding:20px 18px}
+  .why{display:grid;grid-template-columns:1fr 1.2fr;gap:18px;align-items:center}
+  .placeholder{background:#ddd;border:1px solid #333;display:flex;align-items:center;justify-content:center;text-align:center}
+  .why .placeholder{aspect-ratio:4/3;font-size:22px}
+  .bullets{font-size:12px;line-height:1.55}
+  .title{text-align:center;font-size:22px;margin:0 0 14px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .card{border:1px solid #333;border-radius:6px;overflow:hidden;background:#fff}
+  .card .img{aspect-ratio:16/9;background:#ddd;border-bottom:1px solid #333}
+  .card .copy{padding:8px;font-size:11px;line-height:1.35}
+  .testimonials{display:grid;gap:9px}
+  .testimonial{border:1px solid #333;border-radius:6px;padding:8px;display:grid;grid-template-columns:42px 1fr;gap:9px;align-items:center}
+  .avatar{width:42px;height:42px;border-radius:50%;background:#ddd;border:1px solid #999}
+  .testimonial strong{display:block;font-size:11px}
+  .testimonial p{font-size:10px;line-height:1.35;margin:2px 0 0}
+  .certs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .cert{aspect-ratio:4/3;background:#ddd;border:1px solid #333;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px}
+  .promo-wrap{padding:20px}
+  .promo-title{text-align:center;font-size:24px;margin:5px 0 18px}
+  .carousel{position:relative}
+  .promo-feature{display:grid;grid-template-columns:1fr 1.15fr;border:1px solid #333;border-radius:7px;overflow:hidden;min-height:220px}
+  .promo-feature .photo{background:#ddd;display:flex;align-items:center;justify-content:center;font-size:26px;border-right:1px solid #333}
+  .promo-feature .art{padding:22px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:18px}
+  .poster{height:190px;margin-top:24px;background:#ddd;border:1px solid #333;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:28px}
+  .arrow{position:absolute;right:-12px;top:50%;transform:translateY(-50%);font-size:34px}
+  .dots{text-align:center;letter-spacing:8px;margin:10px 0 0;font-size:14px}
+  .note{margin-top:28px;background:#fff;border-left:4px solid #222;padding:14px 16px;font-size:13px;line-height:1.5}
+  @media(max-width:900px){
+    .grid{grid-template-columns:1fr}
+  }
+  @media(max-width:620px){
+    .nav{gap:8px;font-size:10px;overflow:auto}
+    .brand{font-size:17px}
+    .why{grid-template-columns:1fr}
+    .cards{grid-template-columns:repeat(2,1fr)}
+    .certs{grid-template-columns:repeat(2,1fr)}
+    .promo-feature{grid-template-columns:1fr}
+    .promo-feature .photo{border-right:0;border-bottom:1px solid #333;min-height:150px}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>GLOSKIN Skin Clinic — Home & Promo Wireframe</h1>
+  <p class="lead">HTML reference converted from the clearer client sketch supplied earlier.</p>
+
+  <div class="grid">
+    <section>
+      <h2>Home Page</h2>
+      <div class="browser">
+        <div class="browserbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="address"></span></div>
+        <div class="nav">
+          <span class="brand">GLOSKIN</span>
+          <span>Home</span><span>Treatment</span><span>Promo</span><span>Skincare</span><span>Tentang Kami</span><span>ID</span><span>Cart</span>
+        </div>
+        <div class="hero">FULL-WIDTH VIDEO CAMPAIGN<br><small>no overlay text in final implementation</small></div>
+
+        <div class="section why">
+          <div class="placeholder">Kenapa Memilih<br>GLOSKIN</div>
+          <div>
+            <h3>Kenapa Memilih GLOSKIN</h3>
+            <div class="bullets">
+              • Ringkas, editorial, mudah dibaca.<br>
+              • Tidak perlu komponen kompleks.<br>
+              • Gunakan konten managed yang relevan saja.<br>
+              • Responsif dan mempertahankan hirarki wireframe.
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3 class="title">Treatment Unggulan</h3>
+          <div class="cards">
+            <div class="card"><div class="img"></div><div class="copy"><strong>Service card</strong><br>Ringkasan singkat.</div></div>
+            <div class="card"><div class="img"></div><div class="copy"><strong>Service card</strong><br>Ringkasan singkat.</div></div>
+            <div class="card"><div class="img"></div><div class="copy"><strong>Service card</strong><br>Ringkasan singkat.</div></div>
+            <div class="card"><div class="img"></div><div class="copy"><strong>Service card</strong><br>Ringkasan singkat.</div></div>
+            <div class="card"><div class="img"></div><div class="copy"><strong>Service card</strong><br>Ringkasan singkat.</div></div>
+            <div class="card"><div class="img"></div><div class="copy"><strong>Service card</strong><br>Ringkasan singkat.</div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3 class="title">Testimoni</h3>
+          <div class="testimonials">
+            <div class="testimonial"><div class="avatar"></div><div><strong>User ipsum</strong><p>Testimonial row visible simultaneously, not a slider-only presentation.</p></div></div>
+            <div class="testimonial"><div class="avatar"></div><div><strong>User lorem</strong><p>Short, readable managed testimonial copy.</p></div></div>
+            <div class="testimonial"><div class="avatar"></div><div><strong>User ipsum</strong><p>Three stacked rows in desktop reference.</p></div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3 class="title">Piagam</h3>
+          <div class="certs">
+            <div class="cert">Image only</div><div class="cert">Image only</div><div class="cert">Image only</div><div class="cert">Image only</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Promo Page</h2>
+      <div class="browser">
+        <div class="browserbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="address"></span></div>
+        <div class="nav">
+          <span class="brand">GLOSKIN</span>
+          <span>Home</span><span>Treatment</span><span>Promo</span><span>Skincare</span><span>Tentang Kami</span><span>ID</span>
+        </div>
+        <div class="promo-wrap">
+          <h3 class="promo-title">Promo Terbatas</h3>
+          <div class="carousel">
+            <div class="promo-feature">
+              <div class="photo">Foto</div>
+              <div class="art"><div><strong>Promo artwork</strong><br><small>image/artwork is the visual truth</small></div></div>
+            </div>
+            <span class="arrow">›</span>
+            <div class="dots">● ○ ○ ○ ○</div>
+          </div>
+
+          <div class="carousel">
+            <div class="poster">Promo Poster</div>
+            <span class="arrow">›</span>
+            <div class="dots">● ○ ○ ○ ○</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="note">
+    <strong>Implementation intent:</strong> this is a fidelity reference, not a new runtime framework.
+    Reuse canonical owners. For Phase 4, remove/Trash obsolete Promo and Achievement content only after the replacement dataset is ready.
+    Promo placeholders may use 3–6 landscape banners; Home Piagam should remain four image-only cards to preserve the supplied wireframe.
+  </div>
+</div>
+</body>
+</html>
