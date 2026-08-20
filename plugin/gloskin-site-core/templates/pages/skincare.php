@@ -26,6 +26,7 @@ gloskin_ui1_render_hero( $gloskin_context['hero'] );
 				$gloskin_cs = trim( $gloskin_cs );
 				if ( '' !== $gloskin_cs ) { $gloskin_active_slugs[ $gloskin_cs ] = true; }
 			}
+		}
 	}
 	/* Build ordered chip list matching mappings order */
 	$gloskin_chips = array();
