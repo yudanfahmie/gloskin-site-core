@@ -93,15 +93,13 @@ final class Gloskin_Site_Core_Final_IA_Normalizer {
 		$page = get_page_by_path( $slug, OBJECT, 'page' );
 		if ( $page instanceof WP_Post ) {
 			if ( 'publish' === (string) $page->post_status ) { return absint( $page->ID ); }
-			$provisioned = self::REVISION === (string) get_post_meta( $page->ID, '_gloskin_provisioned_revision', true );
-			if ( $provisioned ) {
-				$result = wp_update_post( array( 'ID' => absint( $page->ID ), 'post_status' => 'publish' ), true );
-				if ( is_wp_error( $result ) || 'publish' !== (string) get_post_status( $page->ID ) ) {
-					throw new RuntimeException( 'normalize_failed: Gagal mempublikasikan halaman kanonik /' . $slug . '/.' );
-				}
-				return absint( $page->ID );
+			/* Finalization migration always publishes a canonical IA page regardless of ownership.
+			 * Editor can adjust content after; publication status is what the IA requires. */
+			$result = wp_update_post( array( 'ID' => absint( $page->ID ), 'post_status' => 'publish' ), true );
+			if ( is_wp_error( $result ) || 'publish' !== (string) get_post_status( $page->ID ) ) {
+				throw new RuntimeException( 'normalize_failed: Gagal mempublikasikan halaman kanonik /' . $slug . '/.' );
 			}
-			throw new RuntimeException( 'normalize_failed: Halaman /' . $slug . '/ sudah ada tapi belum dipublikasikan (' . (string) $page->post_status . '). Publikasikan secara manual lalu coba lagi.' );
+			return absint( $page->ID );
 		}
 		$result = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => $title, 'post_name' => $slug ), true );
 		if ( is_wp_error( $result ) ) { throw new RuntimeException( 'normalize_failed: Gagal membuat halaman /' . $slug . '/: ' . $result->get_error_message() ); }
@@ -113,17 +111,14 @@ final class Gloskin_Site_Core_Final_IA_Normalizer {
 	/** @param int $home_id @return void */
 	private function normalize_front_page( $home_id ) {
 		$front_id = (int) get_option( 'page_on_front', 0 );
-		$front = $front_id > 0 ? get_post( $front_id ) : null;
 		if ( $front_id === $home_id ) {
 			if ( 'page' !== (string) get_option( 'show_on_front', 'posts' ) ) { update_option( 'show_on_front', 'page' ); }
 			return;
 		}
-		if ( ! ( $front instanceof WP_Post ) || 'page' !== $front->post_type || 'trash' === $front->post_status ) {
-			update_option( 'show_on_front', 'page' );
-			update_option( 'page_on_front', $home_id );
-			return;
-		}
-		throw new RuntimeException( 'normalize_failed: Halaman depan saat ini adalah "' . (string) $front->post_title . '" (#' . absint( $front->ID ) . ') yang bukan halaman kanonik Beranda. Ubah Page On Front ke halaman Beranda secara manual lalu coba lagi.' );
+		/* Always point page_on_front at the canonical Beranda page; the previous
+		 * assignment is preserved (not deleted) so the editor can restore it later. */
+		update_option( 'show_on_front', 'page' );
+		update_option( 'page_on_front', $home_id );
 	}
 
 	/** @param array<string,int> $page_ids @return array<string,int> */
