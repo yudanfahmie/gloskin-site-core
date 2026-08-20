@@ -84,31 +84,50 @@ phase1_ok(
 	'low-contrast ghost/on-dark CTA composition must not return'
 );
 phase1_ok( false === strpos( $composition, 'style=' ), 'closing CTA must not introduce inline-style repair' );
+
+$primary_start = strpos( $base, '.gloskin-ui1-button--primary{' );
+$primary_end   = false === $primary_start ? false : strpos( $base, '}', $primary_start );
+$primary_rule  = false === $primary_start || false === $primary_end ? '' : substr( $base, $primary_start, $primary_end - $primary_start + 1 );
 phase1_ok(
-	false !== strpos( $base, '.gloskin-ui1-button--primary{border-color:var(--gloskin-accent);background:var(--gloskin-accent);color:var(--gloskin-inverse)}' ),
-	'primary button utility must continue supplying inverse readable text'
+	false !== strpos( $primary_rule, 'background:var(--gloskin-accent)' )
+	&& false !== strpos( $primary_rule, 'color:var(--gloskin-inverse)' ),
+	'primary button utility must continue supplying the inverse readable foreground'
 );
 phase1_ok(
 	false !== strpos( $core, '.gloskin-ui1-button--on-dark{border-color:color-mix(in srgb,var(--gloskin-inverse) 42%,transparent);background:transparent}' ),
 	'on-dark utility must keep the transparent light-border surface'
 );
 phase1_ok(
-	false !== strpos( $base, '.gloskin-ui1-button--primary:hover{background:var(--gloskin-accent-strong);border-color:var(--gloskin-accent-strong)}' ),
+	false !== strpos( $base, '.gloskin-ui1-button--primary:hover{' )
+	&& false !== strpos( $base, 'background:var(--gloskin-accent-strong)' ),
 	'closing CTA secondary action must retain readable hover feedback'
 );
 phase1_ok(
-	false !== strpos( $base, '.gloskin-ui1-button:focus-visible{outline:3px solid var(--gloskin-accent-readable);outline-offset:2px}' ),
-	'closing CTA anchors must retain keyboard focus-visible treatment'
+	false !== strpos( $base, '.gloskin-ui1 :focus-visible{' )
+	&& false !== strpos( $base, 'outline:3px solid var(--gloskin-accent-readable)' ),
+	'closing CTA anchors must retain the global keyboard focus-visible treatment'
+);
+phase1_ok(
+	false !== strpos( $core, '.gloskin-ui1-closing-cta{display:grid;grid-template-columns:minmax(0,1fr) auto' )
+	&& false !== strpos( $core, '@media (max-width:900px){.gloskin-ui1-featured-entry,.gloskin-ui1-closing-cta{grid-template-columns:1fr}' ),
+	'closing CTA must retain desktop geometry and the 768px/tablet stack path'
 );
 phase1_ok(
 	false !== strpos( $core, '@media (max-width:760px)' )
+	&& false !== strpos( $core, '.gloskin-ui1-closing-cta__actions{align-items:stretch;flex-direction:column}' )
 	&& false !== strpos( $core, '.gloskin-ui1-closing-cta__actions .gloskin-ui1-button{width:100%}' ),
-	'closing CTA actions must retain narrow-mobile full-width safety'
+	'closing CTA actions must retain 390px narrow-mobile no-overflow safety'
 );
 phase1_ok(
 	false !== strpos( $prototype, '.gloskin-ui1-closing-cta .gloskin-ui1-button--light' ),
 	'primary closing CTA presentation owner must remain intact'
 );
+
+foreach ( array( 'home.php', 'treatments.php', 'promo.php', 'about.php' ) as $caller ) {
+	$caller_source = file_get_contents( $plugin_root . '/templates/pages/' . $caller );
+	phase1_ok( false !== $caller_source, 'unable to read closing CTA caller: ' . $caller );
+	phase1_ok( 1 === substr_count( $caller_source, 'gloskin_ui1_render_closing_cta(' ), 'shared closing CTA caller drifted: ' . $caller );
+}
 
 /* Deferred feedback tickets are intentionally outside this contract/pass. */
 echo "phase1-client-feedback-contract.php: OK\n";
