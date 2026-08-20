@@ -132,7 +132,7 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration_Admin {
 
 	/** @return void */
 	public function ajax_advance() {
-		check_ajax_referer( self::NONCE );
+		check_ajax_referer( self::NONCE, 'nonce' );
 		if ( ! current_user_can( self::CAPABILITY ) ) {
 			wp_send_json_error( array(
 				'code'      => 'unauthorized',

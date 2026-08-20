@@ -1,4 +1,4 @@
-"""
+﻿"""
 single-migration-action-contract.py
 
 Static contract test: admin exposes exactly one relevant prototype-finalization action.
@@ -9,10 +9,10 @@ Asserts:
   3.  Kernel does NOT require Prototype IA Migration admin file.
   4.  Kernel does NOT instantiate Prototype IA Migration admin class.
   5.  Final Migration admin has a distinct SLUG (not the old revision slug).
-  6.  Insight Migration admin is still required (genuinely independent — must NOT be removed).
+  6.  Insight Migration admin is still required (genuinely independent â€” must NOT be removed).
   7.  Final Migration admin title is "Finalisasi Prototype & Data".
   8.  Old revision migration admin (non-final) is not registered in kernel.
-  9.  Plugin / Kernel version synchronized at 0.7.143.
+  9.  Plugin / Kernel version synchronized at 0.7.144.
 """
 
 import re, sys, os
@@ -42,12 +42,12 @@ require("const SLUG = 'gloskin-revision-20260819-migration'" not in final_adm,'F
 require('class-gloskin-site-core-insight-migration-admin.php' in kernel,'Insight Migration admin MUST remain registered in kernel (independent editorial content)')
 require('Finalisasi Prototype & Data' in final_adm or 'Finalisasi Prototype' in final_adm,"Final Migration admin title must be 'Finalisasi Prototype & Data'")
 require('class-gloskin-site-core-revision-20260819-migration-admin.php' not in kernel,'Old (non-final) revision migration admin must not be registered in kernel')
-require("Version: 0.7.143" in plugin_h, "plugin header must be 0.7.143")
-require("const VERSION = '0.7.143';" in kernel, "Kernel VERSION must be 0.7.143")
+require("Version: 0.7.144" in plugin_h, "plugin header must be 0.7.144")
+require("const VERSION = '0.7.144';" in kernel, "Kernel VERSION must be 0.7.144")
 
 if failures:
     for f in failures:
         print('FAIL:', f)
     sys.exit(1)
 
-print('single-migration-action-contract.py: OK (0.7.143)')
+print('single-migration-action-contract.py: OK (0.7.144)')

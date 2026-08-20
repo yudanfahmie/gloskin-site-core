@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 declare(strict_types=1);
 
 $root = dirname( __DIR__ );
@@ -46,6 +46,6 @@ $dead = $root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-doct
 fp_ok( ! file_exists( $dead ), 'legacy doctor migration admin source retired' );
 fp_ok( false === strpos( $batch, 'Gloskin_Site_Core_Doctor_Migration_Admin' ) && false === strpos( $batch, 'class-gloskin-site-core-doctor-migration-admin.php' ), 'production batch has zero old-admin runtime consumer' );
 fp_ok( false !== strpos( $batch, 'class-gloskin-site-core-doctor-importer.php' ), 'doctor importer remains available for Final Migration compatibility' );
-fp_ok( false !== strpos( $kernel, "const VERSION = '0.7.143';" ) && false !== strpos( $plugin, 'Version: 0.7.143' ), 'production behavior bump is 0.7.143' );
+fp_ok( false !== strpos( $kernel, "const VERSION = '0.7.144';" ) && false !== strpos( $plugin, 'Version: 0.7.144' ), 'production behavior bump is 0.7.144' );
 
 echo "final-preflight-safety-contract.php: OK\n";
