@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Client Feedback — Developer Priority Plan (Phase 1)</title>
+<style>
+:root{color-scheme:light;--bg:#fffaf7;--card:#ffffff;--ink:#171717;--muted:#6a625f;--line:#e6ddd7;--accent:#b8000c;--soft:#f8ece5;--good:#0f6b3d;--warn:#9a5a00}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{max-width:1180px;margin:auto;padding:48px 24px 80px}h1,h2,h3{line-height:1.15;margin:0 0 .6em}h1{font-size:clamp(2.3rem,5vw,4.4rem);max-width:15ch}h2{margin-top:2.2em;font-size:clamp(1.6rem,3vw,2.4rem)}h3{font-size:1.12rem}.lead{max-width:820px;color:var(--muted);font-size:1.08rem}.meta{display:flex;flex-wrap:wrap;gap:10px;margin:24px 0 36px}.pill{padding:7px 11px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:.86rem}.hero{padding:34px;border:1px solid var(--line);border-radius:28px;background:linear-gradient(135deg,var(--card),var(--soft))}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:22px 0}.card{padding:24px;border:1px solid var(--line);border-radius:22px;background:var(--card)}.card strong{display:block;margin-bottom:8px}.good{color:var(--good)}.warn{color:var(--warn)}table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}th,td{padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}th{background:#f5efeb;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em}tr:last-child td{border-bottom:0}code{padding:.14em .35em;border-radius:6px;background:#f3eeeb;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em}pre{overflow:auto;padding:18px;border-radius:16px;background:#181716;color:#f8f4f1}.note{padding:18px 20px;border-left:4px solid var(--accent);background:var(--card);border-radius:0 14px 14px 0}.checklist{columns:2;gap:36px}.checklist li{break-inside:avoid;margin-bottom:8px}.order{display:inline-grid;width:30px;height:30px;place-items:center;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;margin-right:8px}@media(max-width:820px){.grid{grid-template-columns:1fr}.checklist{columns:1}.wrap{padding:28px 16px 60px}.hero{padding:24px}table{display:block;overflow-x:auto}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<section class="hero">
+<p class="pill" style="display:inline-block">Developer brief · Phase 1</p>
+<h1>Client Feedback Priority Plan</h1>
+<p class="lead">A developer-facing execution plan derived from the raw client-feedback bundle. Phase 1 intentionally starts with the clearest low-effort / high-impact fixes and avoids workstreams that still require provider, research, migration, or asset decisions.</p>
+<div class="meta"><span class="pill">Repo: yudanfahmie/gloskin-site-core</span><span class="pill">Baseline: d411d0f3</span><span class="pill">Raw evidence remains untouched</span></div>
+</section>
+
+<h2>Phase 1: do these first</h2>
+<div class="grid">
+<article class="card"><span class="order">1</span><strong>FB-989346 — Navbar labels</strong><p>Persist the approved labels <code>Treatment</code>, <code>Promo</code>, <code>Skincare</code>, <code>Tentang Kami</code> through an option-backed one-shot resolver consumed by the existing Navigation Service.</p><p class="good">Low risk · site-wide visibility</p></article>
+<article class="card"><span class="order">2</span><strong>FB-989369 — Remove breadcrumbs</strong><p>Remove the Gloskin-visible breadcrumb render from the shell while preserving WooCommerce breadcrumb suppression.</p><p class="good">Very low risk · global cleanup</p></article>
+<article class="card"><span class="order">3</span><strong>FB-989364 — CTA text visibility</strong><p>Fix the existing consultation CTA's cascade/contrast in the canonical presentation owner, then regression-check all shared CTA callers.</p><p class="good">Low–medium risk · conversion impact</p></article>
+</div>
+
+<h2>Implementation contracts</h2>
+<table>
+<thead><tr><th>Ticket</th><th>Current owner</th><th>Required shape</th><th>Do not do</th></tr></thead>
+<tbody>
+<tr><td><strong>FB-989346</strong></td><td><code>class-gloskin-site-core-navigation-service.php</code></td><td>Versioned/idempotent one-shot resolver writes persistent WordPress option; Navigation Service reads that map and retains matching fallback labels.</td><td>No temporary filter, transient, request-time repair loop, or JS URL matcher.</td></tr>
+<tr><td><strong>FB-989369</strong></td><td><code>templates/shell.php</code></td><td>Remove <code>gloskin_ui1_render_breadcrumbs()</code> from visible shell output; keep <code>remove_action(...woocommerce_breadcrumb...)</code>.</td><td>Do not remove Woo suppression or touch unrelated commerce routing/headings.</td></tr>
+<tr><td><strong>FB-989364</strong></td><td><code>composition-helpers.php</code> + canonical CSS stack</td><td>Inspect computed cascade first; apply the smallest shared/scoped presentation correction that makes default/hover/focus text readable.</td><td>No duplicate markup, inline styles, JS style mutation, or <code>!important</code>.</td></tr>
+</tbody>
+</table>
+
+<h2>Acceptance checklist</h2>
+<ul class="checklist">
+<li>Desktop and mobile nav show exactly four approved labels.</li>
+<li>Labels persist after reload/cache clear/login state changes.</li>
+<li>Existing active-route / <code>aria-current</code> behavior remains intact.</li>
+<li>No visible breadcrumb on editorial or WooCommerce routes.</li>
+<li>WooCommerce classic breadcrumb does not reappear.</li>
+<li>Consultation CTA text is readable by default, hover and keyboard focus.</li>
+<li>Shared CTA callers do not regress.</li>
+<li>No new parallel owner/controller is introduced.</li>
+<li>Focused regression contracts are updated/added.</li>
+<li>Canonical runtime/test harness passes with a clean tree.</li>
+</ul>
+
+<h2>Deferred from Phase 1</h2>
+<table>
+<thead><tr><th>Ticket</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>FB-989348</td><td>Lock translation-provider/storage strategy first.</td></tr>
+<tr><td>FB-989350</td><td>Design is clear, but Home restructuring is a broader composition pass.</td></tr>
+<tr><td>FB-989352</td><td>Design is clear; keep for the next visual composition batch.</td></tr>
+<tr><td>FB-989354</td><td>Catalog reconstruction requires deduplication, research, enrichment, media import and migration verification.</td></tr>
+<tr><td>FB-989356</td><td>Design is ready and review UI should be omitted, but it touches a shared commerce renderer.</td></tr>
+<tr><td>FB-989358</td><td>Sketch is ready; needs a dedicated About composition pass without inventing factual content.</td></tr>
+<tr><td>FB-989360</td><td>Raw Treatment media is present, but taxonomy/concern/procedure mapping needs a deep migration audit.</td></tr>
+<tr><td>FB-989362</td><td>Historical video architecture is reusable; final no-crop behavior and raw video still need a dedicated pass.</td></tr>
+</tbody>
+</table>
+
+<h2>Engineering guardrails</h2>
+<div class="note">Extend existing owners only. Prefer persistent WordPress state for client-approved values. No new framework, SPA layer, global fetch/history monkeypatch, third-party JS dependency, <code>!important</code>, inline-style workaround, or duplicate active-route owner.</div>
+
+<h2>Next recommended batch</h2>
+<p><strong>FB-989356 Product card</strong> → <strong>FB-989350 Home structure</strong> → <strong>FB-989352 Promo structure</strong>. Keep multilingual, catalog reconstruction, Treatment migration, and the no-crop video hero as separate workstreams.</p>
+</main>
+</body>
+</html>
