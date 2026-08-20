@@ -147,9 +147,23 @@ final class Gloskin_Site_Core_Phase3_Migration {
 					break;
 
 				case 'media_reconcile':
-					$result = $this->run_media_reconcile();
-					$state['audit']['media']    = $result['audit'];
+					$result = $this->run_media_reconcile_step( $state );
 					$state['sha_to_id']         = $result['sha_to_id'];
+					$state['audit']['media']     = $result['audit'];
+					$state['media_cursor']       = $result['cursor'];
+					$state['media_total']        = $result['total'];
+					$state['media_last_action']  = $result['last_action'];
+
+					/* Cursor not yet exhausted — save and return without advancing step index. */
+					if ( $result['cursor'] < $result['total'] ) {
+						$state['status']     = 'running';
+						$state['last_error'] = '';
+						$state['updated_at'] = time();
+						$this->save_state( $state );
+						$this->release_lock( $token );
+						return $this->response_state( $state );
+					}
+					/* All assets processed — fall through to advance step index. */
 					break;
 
 				case 'skincare_reconcile':
@@ -427,133 +441,179 @@ final class Gloskin_Site_Core_Phase3_Migration {
 	}
 
 	/* -----------------------------------------------------------------
-	 * CHECKPOINT: MEDIA RECONCILE
+	 * CHECKPOINT: MEDIA RECONCILE — cursor-based, one asset per advance()
 	 * ----------------------------------------------------------------- */
 
 	/**
-	 * @return array{audit:array<string,int>,sha_to_id:array<string,int>}
+	 * Build the same deterministic ordered list of unique absolute asset paths on every call.
+	 * Order and dedup are stable across requests (manifests are immutable).
+	 *
+	 * @return string[] Ordered absolute paths.
 	 */
-	private function run_media_reconcile() {
-		$this->load_media_functions();
-
-		$sk_manifest  = $this->load_json( 'skincare-products.json' );
-		$tr_manifest  = $this->load_json( 'treatment-catalog.json' );
+	private function build_media_asset_list() {
+		$sk_manifest   = $this->load_json( 'skincare-products.json' );
+		$tr_manifest   = $this->load_json( 'treatment-catalog.json' );
 		$page_manifest = $this->load_json( 'treatment-page-media.json' );
 
-		/* Collect all unique absolute asset paths (77ee manifest schema). */
-		$asset_paths = array(); /* keyed by absolute path → true */
+		$seen  = array(); /* keyed by absolute path → true, for inline dedup */
+		$order = array(); /* ordered list of unique absolute paths */
 
 		foreach ( (array) ( $sk_manifest['records'] ?? array() ) as $p ) {
 			if ( ! empty( $p['primary'] ) ) {
-				$asset_paths[ $this->sk_asset( $p['primary'] ) ] = true;
+				$abs = $this->sk_asset( $p['primary'] );
+				if ( ! isset( $seen[ $abs ] ) ) { $seen[ $abs ] = true; $order[] = $abs; }
 			}
 			foreach ( (array) ( $p['alternate'] ?? array() ) as $alt ) {
 				if ( '' !== $alt ) {
-					$asset_paths[ $this->sk_asset( $alt ) ] = true;
+					$abs = $this->sk_asset( $alt );
+					if ( ! isset( $seen[ $abs ] ) ) { $seen[ $abs ] = true; $order[] = $abs; }
 				}
 			}
 		}
 		foreach ( (array) ( $tr_manifest['woo_treatment_products'] ?? array() ) as $p ) {
 			if ( ! empty( $p['primary'] ) ) {
-				$asset_paths[ $this->tr_asset( $p['primary'] ) ] = true;
+				$abs = $this->tr_asset( $p['primary'] );
+				if ( ! isset( $seen[ $abs ] ) ) { $seen[ $abs ] = true; $order[] = $abs; }
 			}
 		}
 		foreach ( (array) ( $tr_manifest['informational_cpt_targets'] ?? array() ) as $r ) {
 			if ( ! empty( $r['featured_asset'] ) ) {
-				$asset_paths[ $this->tr_asset( $r['featured_asset'] ) ] = true;
+				$abs = $this->tr_asset( $r['featured_asset'] );
+				if ( ! isset( $seen[ $abs ] ) ) { $seen[ $abs ] = true; $order[] = $abs; }
 			}
 		}
 		foreach ( (array) ( $page_manifest['presentation_media'] ?? array() ) as $item ) {
 			if ( ! empty( $item['asset'] ) ) {
-				$asset_paths[ $this->page_asset( $item['asset'] ) ] = true;
+				$abs = $this->page_asset( $item['asset'] );
+				if ( ! isset( $seen[ $abs ] ) ) { $seen[ $abs ] = true; $order[] = $abs; }
 			}
 		}
 
-		$sha_to_id      = array();
-		$imported       = 0;
-		$reused         = 0;
-		$skipped        = 0;
-		$skipped_assets = array();
-
-		foreach ( array_keys( $asset_paths ) as $abs_path ) {
-			/* Keys are already absolute paths (resolved by sk_asset/tr_asset/page_asset). */
-			$rel_path = ltrim( str_replace( $this->assets_base, '', $abs_path ), '/\\' );
-
-			/* Skip non-readable or .psd assets. */
-			if ( 'psd' === strtolower( pathinfo( $abs_path, PATHINFO_EXTENSION ) ) ) {
-				$skipped++;
-				$skipped_assets[] = $rel_path;
-				continue;
-			}
-			/* Asset might be a directory path (no specific file). */
-			if ( ! is_file( $abs_path ) ) {
-				/* Try to find first image in directory. */
-				$found = $this->find_first_image_in( $abs_path );
-				if ( null === $found ) {
-					$skipped++;
-					$skipped_assets[] = $rel_path . ' (no readable file)';
-					continue;
-				}
-				$abs_path = $found;
-				$rel_path = ltrim( str_replace( $this->assets_base, '', $abs_path ), '/\\' );
-			}
-			if ( ! is_readable( $abs_path ) ) {
-				$skipped++;
-				$skipped_assets[] = $rel_path;
-				continue;
-			}
-
-			$sha = hash_file( 'sha256', $abs_path );
-			if ( false === $sha ) {
-				$skipped++;
-				continue;
-			}
-
-			/* Check existing dedup by SHA. */
-			$existing_id = $this->find_attachment_by_sha( $sha );
-			if ( $existing_id ) {
-				$sha_to_id[ $sha ] = $existing_id;
-				$reused++;
-				continue;
-			}
-
-			/* Import as new attachment. */
-			$new_id = $this->import_local_asset( $abs_path, $sha );
-			if ( $new_id > 0 ) {
-				$sha_to_id[ $sha ] = $new_id;
-				$imported++;
-			} else {
-				$skipped++;
-				$skipped_assets[] = $rel_path . ' (import failed)';
-			}
-		}
-
-		return array(
-			'audit'     => array(
-				'imported'        => $imported,
-				'reused'          => $reused,
-				'skipped'         => $skipped,
-				'skipped_assets'  => $skipped_assets,
-				'total_processed' => $imported + $reused + $skipped,
-			),
-			'sha_to_id' => $sha_to_id,
-		);
+		return $order;
 	}
 
 	/**
-	 * @param array<string,true> $asset_paths Asset accumulator.
-	 * @param array<string,mixed> $product Product entry.
-	 * @return void
+	 * Process exactly ONE media asset at the current cursor position.
+	 * Cursor incremented only after safe resolution; state saved by caller.
+	 *
+	 * @param array<string,mixed> $state Current migration state.
+	 * @return array{sha_to_id:array<string,int>,audit:array<string,mixed>,cursor:int,total:int,last_action:string}
 	 */
-	private function collect_assets( array &$asset_paths, array $product ) {
-		if ( ! empty( $product['client_asset'] ) ) {
-			$asset_paths[ $product['client_asset'] ] = true;
+	private function run_media_reconcile_step( array $state ) {
+		$this->load_media_functions();
+
+		$asset_list = $this->build_media_asset_list();
+		$total      = count( $asset_list );
+		$cursor     = (int) ( $state['media_cursor'] ?? 0 );
+		$sha_to_id  = (array) ( $state['sha_to_id'] ?? array() );
+		$audit      = array_merge(
+			array(
+				'imported'        => 0,
+				'reused'          => 0,
+				'recovered'       => 0,
+				'skipped'         => 0,
+				'skipped_assets'  => array(),
+				'total_processed' => 0,
+			),
+			(array) ( $state['audit']['media'] ?? array() )
+		);
+		$last_action = '';
+
+		if ( $cursor >= $total ) {
+			/* Already complete — idempotent no-op. */
+			return array(
+				'sha_to_id'   => $sha_to_id,
+				'audit'       => $audit,
+				'cursor'      => $cursor,
+				'total'       => $total,
+				'last_action' => 'Selesai',
+			);
 		}
-		foreach ( (array) ( $product['gallery_assets'] ?? array() ) as $ga ) {
-			if ( '' !== $ga ) {
-				$asset_paths[ $ga ] = true;
+
+		$abs_path = $asset_list[ $cursor ];
+		$rel_path = ltrim( str_replace( $this->assets_base, '', $abs_path ), '/\\' );
+
+		/* Skip .psd — not importable. */
+		if ( 'psd' === strtolower( pathinfo( $abs_path, PATHINFO_EXTENSION ) ) ) {
+			$audit['skipped']++;
+			$audit['skipped_assets'][] = $rel_path;
+			$last_action = 'Skipped (psd): ' . basename( $abs_path );
+			$cursor++;
+			$audit['total_processed'] = $audit['imported'] + $audit['reused'] + $audit['recovered'] + $audit['skipped'];
+			return compact( 'sha_to_id', 'audit', 'cursor', 'total', 'last_action' );
+		}
+
+		/* Resolve directory to first image file. */
+		if ( ! is_file( $abs_path ) ) {
+			$found = $this->find_first_image_in( $abs_path );
+			if ( null === $found ) {
+				$audit['skipped']++;
+				$audit['skipped_assets'][] = $rel_path . ' (no readable file)';
+				$last_action = 'Skipped: ' . basename( $abs_path );
+				$cursor++;
+				$audit['total_processed'] = $audit['imported'] + $audit['reused'] + $audit['recovered'] + $audit['skipped'];
+				return compact( 'sha_to_id', 'audit', 'cursor', 'total', 'last_action' );
 			}
+			$abs_path = $found;
+			$rel_path = ltrim( str_replace( $this->assets_base, '', $abs_path ), '/\\' );
 		}
+
+		if ( ! is_readable( $abs_path ) ) {
+			$audit['skipped']++;
+			$audit['skipped_assets'][] = $rel_path . ' (not readable)';
+			$last_action = 'Skipped: ' . basename( $abs_path );
+			$cursor++;
+			$audit['total_processed'] = $audit['imported'] + $audit['reused'] + $audit['recovered'] + $audit['skipped'];
+			return compact( 'sha_to_id', 'audit', 'cursor', 'total', 'last_action' );
+		}
+
+		$sha = hash_file( 'sha256', $abs_path );
+		if ( false === $sha ) {
+			$audit['skipped']++;
+			$last_action = 'Skipped (hash error): ' . basename( $abs_path );
+			$cursor++;
+			$audit['total_processed'] = $audit['imported'] + $audit['reused'] + $audit['recovered'] + $audit['skipped'];
+			return compact( 'sha_to_id', 'audit', 'cursor', 'total', 'last_action' );
+		}
+
+		/* 1. SHA dedup — reuse existing attachment if already imported. */
+		$existing_id = $this->find_attachment_by_sha( $sha );
+		if ( $existing_id ) {
+			$sha_to_id[ $sha ] = $existing_id;
+			$audit['reused']++;
+			$last_action = 'Reused: ' . basename( $abs_path );
+			$cursor++;
+			$audit['total_processed'] = $audit['imported'] + $audit['reused'] + $audit['recovered'] + $audit['skipped'];
+			return compact( 'sha_to_id', 'audit', 'cursor', 'total', 'last_action' );
+		}
+
+		/* 2. Recovery — bounded title lookup + exact binary SHA verification (spec D).
+		 *    Handles partial attachments left by any prior failed attempt. */
+		$recovered_id = $this->recover_partial_attachment( $abs_path, $sha );
+		if ( $recovered_id > 0 ) {
+			$sha_to_id[ $sha ] = $recovered_id;
+			$audit['recovered']++;
+			$last_action = 'Recovered: ' . basename( $abs_path );
+			$cursor++;
+			$audit['total_processed'] = $audit['imported'] + $audit['reused'] + $audit['recovered'] + $audit['skipped'];
+			return compact( 'sha_to_id', 'audit', 'cursor', 'total', 'last_action' );
+		}
+
+		/* 3. Import as new attachment — stream copy, no full-file PHP memory load. */
+		$new_id = $this->import_local_asset( $abs_path, $sha );
+		if ( $new_id > 0 ) {
+			$sha_to_id[ $sha ] = $new_id;
+			$audit['imported']++;
+			$last_action = 'Imported: ' . basename( $abs_path );
+		} else {
+			$audit['skipped']++;
+			$audit['skipped_assets'][] = $rel_path . ' (import failed)';
+			$last_action = 'Failed: ' . basename( $abs_path );
+		}
+
+		$cursor++;
+		$audit['total_processed'] = $audit['imported'] + $audit['reused'] + $audit['recovered'] + $audit['skipped'];
+		return compact( 'sha_to_id', 'audit', 'cursor', 'total', 'last_action' );
 	}
 
 	/* -----------------------------------------------------------------
@@ -1106,40 +1166,116 @@ final class Gloskin_Site_Core_Phase3_Migration {
 	 * @param string $sha SHA-256 of the file.
 	 * @return int Attachment ID, 0 on failure.
 	 */
+	/**
+	 * Import a packaged asset using stream copy — no full-file PHP memory load (spec B).
+	 * Writes provenance BEFORE wp_generate_attachment_metadata (spec C).
+	 *
+	 * @param string $abs_path Absolute source path.
+	 * @param string $sha      SHA-256 hex digest of source file.
+	 * @return int Attachment ID, 0 on failure.
+	 */
 	private function import_local_asset( $abs_path, $sha ) {
 		$this->load_media_functions();
 
-		$filename = basename( $abs_path );
-		$upload   = wp_upload_bits( $filename, null, file_get_contents( $abs_path ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local admin-only migration, bounded file
-		if ( ! empty( $upload['error'] ) ) {
+		$upload_dir = wp_upload_dir();
+		if ( ! empty( $upload_dir['error'] ) ) {
 			return 0;
 		}
 
-		$file_path = $upload['file'];
-		$file_type = wp_check_filetype( basename( $file_path ), null );
+		$dest_dir  = rtrim( $upload_dir['path'], '/\\' );
+		$dest_url  = rtrim( $upload_dir['url'], '/' );
+		$filename  = basename( $abs_path );
+		$unique    = wp_unique_filename( $dest_dir, $filename );
+		$dest_path = $dest_dir . DIRECTORY_SEPARATOR . $unique;
+
+		/* Stream copy — exact binary, no re-encode, no full-file PHP memory load. */
+		if ( ! copy( $abs_path, $dest_path ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.copy_copy -- stream copy to uploads, no WP equivalent
+			return 0;
+		}
+
+		$file_type = wp_check_filetype( $unique, null );
+		if ( empty( $file_type['type'] ) ) {
+			@unlink( $dest_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			return 0;
+		}
+
 		$attachment = array(
 			'post_mime_type' => $file_type['type'],
 			'post_title'     => sanitize_file_name( $filename ),
 			'post_content'   => '',
 			'post_status'    => 'inherit',
+			'guid'           => $dest_url . '/' . $unique,
 		);
-		$attach_id = wp_insert_attachment( $attachment, $file_path, 0, true );
-		if ( is_wp_error( $attach_id ) ) {
+		$attach_id = wp_insert_attachment( $attachment, $dest_path, 0, true );
+		if ( is_wp_error( $attach_id ) || ! (int) $attach_id ) {
+			@unlink( $dest_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			return 0;
 		}
 		$attach_id = (int) $attach_id;
 
+		/* Provenance BEFORE metadata — if metadata generation kills request,
+		 * provenance is already durable so next advance() SHA-deduplicates (spec C). */
+		update_post_meta( $attach_id, self::ATTACH_SHA256_META, $sha );
+		update_post_meta( $attach_id, self::ATTACH_SOURCE_META, self::MANIFEST_ID );
+
 		if ( function_exists( 'wp_generate_attachment_metadata' ) ) {
-			$metadata = wp_generate_attachment_metadata( $attach_id, $file_path );
+			$metadata = wp_generate_attachment_metadata( $attach_id, $dest_path );
 			if ( $metadata ) {
 				wp_update_attachment_metadata( $attach_id, $metadata );
 			}
 		}
 
-		update_post_meta( $attach_id, self::ATTACH_SHA256_META, $sha );
-		update_post_meta( $attach_id, self::ATTACH_SOURCE_META, 'gloskin-phase3-v1' );
-
 		return $attach_id;
+	}
+
+	/**
+	 * Recover a partial attachment left by a prior failed attempt (spec D).
+	 * Bounded title lookup (max 5 candidates) + mandatory exact binary SHA-256 verification.
+	 * Never creates a duplicate; returns 0 if no exact-SHA match.
+	 *
+	 * @param string $abs_path Absolute source path (authoritative binary).
+	 * @param string $sha      SHA-256 hex digest of source file (authoritative hash).
+	 * @return int Attachment ID if recovered, 0 otherwise.
+	 */
+	private function recover_partial_attachment( $abs_path, $sha ) {
+		global $wpdb;
+		$title         = sanitize_file_name( basename( $abs_path ) );
+		$candidate_ids = $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- bounded admin-only recovery SELECT
+			$wpdb->prepare(
+				"SELECT ID FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_status IN ('inherit','private','trash') AND post_title = %s ORDER BY ID DESC LIMIT 5",
+				$title
+			)
+		);
+		if ( empty( $candidate_ids ) ) {
+			return 0;
+		}
+
+		foreach ( $candidate_ids as $candidate_id ) {
+			$candidate_id   = (int) $candidate_id;
+			$candidate_file = get_attached_file( $candidate_id );
+			if ( ! $candidate_file || ! is_readable( $candidate_file ) ) {
+				continue;
+			}
+			$candidate_sha = hash_file( 'sha256', $candidate_file );
+			/* Reject immediately if SHA cannot be computed or does not match — no fuzzy matching. */
+			if ( false === $candidate_sha || ! hash_equals( $sha, $candidate_sha ) ) {
+				continue;
+			}
+			/* Exact SHA match — write provenance and ensure metadata is present. */
+			update_post_meta( $candidate_id, self::ATTACH_SHA256_META, $sha );
+			update_post_meta( $candidate_id, self::ATTACH_SOURCE_META, self::MANIFEST_ID );
+			$metadata = wp_get_attachment_metadata( $candidate_id );
+			if ( empty( $metadata ) || empty( $metadata['file'] ) ) {
+				$this->load_media_functions();
+				$new_meta = wp_generate_attachment_metadata( $candidate_id, $candidate_file );
+				if ( $new_meta ) {
+					wp_update_attachment_metadata( $candidate_id, $new_meta );
+				}
+			}
+			return $candidate_id;
+		}
+
+		return 0;
 	}
 
 	/**
@@ -1365,21 +1501,31 @@ final class Gloskin_Site_Core_Phase3_Migration {
 		return array(
 			'status'               => 'pending',
 			'next_step_index'      => 0,
-			'current_step'        => 'Siap dijalankan',
+			'current_step'         => 'Siap dijalankan',
 			'manifest_fingerprint' => '',
 			'sha_to_id'            => array(),
+			'media_cursor'         => 0,
+			'media_total'          => 0,
+			'media_last_action'    => '',
 			'audit'                => array(
 				'inventory'          => array(),
 				'dry_run'            => array(),
-				'media'              => array(),
+				'media'              => array(
+					'imported'        => 0,
+					'reused'          => 0,
+					'recovered'       => 0,
+					'skipped'         => 0,
+					'skipped_assets'  => array(),
+					'total_processed' => 0,
+				),
 				'skincare'           => array(),
 				'concerns_paths'     => array(),
 				'treatment_products' => array(),
 				'treatment_records'  => array(),
 				'page_media'         => array(),
 			),
-			'last_error'          => '',
-			'updated_at'          => 0,
+			'last_error'           => '',
+			'updated_at'           => 0,
 		);
 	}
 
@@ -1411,11 +1557,20 @@ final class Gloskin_Site_Core_Phase3_Migration {
 	private function response_state( array $state ) {
 		$steps     = $this->steps();
 		$total     = count( $steps );
-		$processed = min( $total, (int) ( $state['next_step_index'] ?? 0 ) );
-		$state['progress_percent'] = 'complete' === $state['status']
+		$index     = (int) ( $state['next_step_index'] ?? 0 );
+		$processed = min( $total, $index );
+
+		$state['progress_percent']  = 'complete' === $state['status']
 			? 100
 			: (int) floor( ( $processed / max( 1, $total ) ) * 100 );
-		$state['total_steps'] = $total;
+		$state['total_steps']       = $total;
+		$state['step_number']       = $processed + 1;
+
+		/* Media reconcile fields — always present so JS runner can render counters. */
+		$state['media_cursor']      = (int) ( $state['media_cursor'] ?? 0 );
+		$state['media_total']       = (int) ( $state['media_total'] ?? 0 );
+		$state['media_last_action'] = (string) ( $state['media_last_action'] ?? '' );
+
 		return $state;
 	}
 }
