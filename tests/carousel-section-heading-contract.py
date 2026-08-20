@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Contract: Home Promo Carousel autoplay opt-in and shared section-heading 50/50 grid."""
 import sys
 from pathlib import Path
@@ -95,7 +95,7 @@ require("!important" not in css,
 
 # ── Version ──────────────────────────────────────────────────────────────────
 
-require("Version: 0.7.175" in plugin and "const VERSION = '0.7.175';" in kernel,
+require("Version: 0.7.181" in plugin and "const VERSION = '0.7.181';" in kernel,
         "plugin header and Kernel VERSION must both be 0.7.175")
 
 if failures:

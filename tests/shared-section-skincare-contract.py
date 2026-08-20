@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Focused ownership contract for shared headings, Treatments CTA and Skincare presentation."""
 from pathlib import Path
 import re
@@ -114,6 +114,6 @@ require("@media (max-width:900px)" in scoped_tail and "grid-template-columns:1fr
         "Treatments/Skincare polish must stack cleanly below desktop")
 
 require("!important" not in css, "final presentation owner must not introduce !important")
-require("Version: 0.7.175" in plugin and "const VERSION = '0.7.175';" in kernel,
+require("Version: 0.7.181" in plugin and "const VERSION = '0.7.181';" in kernel,
         "plugin and Kernel version must be synchronized")
 print("shared-section-skincare-contract.py: OK (Treatments + Skincare UX polish)")

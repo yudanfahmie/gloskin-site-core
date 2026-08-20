@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.7.180';
+	const VERSION = '0.7.181';
 
 	/** @var string */
 	private $plugin_file;
@@ -53,9 +53,6 @@ final class Gloskin_Site_Core_Kernel {
 			require_once __DIR__ . '/class-gloskin-site-core-revision-20260820-promo-recovery-admin.php';
 			require_once __DIR__ . '/class-gloskin-site-core-media-cleanup-admin.php';
 			require_once __DIR__ . '/class-gloskin-site-core-demo-content-reset.php';
-			require_once __DIR__ . '/class-gloskin-site-core-phase3-migration.php';
-			require_once __DIR__ . '/class-gloskin-site-core-phase3-migration-admin.php';
-
 			$media_compatibility = new Gloskin_Site_Core_Sample_Media_Compatibility();
 			$media_compatibility->register();
 
@@ -79,13 +76,6 @@ final class Gloskin_Site_Core_Kernel {
 
 			$demo_reset = new Gloskin_Site_Core_Demo_Content_Reset();
 			$demo_reset->register();
-
-			$phase3_migration = new Gloskin_Site_Core_Phase3_Migration_Admin();
-			add_action( 'admin_menu', array( $phase3_migration, 'register_menu' ) );
-			add_action( 'admin_notices', array( $phase3_migration, 'render_pending_notice' ) );
-			add_action( 'admin_enqueue_scripts', array( $phase3_migration, 'enqueue_assets' ) );
-			add_action( 'wp_ajax_' . Gloskin_Site_Core_Phase3_Migration_Admin::AJAX_ACTION, array( $phase3_migration, 'ajax_advance' ) );
-			add_action( 'admin_action_gloskin_p3_action', array( $phase3_migration, 'handle_fallback' ) );
 
 			$this->services[] = $media_compatibility;
 			$this->services[] = $admin;

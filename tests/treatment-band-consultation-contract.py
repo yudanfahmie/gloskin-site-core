@@ -18,8 +18,8 @@ require('?path=' in js or 'URLSearchParams' in js,'JS must handle ?path= URL par
 require('?path=' in helpers and '#consultation' in helpers,'PHP CTA href must include ?path=<id>#consultation')
 require(re.search(r'gloskin_ui1_editorial_media_catalog\s*\(.*?\)\s*\{[^}]*return\s+array\s*\(\s*\)',helpers,re.DOTALL),'gloskin_ui1_editorial_media_catalog must return empty array() (no Unsplash URLs)')
 require('https://images.unsplash.com' not in helpers,'No https://images.unsplash.com runtime URLs allowed in template-helpers.php')
-require("Version: 0.7.163" in plugin_h,"plugin header must be 0.7.163")
-require("const VERSION = '0.7.163';" in kernel,"Kernel VERSION must be 0.7.163")
+require("Version: 0.7.181" in plugin_h,"plugin header must be 0.7.163")
+require("const VERSION = '0.7.181';" in kernel,"Kernel VERSION must be 0.7.163")
 if failures:
     for f in failures: print('FAIL:',f)
     sys.exit(1)

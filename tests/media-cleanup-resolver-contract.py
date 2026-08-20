@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Media Cleanup resolver safety contract.
 
@@ -244,7 +244,7 @@ require(classify() == "confirmed-unused",            "clean old image must be 'c
 
 # ── Version synchronized ──────────────────────────────────────────────────────
 require(
-    "Version: 0.7.175" in plugin and "const VERSION = '0.7.175';" in kernel,
+    "Version: 0.7.181" in plugin and "const VERSION = '0.7.181';" in kernel,
     "plugin and Kernel patch versions must be synchronized at 0.7.175"
 )
 print("media-cleanup-resolver-contract.py: OK (0.7.175)")

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Phase-3 Hotfix 0.7.180 Regression Contract
  *
@@ -57,11 +57,11 @@ $ok( '' !== $kernel,    'kernel must be readable' );
  * 0. Version bumped to 0.7.180
  * ------------------------------------------------------------------------- */
 $ok(
-	false !== strpos( $plugin, 'Version: 0.7.180' ),
+	false !== strpos( $plugin, 'Version: 0.7.181' ),
 	'Plugin header Version must be 0.7.180'
 );
 $ok(
-	false !== strpos( $kernel, "const VERSION = '0.7.180';" ),
+	false !== strpos( $kernel, "const VERSION = '0.7.181';" ),
 	'Kernel const VERSION must be 0.7.180'
 );
 

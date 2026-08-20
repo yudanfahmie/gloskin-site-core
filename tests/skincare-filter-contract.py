@@ -1,4 +1,4 @@
-"""
+﻿"""
 skincare-filter-contract.py
 
 Static contract test: skincare filter chips and no-JS product state.
@@ -57,8 +57,8 @@ require("data-gloskin-chip" in js,'JS chip filter must read data-gloskin-chip at
 require("'data-category-slugs'" in js or '"data-category-slugs"' in js,'JS chip filter must read data-category-slugs from product card containers')
 require('data-gloskin-product-card hidden' not in skincare,'PHP must not initially hide product cards; no-JS state must show all products')
 require('Pilih kategori, lalu lihat produk' not in skincare,'Old "Pilih kategori, lalu..." intro copy must be removed from skincare template')
-require("Version: 0.7.175" in plugin_h, "plugin header must be 0.7.175")
-require("const VERSION = '0.7.175';" in kernel, "Kernel VERSION must be 0.7.175")
+require("Version: 0.7.181" in plugin_h, "plugin header must be 0.7.175")
+require("const VERSION = '0.7.181';" in kernel, "Kernel VERSION must be 0.7.175")
 
 if failures:
     for f in failures:

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 declare(strict_types=1);
 
 /**
@@ -395,7 +395,7 @@ $ok(
  * Version sync
  * ------------------------------------------------------------------------- */
 $ok(
-	false !== strpos( $plugin, 'Version: 0.7.180' ) && false !== strpos( $kernel, "const VERSION = '0.7.180';" ),
+	false !== strpos( $plugin, 'Version: 0.7.181' ) && false !== strpos( $kernel, "const VERSION = '0.7.181';" ),
 	'Version: plugin header and kernel VERSION must both be 0.7.180'
 );
 

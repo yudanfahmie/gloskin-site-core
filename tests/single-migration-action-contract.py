@@ -42,8 +42,8 @@ require("const SLUG = 'gloskin-revision-20260819-migration'" not in final_adm,'F
 require('class-gloskin-site-core-insight-migration-admin.php' in kernel,'Insight Migration admin MUST remain registered in kernel (independent editorial content)')
 require('Finalisasi Prototype & Data' in final_adm or 'Finalisasi Prototype' in final_adm,"Final Migration admin title must be 'Finalisasi Prototype & Data'")
 require('class-gloskin-site-core-revision-20260819-migration-admin.php' not in kernel,'Old (non-final) revision migration admin must not be registered in kernel')
-require("Version: 0.7.163" in plugin_h, "plugin header must be 0.7.163")
-require("const VERSION = '0.7.163';" in kernel, "Kernel VERSION must be 0.7.163")
+require("Version: 0.7.181" in plugin_h, "plugin header must be 0.7.163")
+require("const VERSION = '0.7.181';" in kernel, "Kernel VERSION must be 0.7.163")
 
 if failures:
     for f in failures:
