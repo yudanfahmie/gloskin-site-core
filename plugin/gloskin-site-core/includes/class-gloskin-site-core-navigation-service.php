@@ -10,7 +10,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Navigation_Service {
-	const LOCATION = 'gloskin-primary';
+	const LOCATION                = 'gloskin-primary';
+	const APPROVED_LABELS_OPTION  = 'gloskin_site_core_primary_navigation_labels_v1';
+	const APPROVED_LABELS_VERSION = '1.0.0';
+
+	/** @var array<string,string>|null */
+	private $approved_labels = null;
+
+	/**
+	 * Deterministic bootstrap/failure fallback for the client-approved primary IA.
+	 * The lifecycle resolver persists this exact map once; runtime reads that
+	 * persisted projection and falls back here only when the option is unavailable
+	 * or invalid.
+	 *
+	 * @return array<string,string>
+	 */
+	public static function approved_label_defaults() {
+		return array(
+			'/treatments/' => 'Treatment',
+			'/promo/'      => 'Promo',
+			'/skincare/'   => 'Skincare',
+			'/about/'      => 'Tentang Kami',
+		);
+	}
 
 	/** @return void */
 	public function register() {
@@ -45,6 +67,44 @@ final class Gloskin_Site_Core_Navigation_Service {
 		}
 
 		return $this->fallback_tree();
+	}
+
+	/**
+	 * Read the one versioned persistent label option. A complete record is never
+	 * rewritten by the runtime Navigation Service; LifecycleService owns the
+	 * bounded one-shot resolver. Invalid/incomplete records fail closed to the
+	 * deterministic client-approved defaults rather than causing request-time
+	 * database repair.
+	 *
+	 * @return array<string,string>
+	 */
+	private function approved_label_map() {
+		if ( is_array( $this->approved_labels ) ) {
+			return $this->approved_labels;
+		}
+
+		$defaults = self::approved_label_defaults();
+		$state    = function_exists( 'get_option' ) ? get_option( self::APPROVED_LABELS_OPTION, array() ) : array();
+		$labels   = is_array( $state ) && isset( $state['labels'] ) && is_array( $state['labels'] ) ? $state['labels'] : array();
+		$valid    = is_array( $state )
+			&& isset( $state['version'], $state['status'] )
+			&& self::APPROVED_LABELS_VERSION === (string) $state['version']
+			&& 'complete' === (string) $state['status']
+			&& array_keys( $defaults ) === array_keys( $labels );
+
+		if ( $valid ) {
+			foreach ( $defaults as $path => $fallback ) {
+				$value = isset( $labels[ $path ] ) ? trim( (string) $labels[ $path ] ) : '';
+				if ( '' === $value ) {
+					$valid = false;
+					break;
+				}
+				$labels[ $path ] = $value;
+			}
+		}
+
+		$this->approved_labels = $valid ? $labels : $defaults;
+		return $this->approved_labels;
 	}
 
 	/**
@@ -93,11 +153,12 @@ final class Gloskin_Site_Core_Navigation_Service {
 	 * @return array<int,array<string,mixed>>
 	 */
 	private function approved_primary_tree( array $tree ) {
+		$labels = $this->approved_label_map();
 		$targets = array(
-			'/treatments/' => array( 'label' => 'Perawatan', 'path' => '/treatments/' ),
-			'/promo/'      => array( 'label' => 'Promo', 'path' => '/promo/' ),
-			'/skincare/'   => array( 'label' => 'Skincare', 'path' => '/skincare/' ),
-			'/about/'      => array( 'label' => 'Tentang Gloskin', 'path' => '/about/' ),
+			'/treatments/' => array( 'label' => $labels['/treatments/'], 'path' => '/treatments/' ),
+			'/promo/'      => array( 'label' => $labels['/promo/'], 'path' => '/promo/' ),
+			'/skincare/'   => array( 'label' => $labels['/skincare/'], 'path' => '/skincare/' ),
+			'/about/'      => array( 'label' => $labels['/about/'], 'path' => '/about/' ),
 		);
 		$native = array();
 		foreach ( $tree as $node ) {
@@ -151,11 +212,12 @@ final class Gloskin_Site_Core_Navigation_Service {
 	 * @return array<int,array<string,mixed>>
 	 */
 	private function fallback_tree() {
+		$labels = $this->approved_label_map();
 		return array(
-			$this->fallback_item( 'Perawatan', '/treatments/' ),
-			$this->fallback_item( 'Promo', '/promo/' ),
-			$this->fallback_item( 'Skincare', '/skincare/' ),
-			$this->fallback_item( 'Tentang Gloskin', '/about/' ),
+			$this->fallback_item( $labels['/treatments/'], '/treatments/' ),
+			$this->fallback_item( $labels['/promo/'], '/promo/' ),
+			$this->fallback_item( $labels['/skincare/'], '/skincare/' ),
+			$this->fallback_item( $labels['/about/'], '/about/' ),
 		);
 	}
 
@@ -187,17 +249,16 @@ final class Gloskin_Site_Core_Navigation_Service {
 	 */
 	private function public_label_for_url( $label, $url ) {
 		$path = $this->site_path( $url );
-		$labels = array(
-			'/'            => 'Beranda',
-			'/about/'      => 'Tentang Gloskin',
-			'/treatments/' => 'Perawatan',
-			'/promo/'      => 'Promo',
-			'/skincare/'   => 'Skincare',
-			'/clinics/'    => 'Klinik',
-			'/doctors/'    => 'Dokter',
-			'/insights/'   => 'Insight',
-			'/shop/'       => 'Belanja',
-			'/contact/'    => 'Kontak',
+		$labels = array_merge(
+			array(
+				'/'          => 'Beranda',
+				'/clinics/'  => 'Klinik',
+				'/doctors/'  => 'Dokter',
+				'/insights/' => 'Insight',
+				'/shop/'     => 'Belanja',
+				'/contact/'  => 'Kontak',
+			),
+			$this->approved_label_map()
 		);
 
 		return isset( $labels[ $path ] ) ? $labels[ $path ] : $label;
