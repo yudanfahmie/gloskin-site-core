@@ -73,6 +73,9 @@ php tests/final-migration-state-contract.php
 php tests/final-migration-batch-contract.php
 python tests/final-migration-dom-contract.py
 python tests/final-migration-js-behavior-contract.py
+node tests/final-migration-ajax-response-contract.js
+python3 tests/php-source-hygiene-contract.py
+python3 tests/promo-stage2-checkpoint3-resume-contract.py
 php tests/final-migration-path-contract.php
 php tests/final-migration-package-integrity.php
 php tests/final-migration-dom-ajax-contract.php

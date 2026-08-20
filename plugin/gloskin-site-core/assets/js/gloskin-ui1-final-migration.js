@@ -65,6 +65,31 @@
 		updateProgress( state );
 	}
 
+	/**
+	 * Parse the complete AJAX response without hiding server-side output.
+	 *
+	 * A single legacy UTF-8 BOM is tolerated at byte zero. Any other prefix
+	 * remains visible as a hard failure instead of being trimmed to a later
+	 * JSON object.
+	 *
+	 * @param {*} raw Complete response body.
+	 * @return {Object} Parsed WordPress AJAX payload.
+	 */
+	function parseAjaxResponse( raw ) {
+		var text = String( null == raw ? '' : raw );
+
+		if ( '\uFEFF' === text.charAt( 0 ) ) {
+			text = text.slice( 1 );
+		}
+		text = text.replace( /^[\t\n\r ]+/, '' );
+
+		if ( '{' !== text.charAt( 0 ) ) {
+			throw new Error( 'Respons AJAX bukan JSON murni.' );
+		}
+
+		return JSON.parse( text );
+	}
+
 	function request( mode ) {
 		var body = 'action=' + encodeURIComponent( action )
 			+ '&nonce=' + encodeURIComponent( nonce )
@@ -76,7 +101,8 @@
 			headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
 			body: body,
 		} ).then( function ( response ) {
-			return response.json().then( function ( payload ) {
+			return response.text().then( function ( raw ) {
+				var payload = parseAjaxResponse( raw );
 				if ( ! payload || ! payload.success ) {
 					var data  = payload && payload.data ? payload.data : {};
 					var error = new Error( data.message || 'Checkpoint gagal.' );

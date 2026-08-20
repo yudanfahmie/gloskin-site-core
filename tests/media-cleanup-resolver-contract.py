@@ -98,6 +98,6 @@ require(classify(soft=True) == "ambiguous" and classify(warning=True) == "ambigu
         classify(valid_file=False) == "ambiguous", "uncertainty must fail closed")
 require(classify() == "confirmed-unused", "only fully clean old image can enter manifest")
 
-require("Version: 0.7.161" in plugin and "const VERSION = '0.7.161';" in kernel,
+require("Version: 0.7.162" in plugin and "const VERSION = '0.7.162';" in kernel,
         "plugin and Kernel patch versions must be synchronized")
-print("media-cleanup-resolver-contract.py: OK (0.7.161)")
+print("media-cleanup-resolver-contract.py: OK (0.7.162)")

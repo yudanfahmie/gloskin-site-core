@@ -109,6 +109,6 @@ ordered = sorted([(0, "Zulu", 9), (2, "Beta", 7), (1, "Alpha", 8)],
                  key=lambda row: (row[0] <= 0, row[0] if row[0] > 0 else 0, row[1], row[2]))
 require([row[2] for row in ordered] == [8, 7, 9], "explicit order then title/ID behavior changed")
 
-require("Version: 0.7.161" in plugin and "const VERSION = '0.7.161';" in kernel,
+require("Version: 0.7.162" in plugin and "const VERSION = '0.7.162';" in kernel,
         "plugin and Kernel version must be synchronized")
-print("promo-recovery-stage2-contract.py: OK (0.7.161)")
+print("promo-recovery-stage2-contract.py: OK (0.7.162)")

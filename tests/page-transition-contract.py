@@ -46,4 +46,4 @@ require("commerceHandoffOwns" in pt, "existing cart-checkout handoff remains sta
 require("'/product/'" not in pt and '"/product/"' not in pt, "normal PDP link eligible")
 require("page-transition-contract.py" in runtime, "contract registered in runtime suite")
 require("gloskin-ui1-commerce-handoff__g" in shell and canonical_path in shell[shell.index("gloskin-ui1-commerce-handoff"):], "commerce handoff reuses canonical white G visually")
-print("page-transition-contract: OK (0.7.161 final closure)")
+print("page-transition-contract: OK (0.7.162 final closure)")
