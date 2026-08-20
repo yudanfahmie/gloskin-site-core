@@ -15,11 +15,7 @@ $kernel = gh_read('plugin/gloskin-site-core/includes/class-gloskin-site-core-ker
 $plugin = gh_read('plugin/gloskin-site-core/gloskin-site-core.php');
 $manifest = json_decode( gh_read('plugin/gloskin-site-core/migration-runtime/gloskin-editorial-media-v1/manifest.json'), true );
 
-<<<<<<< HEAD
-gh_ok( str_contains( $kernel, "const VERSION = '0.7.155'" ) && str_contains( $plugin, 'Version: 0.7.155' ), 'version bumped to 0.7.155' );
-=======
-gh_ok( str_contains( $kernel, "const VERSION = '0.7.156'" ) && str_contains( $plugin, 'Version: 0.7.156' ), 'version bumped to 0.7.156' );
->>>>>>> cd8b8a3e43a2fde30f37702b31ab3cea5f3a617b
+gh_ok( str_contains( $kernel, "const VERSION = '0.7.157'" ) && str_contains( $plugin, 'Version: 0.7.157' ), 'version bumped to 0.7.157' );
 gh_ok( str_contains( $migration, "const REVISION       = '2026-08-19-final'" ), 'REVISION unchanged' );
 gh_ok( str_contains( $migration, "const STATE_OPTION   = 'gloskin_site_core_revision_20260819f_state'" ), 'STATE_OPTION unchanged' );
 $steps = array( 'preflight','managed_content','demo_seed','doctor_photos','normalize','cleanup','verify','finalize' );

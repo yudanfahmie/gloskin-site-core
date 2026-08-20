@@ -249,7 +249,7 @@ body.woocommerce-cart:has(.wp-block-woocommerce-cart.is-loading) .gloskin-ui1-co
    cleanup runs on pageshow, and a hard timeout prevents permanent lockout.
    Woo AJAX/cart/checkout/modal flows are explicitly excluded in initPageTransitions(). */
 :root{
-	--gl-transition-bg:#FFF2EB;
+	--gl-transition-bg:transparent;
 	--gl-transition-jelly:#CA050E;
 	--gl-transition-duration:360ms;
 	--gl-transition-g-size:104px;
@@ -288,6 +288,7 @@ body.woocommerce-cart:has(.wp-block-woocommerce-cart.is-loading) .gloskin-ui1-co
 	height:54%;
 	display:block;
 }
+.gloskin-ui1-page-transition__g path{fill:#fff}
 @keyframes gloskin-ui1-transition-blob{
 	0%{border-radius:60% 40% 55% 45%/50% 60% 40% 50%}
 	33%{border-radius:40% 60% 45% 55%/60% 40% 55% 45%}

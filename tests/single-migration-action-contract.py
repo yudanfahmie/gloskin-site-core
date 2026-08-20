@@ -12,11 +12,7 @@ Asserts:
   6.  Insight Migration admin is still required (genuinely independent â€” must NOT be removed).
   7.  Final Migration admin title is "Finalisasi Prototype & Data".
   8.  Old revision migration admin (non-final) is not registered in kernel.
-<<<<<<< HEAD
-  9.  Plugin / Kernel version synchronized at 0.7.155.
-=======
-  9.  Plugin / Kernel version synchronized at 0.7.156.
->>>>>>> cd8b8a3e43a2fde30f37702b31ab3cea5f3a617b
+  9.  Plugin / Kernel version synchronized at 0.7.157.
 """
 
 import re, sys, os
@@ -46,21 +42,12 @@ require("const SLUG = 'gloskin-revision-20260819-migration'" not in final_adm,'F
 require('class-gloskin-site-core-insight-migration-admin.php' in kernel,'Insight Migration admin MUST remain registered in kernel (independent editorial content)')
 require('Finalisasi Prototype & Data' in final_adm or 'Finalisasi Prototype' in final_adm,"Final Migration admin title must be 'Finalisasi Prototype & Data'")
 require('class-gloskin-site-core-revision-20260819-migration-admin.php' not in kernel,'Old (non-final) revision migration admin must not be registered in kernel')
-<<<<<<< HEAD
-require("Version: 0.7.155" in plugin_h, "plugin header must be 0.7.155")
-require("const VERSION = '0.7.155';" in kernel, "Kernel VERSION must be 0.7.155")
-=======
-require("Version: 0.7.156" in plugin_h, "plugin header must be 0.7.156")
-require("const VERSION = '0.7.156';" in kernel, "Kernel VERSION must be 0.7.156")
->>>>>>> cd8b8a3e43a2fde30f37702b31ab3cea5f3a617b
+require("Version: 0.7.157" in plugin_h, "plugin header must be 0.7.157")
+require("const VERSION = '0.7.157';" in kernel, "Kernel VERSION must be 0.7.157")
 
 if failures:
     for f in failures:
         print('FAIL:', f)
     sys.exit(1)
 
-<<<<<<< HEAD
-print('single-migration-action-contract.py: OK (0.7.155)')
-=======
-print('single-migration-action-contract.py: OK (0.7.156)')
->>>>>>> cd8b8a3e43a2fde30f37702b31ab3cea5f3a617b
+print('single-migration-action-contract.py: OK (0.7.157)')

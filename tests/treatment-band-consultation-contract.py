@@ -18,18 +18,9 @@ require('?path=' in js or 'URLSearchParams' in js,'JS must handle ?path= URL par
 require('?path=' in helpers and '#consultation' in helpers,'PHP CTA href must include ?path=<id>#consultation')
 require(re.search(r'gloskin_ui1_editorial_media_catalog\s*\(.*?\)\s*\{[^}]*return\s+array\s*\(\s*\)',helpers,re.DOTALL),'gloskin_ui1_editorial_media_catalog must return empty array() (no Unsplash URLs)')
 require('https://images.unsplash.com' not in helpers,'No https://images.unsplash.com runtime URLs allowed in template-helpers.php')
-<<<<<<< HEAD
-require("Version: 0.7.155" in plugin_h,"plugin header must be 0.7.155")
-require("const VERSION = '0.7.155';" in kernel,"Kernel VERSION must be 0.7.155")
+require("Version: 0.7.157" in plugin_h,"plugin header must be 0.7.157")
+require("const VERSION = '0.7.157';" in kernel,"Kernel VERSION must be 0.7.157")
 if failures:
     for f in failures: print('FAIL:',f)
     sys.exit(1)
-print('treatment-band-consultation-contract.py: OK (0.7.155)')
-=======
-require("Version: 0.7.156" in plugin_h,"plugin header must be 0.7.156")
-require("const VERSION = '0.7.156';" in kernel,"Kernel VERSION must be 0.7.156")
-if failures:
-    for f in failures: print('FAIL:',f)
-    sys.exit(1)
-print('treatment-band-consultation-contract.py: OK (0.7.156)')
->>>>>>> cd8b8a3e43a2fde30f37702b31ab3cea5f3a617b
+print('treatment-band-consultation-contract.py: OK (0.7.157)')

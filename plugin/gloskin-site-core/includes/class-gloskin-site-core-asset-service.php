@@ -390,6 +390,26 @@ final class Gloskin_Site_Core_Asset_Service {
 	}
 
 	/**
+	 * Download Diagnostic presentation and progressive enhancement, only after
+	 * AdminService has proven the exact screen, capability, and user_login.
+	 *
+	 * @return void
+	 */
+	public function enqueue_admin_diagnostic() {
+		$registry = $this->registry();
+		if ( ! empty( $registry['admin_styles']['gloskin-admin'] ) ) {
+			$asset = $registry['admin_styles']['gloskin-admin'];
+			wp_register_style( 'gloskin-admin', plugins_url( $asset['src'], $this->plugin_file ), $asset['deps'], $this->version, $asset['media'] );
+			wp_enqueue_style( 'gloskin-admin' );
+		}
+		if ( ! empty( $registry['admin_scripts']['gloskin-ui1-diagnostic'] ) ) {
+			$asset = $registry['admin_scripts']['gloskin-ui1-diagnostic'];
+			wp_register_script( 'gloskin-ui1-diagnostic', plugins_url( $asset['src'], $this->plugin_file ), $asset['deps'], $this->version, true );
+			wp_enqueue_script( 'gloskin-ui1-diagnostic' );
+		}
+	}
+
+	/**
 	 * The Konsultasi Perawatan mapping matrix's scoped presentation assets.
 	 * Gloskin_Site_Core_Admin_Service already gates the call to this method
 	 * to that exact screen's hook; this method only registers/enqueues the

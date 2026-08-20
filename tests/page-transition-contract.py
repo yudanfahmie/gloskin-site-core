@@ -14,7 +14,8 @@ require(shell.count('class="gloskin-ui1-page-transition" data-gloskin-page-trans
 require(canonical_path in shell, "exact canonical G path")
 require('fill="#fff"' in shell or 'fill="#FFFFFF"' in shell, "canonical G is white")
 require('viewBox="82 74 185 232"' in shell and 'translate(65,300) scale(0.3117268,-0.32)' in shell, "canonical G geometry")
-require("--gl-transition-bg:#FFF2EB" in css, "warm transition background")
+require("--gl-transition-bg:transparent" in css, "transparent transition backdrop")
+require(".gloskin-ui1-page-transition__g path{fill:#fff}" in css, "transition G remains pure white")
 require("--gl-transition-jelly:#CA050E" in css, "canonical jelly red")
 require("--gl-transition-g-size:104px" in css, "desktop G/jelly footprint")
 require("--gl-transition-g-size:84px" in css, "mobile G/jelly footprint")
@@ -45,8 +46,4 @@ require("commerceHandoffOwns" in pt, "existing cart-checkout handoff remains sta
 require("'/product/'" not in pt and '"/product/"' not in pt, "normal PDP link eligible")
 require("page-transition-contract.py" in runtime, "contract registered in runtime suite")
 require("gloskin-ui1-commerce-handoff__g" in shell and canonical_path in shell[shell.index("gloskin-ui1-commerce-handoff"):], "commerce handoff reuses canonical white G visually")
-<<<<<<< HEAD
-print("page-transition-contract: OK (0.7.155 final closure)")
-=======
-print("page-transition-contract: OK (0.7.156 final closure)")
->>>>>>> cd8b8a3e43a2fde30f37702b31ab3cea5f3a617b
+print("page-transition-contract: OK (0.7.157 final closure)")

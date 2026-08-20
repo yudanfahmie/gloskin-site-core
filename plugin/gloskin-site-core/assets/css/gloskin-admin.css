@@ -1,5 +1,5 @@
 /*
- * Gloskin admin presentation shell -- Settings screen only.
+ * Gloskin admin presentation shell -- scoped Gloskin admin screens only.
  *
  * Presentation patterns only (isolated scoped root, scoped reset, tokenized
  * spacing, two-column shell with sticky sidebar, workspace/canvas,
@@ -7,7 +7,7 @@
  * Zero runtime dependency on any external admin framework; every selector,
  * token and class name here is Gloskin-owned. No global wp-admin CSS
  * leakage -- every rule is scoped beneath #gloskin-admin-root, and this
- * file is only ever enqueued on the Gloskin Settings screen.
+ * file is only ever enqueued on an explicitly gated Gloskin admin screen.
  *
  * @package GloskinSiteCore
  */
@@ -94,6 +94,19 @@
 .gloskin-admin-media-field__warning{margin:0 0 var(--gloskin-admin-space-2);padding:8px 10px;border-left:3px solid var(--gloskin-admin-accent);border-radius:4px;background:var(--gloskin-admin-accent-soft);color:var(--gloskin-admin-text);font-size:12px}
 .gloskin-admin-media-field p:last-child{margin-bottom:0}
 
+/* Download Diagnostic: AJAX is progressive enhancement over the native
+   admin-post form, so the status and indeterminate loader stay purely visual. */
+.gloskin-admin-diagnostic__actions{display:flex;align-items:center;gap:var(--gloskin-admin-space-3);margin:var(--gloskin-admin-space-5) 0 var(--gloskin-admin-space-3)}
+.gloskin-admin-diagnostic__spinner{width:22px;height:22px;border:3px solid var(--gloskin-admin-accent-soft);border-top-color:var(--gloskin-admin-accent);border-radius:50%;animation:gloskin-admin-diagnostic-spin .8s linear infinite}
+.gloskin-admin-diagnostic__spinner[aria-hidden="true"]{display:none}
+.gloskin-admin-diagnostic__status{min-height:22px;margin:0;color:var(--gloskin-admin-muted)}
+.gloskin-admin-diagnostic__status[data-state="success"]{color:#008a20}
+.gloskin-admin-diagnostic__status[data-state="error"]{color:#b32d2e}
+.gloskin-admin-diagnostic__progress{height:4px;margin-top:var(--gloskin-admin-space-3);overflow:hidden;border-radius:999px;background:var(--gloskin-admin-surface-muted)}
+.gloskin-admin-diagnostic__progress>span{display:block;width:42%;height:100%;border-radius:inherit;background:var(--gloskin-admin-accent);animation:gloskin-admin-diagnostic-progress 1.2s ease-in-out infinite}
+@keyframes gloskin-admin-diagnostic-spin{to{transform:rotate(360deg)}}
+@keyframes gloskin-admin-diagnostic-progress{0%{transform:translateX(-110%)}100%{transform:translateX(340%)}}
+
 @media (max-width:900px){
 	.gloskin-admin-shell{grid-template-columns:1fr}
 	.gloskin-admin-shell__sidebar{position:static}
@@ -101,4 +114,5 @@
 @media (prefers-reduced-motion:reduce){
 	#gloskin-admin-root .gloskin-admin-tabs__tab,
 	#gloskin-admin-root .gloskin-admin-header-card{transition:none}
+	.gloskin-admin-diagnostic__spinner,.gloskin-admin-diagnostic__progress>span{animation:none}
 }

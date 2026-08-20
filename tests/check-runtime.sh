@@ -28,6 +28,8 @@ if ! ./tests/check-presentation.sh >"$presentation_log" 2>&1; then
 fi
 rm -f "$presentation_log"
 python tests/prototype-refresh-contract.py
+python tests/diagnostic-presentation-contract.py
+python tests/diagnostic-export-contract.py
 python tests/width-doctor-grid-contract.py
 python tests/prototype-authority-contract.py
 ./tests/plugin-check-remediation-contract.sh
@@ -46,6 +48,7 @@ php tests/consultation-contract.php
 php tests/consultation-demo-importer-contract.php
 php tests/woo-cart-notice-contract.php
 php tests/release-version-contract.php
+php tests/diagnostic-export-contract.php
 php tests/shop-catalog-contract.php
 php tests/shop-smart-search-contract.php
 php tests/product-grid-contract.php

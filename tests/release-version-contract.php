@@ -16,11 +16,7 @@ if ( ! preg_match( "/const VERSION = '([0-9]+\\.[0-9]+\\.[0-9]+)';/", $kernel, $
 	fwrite( STDERR, "Kernel VERSION missing\n" );
 	exit( 1 );
 }
-<<<<<<< HEAD
-$expected = '0.7.155';
-=======
-$expected = '0.7.156';
->>>>>>> cd8b8a3e43a2fde30f37702b31ab3cea5f3a617b
+$expected = '0.7.157';
 if ( $plugin_match[1] !== $expected || $kernel_match[1] !== $expected ) {
 	fwrite( STDERR, 'Release version mismatch: header=' . $plugin_match[1] . ', kernel=' . $kernel_match[1] . ', expected=' . $expected . "\n" );
 	exit( 1 );

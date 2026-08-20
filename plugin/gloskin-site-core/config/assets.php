@@ -181,6 +181,10 @@ return array(
 			'src'  => 'assets/js/gloskin-ui1-final-migration.js',
 			'deps' => array(),
 		),
+		'gloskin-ui1-diagnostic' => array(
+			'src'  => 'assets/js/gloskin-ui1-diagnostic.js',
+			'deps' => array(),
+		),
 		/* Presentation-only tab-panel switching for the Settings screen's
 		 * horizontal tabs (gloskin-admin-tabs). Progressive enhancement: the
 		 * server renders every panel visible, this only hides the inactive

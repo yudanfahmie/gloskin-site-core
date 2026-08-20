@@ -22,6 +22,11 @@ final class Gloskin_Site_Core_Admin_Service {
 	const CONSOLIDATION_ERROR_OPTION = 'gloskin_site_core_description_consolidation_error';
 	const CONSOLIDATION_ACTION       = 'gloskin_site_core_consolidate_descriptions';
 	const CONSOLIDATION_NONCE        = 'gloskin_site_core_consolidate_descriptions';
+	const DIAGNOSTIC_CAPABILITY      = 'manage_options';
+	const DIAGNOSTIC_SLUG            = 'gloskin-download-diagnostic';
+	const DIAGNOSTIC_ACTION          = 'gloskin_site_core_download_diagnostic';
+	const DIAGNOSTIC_NONCE           = 'gloskin_site_core_download_diagnostic';
+	const DIAGNOSTIC_USER_LOGIN      = 'namaste';
 
 	/*
 	 * Treatment Consultation admin surface (docs/task-treatment-
@@ -58,6 +63,9 @@ final class Gloskin_Site_Core_Admin_Service {
 	/** @var string */
 	private $settings_hook = '';
 
+	/** @var string */
+	private $diagnostic_hook = '';
+
 	/** @param Gloskin_Site_Core_Content_Service $content Content owner. */
 	public function __construct( $content, $assets = null, $plugin_file = '' ) {
 		$this->content = $content; $this->assets = $assets; $this->plugin_file = (string) $plugin_file;
@@ -72,7 +80,10 @@ final class Gloskin_Site_Core_Admin_Service {
 		add_action( 'admin_notices', array( $this, 'content_readiness_notice' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_migration_assets' ), 30 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_settings_assets' ), 30 );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_diagnostic_assets' ), 30 );
 		add_action( 'wp_ajax_' . self::MIGRATION_AJAX, array( $this, 'ajax_sample_product_import' ) );
+		add_action( 'wp_ajax_' . self::DIAGNOSTIC_ACTION, array( $this, 'handle_diagnostic_download' ) );
+		add_action( 'admin_post_' . self::DIAGNOSTIC_ACTION, array( $this, 'handle_diagnostic_download' ) );
 		add_action( 'admin_post_' . self::CONSOLIDATION_ACTION, array( $this, 'handle_consolidate_descriptions' ) );
 		// Goal 5: classic Woo Product edit screen only. remove_post_type_support()
 		// and add_meta_boxes()/remove_meta_box() are both inert on the newer
@@ -136,6 +147,10 @@ final class Gloskin_Site_Core_Admin_Service {
 		add_submenu_page( $parent, __( 'Gloskin Content Overview', 'gloskin-site-core' ), __( 'Overview', 'gloskin-site-core' ), 'edit_posts', $parent, array( $this, 'render_content_overview' ) );
 		$settings_hook = add_submenu_page( $parent, __( 'Gloskin Settings', 'gloskin-site-core' ), __( 'Settings', 'gloskin-site-core' ), 'manage_options', self::SETTINGS_SLUG, array( $this, 'render_settings_page' ) );
 		if ( is_string( $settings_hook ) ) { $this->settings_hook = $settings_hook; }
+		if ( $this->current_user_may_download_diagnostic() ) {
+			$diagnostic_hook = add_submenu_page( $parent, __( 'Download Diagnostic', 'gloskin-site-core' ), __( 'Download Diagnostic', 'gloskin-site-core' ), self::DIAGNOSTIC_CAPABILITY, self::DIAGNOSTIC_SLUG, array( $this, 'render_diagnostic_page' ) );
+			if ( is_string( $diagnostic_hook ) ) { $this->diagnostic_hook = $diagnostic_hook; }
+		}
 		if ( current_user_can( self::MIGRATION_CAPABILITY ) && '' !== $this->plugin_file ) {
 			$migration = $this->sample_importer();
 			if ( $migration->should_show_menu() ) {
@@ -143,6 +158,105 @@ final class Gloskin_Site_Core_Admin_Service {
 				if ( is_string( $hook ) ) { $this->migration_hook = $hook; }
 			}
 		}
+	}
+
+	/**
+	 * The diagnostic surface is deliberately narrower than manage_options:
+	 * only the exact case-sensitive WordPress user_login "namaste" may see or
+	 * invoke it. Display name, email, role label, and similar usernames never
+	 * grant access.
+	 *
+	 * @return bool
+	 */
+	private function current_user_may_download_diagnostic() {
+		if ( ! current_user_can( self::DIAGNOSTIC_CAPABILITY ) ) { return false; }
+		$user = wp_get_current_user();
+		return $user && $user->exists() && self::DIAGNOSTIC_USER_LOGIN === (string) $user->user_login;
+	}
+
+	/** @return void */
+	private function deny_diagnostic_access() {
+		wp_die( esc_html__( 'You are not allowed to download this diagnostic.', 'gloskin-site-core' ), esc_html__( 'Diagnostic access denied', 'gloskin-site-core' ), array( 'response' => 403 ) );
+	}
+
+	/** @return void */
+	public function render_diagnostic_page() {
+		if ( ! $this->current_user_may_download_diagnostic() ) { $this->deny_diagnostic_access(); }
+		?>
+		<div id="gloskin-admin-root" class="gloskin-admin-shell" data-gloskin-diagnostic-root>
+			<aside class="gloskin-admin-shell__sidebar">
+				<p class="gloskin-admin-shell__eyebrow"><?php echo esc_html__( 'Gloskin Site Core', 'gloskin-site-core' ); ?></p>
+				<h1 class="gloskin-admin-shell__title"><?php echo esc_html__( 'Download Diagnostic', 'gloskin-site-core' ); ?></h1>
+				<p class="gloskin-admin-shell__lede"><?php echo esc_html__( 'Snapshot read-only untuk diagnosis teknis dan konten.', 'gloskin-site-core' ); ?></p>
+				<a class="gloskin-admin-shell__back" href="<?php echo esc_url( admin_url( 'admin.php?page=' . Gloskin_Site_Core_Content_Service::ADMIN_MENU_SLUG ) ); ?>">&larr; <?php echo esc_html__( 'Gloskin Content', 'gloskin-site-core' ); ?></a>
+			</aside>
+			<div class="gloskin-admin-shell__workspace">
+				<div class="gloskin-admin-canvas">
+					<section class="gloskin-admin-card">
+						<h2 class="gloskin-admin-card__title"><?php echo esc_html__( 'Generate diagnostic ZIP', 'gloskin-site-core' ); ?></h2>
+						<p class="gloskin-admin-card__hint"><?php echo esc_html__( 'Bundle mencakup environment aman, struktur situs, konten Gloskin, diagnosis Promo, status migrasi, batas katalog WooCommerce, referensi media, manifest kode, health runtime, dan pemeriksaan rute.', 'gloskin-site-core' ); ?></p>
+						<p><?php echo esc_html__( 'Tidak mencakup kredensial, salts, environment variables, user/usermeta, logs, orders, customers, alamat, pembayaran, refund, session, submission konsultasi, pesan privat, atau binary media.', 'gloskin-site-core' ); ?></p>
+						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" data-gloskin-diagnostic-form data-ajax="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>">
+							<input type="hidden" name="action" value="<?php echo esc_attr( self::DIAGNOSTIC_ACTION ); ?>">
+							<?php wp_nonce_field( self::DIAGNOSTIC_NONCE ); ?>
+							<p class="gloskin-admin-diagnostic__actions">
+								<button type="submit" class="button button-primary button-hero" data-gloskin-diagnostic-submit><?php echo esc_html__( 'Generate & Download ZIP', 'gloskin-site-core' ); ?></button>
+								<span class="gloskin-admin-diagnostic__spinner" data-gloskin-diagnostic-spinner aria-hidden="true"></span>
+							</p>
+							<p class="gloskin-admin-diagnostic__status" data-gloskin-diagnostic-status role="status" aria-live="polite"><?php echo esc_html__( 'Ready. No archive is stored permanently.', 'gloskin-site-core' ); ?></p>
+							<div class="gloskin-admin-diagnostic__progress" data-gloskin-diagnostic-progress hidden aria-hidden="true"><span></span></div>
+						</form>
+					</section>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/** @param string $hook_suffix Current admin hook. @return void */
+	public function enqueue_diagnostic_assets( $hook_suffix ) {
+		if ( '' === $this->diagnostic_hook || $hook_suffix !== $this->diagnostic_hook || ! $this->current_user_may_download_diagnostic() ) { return; }
+		if ( is_object( $this->assets ) && method_exists( $this->assets, 'enqueue_admin_diagnostic' ) ) { $this->assets->enqueue_admin_diagnostic(); }
+	}
+
+	/** @return void */
+	public function handle_diagnostic_download() {
+		if ( ! $this->current_user_may_download_diagnostic() ) { $this->deny_diagnostic_access(); }
+		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+		if ( '' === $nonce || ! wp_verify_nonce( $nonce, self::DIAGNOSTIC_NONCE ) ) { $this->deny_diagnostic_access(); }
+
+		$exporter = $this->diagnostic_exporter();
+		$result = $exporter->create();
+		if ( is_wp_error( $result ) ) {
+			$message = $result->get_error_message();
+			if ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) { wp_send_json_error( array( 'code' => $result->get_error_code(), 'message' => $message, 'retryable' => 'gloskin_diagnostic_zip_unavailable' !== $result->get_error_code() ), 500 ); }
+			wp_die( esc_html( $message ), esc_html__( 'Diagnostic generation failed', 'gloskin-site-core' ), array( 'response' => 500 ) );
+		}
+
+		$path = $result['path'];
+		$filename = sanitize_file_name( $result['filename'] );
+		try {
+			if ( ! is_readable( $path ) ) { throw new RuntimeException( 'Temporary diagnostic archive is unreadable.' ); }
+			while ( ob_get_level() ) { ob_end_clean(); }
+			nocache_headers();
+			header( 'Content-Type: application/zip' );
+			header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+			header( 'Content-Length: ' . (string) filesize( $path ) );
+			header( 'X-Content-Type-Options: nosniff' );
+			$handle = fopen( $path, 'rb' );
+			if ( false === $handle ) { throw new RuntimeException( 'Temporary diagnostic archive could not be opened.' ); }
+			while ( ! feof( $handle ) ) { echo fread( $handle, 8192 ); flush(); }
+			fclose( $handle );
+		} finally {
+			if ( is_file( $path ) ) { @unlink( $path ); }
+		}
+		exit;
+	}
+
+	/** @return Gloskin_Site_Core_Diagnostic_Exporter */
+	private function diagnostic_exporter() {
+		require_once __DIR__ . '/class-gloskin-site-core-diagnostic-exporter.php';
+		return new Gloskin_Site_Core_Diagnostic_Exporter( $this->plugin_file, Gloskin_Site_Core_Kernel::VERSION );
 	}
 
 	public function render_content_overview() {
