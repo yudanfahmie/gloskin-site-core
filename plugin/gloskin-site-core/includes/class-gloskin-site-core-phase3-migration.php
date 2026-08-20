@@ -51,10 +51,10 @@ final class Gloskin_Site_Core_Phase3_Migration {
 	private $assets_base;
 
 	public function __construct() {
-		$abspath = rtrim( ABSPATH, '/\\' );
-		$sep     = DIRECTORY_SEPARATOR;
-		$this->manifests_dir = $abspath . $sep . 'docs' . $sep . 'client-feedback-phase-3' . $sep . 'manifests';
-		$this->assets_base   = $abspath . $sep . 'docs' . $sep . 'feedback-cases-gloskin-20260820-154828';
+		$plugin_root = rtrim( plugin_dir_path( dirname( __FILE__ ) ), '/\\' );
+		$sep         = DIRECTORY_SEPARATOR;
+		$this->manifests_dir = $plugin_root . $sep . 'resources' . $sep . 'phase3' . $sep . 'manifests';
+		$this->assets_base   = $plugin_root . $sep . 'resources' . $sep . 'phase3' . $sep . 'assets';
 	}
 
 	/* -----------------------------------------------------------------
@@ -290,7 +290,7 @@ final class Gloskin_Site_Core_Phase3_Migration {
 		/* Sample a few critical client asset paths. */
 		$sample_assets = array(
 			'FB-989360-treatment-page/FOTO TREATMENT/AGING - KERUTAN/BOTOX/BTX.png',
-			'FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/SYLFIRM X/SYLFIRM.jpg',
+			'FB-989360-treatment-page/FOTO TREATMENT/JERAWAT & BEKAS JERAWAT/SYLFIRM X/SYLFIRM.png',
 			'FB-989354-skincare-page/FOTO PRODUCT PNG/BRIGHTENING FACE WASH.png',
 		);
 		$missing_assets = array();

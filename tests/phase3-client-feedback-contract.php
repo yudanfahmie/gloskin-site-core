@@ -47,11 +47,11 @@ foreach ( array(
 }
 
 /* ---------------------------------------------------------------------------
- * 1. Version sync at 0.7.176
+ * 1. Version sync at 0.7.177
  * ------------------------------------------------------------------------- */
 $ok(
-	false !== strpos( $plugin_php, 'Version: 0.7.176' ) && false !== strpos( $kernel_php, "const VERSION = '0.7.176';" ),
-	'Phase-3 runtime/cache version must be synchronized at 0.7.176'
+	false !== strpos( $plugin_php, 'Version: 0.7.177' ) && false !== strpos( $kernel_php, "const VERSION = '0.7.177';" ),
+	'Phase-3 runtime/cache version must be synchronized at 0.7.177'
 );
 
 /* ---------------------------------------------------------------------------
@@ -365,6 +365,79 @@ $ok(
 		&& false === strpos( $migration, "'gloskin_site_core_phase3_v1_state'" )
 		&& false === strpos( $migration, "'gloskin_site_core_phase3_v1_lock'" ),
 	'Phase-3 STATE_OPTION / LOCK_OPTION must match authoritative 77ee owners with no alternate state owner'
+);
+
+/* ---------------------------------------------------------------------------
+ * 21. Production package owns all Phase-3 runtime dependencies
+ * ------------------------------------------------------------------------- */
+$constructor_start = strpos( $migration, 'public function __construct()' );
+$constructor_end   = false !== $constructor_start ? strpos( $migration, '/* -----------------------------------------------------------------', (int) $constructor_start ) : false;
+$constructor_body  = ( false !== $constructor_start && false !== $constructor_end )
+	? substr( $migration, (int) $constructor_start, (int) $constructor_end - (int) $constructor_start )
+	: '';
+
+$packaged_manifest_dir = $root . '/plugin/gloskin-site-core/resources/phase3/manifests';
+$packaged_assets_base  = $root . '/plugin/gloskin-site-core/resources/phase3/assets';
+$packaged_manifest_ok  = true;
+foreach ( array( 'migration-manifest.json', 'skincare-products.json', 'treatment-catalog.json', 'treatment-page-media.json', 'unresolved.json' ) as $manifest_name ) {
+	$source_path   = $root . '/docs/client-feedback-phase-3/manifests/' . $manifest_name;
+	$packaged_path = $packaged_manifest_dir . '/' . $manifest_name;
+	$packaged_manifest_ok = $packaged_manifest_ok
+		&& is_file( $source_path )
+		&& is_file( $packaged_path )
+		&& hash_file( 'sha256', $source_path ) === hash_file( 'sha256', $packaged_path );
+}
+
+$required_packaged_assets = array();
+if ( is_array( $sk_data ) ) {
+	foreach ( (array) ( $sk_data['records'] ?? array() ) as $record ) {
+		if ( ! empty( $record['primary'] ) ) {
+			$required_packaged_assets[] = 'FB-989354-skincare-page/FOTO PRODUCT PNG/' . $record['primary'];
+		}
+		foreach ( (array) ( $record['alternate'] ?? array() ) as $alternate ) {
+			if ( '' !== (string) $alternate ) {
+				$required_packaged_assets[] = 'FB-989354-skincare-page/FOTO PRODUCT PNG/' . $alternate;
+			}
+		}
+	}
+}
+if ( is_array( $tr_data ) ) {
+	foreach ( (array) ( $tr_data['woo_treatment_products'] ?? array() ) as $record ) {
+		if ( ! empty( $record['primary'] ) ) {
+			$required_packaged_assets[] = 'FB-989360-treatment-page/FOTO TREATMENT/' . $record['primary'];
+		}
+	}
+	foreach ( (array) ( $tr_data['informational_cpt_targets'] ?? array() ) as $record ) {
+		if ( ! empty( $record['featured_asset'] ) ) {
+			$required_packaged_assets[] = 'FB-989360-treatment-page/FOTO TREATMENT/' . $record['featured_asset'];
+		}
+	}
+}
+if ( is_array( $pm_data ) ) {
+	foreach ( (array) ( $pm_data['presentation_media'] ?? array() ) as $record ) {
+		if ( ! empty( $record['asset'] ) ) {
+			$required_packaged_assets[] = ltrim( str_replace( 'docs/feedback-cases-gloskin-20260820-154828/', '', (string) $record['asset'] ), '/' );
+		}
+	}
+}
+$required_packaged_assets = array_values( array_unique( $required_packaged_assets ) );
+$packaged_assets_ok = true;
+foreach ( $required_packaged_assets as $asset_rel ) {
+	if ( ! is_file( $packaged_assets_base . '/' . $asset_rel ) ) {
+		$packaged_assets_ok = false;
+		break;
+	}
+}
+
+$ok(
+	'' !== $constructor_body
+		&& false === strpos( $constructor_body, 'ABSPATH' )
+		&& false !== strpos( $constructor_body, 'plugin_dir_path( dirname( __FILE__ ) )' )
+		&& false !== strpos( $constructor_body, "'resources' . \$sep . 'phase3' . \$sep . 'manifests'" )
+		&& false !== strpos( $constructor_body, "'resources' . \$sep . 'phase3' . \$sep . 'assets'" )
+		&& $packaged_manifest_ok
+		&& $packaged_assets_ok,
+	'Phase-3 runtime must resolve byte-identical packaged manifests/assets from the installed plugin and never from ABSPATH/docs'
 );
 
 /* ---------------------------------------------------------------------------
