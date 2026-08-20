@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-/** Static contract: response-state keys, error classification, and failed-state resume path for v0.7.152. */
+/** Static contract: response-state keys, error classification, and failed-state resume path for v0.7.153. */
 $root=dirname(__DIR__); $passed=0; $failed=0;
 function ok_state(bool $cond,string $msg):void{global $passed,$failed;if($cond){echo "ok: {$msg}\n";$passed++;}else{echo "FAIL: {$msg}\n";$failed++;}}
 $migration=file_get_contents($root.'/plugin/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration.php');
@@ -19,6 +19,6 @@ foreach(array('bundle_unavailable','bundle_invalid','doctor_unmatched','doctor_a
 ok_state(str_contains($admin,'sedang diproses')&&str_contains($admin,'migration_locked'),"classify_error() must map 'sedang diproses' to migration_locked");
 ok_state(!str_contains($js,'processed_products'),"New JS must not reference processed_products (wrong key from old import JS)");
 ok_state(str_contains($js,'processed_steps'),"New JS must read processed_steps from AJAX state response");
-ok_state((bool)preg_match("/const VERSION\s*=\s*'0\.7\.152'/",$kernel),'Kernel VERSION must be 0.7.152');
-ok_state((bool)preg_match('/^ \* Version: 0\.7\.152$/m',$plugin_h),'Plugin header Version must be 0.7.152');
+ok_state((bool)preg_match("/const VERSION\s*=\s*'0\.7\.153'/",$kernel),'Kernel VERSION must be 0.7.153');
+ok_state((bool)preg_match('/^ \* Version: 0\.7\.153$/m',$plugin_h),'Plugin header Version must be 0.7.153');
 echo "\nfinal-migration-state-contract.php: {$passed} passed, {$failed} failed\n"; exit($failed>0?1:0);
