@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/class-gloskin-site-core-page-lookup.php';
+
 // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 
@@ -712,7 +714,7 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 		/* ── 4. Canonical IA pages — self-heal publication status ── */
 		try {
 			foreach ( array( 'home', 'treatments', 'promo', 'skincare', 'about' ) as $slug ) {
-				$page = get_page_by_path( $slug, OBJECT, 'page' );
+				$page = Gloskin_Site_Core_Page_Lookup::find( $slug );
 				if ( ! ( $page instanceof WP_Post ) ) { continue; /* Page not found is non-fatal; normalize already created it. */ }
 				if ( 'publish' !== (string) $page->post_status ) {
 					wp_update_post( array( 'ID' => absint( $page->ID ), 'post_status' => 'publish' ) );
@@ -727,7 +729,7 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 			if ( 'page' !== (string) get_option( 'show_on_front', 'posts' ) ) {
 				update_option( 'show_on_front', 'page' );
 			}
-			$beranda = get_page_by_path( 'home', OBJECT, 'page' );
+			$beranda = Gloskin_Site_Core_Page_Lookup::find( 'home' );
 			if ( $beranda instanceof WP_Post && (int) get_option( 'page_on_front', 0 ) !== (int) $beranda->ID ) {
 				update_option( 'page_on_front', absint( $beranda->ID ) );
 			}

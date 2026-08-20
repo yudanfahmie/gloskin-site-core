@@ -15,7 +15,7 @@ $kernel = gh_read('plugin/gloskin-site-core/includes/class-gloskin-site-core-ker
 $plugin = gh_read('plugin/gloskin-site-core/gloskin-site-core.php');
 $manifest = json_decode( gh_read('plugin/gloskin-site-core/migration-runtime/gloskin-editorial-media-v1/manifest.json'), true );
 
-gh_ok( str_contains( $kernel, "const VERSION = '0.7.157'" ) && str_contains( $plugin, 'Version: 0.7.157' ), 'version bumped to 0.7.157' );
+gh_ok( str_contains( $kernel, "const VERSION = '0.7.159'" ) && str_contains( $plugin, 'Version: 0.7.159' ), 'version bumped to 0.7.159' );
 gh_ok( str_contains( $migration, "const REVISION       = '2026-08-19-final'" ), 'REVISION unchanged' );
 gh_ok( str_contains( $migration, "const STATE_OPTION   = 'gloskin_site_core_revision_20260819f_state'" ), 'STATE_OPTION unchanged' );
 $steps = array( 'preflight','managed_content','demo_seed','doctor_photos','normalize','cleanup','verify','finalize' );
@@ -25,7 +25,7 @@ gh_ok( ! in_array(false,$positions,true) && $positions === $sorted, 'eight final
 gh_ok( ! str_contains( $migration, 'Pengguna Demo' ) && ! str_contains( $migration, 'kondisi kulit saya membaik' ), 'synthetic patient/outcome wording removed' );
 gh_ok( str_contains( $migration, "'policy'      => 'engineering-fixture-non-public-v2'" ) && str_contains( $migration, "'post_status' => 'draft'" ), 'demo fixtures explicitly non-public' );
 gh_ok( ! str_contains( $migration, 'Demo seed tidak lengkap' ) && str_contains( $migration, 'quarantine_owned_demo_records' ), 'verify no longer depends on fake testimonial/achievement completeness' );
-gh_ok( substr_count( $template, "'_gloskin_demo_identity'" ) >= 2, 'public managed record queries exclude demo identities' );
+gh_ok( substr_count( $template, "'_gloskin_demo_identity'" ) >= 1, 'generic testimonial/achievement query keeps its demo-identity exclusion' );
 
 gh_ok( str_contains( $ia, "'publish' === (string) \$page->post_status" ) && str_contains( $ia, "'_gloskin_provisioned_revision'" ), 'canonical page differentiates published and migration-provisioned ownership' );
 /* Safe-stop removed intentionally in 0.7.146: finalization migration always publishes

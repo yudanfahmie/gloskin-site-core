@@ -30,6 +30,8 @@ rm -f "$presentation_log"
 python tests/prototype-refresh-contract.py
 python tests/diagnostic-presentation-contract.py
 python tests/diagnostic-export-contract.py
+python tests/promo-recovery-stage2-contract.py
+python tests/shared-section-skincare-contract.py
 python tests/width-doctor-grid-contract.py
 python tests/prototype-authority-contract.py
 ./tests/plugin-check-remediation-contract.sh

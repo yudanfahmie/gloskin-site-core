@@ -643,6 +643,7 @@ if ( ! function_exists( 'gloskin_ui1_render_managed_promo_carousel' ) ) {
 				<div class="gloskin-ui1-promo-carousel__stage" role="region" aria-live="polite" aria-atomic="true">
 					<?php foreach ( $promos as $promo_index => $promo ) :
 						$is_first = 0 === $promo_index;
+						$slide_heading_tag = $is_first ? $heading_tag : 'h2';
 						$title     = (string) $promo['title'];
 						$eyebrow   = (string) $promo['eyebrow'];
 						$summary   = '' !== (string) $promo['summary'] ? (string) $promo['summary'] : (string) $promo['excerpt'];
@@ -654,7 +655,7 @@ if ( ! function_exists( 'gloskin_ui1_render_managed_promo_carousel' ) ) {
 							<div class="gloskin-ui1-promo-carousel__slide-inner">
 								<div class="gloskin-ui1-promo-carousel__copy">
 									<?php if ( '' !== $eyebrow ) : ?><p class="gloskin-ui1-eyebrow"><?php echo esc_html( $eyebrow ); ?></p><?php endif; ?>
-									<<?php echo esc_attr( $heading_tag ); ?> class="gloskin-ui1-promo-carousel__title"><?php echo esc_html( $title ); ?></<?php echo esc_attr( $heading_tag ); ?>>
+									<<?php echo esc_attr( $slide_heading_tag ); ?> class="gloskin-ui1-promo-carousel__title"><?php echo esc_html( $title ); ?></<?php echo esc_attr( $slide_heading_tag ); ?>>
 									<?php if ( '' !== $summary ) : ?><p class="gloskin-ui1-promo-carousel__summary"><?php echo esc_html( wp_trim_words( $summary, 40 ) ); ?></p><?php endif; ?>
 									<?php if ( '' !== $cta_label && '' !== $cta_url ) : ?>
 										<a class="gloskin-ui1-button gloskin-ui1-button--primary" href="<?php echo esc_url( $cta_url ); ?>"><?php echo esc_html( $cta_label ); ?></a>

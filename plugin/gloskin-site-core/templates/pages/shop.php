@@ -69,7 +69,7 @@ $gloskin_shop_price_label_max = 'normal' === $gloskin_shop_price_state
 $gloskin_shop_results_partial = dirname( __DIR__ ) . '/parts/shop-results.php';
 ?>
 <?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?>
-<section class="gloskin-ui1-section gloskin-ui1-section--tight" data-gloskin-section="shop-intro">
+<section class="gloskin-ui1-section gloskin-ui1-section--tight gloskin-ui1-section--intro-only" data-gloskin-section="shop-intro">
 	<div class="gloskin-ui1-container">
 		<div class="gloskin-ui1-container--narrow gloskin-ui1-section__intro"><?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?></div>
 	</div>

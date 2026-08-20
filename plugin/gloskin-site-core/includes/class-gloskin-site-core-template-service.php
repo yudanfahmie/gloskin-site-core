@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/class-gloskin-site-core-page-lookup.php';
+
 final class Gloskin_Site_Core_Template_Service {
 	/** @var string */
 	private $plugin_root;
@@ -371,7 +373,6 @@ final class Gloskin_Site_Core_Template_Service {
 		/* Filter by date eligibility */
 		$now   = function_exists( 'current_datetime' ) ? current_datetime() : new DateTimeImmutable( 'now', wp_timezone() );
 		$posts = array_values( array_filter( $posts, function ( $post ) use ( $now ) {
-			if ( '' !== (string) get_post_meta( $post->ID, '_gloskin_demo_identity', true ) ) { return false; }
 			return $this->is_promo_date_eligible( $post->ID, $now );
 		} ) );
 
@@ -1113,8 +1114,7 @@ final class Gloskin_Site_Core_Template_Service {
 		if ( $current instanceof WP_Post && 'page' === $current->post_type && $slug === $current->post_name ) {
 			return $current;
 		}
-		$page = get_page_by_path( $slug, OBJECT, 'page' );
-		return $page instanceof WP_Post ? $page : null;
+		return Gloskin_Site_Core_Page_Lookup::find( $slug );
 	}
 
 	/** @return array<string,mixed> */

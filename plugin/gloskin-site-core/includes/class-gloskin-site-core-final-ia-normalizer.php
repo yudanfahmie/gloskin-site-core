@@ -6,6 +6,8 @@
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
+require_once __DIR__ . '/class-gloskin-site-core-page-lookup.php';
+
 final class Gloskin_Site_Core_Final_IA_Normalizer {
 	const REVISION = '2026-08-19-final';
 	const MENU_LOCATION = 'gloskin-primary';
@@ -67,7 +69,7 @@ final class Gloskin_Site_Core_Final_IA_Normalizer {
 
 	/** @param string $slug @param string $title @return int */
 	private function ensure_page( $slug, $title ) {
-		$page = get_page_by_path( $slug, OBJECT, 'page' );
+		$page = Gloskin_Site_Core_Page_Lookup::find( $slug );
 		if ( $page instanceof WP_Post ) {
 			if ( 'publish' === (string) $page->post_status ) { return absint( $page->ID ); }
 			/* Finalization migration always publishes a canonical IA page regardless of ownership.

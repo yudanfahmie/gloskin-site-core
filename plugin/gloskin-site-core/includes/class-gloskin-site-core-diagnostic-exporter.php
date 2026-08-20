@@ -12,8 +12,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/class-gloskin-site-core-page-lookup.php';
+
 final class Gloskin_Site_Core_Diagnostic_Exporter {
-	const SCHEMA_VERSION          = '1.0';
+	const SCHEMA_VERSION          = '1.1';
 	const MAX_SOURCE_FILE_BYTES   = 1048576;
 	const MAX_SOURCE_TOTAL_BYTES  = 20971520;
 	const MAX_ARCHIVE_BYTES       = 52428800;
@@ -365,7 +367,7 @@ final class Gloskin_Site_Core_Diagnostic_Exporter {
 
 	/** @return array<string,mixed> */
 	private function promo_diagnostic() {
-		$page = get_page_by_path( 'promo', OBJECT, 'page' );
+		$page = Gloskin_Site_Core_Page_Lookup::find( 'promo' );
 		$now = function_exists( 'current_datetime' ) ? current_datetime() : new DateTimeImmutable( 'now', wp_timezone() );
 		$rows = array();
 		$eligible = array();
@@ -373,10 +375,9 @@ final class Gloskin_Site_Core_Diagnostic_Exporter {
 		foreach ( $posts as $post ) {
 			$reasons = array();
 			$active = '1' === (string) get_post_meta( $post->ID, 'gloskin_promo_active', true );
-			$demo = '' !== (string) get_post_meta( $post->ID, '_gloskin_demo_identity', true );
+			$demo_identity = (string) get_post_meta( $post->ID, '_gloskin_demo_identity', true );
 			if ( 'publish' !== $post->post_status ) { $reasons[] = 'status_not_publish'; }
 			if ( ! $active ) { $reasons[] = 'inactive'; }
-			if ( $demo ) { $reasons[] = 'demo_identity'; }
 			$reasons = array_merge( $reasons, $this->promo_date_reasons( $post->ID, $now ) );
 			if ( array() === $reasons ) { $eligible[] = $post; }
 			$summary = trim( (string) get_post_meta( $post->ID, 'gloskin_promo_summary', true ) );
@@ -384,21 +385,51 @@ final class Gloskin_Site_Core_Diagnostic_Exporter {
 			$cta_url = trim( (string) get_post_meta( $post->ID, 'gloskin_promo_cta_url', true ) );
 			$image_id = (int) get_post_thumbnail_id( $post->ID );
 			if ( $image_id ) { $this->remember_media( $image_id, 'promo', $post->ID ); }
-			$rows[] = array( 'id' => (int) $post->ID, 'status' => $post->post_status, 'title' => $post->post_title, 'start_date' => get_post_meta( $post->ID, 'gloskin_promo_start_date', true ), 'end_date' => get_post_meta( $post->ID, 'gloskin_promo_end_date', true ), 'order' => get_post_meta( $post->ID, 'gloskin_promo_order', true ), 'active' => $active, 'demo_identity' => $demo, 'summary_ready' => '' !== $summary, 'content_ready' => '' !== trim( $post->post_content ), 'cta_ready' => '' !== $cta_label && '' !== $cta_url, 'media_ready' => $image_id > 0, 'eligible' => array() === $reasons, 'exclusion_reasons' => $reasons );
+			$rows[] = array( 'id' => (int) $post->ID, 'status' => $post->post_status, 'title' => $post->post_title, 'start_date' => get_post_meta( $post->ID, 'gloskin_promo_start_date', true ), 'end_date' => get_post_meta( $post->ID, 'gloskin_promo_end_date', true ), 'order' => get_post_meta( $post->ID, 'gloskin_promo_order', true ), 'active' => $active, 'demo_identity' => $demo_identity, 'summary_ready' => '' !== $summary, 'content_ready' => '' !== trim( $post->post_content ), 'cta_ready' => '' !== $cta_label && '' !== $cta_url, 'media_ready' => $image_id > 0, 'eligible' => array() === $reasons, 'exclusion_reasons' => $reasons );
 		}
 		usort( $eligible, array( $this, 'compare_promos' ) );
 		$eligible_ids = array_map( static function ( $post ) { return (int) $post->ID; }, $eligible );
 		if ( $posts && ! $eligible ) { $this->warnings[] = 'Published or imported Promo records exist, but none are eligible for rendering.'; }
 		if ( $page && '' === trim( $page->post_content ) ) { $this->warnings[] = 'The Promo Page body is empty because the managed Promo renderer owns its public content.'; }
+		$collisions = $this->promo_path_collisions();
+		$navigation = $this->promo_navigation_diagnostic();
 		return array(
 			'current_site_time' => $now->format( DATE_ATOM ), 'timezone' => wp_timezone_string(),
-			'promo_page' => $page ? array( 'exists' => true, 'id' => (int) $page->ID, 'status' => $page->post_status, 'slug' => $page->post_name, 'template' => get_page_template_slug( $page->ID ), 'url' => get_permalink( $page ), 'content_length' => strlen( $page->post_content ) ) : array( 'exists' => false ),
+			'promo_page' => $page ? array( 'exists' => true, 'id' => (int) $page->ID, 'post_type' => $page->post_type, 'status' => $page->post_status, 'slug' => $page->post_name, 'template' => get_page_template_slug( $page->ID ), 'url' => get_permalink( $page ), 'content_length' => strlen( $page->post_content ) ) : array( 'exists' => false ),
+			'non_page_path_collisions' => $collisions,
+			'navigation' => $navigation,
+			'route_resolution' => array( 'url' => home_url( '/promo/' ), 'object_id' => (int) url_to_postid( home_url( '/promo/' ) ) ),
 			'records' => $rows,
 			'homepage_selected_ids' => array_slice( $eligible_ids, 0, 5 ),
 			'promo_page_selected_ids' => array_slice( $eligible_ids, 0, 10 ),
 			'query' => array( 'post_type' => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE, 'post_status' => 'publish', 'posts_per_page' => -1, 'orderby' => 'ID', 'order' => 'ASC', 'meta_query' => array( array( 'key' => 'gloskin_promo_active', 'value' => '1', 'compare' => '=' ) ) ),
-			'eligibility_rules' => array( 'published', 'active_equals_1', 'no_demo_identity', 'start_date_inclusive', 'end_date_inclusive_local_23_59_59', 'invalid_dates_warn_and_remain_eligible', 'order_meta_then_title_then_id' ),
+			'eligibility_rules' => array( 'published', 'active_equals_1', 'start_date_inclusive', 'end_date_inclusive_local_23_59_59', 'invalid_dates_warn_and_remain_eligible', 'order_meta_then_title_then_id' ),
 		);
+	}
+
+	/** @return array<int,array<string,mixed>> */
+	private function promo_path_collisions() {
+		global $wpdb;
+		if ( ! isset( $wpdb->posts ) ) { return array(); }
+		$objects = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_type, post_status, post_parent, post_title, post_name FROM {$wpdb->posts} WHERE post_name = %s AND post_type <> %s ORDER BY ID ASC LIMIT 20", 'promo', 'page' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows = array();
+		foreach ( (array) $objects as $object ) {
+			$rows[] = array( 'id' => (int) $object->ID, 'post_type' => (string) $object->post_type, 'status' => (string) $object->post_status, 'parent' => (int) $object->post_parent, 'title' => (string) $object->post_title, 'slug' => (string) $object->post_name );
+		}
+		return $rows;
+	}
+
+	/** @return array<string,mixed> */
+	private function promo_navigation_diagnostic() {
+		$locations = get_nav_menu_locations();
+		$menu_id = absint( isset( $locations['gloskin-primary'] ) ? $locations['gloskin-primary'] : 0 );
+		$matches = array();
+		foreach ( $menu_id ? (array) wp_get_nav_menu_items( $menu_id ) : array() as $item ) {
+			$path = wp_parse_url( (string) $item->url, PHP_URL_PATH );
+			if ( '/promo/' !== trailingslashit( '/' . ltrim( (string) $path, '/' ) ) && 'promo' !== strtolower( trim( (string) $item->title ) ) ) { continue; }
+			$matches[] = array( 'menu_item_id' => (int) $item->ID, 'object_id' => (int) $item->object_id, 'object' => (string) $item->object, 'type' => (string) $item->type, 'url' => (string) $item->url );
+		}
+		return array( 'menu_id' => $menu_id, 'matches' => $matches );
 	}
 
 	/** @param int $post_id Post ID. @param DateTimeInterface $now Current time. @return array<int,string> */
@@ -428,7 +459,7 @@ final class Gloskin_Site_Core_Diagnostic_Exporter {
 	/** @return array<string,mixed> */
 	private function migration_state() {
 		$options = array(
-			'gloskin_site_core_schema_version','gloskin_site_core_prototype_ia_20260818_state','gloskin_site_core_prototype_ia_20260818_lock','gloskin_site_core_revision_20260819_state','gloskin_site_core_revision_20260819_lock','gloskin_site_core_revision_20260819f_state','gloskin_site_core_revision_20260819f_lock','gloskin_site_core_sample_products_v1_state','gloskin_site_core_sample_products_v1_lock','gloskin_site_core_insights_v1_state','gloskin_site_core_insights_v1_lock','gloskin_site_core_doctor_migration_v1','gloskin_site_core_doctor_migration_v1_lock','gloskin_site_core_consultation_demo','gloskin_site_core_editorial_media_v1','gloskin_site_core_description_consolidation','gloskin_site_core_description_consolidation_error',
+			'gloskin_site_core_schema_version','gloskin_site_core_prototype_ia_20260818_state','gloskin_site_core_prototype_ia_20260818_lock','gloskin_site_core_revision_20260819_state','gloskin_site_core_revision_20260819_lock','gloskin_site_core_revision_20260819f_state','gloskin_site_core_revision_20260819f_lock','gloskin_site_core_revision_20260820_promo_recovery_state','gloskin_site_core_revision_20260820_promo_recovery_lock','gloskin_site_core_sample_products_v1_state','gloskin_site_core_sample_products_v1_lock','gloskin_site_core_insights_v1_state','gloskin_site_core_insights_v1_lock','gloskin_site_core_doctor_migration_v1','gloskin_site_core_doctor_migration_v1_lock','gloskin_site_core_consultation_demo','gloskin_site_core_editorial_media_v1','gloskin_site_core_description_consolidation','gloskin_site_core_description_consolidation_error',
 		);
 		$state = array(); foreach ( $options as $option ) { $value = get_option( $option, null ); if ( null !== $value ) { $state[ $option ] = $value; } }
 		return array( 'allowlisted_options' => $state, 'note' => 'No complete options-table export is performed.' );

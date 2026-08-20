@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.7.157';
+	const VERSION = '0.7.159';
 
 	/** @var string */
 	private $plugin_file;
@@ -50,6 +50,7 @@ final class Gloskin_Site_Core_Kernel {
 			require_once __DIR__ . '/class-gloskin-site-core-sample-media-compatibility.php';
 			require_once __DIR__ . '/class-gloskin-site-core-insight-migration-admin.php';
 			require_once __DIR__ . '/class-gloskin-site-core-revision-20260819-final-migration-admin.php';
+			require_once __DIR__ . '/class-gloskin-site-core-revision-20260820-promo-recovery-admin.php';
 			require_once __DIR__ . '/class-gloskin-site-core-demo-content-reset.php';
 
 			$media_compatibility = new Gloskin_Site_Core_Sample_Media_Compatibility();
@@ -67,6 +68,9 @@ final class Gloskin_Site_Core_Kernel {
 			$revision_final_migration = new Gloskin_Site_Core_Revision_20260819_Final_Migration_Admin( $assets, $this->plugin_file );
 			$revision_final_migration->register();
 
+			$promo_recovery = new Gloskin_Site_Core_Revision_20260820_Promo_Recovery_Admin( $assets );
+			$promo_recovery->register();
+
 			$demo_reset = new Gloskin_Site_Core_Demo_Content_Reset();
 			$demo_reset->register();
 
@@ -75,6 +79,7 @@ final class Gloskin_Site_Core_Kernel {
 			$this->services[] = $insight_migration;
 			$this->services[] = $lifecycle;
 			$this->services[] = $revision_final_migration;
+			$this->services[] = $promo_recovery;
 			$this->services[] = $demo_reset;
 			$this->boot_production_batch();
 			return;
@@ -122,6 +127,7 @@ final class Gloskin_Site_Core_Kernel {
 	private function load_shared_classes() {
 		require_once __DIR__ . '/class-gloskin-site-core-content-service.php';
 		require_once __DIR__ . '/class-gloskin-site-core-asset-service.php';
+		require_once __DIR__ . '/class-gloskin-site-core-page-lookup.php';
 	}
 
 	/**

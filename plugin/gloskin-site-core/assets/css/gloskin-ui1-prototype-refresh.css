@@ -184,8 +184,10 @@ body.gloskin-ui1{
 .gloskin-ui1-promo-campaign__poster--3{top:5%;right:0;width:34%;height:35%;z-index:1;transform:rotate(-3deg)}
 .gloskin-ui1-promo-campaign__image{width:100%;height:100%;object-fit:cover}
 
-/* Section rhythm and reusable editorial compositions. */
+/* Section rhythm and reusable editorial compositions. Core/base retains a
+ * structural fallback; this final convergence layer owns the visual rhythm. */
 .gloskin-ui1-section{padding:clamp(74px,9vw,118px) 0;background:var(--gloskin-refresh-blush)}
+.gloskin-ui1-section--tight{padding:clamp(38px,5vw,64px) 0}
 .gloskin-ui1-section--soft{background:color-mix(in srgb,var(--gloskin-refresh-cream) 64%,var(--gloskin-refresh-blush))}
 .gloskin-ui1-section--contrast,
 .gloskin-ui1-section--cta{--gloskin-copy-ink:color-mix(in srgb,var(--gloskin-refresh-blush) 72%,transparent);background:var(--gloskin-refresh-black);color:var(--gloskin-refresh-blush)}
@@ -196,15 +198,45 @@ body.gloskin-ui1{
 	align-items:end;
 	margin-bottom:clamp(34px,5vw,62px);
 }
-.gloskin-ui1-section-heading h2{max-width:12ch;margin:0}
-.gloskin-ui1-section-heading p{max-width:54ch;margin:0 0 7px auto;color:var(--gloskin-muted)}
+.gloskin-ui1-section-heading h2{width:min(100%,22ch);max-width:none;margin:0;text-wrap:balance}
+.gloskin-ui1-section-heading p{max-width:40ch;margin:0;justify-self:end;color:var(--gloskin-copy-ink);font-weight:300;line-height:1.65;text-wrap:pretty}
 .gloskin-ui1-section--contrast .gloskin-ui1-section-heading p,
 .gloskin-ui1-section--cta .gloskin-ui1-section-heading p{color:color-mix(in srgb,var(--gloskin-refresh-blush) 72%,transparent)}
 .gloskin-ui1-section__intro{margin-bottom:clamp(34px,5vw,62px)}
+.gloskin-ui1-section--intro-only .gloskin-ui1-section__intro{margin-bottom:0}
 .gloskin-ui1-editorial-split{gap:clamp(34px,6vw,80px);align-items:center}
 .gloskin-ui1-editorial-split__media{border-radius:var(--gloskin-radius-lg);box-shadow:none}
 .gloskin-ui1-editorial-split__content{max-width:600px}
 .gloskin-ui1-editorial-split__content p{color:var(--gloskin-muted)}
+
+/* Skincare filter: one final component owner; existing JS/ARIA markup remains
+ * the behavior owner and all cards stay visible without JavaScript. */
+.gloskin-ui1-chip-filter{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 clamp(28px,4vw,44px)}
+.gloskin-ui1-chip{
+	appearance:none;
+	display:inline-flex;
+	flex:0 0 auto;
+	min-height:42px;
+	align-items:center;
+	justify-content:center;
+	padding:9px 16px;
+	border:1px solid var(--gloskin-border);
+	border-radius:999px;
+	background:var(--gloskin-refresh-cream);
+	color:var(--gloskin-copy-ink);
+	font:inherit;
+	font-weight:500;
+	line-height:1.25;
+	text-align:center;
+	white-space:nowrap;
+	cursor:pointer;
+	transition:background-color 160ms ease,border-color 160ms ease,color 160ms ease,box-shadow 160ms ease;
+}
+.gloskin-ui1-chip:hover{border-color:color-mix(in srgb,var(--gloskin-refresh-red) 54%,var(--gloskin-border));background:color-mix(in srgb,var(--gloskin-refresh-cream) 74%,var(--gloskin-refresh-blush))}
+.gloskin-ui1-chip.is-active,
+.gloskin-ui1-chip[aria-selected="true"]{border-color:var(--gloskin-refresh-red);background:var(--gloskin-refresh-red);color:var(--gloskin-refresh-blush)}
+.gloskin-ui1-chip:focus-visible{outline:none;border-color:var(--gloskin-refresh-red);box-shadow:0 0 0 3px color-mix(in srgb,var(--gloskin-refresh-red) 24%,transparent)}
+.gloskin-ui1-chip:disabled{opacity:.46;cursor:not-allowed}
 
 /* Shared cards: lower density, softer geometry, no ornamental chrome. */
 .gloskin-ui1-card,
@@ -321,7 +353,7 @@ body.woocommerce-page .gloskin-ui1-commerce-native{background:var(--gloskin-refr
 	.gloskin-ui1-hero .gloskin-ui1-hero__grid{grid-template-columns:1fr 1fr;gap:34px}
 	.gloskin-ui1-promo-campaign__grid{grid-template-columns:1fr 1fr;gap:34px}
 	.gloskin-ui1-section-heading{grid-template-columns:1fr;gap:14px}
-	.gloskin-ui1-section-heading p{margin-left:0}
+	.gloskin-ui1-section-heading p{max-width:42ch;justify-self:start;margin:0}
 	[data-gloskin-section="home-treatments"] .gloskin-ui1-card--treatment{grid-template-columns:minmax(230px,.9fr) minmax(0,1.1fr)}
 }
 @media (max-width:759px){
@@ -334,6 +366,8 @@ body.woocommerce-page .gloskin-ui1-commerce-native{background:var(--gloskin-refr
 	.gloskin-ui1 h1{font-size:clamp(2.2rem,11vw,3.6rem)}
 	.gloskin-ui1 h2{font-size:clamp(1.85rem,9vw,2.8rem)}
 	.gloskin-ui1-section{padding:clamp(58px,13vw,82px) 0}
+	.gloskin-ui1-section--tight{padding:clamp(38px,8vw,56px) 0}
+	.gloskin-ui1-chip-filter{max-width:100%;flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;overscroll-behavior-inline:contain;scrollbar-width:thin}
 	.gloskin-ui1-hero{padding:52px 0 68px}
 	.gloskin-ui1-hero .gloskin-ui1-hero__grid{grid-template-columns:1fr}
 	.gloskin-ui1-hero .gloskin-ui1-hero__media{min-height:420px;border-radius:50% 50% 22px 22px}
