@@ -1,67 +1,285 @@
 {
-  "manifest_id": "gloskin-client-feedback-phase3-skincare-v1",
-  "ticket": "FB-989354",
-  "generated_on": "2026-08-20",
-  "fresh_inventory_required": true,
-  "defaults": {
-    "action": "UPDATE_OR_CREATE",
-    "family": "skincare",
-    "product_type_policy": "preserve_existing_or_simple",
-    "copy_policy": "verified official copy when available; otherwise conservative category copy",
-    "price_policy": "preserve verified current real Woo price; if creating use a still-current approved official-store observation only; otherwise leave unpriced/draft",
-    "media_root": "docs/feedback-cases-gloskin-20260820-154828/FB-989354-skincare-page/FOTO PRODUCT PNG/",
-    "dedupe_media_by": "sha256"
-  },
-  "identity_resolution_order": [
-    "existing explicit source/provenance meta",
-    "exact SKU when manifest/source verifies SKU",
-    "normalized exact title/slug",
-    "otherwise CREATE only for resolved target; never fuzzy-overwrite unrelated records"
-  ],
-  "synthetic_sample_rule": {
-    "source_meta": "_gloskin_sample_source_id",
-    "sample_marker_meta": "_gloskin_sample_data",
-    "action": "SUPERSEDE_TO_TRASH_ONLY_IF_EXPLICITLY_CONFIRMED_SYNTHETIC",
-    "never_hard_delete": true
-  },
-  "records": [
-    {"slug":"acne-day-protection-cream","title":"Acne Day Protection Cream","category":"day-cream-sunscreen","primary":"ACNE DAY PROTECTION POT.png","alternate":["Acne Day Protection.png"],"source":"https://gloskin.id/day-cream-sunscreen","observed_price_idr":189000,"price_source":"https://shopee.co.id/gloskin.official","checked_on":"2026-08-20"},
-    {"slug":"glam-air-cushion","title":"Glam Air Cushion","category":"support","primary":"NATURAL CUSHION.png","alternate":["BEIGE CUSHION.png"],"source":"https://gloskin.id/produk-penunjang","notes":"Client assets show Natural/Beige presentations; do not create shade variations unless fresh Woo inventory or official product data confirms the variation model.","product_type_policy":"preserve_existing_type; if missing create simple until variation truth is verified"},
-    {"slug":"bio-calmskin","title":"Bio Calmskin","category":"support","primary":"BIO CALM SKIN.png","alternate":["BIO CALM SKIN 2.png"],"source":"https://gloskin.id/produk-penunjang"},
-    {"slug":"brightening-face-wash","title":"Brightening Face Wash","category":"facial-wash","primary":"BRIGHTENING FACE WASH.png","alternate":["Brightrning-Face-Wash.png"],"source":"https://gloskin.id/facial-wash","observed_price_idr":72930,"price_source":"https://shopee.co.id/gloskin.official","checked_on":"2026-08-20"},
-    {"slug":"c-power-silk-gel","title":"C Power Silk Gel","category":"support","primary":"C POWER SILK GEL.png","source":"https://gloskin.id/produk-penunjang"},
-    {"slug":"clear-xpert-serum","title":"Clear Xpert Serum","category":"serum","primary":"CLEAR XPERT SERU,.png","alternate":["CLEAR XPERT.png"],"source":"https://gloskin.id/serum","observed_price_idr":118800,"price_source":"https://shopee.co.id/gloskin.official","checked_on":"2026-08-20"},
-    {"slug":"essence-bio-moisturizer","title":"Essence Bio Moisturizer","category":"support","primary":"ESSENCE BIO MOIST.png","source":"https://gloskin.id/produk-penunjang","observed_price_idr":114000,"price_source":"https://shopee.co.id/gloskin.official","checked_on":"2026-08-20","notes":"Normalize the client filename and any official-site spelling typo; keep canonical title 'Essence Bio Moisturizer'."},
-    {"slug":"gloskin-glow-face-tonic","title":"Gloskin Glow Face Tonic","category":"support","primary":"GLOW FACE TONIC 11.png","alternate":["GLOW FACE TONIC 2.png"],"source":"https://gloskin.id/produk-penunjang","observed_price_idr":149000,"price_source":"https://shopee.co.id/gloskin.official","checked_on":"2026-08-20"},
-    {"slug":"glow-face-tonic-pads","title":"Glow Face Tonic Pads","category":"support","primary":"GLOW FACE TONIC PADS.png","alternate":["glow face tonic pads pack.png"],"source":"https://gloskin.id/produk-penunjang","observed_price_idr":68000,"price_source":"https://www.blibli.com/merchant/gloskin-by-dnm","checked_on":"2026-08-20"},
-    {"slug":"glowing-facial-wash","title":"Glowing Facial Wash","category":"facial-wash","primary":"GLOWING FACIAL WASH.png","source":"https://gloskin.id/facial-wash"},
-    {"slug":"glowing-white-sunscreen","title":"Glowing White Sunscreen","category":"day-cream-sunscreen","primary":"GWS.png","source":"https://gloskin.id/day-cream-sunscreen"},
-    {"slug":"hydra-xpert-serum","title":"Hydra Xpert Serum","category":"serum","primary":"HYDRA XPERT SERUM.png","alternate":["HYDRA XPERT.png"],"source":"https://gloskin.id/serum"},
-    {"slug":"hydro-fresh-foaming","title":"Hydro Fresh Foaming With Chamomile Extract","category":"facial-wash","primary":"HYDRO FRESH.png","source":"https://gloskin.id/facial-wash","observed_price_idr":115500,"price_source":"https://shopee.co.id/gloskin.official","checked_on":"2026-08-20"},
-    {"slug":"brightening-loose-powder","title":"Brightening Loose Powder","category":"support","primary":"LOOSE POWDER.png","source":"https://gloskin.id/produk-penunjang","observed_price_idr":141570,"price_source":"https://shopee.co.id/gloskin.official","checked_on":"2026-08-20"},
-    {"slug":"skin-fresh-toner","title":"Skin Fresh Toner","category":"toner","primary":"SKIN FRESH.png","source":"https://gloskin.id/toner"},
-    {"slug":"sense-cleansing-milk","title":"Sense Cleansing Milk","category":"support","primary":"Sense-Cleansing-Milk-1-300x300.png","source":"https://gloskin.id/produk-penunjang","observed_price_idr":102000,"price_source":"https://shopee.co.id/gloskin.official","checked_on":"2026-08-20"},
-    {"slug":"transforming-night-cream","title":"Transforming Night Cream","category":"support","primary":"TNC.png","source":"https://gloskin.id/produk-penunjang"},
-    {"slug":"acne-facial-cleanser","title":"Acne Facial Cleanser","category":"facial-wash","primary":"acne facial cleanser.png","source":"https://gloskin.id/facial-wash","observed_price_idr":126000,"price_source":"https://shopee.co.id/gloskin.official","checked_on":"2026-08-20"},
-    {"slug":"acne-prone-gel","title":"Acne Prone Gel","category":"support","primary":"acne prone gel.png","source":"https://gloskin.id/produk-penunjang"},
-    {"slug":"cysteamine-advance-plus","title":"Cysteamine Advance Plus","category":"support","primary":"cysteamine.png","source":"https://gloskin.id/produk-penunjang"},
-    {"slug":"day-protection-cream","title":"Day Protection Cream","category":"day-cream-sunscreen","primary":"day protection cream.png","alternate":["day protection cream 1.png","dpc 2.png"],"source":"https://gloskin.id/day-cream-sunscreen","notes":"Ignore day protection cream.psd at runtime."},
-    {"slug":"flawless-high-defences-50","title":"Flawless High Defences 50","category":"day-cream-sunscreen","primary":"flawless.png","source":"https://gloskin.id/day-cream-sunscreen","observed_price_idr":162120,"price_source":"https://shopee.co.id/gloskin.official","checked_on":"2026-08-20","notes":"Use official catalog title spelling as source truth; do not infer additional SPF/PA claims beyond verified source."},
-    {"slug":"rejuve-xpert-serum","title":"Rejuve Xpert Serum","category":"serum","primary":"rejuve expert.png","source":"https://gloskin.id/serum","observed_price_idr":144300,"price_source":"https://shopee.co.id/gloskin.official","checked_on":"2026-08-20"},
-    {"slug":"ultimate-whitening-cream","title":"Ultimate Whitening Cream","category":"support","primary":"ultimate.png","source":"https://gloskin.id/produk-penunjang","observed_price_idr":155400,"price_source":"https://shopee.co.id/gloskin.official","checked_on":"2026-08-20"},
-    {"slug":"whitening-sunscreen","title":"Whitening Sunscreen","category":"day-cream-sunscreen","primary":"whitening sunscree.png","source":"https://gloskin.id/day-cream-sunscreen"}
-  ],
-  "unresolved_assets": [
-    {"asset":"AZ EXPERT.png","related":["az xpert.png"],"reason":"Client asset name is clear but no authoritative public Gloskin product identity was found. Do not create/update a product from filename alone."},
-    {"asset":"glam gold serum.png","related":[],"reason":"No authoritative current Gloskin product identity/source confirmed."},
-    {"asset":"Skin-Fresh-Facial-Wash-1.png","related":[],"reason":"Potential legacy/client-only product; current official source was not confirmed. Do not conflate with Skin Fresh Toner."},
-    {"asset":"DSC02911.png","related":[],"reason":"Opaque filename; identity cannot be inferred safely."},
-    {"asset":"Untitled design (47).png","related":[],"reason":"Opaque filename; identity cannot be inferred safely."}
-  ],
-  "global_rules": {
-    "never_import_extensions": ["psd"],
-    "dedupe_media_by": "sha256",
-    "preserve": ["existing real SKU", "existing real price unless target price explicitly approved", "order/history references", "stock state unless manifest explicitly owns it"],
-    "do_not_invent": ["SKU", "price", "ingredients", "BPOM", "size", "stock quantity", "medical/cosmetic claims"]
-  }
+  "version": "1.0",
+  "resolved_count": 25,
+  "products": [
+    {
+      "id": "p3:sk:glowing-facial-wash",
+      "name": "Glowing Facial Wash",
+      "slug": "glowing-facial-wash",
+      "sku": "GS-SK-GFW",
+      "category": "facial-wash",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/GLOWING FACIAL WASH.png",
+      "gallery_assets": [],
+      "copy_short": "Facial wash untuk kulit bercahaya."
+    },
+    {
+      "id": "p3:sk:brightening-face-wash",
+      "name": "Brightening Face Wash",
+      "slug": "brightening-face-wash",
+      "sku": "GS-SK-BFW",
+      "category": "facial-wash",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/BRIGHTENING FACE WASH.png",
+      "gallery_assets": ["FB-989354-skincare-page/FOTO PRODUCT PNG/Brightrning-Face-Wash.png"],
+      "copy_short": "Facial wash brightening untuk kulit lebih cerah."
+    },
+    {
+      "id": "p3:sk:acne-facial-cleanser",
+      "name": "Acne Facial Cleanser",
+      "slug": "acne-facial-cleanser",
+      "sku": "GS-SK-AFC",
+      "category": "facial-wash",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/acne facial cleanser.png",
+      "gallery_assets": [],
+      "copy_short": "Pembersih wajah khusus kulit berjerawat."
+    },
+    {
+      "id": "p3:sk:sense-cleansing-milk",
+      "name": "Sense Cleansing Milk",
+      "slug": "sense-cleansing-milk",
+      "sku": "GS-SK-SCM",
+      "category": "facial-wash",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/Sense-Cleansing-Milk-1-300x300.png",
+      "gallery_assets": [],
+      "copy_short": "Susu pembersih lembut untuk kulit sensitif."
+    },
+    {
+      "id": "p3:sk:day-protection-cream",
+      "name": "Day Protection Cream",
+      "slug": "day-protection-cream",
+      "sku": "GS-SK-DPC",
+      "category": "day-cream-sunscreen",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/day protection cream.png",
+      "gallery_assets": [
+        "FB-989354-skincare-page/FOTO PRODUCT PNG/day protection cream 1.png",
+        "FB-989354-skincare-page/FOTO PRODUCT PNG/dpc 2.png"
+      ],
+      "copy_short": "Pelembab harian dengan perlindungan UV."
+    },
+    {
+      "id": "p3:sk:whitening-sunscreen",
+      "name": "Whitening Sunscreen",
+      "slug": "whitening-sunscreen",
+      "sku": "GS-SK-WSS",
+      "category": "day-cream-sunscreen",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/whitening sunscree.png",
+      "gallery_assets": [],
+      "copy_short": "Sunscreen dengan efek pencerah kulit."
+    },
+    {
+      "id": "p3:sk:acne-day-protection",
+      "name": "Acne Day Protection",
+      "slug": "acne-day-protection",
+      "sku": "GS-SK-ADP",
+      "category": "acne-care",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/Acne Day Protection.png",
+      "gallery_assets": [],
+      "copy_short": "Perlindungan harian untuk kulit berjerawat."
+    },
+    {
+      "id": "p3:sk:acne-day-protection-pot",
+      "name": "Acne Day Protection Pot",
+      "slug": "acne-day-protection-pot",
+      "sku": "GS-SK-ADPP",
+      "category": "acne-care",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/ACNE DAY PROTECTION POT.png",
+      "gallery_assets": [],
+      "copy_short": "Krim perawatan jerawat harian dalam kemasan pot."
+    },
+    {
+      "id": "p3:sk:glow-face-tonic",
+      "name": "Glow Face Tonic",
+      "slug": "glow-face-tonic",
+      "sku": "GS-SK-GFT",
+      "category": "toner",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/GLOW FACE TONIC 11.png",
+      "gallery_assets": ["FB-989354-skincare-page/FOTO PRODUCT PNG/GLOW FACE TONIC 2.png"],
+      "copy_short": "Toner untuk kulit cerah dan sehat."
+    },
+    {
+      "id": "p3:sk:glow-face-tonic-pads",
+      "name": "Glow Face Tonic Pads",
+      "slug": "glow-face-tonic-pads",
+      "sku": "GS-SK-GFTP",
+      "category": "toner",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/GLOW FACE TONIC PADS.png",
+      "gallery_assets": ["FB-989354-skincare-page/FOTO PRODUCT PNG/glow face tonic pads pack.png"],
+      "copy_short": "Toner pads praktis untuk pemakaian sehari-hari."
+    },
+    {
+      "id": "p3:sk:hydra-xpert-serum",
+      "name": "Hydra Xpert Serum",
+      "slug": "hydra-xpert-serum",
+      "sku": "GS-SK-HXS",
+      "category": "serum",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/HYDRA XPERT SERUM.png",
+      "gallery_assets": ["FB-989354-skincare-page/FOTO PRODUCT PNG/HYDRA XPERT.png"],
+      "copy_short": "Serum hidrasi intensif untuk kulit kering."
+    },
+    {
+      "id": "p3:sk:clear-xpert-serum",
+      "name": "Clear Xpert Serum",
+      "slug": "clear-xpert-serum",
+      "sku": "GS-SK-CXS",
+      "category": "serum",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/CLEAR XPERT SERU,.png",
+      "gallery_assets": ["FB-989354-skincare-page/FOTO PRODUCT PNG/CLEAR XPERT.png"],
+      "copy_short": "Serum untuk kulit bersih dan bebas jerawat."
+    },
+    {
+      "id": "p3:sk:c-power-silk-gel",
+      "name": "C Power Silk Gel",
+      "slug": "c-power-silk-gel",
+      "sku": "GS-SK-CPSG",
+      "category": "serum",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/C POWER SILK GEL.png",
+      "gallery_assets": [],
+      "copy_short": "Gel vitamin C untuk brightening dan antioksidan."
+    },
+    {
+      "id": "p3:sk:cysteamine",
+      "name": "Cysteamine",
+      "slug": "cysteamine",
+      "sku": "GS-SK-CYST",
+      "category": "brightening-pigmentation-care",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/cysteamine.png",
+      "gallery_assets": [],
+      "copy_short": "Agen depigmentasi untuk kulit lebih merata."
+    },
+    {
+      "id": "p3:sk:essence-bio-moist",
+      "name": "Essence Bio Moist",
+      "slug": "essence-bio-moist",
+      "sku": "GS-SK-EBM",
+      "category": "serum",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/ESSENCE BIO MOIST.png",
+      "gallery_assets": [],
+      "copy_short": "Esens untuk kulit lembap dan bercahaya."
+    },
+    {
+      "id": "p3:sk:bio-calm-skin",
+      "name": "Bio Calm Skin",
+      "slug": "bio-calm-skin",
+      "sku": "GS-SK-BCS",
+      "category": "acne-care",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/BIO CALM SKIN.png",
+      "gallery_assets": ["FB-989354-skincare-page/FOTO PRODUCT PNG/BIO CALM SKIN 2.png"],
+      "copy_short": "Pelembab menenangkan untuk kulit sensitif dan berjerawat."
+    },
+    {
+      "id": "p3:sk:hydro-fresh",
+      "name": "Hydro Fresh",
+      "slug": "hydro-fresh",
+      "sku": "GS-SK-HF",
+      "category": "serum",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/HYDRO FRESH.png",
+      "gallery_assets": [],
+      "copy_short": "Formula hidrasi segar untuk kulit sehat."
+    },
+    {
+      "id": "p3:sk:acne-prone-gel",
+      "name": "Acne Prone Gel",
+      "slug": "acne-prone-gel",
+      "sku": "GS-SK-APG",
+      "category": "acne-care",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/acne prone gel.png",
+      "gallery_assets": [],
+      "copy_short": "Gel untuk kulit rawan jerawat."
+    },
+    {
+      "id": "p3:sk:tnc",
+      "name": "TNC",
+      "slug": "tnc",
+      "sku": "GS-SK-TNC",
+      "category": "anti-aging",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/TNC.png",
+      "gallery_assets": [],
+      "copy_short": "Formula perawatan anti-aging."
+    },
+    {
+      "id": "p3:sk:rejuve-expert",
+      "name": "Rejuve Expert",
+      "slug": "rejuve-expert",
+      "sku": "GS-SK-RE",
+      "category": "anti-aging",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/rejuve expert.png",
+      "gallery_assets": [],
+      "copy_short": "Perawatan rejuvenasi untuk kulit lebih muda."
+    },
+    {
+      "id": "p3:sk:ultimate",
+      "name": "Ultimate",
+      "slug": "ultimate",
+      "sku": "GS-SK-ULT",
+      "category": "anti-aging",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/ultimate.png",
+      "gallery_assets": [],
+      "copy_short": "Perawatan komprehensif anti-aging."
+    },
+    {
+      "id": "p3:sk:flawless",
+      "name": "Flawless",
+      "slug": "flawless",
+      "sku": "GS-SK-FLW",
+      "category": "brightening-pigmentation-care",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/flawless.png",
+      "gallery_assets": [],
+      "copy_short": "Formula untuk kulit tanpa noda."
+    },
+    {
+      "id": "p3:sk:gws",
+      "name": "GWS",
+      "slug": "gws",
+      "sku": "GS-SK-GWS",
+      "category": "brightening-pigmentation-care",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/GWS.png",
+      "gallery_assets": [],
+      "copy_short": "Perawatan pencerah kulit komprehensif."
+    },
+    {
+      "id": "p3:sk:glam-air-cushion",
+      "name": "Glam Air Cushion",
+      "slug": "glam-air-cushion",
+      "sku": "GS-SK-GAC",
+      "category": "makeup",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/NATURAL CUSHION.png",
+      "gallery_assets": ["FB-989354-skincare-page/FOTO PRODUCT PNG/BEIGE CUSHION.png"],
+      "copy_short": "Air cushion untuk tampilan natural dan flawless.",
+      "note": "Reuse existing variation/shade model if present; otherwise simple product. Do NOT invent shade variations."
+    },
+    {
+      "id": "p3:sk:loose-powder",
+      "name": "Loose Powder",
+      "slug": "loose-powder",
+      "sku": "GS-SK-LP",
+      "category": "makeup",
+      "family": "skincare",
+      "client_asset": "FB-989354-skincare-page/FOTO PRODUCT PNG/LOOSE POWDER.png",
+      "gallery_assets": [],
+      "copy_short": "Bedak tabur untuk tampilan matte tahan lama."
+    }
+  ]
 }

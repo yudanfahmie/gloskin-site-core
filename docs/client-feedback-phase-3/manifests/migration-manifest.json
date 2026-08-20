@@ -1,65 +1,33 @@
 {
-  "manifest_id": "gloskin-client-feedback-phase3-migration-v1",
-  "generated_on": "2026-08-20",
-  "tickets": ["FB-989354", "FB-989360"],
-  "execution_order": ["preflight", "fresh_inventory", "dry_run_plan", "media_reconcile", "phase3a_skincare", "phase3b_treatment_taxonomy", "phase3b_treatment_products", "phase3b_informational_cpt", "phase3b_page_media", "verify", "finalize"],
-  "source_manifests": [
-    "docs/client-feedback-phase-3/manifests/skincare-products.json",
-    "docs/client-feedback-phase-3/manifests/treatment-catalog.json",
-    "docs/client-feedback-phase-3/manifests/treatment-page-media.json",
-    "docs/client-feedback-phase-3/manifests/unresolved.json"
+  "manifest_id": "gloskin-phase3-v1",
+  "version": "3.0.0",
+  "feedback_tickets": ["FB-989354", "FB-989360"],
+  "assets_bundle": "feedback-cases-gloskin-20260820-154828",
+  "skincare_resolved_count": 25,
+  "skincare_hold_count": 5,
+  "treatment_product_count": 48,
+  "treatment_record_count": 8,
+  "path_count": 4,
+  "new_concern_terms": [
+    "skin-barrier",
+    "bioremodeling",
+    "contouring",
+    "hair-restoration",
+    "body-wellness",
+    "aesthetic-correction",
+    "keloid-scar"
   ],
-  "state": {
-    "option": "gloskin_site_core_client_feedback_phase3_v1_state",
-    "lock_option": "gloskin_site_core_client_feedback_phase3_v1_lock",
-    "status_values": ["pending", "validating", "running", "verifying", "failed", "complete"],
-    "manifest_fingerprint_required": true,
-    "resume_from_checkpoint": true,
-    "second_run_result": {"created": 0, "updated": 0, "trashed": 0, "media_imported": 0, "status": "already_complete"}
-  },
-  "fresh_inventory": {
-    "required": true,
-    "capture": [
-      "Woo products and variations: ID/status/title/slug/SKU/type/price/stock/categories/featured+gallery media",
-      "Woo order-safe product identity references; never mutate historical order line items",
-      "gloskin_treatment CPT and relevant meta/relationships",
-      "gloskin_product_family/gloskin_concern/gloskin_consultation_path terms and meta",
-      "attachments with migration/source/hash provenance"
-    ],
-    "note": "The checked-in diagnostic is forensic feedback-time evidence, not execution-time DB truth."
-  },
-  "actions": {
-    "REUSE": "No write when object/media already satisfies target.",
-    "UPDATE": "Update a deterministic existing canonical object.",
-    "CREATE": "Create only a resolved target that is missing.",
-    "SUPERSEDE": "Trash only an explicitly mapped obsolete/synthetic object; never hard delete Woo products.",
-    "BIND_PRESENTATION_MEDIA": "Bind chosen media through the existing canonical presentation owner."
-  },
-  "identity_rules": {
-    "products": ["explicit source/provenance meta", "verified exact SKU", "normalized exact title/slug", "no fuzzy destructive overwrite"],
-    "media": ["existing migration/source meta", "sha256 binary match", "import once and record source path/hash"],
-    "terms": ["exact stable slug"],
-    "informational_treatments": ["exact approved target slug/title"]
-  },
-  "mutation_safety": {
-    "use_wordpress_woocommerce_apis": true,
-    "direct_sql_for_content_mutation": false,
-    "dry_run_before_first_mutation": true,
-    "capability_and_nonce_for_admin_trigger": true,
-    "never_hard_delete_woo_products": true,
-    "preserve_editor_owned_relationships_unless_manifest_owns_them": true,
-    "unresolved_policy": "skip_record_or_field_and_continue; report; never guess"
-  },
-  "completion_requirements": [
-    "Every resolved client product asset is attached to the intended canonical product or explicitly recorded as alternate/rejected.",
-    "Exactly 25 resolved skincare target identities are reconciled; unresolved assets remain untouched.",
-    "Exactly 48 Woo treatment product target identities are reconciled with family=treatment and manifest concerns.",
-    "Exactly 8 umbrella gloskin_treatment informational records are reconciled; do not create 48 CPT records.",
-    "Exactly four consultation path slugs remain and receive the selected client media/copy.",
-    "Treatment landing hero/presentation media uses the selected client original asset through an existing owner.",
-    "Media duplicates are reused by hash.",
-    "Phase 1 and Phase 2 focused contracts still pass.",
-    "Canonical harness has no new failures relative to captured pre-change baseline.",
-    "Second run is a no-op/already_complete."
+  "steps": [
+    "preflight",
+    "inventory",
+    "dry_run",
+    "media_reconcile",
+    "skincare_reconcile",
+    "concerns_paths",
+    "treatment_products",
+    "treatment_records",
+    "page_media",
+    "verify",
+    "complete"
   ]
 }
