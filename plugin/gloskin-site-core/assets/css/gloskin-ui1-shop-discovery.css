@@ -54,6 +54,7 @@
 	top: auto;
 	min-width: 0;
 	max-width: 100%;
+	margin-block-start: 8px;
 	padding: 0;
 	border: 0;
 	overflow: visible;

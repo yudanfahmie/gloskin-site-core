@@ -65,17 +65,26 @@ assert(source.includes('window.clearTimeout(searchTimer);'), 'immediate search m
 assert((source.match(/window\.clearTimeout\(searchTimer\);/g) || []).length >= 5, 'competing filter/page actions must cancel pending search debounce before requesting');
 
 const categoryClick = source.indexOf("var categoryLink = event.target.closest && event.target.closest('[data-gloskin-shop-category]');");
+const categoryPrevent = source.indexOf('event.preventDefault();', categoryClick);
 const categoryState = source.indexOf('updateCategoryState(nextState.category);', categoryClick);
 const categoryRequest = source.indexOf('requestFilterState(nextState,', categoryClick);
-assert(categoryClick !== -1 && categoryState > categoryClick && categoryRequest > categoryState,
-    'category active state must update immediately before the AJAX request begins');
+assert(categoryClick !== -1 && categoryPrevent > categoryClick && categoryState > categoryPrevent && categoryRequest > categoryState,
+    'category clicks must stay in the canonical AJAX owner: prevent native navigation, update state, then request');
 
 assert(templateSource.includes('<nav class="gloskin-ui1-shop-categories"') && templateSource.includes('<li><a href='),
     'Shop categories must stay crawlable anchor navigation for progressive enhancement');
 assert(!templateSource.includes('role="tablist"') && !templateSource.includes('role="tab"'),
     'Shop category filters are not ARIA tabs because results are not a tabpanel');
+const categoryAnchors = templateSource.match(/<a[^>]*data-gloskin-shop-category=[^>]*>/g) || [];
+assert(categoryAnchors.length >= 2 && categoryAnchors.every((anchor) => anchor.includes('data-gloskin-no-transition')),
+    'every enhanced Shop category anchor must opt out of the global document transition so AJAX clicks never reload the page');
+assert(coreSource.includes("link.hasAttribute('data-gloskin-no-transition')"),
+    'global transition must retain the shared no-transition escape hatch consumed by Shop filters');
 assert(cssSource.includes('.gloskin-ui1-shop-categories ul {') && cssSource.includes('list-style: none;'),
     'Shop category presentation must reset global list bullets');
+const categoryNavRule = cssSource.split('.gloskin-ui1-shop-categories {', 2)[1].split('}', 1)[0];
+assert(categoryNavRule.includes('margin-block-start: 8px;'),
+    'Shop category controls need deliberate breathing room after the category heading');
 assert(cssSource.includes('.gloskin-ui1-shop-categories a {') && cssSource.includes('min-height: 44px;') && cssSource.includes('text-decoration: none;'),
     'Shop category choices need a full touch target and control-like anchor presentation');
 assert(cssSource.includes('.gloskin-ui1-shop-categories a[aria-current="page"] {'),
@@ -85,16 +94,17 @@ assert(mobileCategoryCss.includes('.gloskin-ui1-shop-categories ul {') && mobile
     'narrow Shop category controls must become a horizontal scroll strip rather than a long bullet list');
 assert(!cssSource.includes('!important'), 'Shop route-specific CSS must not introduce !important');
 
-assert(routeTraitSource.includes("if ( ! $this->should_render_shop() )"), 'Shop asset gate must remain route-aware');
+assert(routeTraitSource.includes("'shop' ===") && routeTraitSource.includes("function_exists( 'is_shop' )") && routeTraitSource.includes('if ( ! $is_shop )'),
+    'Shop asset gate must remain route-aware without adding a second route owner');
 assert(routeTraitSource.includes("assets/js/gloskin-ui1-shop-discovery.js"), 'Shop Discovery JS must be enqueued by the canonical Shop route owner');
 assert(routeTraitSource.includes("assets/css/gloskin-ui1-shop-discovery.css"), 'Shop Discovery CSS must be enqueued by the canonical Shop route owner');
 assert(routeTraitSource.includes("array( 'gloskin-ui1-prototype-refresh' )"), 'Shop Discovery CSS must remain final after prototype refresh');
-assert(productionBatchSource.includes('new Gloskin_Site_Core_Shop_Discovery') && productionBatchSource.includes('$this->shop_discovery->register();'),
-    'production batch must register the Shop discovery route owner');
+assert(productionBatchSource.includes('$shop = new Gloskin_Site_Core_Shop_Discovery') && productionBatchSource.includes('$shop->register();'),
+    'production batch must register the single Shop discovery route owner');
 assert(!assetConfigSource.includes("'gloskin-ui1-shop-discovery'"), 'Shop Discovery assets must not be duplicated in the global asset registry');
 
 assert(!/window\.fetch\s*=(?!=)/.test(source), 'global fetch monkeypatch forbidden');
 assert(!/(?:window\.)?history\.pushState\s*=(?!=)/.test(source), 'global pushState monkeypatch forbidden');
 assert(!/(?:window\.)?history\.replaceState\s*=(?!=)/.test(source), 'global replaceState monkeypatch forbidden');
 
-console.log('shop-catalog-controller.test.js: OK (single owner + progressive category controls)');
+console.log('shop-catalog-controller.test.js: OK (single owner + non-reloading category filters)');

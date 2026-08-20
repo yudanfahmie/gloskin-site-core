@@ -164,12 +164,12 @@ $gloskin_shop_results_partial = dirname( __DIR__ ) . '/parts/shop-results.php';
 					<span class="gloskin-ui1-shop-rail-section__label"><?php echo esc_html__( 'Kategori', 'gloskin-site-core' ); ?></span>
 					<nav class="gloskin-ui1-shop-categories" data-gloskin-shop-categories aria-label="<?php echo esc_attr__( 'Kategori produk', 'gloskin-site-core' ); ?>">
 						<ul>
-							<li><a href="<?php echo esc_url( $gloskin_shop_url ); ?>" data-gloskin-shop-category="" aria-current="page"><?php echo esc_html__( 'Semua Produk', 'gloskin-site-core' ); ?></a></li>
+							<li><a href="<?php echo esc_url( $gloskin_shop_url ); ?>" data-gloskin-shop-category="" data-gloskin-no-transition aria-current="page"><?php echo esc_html__( 'Semua Produk', 'gloskin-site-core' ); ?></a></li>
 							<?php foreach ( (array) $gloskin_context['mappings'] as $gloskin_mapping ) :
 								$gloskin_mapping_slug = isset( $gloskin_mapping['woo_slug'] ) ? sanitize_title( (string) $gloskin_mapping['woo_slug'] ) : '';
 								$gloskin_mapping_url  = isset( $gloskin_mapping['url'] ) ? (string) $gloskin_mapping['url'] : '';
 								?>
-								<li><a href="<?php echo esc_url( $gloskin_mapping_url ); ?>" data-gloskin-shop-category="<?php echo esc_attr( $gloskin_mapping_slug ); ?>"><?php echo esc_html( (string) ( $gloskin_mapping['label'] ?? '' ) ); ?></a></li>
+								<li><a href="<?php echo esc_url( $gloskin_mapping_url ); ?>" data-gloskin-shop-category="<?php echo esc_attr( $gloskin_mapping_slug ); ?>" data-gloskin-no-transition><?php echo esc_html( (string) ( $gloskin_mapping['label'] ?? '' ) ); ?></a></li>
 							<?php endforeach; ?>
 						</ul>
 					</nav>
