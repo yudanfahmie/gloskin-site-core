@@ -115,6 +115,6 @@ require("@media (max-width:900px)" in scoped_tail and "grid-template-columns:1fr
         "Treatments/Skincare polish must stack cleanly below desktop")
 
 require("!important" not in css, "final presentation owner must not introduce !important")
-require("Version: 0.7.167" in plugin and "const VERSION = '0.7.167';" in kernel,
+require("Version: 0.7.168" in plugin and "const VERSION = '0.7.168';" in kernel,
         "plugin and Kernel version must be synchronized")
 print("shared-section-skincare-contract.py: OK (Treatments + Skincare UX polish)")
