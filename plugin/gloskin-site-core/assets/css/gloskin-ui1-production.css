@@ -9,6 +9,8 @@
  * Setting font-family here lets every nav descendant inherit Graphik without
  * repeating the declaration on __link, __toggle, submenu, or mobile variants. */
 .gloskin-ui1-nav{
+	--gloskin-nav-active-surface:color-mix(in srgb,var(--gloskin-accent) 10%,var(--gloskin-refresh-blush));
+	--gloskin-nav-active-surface-hover:color-mix(in srgb,var(--gloskin-accent) 17%,var(--gloskin-refresh-blush));
 	font-family:var(--gloskin-font-nav);
 }
 .gloskin-ui1-nav__link{
@@ -19,6 +21,19 @@
 	font-weight:400;
 	letter-spacing:.075em;
 	text-transform:uppercase;
+	transition:color 160ms ease,background-color 160ms ease;
+}
+/* The server-rendered .is-active marker is the sole current-route owner for
+ * desktop and mobile. This surface is intentionally calmer than the moving
+ * desktop hover bubble and changes only paint, never box geometry. */
+.gloskin-ui1-nav>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item.is-active>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{
+	background:var(--gloskin-nav-active-surface);
+	color:var(--gloskin-accent-strong);
+}
+.gloskin-ui1-nav>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item.is-active>.gloskin-ui1-nav__row:hover>.gloskin-ui1-nav__link,
+.gloskin-ui1-nav>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item.is-active>.gloskin-ui1-nav__row:focus-within>.gloskin-ui1-nav__link{
+	background:var(--gloskin-nav-active-surface-hover);
+	color:var(--gloskin-accent-strong);
 }
 .gloskin-ui1-search-overlay__input{font-family:var(--gloskin-font-body)}
 .gloskin-ui1-search-results__label{font-family:var(--gloskin-font-body)}
@@ -93,16 +108,16 @@
 /* Top-level desktop navigation: bubble geometry is snapped invisibly by
    initNavBubble() to the target link's final rectangle. Visible motion is
    center-origin scale + opacity only: no translate, width/height, left/top
-   transition, liquid bridge or diagonal travel. */
+   transition, liquid bridge or diagonal travel. The active link keeps the
+   quieter server-owned surface above the bubble at rest; hover/focus makes
+   that surface transparent so the existing full-strength bubble shows. */
 .gloskin-ui1-nav--desktop{position:relative;z-index:0}
 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{
 	position:relative;
 	z-index:1;
 	background:transparent;
-	transition:color 160ms ease;
 }
-.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link:hover,
-.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item.is-active>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{
+.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link:hover{
 	background:transparent;
 	color:var(--gloskin-accent-readable);
 }
@@ -111,6 +126,17 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 	color:#fff;
 	transition-duration:0s;
 	opacity:1;
+}
+body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item.is-active>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled{
+	background:var(--gloskin-nav-active-surface);
+	color:var(--gloskin-accent-strong);
+	transition-duration:160ms;
+}
+body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item.is-active>.gloskin-ui1-nav__row:hover>.gloskin-ui1-nav__link.is-bubbled,
+body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item.is-active>.gloskin-ui1-nav__row:focus-within>.gloskin-ui1-nav__link.is-bubbled{
+	background:transparent;
+	color:#fff;
+	transition-duration:0s;
 }
 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__toggle:hover{
 	background:transparent;
