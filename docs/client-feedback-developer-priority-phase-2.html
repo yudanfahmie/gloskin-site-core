@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gloskin Client Feedback — Phase 2 Developer Handoff</title>
+<style>
+:root{--bg:#fff8f3;--card:#fff;--ink:#171311;--muted:#6f625b;--line:#e8dcd4;--accent:#b50012;--good:#136c43;--warn:#a05b00;--soft:#faece4;--dark:#181514}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15.5px/1.62 Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{max-width:1180px;margin:auto;padding:40px 22px 80px}h1,h2,h3{line-height:1.14}h1{font-size:clamp(2.2rem,5vw,4.5rem);max-width:15ch;margin:.2em 0 .35em}h2{margin:2.25em 0 .7em;font-size:clamp(1.55rem,3vw,2.35rem)}h3{font-size:1.08rem;margin:0 0 .55em}.hero{padding:34px;border:1px solid var(--line);border-radius:28px;background:linear-gradient(135deg,#fff,var(--soft))}.lead{max-width:850px;color:var(--muted);font-size:1.06rem}.meta{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}.pill{display:inline-flex;padding:7px 11px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:.84rem}.status{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:22px}.card{padding:22px;border:1px solid var(--line);border-radius:20px;background:var(--card)}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--accent)}table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line)}th,td{padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}th{background:#f6ede8;text-transform:uppercase;font-size:.77rem;letter-spacing:.06em}tr:last-child td{border-bottom:0}code{padding:.12em .35em;border-radius:5px;background:#f3ece8;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.91em}.note{padding:18px 20px;border-left:4px solid var(--accent);border-radius:0 14px 14px 0;background:#fff}.oknote{border-left-color:var(--good)}.steps{display:grid;gap:11px;counter-reset:step}.steps>div{counter-increment:step;position:relative;padding:18px 18px 18px 58px;border:1px solid var(--line);border-radius:16px;background:#fff}.steps>div:before{content:counter(step);position:absolute;left:17px;top:17px;width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700}.mono{padding:17px;border-radius:15px;background:var(--dark);color:#f9f2ed;overflow:auto;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}.check{columns:2;gap:34px}.check li{break-inside:avoid;margin-bottom:7px}@media(max-width:820px){.status{grid-template-columns:1fr}.check{columns:1}.wrap{padding:24px 14px 55px}.hero{padding:23px}table{display:block;overflow-x:auto}}
+</style>
+</head>
+<body><main class="wrap">
+<section class="hero">
+<span class="pill">Developer execution handoff · Phase 2</span>
+<h1>Finish the real Phase 2 branch</h1>
+<p class="lead">The previous AI run completed investigation and a local implementation, but repository write/review was interrupted. This handoff removes the ambiguity: re-implement on the real target branch, preserve Phase 1, and do not let unrelated baseline CI failures block these three client tickets.</p>
+<div class="meta"><span class="pill">Repo: yudanfahmie/gloskin-site-core</span><span class="pill">Target: phase2-client-feedback-20260820</span><span class="pill">Scope: 989356 · 989350 · 989352</span><span class="pill">Raw evidence: read-only</span></div>
+<div class="status">
+<div class="card"><strong class="good">Phase 1 protected</strong><p>Navbar labels, breadcrumb removal and CTA contrast already exist and must remain green.</p></div>
+<div class="card"><strong class="warn">Baseline harness already red</strong><p>Known unrelated architecture/version assertions are not authorization to refactor outside Phase 2.</p></div>
+<div class="card"><strong class="bad">Previous run incomplete</strong><p>The real implementation branch was not populated. Temporary preflight workflow commits are not the implementation.</p></div>
+</div>
+</section>
+
+<h2>Execution rule</h2>
+<div class="note oknote"><strong>Do the client work, not CI archaeology.</strong> Capture baseline failures before editing. After implementation, Phase 2 is acceptable when focused tests and Phase-1 regression pass and the canonical harness introduces no new failures beyond the same documented baseline-red set.</div>
+
+<h2>Three tickets</h2>
+<table><thead><tr><th>Ticket</th><th>Reverse-engineered target</th><th>Canonical seam</th><th>Hard constraint</th></tr></thead><tbody>
+<tr><td><strong>FB-989356</strong><br>Skincare product card</td><td>Sparse product-first card: contained packshot, compact title/price, outlined purchase action.</td><td><code>gloskin_ui1_render_product_card($product,$variant)</code> — add/use a Skincare variant only from <code>skincare.php</code>.</td><td>No stars, ratings, review count, review placeholder, fake social proof. Woo remains behavior/data owner.</td></tr>
+<tr><td><strong>FB-989350</strong><br>Home structure</td><td><code>Hero → Why Gloskin → Treatment Unggulan → Testimoni → Piagam</code>, verified again against <code>home.jpeg</code>.</td><td><code>templates/pages/home.php</code> + existing <code>home_context()</code> datasets/helpers.</td><td>No duplicate queries/service. Do not implement multilingual or deferred video-only hero.</td></tr>
+<tr><td><strong>FB-989352</strong><br>Promo structure</td><td>Light <em>Promo Terbatas</em> featured composition followed by larger Promo poster-selection area, verified against <code>promo.jpeg</code>.</td><td>Existing managed <code>gloskin_promo</code> owner + page/compact seam of <code>gloskin_ui1_render_managed_promo_carousel()</code>.</td><td>No second promo query/renderer; Home compact Promo must stay isolated.</td></tr>
+</tbody></table>
+
+<h2>Visual authorities</h2>
+<div class="mono">FB-989356: docs/feedback-cases-gloskin-20260820-154828/FB-989356-skincare-page/evidence/product skincare.jpeg
+FB-989350: docs/feedback-cases-gloskin-20260820-154828/FB-989350-home-page/evidence/home.jpeg
+FB-989352: docs/feedback-cases-gloskin-20260820-154828/FB-989352-promo-page/evidence/promo.jpeg</div>
+<p>Inspect each named reference plus the original ticket screenshot before editing. The references are visual authority; raw evidence must not be modified.</p>
+
+<h2>Known baseline-red items</h2>
+<table><thead><tr><th>Area</th><th>Reported pre-existing condition</th><th>Phase-2 action</th></tr></thead><tbody>
+<tr><td>Architecture contract</td><td>Existing direct <code>$wpdb</code> ownership violations in <code>revision-20260820-promo-recovery.php</code>, <code>media-cleanup-resolver.php</code>, <code>diagnostic-exporter.php</code>.</td><td>Record only. Do not change these files to obtain green CI.</td></tr>
+<tr><td>Version/preflight</td><td>Stale assertion expects <code>0.7.159</code> while runtime baseline is <code>0.7.170</code>.</td><td>Record as baseline unless the normal Phase-2 release contract legitimately requires the one presentation version bump.</td></tr>
+</tbody></table>
+
+<h2>Repository completion steps</h2>
+<div class="steps">
+<div><strong>Checkout the real branch.</strong> Work on <code>phase2-client-feedback-20260820</code>. Re-implement from current branch contents; do not depend on lost local state.</div>
+<div><strong>Ignore the temporary preflight branch as an implementation source.</strong> <code>phase2-preflight-20260820</code> contains workflow/artifact plumbing from the interrupted run.</div>
+<div><strong>Run baseline + Phase 1 preflight.</strong> Capture canonical failures and confirm <code>php tests/phase1-client-feedback-contract.php</code> passes.</div>
+<div><strong>Implement only 989356, 989350, 989352.</strong> Extend existing owners; no migrations and no deferred tickets.</div>
+<div><strong>Add focused contracts.</strong> Verify the Skincare variant, Home order/owners, Promo page/compact isolation, and no review UI.</div>
+<div><strong>Run focused tests, Phase 1, then canonical harness.</strong> No new canonical failures may appear beyond the captured baseline set.</div>
+<div><strong>Browser-check if available.</strong> Compare at roughly 390, 768, 1024 and 1440px. Static tests alone do not prove visual parity.</div>
+<div><strong>Commit and push the real branch.</strong> Review diff vs main. Stop before merge unless explicitly instructed.</div>
+</div>
+
+<h2>Non-goals</h2>
+<ul class="check"><li>FB-989348 multilingual ID/EN</li><li>FB-989354 product catalog reconstruction/migration</li><li>FB-989358 About structure</li><li>FB-989360 Treatment taxonomy/data/media migration</li><li>FB-989362 Home full-video/no-text/no-crop hero</li><li>Any unrelated baseline architecture cleanup</li></ul>
+
+<h2>Definition of done</h2>
+<div class="note"><strong>The branch—not a local workspace—is the deliverable.</strong> <code>phase2-client-feedback-20260820</code> must contain the runtime changes, focused tests, and required version/cache-busting update. Phase-2 focused tests and Phase-1 regression must pass; canonical-harness differences must show no new failures; the final diff must contain only these three tickets plus necessary tests/version changes.</div>
+
+<h2>Final report checklist</h2>
+<ul class="check"><li>Implementation commit SHA(s)</li><li>Reference mapping actually used</li><li>Exact runtime/test files changed</li><li>Root mismatch fixed per ticket</li><li>No review/rating UI in FB-989356</li><li>Home/Promo canonical owners reused</li><li>Focused test results</li><li>Phase-1 regression result</li><li>Baseline-vs-post canonical harness comparison</li><li>Browser widths checked or unavailable stated</li><li>Deferred tickets untouched</li></ul>
+</main></body></html>
