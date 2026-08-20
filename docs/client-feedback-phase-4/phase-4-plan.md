@@ -1,397 +1,276 @@
-# Gloskin Phase 4 — Final Presentation, Cleanup, and Safety Plan
+# Gloskin Phase 4 — Current Completion Plan
 
-## Execution gate
+This file is the **current-state plan**, not the historical execution sequence.
 
-Phase 4 may be **audited and prepared** while Phase 3 is running in production, but Phase-4 runtime code must not be merged/deployed until Phase 3 production is confirmed:
+Baseline at this refresh:
 
-- `COMPLETE`
-- final Phase-3 verifier passes
-- required skips = 0
-- exact 25 Skincare Woo products
-- exact 48 Treatment Woo products
-- exact 8 informational `gloskin_treatment` records
-- exact 4 consultation paths
-- exact 18 concerns
-- exact 4 consultation-path media bindings
-- Treatment hero bound
-- exactly 3 `gloskin_treatment_feature_on_home=1`
-- zero active legacy Treatment products/posts
-- canonical prices valid
-- second Phase-3 run is `already_complete` / no-op
+- `main`: `414ff73d4016ac46c7ed777f47de4af827c533a8`
+- plugin version: `0.7.182`
 
-Do not reset or mutate Phase-3 state from Phase 4.
+If `origin/main` advances, the newer main is authoritative. Never reset it backward to this SHA.
 
----
+## Structural authority — no screenshot interpretation
 
-# Presentation authority
+For Phase-4 page composition, the sole implementation structure reference is now:
 
-For Home and Promo, the latest authority is:
+`docs/client-feedback-phase-4/home-promo-wireframe.html`
 
-1. `docs/client-feedback-phase-4/home-promo-wireframe.html`
-2. the original client-feedback evidence for FB-989350 / FB-989352 / FB-989362
+Despite the legacy filename, it now contains **Home + Promo + About**.
 
-For About, the original FB-989358 evidence image is authoritative:
+The original FB-989350 / FB-989352 / FB-989358 / FB-989362 images remain provenance only. **Coder must not block on opening, OCRing, reverse-engineering, or reinterpreting those images.** Implement the HTML wireframe directly.
 
-`docs/feedback-cases-gloskin-20260820-154828/FB-989358-tentang-kami-page/evidence/feedback-989321-1787213320-0.png`
-
-The implementation must inspect that evidence and derive the exact About section order before editing `about.php`. Existing generic sections are not authoritative merely because they already exist.
-
-Language switcher / FB-989348 is explicitly deferred until after Phase 4.
+If an old prompt/test says the screenshots are the runtime authority, this plan supersedes that instruction.
 
 ---
 
-# Final Home target
+## Already PASS / preserve
 
-Exact visible structure:
+Do not redo these items:
+
+| Area | Current status |
+| --- | --- |
+| Phase-3 production data contract | PASS / preserve; do not rerun migration |
+| Media Cleanup candidate-bound structured references | PASS |
+| Media Cleanup deleting/verifying reload-resume | PASS |
+| Shop AJAX canonical root `data-gloskin-shop-catalog-owner` | PASS |
+| Shop + Skincare shared retail product-card presentation | PASS |
+| Phase-4.1 Treatment focus media 1:1 circles | PASS |
+| Phase-4.1 Treatment editorial band sizing/hover/reduced-motion | PASS |
+| Skincare intro removal | PASS |
+| Phase-3 PHP migration runtime retirement | PASS |
+| Phase-5 Translation admin + OPUS-MT generation | PASS |
+| Phase-5 saved ID/EN frontend language context/projections/fallback | PASS |
+
+Phase-5 ID/EN is already real functionality. A server-rendered/no-JS switcher is useful hardening, but **do not rebuild multilingual**.
+
+---
+
+## Remaining Phase-4 source work
+
+### 1. Home
+
+Implement exactly the wireframe order:
 
 1. Navbar
-2. Full-width Home video hero
-3. `Kenapa Memilih GLOSKIN` — simple two-column image + concise heading/bullets
-4. `Treatment Unggulan` — exactly 6 visible cards, desktop 3×2
-5. `Testimoni` — exactly 3 horizontal rows visible simultaneously
-6. `Piagam` — exactly 4 image-only cards
+2. Home full-width video only
+3. Why Gloskin
+4. Treatment Unggulan — exactly 6
+5. Testimoni — exactly 3 static rows
+6. Piagam — exactly 4 image-only cards
 
-Negative requirements:
+Nothing after Piagam.
 
-- no text/CTA/eyebrow overlay on the Home video
-- no cropped Home video
-- no Home Promo campaign block
-- no secondary brand-story band
-- no testimonial slider-only UI, arrows, or dots
-- no Achievement title/issuer/year/excerpt text on Home
-- no Home closing CTA
+Home hero:
 
-The current Home template already omits Promo, so preserve that omission rather than accidentally reintroducing it.
+- whole video frame visible;
+- `object-fit: contain` / equivalent uncropped behavior;
+- no heading/copy/CTA/overlay;
+- Home-only scope; other page heroes unchanged.
 
-## Home Treatment invariant
+Treatment invariant:
 
-Phase 3 owns exactly 3 records with:
+- Phase 3 still owns exactly 3 `gloskin_treatment_feature_on_home=1` records;
+- those exact 3 render first;
+- fill deterministic 3 other published canonical Treatments;
+- no duplicate IDs;
+- desktop 3×2.
 
-`gloskin_treatment_feature_on_home = 1`
+### 2. Promo
 
-Do not change that count to six.
+Exact structure:
 
-Home selection logic must be deterministic:
+1. `Promo Terbatas`
+2. independent landscape image carousel
+3. `Promo Poster`
+4. second independent image-only carousel
 
-1. take the exact 3 published Phase-3 featured records;
-2. fill the remaining 3 from other published canonical `gloskin_treatment` records;
-3. exclude duplicates;
-4. use stable deterministic ordering;
-5. render exactly 6.
+Reuse `gloskin_promo` and the current carousel controller. No page content, closing CTA, text-heavy campaign card, thumbnail selector, or external runtime image fetch.
 
----
+### 3. About
 
-# Home Hero / FB-989362
+Exact structure is now normalized in the HTML wireframe:
 
-Keep one shared hero renderer: `gloskin_ui1_render_hero()`.
+1. Navbar
+2. simple `Tentang Kami` page header; no sales CTA
+3. `Tentang GLOSKIN` story — canonical About media + Page content
+4. Founder — canonical founder identity/role/story + canonical portrait
+5. `Visi · Misi · Nilai` — three concise managed blocks
+6. end
 
-Add/reuse one Home-only presentation mode such as `video-only` / `home-video` rather than creating another renderer.
+Explicit omissions:
 
-That mode must:
+- Doctors
+- Clinics
+- Achievements
+- generic closing CTA
 
-- render the native Media Library MP4/WebM source full-width;
-- preserve the whole frame — no `object-fit: cover` crop;
-- render no eyebrow, H1, copy, or CTA overlay;
-- avoid campaign fade/scroll-cue if those elements are not in the approved reference;
-- keep a safe uncropped fallback when the video is unavailable;
-- remain responsive without distorting the source aspect ratio;
-- leave shared hero behavior on other routes unchanged.
-
----
-
-# Why Gloskin
-
-Reuse the current Why owner/data rather than inventing a second content model, but simplify its presentation to the latest reference:
-
-- one primary image on the left;
-- one concise copy/bullet column on the right;
-- no extra decorative narrative band;
-- no fabricated statistics, medical claims, awards, or guarantees;
-- responsive single-column stack on narrow screens.
+Do not invent content when a canonical field is empty.
 
 ---
 
-# Testimonials
+## Phase-4 staged work that may be reused
 
-Reuse the existing managed `gloskin_testimonial` records and shared helper.
+Useful work exists on:
 
-Home presentation must be a dedicated helper mode, not copied markup:
+`origin/phase4-commit3-work-20260821`
 
-- exactly 3 active/published records in deterministic managed order;
-- three static horizontal rows visible at once;
-- no carousel viewport, arrows, dots, or autoplay on Home;
-- retain semantic attribution/copy and responsive stacking.
+That branch is stale/divergent from current main. **Do not merge it wholesale.**
 
-Other routes may retain their existing presentation if used elsewhere.
+Safe candidates to selectively reuse:
 
----
+- `plugin/gloskin-site-core/assets/css/gloskin-ui1-phase4.css`
+- `plugin/gloskin-site-core/templates/pages/home.php`
+- `plugin/gloskin-site-core/templates/pages/promo.php`
+- `plugin/gloskin-site-core/templates/parts/phase4-home-selection.php`
+- `plugin/gloskin-site-core/includes/class-gloskin-site-core-phase4-finalizer-admin.php`
 
-# Piagam / Achievement
+For `config/assets.php`, apply only the Phase-4 stylesheet registration hunk to current main.
 
-Canonical content owner remains `gloskin_achievement`.
-
-Home presentation:
-
-- exactly 4 records;
-- image only;
-- one row of four on desktop;
-- responsive grid on smaller screens;
-- no title, recognition, issuer, year, excerpt, or CTA in the Home card UI.
-
-Use a helper presentation mode rather than duplicating an achievement renderer.
+Never restore an old Kernel/plugin bootstrap/Translation implementation from that branch.
 
 ---
 
-# Promo target
+## Phase-4 finalizer
 
-Reuse `gloskin_promo`; do not create another Promo CPT or poster data model.
+Reuse the staged `Gloskin_Site_Core_Phase4_Finalizer_Admin`; wire it minimally into the **current** admin Kernel.
 
-Exact `/promo/` presentation:
+Contract:
 
-1. centered `Promo Terbatas`
-2. first large landscape image-led carousel
-3. second independent `Promo Poster` landscape/image-only carousel
-4. each carousel has its own local controls/dots
+- explicit operator action only;
+- `manage_options` + nonce;
+- no automatic production execution;
+- idempotent;
+- second run = `already_complete`, zero mutation;
+- replacement ready → media/category bound → verify → Trash obsolete → verify → complete;
+- no hard delete;
+- no Media Library delete.
 
-Negative requirements:
+Replacement contract:
 
-- no duplicated text-heavy campaign composition
-- no page-content block below the carousels
-- no closing CTA
-- no thumbnail-selector UI from the stale Phase-2 design
-- no runtime external image fetch
+- Promo: exactly 3 stable image-ready Phase-4 replacements is accepted within the approved 3–6 range;
+- Piagam: exactly 4 stable image-ready replacements.
 
-The same managed Promo records may feed both presentation surfaces. If there is no separate poster asset owner, reuse each record's canonical primary/featured image. Do not create a second data store.
-
-The existing promo-gallery JS controller is already scoped per gallery root; reuse that per-instance behavior instead of creating another carousel framework.
-
----
-
-# About / FB-989358
-
-Before implementation, inspect the original evidence image and write the exact ordered section list into the implementation report.
-
-Then render only those sections in that order.
-
-Current generic About context/template includes story, founder, vision/mission/values, doctors, clinics, achievements, and closing CTA. None of those sections should survive solely because a data owner exists.
-
-Rules:
-
-- keep factual Page/founder/content owners only when the sketch actually needs them;
-- remove Doctors / Clinics / Achievements / generic closing CTA when absent from the sketch;
-- do not invent business facts to fill missing sketch content;
-- update stale tests when they require an About closing CTA that the authoritative sketch does not contain.
+Coder implements/tests the finalizer but **does not run it in production**.
 
 ---
 
-# Shop AJAX
+## Native Woo `product_cat` final alignment
 
-This is a surgical selector-contract repair.
+Use the authoritative mapping docs already in this directory.
 
-Canonical Shop root:
+Required finalizer verification:
 
-`data-gloskin-shop-catalog-owner`
+- Skincare: `25/25`
+- Treatment: `48/48 → perawatan`
+- canonical Uncategorized: `0`
+- unrelated Woo products mutated: `0`
 
-The current JS owner is:
+Skincare distribution:
 
-`assets/js/gloskin-ui1-core.js`
+- `produk-penunjang`: 11
+- `day-cream-sunscreen`: 5
+- `facial-wash`: 4
+- `serum`: 4
+- `toner`: 1
 
-It must initialize against the canonical root instead of looking for a different `data-gloskin-shop-catalog` root.
+Preserve legitimate extra categories. Remove Uncategorized only after a valid category is attached.
 
-Preserve:
-
-- REST endpoint
-- search/category/price state
-- pagination hrefs
-- browser History behavior
-- SSR partial
-- AJAX partial replacement
-- loading/error behavior
-
-Do not create a second catalog root/controller.
+Do not mutate Phase-3 private taxonomy identities, prices, stock, SKU, media/provenance, or Phase-3 state.
 
 ---
 
-# One Shop / Skincare retail product card
+## Retirement cleanup
 
-Use `gloskin_ui1_render_product_card()` as the single renderer.
+### Reset Demo
 
-Shop and Skincare must request the same canonical retail presentation variant.
+`Gloskin_Site_Core_Demo_Content_Reset` is still active on current main and can recreate obsolete content. Retire its active Kernel registration with the smallest safe change. Do not create a replacement reset framework.
 
-Target:
+### Plugin Phase-3 resource bundle
 
-- contained/consistent product image ratio
-- product title
-- Woo price
-- primary Woo action
-- equal card height and action baseline
-- no rating/review UI
-- no dense short-description block
-- no extra wishlist presentation unless explicitly approved elsewhere
+Phase-3 PHP migration runtime is retired, but current source still contains:
 
-AJAX Shop results must inherit the same renderer automatically through the existing server partial.
+`plugin/gloskin-site-core/resources/phase3/`
 
----
+Run one quick runtime-reference grep. If active dependencies are zero as expected, remove that entire plugin resource directory.
 
-# Media Cleanup safety hotfix
+Keep:
 
-Do not perform production deletion as part of implementation.
+`docs/client-feedback-phase-3/`
 
-Fix the two known safety defects only.
+Do not delete production DB state, products, Treatments, attachments, or provenance.
 
-## Candidate-bound structured references
-
-The current resolver fetches a globally limited structured postmeta window and only then checks whether a row references the candidate attachment. That can miss a real reference outside the first window.
-
-For the candidate attachment ID, resolve before any result cap:
-
-- `_thumbnail_id` — exact ID equality;
-- `_product_image_gallery` — delimiter-safe CSV membership;
-- Gloskin image/media/gallery structured meta — candidate-bound matching only.
-
-Never restore naked numeric `%ID%` searches.
-
-If a structured value cannot be safely interpreted, classify conservatively / ambiguous rather than deleting.
-
-Preserve frozen scan boundary, sealed manifest, JIT reclassification, candidate-scoped verification, current authorization, and `wp_delete_attachment( $id, true )` as the only attachment deletion owner.
-
-## Reload/resume
-
-When an existing cleanup run reloads in `deleting` or `verifying`:
-
-- show the existing Continue button;
-- resume the existing deletion/verification cursor and sealed manifest;
-- never restart the scan;
-- never create a second worker;
-- do not auto-start destructive deletion after page load.
+Because cPanel deployment copies without delete-sync, report stale live-file cleanup as a one-time operator note; coder does not delete production files.
 
 ---
 
-# Phase-4 managed-content finalize
+## Phase-5 compatibility after final Phase-4 templates
 
-Use one small idempotent Phase-4 finalize action; do not build another Phase-3-sized migration engine.
+Do not rebuild Phase 5.
 
-Required order:
+After Home/Promo/About are final, register only the actual new visible static strings in the existing `Gloskin_Site_Core_Translation::interface_registry()` so EN is not mixed with Indonesian.
 
-replacement ready
-→ replacement media bound
-→ replacement renderability verified
-→ Trash legacy records
-→ final verify
+Likely final labels include:
 
-## Promo replacements
+- `Kenapa Memilih GLOSKIN`
+- `Testimoni`
+- `Piagam`
+- `Promo Poster`
+- `Informasi promo belum tersedia.`
+- final About headings used by the wireframe
 
-- create/ensure 3–6 stable Phase-4 Promo identities;
-- published + active only after a usable landscape featured/primary image is bound;
-- prefer suitable bundled/local assets; otherwise use lightweight local placeholder banners;
-- clearly mark placeholders as Phase-4 demo/placeholder content;
-- stable deterministic order;
-- after replacements pass verification, Trash every non-allowlisted active/non-trash `gloskin_promo` record;
-- never hard-delete here;
-- never delete Media Library attachments here.
+Expose only textual custom fields that the final templates actually render. Never expose media IDs, URLs, booleans, ordering, prices, SKU, stock, taxonomy IDs, or migration state.
 
-## Piagam replacements
-
-- create/ensure exactly 4 stable Phase-4 `gloskin_achievement` identities;
-- each must have a usable image;
-- mark temporary artwork as placeholder when real certificate artwork is unavailable;
-- after all four pass verification, Trash every non-allowlisted active/non-trash `gloskin_achievement` record;
-- never hard-delete here;
-- never delete Media Library attachments here.
-
-Bind every placeholder attachment to its active replacement record so Media Cleanup sees a real WordPress reference.
-
-Second finalize run must create zero records and Trash zero additional records.
+Optional high-value hardening: render current ID/EN controls server-side so switching works without JavaScript. Keep the same `Gloskin_Site_Core_Language` owner and cookie/query mechanism; no new service.
 
 ---
 
-# Retire obsolete Reset Demo mutation
+## Version
 
-The existing `Gloskin_Site_Core_Demo_Content_Reset` admin tool can hard-delete demo Promo/Testimonial/Achievement posts and recreate the old 3-promo / 3-testimonial / 3-achievement dataset. After Phase 4 this would be able to resurrect obsolete presentation data and bypass the Trash-only cleanup policy.
+Current source is `0.7.182`.
 
-Phase 4 must retire that mutation path with the smallest safe change:
-
-- do not use it for Phase-4 population;
-- stop exposing/registering its destructive reset action after Phase-4 finalize, or make it fail closed once Phase-4 is complete;
-- it must not hard-delete or recreate Phase-4 Promo/Piagam records;
-- do not replace it with another broad reset framework.
-
-The old one-shot Promo recovery workflow is separate; do not re-run or redesign it unless a focused regression proves it interferes with Phase 4.
+After the remaining completion batch, if main has not already advanced, bump exactly one patch to `0.7.183` and synchronize only active canonical version owners/tests.
 
 ---
 
-# Stale contract updates
+## Focused validation
 
-Update only assertions made obsolete by the latest approved client references.
+No broad historical audit.
 
-Known stale assertions include:
+Run only changed-source lint plus focused contracts for:
 
-- Phase 1 requiring a closing CTA caller on Home / Promo / About;
-- Phase 2 requiring Home campaign text/CTA instead of video-only;
-- Phase 2 locking the old Home closing CTA;
-- Phase 2 locking Shop vs Skincare card divergence;
-- Phase 2 locking old Promo single-carousel / thumbnail-selector assumptions.
+- Home exact structure/counts/omissions;
+- Promo two independent roots/omissions;
+- About HTML-wireframe order/omissions;
+- Phase-4 finalizer registration + no-op + no hard/media delete;
+- 25/48 Woo mapping;
+- Demo Reset inactive;
+- plugin `resources/phase3` absent;
+- Phase-4.1 preserved;
+- Shop/Media Cleanup preserved;
+- Phase-5 admin/frontend preserved;
+- final static translation labels covered;
+- `git diff --check`.
 
-Preserve unrelated guarantees:
-
-- approved navbar labels;
-- breadcrumb removal;
-- shared CTA component readability itself (even when a page no longer calls it);
-- Woo action semantics;
-- canonical data ownership.
-
----
-
-# Required Phase-4 regression contract
-
-The new compact Phase-4 contract must prove at minimum:
-
-- Home exact section order matches the latest wireframe;
-- Home does not render Promo, extra brand-story content, or closing CTA;
-- Home hero is video-only/no-text and uses an uncropped presentation rule;
-- Home shows exactly 6 Treatment cards while Phase-3 feature meta remains exactly 3;
-- Home shows exactly 3 static testimonial rows with no Home slider controls;
-- Home shows exactly 4 image-only Piagam cards;
-- Promo renders two independent image-led gallery/carousel roots and no legacy page content/CTA/thumb-selector composition;
-- About section set/order is explicitly derived from FB-989358 evidence;
-- Shop JS resolves `data-gloskin-shop-catalog-owner` and AJAX pagination remains wired;
-- Shop and Skincare use the same retail-card variant;
-- Media Cleanup structured-reference detection is candidate-bound before result limiting;
-- deleting/verifying reload can resume without auto-starting deletion;
-- Phase-4 Promo replacement count is 3–6;
-- Phase-4 Piagam replacement count is exactly 4;
-- legacy Promo/Achievement records are Trashed only after replacements are ready;
-- Phase-4 finalize deletes zero Media Library attachments;
-- obsolete Reset Demo cannot resurrect/hard-delete Phase-4 content after finalize;
-- second Phase-4 finalize is a no-op.
+If an older test encodes a superseded Phase-2 presentation, update the stale assertion rather than restoring obsolete UI.
 
 ---
 
-# Recommended execution order
+## Client-ticket source status at this refresh
 
-1. Media Cleanup safety hotfix
-2. Shop AJAX selector repair
-3. unified Shop/Skincare product card
-4. Home Hero + Home composition fidelity
-5. Promo two-carousel fidelity
-6. About fidelity from original evidence
-7. Phase-4 Promo/Piagam replacement + Trash-only legacy cleanup
-8. retire obsolete Reset Demo mutation
-9. focused contracts and production acceptance
-10. ID/EN language switcher as the final feature task
-11. final 11/11 client-ticket gate
+| Ticket | Status |
+| --- | --- |
+| FB-989346 Navbar | PASS |
+| FB-989348 real ID/EN | PASS functionally; optional no-JS hardening remains |
+| FB-989350 Home | OPEN until final Phase-4 Home lands on main |
+| FB-989352 Promo | OPEN until two-carousel Phase-4 Promo lands on main |
+| FB-989354 Skincare media | PASS |
+| FB-989356 retail card | PASS |
+| FB-989358 About | OPEN until HTML-wireframe About lands on main |
+| FB-989360 Treatment catalog/media | PASS |
+| FB-989362 Home full video/no crop/no text | OPEN until final Home hero lands on main |
+| FB-989364 CTA readability | PASS; final Home also removes obsolete closing CTA |
+| FB-989369 breadcrumbs | PASS |
 
----
+Current practical source status: **7/11 PASS, 4/11 presentation tickets still need the final Phase-4 integration.**
 
-# Principles
-
-- low effort, high impact
-- reuse canonical owners
-- no architecture redesign without necessity
-- no new CPT for existing concepts
-- no runtime external image fetch
-- no Phase-3 state/manifests/media mutation
-- Trash managed legacy posts before any permanent-deletion discussion
-- attachment deletion remains isolated to Media Cleanup
-- placeholders are explicitly marked as placeholders
-- production acceptance checks current rendered/data state, not historical counters alone
+Production is not 11/11 merely because source is ready: the Phase-4 finalizer still requires an explicit post-deploy operator run and verification.
