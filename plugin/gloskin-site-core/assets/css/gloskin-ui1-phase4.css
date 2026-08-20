@@ -1,0 +1,211 @@
+/* Phase 4 presentation fidelity. Scoped to the final Home/Promo/About seams only. */
+
+[data-gloskin-phase4-home-hero] .gloskin-ui1-hero--campaign {
+	background: #000;
+	min-height: 0;
+	padding: 0;
+}
+[data-gloskin-phase4-home-hero] .gloskin-ui1-hero--campaign .gloskin-ui1-hero__grid {
+	display: block;
+	width: 100%;
+	max-width: none;
+	padding: 0;
+}
+[data-gloskin-phase4-home-hero] .gloskin-ui1-hero--campaign .gloskin-ui1-hero__content,
+[data-gloskin-phase4-home-hero] .gloskin-ui1-hero--campaign .gloskin-ui1-hero__fade,
+[data-gloskin-phase4-home-hero] .gloskin-ui1-hero--campaign .gloskin-ui1-hero__scroll-cue {
+	display: none !important;
+}
+[data-gloskin-phase4-home-hero] .gloskin-ui1-hero--campaign .gloskin-ui1-hero__media,
+[data-gloskin-phase4-home-hero] .gloskin-ui1-hero--campaign .gloskin-ui1-hero__media--campaign,
+[data-gloskin-phase4-home-hero] .gloskin-ui1-hero--campaign .gloskin-ui1-hero__media-fallback,
+[data-gloskin-phase4-home-hero] .gloskin-ui1-hero--campaign .gloskin-ui1-hero-bg-video {
+	position: relative;
+	inset: auto;
+	width: 100%;
+	max-width: none;
+	aspect-ratio: 16 / 9;
+	margin: 0;
+	border: 0;
+	border-radius: 0;
+	overflow: hidden;
+	background: #000;
+}
+[data-gloskin-phase4-home-hero] .gloskin-ui1-hero--campaign .gloskin-ui1-hero__image,
+[data-gloskin-phase4-home-hero] .gloskin-ui1-hero--campaign .gloskin-ui1-hero-bg-video__media {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	object-position: center;
+	border-radius: 0;
+}
+
+.gloskin-phase4-home-why__grid,
+.gloskin-phase4-about-story__grid,
+.gloskin-phase4-about-founder__grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: clamp(2rem, 5vw, 5rem);
+	align-items: center;
+}
+.gloskin-phase4-home-why__media,
+.gloskin-phase4-about-story__media,
+.gloskin-phase4-about-founder__media {
+	min-width: 0;
+	overflow: hidden;
+	border-radius: 1.5rem;
+}
+.gloskin-phase4-home-why__media,
+.gloskin-phase4-about-story__media {
+	aspect-ratio: 4 / 3;
+}
+.gloskin-phase4-about-founder__media {
+	aspect-ratio: 4 / 5;
+}
+.gloskin-phase4-home-why__image,
+.gloskin-phase4-home-why__media > img,
+.gloskin-phase4-about-story__image,
+.gloskin-phase4-about-founder__image {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+.gloskin-phase4-home-why__copy h2,
+.gloskin-phase4-about-story__copy h2,
+.gloskin-phase4-about-founder__copy h2 { margin-top: 0; }
+.gloskin-phase4-home-why__copy ul {
+	margin: 1.25rem 0 0;
+	padding-left: 1.25rem;
+	display: grid;
+	gap: .8rem;
+}
+
+.gloskin-phase4-home-treatments__grid {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.gloskin-phase4-home-testimonials__rows {
+	display: grid;
+	gap: 1rem;
+}
+.gloskin-phase4-home-testimonial {
+	margin: 0;
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 1.1rem;
+	align-items: center;
+	padding: 1.25rem;
+	border: 1px solid currentColor;
+	border-radius: 1rem;
+}
+.gloskin-phase4-home-testimonial__avatar {
+	width: 4rem;
+	height: 4rem;
+	border-radius: 50%;
+	object-fit: cover;
+}
+.gloskin-phase4-home-testimonial blockquote,
+.gloskin-phase4-home-testimonial blockquote p { margin: 0; }
+.gloskin-phase4-home-testimonial figcaption {
+	margin-top: .6rem;
+	display: flex;
+	gap: .6rem;
+	flex-wrap: wrap;
+	align-items: baseline;
+}
+
+.gloskin-phase4-home-piagam__grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 1rem;
+}
+.gloskin-phase4-home-piagam__card { margin: 0; }
+.gloskin-phase4-home-piagam__image {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 4 / 3;
+	object-fit: contain;
+}
+
+.gloskin-phase4-promo { padding-block: clamp(2rem, 5vw, 4.5rem); }
+.gloskin-phase4-promo + .gloskin-phase4-promo { padding-top: 0; }
+.gloskin-phase4-promo__heading {
+	margin: 0 0 clamp(1.5rem, 3vw, 2.5rem);
+	text-align: center;
+}
+.gloskin-phase4-promo__carousel {
+	position: relative;
+	padding: 0;
+	background: transparent;
+}
+.gloskin-phase4-promo__carousel .gloskin-ui1-promo-carousel__stage { margin: 0; }
+.gloskin-phase4-promo__slide {
+	margin: 0;
+	padding: 0;
+}
+.gloskin-phase4-promo__media {
+	width: 100%;
+	aspect-ratio: 16 / 7;
+	border-radius: 1.5rem;
+	overflow: hidden;
+	background: rgba(0, 0, 0, .06);
+}
+.gloskin-phase4-promo__image {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	object-position: center;
+}
+.gloskin-phase4-promo__missing {
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, .06);
+}
+.gloskin-phase4-promo__controls {
+	margin-top: 1rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: .9rem;
+}
+.gloskin-phase4-promo--poster .gloskin-phase4-promo__media { aspect-ratio: 16 / 8; }
+
+.gloskin-phase4-about-header {
+	padding: clamp(3rem, 7vw, 6rem) 0;
+	text-align: center;
+	background: rgba(0, 0, 0, .035);
+}
+.gloskin-phase4-about-header h1 { margin: 0; }
+.gloskin-phase4-about-founder__role { font-weight: 600; }
+.gloskin-phase4-about-principles__grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 1rem;
+}
+.gloskin-phase4-about-principle {
+	padding: clamp(1.25rem, 3vw, 2rem);
+	border: 1px solid currentColor;
+	border-radius: 1rem;
+}
+.gloskin-phase4-about-principle h3 { margin-top: 0; }
+
+@media (max-width: 900px) {
+	.gloskin-phase4-home-why__grid,
+	.gloskin-phase4-about-story__grid,
+	.gloskin-phase4-about-founder__grid { grid-template-columns: 1fr; }
+	.gloskin-phase4-home-treatments__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.gloskin-phase4-home-piagam__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.gloskin-phase4-promo__media,
+	.gloskin-phase4-promo--poster .gloskin-phase4-promo__media { aspect-ratio: 4 / 3; }
+	.gloskin-phase4-about-principles__grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+	.gloskin-phase4-home-treatments__grid { grid-template-columns: 1fr; }
+	.gloskin-phase4-home-testimonial { grid-template-columns: 1fr; }
+	.gloskin-phase4-home-piagam__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

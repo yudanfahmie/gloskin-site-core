@@ -1,47 +1,64 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
-gloskin_ui1_render_hero( $gloskin_context['hero'] );
-$gloskin_has_principles = $gloskin_context['vision'] || $gloskin_context['mission'] || $gloskin_context['values'];
-$gloskin_about_clinics  = gloskin_ui1_real_cards( $gloskin_context['clinics'] );
-$gloskin_founder        = $gloskin_context['founder'];
+
+$gloskin_about_page           = isset( $gloskin_context['page'] ) && $gloskin_context['page'] instanceof WP_Post ? $gloskin_context['page'] : null;
+$gloskin_founder              = isset( $gloskin_context['founder'] ) ? $gloskin_context['founder'] : null;
+$gloskin_has_principles       = ! empty( $gloskin_context['vision'] ) || ! empty( $gloskin_context['mission'] ) || ! empty( $gloskin_context['values'] );
+$gloskin_about_media_id       = $gloskin_about_page ? absint( get_post_thumbnail_id( $gloskin_about_page->ID ) ) : 0;
 ?>
-<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?>
-<section class="gloskin-ui1-section" data-gloskin-section="about-story"><div class="gloskin-ui1-container">
-	<div class="gloskin-ui1-about-story">
-		<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Cerita Gloskin', 'gloskin-site-core' ); ?></p>
-		<?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?>
+<header class="gloskin-phase4-about-header" data-gloskin-section="about-header">
+	<div class="gloskin-ui1-container gloskin-ui1-container--narrow">
+		<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'ABOUT', 'gloskin-site-core' ); ?></p>
+		<h1><?php echo esc_html__( 'Tentang Kami', 'gloskin-site-core' ); ?></h1>
 	</div>
-</div></section>
-<?php endif; ?>
-<?php if ( $gloskin_founder ) : ?>
-<section class="gloskin-ui1-section gloskin-ui1-section--soft" data-gloskin-section="about-founder"><div class="gloskin-ui1-container">
-	<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Pendiri', 'gloskin-site-core' ); ?></p>
-	<div class="gloskin-ui1-about-founder">
-		<?php if ( $gloskin_founder['media_id'] ) : ?>
-			<div class="gloskin-ui1-about-founder__media">
-				<?php echo wp_get_attachment_image( $gloskin_founder['media_id'], 'large', false, array( 'class' => 'gloskin-ui1-about-founder__image', 'loading' => 'lazy' ) ); ?>
-			</div>
-		<?php endif; ?>
-		<div class="gloskin-ui1-about-founder__copy">
-			<h2 class="gloskin-ui1-about-founder__name"><?php echo esc_html( $gloskin_founder['name'] ); ?></h2>
-			<p class="gloskin-ui1-about-founder__role"><?php echo esc_html( $gloskin_founder['role'] ); ?></p>
-			<?php if ( '' !== $gloskin_founder['story'] ) : ?>
-				<div class="gloskin-ui1-prose"><?php echo wp_kses_post( wpautop( $gloskin_founder['story'] ) ); ?></div>
+</header>
+
+<?php if ( $gloskin_about_page && gloskin_ui1_has_content( $gloskin_about_page ) ) : ?>
+<section class="gloskin-ui1-section gloskin-phase4-about-story" data-gloskin-section="about-story">
+	<div class="gloskin-ui1-container gloskin-phase4-about-story__grid">
+		<div class="gloskin-phase4-about-story__media">
+			<?php if ( $gloskin_about_media_id ) : ?>
+				<?php echo wp_get_attachment_image( $gloskin_about_media_id, 'large', false, array( 'class' => 'gloskin-phase4-about-story__image', 'loading' => 'eager' ) ); ?>
+			<?php else : ?>
+				<?php gloskin_ui1_render_editorial_media( 'editorial', 'about_story', 'gloskin-phase4-about-story__image', true ); ?>
 			<?php endif; ?>
 		</div>
+		<div class="gloskin-phase4-about-story__copy">
+			<p class="gloskin-ui1-eyebrow">GLOSKIN</p>
+			<h2><?php echo esc_html__( 'Tentang GLOSKIN', 'gloskin-site-core' ); ?></h2>
+			<?php gloskin_ui1_render_page_content( $gloskin_about_page ); ?>
+		</div>
 	</div>
-</div></section>
+</section>
 <?php endif; ?>
+
+<?php if ( is_array( $gloskin_founder ) ) : ?>
+<section class="gloskin-ui1-section gloskin-ui1-section--soft gloskin-phase4-about-founder" data-gloskin-section="about-founder">
+	<div class="gloskin-ui1-container gloskin-phase4-about-founder__grid">
+		<div class="gloskin-phase4-about-founder__copy">
+			<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Founder', 'gloskin-site-core' ); ?></p>
+			<h2><?php echo esc_html( (string) $gloskin_founder['name'] ); ?></h2>
+			<?php if ( '' !== trim( (string) $gloskin_founder['role'] ) ) : ?><p class="gloskin-phase4-about-founder__role"><?php echo esc_html( (string) $gloskin_founder['role'] ); ?></p><?php endif; ?>
+			<?php if ( '' !== trim( (string) $gloskin_founder['story'] ) ) : ?><div class="gloskin-ui1-prose"><?php echo wp_kses_post( wpautop( (string) $gloskin_founder['story'] ) ); ?></div><?php endif; ?>
+		</div>
+		<?php if ( ! empty( $gloskin_founder['media_id'] ) ) : ?>
+		<div class="gloskin-phase4-about-founder__media">
+			<?php echo wp_get_attachment_image( absint( $gloskin_founder['media_id'] ), 'large', false, array( 'class' => 'gloskin-phase4-about-founder__image', 'loading' => 'lazy' ) ); ?>
+		</div>
+		<?php endif; ?>
+	</div>
+</section>
+<?php endif; ?>
+
 <?php if ( $gloskin_has_principles ) : ?>
-<section class="gloskin-ui1-section" data-gloskin-section="about-principles"><div class="gloskin-ui1-container">
-	<div class="gloskin-ui1-grid gloskin-ui1-grid--three gloskin-ui1-about-principles">
-		<?php if ( $gloskin_context['vision'] ) : ?><article><h2><?php echo esc_html__( 'Visi', 'gloskin-site-core' ); ?></h2><div class="gloskin-ui1-prose"><?php echo wp_kses_post( $gloskin_context['vision'] ); ?></div></article><?php endif; ?>
-		<?php if ( $gloskin_context['mission'] ) : ?><article><h2><?php echo esc_html__( 'Misi', 'gloskin-site-core' ); ?></h2><div class="gloskin-ui1-prose"><?php echo wp_kses_post( $gloskin_context['mission'] ); ?></div></article><?php endif; ?>
-		<?php if ( $gloskin_context['values'] ) : ?><article><h2><?php echo esc_html__( 'Nilai', 'gloskin-site-core' ); ?></h2><div class="gloskin-ui1-prose"><?php echo wp_kses_post( $gloskin_context['values'] ); ?></div></article><?php endif; ?>
+<section class="gloskin-ui1-section gloskin-phase4-about-principles" data-gloskin-section="about-principles">
+	<div class="gloskin-ui1-container">
+		<?php gloskin_ui1_render_section_heading( __( 'Visi · Misi · Nilai', 'gloskin-site-core' ) ); ?>
+		<div class="gloskin-phase4-about-principles__grid">
+			<?php if ( ! empty( $gloskin_context['vision'] ) ) : ?><article class="gloskin-phase4-about-principle"><h3><?php echo esc_html__( 'Visi', 'gloskin-site-core' ); ?></h3><div class="gloskin-ui1-prose"><?php echo wp_kses_post( $gloskin_context['vision'] ); ?></div></article><?php endif; ?>
+			<?php if ( ! empty( $gloskin_context['mission'] ) ) : ?><article class="gloskin-phase4-about-principle"><h3><?php echo esc_html__( 'Misi', 'gloskin-site-core' ); ?></h3><div class="gloskin-ui1-prose"><?php echo wp_kses_post( $gloskin_context['mission'] ); ?></div></article><?php endif; ?>
+			<?php if ( ! empty( $gloskin_context['values'] ) ) : ?><article class="gloskin-phase4-about-principle"><h3><?php echo esc_html__( 'Nilai', 'gloskin-site-core' ); ?></h3><div class="gloskin-ui1-prose"><?php echo wp_kses_post( $gloskin_context['values'] ); ?></div></article><?php endif; ?>
+		</div>
 	</div>
-</div></section>
+</section>
 <?php endif; ?>
-<?php if ( $gloskin_context['doctors'] ) : ?><section class="gloskin-ui1-section gloskin-ui1-section--soft" data-gloskin-section="about-doctors"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_section_heading( __( 'Tim Dokter', 'gloskin-site-core' ), __( 'Profil yang tampil di sini berasal dari data dokter yang dipublikasikan Gloskin.', 'gloskin-site-core' ) ); gloskin_ui1_render_card_grid( $gloskin_context['doctors'], 'doctor' ); ?></div></section><?php endif; ?>
-<?php if ( $gloskin_about_clinics ) : ?><section class="gloskin-ui1-section" data-gloskin-section="about-clinics"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_section_heading( __( 'Jaringan Klinik', 'gloskin-site-core' ), __( 'Pilih lokasi Gloskin dan buka halaman cabang untuk melihat informasi yang tersedia.', 'gloskin-site-core' ) ); gloskin_ui1_render_card_grid( $gloskin_about_clinics, 'clinic' ); ?></div></section><?php endif; ?>
-<?php gloskin_ui1_render_achievements( $gloskin_context['achievements'], 'full' ); ?>
-<section class="gloskin-ui1-section gloskin-ui1-section--cta" data-gloskin-section="about-closing"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_closing_cta( __( 'Langkah Berikutnya', 'gloskin-site-core' ), __( 'Pilih lokasi atau hubungi Gloskin saat Anda siap melanjutkan.', 'gloskin-site-core' ), __( 'Halaman klinik memuat kanal kontak dan informasi cabang yang tersedia.', 'gloskin-site-core' ), __( 'Pilih Klinik', 'gloskin-site-core' ), home_url( '/clinics/' ), __( 'Hubungi Gloskin', 'gloskin-site-core' ), home_url( '/contact/' ) ); ?></div></section>
