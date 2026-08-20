@@ -32,6 +32,8 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 			return;
 		}
 
+		$this->resolve_primary_navigation_labels();
+
 		$current = (string) get_option( self::VERSION_OPTION, '' );
 		if ( '' === $current || version_compare( $current, self::BASE_SCHEMA_VERSION, '<' ) ) {
 			$this->provision_approved_structure();
@@ -54,6 +56,51 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 	}
 
 	/**
+	 * Persist the Phase-1 approved primary-nav labels exactly once without
+	 * mutating the editor-owned WordPress menu. One option carries version,
+	 * progress state and the canonical map, so there is no parallel settings
+	 * store. A completed record is a terminal gate: admin requests never enter a
+	 * repair loop. Incomplete writes are verified before the same option is
+	 * marked complete and may safely resume on the next privileged admin load.
+	 *
+	 * @return void
+	 */
+	public function resolve_primary_navigation_labels() {
+		require_once __DIR__ . '/class-gloskin-site-core-navigation-service.php';
+
+		$option  = Gloskin_Site_Core_Navigation_Service::APPROVED_LABELS_OPTION;
+		$version = Gloskin_Site_Core_Navigation_Service::APPROVED_LABELS_VERSION;
+		$labels  = Gloskin_Site_Core_Navigation_Service::approved_label_defaults();
+		$state   = get_option( $option, array() );
+
+		if ( is_array( $state )
+			&& isset( $state['version'], $state['status'] )
+			&& $version === (string) $state['version']
+			&& 'complete' === (string) $state['status'] ) {
+			return;
+		}
+
+		$pending = array(
+			'version' => $version,
+			'status'  => 'resolving',
+			'labels'  => $labels,
+		);
+		update_option( $option, $pending, false );
+
+		$verified = get_option( $option, array() );
+		if ( ! is_array( $verified )
+			|| ! isset( $verified['version'], $verified['status'], $verified['labels'] )
+			|| $version !== (string) $verified['version']
+			|| 'resolving' !== (string) $verified['status']
+			|| $labels !== $verified['labels'] ) {
+			return;
+		}
+
+		$pending['status'] = 'complete';
+		update_option( $option, $pending, false );
+	}
+
+	/**
 	 * Register rewrites, populate the pre-revision safe baseline structure and flush once.
 	 *
 	 * Activation is schema-monotonic. A new install records BASE_SCHEMA_VERSION,
@@ -71,6 +118,8 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 		 * registered here explicitly -- the normal init hook has not
 		 * fired yet on this static register_activation_hook path. */
 		Gloskin_Site_Core_Content_Service::register_taxonomies();
+
+		$this->resolve_primary_navigation_labels();
 
 		$current = (string) get_option( self::VERSION_OPTION, '' );
 		$this->provision_approved_structure();
