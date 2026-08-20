@@ -41,8 +41,8 @@ $batch       = false !== $batch_start && false !== $batch_end ? substr( $migrati
 $compact     = (string) preg_replace( '/\s+/', ' ', $batch );
 ok( '' !== $batch && false === strpos( $compact, '$state[\'doctor_all_snapshot\'] =' ), 'doctor batch never resets original all-doctor snapshot' );
 
-ok( (bool) preg_match( "/const VERSION\s*=\s*'0\.7\.154'/", $kernel ), 'Kernel VERSION must be 0.7.154' );
-ok( (bool) preg_match( '/^ \* Version: 0\.7\.154$/m', $plugin_h ), 'Plugin header Version must be 0.7.154' );
+ok( (bool) preg_match( "/const VERSION\s*=\s*'0\.7\.154'/", $kernel ), 'Kernel VERSION must be 0.7.155' );
+ok( (bool) preg_match( '/^ \* Version: 0\.7\.154$/m', $plugin_h ), 'Plugin header Version must be 0.7.155' );
 
 echo "\ndoctor-snapshot-contract.php: {$passed} passed, {$failed} failed\n";
 exit( $failed > 0 ? 1 : 0 );

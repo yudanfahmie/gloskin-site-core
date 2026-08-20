@@ -28,6 +28,30 @@ page_matrix = read("docs/page-matrix.csv")
 
 for value in ("#CA050E", "#784F0C", "#F6D179", "#FBE2B2", "#FFEBBB", "#FFF2EB", "#000000"):
     require(value in css, f"approved brand color missing: {value}")
+require("--gloskin-refresh-black:#000000" in css, "true dark-background token must remain black")
+require("--gloskin-copy-ink:var(--gloskin-brand-charcoal)" in css,
+        "solid warm-charcoal copy token missing")
+require("--gloskin-text-secondary:var(--gloskin-muted)" in css,
+        "secondary text token must be defined without flattening metadata into body copy")
+copy_rule = css.split("/* Public body copy:", 1)[1]
+for selector in (
+    ".gloskin-ui1-hero__copy",
+    ".gloskin-ui1-section-heading p",
+    ".gloskin-ui1-card__copy",
+    ".gloskin-ui1-prose p",
+    ".gloskin-ui1-treatment-band__copy",
+    ".gloskin-ui1-promo-carousel__summary",
+    ".gloskin-ui1-why__lead",
+    ".gloskin-ui1-why__card-copy",
+    ".gloskin-ui1-achievement__copy",
+    ".gloskin-ui1-insights-archive__excerpt",
+    ".gloskin-ui1-consultation-card__copy",
+    ".gloskin-ui1-not-found__copy",
+    ".woocommerce-product-details__short-description",
+):
+    require(selector in copy_rule, f"public copy normalization missing selector: {selector}")
+require("color:var(--gloskin-copy-ink)" in copy_rule, "public copy must use the semantic solid ink")
+require("font-weight:300" in copy_rule, "public copy must use Graphik Light")
 require('"Graphik"' in css, "Graphik target role missing")
 require('"Felix Titling"' in css, "Felix Titling target role missing")
 require("!important" not in css, "prototype refresh must add zero !important declarations")
