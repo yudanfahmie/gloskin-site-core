@@ -1,0 +1,272 @@
+{
+    "content_counts": {
+        "gloskin_clinic": {
+            "auto-draft": 0,
+            "dp-rewrite-republish": 0,
+            "draft": 0,
+            "future": 0,
+            "inherit": 0,
+            "pending": 0,
+            "private": 0,
+            "publish": "9",
+            "request-completed": 0,
+            "request-confirmed": 0,
+            "request-failed": 0,
+            "request-pending": 0,
+            "trash": 0,
+            "wc-cancelled": 0,
+            "wc-checkout-draft": 0,
+            "wc-completed": 0,
+            "wc-failed": 0,
+            "wc-on-hold": 0,
+            "wc-pending": 0,
+            "wc-processing": 0,
+            "wc-refunded": 0
+        },
+        "gloskin_doctor": {
+            "auto-draft": 0,
+            "dp-rewrite-republish": 0,
+            "draft": 0,
+            "future": 0,
+            "inherit": 0,
+            "pending": 0,
+            "private": 0,
+            "publish": "13",
+            "request-completed": 0,
+            "request-confirmed": 0,
+            "request-failed": 0,
+            "request-pending": 0,
+            "trash": 0,
+            "wc-cancelled": 0,
+            "wc-checkout-draft": 0,
+            "wc-completed": 0,
+            "wc-failed": 0,
+            "wc-on-hold": 0,
+            "wc-pending": 0,
+            "wc-processing": 0,
+            "wc-refunded": 0
+        },
+        "gloskin_treatment": {
+            "auto-draft": 0,
+            "dp-rewrite-republish": 0,
+            "draft": 0,
+            "future": 0,
+            "inherit": 0,
+            "pending": 0,
+            "private": 0,
+            "publish": 0,
+            "request-completed": 0,
+            "request-confirmed": 0,
+            "request-failed": 0,
+            "request-pending": 0,
+            "trash": 0,
+            "wc-cancelled": 0,
+            "wc-checkout-draft": 0,
+            "wc-completed": 0,
+            "wc-failed": 0,
+            "wc-on-hold": 0,
+            "wc-pending": 0,
+            "wc-processing": 0,
+            "wc-refunded": 0
+        },
+        "page": {
+            "auto-draft": 0,
+            "dp-rewrite-republish": 0,
+            "draft": "1",
+            "future": 0,
+            "inherit": 0,
+            "pending": 0,
+            "private": 0,
+            "publish": "20",
+            "request-completed": 0,
+            "request-confirmed": 0,
+            "request-failed": 0,
+            "request-pending": 0,
+            "trash": 0,
+            "wc-cancelled": 0,
+            "wc-checkout-draft": 0,
+            "wc-completed": 0,
+            "wc-failed": 0,
+            "wc-on-hold": 0,
+            "wc-pending": 0,
+            "wc-processing": 0,
+            "wc-refunded": 0
+        },
+        "post": {
+            "auto-draft": "2",
+            "dp-rewrite-republish": 0,
+            "draft": 0,
+            "future": 0,
+            "inherit": 0,
+            "pending": 0,
+            "private": 0,
+            "publish": "13",
+            "request-completed": 0,
+            "request-confirmed": 0,
+            "request-failed": 0,
+            "request-pending": 0,
+            "trash": 0,
+            "wc-cancelled": 0,
+            "wc-checkout-draft": 0,
+            "wc-completed": 0,
+            "wc-failed": 0,
+            "wc-on-hold": 0,
+            "wc-pending": 0,
+            "wc-processing": 0,
+            "wc-refunded": 0
+        },
+        "product": {
+            "auto-draft": 0,
+            "dp-rewrite-republish": 0,
+            "draft": 0,
+            "future": 0,
+            "inherit": 0,
+            "pending": 0,
+            "private": 0,
+            "publish": "21",
+            "request-completed": 0,
+            "request-confirmed": 0,
+            "request-failed": 0,
+            "request-pending": 0,
+            "trash": 0,
+            "wc-cancelled": 0,
+            "wc-checkout-draft": 0,
+            "wc-completed": 0,
+            "wc-failed": 0,
+            "wc-on-hold": 0,
+            "wc-pending": 0,
+            "wc-processing": 0,
+            "wc-refunded": 0
+        }
+    },
+    "gloskin_cron_hooks": [],
+    "gloskin_rest_routes": [
+        "/wp/v2/gloskin_treatment",
+        "/wp/v2/gloskin_treatment/(?P<id>[\\d]+)",
+        "/wp/v2/gloskin_treatment/(?P<id>[\\d]+)/autosaves",
+        "/wp/v2/gloskin_treatment/(?P<parent>[\\d]+)/autosaves/(?P<id>[\\d]+)",
+        "/wp/v2/gloskin_clinic",
+        "/wp/v2/gloskin_clinic/(?P<id>[\\d]+)",
+        "/wp/v2/gloskin_clinic/(?P<id>[\\d]+)/autosaves",
+        "/wp/v2/gloskin_clinic/(?P<parent>[\\d]+)/autosaves/(?P<id>[\\d]+)",
+        "/wp/v2/gloskin_doctor",
+        "/wp/v2/gloskin_doctor/(?P<id>[\\d]+)",
+        "/wp/v2/gloskin_doctor/(?P<id>[\\d]+)/autosaves",
+        "/wp/v2/gloskin_doctor/(?P<parent>[\\d]+)/autosaves/(?P<id>[\\d]+)",
+        "/wp/v2/gloskin_promo",
+        "/wp/v2/gloskin_promo/(?P<id>[\\d]+)",
+        "/wp/v2/gloskin_promo/(?P<id>[\\d]+)/autosaves",
+        "/wp/v2/gloskin_promo/(?P<parent>[\\d]+)/autosaves/(?P<id>[\\d]+)",
+        "/wp/v2/gloskin_testimonial",
+        "/wp/v2/gloskin_testimonial/(?P<id>[\\d]+)",
+        "/wp/v2/gloskin_testimonial/(?P<id>[\\d]+)/autosaves",
+        "/wp/v2/gloskin_testimonial/(?P<parent>[\\d]+)/autosaves/(?P<id>[\\d]+)",
+        "/wp/v2/gloskin_achievement",
+        "/wp/v2/gloskin_achievement/(?P<id>[\\d]+)",
+        "/wp/v2/gloskin_achievement/(?P<id>[\\d]+)/autosaves",
+        "/wp/v2/gloskin_achievement/(?P<parent>[\\d]+)/autosaves/(?P<id>[\\d]+)"
+    ],
+    "invalid_cta_references": [],
+    "missing_referenced_media_ids": [],
+    "relevant_rewrite_rules": [
+        {
+            "pattern": "treatments/([^/]+)/embed/?$",
+            "target": "index.php?gloskin_treatment=$matches[1]&embed=true"
+        },
+        {
+            "pattern": "treatments/([^/]+)/trackback/?$",
+            "target": "index.php?gloskin_treatment=$matches[1]&tb=1"
+        },
+        {
+            "pattern": "treatments/([^/]+)/page/?([0-9]{1,})/?$",
+            "target": "index.php?gloskin_treatment=$matches[1]&paged=$matches[2]"
+        },
+        {
+            "pattern": "treatments/([^/]+)/comment-page-([0-9]{1,})/?$",
+            "target": "index.php?gloskin_treatment=$matches[1]&cpage=$matches[2]"
+        },
+        {
+            "pattern": "treatments/([^/]+)/wc/file/transient(/(.*))?/?$",
+            "target": "index.php?gloskin_treatment=$matches[1]&wc/file/transient=$matches[3]"
+        },
+        {
+            "pattern": "treatments/([^/]+)/wc-api(/(.*))?/?$",
+            "target": "index.php?gloskin_treatment=$matches[1]&wc-api=$matches[3]"
+        },
+        {
+            "pattern": "treatments/([^/]+)/schema-preview(/(.*))?/?$",
+            "target": "index.php?gloskin_treatment=$matches[1]&schema-preview=$matches[3]"
+        },
+        {
+            "pattern": "treatments/([^/]+)(?:/([0-9]+))?/?$",
+            "target": "index.php?gloskin_treatment=$matches[1]&page=$matches[2]"
+        },
+        {
+            "pattern": "clinics/([^/]+)/embed/?$",
+            "target": "index.php?gloskin_clinic=$matches[1]&embed=true"
+        },
+        {
+            "pattern": "clinics/([^/]+)/trackback/?$",
+            "target": "index.php?gloskin_clinic=$matches[1]&tb=1"
+        },
+        {
+            "pattern": "clinics/([^/]+)/page/?([0-9]{1,})/?$",
+            "target": "index.php?gloskin_clinic=$matches[1]&paged=$matches[2]"
+        },
+        {
+            "pattern": "clinics/([^/]+)/comment-page-([0-9]{1,})/?$",
+            "target": "index.php?gloskin_clinic=$matches[1]&cpage=$matches[2]"
+        },
+        {
+            "pattern": "clinics/([^/]+)/wc/file/transient(/(.*))?/?$",
+            "target": "index.php?gloskin_clinic=$matches[1]&wc/file/transient=$matches[3]"
+        },
+        {
+            "pattern": "clinics/([^/]+)/wc-api(/(.*))?/?$",
+            "target": "index.php?gloskin_clinic=$matches[1]&wc-api=$matches[3]"
+        },
+        {
+            "pattern": "clinics/([^/]+)/schema-preview(/(.*))?/?$",
+            "target": "index.php?gloskin_clinic=$matches[1]&schema-preview=$matches[3]"
+        },
+        {
+            "pattern": "clinics/([^/]+)(?:/([0-9]+))?/?$",
+            "target": "index.php?gloskin_clinic=$matches[1]&page=$matches[2]"
+        },
+        {
+            "pattern": "doctors/([^/]+)/embed/?$",
+            "target": "index.php?gloskin_doctor=$matches[1]&embed=true"
+        },
+        {
+            "pattern": "doctors/([^/]+)/trackback/?$",
+            "target": "index.php?gloskin_doctor=$matches[1]&tb=1"
+        },
+        {
+            "pattern": "doctors/([^/]+)/page/?([0-9]{1,})/?$",
+            "target": "index.php?gloskin_doctor=$matches[1]&paged=$matches[2]"
+        },
+        {
+            "pattern": "doctors/([^/]+)/comment-page-([0-9]{1,})/?$",
+            "target": "index.php?gloskin_doctor=$matches[1]&cpage=$matches[2]"
+        },
+        {
+            "pattern": "doctors/([^/]+)/wc/file/transient(/(.*))?/?$",
+            "target": "index.php?gloskin_doctor=$matches[1]&wc/file/transient=$matches[3]"
+        },
+        {
+            "pattern": "doctors/([^/]+)/wc-api(/(.*))?/?$",
+            "target": "index.php?gloskin_doctor=$matches[1]&wc-api=$matches[3]"
+        },
+        {
+            "pattern": "doctors/([^/]+)/schema-preview(/(.*))?/?$",
+            "target": "index.php?gloskin_doctor=$matches[1]&schema-preview=$matches[3]"
+        },
+        {
+            "pattern": "doctors/([^/]+)(?:/([0-9]+))?/?$",
+            "target": "index.php?gloskin_doctor=$matches[1]&page=$matches[2]"
+        }
+    ],
+    "warnings": [
+        "The Promo Page body is empty because the managed Promo renderer owns its public content."
+    ]
+}

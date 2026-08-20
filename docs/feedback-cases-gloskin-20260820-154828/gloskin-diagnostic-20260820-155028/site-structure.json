@@ -1,0 +1,479 @@
+{
+    "duplicate_canonical_slugs": [],
+    "front_page": {
+        "page_for_posts": 0,
+        "page_on_front": 988079,
+        "show_on_front": "page"
+    },
+    "gloskin_routes": [
+        {
+            "path": "/",
+            "url": "https://gloskin-id.markas.cloud/"
+        },
+        {
+            "path": "/treatments/",
+            "url": "https://gloskin-id.markas.cloud/treatments/"
+        },
+        {
+            "path": "/skincare/",
+            "url": "https://gloskin-id.markas.cloud/skincare/"
+        },
+        {
+            "path": "/shop/",
+            "url": "https://gloskin-id.markas.cloud/shop/"
+        },
+        {
+            "path": "/about/",
+            "url": "https://gloskin-id.markas.cloud/about/"
+        },
+        {
+            "path": "/promo/",
+            "url": "https://gloskin-id.markas.cloud/promo/"
+        },
+        {
+            "path": "/insights/",
+            "url": "https://gloskin-id.markas.cloud/insights/"
+        },
+        {
+            "path": "/clinics/",
+            "url": "https://gloskin-id.markas.cloud/clinics/"
+        },
+        {
+            "path": "/doctors/",
+            "url": "https://gloskin-id.markas.cloud/doctors/"
+        },
+        {
+            "path": "/contact/",
+            "url": "https://gloskin-id.markas.cloud/contact/"
+        },
+        {
+            "path": "product:gentle-balance-facial-cleanser",
+            "url": "https://gloskin-id.markas.cloud/product/gentle-balance-facial-cleanser/"
+        }
+    ],
+    "menu_locations": {
+        "gloskin-primary": 88
+    },
+    "navigation_menus": [
+        {
+            "id": 88,
+            "items": [
+                {
+                    "id": 988283,
+                    "object": "page",
+                    "object_id": 988081,
+                    "parent": 0,
+                    "title": "Perawatan",
+                    "type": "post_type",
+                    "url": "https://gloskin-id.markas.cloud/treatments/"
+                },
+                {
+                    "id": 988284,
+                    "object": "page",
+                    "object_id": 988307,
+                    "parent": 0,
+                    "title": "Promo",
+                    "type": "post_type",
+                    "url": "https://gloskin-id.markas.cloud/promo/"
+                },
+                {
+                    "id": 988285,
+                    "object": "page",
+                    "object_id": 988082,
+                    "parent": 0,
+                    "title": "Skincare",
+                    "type": "post_type",
+                    "url": "https://gloskin-id.markas.cloud/skincare/"
+                },
+                {
+                    "id": 988286,
+                    "object": "page",
+                    "object_id": 988080,
+                    "parent": 0,
+                    "title": "Tentang Gloskin",
+                    "type": "post_type",
+                    "url": "https://gloskin-id.markas.cloud/about/"
+                }
+            ],
+            "name": "Gloskin Primary",
+            "slug": "gloskin-primary"
+        },
+        {
+            "id": 89,
+            "items": [
+                {
+                    "id": 988287,
+                    "object": "page",
+                    "object_id": 988081,
+                    "parent": 0,
+                    "title": "Perawatan",
+                    "type": "post_type",
+                    "url": "https://gloskin-id.markas.cloud/treatments/"
+                }
+            ],
+            "name": "Gloskin Primary Preserved 2026-08-19-final",
+            "slug": "gloskin-primary-preserved-2026-08-19-final"
+        }
+    ],
+    "pages": [
+        {
+            "id": 988079,
+            "parent": 0,
+            "path": "home",
+            "slug": "home",
+            "status": "publish",
+            "template": "",
+            "title": "Beranda",
+            "url": "https://gloskin-id.markas.cloud/"
+        },
+        {
+            "id": 988080,
+            "parent": 0,
+            "path": "about",
+            "slug": "about",
+            "status": "publish",
+            "template": "",
+            "title": "Tentang Gloskin",
+            "url": "https://gloskin-id.markas.cloud/about/"
+        },
+        {
+            "id": 988081,
+            "parent": 0,
+            "path": "treatments",
+            "slug": "treatments",
+            "status": "publish",
+            "template": "",
+            "title": "Perawatan",
+            "url": "https://gloskin-id.markas.cloud/treatments/"
+        },
+        {
+            "id": 988082,
+            "parent": 0,
+            "path": "skincare",
+            "slug": "skincare",
+            "status": "publish",
+            "template": "",
+            "title": "Skincare",
+            "url": "https://gloskin-id.markas.cloud/skincare/"
+        },
+        {
+            "id": 988083,
+            "parent": 0,
+            "path": "clinics",
+            "slug": "clinics",
+            "status": "publish",
+            "template": "",
+            "title": "Klinik",
+            "url": "https://gloskin-id.markas.cloud/clinics/"
+        },
+        {
+            "id": 988084,
+            "parent": 0,
+            "path": "contact",
+            "slug": "contact",
+            "status": "publish",
+            "template": "",
+            "title": "Kontak",
+            "url": "https://gloskin-id.markas.cloud/contact/"
+        },
+        {
+            "id": 988085,
+            "parent": 0,
+            "path": "insights",
+            "slug": "insights",
+            "status": "publish",
+            "template": "",
+            "title": "Insight",
+            "url": "https://gloskin-id.markas.cloud/insights/"
+        },
+        {
+            "id": 988086,
+            "parent": 0,
+            "path": "shop",
+            "slug": "shop",
+            "status": "publish",
+            "template": "",
+            "title": "Belanja",
+            "url": "https://gloskin-id.markas.cloud/shop/"
+        },
+        {
+            "id": 988087,
+            "parent": 0,
+            "path": "doctors",
+            "slug": "doctors",
+            "status": "publish",
+            "template": "",
+            "title": "Dokter",
+            "url": "https://gloskin-id.markas.cloud/doctors/"
+        },
+        {
+            "id": 988088,
+            "parent": 988082,
+            "path": "skincare/facial-wash",
+            "slug": "facial-wash",
+            "status": "publish",
+            "template": "",
+            "title": "Facial Wash",
+            "url": "https://gloskin-id.markas.cloud/skincare/facial-wash/"
+        },
+        {
+            "id": 988089,
+            "parent": 988082,
+            "path": "skincare/day-cream-sunscreen",
+            "slug": "day-cream-sunscreen",
+            "status": "publish",
+            "template": "",
+            "title": "Day Cream / Sunscreen",
+            "url": "https://gloskin-id.markas.cloud/skincare/day-cream-sunscreen/"
+        },
+        {
+            "id": 988090,
+            "parent": 988082,
+            "path": "skincare/toner",
+            "slug": "toner",
+            "status": "publish",
+            "template": "",
+            "title": "Toner",
+            "url": "https://gloskin-id.markas.cloud/skincare/toner/"
+        },
+        {
+            "id": 988091,
+            "parent": 988082,
+            "path": "skincare/serum",
+            "slug": "serum",
+            "status": "publish",
+            "template": "",
+            "title": "Serum",
+            "url": "https://gloskin-id.markas.cloud/skincare/serum/"
+        },
+        {
+            "id": 988092,
+            "parent": 988082,
+            "path": "skincare/acne-care",
+            "slug": "acne-care",
+            "status": "publish",
+            "template": "",
+            "title": "Acne Care",
+            "url": "https://gloskin-id.markas.cloud/skincare/acne-care/"
+        },
+        {
+            "id": 988093,
+            "parent": 988082,
+            "path": "skincare/anti-aging",
+            "slug": "anti-aging",
+            "status": "publish",
+            "template": "",
+            "title": "Anti-Aging",
+            "url": "https://gloskin-id.markas.cloud/skincare/anti-aging/"
+        },
+        {
+            "id": 988094,
+            "parent": 988082,
+            "path": "skincare/brightening-pigmentation-care",
+            "slug": "brightening-pigmentation-care",
+            "status": "publish",
+            "template": "",
+            "title": "Brightening & Pigmentation Care",
+            "url": "https://gloskin-id.markas.cloud/skincare/brightening-pigmentation-care/"
+        },
+        {
+            "id": 988096,
+            "parent": 0,
+            "path": "cart",
+            "slug": "cart",
+            "status": "publish",
+            "template": "",
+            "title": "Cart",
+            "url": "https://gloskin-id.markas.cloud/cart/"
+        },
+        {
+            "id": 988097,
+            "parent": 0,
+            "path": "checkout",
+            "slug": "checkout",
+            "status": "publish",
+            "template": "",
+            "title": "Checkout",
+            "url": "https://gloskin-id.markas.cloud/checkout/"
+        },
+        {
+            "id": 988098,
+            "parent": 0,
+            "path": "my-account",
+            "slug": "my-account",
+            "status": "publish",
+            "template": "",
+            "title": "My account",
+            "url": "https://gloskin-id.markas.cloud/my-account/"
+        },
+        {
+            "id": 988099,
+            "parent": 0,
+            "path": "refund_returns",
+            "slug": "refund_returns",
+            "status": "draft",
+            "template": "",
+            "title": "Refund and Returns Policy",
+            "url": null
+        },
+        {
+            "id": 988307,
+            "parent": 0,
+            "path": "promo",
+            "slug": "promo",
+            "status": "publish",
+            "template": "",
+            "title": "Promo",
+            "url": "https://gloskin-id.markas.cloud/promo/"
+        }
+    ],
+    "public_post_types": [
+        {
+            "has_archive": false,
+            "label": "Posts",
+            "name": "post",
+            "rewrite": false
+        },
+        {
+            "has_archive": false,
+            "label": "Pages",
+            "name": "page",
+            "rewrite": false
+        },
+        {
+            "has_archive": false,
+            "label": "Media",
+            "name": "attachment",
+            "rewrite": false
+        },
+        {
+            "has_archive": false,
+            "label": "Treatments",
+            "name": "gloskin_treatment",
+            "rewrite": {
+                "ep_mask": 1,
+                "feeds": false,
+                "pages": true,
+                "slug": "treatments",
+                "with_front": false
+            }
+        },
+        {
+            "has_archive": false,
+            "label": "Clinics",
+            "name": "gloskin_clinic",
+            "rewrite": {
+                "ep_mask": 1,
+                "feeds": false,
+                "pages": true,
+                "slug": "clinics",
+                "with_front": false
+            }
+        },
+        {
+            "has_archive": false,
+            "label": "Doctors",
+            "name": "gloskin_doctor",
+            "rewrite": {
+                "ep_mask": 1,
+                "feeds": false,
+                "pages": true,
+                "slug": "doctors",
+                "with_front": false
+            }
+        },
+        {
+            "has_archive": false,
+            "label": "Products",
+            "name": "product",
+            "rewrite": {
+                "ep_mask": 1,
+                "feeds": false,
+                "pages": true,
+                "slug": "product",
+                "with_front": false
+            }
+        }
+    ],
+    "public_taxonomies": [
+        {
+            "label": "Categories",
+            "name": "category",
+            "object_types": [
+                "post"
+            ],
+            "rewrite": {
+                "ep_mask": 512,
+                "hierarchical": true,
+                "slug": "category",
+                "with_front": true
+            }
+        },
+        {
+            "label": "Tags",
+            "name": "post_tag",
+            "object_types": [
+                "post"
+            ],
+            "rewrite": {
+                "ep_mask": 1024,
+                "hierarchical": false,
+                "slug": "tag",
+                "with_front": true
+            }
+        },
+        {
+            "label": "Formats",
+            "name": "post_format",
+            "object_types": [
+                "post"
+            ],
+            "rewrite": {
+                "ep_mask": 0,
+                "hierarchical": false,
+                "slug": "type",
+                "with_front": true
+            }
+        },
+        {
+            "label": "Brands",
+            "name": "product_brand",
+            "object_types": [
+                "product"
+            ],
+            "rewrite": {
+                "ep_mask": 0,
+                "hierarchical": true,
+                "slug": "brand",
+                "with_front": false
+            }
+        },
+        {
+            "label": "Product categories",
+            "name": "product_cat",
+            "object_types": [
+                "product"
+            ],
+            "rewrite": {
+                "ep_mask": 0,
+                "hierarchical": true,
+                "slug": "product-category",
+                "with_front": false
+            }
+        },
+        {
+            "label": "Product tags",
+            "name": "product_tag",
+            "object_types": [
+                "product"
+            ],
+            "rewrite": {
+                "ep_mask": 0,
+                "hierarchical": false,
+                "slug": "product-tag",
+                "with_front": false
+            }
+        }
+    ],
+    "unresolved_page_relationships": []
+}

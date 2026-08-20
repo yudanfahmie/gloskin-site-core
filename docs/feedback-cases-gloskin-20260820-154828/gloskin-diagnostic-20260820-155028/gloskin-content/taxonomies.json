@@ -1,0 +1,214 @@
+{
+    "terms": [
+        {
+            "baseline_concerns": "",
+            "count": 0,
+            "description": "",
+            "id": 67,
+            "name": "Skincare",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "",
+            "slug": "skincare",
+            "taxonomy": "gloskin_product_family"
+        },
+        {
+            "baseline_concerns": "",
+            "count": 8,
+            "description": "",
+            "id": 68,
+            "name": "Perawatan",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "",
+            "slug": "treatment",
+            "taxonomy": "gloskin_product_family"
+        },
+        {
+            "baseline_concerns": "",
+            "count": 1,
+            "description": "",
+            "id": 73,
+            "name": "Jerawat Aktif",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "",
+            "slug": "active-acne",
+            "taxonomy": "gloskin_concern"
+        },
+        {
+            "baseline_concerns": "",
+            "count": 1,
+            "description": "",
+            "id": 74,
+            "name": "Bekas Jerawat",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "",
+            "slug": "acne-marks",
+            "taxonomy": "gloskin_concern"
+        },
+        {
+            "baseline_concerns": "",
+            "count": 2,
+            "description": "",
+            "id": 75,
+            "name": "Kulit Kusam",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "",
+            "slug": "dullness",
+            "taxonomy": "gloskin_concern"
+        },
+        {
+            "baseline_concerns": "",
+            "count": 2,
+            "description": "",
+            "id": 76,
+            "name": "Flek &amp; Pigmentasi",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "",
+            "slug": "pigmentation",
+            "taxonomy": "gloskin_concern"
+        },
+        {
+            "baseline_concerns": "",
+            "count": 2,
+            "description": "",
+            "id": 77,
+            "name": "Pori Besar",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "",
+            "slug": "large-pores",
+            "taxonomy": "gloskin_concern"
+        },
+        {
+            "baseline_concerns": "",
+            "count": 2,
+            "description": "",
+            "id": 78,
+            "name": "Kulit Berminyak",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "",
+            "slug": "oily-skin",
+            "taxonomy": "gloskin_concern"
+        },
+        {
+            "baseline_concerns": "",
+            "count": 2,
+            "description": "",
+            "id": 79,
+            "name": "Kulit Kering / Dehidrasi",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "",
+            "slug": "dry-dehydrated",
+            "taxonomy": "gloskin_concern"
+        },
+        {
+            "baseline_concerns": "",
+            "count": 2,
+            "description": "",
+            "id": 80,
+            "name": "Sensitif / Kemerahan",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "",
+            "slug": "sensitivity-redness",
+            "taxonomy": "gloskin_concern"
+        },
+        {
+            "baseline_concerns": "",
+            "count": 1,
+            "description": "",
+            "id": 81,
+            "name": "Garis Halus",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "",
+            "slug": "fine-lines",
+            "taxonomy": "gloskin_concern"
+        },
+        {
+            "baseline_concerns": "",
+            "count": 3,
+            "description": "",
+            "id": 82,
+            "name": "Tekstur Tidak Merata",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "",
+            "slug": "uneven-texture",
+            "taxonomy": "gloskin_concern"
+        },
+        {
+            "baseline_concerns": [
+                73,
+                74,
+                77,
+                78
+            ],
+            "count": 4,
+            "description": "",
+            "id": 69,
+            "name": "Jerawat",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "1",
+            "slug": "acne-focus",
+            "taxonomy": "gloskin_consultation_path"
+        },
+        {
+            "baseline_concerns": [
+                75,
+                76,
+                82
+            ],
+            "count": 3,
+            "description": "",
+            "id": 70,
+            "name": "Brightening",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "2",
+            "slug": "brightening-focus",
+            "taxonomy": "gloskin_consultation_path"
+        },
+        {
+            "baseline_concerns": [
+                81,
+                82,
+                79
+            ],
+            "count": 1,
+            "description": "",
+            "id": 71,
+            "name": "Anti-Aging",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "3",
+            "slug": "anti-aging-focus",
+            "taxonomy": "gloskin_consultation_path"
+        },
+        {
+            "baseline_concerns": [
+                79,
+                80,
+                78,
+                77
+            ],
+            "count": 3,
+            "description": "",
+            "id": 72,
+            "name": "Skin Health",
+            "parent": 0,
+            "path_image_id": 0,
+            "path_order": "4",
+            "slug": "skin-health-focus",
+            "taxonomy": "gloskin_consultation_path"
+        }
+    ]
+}

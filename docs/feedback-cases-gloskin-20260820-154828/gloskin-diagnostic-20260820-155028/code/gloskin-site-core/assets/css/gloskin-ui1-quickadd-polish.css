@@ -1,0 +1,491 @@
+/* Reusable Gloskin variable-product presentation. WooCommerce remains the
+ * sole owner of attribute selects, variation state, quantity constraints and
+ * submission; every rule here is scoped to the existing Quick Add overlay or
+ * the already-composed primary Purchase Dock. */
+.gloskin-ui1-quickadd__form .table-container{
+	width:100%;
+	max-width:100%;
+	min-width:0;
+	margin:0;
+	padding:0;
+	border:0;
+	border-radius:0;
+	background:transparent;
+	box-shadow:none;
+}
+
+.gloskin-ui1-variable-select--enhanced,
+.gloskin-ui1-variable-native-submit--enhanced{
+	position:absolute;
+	inline-size:1px;
+	block-size:1px;
+	margin:-1px;
+	padding:0;
+	border:0;
+	overflow:hidden;
+	clip-path:inset(50%);
+	white-space:nowrap;
+	visibility:hidden;
+	pointer-events:none;
+}
+.gloskin-ui1 .gloskin-ui1-variable-catalog-enhanced .reset_variations{
+	display:none;
+}
+
+.gloskin-ui1-quickadd__form form.cart{
+	display:grid;
+	grid-template-columns:minmax(0,1fr);
+	gap:14px;
+	width:100%;
+	min-width:0;
+	margin:0;
+}
+.gloskin-ui1-quickadd__form table.variations,
+.gloskin-ui1-quickadd__form table.variations tbody{
+	display:block;
+	width:100%;
+	margin:0;
+}
+.gloskin-ui1-quickadd__form table.variations tr{
+	display:grid;
+	grid-template-columns:minmax(0,1fr);
+	gap:7px;
+	width:100%;
+	margin:0 0 12px;
+}
+.gloskin-ui1-quickadd__form table.variations tr:last-child{
+	margin-bottom:0;
+}
+.gloskin-ui1-quickadd__form table.variations th,
+.gloskin-ui1-quickadd__form table.variations td{
+	display:block;
+	width:100%;
+	padding:0;
+	border:0;
+	text-align:left;
+}
+.gloskin-ui1-quickadd__form table.variations th label,
+.gloskin-ui1-variable-field__label{
+	display:block;
+	margin:0;
+	font-size:.82rem;
+	font-weight:700;
+	line-height:1.35;
+	color:var(--gloskin-ink);
+}
+
+.gloskin-ui1-variable-chips{
+	display:flex;
+	flex-wrap:wrap;
+	gap:8px;
+	min-width:0;
+	outline:none;
+}
+.gloskin-ui1 .gloskin-ui1-variable-chips .gloskin-ui1-variable-chip{
+	appearance:none;
+	display:inline-flex;
+	align-items:center;
+	justify-content:center;
+	min-height:42px;
+	max-width:100%;
+	padding:8px 14px;
+	border:1px solid var(--gloskin-border);
+	border-radius:999px;
+	background:var(--gloskin-surface-soft,#fbf8f1);
+	color:var(--gloskin-ink);
+	font:inherit;
+	font-size:.88rem;
+	font-weight:650;
+	line-height:1.2;
+	cursor:pointer;
+	transition:border-color 160ms ease,background-color 160ms ease,box-shadow 160ms ease;
+}
+.gloskin-ui1 .gloskin-ui1-variable-chips .gloskin-ui1-variable-chip:hover:not(:disabled),
+.gloskin-ui1 .gloskin-ui1-variable-chips .gloskin-ui1-variable-chip:focus-visible{
+	border-color:var(--gloskin-accent);
+	background:var(--gloskin-surface-soft,#fbf8f1);
+	color:var(--gloskin-ink);
+	box-shadow:0 0 0 2px color-mix(in srgb,var(--gloskin-accent) 13%,transparent);
+}
+.gloskin-ui1 .gloskin-ui1-variable-chips .gloskin-ui1-variable-chip[aria-pressed="true"],
+.gloskin-ui1 .gloskin-ui1-variable-chips .gloskin-ui1-variable-chip[aria-pressed="true"]:hover,
+.gloskin-ui1 .gloskin-ui1-variable-chips .gloskin-ui1-variable-chip[aria-pressed="true"]:focus-visible{
+	border-color:var(--gloskin-accent);
+	background:var(--gloskin-accent-soft);
+	color:var(--gloskin-ink);
+}
+.gloskin-ui1 .gloskin-ui1-variable-chips .gloskin-ui1-variable-chip:disabled{
+	opacity:.42;
+	cursor:not-allowed;
+}
+.gloskin-ui1-variable-chips:focus-visible{
+	border-radius:12px;
+	box-shadow:0 0 0 2px color-mix(in srgb,var(--gloskin-accent) 18%,transparent);
+}
+
+.gloskin-ui1-quickadd__form .woocommerce-variation.single_variation{
+	grid-column:1 / -1;
+	min-width:0;
+}
+.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart.variations_button{
+	display:grid;
+	grid-template-columns:auto minmax(0,1fr);
+	gap:12px;
+	align-items:stretch;
+	width:100%;
+	min-width:0;
+}
+.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart.variations_button .quantity{
+	grid-column:1;
+	align-self:stretch;
+	justify-self:start;
+	margin:0;
+}
+.gloskin-ui1-variable-modal__cta{
+	grid-column:2;
+	min-width:0;
+	width:100%;
+	min-height:46px;
+	margin:0;
+	display:inline-flex;
+	align-items:center;
+	justify-content:center;
+	gap:8px;
+	border:1px solid var(--gloskin-accent);
+	border-radius:var(--gloskin-radius-control,10px);
+	background:var(--gloskin-accent);
+	color:#fff;
+	font:inherit;
+	font-weight:750;
+	line-height:1.2;
+	cursor:pointer;
+}
+.gloskin-ui1-variable-modal__cta:hover,
+.gloskin-ui1-variable-modal__cta:focus-visible{
+	filter:brightness(.96);
+}
+/* Idle: the shared plus-icon primitive. Loading: the SAME ::before swaps to
+   the existing canonical ring spinner -- one pseudo-element, one owner, so
+   idle and loading icons can never render at the same time. */
+.gloskin-ui1-variable-modal__cta::before{
+	content:"";
+	flex:0 0 15px;
+	width:15px;
+	height:15px;
+	background-color:currentColor;
+	-webkit-mask:var(--gloskin-icon-plus) center/contain no-repeat;
+	mask:var(--gloskin-icon-plus) center/contain no-repeat;
+}
+.gloskin-ui1-variable-modal__cta.is-loading{
+	pointer-events:none;
+}
+.gloskin-ui1-variable-modal__cta.is-loading::before{
+	background-color:transparent;
+	-webkit-mask:none;
+	mask:none;
+	border:2px solid currentColor;
+	border-right-color:transparent;
+	border-radius:999px;
+	animation:gloskin-atc-spin 650ms linear infinite;
+}
+.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart.variations_button.is-quantity-hidden{
+	grid-template-columns:minmax(0,1fr);
+}
+.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart.variations_button.is-quantity-hidden .gloskin-ui1-variable-modal__cta{
+	grid-column:1;
+}
+
+.gloskin-ui1-quickadd__loading{
+	gap:10px;
+}
+.gloskin-ui1-quickadd__image--placeholder{
+	display:block;
+	background:var(--gloskin-surface-soft,#fbf8f1);
+}
+
+.gloskin-ui1-variable-modal__pdp{
+	display:grid;
+	gap:18px;
+	min-width:0;
+}
+.gloskin-ui1-variable-modal__identity{
+	display:grid;
+	gap:4px;
+	min-width:0;
+}
+.gloskin-ui1-variable-modal__identity strong{
+	font-size:1rem;
+	line-height:1.35;
+}
+.gloskin-ui1-variable-modal__identity-converged{
+	margin:0;
+}
+.gloskin-ui1-variable-modal__fields{
+	display:grid;
+	gap:15px;
+}
+.gloskin-ui1-variable-field{
+	display:grid;
+	gap:7px;
+	min-width:0;
+}
+.gloskin-ui1-variable-modal__variation-state{
+	min-width:0;
+}
+.gloskin-ui1-variable-modal__variation-state:empty{
+	display:none;
+}
+.gloskin-ui1-variable-modal__actions{
+	display:grid;
+	grid-template-columns:auto minmax(0,1fr);
+	gap:12px;
+	align-items:stretch;
+	min-width:0;
+}
+.gloskin-ui1-variable-modal__actions.is-quantity-hidden{
+	grid-template-columns:minmax(0,1fr);
+}
+.gloskin-ui1-variable-modal__actions.is-quantity-hidden .gloskin-ui1-variable-modal__qty-proxy{
+	display:none;
+}
+.gloskin-ui1-variable-modal__actions.is-quantity-hidden .gloskin-ui1-variable-modal__cta{
+	grid-column:1 / -1;
+}
+
+/* ONE active Gloskin quantity-stepper visual owner. Legacy surface classes
+ * remain stable DOM/behavior hooks, while this final-loaded component owns
+ * the rendered 34 / 44 / 34 x 46 geometry on all three surfaces. */
+.gloskin-ui1 .gloskin-ui1-qty-stepper,
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control,
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-proxy,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control{
+	display:grid;
+	grid-template-columns:34px 44px 34px;
+	width:fit-content;
+	min-height:46px;
+	align-items:stretch;
+	border:1px solid var(--gloskin-border);
+	border-radius:var(--gloskin-radius-sm);
+	background:var(--gloskin-bg);
+	color:var(--gloskin-text);
+	overflow:hidden;
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control input.qty,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control input.qty,
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-value,
+.gloskin-ui1 .gloskin-ui1-qty-stepper__value{
+	width:44px;
+	min-width:44px;
+	max-width:44px;
+	min-height:44px;
+	padding:0;
+	border:0;
+	border-radius:0;
+	background:transparent;
+	color:var(--gloskin-text);
+	font:inherit;
+	font-size:.9rem;
+	font-weight:700;
+	line-height:1;
+	text-align:center;
+}
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-value,
+.gloskin-ui1 .gloskin-ui1-qty-stepper__value:not(input){
+	display:grid;
+	place-items:center;
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control input.qty,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control input.qty,
+.gloskin-ui1 input.gloskin-ui1-qty-stepper__value{
+	-moz-appearance:textfield;
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control input.qty::-webkit-inner-spin-button,
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control input.qty::-webkit-outer-spin-button,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control input.qty::-webkit-inner-spin-button,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control input.qty::-webkit-outer-spin-button,
+.gloskin-ui1 input.gloskin-ui1-qty-stepper__value::-webkit-inner-spin-button,
+.gloskin-ui1 input.gloskin-ui1-qty-stepper__value::-webkit-outer-spin-button{
+	margin:0;
+	-webkit-appearance:none;
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-minus,
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-plus,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-minus,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-plus,
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-proxy button,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__minus,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__plus{
+	appearance:none;
+	display:grid;
+	width:34px;
+	min-width:34px;
+	min-height:44px;
+	padding:0;
+	border:0;
+	border-radius:0;
+	background:transparent;
+	color:var(--gloskin-text);
+	font:inherit;
+	font-size:1.05rem;
+	font-weight:700;
+	line-height:1;
+	cursor:pointer;
+	place-items:center;
+	transition:background-color 140ms ease,color 140ms ease;
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-minus,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-minus,
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-proxy button:first-child,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__minus{
+	border-right:1px solid var(--gloskin-border);
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-plus,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-plus,
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-proxy button:last-child,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__plus{
+	border-left:1px solid var(--gloskin-border);
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-minus:hover,
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-plus:hover,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-minus:hover,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-plus:hover,
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-proxy button:hover,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__minus:hover,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__plus:hover,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__minus:focus-visible,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__plus:focus-visible{
+	background:var(--gloskin-surface);
+	color:var(--gloskin-text);
+}
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-minus:disabled,
+.gloskin-ui1 .gloskin-ui1-quickadd__qty-control .gloskin-ui1-quickadd__qty-plus:disabled,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-minus:disabled,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .gloskin-ui1-purchase-dock__qty-plus:disabled,
+.gloskin-ui1 .gloskin-ui1-variable-modal__qty-proxy button:disabled,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__minus:disabled,
+.gloskin-ui1 .gloskin-ui1-qty-stepper .gloskin-ui1-qty-stepper__plus:disabled{
+	opacity:.4;
+	cursor:not-allowed;
+	background:transparent;
+	color:var(--gloskin-muted);
+}
+
+body.single-product [data-gloskin-purchase-dock] form.variations_form.gloskin-ui1-variable-pdp-enhanced .gloskin-ui1-purchase-dock__variants,
+body.single-product [data-gloskin-purchase-dock] form.variations_form.gloskin-ui1-variable-pdp-enhanced .gloskin-ui1-purchase-dock__variation-action{
+	position:absolute;
+	inline-size:1px;
+	block-size:1px;
+	margin:-1px;
+	padding:0;
+	border:0;
+	overflow:hidden;
+	clip-path:inset(50%);
+	white-space:nowrap;
+	visibility:hidden;
+}
+[data-gloskin-purchase-dock] .gloskin-ui1-variable-pdp-trigger{
+	appearance:none;
+	min-height:46px;
+	width:100%;
+	min-width:0;
+	padding:10px 14px;
+	border:1px solid var(--gloskin-inverse);
+	border-radius:var(--gloskin-action-radius);
+	background:var(--gloskin-inverse);
+	color:var(--gloskin-accent-strong);
+	font:inherit;
+	font-weight:700;
+	line-height:1.25;
+	cursor:pointer;
+	transition:background-color 140ms ease,border-color 140ms ease,color 140ms ease;
+}
+[data-gloskin-purchase-dock] .gloskin-ui1-variable-pdp-trigger:hover,
+[data-gloskin-purchase-dock] .gloskin-ui1-variable-pdp-trigger:focus-visible{
+	border-color:var(--gloskin-inverse);
+	background:color-mix(in srgb,var(--gloskin-inverse) 92%,var(--gloskin-accent-soft));
+	color:var(--gloskin-accent-strong);
+}
+
+.gloskin-ui1-action-spotlight__backdrop{
+	position:fixed;
+	inset:0;
+	z-index:9996;
+	background:rgba(42,35,44,.22);
+	-webkit-backdrop-filter:blur(2px) saturate(.92);
+	backdrop-filter:blur(2px) saturate(.92);
+	pointer-events:none;
+}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home:has(>[data-gloskin-purchase-dock].is-action-spotlight){
+	position:relative;
+	z-index:9997;
+}
+[data-gloskin-variable-pdp-trigger].is-action-spotlight-target{
+	position:relative;
+	box-shadow:0 0 0 3px color-mix(in srgb,var(--gloskin-inverse) 74%,transparent),0 8px 20px color-mix(in srgb,var(--gloskin-brand-charcoal) 16%,transparent);
+	transform:translateY(-1px);
+	animation:gloskin-action-spotlight-pulse 760ms cubic-bezier(.22,1,.36,1) 1;
+}
+@keyframes gloskin-action-spotlight-pulse{
+	0%,100%{box-shadow:0 0 0 3px color-mix(in srgb,var(--gloskin-inverse) 74%,transparent),0 8px 20px color-mix(in srgb,var(--gloskin-brand-charcoal) 16%,transparent)}
+	50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--gloskin-inverse) 52%,transparent),0 10px 24px color-mix(in srgb,var(--gloskin-brand-charcoal) 18%,transparent)}
+}
+
+.gloskin-ui1-toast-region{
+	position:fixed;
+	left:50%;
+	bottom:max(28px,env(safe-area-inset-bottom));
+	z-index:12000;
+	max-width:min(420px,calc(100vw - 32px));
+	padding:11px 15px;
+	border:1px solid color-mix(in srgb,var(--gloskin-accent) 26%,var(--gloskin-border));
+	border-radius:999px;
+	background:color-mix(in srgb,var(--gloskin-accent) 7%,#fff);
+	box-shadow:0 8px 24px rgba(30,24,18,.08);
+	color:var(--gloskin-ink);
+	font-size:.88rem;
+	font-weight:700;
+	line-height:1.35;
+	text-align:center;
+	opacity:0;
+	transform:translate(-50%,8px);
+	pointer-events:none;
+	transition:opacity 160ms ease,transform 160ms ease;
+}
+.gloskin-ui1-toast-region.is-visible{
+	opacity:1;
+	transform:translate(-50%,0);
+}
+
+@media (max-width:340px){
+	.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart.variations_button,
+	.gloskin-ui1-variable-modal__actions{
+		grid-template-columns:minmax(0,1fr);
+	}
+	.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart.variations_button .quantity,
+	.gloskin-ui1-variable-modal__qty-proxy,
+	.gloskin-ui1-variable-modal__cta{
+		grid-column:1;
+	}
+	.gloskin-ui1-quickadd__form .woocommerce-variation-add-to-cart.variations_button .quantity,
+	.gloskin-ui1-variable-modal__qty-proxy{
+		justify-self:start;
+	}
+}
+
+@media (prefers-reduced-motion:reduce){
+	.gloskin-ui1 .gloskin-ui1-variable-chips .gloskin-ui1-variable-chip,
+	.gloskin-ui1-toast-region{
+		transition:none;
+	}
+	.gloskin-ui1-toast-region,
+	.gloskin-ui1-toast-region.is-visible{
+		transform:translate(-50%,0);
+	}
+	[data-gloskin-variable-pdp-trigger].is-action-spotlight-target{
+		animation:none;
+		transform:none;
+	}
+	.gloskin-ui1-variable-modal__cta.is-loading::before{
+		animation:none;
+	}
+}

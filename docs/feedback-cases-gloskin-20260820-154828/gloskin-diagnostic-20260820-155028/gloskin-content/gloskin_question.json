@@ -1,0 +1,508 @@
+{
+    "post_type": "gloskin_question",
+    "records": [
+        {
+            "content": "",
+            "created": "2026-08-14 23:04:02",
+            "excerpt": "",
+            "featured_media": null,
+            "id": 988182,
+            "menu_order": 0,
+            "meta": {
+                "gloskin_question_answers": [
+                    {
+                        "concern_id": 73,
+                        "label": "Jerawat & bekasnya",
+                        "weight": 3
+                    },
+                    {
+                        "concern_id": 75,
+                        "label": "Kulit kusam & flek",
+                        "weight": 3
+                    },
+                    {
+                        "concern_id": 81,
+                        "label": "Tanda penuaan",
+                        "weight": 3
+                    },
+                    {
+                        "concern_id": 80,
+                        "label": "Kesehatan kulit secara umum",
+                        "weight": 2
+                    }
+                ]
+            },
+            "modified": "2026-08-14 23:04:02",
+            "parent": 0,
+            "slug": "apa-keluhan-utama-yang-paling-ingin-anda-fokuskan",
+            "status": "publish",
+            "terms": [],
+            "title": "Apa keluhan utama yang paling ingin Anda fokuskan?",
+            "type": "gloskin_question",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_question&p=988182"
+        },
+        {
+            "content": "",
+            "created": "2026-08-14 23:04:02",
+            "excerpt": "",
+            "featured_media": null,
+            "id": 988183,
+            "menu_order": 0,
+            "meta": {
+                "gloskin_question_answers": [
+                    {
+                        "concern_id": 78,
+                        "label": "Sangat berminyak",
+                        "weight": 3
+                    },
+                    {
+                        "concern_id": 78,
+                        "label": "Berminyak di area T-zone",
+                        "weight": 2
+                    },
+                    {
+                        "concern_id": 79,
+                        "label": "Cenderung kering",
+                        "weight": 2
+                    }
+                ]
+            },
+            "modified": "2026-08-14 23:04:02",
+            "parent": 0,
+            "slug": "bagaimana-kondisi-minyak-kulit-anda-sepanjang-hari",
+            "status": "publish",
+            "terms": [
+                {
+                    "id": 69,
+                    "name": "Jerawat",
+                    "parent": 0,
+                    "slug": "acne-focus",
+                    "taxonomy": "gloskin_consultation_path"
+                }
+            ],
+            "title": "Bagaimana kondisi minyak kulit Anda sepanjang hari?",
+            "type": "gloskin_question",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_question&p=988183"
+        },
+        {
+            "content": "",
+            "created": "2026-08-14 23:04:02",
+            "excerpt": "",
+            "featured_media": null,
+            "id": 988184,
+            "menu_order": 0,
+            "meta": {
+                "gloskin_question_answers": [
+                    {
+                        "concern_id": 77,
+                        "label": "Sangat sering",
+                        "weight": 3
+                    },
+                    {
+                        "concern_id": 77,
+                        "label": "Kadang-kadang",
+                        "weight": 2
+                    }
+                ]
+            },
+            "modified": "2026-08-14 23:04:02",
+            "parent": 0,
+            "slug": "seberapa-sering-komedo-atau-sumbatan-pori-menjadi-perhatian",
+            "status": "publish",
+            "terms": [
+                {
+                    "id": 69,
+                    "name": "Jerawat",
+                    "parent": 0,
+                    "slug": "acne-focus",
+                    "taxonomy": "gloskin_consultation_path"
+                }
+            ],
+            "title": "Seberapa sering komedo atau sumbatan pori menjadi perhatian?",
+            "type": "gloskin_question",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_question&p=988184"
+        },
+        {
+            "content": "",
+            "created": "2026-08-14 23:04:02",
+            "excerpt": "",
+            "featured_media": null,
+            "id": 988185,
+            "menu_order": 0,
+            "meta": {
+                "gloskin_question_answers": [
+                    {
+                        "concern_id": 73,
+                        "label": "Hampir selalu ada",
+                        "weight": 3
+                    },
+                    {
+                        "concern_id": 73,
+                        "label": "Muncul sesekali",
+                        "weight": 2
+                    }
+                ]
+            },
+            "modified": "2026-08-14 23:04:02",
+            "parent": 0,
+            "slug": "seberapa-sering-jerawat-aktif-muncul",
+            "status": "publish",
+            "terms": [
+                {
+                    "id": 69,
+                    "name": "Jerawat",
+                    "parent": 0,
+                    "slug": "acne-focus",
+                    "taxonomy": "gloskin_consultation_path"
+                }
+            ],
+            "title": "Seberapa sering jerawat aktif muncul?",
+            "type": "gloskin_question",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_question&p=988185"
+        },
+        {
+            "content": "",
+            "created": "2026-08-14 23:04:02",
+            "excerpt": "",
+            "featured_media": null,
+            "id": 988186,
+            "menu_order": 0,
+            "meta": {
+                "gloskin_question_answers": [
+                    {
+                        "concern_id": 74,
+                        "label": "Sangat mengganggu",
+                        "weight": 3
+                    },
+                    {
+                        "concern_id": 74,
+                        "label": "Cukup terlihat",
+                        "weight": 2
+                    }
+                ]
+            },
+            "modified": "2026-08-14 23:04:02",
+            "parent": 0,
+            "slug": "seberapa-besar-bekas-jerawat-menjadi-perhatian-anda",
+            "status": "publish",
+            "terms": [
+                {
+                    "id": 69,
+                    "name": "Jerawat",
+                    "parent": 0,
+                    "slug": "acne-focus",
+                    "taxonomy": "gloskin_consultation_path"
+                }
+            ],
+            "title": "Seberapa besar bekas jerawat menjadi perhatian Anda?",
+            "type": "gloskin_question",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_question&p=988186"
+        },
+        {
+            "content": "",
+            "created": "2026-08-14 23:04:02",
+            "excerpt": "",
+            "featured_media": null,
+            "id": 988187,
+            "menu_order": 0,
+            "meta": {
+                "gloskin_question_answers": [
+                    {
+                        "concern_id": 75,
+                        "label": "Terasa kusam",
+                        "weight": 3
+                    },
+                    {
+                        "concern_id": 75,
+                        "label": "Kadang kusam",
+                        "weight": 2
+                    }
+                ]
+            },
+            "modified": "2026-08-14 23:04:02",
+            "parent": 0,
+            "slug": "bagaimana-tampilan-kecerahan-warna-kulit-anda-saat-ini",
+            "status": "publish",
+            "terms": [
+                {
+                    "id": 70,
+                    "name": "Brightening",
+                    "parent": 0,
+                    "slug": "brightening-focus",
+                    "taxonomy": "gloskin_consultation_path"
+                }
+            ],
+            "title": "Bagaimana tampilan kecerahan warna kulit Anda saat ini?",
+            "type": "gloskin_question",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_question&p=988187"
+        },
+        {
+            "content": "",
+            "created": "2026-08-14 23:04:02",
+            "excerpt": "",
+            "featured_media": null,
+            "id": 988188,
+            "menu_order": 0,
+            "meta": {
+                "gloskin_question_answers": [
+                    {
+                        "concern_id": 76,
+                        "label": "Ya, cukup terlihat",
+                        "weight": 3
+                    },
+                    {
+                        "concern_id": 76,
+                        "label": "Ada sedikit",
+                        "weight": 2
+                    }
+                ]
+            },
+            "modified": "2026-08-14 23:04:02",
+            "parent": 0,
+            "slug": "apakah-flek-atau-noda-gelap-menjadi-perhatian",
+            "status": "publish",
+            "terms": [
+                {
+                    "id": 70,
+                    "name": "Brightening",
+                    "parent": 0,
+                    "slug": "brightening-focus",
+                    "taxonomy": "gloskin_consultation_path"
+                }
+            ],
+            "title": "Apakah flek atau noda gelap menjadi perhatian?",
+            "type": "gloskin_question",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_question&p=988188"
+        },
+        {
+            "content": "",
+            "created": "2026-08-14 23:04:03",
+            "excerpt": "",
+            "featured_media": null,
+            "id": 988189,
+            "menu_order": 0,
+            "meta": {
+                "gloskin_question_answers": [
+                    {
+                        "concern_id": 82,
+                        "label": "Tidak merata / kasar",
+                        "weight": 3
+                    },
+                    {
+                        "concern_id": 82,
+                        "label": "Sedikit tidak merata",
+                        "weight": 2
+                    }
+                ]
+            },
+            "modified": "2026-08-14 23:04:03",
+            "parent": 0,
+            "slug": "bagaimana-kondisi-tekstur-permukaan-kulit-anda",
+            "status": "publish",
+            "terms": [
+                {
+                    "id": 70,
+                    "name": "Brightening",
+                    "parent": 0,
+                    "slug": "brightening-focus",
+                    "taxonomy": "gloskin_consultation_path"
+                }
+            ],
+            "title": "Bagaimana kondisi tekstur permukaan kulit Anda?",
+            "type": "gloskin_question",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_question&p=988189"
+        },
+        {
+            "content": "",
+            "created": "2026-08-14 23:04:03",
+            "excerpt": "",
+            "featured_media": null,
+            "id": 988190,
+            "menu_order": 0,
+            "meta": {
+                "gloskin_question_answers": [
+                    {
+                        "concern_id": 77,
+                        "label": "Sangat terlihat",
+                        "weight": 3
+                    },
+                    {
+                        "concern_id": 77,
+                        "label": "Cukup terlihat",
+                        "weight": 2
+                    }
+                ]
+            },
+            "modified": "2026-08-14 23:04:03",
+            "parent": 0,
+            "slug": "seberapa-terlihat-pori-pori-pada-area-wajah-anda",
+            "status": "publish",
+            "terms": [
+                {
+                    "id": 72,
+                    "name": "Skin Health",
+                    "parent": 0,
+                    "slug": "skin-health-focus",
+                    "taxonomy": "gloskin_consultation_path"
+                }
+            ],
+            "title": "Seberapa terlihat pori-pori pada area wajah Anda?",
+            "type": "gloskin_question",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_question&p=988190"
+        },
+        {
+            "content": "",
+            "created": "2026-08-14 23:04:03",
+            "excerpt": "",
+            "featured_media": null,
+            "id": 988191,
+            "menu_order": 0,
+            "meta": {
+                "gloskin_question_answers": [
+                    {
+                        "concern_id": 79,
+                        "label": "Sering",
+                        "weight": 3
+                    },
+                    {
+                        "concern_id": 79,
+                        "label": "Kadang-kadang",
+                        "weight": 2
+                    }
+                ]
+            },
+            "modified": "2026-08-14 23:04:03",
+            "parent": 0,
+            "slug": "seberapa-sering-kulit-terasa-kering-atau-tertarik",
+            "status": "publish",
+            "terms": [
+                {
+                    "id": 72,
+                    "name": "Skin Health",
+                    "parent": 0,
+                    "slug": "skin-health-focus",
+                    "taxonomy": "gloskin_consultation_path"
+                }
+            ],
+            "title": "Seberapa sering kulit terasa kering atau tertarik?",
+            "type": "gloskin_question",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_question&p=988191"
+        },
+        {
+            "content": "",
+            "created": "2026-08-14 23:04:03",
+            "excerpt": "",
+            "featured_media": null,
+            "id": 988192,
+            "menu_order": 0,
+            "meta": {
+                "gloskin_question_answers": [
+                    {
+                        "concern_id": 80,
+                        "label": "Sangat mudah",
+                        "weight": 3
+                    },
+                    {
+                        "concern_id": 80,
+                        "label": "Kadang-kadang",
+                        "weight": 2
+                    }
+                ]
+            },
+            "modified": "2026-08-14 23:04:03",
+            "parent": 0,
+            "slug": "seberapa-mudah-kulit-terasa-sensitif-atau-tampak-kemerahan",
+            "status": "publish",
+            "terms": [
+                {
+                    "id": 72,
+                    "name": "Skin Health",
+                    "parent": 0,
+                    "slug": "skin-health-focus",
+                    "taxonomy": "gloskin_consultation_path"
+                }
+            ],
+            "title": "Seberapa mudah kulit terasa sensitif atau tampak kemerahan?",
+            "type": "gloskin_question",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_question&p=988192"
+        },
+        {
+            "content": "",
+            "created": "2026-08-14 23:04:03",
+            "excerpt": "",
+            "featured_media": null,
+            "id": 988193,
+            "menu_order": 0,
+            "meta": {
+                "gloskin_question_answers": [
+                    {
+                        "concern_id": 81,
+                        "label": "Ya, cukup terlihat",
+                        "weight": 3
+                    },
+                    {
+                        "concern_id": 81,
+                        "label": "Mulai terlihat",
+                        "weight": 2
+                    }
+                ]
+            },
+            "modified": "2026-08-14 23:04:03",
+            "parent": 0,
+            "slug": "apakah-garis-halus-menjadi-perhatian-anda-saat-ini",
+            "status": "publish",
+            "terms": [
+                {
+                    "id": 71,
+                    "name": "Anti-Aging",
+                    "parent": 0,
+                    "slug": "anti-aging-focus",
+                    "taxonomy": "gloskin_consultation_path"
+                }
+            ],
+            "title": "Apakah garis halus menjadi perhatian Anda saat ini?",
+            "type": "gloskin_question",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_question&p=988193"
+        },
+        {
+            "content": "",
+            "created": "2026-08-14 23:04:03",
+            "excerpt": "",
+            "featured_media": null,
+            "id": 988194,
+            "menu_order": 0,
+            "meta": {
+                "gloskin_question_answers": [
+                    {
+                        "concern_id": 73,
+                        "label": "Kulit bersih dari jerawat",
+                        "weight": 2
+                    },
+                    {
+                        "concern_id": 75,
+                        "label": "Warna kulit lebih cerah merata",
+                        "weight": 2
+                    },
+                    {
+                        "concern_id": 81,
+                        "label": "Kulit terasa lebih kenyal & halus",
+                        "weight": 2
+                    },
+                    {
+                        "concern_id": 80,
+                        "label": "Kulit terasa lebih nyaman & sehat",
+                        "weight": 2
+                    }
+                ]
+            },
+            "modified": "2026-08-14 23:04:03",
+            "parent": 0,
+            "slug": "hasil-perawatan-apa-yang-paling-ingin-anda-prioritaskan",
+            "status": "publish",
+            "terms": [],
+            "title": "Hasil perawatan apa yang paling ingin Anda prioritaskan?",
+            "type": "gloskin_question",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_question&p=988194"
+        }
+    ]
+}

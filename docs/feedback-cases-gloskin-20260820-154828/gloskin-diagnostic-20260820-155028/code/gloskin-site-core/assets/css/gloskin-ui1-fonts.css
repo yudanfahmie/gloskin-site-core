@@ -1,0 +1,58 @@
+/*
+ * Gloskin UI v1 self-hosted production fonts.
+ *
+ * Graphik runtime faces are verbatim owner-supplied WOFF binaries sourced from
+ * opr/bloc at commit ddd732dd29409153802e37936a365794368c30bf.
+ * No font conversion is performed; runtime files are the canonical binaries.
+ * See assets/fonts/GRAPHIK-SOURCE.md for provenance and licensing notes.
+ * No runtime request to an external font CDN remains.
+ *
+ * This file declares only @font-face rules — no other selectors.
+ */
+
+/* Felix Titling — editorial display headings only (400 normal) */
+@font-face{
+	font-family:"Felix Titling";
+	src:url("../fonts/Felixti.woff2") format("woff2");
+	font-style:normal;
+	font-weight:400;
+	font-display:swap;
+}
+
+/* Graphik — one canonical sans-serif family. The uploaded source includes a
+ * genuine Semibold WOFF, so 600 maps to that face rather than synthesis. */
+@font-face{
+	font-family:"Graphik";
+	src:url("../fonts/Graphik-Light.woff") format("woff");
+	font-style:normal;
+	font-weight:300;
+	font-display:swap;
+}
+@font-face{
+	font-family:"Graphik";
+	src:url("../fonts/Graphik-Regular.woff") format("woff");
+	font-style:normal;
+	font-weight:400;
+	font-display:swap;
+}
+@font-face{
+	font-family:"Graphik";
+	src:url("../fonts/Graphik-Medium.woff") format("woff");
+	font-style:normal;
+	font-weight:500;
+	font-display:swap;
+}
+@font-face{
+	font-family:"Graphik";
+	src:url("../fonts/Graphik-Semibold.woff") format("woff");
+	font-style:normal;
+	font-weight:600;
+	font-display:swap;
+}
+@font-face{
+	font-family:"Graphik";
+	src:url("../fonts/Graphik-Bold.woff") format("woff");
+	font-style:normal;
+	font-weight:700;
+	font-display:swap;
+}

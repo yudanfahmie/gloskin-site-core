@@ -1,0 +1,757 @@
+{
+    "available": true,
+    "excluded": [
+        "orders",
+        "customers",
+        "addresses",
+        "payment data",
+        "refunds",
+        "sessions",
+        "gateway configuration",
+        "private notes"
+    ],
+    "pages": {
+        "cart": {
+            "id": 988096,
+            "status": "publish",
+            "url": "https://gloskin-id.markas.cloud/cart/"
+        },
+        "checkout": {
+            "id": 988097,
+            "status": "publish",
+            "url": "https://gloskin-id.markas.cloud/checkout/"
+        },
+        "myaccount": {
+            "id": 988098,
+            "status": "publish",
+            "url": "https://gloskin-id.markas.cloud/my-account/"
+        },
+        "shop": {
+            "id": 988086,
+            "status": "publish",
+            "url": "https://gloskin-id.markas.cloud/shop/"
+        }
+    },
+    "product_counts": {
+        "auto-draft": 0,
+        "dp-rewrite-republish": 0,
+        "draft": 0,
+        "future": 0,
+        "inherit": 0,
+        "pending": 0,
+        "private": 0,
+        "publish": "21",
+        "request-completed": 0,
+        "request-confirmed": 0,
+        "request-failed": 0,
+        "request-pending": 0,
+        "trash": 0,
+        "wc-cancelled": 0,
+        "wc-checkout-draft": 0,
+        "wc-completed": 0,
+        "wc-failed": 0,
+        "wc-on-hold": 0,
+        "wc-pending": 0,
+        "wc-processing": 0,
+        "wc-refunded": 0
+    },
+    "products": [
+        {
+            "attributes": [
+                {
+                    "name": "Ukuran",
+                    "options": [
+                        "100 ml"
+                    ],
+                    "variation": false,
+                    "visible": true
+                },
+                {
+                    "name": "Usage",
+                    "options": [
+                        "Gunakan secukupnya sesuai tahap rutinitas pada kulit yang bersih. Hentikan pemakaian bila muncul ketidaknyamanan dan ikuti petunjuk produk resmi bila tersedia."
+                    ],
+                    "variation": false,
+                    "visible": false
+                }
+            ],
+            "category_ids": [
+                60
+            ],
+            "description": "<h3>Karakter produk</h3><p>Pembersih wajah harian dengan karakter sederhana dan mudah dipadukan ke rutinitas pagi maupun malam.</p><h3>Tekstur &amp; sensasi</h3><p>Tekstur cair-gel ringan yang mudah diratakan pada kulit lembap dan mudah dibilas tanpa meninggalkan rasa berat.</p><h3>Posisi dalam rutinitas</h3><p>Gunakan pada tahap yang sesuai setelah pembersihan dan sebelum produk yang lebih oklusif. Susun rutinitas secara sederhana dan sesuaikan dengan kenyamanan kulit.</p><h3>Cara penggunaan</h3><p>Ambil secukupnya, aplikasikan dengan lembut pada area wajah sesuai fungsi produk, lalu lanjutkan ke tahap rutinitas berikutnya. Untuk penggunaan pagi, ikuti kebutuhan proteksi matahari dari produk yang telah terverifikasi secara resmi.</p>",
+            "id": 988101,
+            "image_ids": [
+                988102,
+                988103,
+                988104,
+                988105
+            ],
+            "name": "Gloskin Gentle Balance Facial Cleanser",
+            "price": "165000",
+            "regular_price": "165000",
+            "sale_price": "",
+            "short_description": "Pembersih wajah berformat cair lembut untuk langkah awal rutinitas harian, dengan sensasi bilas yang ringan dan nyaman.",
+            "sku": "GLS-SMP-001",
+            "slug": "gentle-balance-facial-cleanser",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [
+                {
+                    "name": "Ukuran",
+                    "options": [
+                        "60 ml",
+                        "120 ml"
+                    ],
+                    "variation": true,
+                    "visible": true
+                },
+                {
+                    "name": "Usage",
+                    "options": [
+                        "Gunakan secukupnya sesuai tahap rutinitas pada kulit yang bersih. Hentikan pemakaian bila muncul ketidaknyamanan dan ikuti petunjuk produk resmi bila tersedia."
+                    ],
+                    "variation": false,
+                    "visible": false
+                }
+            ],
+            "category_ids": [
+                60
+            ],
+            "description": "<h3>Karakter produk</h3><p>Pembersih wajah berformat gel yang dirancang sebagai produk demo serbaguna untuk kebutuhan katalog staging.</p><h3>Tekstur &amp; sensasi</h3><p>Gel bening-ringan dengan slip lembut saat dipijatkan pada kulit lembap dan rasa segar setelah dibilas.</p><h3>Posisi dalam rutinitas</h3><p>Gunakan pada tahap yang sesuai setelah pembersihan dan sebelum produk yang lebih oklusif. Susun rutinitas secara sederhana dan sesuaikan dengan kenyamanan kulit.</p><h3>Cara penggunaan</h3><p>Ambil secukupnya, aplikasikan dengan lembut pada area wajah sesuai fungsi produk, lalu lanjutkan ke tahap rutinitas berikutnya. Untuk penggunaan pagi, ikuti kebutuhan proteksi matahari dari produk yang telah terverifikasi secara resmi.</p>",
+            "id": 988106,
+            "image_ids": [
+                988107,
+                988108,
+                988109,
+                988110,
+                988111
+            ],
+            "name": "Gloskin Fresh Gel Facial Wash",
+            "price": "119000",
+            "regular_price": "",
+            "sale_price": "",
+            "short_description": "Facial wash bertekstur gel segar untuk rutinitas pembersihan praktis, tersedia dalam dua pilihan ukuran.",
+            "sku": "GLS-SMP-002",
+            "slug": "fresh-gel-facial-wash",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "variable"
+        },
+        {
+            "attributes": [
+                {
+                    "name": "Ukuran",
+                    "options": [
+                        "40 g"
+                    ],
+                    "variation": false,
+                    "visible": true
+                },
+                {
+                    "name": "Usage",
+                    "options": [
+                        "Gunakan secukupnya sesuai tahap rutinitas pada kulit yang bersih. Hentikan pemakaian bila muncul ketidaknyamanan dan ikuti petunjuk produk resmi bila tersedia."
+                    ],
+                    "variation": false,
+                    "visible": false
+                }
+            ],
+            "category_ids": [
+                61
+            ],
+            "description": "<h3>Karakter produk</h3><p>Krim harian berformat praktis yang ditempatkan setelah serum dan sebelum tahap proteksi matahari terpisah bila digunakan.</p><h3>Tekstur &amp; sensasi</h3><p>Krim lembut dengan daya sebar mudah, terasa nyaman dan tidak dimaksudkan untuk memberi klaim perlindungan spesifik.</p><h3>Posisi dalam rutinitas</h3><p>Gunakan pada tahap yang sesuai setelah pembersihan dan sebelum produk yang lebih oklusif. Susun rutinitas secara sederhana dan sesuaikan dengan kenyamanan kulit.</p><h3>Cara penggunaan</h3><p>Ambil secukupnya, aplikasikan dengan lembut pada area wajah sesuai fungsi produk, lalu lanjutkan ke tahap rutinitas berikutnya. Untuk penggunaan pagi, ikuti kebutuhan proteksi matahari dari produk yang telah terverifikasi secara resmi.</p>",
+            "id": 988114,
+            "image_ids": [
+                988115,
+                988116,
+                988117,
+                988118
+            ],
+            "name": "Gloskin Daily Shield Moisturizing Cream",
+            "price": "199000",
+            "regular_price": "199000",
+            "sale_price": "",
+            "short_description": "Krim pelembap harian dengan rasa nyaman dan hasil akhir rapi untuk melengkapi rutinitas pagi.",
+            "sku": "GLS-SMP-003",
+            "slug": "daily-shield-moisturizing-cream",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [
+                {
+                    "name": "Ukuran",
+                    "options": [
+                        "30 g",
+                        "50 g"
+                    ],
+                    "variation": true,
+                    "visible": true
+                },
+                {
+                    "name": "Usage",
+                    "options": [
+                        "Gunakan secukupnya sesuai tahap rutinitas pada kulit yang bersih. Hentikan pemakaian bila muncul ketidaknyamanan dan ikuti petunjuk produk resmi bila tersedia."
+                    ],
+                    "variation": false,
+                    "visible": false
+                }
+            ],
+            "category_ids": [
+                61
+            ],
+            "description": "<h3>Karakter produk</h3><p>Produk demo kategori krim siang yang menunjukkan alur produk variable WooCommerce tanpa menyatakan tingkat SPF atau klaim proteksi tertentu.</p><h3>Tekstur &amp; sensasi</h3><p>Krim ringan dengan hasil akhir halus dan mudah diratakan sebagai lapisan akhir rutinitas pagi.</p><h3>Posisi dalam rutinitas</h3><p>Gunakan pada tahap yang sesuai setelah pembersihan dan sebelum produk yang lebih oklusif. Susun rutinitas secara sederhana dan sesuaikan dengan kenyamanan kulit.</p><h3>Cara penggunaan</h3><p>Ambil secukupnya, aplikasikan dengan lembut pada area wajah sesuai fungsi produk, lalu lanjutkan ke tahap rutinitas berikutnya. Untuk penggunaan pagi, ikuti kebutuhan proteksi matahari dari produk yang telah terverifikasi secara resmi.</p>",
+            "id": 988119,
+            "image_ids": [
+                988120,
+                988121,
+                988122,
+                988123,
+                988124
+            ],
+            "name": "Gloskin Daily Shield UV Cream",
+            "price": "229000",
+            "regular_price": "",
+            "sale_price": "",
+            "short_description": "Krim siang bertekstur halus dalam dua ukuran untuk contoh katalog perawatan harian kategori day cream/sunscreen.",
+            "sku": "GLS-SMP-004",
+            "slug": "daily-shield-uv-cream",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "variable"
+        },
+        {
+            "attributes": [
+                {
+                    "name": "Ukuran",
+                    "options": [
+                        "120 ml"
+                    ],
+                    "variation": false,
+                    "visible": true
+                },
+                {
+                    "name": "Usage",
+                    "options": [
+                        "Gunakan secukupnya sesuai tahap rutinitas pada kulit yang bersih. Hentikan pemakaian bila muncul ketidaknyamanan dan ikuti petunjuk produk resmi bila tersedia."
+                    ],
+                    "variation": false,
+                    "visible": false
+                }
+            ],
+            "category_ids": [
+                62
+            ],
+            "description": "<h3>Karakter produk</h3><p>Toner berformat cair untuk tahap persiapan rutinitas, cocok sebagai contoh produk simple pada katalog staging.</p><h3>Tekstur &amp; sensasi</h3><p>Cairan ringan dengan sensasi segar yang cepat menyebar saat ditepuk perlahan pada kulit.</p><h3>Posisi dalam rutinitas</h3><p>Gunakan pada tahap yang sesuai setelah pembersihan dan sebelum produk yang lebih oklusif. Susun rutinitas secara sederhana dan sesuaikan dengan kenyamanan kulit.</p><h3>Cara penggunaan</h3><p>Ambil secukupnya, aplikasikan dengan lembut pada area wajah sesuai fungsi produk, lalu lanjutkan ke tahap rutinitas berikutnya. Untuk penggunaan pagi, ikuti kebutuhan proteksi matahari dari produk yang telah terverifikasi secara resmi.</p>",
+            "id": 988127,
+            "image_ids": [
+                988128,
+                988129,
+                988130
+            ],
+            "name": "Gloskin Hydra Balance Toner",
+            "price": "159000",
+            "regular_price": "159000",
+            "sale_price": "",
+            "short_description": "Toner cair ringan untuk membantu menyiapkan pengalaman rutinitas setelah pembersihan wajah.",
+            "sku": "GLS-SMP-005",
+            "slug": "hydra-balance-toner",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [
+                {
+                    "name": "Ukuran",
+                    "options": [
+                        "100 ml",
+                        "150 ml"
+                    ],
+                    "variation": true,
+                    "visible": true
+                },
+                {
+                    "name": "Usage",
+                    "options": [
+                        "Gunakan secukupnya sesuai tahap rutinitas pada kulit yang bersih. Hentikan pemakaian bila muncul ketidaknyamanan dan ikuti petunjuk produk resmi bila tersedia."
+                    ],
+                    "variation": false,
+                    "visible": false
+                }
+            ],
+            "category_ids": [
+                62
+            ],
+            "description": "<h3>Karakter produk</h3><p>Produk demo toner-essence yang menampilkan pilihan ukuran lokal WooCommerce dan penempatan rutinitas yang jelas.</p><h3>Tekstur &amp; sensasi</h3><p>Cairan essence ringan, sedikit lebih cushiony dibanding toner biasa, namun tetap mudah diratakan.</p><h3>Posisi dalam rutinitas</h3><p>Gunakan pada tahap yang sesuai setelah pembersihan dan sebelum produk yang lebih oklusif. Susun rutinitas secara sederhana dan sesuaikan dengan kenyamanan kulit.</p><h3>Cara penggunaan</h3><p>Ambil secukupnya, aplikasikan dengan lembut pada area wajah sesuai fungsi produk, lalu lanjutkan ke tahap rutinitas berikutnya. Untuk penggunaan pagi, ikuti kebutuhan proteksi matahari dari produk yang telah terverifikasi secara resmi.</p>",
+            "id": 988131,
+            "image_ids": [
+                988132,
+                988133,
+                988134,
+                988135
+            ],
+            "name": "Gloskin Calm Prep Essence Toner",
+            "price": "179000",
+            "regular_price": "",
+            "sale_price": "",
+            "short_description": "Essence toner dengan tekstur sedikit lebih berisi, tersedia dalam dua ukuran untuk rutinitas setelah cleansing.",
+            "sku": "GLS-SMP-006",
+            "slug": "calm-prep-essence-toner",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "variable"
+        },
+        {
+            "attributes": [
+                {
+                    "name": "Ukuran",
+                    "options": [
+                        "30 ml"
+                    ],
+                    "variation": false,
+                    "visible": true
+                },
+                {
+                    "name": "Usage",
+                    "options": [
+                        "Gunakan secukupnya sesuai tahap rutinitas pada kulit yang bersih. Hentikan pemakaian bila muncul ketidaknyamanan dan ikuti petunjuk produk resmi bila tersedia."
+                    ],
+                    "variation": false,
+                    "visible": false
+                }
+            ],
+            "category_ids": [
+                63
+            ],
+            "description": "<h3>Karakter produk</h3><p>Serum demo dengan format dropper/pump yang ditempatkan di tahap treatment tanpa klaim bahan aktif atau hasil klinis tertentu.</p><h3>Tekstur &amp; sensasi</h3><p>Serum cair ringan dengan glide halus dan rasa nyaman saat dilapis bersama produk rutinitas lainnya.</p><h3>Posisi dalam rutinitas</h3><p>Gunakan pada tahap yang sesuai setelah pembersihan dan sebelum produk yang lebih oklusif. Susun rutinitas secara sederhana dan sesuaikan dengan kenyamanan kulit.</p><h3>Cara penggunaan</h3><p>Ambil secukupnya, aplikasikan dengan lembut pada area wajah sesuai fungsi produk, lalu lanjutkan ke tahap rutinitas berikutnya. Untuk penggunaan pagi, ikuti kebutuhan proteksi matahari dari produk yang telah terverifikasi secara resmi.</p>",
+            "id": 988138,
+            "image_ids": [
+                988139,
+                988140,
+                988141,
+                988142,
+                988143
+            ],
+            "name": "Gloskin Radiance Support Serum",
+            "price": "249000",
+            "regular_price": "249000",
+            "sale_price": "",
+            "short_description": "Serum bertekstur ringan untuk melengkapi rutinitas perawatan wajah sebelum pelembap.",
+            "sku": "GLS-SMP-007",
+            "slug": "radiance-support-serum",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [
+                {
+                    "name": "Ukuran",
+                    "options": [
+                        "15 ml",
+                        "30 ml"
+                    ],
+                    "variation": true,
+                    "visible": true
+                },
+                {
+                    "name": "Usage",
+                    "options": [
+                        "Gunakan secukupnya sesuai tahap rutinitas pada kulit yang bersih. Hentikan pemakaian bila muncul ketidaknyamanan dan ikuti petunjuk produk resmi bila tersedia."
+                    ],
+                    "variation": false,
+                    "visible": false
+                }
+            ],
+            "category_ids": [
+                63
+            ],
+            "description": "<h3>Karakter produk</h3><p>Serum demo yang menunjukkan variasi ukuran dan harga secara native melalui WooCommerce.</p><h3>Tekstur &amp; sensasi</h3><p>Tekstur serum ringan dengan rasa halus, mudah diratakan dan nyaman untuk layering.</p><h3>Posisi dalam rutinitas</h3><p>Gunakan pada tahap yang sesuai setelah pembersihan dan sebelum produk yang lebih oklusif. Susun rutinitas secara sederhana dan sesuaikan dengan kenyamanan kulit.</p><h3>Cara penggunaan</h3><p>Ambil secukupnya, aplikasikan dengan lembut pada area wajah sesuai fungsi produk, lalu lanjutkan ke tahap rutinitas berikutnya. Untuk penggunaan pagi, ikuti kebutuhan proteksi matahari dari produk yang telah terverifikasi secara resmi.</p>",
+            "id": 988144,
+            "image_ids": [
+                988145,
+                988146,
+                988147,
+                988148,
+                988149,
+                988150
+            ],
+            "name": "Gloskin Hydra Renewal Serum",
+            "price": "189000",
+            "regular_price": "",
+            "sale_price": "",
+            "short_description": "Serum ringan dalam dua pilihan ukuran untuk contoh produk variable pada tahap perawatan setelah toner.",
+            "sku": "GLS-SMP-008",
+            "slug": "hydra-renewal-serum",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "variable"
+        },
+        {
+            "attributes": [
+                {
+                    "name": "Ukuran",
+                    "options": [
+                        "15 g"
+                    ],
+                    "variation": false,
+                    "visible": true
+                },
+                {
+                    "name": "Usage",
+                    "options": [
+                        "Gunakan secukupnya sesuai tahap rutinitas pada kulit yang bersih. Hentikan pemakaian bila muncul ketidaknyamanan dan ikuti petunjuk produk resmi bila tersedia."
+                    ],
+                    "variation": false,
+                    "visible": false
+                }
+            ],
+            "category_ids": [
+                64
+            ],
+            "description": "<h3>Karakter produk</h3><p>Produk demo berformat spot gel untuk mencontohkan kategori acne care tanpa klaim pengobatan penyakit.</p><h3>Tekstur &amp; sensasi</h3><p>Gel ringan yang mudah diaplikasikan tipis pada area yang diinginkan dan cepat terasa set.</p><h3>Posisi dalam rutinitas</h3><p>Gunakan pada tahap yang sesuai setelah pembersihan dan sebelum produk yang lebih oklusif. Susun rutinitas secara sederhana dan sesuaikan dengan kenyamanan kulit.</p><h3>Cara penggunaan</h3><p>Ambil secukupnya, aplikasikan dengan lembut pada area wajah sesuai fungsi produk, lalu lanjutkan ke tahap rutinitas berikutnya. Untuk penggunaan pagi, ikuti kebutuhan proteksi matahari dari produk yang telah terverifikasi secara resmi.</p>",
+            "id": 988153,
+            "image_ids": [
+                988154,
+                988155,
+                988156
+            ],
+            "name": "Gloskin Clear Balance Spot Gel",
+            "price": "129000",
+            "regular_price": "129000",
+            "sale_price": "",
+            "short_description": "Gel perawatan titik berukuran ringkas untuk penggunaan lokal sebagai bagian dari rutinitas skincare.",
+            "sku": "GLS-SMP-009",
+            "slug": "clear-balance-spot-gel",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [
+                {
+                    "name": "Ukuran",
+                    "options": [
+                        "30 ml"
+                    ],
+                    "variation": false,
+                    "visible": true
+                },
+                {
+                    "name": "Usage",
+                    "options": [
+                        "Gunakan secukupnya sesuai tahap rutinitas pada kulit yang bersih. Hentikan pemakaian bila muncul ketidaknyamanan dan ikuti petunjuk produk resmi bila tersedia."
+                    ],
+                    "variation": false,
+                    "visible": false
+                }
+            ],
+            "category_ids": [
+                64
+            ],
+            "description": "<h3>Karakter produk</h3><p>Serum demo untuk tahap perawatan setelah toner, tanpa menyatakan komposisi aktif atau efektivitas medis.</p><h3>Tekstur &amp; sensasi</h3><p>Serum cair ringan dengan daya sebar baik dan rasa nyaman untuk rutinitas berlapis.</p><h3>Posisi dalam rutinitas</h3><p>Gunakan pada tahap yang sesuai setelah pembersihan dan sebelum produk yang lebih oklusif. Susun rutinitas secara sederhana dan sesuaikan dengan kenyamanan kulit.</p><h3>Cara penggunaan</h3><p>Ambil secukupnya, aplikasikan dengan lembut pada area wajah sesuai fungsi produk, lalu lanjutkan ke tahap rutinitas berikutnya. Untuk penggunaan pagi, ikuti kebutuhan proteksi matahari dari produk yang telah terverifikasi secara resmi.</p>",
+            "id": 988157,
+            "image_ids": [
+                988158,
+                988159,
+                988160,
+                988161
+            ],
+            "name": "Gloskin Clear Balance Serum",
+            "price": "219000",
+            "regular_price": "219000",
+            "sale_price": "",
+            "short_description": "Serum bertekstur ringan untuk kategori acne care, dirancang sebagai contoh katalog staging yang aman dan mudah dipahami.",
+            "sku": "GLS-SMP-010",
+            "slug": "clear-balance-serum",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [
+                {
+                    "name": "Ukuran",
+                    "options": [
+                        "40 g"
+                    ],
+                    "variation": false,
+                    "visible": true
+                },
+                {
+                    "name": "Usage",
+                    "options": [
+                        "Gunakan secukupnya sesuai tahap rutinitas pada kulit yang bersih. Hentikan pemakaian bila muncul ketidaknyamanan dan ikuti petunjuk produk resmi bila tersedia."
+                    ],
+                    "variation": false,
+                    "visible": false
+                }
+            ],
+            "category_ids": [
+                65
+            ],
+            "description": "<h3>Karakter produk</h3><p>Krim demo kategori anti-aging yang fokus pada format dan pengalaman produk, bukan klaim hasil atau komposisi aktif.</p><h3>Tekstur &amp; sensasi</h3><p>Krim medium dengan sensasi cushiony dan daya sebar halus untuk menutup rangkaian serum.</p><h3>Posisi dalam rutinitas</h3><p>Gunakan pada tahap yang sesuai setelah pembersihan dan sebelum produk yang lebih oklusif. Susun rutinitas secara sederhana dan sesuaikan dengan kenyamanan kulit.</p><h3>Cara penggunaan</h3><p>Ambil secukupnya, aplikasikan dengan lembut pada area wajah sesuai fungsi produk, lalu lanjutkan ke tahap rutinitas berikutnya. Untuk penggunaan pagi, ikuti kebutuhan proteksi matahari dari produk yang telah terverifikasi secara resmi.</p>",
+            "id": 988162,
+            "image_ids": [
+                988163,
+                988164,
+                988165,
+                988166,
+                988167
+            ],
+            "name": "Gloskin Age Support Renewal Cream",
+            "price": "289000",
+            "regular_price": "289000",
+            "sale_price": "",
+            "short_description": "Krim perawatan dengan tekstur lembut untuk tahap pelembap dalam rutinitas malam atau sesuai preferensi.",
+            "sku": "GLS-SMP-011",
+            "slug": "age-support-renewal-cream",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [
+                {
+                    "name": "Ukuran",
+                    "options": [
+                        "15 ml",
+                        "30 ml"
+                    ],
+                    "variation": true,
+                    "visible": true
+                },
+                {
+                    "name": "Usage",
+                    "options": [
+                        "Gunakan secukupnya sesuai tahap rutinitas pada kulit yang bersih. Hentikan pemakaian bila muncul ketidaknyamanan dan ikuti petunjuk produk resmi bila tersedia."
+                    ],
+                    "variation": false,
+                    "visible": false
+                }
+            ],
+            "category_ids": [
+                65
+            ],
+            "description": "<h3>Karakter produk</h3><p>Produk demo concentrate yang memperlihatkan variasi ukuran WooCommerce tanpa menambahkan klaim klinis atau bahan aktif sebagai fakta.</p><h3>Tekstur &amp; sensasi</h3><p>Tekstur serum-concentrate yang halus, sedikit lebih berisi, dan mudah diratakan dalam jumlah kecil.</p><h3>Posisi dalam rutinitas</h3><p>Gunakan pada tahap yang sesuai setelah pembersihan dan sebelum produk yang lebih oklusif. Susun rutinitas secara sederhana dan sesuaikan dengan kenyamanan kulit.</p><h3>Cara penggunaan</h3><p>Ambil secukupnya, aplikasikan dengan lembut pada area wajah sesuai fungsi produk, lalu lanjutkan ke tahap rutinitas berikutnya. Untuk penggunaan pagi, ikuti kebutuhan proteksi matahari dari produk yang telah terverifikasi secara resmi.</p>",
+            "id": 988168,
+            "image_ids": [
+                988169,
+                988170,
+                988171,
+                988172,
+                988173
+            ],
+            "name": "Gloskin Age Support Concentrate",
+            "price": "239000",
+            "regular_price": "",
+            "sale_price": "",
+            "short_description": "Concentrate bertekstur serum dalam dua pilihan ukuran untuk tahap treatment sebelum pelembap.",
+            "sku": "GLS-SMP-012",
+            "slug": "age-support-concentrate",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "variable"
+        },
+        {
+            "attributes": [
+                {
+                    "name": "Ukuran",
+                    "options": [
+                        "40 g"
+                    ],
+                    "variation": false,
+                    "visible": true
+                },
+                {
+                    "name": "Usage",
+                    "options": [
+                        "Gunakan secukupnya sesuai tahap rutinitas pada kulit yang bersih. Hentikan pemakaian bila muncul ketidaknyamanan dan ikuti petunjuk produk resmi bila tersedia."
+                    ],
+                    "variation": false,
+                    "visible": false
+                }
+            ],
+            "category_ids": [
+                66
+            ],
+            "description": "<h3>Karakter produk</h3><p>Krim demo yang menampilkan struktur katalog dan penempatan rutinitas tanpa klaim pencerahan terukur atau jaminan hasil.</p><h3>Tekstur &amp; sensasi</h3><p>Krim ringan-menengah dengan daya sebar halus dan hasil akhir nyaman untuk tahap pelembap.</p><h3>Posisi dalam rutinitas</h3><p>Gunakan pada tahap yang sesuai setelah pembersihan dan sebelum produk yang lebih oklusif. Susun rutinitas secara sederhana dan sesuaikan dengan kenyamanan kulit.</p><h3>Cara penggunaan</h3><p>Ambil secukupnya, aplikasikan dengan lembut pada area wajah sesuai fungsi produk, lalu lanjutkan ke tahap rutinitas berikutnya. Untuk penggunaan pagi, ikuti kebutuhan proteksi matahari dari produk yang telah terverifikasi secara resmi.</p>",
+            "id": 988176,
+            "image_ids": [
+                988177,
+                988178,
+                988179,
+                988180,
+                988181
+            ],
+            "name": "Gloskin Tone Even Radiance Cream",
+            "price": "259000",
+            "regular_price": "259000",
+            "sale_price": "",
+            "short_description": "Krim perawatan bertekstur nyaman untuk melengkapi rutinitas kategori brightening &amp; pigmentation care.",
+            "sku": "GLS-SMP-013",
+            "slug": "tone-even-radiance-cream",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [],
+            "category_ids": [
+                59
+            ],
+            "description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Produk ini adalah data sintetis untuk mendemonstrasikan alur konsultasi dan tidak merepresentasikan harga atau ketersediaan aktual.",
+            "id": 988195,
+            "image_ids": [],
+            "name": "Acne Clarifying Facial",
+            "price": "350000",
+            "regular_price": "350000",
+            "sale_price": "",
+            "short_description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Contoh perawatan demo untuk keperluan staging.",
+            "sku": "GLS-TRT-001",
+            "slug": "acne-clarifying-facial",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [],
+            "category_ids": [
+                59
+            ],
+            "description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Produk ini adalah data sintetis untuk mendemonstrasikan alur konsultasi dan tidak merepresentasikan harga atau ketersediaan aktual.",
+            "id": 988196,
+            "image_ids": [],
+            "name": "Deep Pore Facial",
+            "price": "380000",
+            "regular_price": "380000",
+            "sale_price": "",
+            "short_description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Contoh perawatan demo untuk keperluan staging.",
+            "sku": "GLS-TRT-002",
+            "slug": "deep-pore-facial",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [],
+            "category_ids": [
+                59
+            ],
+            "description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Produk ini adalah data sintetis untuk mendemonstrasikan alur konsultasi dan tidak merepresentasikan harga atau ketersediaan aktual.",
+            "id": 988197,
+            "image_ids": [],
+            "name": "Brightening Facial",
+            "price": "420000",
+            "regular_price": "420000",
+            "sale_price": "",
+            "short_description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Contoh perawatan demo untuk keperluan staging.",
+            "sku": "GLS-TRT-003",
+            "slug": "brightening-facial",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [],
+            "category_ids": [
+                59
+            ],
+            "description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Produk ini adalah data sintetis untuk mendemonstrasikan alur konsultasi dan tidak merepresentasikan harga atau ketersediaan aktual.",
+            "id": 988198,
+            "image_ids": [],
+            "name": "Pigmentation Care Treatment",
+            "price": "480000",
+            "regular_price": "480000",
+            "sale_price": "",
+            "short_description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Contoh perawatan demo untuk keperluan staging.",
+            "sku": "GLS-TRT-004",
+            "slug": "pigmentation-care-treatment",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [],
+            "category_ids": [
+                59
+            ],
+            "description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Produk ini adalah data sintetis untuk mendemonstrasikan alur konsultasi dan tidak merepresentasikan harga atau ketersediaan aktual.",
+            "id": 988199,
+            "image_ids": [],
+            "name": "Rejuvenation Facial",
+            "price": "550000",
+            "regular_price": "550000",
+            "sale_price": "",
+            "short_description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Contoh perawatan demo untuk keperluan staging.",
+            "sku": "GLS-TRT-005",
+            "slug": "rejuvenation-facial",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [],
+            "category_ids": [
+                59
+            ],
+            "description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Produk ini adalah data sintetis untuk mendemonstrasikan alur konsultasi dan tidak merepresentasikan harga atau ketersediaan aktual.",
+            "id": 988200,
+            "image_ids": [],
+            "name": "Hydration Booster",
+            "price": "400000",
+            "regular_price": "400000",
+            "sale_price": "",
+            "short_description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Contoh perawatan demo untuk keperluan staging.",
+            "sku": "GLS-TRT-006",
+            "slug": "hydration-booster",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [],
+            "category_ids": [
+                59
+            ],
+            "description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Produk ini adalah data sintetis untuk mendemonstrasikan alur konsultasi dan tidak merepresentasikan harga atau ketersediaan aktual.",
+            "id": 988201,
+            "image_ids": [],
+            "name": "Skin Barrier Therapy",
+            "price": "460000",
+            "regular_price": "460000",
+            "sale_price": "",
+            "short_description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Contoh perawatan demo untuk keperluan staging.",
+            "sku": "GLS-TRT-007",
+            "slug": "skin-barrier-therapy",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        },
+        {
+            "attributes": [],
+            "category_ids": [
+                59
+            ],
+            "description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Produk ini adalah data sintetis untuk mendemonstrasikan alur konsultasi dan tidak merepresentasikan harga atau ketersediaan aktual.",
+            "id": 988202,
+            "image_ids": [],
+            "name": "Texture Renewal Treatment",
+            "price": "500000",
+            "regular_price": "500000",
+            "sale_price": "",
+            "short_description": "Synthetic staging/demo consultation bundle — not verified commercial product or clinical truth. Contoh perawatan demo untuk keperluan staging.",
+            "sku": "GLS-TRT-008",
+            "slug": "texture-renewal-treatment",
+            "status": "publish",
+            "stock_status": "instock",
+            "type": "simple"
+        }
+    ],
+    "version": "11.0.1"
+}

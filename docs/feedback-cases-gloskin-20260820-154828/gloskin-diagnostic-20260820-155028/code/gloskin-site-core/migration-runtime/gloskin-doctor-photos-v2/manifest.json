@@ -1,0 +1,160 @@
+{
+  "bundle_id": "gloskin-doctor-photos-v2",
+  "bundle_revision": "2026-08-19-remastered",
+  "description": "12 primary doctor portrait WebPs regenerated from owner-supplied originals. Quality-safe: EXIF orientation normalize, resize max 1600px long edge, WebP q82, no retouch/crop/AI.",
+  "doctors": [
+    {
+      "source_label": "DR ARWINA SUFIKA",
+      "match_aliases": [
+        "arwina sufika"
+      ],
+      "source_path": "docs/doctor-real-photo/DR ARWINA SUFIKA/dr Fika.png",
+      "primary_webp": "dr-arwina-sufika.webp",
+      "primary_sha256": "9fa403b41a6446f4a422102ced224b350d8e39960b9d2c84d8f0ecc738ff7e45",
+      "width": 899,
+      "height": 1600,
+      "bytes": 54650
+    },
+    {
+      "source_label": "DR CYINTIA MUSIUS",
+      "match_aliases": [
+        "cyintia musius",
+        "cyntia musius"
+      ],
+      "source_path": "docs/doctor-real-photo/DR CYINTIA MUSIUS/DR. CYNTIA.jpg",
+      "primary_webp": "dr-cyintia-musius.webp",
+      "primary_sha256": "e535ba547b50c4fa1f96d6592979c026f070acb5a950113a243426e3e6859c62",
+      "width": 899,
+      "height": 1600,
+      "bytes": 33670
+    },
+    {
+      "source_label": "DR DESY PUSTIKA SARI",
+      "match_aliases": [
+        "desy pustika sari"
+      ],
+      "source_path": "docs/doctor-real-photo/DR DESY PUSTIKA SARI/DR DESY.png",
+      "primary_webp": "dr-desy-pustika-sari.webp",
+      "primary_sha256": "44a74f427284392becca2224b14157bb8bdd6583838d8367b9639eaa7fac177b",
+      "width": 910,
+      "height": 1600,
+      "bytes": 31898
+    },
+    {
+      "source_label": "DR FLORENTINA AIRA S SYAHARANI",
+      "match_aliases": [
+        "florentina aira s syaharani",
+        "lorentina aira syaharani"
+      ],
+      "source_path": "docs/doctor-real-photo/DR FLORENTINA AIRA S SYAHARANI/DR FLO.png",
+      "primary_webp": "dr-florentina-aira-s-syaharani.webp",
+      "primary_sha256": "f7deb9e95868165b403a5797b90674fd5769e68f347d9676a9956e5a75015df5",
+      "width": 899,
+      "height": 1600,
+      "bytes": 40622
+    },
+    {
+      "source_label": "DR MARIA MAGDALENA BR MANIK_",
+      "match_aliases": [
+        "maria magdalena br manik"
+      ],
+      "source_path": "docs/doctor-real-photo/DR MARIA MAGDALENA BR MANIK_/Dr. Maria.png",
+      "primary_webp": "dr-maria-magdalena-br-manik.webp",
+      "primary_sha256": "f3e172f2136aee959bf6db8fae74bf1f1a46b08704c416859cb7c50a1e3fb39d",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 59922
+    },
+    {
+      "source_label": "DR MEGA CARKANINBA",
+      "match_aliases": [
+        "mega carkaninba"
+      ],
+      "source_path": "docs/doctor-real-photo/DR MEGA CARKANINBA/DR MEGA.png",
+      "primary_webp": "dr-mega-carkaninba.webp",
+      "primary_sha256": "a5fa8d08bdd62abadee9550d360e757c234e645354292d89c3a9061732c94260",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 34582
+    },
+    {
+      "source_label": "DR NANANG MASRANI, M BIOMED (AAM)",
+      "match_aliases": [
+        "nanang masrani",
+        "nanang masrani m biomed aam"
+      ],
+      "source_path": "docs/doctor-real-photo/DR NANANG MASRANI, M BIOMED (AAM)/dr. Nanang.png",
+      "primary_webp": "dr-nanang-masrani-m-biomed-aam.webp",
+      "primary_sha256": "31e06eecaedcfa73f13974aed5baa4a4d7dd52b2f471074482f6811f530a2200",
+      "width": 1066,
+      "height": 1600,
+      "bytes": 39366
+    },
+    {
+      "source_label": "DR NI NYOMAN AYU LAKSMI TRIMURTI",
+      "match_aliases": [
+        "ni nyoman ayu laksmi trimurti",
+        "ni nyoman ayu laksmy trimurti",
+        "ni nyoman ayu laksmi trimurti m biomed aam"
+      ],
+      "source_path": "docs/doctor-real-photo/DR NI NYOMAN AYU LAKSMI TRIMURTI/dr. Laksmy.jpeg",
+      "primary_webp": "dr-ni-nyoman-ayu-laksmi-trimurti.webp",
+      "primary_sha256": "6cfc219ed2f1615c7572f73d5184ac8767b4fefbe6e858ccee27d6c65ff74665",
+      "width": 1280,
+      "height": 853,
+      "bytes": 27820
+    },
+    {
+      "source_label": "DR OQTI RODIA Sp.GK",
+      "match_aliases": [
+        "oqti rodia",
+        "oqti rodia sp gk"
+      ],
+      "source_path": "docs/doctor-real-photo/DR OQTI RODIA Sp.GK/DR OQTI.png",
+      "primary_webp": "dr-oqti-rodia-sp-gk.webp",
+      "primary_sha256": "0d495a3a9f6fc54eaa021ae9b3185e31104a9fab64b5f8f82548b30b8b4c2832",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 59036
+    },
+    {
+      "source_label": "DR PRISSILMA TANIA JONARDI Sp.DVE",
+      "match_aliases": [
+        "prissilma tania jonardi",
+        "prissilma tania jonardi sp dve"
+      ],
+      "source_path": "docs/doctor-real-photo/DR PRISSILMA TANIA JONARDI Sp.DVE/DR TANIA.png",
+      "primary_webp": "dr-prissilma-tania-jonardi-sp-dve.webp",
+      "primary_sha256": "b16af0e34ff57024e5d43eff93b56c036de3053723507d79a5eac5ed5685b772",
+      "width": 900,
+      "height": 1600,
+      "bytes": 28568
+    },
+    {
+      "source_label": "DR RODIAH",
+      "match_aliases": [
+        "rodiah",
+        "diah pasaribu"
+      ],
+      "source_path": "docs/doctor-real-photo/DR RODIAH/dokter diah.jpg",
+      "primary_webp": "dr-rodiah.webp",
+      "primary_sha256": "8218b05fe911a88669e6c38e3ca6fea327bb8c1aedc751394f34907c7f1ae4b9",
+      "width": 1066,
+      "height": 1600,
+      "bytes": 48548
+    },
+    {
+      "source_label": "DR VINDI NAZHIFA",
+      "match_aliases": [
+        "vindi nazhifa",
+        "vindy nazhifa"
+      ],
+      "source_path": "docs/doctor-real-photo/DR VINDI NAZHIFA/dokter vindy.jpg",
+      "primary_webp": "dr-vindi-nazhifa.webp",
+      "primary_sha256": "eceb742aaf13632173de2402ddb8f87735dadd1d25f30f649d01f35d11467f7e",
+      "width": 1066,
+      "height": 1600,
+      "bytes": 43326
+    }
+  ]
+}

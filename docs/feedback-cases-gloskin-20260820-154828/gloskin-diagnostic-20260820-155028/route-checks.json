@@ -1,0 +1,105 @@
+{
+    "authentication_cookies_sent": "[REDACTED]",
+    "checks": [
+        {
+            "content_type": "text/html; charset=UTF-8",
+            "final_url": "https://gloskin-id.markas.cloud/",
+            "h1_count": 1,
+            "redirect_location": null,
+            "requested_url": "https://gloskin-id.markas.cloud/",
+            "status": 200,
+            "title": "Beranda – Gloskin ID"
+        },
+        {
+            "content_type": "text/html; charset=UTF-8",
+            "final_url": "https://gloskin-id.markas.cloud/treatments/",
+            "h1_count": 1,
+            "redirect_location": null,
+            "requested_url": "https://gloskin-id.markas.cloud/treatments/",
+            "status": 200,
+            "title": "Perawatan – Gloskin ID"
+        },
+        {
+            "content_type": "text/html; charset=UTF-8",
+            "final_url": "https://gloskin-id.markas.cloud/skincare/",
+            "h1_count": 1,
+            "redirect_location": null,
+            "requested_url": "https://gloskin-id.markas.cloud/skincare/",
+            "status": 200,
+            "title": "Skincare – Gloskin ID"
+        },
+        {
+            "content_type": "text/html; charset=UTF-8",
+            "final_url": "https://gloskin-id.markas.cloud/shop/",
+            "h1_count": 1,
+            "redirect_location": null,
+            "requested_url": "https://gloskin-id.markas.cloud/shop/",
+            "status": 200,
+            "title": "Belanja – Gloskin ID"
+        },
+        {
+            "content_type": "text/html; charset=UTF-8",
+            "final_url": "https://gloskin-id.markas.cloud/about/",
+            "h1_count": 1,
+            "redirect_location": null,
+            "requested_url": "https://gloskin-id.markas.cloud/about/",
+            "status": 200,
+            "title": "Tentang Gloskin – Gloskin ID"
+        },
+        {
+            "content_type": "text/html; charset=UTF-8",
+            "final_url": "https://gloskin-id.markas.cloud/promo/",
+            "h1_count": 1,
+            "redirect_location": null,
+            "requested_url": "https://gloskin-id.markas.cloud/promo/",
+            "status": 200,
+            "title": "Promo – Gloskin ID"
+        },
+        {
+            "content_type": "text/html; charset=UTF-8",
+            "final_url": "https://gloskin-id.markas.cloud/insights/",
+            "h1_count": 1,
+            "redirect_location": null,
+            "requested_url": "https://gloskin-id.markas.cloud/insights/",
+            "status": 200,
+            "title": "Insight – Gloskin ID"
+        },
+        {
+            "content_type": "text/html; charset=UTF-8",
+            "final_url": "https://gloskin-id.markas.cloud/clinics/",
+            "h1_count": 1,
+            "redirect_location": null,
+            "requested_url": "https://gloskin-id.markas.cloud/clinics/",
+            "status": 200,
+            "title": "Klinik – Gloskin ID"
+        },
+        {
+            "content_type": "text/html; charset=UTF-8",
+            "final_url": "https://gloskin-id.markas.cloud/doctors/",
+            "h1_count": 1,
+            "redirect_location": null,
+            "requested_url": "https://gloskin-id.markas.cloud/doctors/",
+            "status": 200,
+            "title": "Dokter – Gloskin ID"
+        },
+        {
+            "content_type": "text/html; charset=UTF-8",
+            "final_url": "https://gloskin-id.markas.cloud/contact/",
+            "h1_count": 1,
+            "redirect_location": null,
+            "requested_url": "https://gloskin-id.markas.cloud/contact/",
+            "status": 200,
+            "title": "Kontak – Gloskin ID"
+        },
+        {
+            "content_type": "text/html; charset=UTF-8",
+            "final_url": "https://gloskin-id.markas.cloud/product/gentle-balance-facial-cleanser/",
+            "h1_count": 1,
+            "redirect_location": null,
+            "requested_url": "https://gloskin-id.markas.cloud/product/gentle-balance-facial-cleanser/",
+            "status": 200,
+            "title": "Gloskin Gentle Balance Facial Cleanser – Gloskin ID"
+        }
+    ],
+    "external_redirects_followed": false
+}

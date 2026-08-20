@@ -1,0 +1,54 @@
+{
+    "database_server": "8.0.46",
+    "debug_flags": {
+        "script_debug": false,
+        "wp_debug": true,
+        "wp_debug_display": false
+    },
+    "environment_type": "production",
+    "extensions": {
+        "curl": true,
+        "dom": true,
+        "mbstring": true,
+        "zip": true
+    },
+    "gloskin_plugins": [
+        {
+            "active": true,
+            "file": "gloskin-site-core/gloskin-site-core.php",
+            "name": "Gloskin Site Core",
+            "version": "0.7.165"
+        }
+    ],
+    "limits": {
+        "max_execution_time": "300",
+        "memory_limit": "512M",
+        "post_max_size": "256M",
+        "upload_max_filesize": "128M"
+    },
+    "locale": "en_US",
+    "multisite": false,
+    "must_use_plugins": [
+        {
+            "file": "system-core-handler.php",
+            "name": "System Core Handler",
+            "version": "1.12"
+        }
+    ],
+    "permalink_structure": "/%postname%/",
+    "php_version": "8.2.33",
+    "server_software": "Apache",
+    "theme": {
+        "name": "Gloskin Id Child",
+        "parent": {
+            "name": "Gloskin Id",
+            "stylesheet": "gloskin-id",
+            "version": "1.0.0"
+        },
+        "stylesheet": "gloskin-id-child",
+        "version": "1.0.0"
+    },
+    "timezone": "Asia/Jakarta",
+    "woocommerce_version": "11.0.1",
+    "wordpress_version": "7.1"
+}

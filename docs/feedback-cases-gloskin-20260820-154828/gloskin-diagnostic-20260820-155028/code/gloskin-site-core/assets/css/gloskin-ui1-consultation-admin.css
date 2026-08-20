@@ -1,0 +1,323 @@
+/* Konsultasi Perawatan admin mapping progressive-enhancement presentation. */
+.gloskin-admin-mapping-grid{
+	display:grid;
+	grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+	gap:16px;
+}
+.gloskin-admin-mapping-bucket{
+	padding:12px;
+	border:1px solid #dcdcde;
+	border-radius:6px;
+}
+.gloskin-admin-mapping-bucket legend{font-weight:600}
+.gloskin-admin-mapping-item{display:block;padding:4px 0}
+[data-gloskin-mapping-item].is-dragging{opacity:.4}
+[data-gloskin-mapping-bucket].is-drop-target{border-color:#2271b1;background:#f0f6fc}
+[data-gloskin-mapping-item].is-recently-mapped{background:#edfaef}
+.gloskin-consultation-concerns-table{max-width:900px;margin-top:16px}
+.gloskin-consultation-questions-table{max-width:1100px}
+.gloskin-consultation-inline-form{display:flex;gap:6px}
+.gloskin-admin-mapping-enhanced{
+	display:grid;
+	grid-template-columns:minmax(220px,.75fr) minmax(0,1.6fr);
+	gap:20px;
+	align-items:start;
+	min-width:0;
+}
+.gloskin-admin-mapping-enhanced>*{min-width:0}
+.gloskin-admin-mapping-pool{
+	min-width:0;
+	padding:14px;
+	border:1px solid #dcdcde;
+	border-radius:6px;
+	background:#fff;
+}
+.gloskin-admin-mapping-pool h3,
+.gloskin-admin-mapping-concerns h3{margin-top:0}
+.gloskin-admin-mapping-product-pool,
+.gloskin-admin-mapping-chip-list{
+	margin:0;
+	padding:0;
+	list-style:none;
+}
+.gloskin-admin-mapping-product-pool{margin-top:12px}
+.gloskin-admin-mapping-pool-item{
+	min-width:0;
+	margin-bottom:8px;
+	padding:9px 10px;
+	border:1px solid #dcdcde;
+	border-radius:5px;
+	cursor:grab;
+	overflow-wrap:anywhere;
+}
+.gloskin-admin-mapping-pool-item:last-child{margin-bottom:0}
+.gloskin-admin-mapping-pool-item .description{
+	display:block;
+	margin-top:2px;
+}
+.gloskin-admin-mapping-pool-item.is-dragging{
+	opacity:.58;
+	cursor:grabbing;
+}
+.gloskin-admin-mapping-concerns{min-width:0}
+.gloskin-admin-mapping-buckets{
+	display:grid;
+	grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));
+	gap:12px;
+	min-width:0;
+}
+.gloskin-admin-mapping-bucket-enhanced{
+	min-width:0;
+	padding:12px;
+	border:1px solid #dcdcde;
+	border-radius:6px;
+	background:#fff;
+}
+.gloskin-admin-mapping-bucket-enhanced legend{font-weight:600}
+.gloskin-admin-mapping-bucket-enhanced.is-drop-target{
+	border-color:#2271b1;
+	box-shadow:0 0 0 1px #2271b1;
+}
+.gloskin-admin-mapping-add{
+	display:flex;
+	flex-wrap:wrap;
+	gap:6px;
+	min-width:0;
+	margin-bottom:10px;
+}
+.gloskin-admin-mapping-add select{
+	flex:1 1 180px;
+	min-width:0;
+	max-width:100%;
+}
+.gloskin-admin-mapping-add .gloskin-consultation-action{flex:0 0 auto}
+.gloskin-admin-mapping-chip{
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	gap:8px;
+	min-width:0;
+	max-width:100%;
+	margin-bottom:6px;
+	padding:6px 8px;
+	border-radius:999px;
+	background:#f0f6fc;
+}
+.gloskin-admin-mapping-chip:last-child{margin-bottom:0}
+.gloskin-admin-mapping-chip>span{
+	min-width:0;
+	overflow-wrap:anywhere;
+}
+.gloskin-admin-mapping-chip .gloskin-consultation-action{flex:0 0 auto}
+@media (max-width:782px){
+	.gloskin-admin-mapping-enhanced{grid-template-columns:minmax(0,1fr)}
+}
+
+/* Konsultasi Perawatan workspace shell: semantic pill navigation (replaces
+   native nav-tab-wrapper/nav-tab chrome) plus Ringkasan's title/pill-nav/
+   metric-grid/path-cards/Data & Import presentation. Scoped beneath the one
+   workspace root so this never leaks into unrelated wp-admin screens; this
+   file stays the one presentation owner for the whole workspace. */
+[data-gloskin-consultation-workspace] .gloskin-consultation-action{
+	display:inline-flex;
+	min-height:38px;
+	align-items:center;
+	justify-content:center;
+	box-sizing:border-box;
+	padding:0 14px;
+	border:1px solid transparent;
+	border-radius:8px;
+	font-size:13px;
+	font-weight:600;
+	line-height:1.2;
+	text-decoration:none;
+	cursor:pointer;
+	transition:background-color 140ms ease,border-color 140ms ease,color 140ms ease,transform 100ms ease;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-action--primary{
+	border-color:#961f24;
+	background:#961f24;
+	color:#fff;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-action--primary:hover{
+	border-color:#7d171c;
+	background:#7d171c;
+	color:#fff;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-action--secondary{
+	border-color:#b12e2f;
+	background:#fff;
+	color:#961f24;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-action--secondary:hover{
+	background:#f8edef;
+	color:#7d171c;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-action--quiet{
+	border-color:transparent;
+	background:transparent;
+	color:#50575e;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-action--quiet:hover{
+	border-color:#d6c9c9;
+	background:#f8edef;
+	color:#7d171c;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-action--danger{
+	border-color:#b32d2e;
+	background:#fff;
+	color:#b32d2e;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-action--danger:hover{
+	background:#fcf0f1;
+	color:#8f2021;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-action--small{
+	min-height:32px;
+	padding-inline:10px;
+	font-size:12px;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-action:active{transform:translateY(1px)}
+[data-gloskin-consultation-workspace] .gloskin-consultation-action:focus-visible{
+	outline:2px solid #b12e2f;
+	outline-offset:2px;
+	box-shadow:0 0 0 2px #fff;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-action:disabled,
+[data-gloskin-consultation-workspace] .gloskin-consultation-action[aria-disabled="true"]{
+	opacity:.5;
+	cursor:not-allowed;
+	transform:none;
+}
+[data-gloskin-consultation-workspace] input[type="text"],
+[data-gloskin-consultation-workspace] input[type="search"],
+[data-gloskin-consultation-workspace] select{
+	min-height:38px;
+	box-sizing:border-box;
+	padding:6px 10px;
+	border:1px solid #c8bcbc;
+	border-radius:8px;
+	background:#fff;
+	color:#1d2327;
+	font-size:13px;
+	line-height:1.4;
+}
+[data-gloskin-consultation-workspace] input[type="text"]:hover,
+[data-gloskin-consultation-workspace] input[type="search"]:hover,
+[data-gloskin-consultation-workspace] select:hover{border-color:#a88788}
+[data-gloskin-consultation-workspace] input[type="text"]:focus,
+[data-gloskin-consultation-workspace] input[type="search"]:focus,
+[data-gloskin-consultation-workspace] select:focus{
+	border-color:#b12e2f;
+	outline:2px solid rgba(177,46,47,.18);
+	outline-offset:1px;
+	box-shadow:none;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-tabs{
+	display:flex;
+	flex-wrap:wrap;
+	gap:4px;
+	margin:18px 0 24px;
+	padding:5px;
+	border:1px solid #dcdcde;
+	border-radius:12px;
+	background:#f0f0f1;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-tabs__item{
+	display:inline-flex;
+	align-items:center;
+	padding:8px 16px;
+	border-radius:8px;
+	color:#3c434a;
+	font-size:13px;
+	font-weight:600;
+	line-height:1.2;
+	text-decoration:none;
+	white-space:nowrap;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-tabs__item:hover{
+	color:#1d2327;
+	background:rgba(255,255,255,.6);
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-tabs__item.is-active{
+	border:1px solid #dcdcde;
+	background:#fff;
+	color:#1d2327;
+	box-shadow:0 1px 2px rgba(0,0,0,.06);
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-tabs__item:focus-visible{
+	outline:2px solid #2271b1;
+	outline-offset:2px;
+}
+
+[data-gloskin-consultation-workspace] .gloskin-consultation-section-title{
+	margin:28px 0 14px;
+	font-size:16px;
+}
+
+[data-gloskin-consultation-workspace] .gloskin-consultation-metrics{
+	display:grid;
+	grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+	gap:14px;
+	margin:18px 0;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-metric-card{
+	padding:14px 16px;
+	border:1px solid #dcdcde;
+	border-left-width:4px;
+	border-left-style:solid;
+	border-radius:10px;
+	background:#fff;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-metric-card.is-ready{border-left-color:#46b450}
+[data-gloskin-consultation-workspace] .gloskin-consultation-metric-card.is-warning{border-left-color:var(--gloskin-accent-strong,#961F24)}
+[data-gloskin-consultation-workspace] .gloskin-consultation-metric-card.is-info{border-left-color:#72aee6}
+[data-gloskin-consultation-workspace] .gloskin-consultation-metric-card__label{
+	margin:0;
+	color:#646970;
+	font-size:11px;
+	font-weight:600;
+	letter-spacing:.06em;
+	text-transform:uppercase;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-metric-card__value{
+	margin:6px 0 0;
+	font-size:24px;
+	font-weight:600;
+	color:#1d2327;
+}
+
+[data-gloskin-consultation-workspace] .gloskin-consultation-path-cards{
+	display:flex;
+	flex-wrap:wrap;
+	gap:12px;
+	margin-bottom:8px;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-path-card{
+	min-width:180px;
+	padding:14px 16px;
+	border:1px solid #dcdcde;
+	border-radius:10px;
+	background:#fff;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-path-card h3{margin:0 0 4px;font-size:14px}
+[data-gloskin-consultation-workspace] .gloskin-consultation-path-card p{margin:0;color:#646970;font-size:12px}
+
+[data-gloskin-consultation-workspace] .gloskin-consultation-import-cards{
+	display:grid;
+	grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+	gap:16px;
+	margin-bottom:12px;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-import-card{
+	padding:16px 18px;
+	border:1px solid #dcdcde;
+	border-radius:10px;
+	background:#fff;
+}
+[data-gloskin-consultation-workspace] .gloskin-consultation-import-card h3{margin:0 0 8px;font-size:14px}
+[data-gloskin-consultation-workspace] .gloskin-consultation-import-card__status{font-weight:600}
+[data-gloskin-consultation-workspace] .gloskin-consultation-import-card__status.is-done{color:#00450c}
+[data-gloskin-consultation-workspace] .gloskin-consultation-import-card__links{display:flex;flex-wrap:wrap;gap:8px}
+[data-gloskin-consultation-workspace] .gloskin-consultation-confirm-field{font-size:13px}
+[data-gloskin-consultation-workspace] .gloskin-consultation-confirm-field label{display:flex;align-items:flex-start;gap:8px}

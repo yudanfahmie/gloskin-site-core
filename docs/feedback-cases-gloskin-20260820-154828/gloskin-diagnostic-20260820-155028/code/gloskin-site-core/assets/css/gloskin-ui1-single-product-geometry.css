@@ -1,0 +1,243 @@
+/*
+ * Native Woo single-product geometry normalization.
+ *
+ * WooCommerce 11 classic layout still applies float/percentage dimensions to
+ * gallery/summary and clearfix pseudo-elements + fixed loop-card widths to
+ * Related Products. Once Gloskin's primary product becomes a CSS Grid those
+ * legacy dimensions no longer describe the containing layout: the 48% values
+ * create half-empty gallery/summary tracks, while ul.products clearfix
+ * pseudos become real grid items and the 22.05% card width then shrinks each
+ * related card inside its assigned cell.
+ *
+ * This file owns only that proven Woo->Gloskin geometry boundary. It does not
+ * alter product data, markup, the outer container, or any nested [product_page]
+ * embed because every selector is anchored to the canonical primary-product
+ * direct child.
+ */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product{row-gap:0}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.woocommerce-product-gallery,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.summary{float:none;clear:none;width:100%;max-width:none;margin:0;box-sizing:border-box}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.woocommerce-product-gallery .flex-control-thumbs{margin:12px 0 14px;padding-inline:clamp(10px,1.5vw,16px);box-sizing:border-box}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products::before,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products::after{content:none;display:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product{float:none;clear:none;width:100%;max-width:none;margin:0;box-sizing:border-box}
+
+/* Progressive-enhancement anti-flicker: while scripting is available, keep
+ * the server-rendered summary dock out of the first painted frame only until
+ * the controller finishes its synchronous preparation (origin marker, full-
+ * width home, reparent, geometry, observers) and marks it ready. The zero-
+ * duration delayed animation is a fail-safe: if the enhancement script fails,
+ * the native Woo form becomes visible again instead of being stranded hidden.
+ * With scripting disabled this rule never applies, so the native no-JS form
+ * remains immediately usable in its server-rendered summary position. */
+@keyframes gloskin-purchase-dock-failsafe{to{visibility:visible}}
+@media (scripting:enabled){
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock:not(.is-ready){visibility:hidden;animation:gloskin-purchase-dock-failsafe 0s linear 900ms forwards}
+}
+/* Belt-and-braces: the controller's own inline preparing state, independent
+ * of the scripting-media fail-safe above. No transition here -- entrance
+ * motion is opt-in per state below, never implied while still preparing. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock.is-preparing{visibility:hidden;opacity:0;transition:none}
+
+/* The dock's real, normal-flow DOM home: a direct full-width row of the
+ * primary product grid, placed immediately after Related Products (or at
+ * the end of the primary product root when Related is absent). This is not
+ * a card -- it is the dock's real destination, independent of .summary's
+ * width. While the dock floats fixed above it, JS reserves its real
+ * measured height here so Footer/next content never jumps when it settles;
+ * .summary itself never reserves any of that space. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home{grid-column:1/-1;width:100%;min-width:0;margin-top:24px}
+
+/* Enhanced purchase-command-bar presentation. The wrapper is the real Gloskin
+ * accent purchase surface in both floating and settled-home states. The SAME
+ * native Woo form and controls are composed into one deliberate desktop row;
+ * only presentation wrappers are new, and every structural wrapper stays
+ * transparent. JS still owns only preparation/floating/home geometry.
+ *
+ * Geometry ownership is anchored to the Gloskin-only semantic classes JS
+ * attaches to the SAME captured native nodes in prepareComposition() --
+ * __form/__variants/__variation-action/__variation-state/__quantity/
+ * __submit -- instead of broad native Woo selectors, so this component owns
+ * its cascade outright instead of racing Woo's own form.cart rules on tied
+ * specificity.
+ *
+ * form.cart::before/::after are explicitly neutralized below: WooCommerce's
+ * own woocommerce.css applies a legacy `content:" ";display:table` clearfix
+ * to div.product form.cart. That is harmless while form.cart is a block, but
+ * the instant this stylesheet makes form.cart (== .gloskin-ui1-purchase-
+ * dock__form) a CSS Grid container, those two generated pseudo-elements stop
+ * being ignorable decoration and become real (empty) grid items -- splitting
+ * the intended single-row 2-column command bar into two implicit rows, with
+ * the product/action cells shifted into the wrong track. Proven directly
+ * against the real hydrated staging PDP: disabling only this one Woo rule
+ * (`.woocommerce div.product form.cart::before,::after{content:" ";
+ * display:table}`) restored the single-row layout, and no theme/WPCB
+ * baseline rule was involved. This is the exact same class of conflict, and
+ * the exact same fix, already applied above for Related Products'
+ * ul.products::before/::after. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{position:static;grid-column:1/-1;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:12px clamp(18px,2vw,28px);border:0;border-radius:var(--gloskin-radius-sm);background:var(--gloskin-accent);color:var(--gloskin-inverse);box-shadow:none;visibility:visible;opacity:1;will-change:transform,opacity}
+
+/* Stable footer-handoff sentinel (task: "Deeply harden Purchase Dock
+ * transitions", section 6): permanently zero-footprint, never reparented,
+ * never resized by dock state -- this is the one boundary authority the
+ * controller measures, breaking the prior self-reference where the old
+ * "home" placeholder's own occupied height (reserved while floating,
+ * released while settled) fed back into the very decision of whether to
+ * float or settle. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-sentinel{grid-column:1/-1;height:0;margin:0;padding:0;pointer-events:none}
+
+/* Explicit state machine (sections 3, 5, 9, 10, 14): position ownership is
+ * class-driven, never inline -- only left/width/FLIP-transform genuinely
+ * need runtime measurement and stay inline. is-floating-enter/is-floating/
+ * is-lifting all sit fixed to the viewport bottom; is-settling/is-home
+ * inherit the base static position above. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating-enter,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-lifting{position:fixed;top:auto;bottom:var(--gloskin-purchase-dock-bottom)}
+
+/* Entrance (section 5): opacity/transform only, ~300ms premium
+ * deceleration. is-floating-enter is the FROM state; the class swap to
+ * is-floating (see gloskin-ui1-purchase-dock.js) is what actually plays
+ * the transition, across two RAFs so the FROM state never paints without
+ * a transition already active. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating-enter{opacity:0;transform:translateY(20px) scale(.995)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating-enter,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating{transition:opacity 300ms cubic-bezier(.22,1,.36,1),transform 300ms cubic-bezier(.22,1,.36,1),box-shadow 300ms cubic-bezier(.22,1,.36,1)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating{opacity:1;transform:translateY(0) scale(1);box-shadow:0 -10px 28px color-mix(in srgb,var(--gloskin-brand-charcoal) 16%,transparent)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-lifting{box-shadow:0 -10px 28px color-mix(in srgb,var(--gloskin-brand-charcoal) 16%,transparent)}
+
+/* FLIP settle/lift (sections 9-10): transform ONLY -- never left/width/
+ * bottom/height, which would create visible geometry wobble. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-settling,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-lifting{transition:transform 280ms cubic-bezier(.22,1,.36,1)}
+
+/* Steady-floating ambient signature (section 14): a restrained sheen
+ * traveling across the upper edge of a decorative layer only -- never the
+ * whole bar moving, never a bounce. Runs only while genuinely settled
+ * into is-floating (never is-preparing/is-settling/is-lifting), paused on
+ * hover/focus-within so interaction feels calm and precise, and paused
+ * while a mutation is in flight so it never competes with the loading
+ * indicator. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(100deg,transparent 42%,color-mix(in srgb,var(--gloskin-inverse) 20%,transparent) 50%,transparent 58%);background-size:220% 220%;background-position:200% 0%;opacity:.5;pointer-events:none;animation:gloskin-purchase-dock-sheen 6s ease-in-out infinite}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating:hover::before,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating:focus-within::before{animation-play-state:paused;opacity:.15}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating:has(.single_add_to_cart_button[aria-busy="true"])::before,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating:has(.gloskin-ui1-purchase-dock__buy-now[aria-busy="true"])::before{animation-play-state:paused;opacity:0}
+@keyframes gloskin-purchase-dock-sheen{0%,100%{background-position:200% 0%}50%{background-position:-60% 0%}}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__form::before,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__form::after{content:none;display:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__form{display:grid;width:100%;max-width:none;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:clamp(20px,3vw,48px);margin:0;background:transparent;box-shadow:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__product{display:flex;align-items:center;gap:clamp(16px,2.2vw,30px);min-width:0;background:transparent;box-shadow:none;border-radius:0}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__identity{display:grid;gap:2px;flex:0 1 300px;min-width:170px;max-width:360px;background:transparent;box-shadow:none;border-radius:0}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__title{display:block;overflow:hidden;color:var(--gloskin-inverse);font-family:var(--gloskin-font-heading);font-size:clamp(.98rem,1.25vw,1.12rem);font-weight:600;line-height:1.15;text-overflow:ellipsis;white-space:nowrap}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__price{display:block;color:var(--gloskin-inverse);font-size:.98rem;font-weight:750;line-height:1.2;white-space:nowrap}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__price .price{color:inherit;font-size:inherit}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__action{display:flex;align-items:center;justify-content:flex-end;gap:12px;min-width:0;background:transparent;box-shadow:none;border-radius:0}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants tbody,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants tr,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants th,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants td,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-action,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-state,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{background:transparent;box-shadow:none;border-radius:0;border:0;margin:0}
+/* A third-party site plugin (wpcodebox2 baseline-frontend.js/.css, outside
+ * this repository) runs a MutationObserver that wraps every <table>
+ * anywhere in document.body -- including this SAME native table.variations
+ * once it is reparented here -- in a `.table-container` div, and that same
+ * plugin's own generic "responsive card table" stylesheet targets
+ * `.table-container table tr`/`td` by that ancestor class (a plain DOM
+ * relationship unaffected by display:contents below) with a card border,
+ * radius, padding and a `content:attr(data-label)` label pseudo-element,
+ * all only active at its own max-width:768px breakpoint -- proven directly
+ * against the real hydrated staging PDP: table.variations tr grew a visible
+ * card border at exactly 768px wide until these were neutralized. Only
+ * border-radius/box-shadow are covered by the shared reset above; border,
+ * margin and the label pseudo need their own explicit reset here because
+ * this plugin owns them at higher specificity than that shared rule alone
+ * contests. display:contents removes the `.table-container` wrapper box
+ * itself from the render tree entirely, so table.variations stays a direct
+ * flex item of __product exactly as this file already lays it out, without
+ * touching that third-party plugin. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .table-container{display:contents}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants td::before,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants td::after{content:none;display:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants{display:block;flex:0 1 330px;width:min(330px,100%);max-width:100%;margin:0;border:0;table-layout:fixed}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants tbody{display:flex;align-items:center;gap:10px;width:100%}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants tr{display:grid;flex:1 1 0;width:auto;min-width:0;grid-template-columns:auto minmax(120px,1fr);align-items:center;gap:8px}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants th{display:block;width:auto;min-width:0;padding:0;border:0;text-align:left;color:color-mix(in srgb,var(--gloskin-inverse) 82%,transparent);font-size:.78rem;font-weight:700;white-space:nowrap}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants td{display:flex;align-items:center;gap:6px;width:100%;min-width:0;padding:0;border:0;text-align:left}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants select{width:auto;flex:1 1 auto;max-width:100%;min-width:0;min-height:46px;background:var(--gloskin-bg);color:var(--gloskin-text)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants .reset_variations{flex:0 0 auto;color:var(--gloskin-inverse);font-size:.75rem;white-space:nowrap}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-action{display:flex;align-items:center;gap:10px;min-width:0;max-width:100%}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-state{display:flex;align-items:center;gap:8px;max-width:180px;margin:0;padding:0;border:0;color:var(--gloskin-inverse);font-size:.8rem;line-height:1.15}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-state p{margin:0;color:inherit}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-state .price{color:var(--gloskin-inverse);font-size:.86rem;white-space:nowrap}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{display:flex;align-items:center;gap:10px;min-width:0;max-width:100%}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__quantity{margin:0}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__quantity .qty{min-height:46px;background:var(--gloskin-bg);color:var(--gloskin-text)}
+/* Compact minus/plus steppers around the SAME native input.qty (never
+ * cloned/replaced). __qty-control is the pill-shaped stepper shell added to
+ * the SAME .quantity node __quantity already marks; the native input drops
+ * its own standalone field border/radius so the pill reads as one control,
+ * not a border nested inside another border. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .qty{width:44px;min-width:0;min-height:44px;padding:0;border:0;border-radius:0;background:transparent;text-align:center;-moz-appearance:textfield}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .qty::-webkit-inner-spin-button,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-control .qty::-webkit-outer-spin-button{margin:0;-webkit-appearance:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-minus,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-plus{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:34px;min-height:44px;padding:0;border:0;background:transparent;color:var(--gloskin-text);font:inherit;font-size:1.05rem;font-weight:700;line-height:1;cursor:pointer;transition:background-color 140ms ease}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-minus{border-right:1px solid var(--gloskin-border)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-plus{border-left:1px solid var(--gloskin-border)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-minus:hover,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-plus:hover{background:var(--gloskin-surface)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-minus:disabled,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-plus:disabled{opacity:.4;cursor:not-allowed;background:transparent}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;padding-inline:18px;background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit:hover{background:color-mix(in srgb,var(--gloskin-inverse) 92%,var(--gloskin-accent-soft));border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
+
+/* Buy Now: a JS-composed sibling of the SAME native submit button (never a
+ * second form/mutation owner -- it triggers the real submit button's own
+ * click, see gloskin-ui1-purchase-dock.js), styled as an outline CTA on
+ * the same accent surface, sharing the one Action Kit radius token. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now{width:auto;min-width:clamp(140px,11vw,180px);max-width:220px;border-width:1px;border-style:solid;font-family:inherit;font-size:inherit;font-style:inherit;font-weight:700;cursor:pointer}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:disabled{cursor:not-allowed}
+
+@media (max-width:1040px){
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.summary{margin-top:clamp(24px,4vw,32px)}
+}
+
+/* Purchase dock structural wrappers are presentation-only; field controls own any radius. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__form,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__product,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__identity,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__variants,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__variants tbody,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__variants tr,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__variants th,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__variants td,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__variation-action,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock__variation-state,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{border-radius:0}
+
+@media (max-width:680px){
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{padding:12px 14px calc(12px + env(safe-area-inset-bottom))}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__form{grid-template-columns:minmax(0,1fr);gap:10px}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__product{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__identity{min-width:0;max-width:none}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants{width:100%;max-width:none}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variants tbody{display:grid;gap:8px}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__action{width:100%;justify-content:stretch}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-action{display:grid;width:100%;gap:8px}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-state{max-width:none}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{display:grid;width:100%;grid-template-columns:auto minmax(0,1fr)}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product.product-type-simple>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__action{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit{width:100%;max-width:none;min-width:0}
+}
+@media (prefers-reduced-motion:reduce){
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating-enter,
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating,
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-settling,
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-lifting{transition:none}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating-enter{opacity:1;transform:none}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating::before{animation:none;display:none}
+}

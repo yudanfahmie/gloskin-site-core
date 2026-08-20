@@ -1,0 +1,74 @@
+{
+    "post_type": "gloskin_testimonial",
+    "records": [
+        {
+            "content": "",
+            "created": "2026-08-20 10:24:42",
+            "excerpt": "Sudah 3 tahun saya coba berbagai produk tapi jerawat selalu kembali. Di Gloskin baru 2 bulan dan hasilnya benar-benar berbeda — kulit saya bersih dan jauh lebih sehat.",
+            "featured_media": null,
+            "id": 988300,
+            "menu_order": 0,
+            "meta": {
+                "_gloskin_demo_identity": "gloskin-demo-r2-testi-anisa",
+                "gloskin_testimonial_active": "1",
+                "gloskin_testimonial_attribution": "Anisa R., 26 tahun",
+                "gloskin_testimonial_order": "1",
+                "gloskin_testimonial_subtitle": "Perawatan Acne & Scarring"
+            },
+            "modified": "2026-08-20 10:24:42",
+            "parent": 0,
+            "slug": "jerawat-aktif-tuntas-dalam-2-bulan",
+            "status": "publish",
+            "terms": [],
+            "title": "Jerawat aktif tuntas dalam 2 bulan",
+            "type": "gloskin_testimonial",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_testimonial&p=988300"
+        },
+        {
+            "content": "",
+            "created": "2026-08-20 10:24:42",
+            "excerpt": "Kulit saya sensitif, tapi dokternya sabar menjelaskan setiap langkah. Flek di pipi sudah jauh berkurang dan banyak teman yang tanya saya pakai apa.",
+            "featured_media": null,
+            "id": 988301,
+            "menu_order": 0,
+            "meta": {
+                "_gloskin_demo_identity": "gloskin-demo-r2-testi-dewi",
+                "gloskin_testimonial_active": "1",
+                "gloskin_testimonial_attribution": "Dewi K., 34 tahun",
+                "gloskin_testimonial_order": "2",
+                "gloskin_testimonial_subtitle": "Perawatan Brightening"
+            },
+            "modified": "2026-08-20 10:24:42",
+            "parent": 0,
+            "slug": "flek-berkurang-kulit-terlihat-lebih-muda",
+            "status": "publish",
+            "terms": [],
+            "title": "Flek berkurang, kulit terlihat lebih muda",
+            "type": "gloskin_testimonial",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_testimonial&p=988301"
+        },
+        {
+            "content": "",
+            "created": "2026-08-20 10:24:43",
+            "excerpt": "Yang saya suka dari Gloskin adalah dokternya tidak langsung menawarkan treatment mahal. Saya dikasih tahu kondisi kulit dulu, baru diberi rekomendasi yang sesuai kebutuhan.",
+            "featured_media": null,
+            "id": 988302,
+            "menu_order": 0,
+            "meta": {
+                "_gloskin_demo_identity": "gloskin-demo-r2-testi-bima",
+                "gloskin_testimonial_active": "1",
+                "gloskin_testimonial_attribution": "Bima S., 29 tahun",
+                "gloskin_testimonial_order": "3",
+                "gloskin_testimonial_subtitle": "Konsultasi Kulit"
+            },
+            "modified": "2026-08-20 10:24:43",
+            "parent": 0,
+            "slug": "klinik-yang-jujur-dan-tidak-memaksa",
+            "status": "publish",
+            "terms": [],
+            "title": "Klinik yang jujur dan tidak memaksa",
+            "type": "gloskin_testimonial",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_testimonial&p=988302"
+        }
+    ]
+}

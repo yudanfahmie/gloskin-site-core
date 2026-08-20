@@ -1,0 +1,17 @@
+{
+  "bundle_id": "gloskin-doctors-v1",
+  "schema_version": 1,
+  "expected_doctors": 13,
+  "source_checked_at": "2026-08-17",
+  "files": {
+    "doctors.json": {
+      "bytes": 4366,
+      "sha256": "ba11091a71972f9af1bcf48a093b7f6421cade6f25efa4aa336bcb3cb2c9f941",
+      "max_bytes": 65536
+    }
+  },
+  "cleanup_files": [
+    "doctors.json",
+    "manifest.json"
+  ]
+}

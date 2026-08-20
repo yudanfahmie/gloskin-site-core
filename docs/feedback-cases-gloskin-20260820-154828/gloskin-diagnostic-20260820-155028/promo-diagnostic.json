@@ -1,0 +1,122 @@
+{
+    "current_site_time": "2026-08-20T15:50:16+07:00",
+    "eligibility_rules": [
+        "published",
+        "active_equals_1",
+        "start_date_inclusive",
+        "end_date_inclusive_local_23_59_59",
+        "invalid_dates_warn_and_remain_eligible",
+        "order_meta_then_title_then_id"
+    ],
+    "homepage_selected_ids": [
+        988297,
+        988298,
+        988299
+    ],
+    "navigation": {
+        "matches": [
+            {
+                "menu_item_id": 988284,
+                "object": "page",
+                "object_id": 988307,
+                "type": "post_type",
+                "url": "https://gloskin-id.markas.cloud/promo/"
+            }
+        ],
+        "menu_id": 88
+    },
+    "non_page_path_collisions": [
+        {
+            "id": 12314,
+            "parent": 0,
+            "post_type": "attachment",
+            "slug": "promo",
+            "status": "inherit",
+            "title": "Promo"
+        }
+    ],
+    "promo_page": {
+        "content_length": 0,
+        "exists": true,
+        "id": 988307,
+        "post_type": "page",
+        "slug": "promo",
+        "status": "publish",
+        "template": "",
+        "url": "https://gloskin-id.markas.cloud/promo/"
+    },
+    "promo_page_selected_ids": [
+        988297,
+        988298,
+        988299
+    ],
+    "query": {
+        "meta_query": [
+            {
+                "compare": "=",
+                "key": "gloskin_promo_active",
+                "value": "1"
+            }
+        ],
+        "order": "ASC",
+        "orderby": "ID",
+        "post_status": "publish",
+        "post_type": "gloskin_promo",
+        "posts_per_page": -1
+    },
+    "records": [
+        {
+            "active": true,
+            "content_ready": false,
+            "cta_ready": true,
+            "demo_identity": "gloskin-demo-r2-promo-brightening",
+            "eligible": true,
+            "end_date": "",
+            "exclusion_reasons": [],
+            "id": 988297,
+            "media_ready": false,
+            "order": "1",
+            "start_date": "",
+            "status": "publish",
+            "summary_ready": true,
+            "title": "Paket Brightening Intensif"
+        },
+        {
+            "active": true,
+            "content_ready": false,
+            "cta_ready": true,
+            "demo_identity": "gloskin-demo-r2-promo-konsultasi-gratis",
+            "eligible": true,
+            "end_date": "",
+            "exclusion_reasons": [],
+            "id": 988298,
+            "media_ready": false,
+            "order": "2",
+            "start_date": "",
+            "status": "publish",
+            "summary_ready": true,
+            "title": "Konsultasi Perdana Bebas Biaya"
+        },
+        {
+            "active": true,
+            "content_ready": false,
+            "cta_ready": true,
+            "demo_identity": "gloskin-demo-r2-promo-acne-program",
+            "eligible": true,
+            "end_date": "",
+            "exclusion_reasons": [],
+            "id": 988299,
+            "media_ready": false,
+            "order": "3",
+            "start_date": "",
+            "status": "publish",
+            "summary_ready": true,
+            "title": "Acne Clear Program — 6 Minggu"
+        }
+    ],
+    "route_resolution": {
+        "object_id": 988307,
+        "url": "https://gloskin-id.markas.cloud/promo/"
+    },
+    "timezone": "Asia/Jakarta"
+}

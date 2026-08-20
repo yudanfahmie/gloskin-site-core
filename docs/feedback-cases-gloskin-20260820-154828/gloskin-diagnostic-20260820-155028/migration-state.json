@@ -1,0 +1,697 @@
+{
+    "allowlisted_options": {
+        "gloskin_site_core_consultation_demo": {
+            "concerns": 10,
+            "last_error": "",
+            "paths": 4,
+            "processed": 35,
+            "products": 8,
+            "questions": 13,
+            "status": "consumed"
+        },
+        "gloskin_site_core_doctor_migration_v1": {
+            "cleanup": "done",
+            "cleanup_error": "",
+            "consumed_at": 1787000926,
+            "expected": 13,
+            "imported_ids": [
+                988246,
+                988247,
+                988248,
+                988249,
+                988250,
+                988251,
+                988252,
+                988253,
+                988254,
+                988255,
+                988256,
+                988257,
+                988258
+            ],
+            "index": 13,
+            "last_error": "",
+            "status": "consumed"
+        },
+        "gloskin_site_core_editorial_media_v1": {
+            "about_story": {
+                "alt": "Gloskin",
+                "attachment_id": 988264,
+                "decorative": false,
+                "height": 932,
+                "kind": "editorial",
+                "mime": "image/jpeg",
+                "role": "About / brand story",
+                "semantic_role": "About / brand story",
+                "sha256": "e91aba0d89f523528cb786e0a43fde96bca8c8f0107a12d7b72e39b50e2df336",
+                "source_asset_url": "https://assets.zyrosite.com/cdn-cgi/image/format%3Dwebp%2Cw%3D1280%2Ch%3D932%2Cfit%3Dcrop/NNlEVZXDhMFiG6pt/foto-member-YHM4XDB0LWqzig8A.jpg",
+                "source_page": "https://gloskin.id/mengapa-harus-gloskin-",
+                "source_type": "first-party-gloskin",
+                "width": 1280
+            },
+            "home_brand_story": {
+                "alt": "Gloskin",
+                "attachment_id": 988260,
+                "decorative": false,
+                "height": 1280,
+                "kind": "editorial",
+                "mime": "image/jpeg",
+                "role": "Home — brand story transition",
+                "semantic_role": "Home — brand story transition",
+                "sha256": "b6d9ab6cb9626b9f521d33b838839fca0578b7af5a7f095891aa86f541c8004b",
+                "source_asset_url": "https://assets.zyrosite.com/cdn-cgi/image/format%3Dwebp%2Cw%3D1280%2Ch%3D1280%2Cfit%3Dcrop/NNlEVZXDhMFiG6pt/gloskin-0202987a-0zsJ4tsdQ98FaGfK.jpg",
+                "source_page": "https://gloskin.id/",
+                "source_type": "first-party-gloskin",
+                "width": 1280
+            },
+            "home_why": {
+                "alt": "Perawatan Gloskin",
+                "attachment_id": 988259,
+                "decorative": false,
+                "height": 1280,
+                "kind": "editorial",
+                "mime": "image/jpeg",
+                "role": "Home — Why Gloskin",
+                "semantic_role": "Home — Why Gloskin",
+                "sha256": "e6b999d03074eca1e3b46fe9f6b1688e063df225c39437485626385247f6339b",
+                "source_asset_url": "https://assets.zyrosite.com/cdn-cgi/image/format%3Dwebp%2Cw%3D1280%2Ch%3D1280%2Cfit%3Dcrop/NNlEVZXDhMFiG6pt/face-theraphy-ts5VWUYwzmGrVtqc.jpg",
+                "source_page": "https://gloskin.id/mengapa-harus-gloskin-",
+                "source_type": "first-party-gloskin",
+                "width": 1280
+            },
+            "skincare_editorial": {
+                "alt": "Skincare Gloskin",
+                "attachment_id": 988263,
+                "decorative": false,
+                "height": 826,
+                "kind": "skincare",
+                "mime": "image/webp",
+                "role": "Skincare editorial discovery",
+                "semantic_role": "Skincare editorial discovery",
+                "sha256": "ca991c539b428722286e4ba696df37a667afb8a66acc4cbb0d90dc835eaf0ad5",
+                "source_asset_url": "https://assets.zyrosite.com/cdn-cgi/image/format%3Dwebp%2Cw%3D1280%2Ch%3D855%2Cfit%3Dcrop/NNlEVZXDhMFiG6pt/serum-f5ZNuylGu6zQrMrr.png",
+                "source_page": "https://gloskin.id/serum",
+                "source_type": "first-party-gloskin",
+                "width": 1169
+            },
+            "treatment_clinical": {
+                "alt": "Prosedur perawatan di Gloskin",
+                "attachment_id": 988262,
+                "decorative": false,
+                "height": 815,
+                "kind": "treatment",
+                "mime": "image/png",
+                "role": "Treatment discovery — clinical procedure",
+                "semantic_role": "Treatment discovery — clinical procedure",
+                "sha256": "857af105207a467124420cdc172e737d2a411238cb62f012c9631fb81d02611f",
+                "source_asset_url": "https://assets.zyrosite.com/cdn-cgi/image/format%3Dwebp%2Cw%3D1280%2Ch%3D815%2Cfit%3Dcrop/NNlEVZXDhMFiG6pt/injeksi-acne-ftB9QvWDD9GlDfgx.png",
+                "source_page": "https://gloskin.id/mengapa-harus-gloskin-",
+                "source_type": "first-party-gloskin",
+                "width": 1280
+            },
+            "treatment_discovery": {
+                "alt": "Perawatan di Gloskin",
+                "attachment_id": 988261,
+                "decorative": false,
+                "height": 815,
+                "kind": "treatment",
+                "mime": "image/png",
+                "role": "Treatment discovery — general",
+                "semantic_role": "Treatment discovery — general",
+                "sha256": "533cf1a278a0d522953b3d6198c70eab7d3e047d46745e42965e81512b97e598",
+                "source_asset_url": "https://assets.zyrosite.com/cdn-cgi/image/format%3Dwebp%2Cw%3D1280%2Ch%3D815%2Cfit%3Dcrop/NNlEVZXDhMFiG6pt/vip-light-3ibydhNkQ0yFkbRH.png",
+                "source_page": "https://gloskin.id/",
+                "source_type": "first-party-gloskin",
+                "width": 1280
+            }
+        },
+        "gloskin_site_core_insights_v1_state": {
+            "bundle_fingerprint": "fa2842f83084bae57890e52ad89914a8a6d0717b4387e160ea25d882e6ee5924",
+            "bundle_id": "gloskin-insights-v1",
+            "cleanup": "complete",
+            "cleanup_error": "",
+            "created_posts": 13,
+            "expected_categories": 5,
+            "expected_media": 13,
+            "expected_posts": 13,
+            "imported_media": 13,
+            "last_error": "",
+            "next_post_index": 13,
+            "processed_posts": 13,
+            "reused_media": 0,
+            "source_version": "v1",
+            "status": "consumed",
+            "updated_at": 1786918047,
+            "updated_posts": 0
+        },
+        "gloskin_site_core_revision_20260819f_state": {
+            "commerce_snapshot": {
+                "woocommerce_cart_page_id": 988096,
+                "woocommerce_checkout_page_id": 988097,
+                "woocommerce_myaccount_page_id": 988098,
+                "woocommerce_shop_page_id": 988086
+            },
+            "current_step": "Selesai",
+            "demo_audit": {
+                "created": [
+                    {
+                        "id": 988265,
+                        "identity": "gloskin-demo-promo-refresh-campaign-2026-1",
+                        "type": "promo"
+                    },
+                    {
+                        "id": 988266,
+                        "identity": "gloskin-demo-promo-refresh-campaign-2026-2",
+                        "type": "promo"
+                    },
+                    {
+                        "id": 988267,
+                        "identity": "gloskin-demo-promo-refresh-campaign-2026-3",
+                        "type": "promo"
+                    },
+                    {
+                        "id": 988268,
+                        "identity": "gloskin-demo-testimonial-2026-1",
+                        "type": "testimonial"
+                    },
+                    {
+                        "id": 988269,
+                        "identity": "gloskin-demo-testimonial-2026-2",
+                        "type": "testimonial"
+                    },
+                    {
+                        "id": 988270,
+                        "identity": "gloskin-demo-achievement-2026-1",
+                        "type": "achievement"
+                    }
+                ],
+                "environment": "production",
+                "policy": "engineering-fixture-non-public-v2",
+                "reused": [],
+                "status": "draft"
+            },
+            "doctor_all_snapshot": {
+                "988246": 0,
+                "988247": 0,
+                "988248": 0,
+                "988249": 0,
+                "988250": 0,
+                "988251": 0,
+                "988252": 0,
+                "988253": 0,
+                "988254": 0,
+                "988255": 0,
+                "988256": 0,
+                "988257": 0,
+                "988258": 0
+            },
+            "doctor_audit": {
+                "applied": [
+                    {
+                        "attachment_id": 988271,
+                        "doctor_id": 988250,
+                        "doctor_title": "dr. Arwina Sufika",
+                        "sha256": "9fa403b41a6446f4a422102ced224b350d8e39960b9d2c84d8f0ecc738ff7e45"
+                    },
+                    {
+                        "attachment_id": 988272,
+                        "doctor_id": 988247,
+                        "doctor_title": "dr. Cyintia Musius",
+                        "sha256": "e535ba547b50c4fa1f96d6592979c026f070acb5a950113a243426e3e6859c62"
+                    },
+                    {
+                        "attachment_id": 988273,
+                        "doctor_id": 988248,
+                        "doctor_title": "dr. Desy Pustika Sari",
+                        "sha256": "44a74f427284392becca2224b14157bb8bdd6583838d8367b9639eaa7fac177b"
+                    },
+                    {
+                        "attachment_id": 988274,
+                        "doctor_id": 988251,
+                        "doctor_title": "dr. Lorentina Aira Syaharani",
+                        "sha256": "f7deb9e95868165b403a5797b90674fd5769e68f347d9676a9956e5a75015df5"
+                    },
+                    {
+                        "attachment_id": 988275,
+                        "doctor_id": 988258,
+                        "doctor_title": "dr. Maria Magdalena br. Manik",
+                        "sha256": "f3e172f2136aee959bf6db8fae74bf1f1a46b08704c416859cb7c50a1e3fb39d"
+                    },
+                    {
+                        "attachment_id": 988276,
+                        "doctor_id": 988257,
+                        "doctor_title": "dr. Mega Carkaninba",
+                        "sha256": "a5fa8d08bdd62abadee9550d360e757c234e645354292d89c3a9061732c94260"
+                    },
+                    {
+                        "attachment_id": 988277,
+                        "doctor_id": 988246,
+                        "doctor_title": "dr. Nanang Masrani, M.Biomed (AAM)",
+                        "sha256": "31e06eecaedcfa73f13974aed5baa4a4d7dd52b2f471074482f6811f530a2200"
+                    },
+                    {
+                        "attachment_id": 988278,
+                        "doctor_id": 988252,
+                        "doctor_title": "dr. Ni Nyoman Ayu Laksmi Trimurti, M.Biomed (AAM)",
+                        "sha256": "6cfc219ed2f1615c7572f73d5184ac8767b4fefbe6e858ccee27d6c65ff74665"
+                    },
+                    {
+                        "attachment_id": 988279,
+                        "doctor_id": 988256,
+                        "doctor_title": "dr. Oqti Rodia, Sp.GK",
+                        "sha256": "0d495a3a9f6fc54eaa021ae9b3185e31104a9fab64b5f8f82548b30b8b4c2832"
+                    },
+                    {
+                        "attachment_id": 988280,
+                        "doctor_id": 988255,
+                        "doctor_title": "dr. Prissilma Tania Jonardi, Sp.DVE",
+                        "sha256": "b16af0e34ff57024e5d43eff93b56c036de3053723507d79a5eac5ed5685b772"
+                    },
+                    {
+                        "attachment_id": 988281,
+                        "doctor_id": 988249,
+                        "doctor_title": "dr. Diah Pasaribu",
+                        "sha256": "8218b05fe911a88669e6c38e3ca6fea327bb8c1aedc751394f34907c7f1ae4b9"
+                    },
+                    {
+                        "attachment_id": 988282,
+                        "doctor_id": 988254,
+                        "doctor_title": "dr. Vindi Nazhifa",
+                        "sha256": "eceb742aaf13632173de2402ddb8f87735dadd1d25f30f649d01f35d11467f7e"
+                    }
+                ],
+                "reused": []
+            },
+            "doctor_cursor": 12,
+            "doctor_matches": {
+                "dr-arwina-sufika.webp": {
+                    "asset_path": "[REDACTED_PATH]/wp-content/plugins/gloskin-site-core/migration-runtime/gloskin-doctor-photos-v2/dr-arwina-sufika.webp",
+                    "doctor_id": 988250,
+                    "doctor_title": "dr. Arwina Sufika",
+                    "sha256": "9fa403b41a6446f4a422102ced224b350d8e39960b9d2c84d8f0ecc738ff7e45",
+                    "source_label": "DR ARWINA SUFIKA",
+                    "webp_file": "dr-arwina-sufika.webp"
+                },
+                "dr-cyintia-musius.webp": {
+                    "asset_path": "[REDACTED_PATH]/wp-content/plugins/gloskin-site-core/migration-runtime/gloskin-doctor-photos-v2/dr-cyintia-musius.webp",
+                    "doctor_id": 988247,
+                    "doctor_title": "dr. Cyintia Musius",
+                    "sha256": "e535ba547b50c4fa1f96d6592979c026f070acb5a950113a243426e3e6859c62",
+                    "source_label": "DR CYINTIA MUSIUS",
+                    "webp_file": "dr-cyintia-musius.webp"
+                },
+                "dr-desy-pustika-sari.webp": {
+                    "asset_path": "[REDACTED_PATH]/wp-content/plugins/gloskin-site-core/migration-runtime/gloskin-doctor-photos-v2/dr-desy-pustika-sari.webp",
+                    "doctor_id": 988248,
+                    "doctor_title": "dr. Desy Pustika Sari",
+                    "sha256": "44a74f427284392becca2224b14157bb8bdd6583838d8367b9639eaa7fac177b",
+                    "source_label": "DR DESY PUSTIKA SARI",
+                    "webp_file": "dr-desy-pustika-sari.webp"
+                },
+                "dr-florentina-aira-s-syaharani.webp": {
+                    "asset_path": "[REDACTED_PATH]/wp-content/plugins/gloskin-site-core/migration-runtime/gloskin-doctor-photos-v2/dr-florentina-aira-s-syaharani.webp",
+                    "doctor_id": 988251,
+                    "doctor_title": "dr. Lorentina Aira Syaharani",
+                    "sha256": "f7deb9e95868165b403a5797b90674fd5769e68f347d9676a9956e5a75015df5",
+                    "source_label": "DR FLORENTINA AIRA S SYAHARANI",
+                    "webp_file": "dr-florentina-aira-s-syaharani.webp"
+                },
+                "dr-maria-magdalena-br-manik.webp": {
+                    "asset_path": "[REDACTED_PATH]/wp-content/plugins/gloskin-site-core/migration-runtime/gloskin-doctor-photos-v2/dr-maria-magdalena-br-manik.webp",
+                    "doctor_id": 988258,
+                    "doctor_title": "dr. Maria Magdalena br. Manik",
+                    "sha256": "f3e172f2136aee959bf6db8fae74bf1f1a46b08704c416859cb7c50a1e3fb39d",
+                    "source_label": "DR MARIA MAGDALENA BR MANIK_",
+                    "webp_file": "dr-maria-magdalena-br-manik.webp"
+                },
+                "dr-mega-carkaninba.webp": {
+                    "asset_path": "[REDACTED_PATH]/wp-content/plugins/gloskin-site-core/migration-runtime/gloskin-doctor-photos-v2/dr-mega-carkaninba.webp",
+                    "doctor_id": 988257,
+                    "doctor_title": "dr. Mega Carkaninba",
+                    "sha256": "a5fa8d08bdd62abadee9550d360e757c234e645354292d89c3a9061732c94260",
+                    "source_label": "DR MEGA CARKANINBA",
+                    "webp_file": "dr-mega-carkaninba.webp"
+                },
+                "dr-nanang-masrani-m-biomed-aam.webp": {
+                    "asset_path": "[REDACTED_PATH]/wp-content/plugins/gloskin-site-core/migration-runtime/gloskin-doctor-photos-v2/dr-nanang-masrani-m-biomed-aam.webp",
+                    "doctor_id": 988246,
+                    "doctor_title": "dr. Nanang Masrani, M.Biomed (AAM)",
+                    "sha256": "31e06eecaedcfa73f13974aed5baa4a4d7dd52b2f471074482f6811f530a2200",
+                    "source_label": "DR NANANG MASRANI, M BIOMED (AAM)",
+                    "webp_file": "dr-nanang-masrani-m-biomed-aam.webp"
+                },
+                "dr-ni-nyoman-ayu-laksmi-trimurti.webp": {
+                    "asset_path": "[REDACTED_PATH]/wp-content/plugins/gloskin-site-core/migration-runtime/gloskin-doctor-photos-v2/dr-ni-nyoman-ayu-laksmi-trimurti.webp",
+                    "doctor_id": 988252,
+                    "doctor_title": "dr. Ni Nyoman Ayu Laksmi Trimurti, M.Biomed (AAM)",
+                    "sha256": "6cfc219ed2f1615c7572f73d5184ac8767b4fefbe6e858ccee27d6c65ff74665",
+                    "source_label": "DR NI NYOMAN AYU LAKSMI TRIMURTI",
+                    "webp_file": "dr-ni-nyoman-ayu-laksmi-trimurti.webp"
+                },
+                "dr-oqti-rodia-sp-gk.webp": {
+                    "asset_path": "[REDACTED_PATH]/wp-content/plugins/gloskin-site-core/migration-runtime/gloskin-doctor-photos-v2/dr-oqti-rodia-sp-gk.webp",
+                    "doctor_id": 988256,
+                    "doctor_title": "dr. Oqti Rodia, Sp.GK",
+                    "sha256": "0d495a3a9f6fc54eaa021ae9b3185e31104a9fab64b5f8f82548b30b8b4c2832",
+                    "source_label": "DR OQTI RODIA Sp.GK",
+                    "webp_file": "dr-oqti-rodia-sp-gk.webp"
+                },
+                "dr-prissilma-tania-jonardi-sp-dve.webp": {
+                    "asset_path": "[REDACTED_PATH]/wp-content/plugins/gloskin-site-core/migration-runtime/gloskin-doctor-photos-v2/dr-prissilma-tania-jonardi-sp-dve.webp",
+                    "doctor_id": 988255,
+                    "doctor_title": "dr. Prissilma Tania Jonardi, Sp.DVE",
+                    "sha256": "b16af0e34ff57024e5d43eff93b56c036de3053723507d79a5eac5ed5685b772",
+                    "source_label": "DR PRISSILMA TANIA JONARDI Sp.DVE",
+                    "webp_file": "dr-prissilma-tania-jonardi-sp-dve.webp"
+                },
+                "dr-rodiah.webp": {
+                    "asset_path": "[REDACTED_PATH]/wp-content/plugins/gloskin-site-core/migration-runtime/gloskin-doctor-photos-v2/dr-rodiah.webp",
+                    "doctor_id": 988249,
+                    "doctor_title": "dr. Diah Pasaribu",
+                    "sha256": "8218b05fe911a88669e6c38e3ca6fea327bb8c1aedc751394f34907c7f1ae4b9",
+                    "source_label": "DR RODIAH",
+                    "webp_file": "dr-rodiah.webp"
+                },
+                "dr-vindi-nazhifa.webp": {
+                    "asset_path": "[REDACTED_PATH]/wp-content/plugins/gloskin-site-core/migration-runtime/gloskin-doctor-photos-v2/dr-vindi-nazhifa.webp",
+                    "doctor_id": 988254,
+                    "doctor_title": "dr. Vindi Nazhifa",
+                    "sha256": "eceb742aaf13632173de2402ddb8f87735dadd1d25f30f649d01f35d11467f7e",
+                    "source_label": "DR VINDI NAZHIFA",
+                    "webp_file": "dr-vindi-nazhifa.webp"
+                }
+            },
+            "doctor_roster_audit": {
+                "complete": true,
+                "expected": 13,
+                "index": 13,
+                "ownership": "final-migration-reused-importer",
+                "status": "consumed"
+            },
+            "editorial_audit": {
+                "catalog": {
+                    "about_story": {
+                        "alt": "Gloskin",
+                        "attachment_id": 988264,
+                        "decorative": false,
+                        "height": 932,
+                        "kind": "editorial",
+                        "mime": "image/jpeg",
+                        "role": "About / brand story",
+                        "semantic_role": "About / brand story",
+                        "sha256": "e91aba0d89f523528cb786e0a43fde96bca8c8f0107a12d7b72e39b50e2df336",
+                        "source_asset_url": "https://assets.zyrosite.com/cdn-cgi/image/format%3Dwebp%2Cw%3D1280%2Ch%3D932%2Cfit%3Dcrop/NNlEVZXDhMFiG6pt/foto-member-YHM4XDB0LWqzig8A.jpg",
+                        "source_page": "https://gloskin.id/mengapa-harus-gloskin-",
+                        "source_type": "first-party-gloskin",
+                        "width": 1280
+                    },
+                    "home_brand_story": {
+                        "alt": "Gloskin",
+                        "attachment_id": 988260,
+                        "decorative": false,
+                        "height": 1280,
+                        "kind": "editorial",
+                        "mime": "image/jpeg",
+                        "role": "Home — brand story transition",
+                        "semantic_role": "Home — brand story transition",
+                        "sha256": "b6d9ab6cb9626b9f521d33b838839fca0578b7af5a7f095891aa86f541c8004b",
+                        "source_asset_url": "https://assets.zyrosite.com/cdn-cgi/image/format%3Dwebp%2Cw%3D1280%2Ch%3D1280%2Cfit%3Dcrop/NNlEVZXDhMFiG6pt/gloskin-0202987a-0zsJ4tsdQ98FaGfK.jpg",
+                        "source_page": "https://gloskin.id/",
+                        "source_type": "first-party-gloskin",
+                        "width": 1280
+                    },
+                    "home_why": {
+                        "alt": "Perawatan Gloskin",
+                        "attachment_id": 988259,
+                        "decorative": false,
+                        "height": 1280,
+                        "kind": "editorial",
+                        "mime": "image/jpeg",
+                        "role": "Home — Why Gloskin",
+                        "semantic_role": "Home — Why Gloskin",
+                        "sha256": "e6b999d03074eca1e3b46fe9f6b1688e063df225c39437485626385247f6339b",
+                        "source_asset_url": "https://assets.zyrosite.com/cdn-cgi/image/format%3Dwebp%2Cw%3D1280%2Ch%3D1280%2Cfit%3Dcrop/NNlEVZXDhMFiG6pt/face-theraphy-ts5VWUYwzmGrVtqc.jpg",
+                        "source_page": "https://gloskin.id/mengapa-harus-gloskin-",
+                        "source_type": "first-party-gloskin",
+                        "width": 1280
+                    },
+                    "skincare_editorial": {
+                        "alt": "Skincare Gloskin",
+                        "attachment_id": 988263,
+                        "decorative": false,
+                        "height": 826,
+                        "kind": "skincare",
+                        "mime": "image/webp",
+                        "role": "Skincare editorial discovery",
+                        "semantic_role": "Skincare editorial discovery",
+                        "sha256": "ca991c539b428722286e4ba696df37a667afb8a66acc4cbb0d90dc835eaf0ad5",
+                        "source_asset_url": "https://assets.zyrosite.com/cdn-cgi/image/format%3Dwebp%2Cw%3D1280%2Ch%3D855%2Cfit%3Dcrop/NNlEVZXDhMFiG6pt/serum-f5ZNuylGu6zQrMrr.png",
+                        "source_page": "https://gloskin.id/serum",
+                        "source_type": "first-party-gloskin",
+                        "width": 1169
+                    },
+                    "treatment_clinical": {
+                        "alt": "Prosedur perawatan di Gloskin",
+                        "attachment_id": 988262,
+                        "decorative": false,
+                        "height": 815,
+                        "kind": "treatment",
+                        "mime": "image/png",
+                        "role": "Treatment discovery — clinical procedure",
+                        "semantic_role": "Treatment discovery — clinical procedure",
+                        "sha256": "857af105207a467124420cdc172e737d2a411238cb62f012c9631fb81d02611f",
+                        "source_asset_url": "https://assets.zyrosite.com/cdn-cgi/image/format%3Dwebp%2Cw%3D1280%2Ch%3D815%2Cfit%3Dcrop/NNlEVZXDhMFiG6pt/injeksi-acne-ftB9QvWDD9GlDfgx.png",
+                        "source_page": "https://gloskin.id/mengapa-harus-gloskin-",
+                        "source_type": "first-party-gloskin",
+                        "width": 1280
+                    },
+                    "treatment_discovery": {
+                        "alt": "Perawatan di Gloskin",
+                        "attachment_id": 988261,
+                        "decorative": false,
+                        "height": 815,
+                        "kind": "treatment",
+                        "mime": "image/png",
+                        "role": "Treatment discovery — general",
+                        "semantic_role": "Treatment discovery — general",
+                        "sha256": "533cf1a278a0d522953b3d6198c70eab7d3e047d46745e42965e81512b97e598",
+                        "source_asset_url": "https://assets.zyrosite.com/cdn-cgi/image/format%3Dwebp%2Cw%3D1280%2Ch%3D815%2Cfit%3Dcrop/NNlEVZXDhMFiG6pt/vip-light-3ibydhNkQ0yFkbRH.png",
+                        "source_page": "https://gloskin.id/",
+                        "source_type": "first-party-gloskin",
+                        "width": 1280
+                    }
+                },
+                "created": [
+                    {
+                        "attachment_id": 988259,
+                        "key": "[REDACTED]",
+                        "sha256": "e6b999d03074eca1e3b46fe9f6b1688e063df225c39437485626385247f6339b"
+                    },
+                    {
+                        "attachment_id": 988260,
+                        "key": "[REDACTED]",
+                        "sha256": "b6d9ab6cb9626b9f521d33b838839fca0578b7af5a7f095891aa86f541c8004b"
+                    },
+                    {
+                        "attachment_id": 988261,
+                        "key": "[REDACTED]",
+                        "sha256": "533cf1a278a0d522953b3d6198c70eab7d3e047d46745e42965e81512b97e598"
+                    },
+                    {
+                        "attachment_id": 988262,
+                        "key": "[REDACTED]",
+                        "sha256": "857af105207a467124420cdc172e737d2a411238cb62f012c9631fb81d02611f"
+                    },
+                    {
+                        "attachment_id": 988263,
+                        "key": "[REDACTED]",
+                        "sha256": "ca991c539b428722286e4ba696df37a667afb8a66acc4cbb0d90dc835eaf0ad5"
+                    },
+                    {
+                        "attachment_id": 988264,
+                        "key": "[REDACTED]",
+                        "sha256": "e91aba0d89f523528cb786e0a43fde96bca8c8f0107a12d7b72e39b50e2df336"
+                    }
+                ],
+                "reused": []
+            },
+            "ia_audit": {
+                "menu_id": 88,
+                "page_ids": {
+                    "about": 988080,
+                    "home": 988079,
+                    "promo": 12314,
+                    "skincare": 988082,
+                    "treatments": 988081
+                },
+                "preserved_item_count": 0,
+                "preserved_menu_id": 0
+            },
+            "last_error": "",
+            "next_step_index": 8,
+            "processed_steps": 8,
+            "revision": "2026-08-19-final",
+            "status": "consumed",
+            "total_steps": 8,
+            "updated_at": 1787194768
+        },
+        "gloskin_site_core_revision_20260820_promo_recovery_state": {
+            "audit": {
+                "menu_id": 88,
+                "menu_item_id": 988284,
+                "menu_rebound": false,
+                "page_action": "preserved",
+                "page_id": 988307,
+                "production_promo_mutations": 0,
+                "promo_record_changes": [],
+                "rewrite_flushed": false,
+                "verification": {
+                    "eligible_promo_ids": [
+                        988297,
+                        988298,
+                        988299
+                    ],
+                    "menu_item_id": 988284,
+                    "page_id": 988307,
+                    "production_promo_records_unchanged": true,
+                    "route_status": 200,
+                    "woo_page_ids_unchanged": true
+                }
+            },
+            "current_step": "Selesai",
+            "last_error": "",
+            "next_step_index": 4,
+            "preflight": {
+                "canonical_page_ids": {
+                    "about": 988080,
+                    "clinics": 988083,
+                    "contact": 988084,
+                    "doctors": 988087,
+                    "home": 988079,
+                    "promo": 0,
+                    "skincare": 988082,
+                    "treatments": 988081
+                },
+                "collision_12314": {
+                    "author": 2,
+                    "date": "2023-11-20 05:48:02",
+                    "exists": true,
+                    "fingerprint": "4555eba1f4a71dec8fe59903452260696319f1063928714dfa2eef0204eed733",
+                    "guid": "https://gloskin-id.markas.cloud/wp-content/uploads/2023/11/Promo.jpg",
+                    "id": 12314,
+                    "mime_type": "image/jpeg",
+                    "modified": "2026-08-20 09:59:26",
+                    "parent": 0,
+                    "slug": "promo",
+                    "status": "inherit",
+                    "title": "Promo",
+                    "type": "attachment"
+                },
+                "environment": "production",
+                "navigation": {
+                    "menu_id": 88,
+                    "promo_items": [
+                        {
+                            "menu_item_id": 988284,
+                            "object": "page",
+                            "object_id": 12314,
+                            "order": 2,
+                            "parent": 0,
+                            "title": "Promo",
+                            "type": "post_type",
+                            "url": "https://gloskin-id.markas.cloud/promo/"
+                        }
+                    ]
+                },
+                "preserved_ids": [
+                    12314,
+                    988297,
+                    988298,
+                    988299,
+                    988284
+                ],
+                "promo_fingerprints": {
+                    "988297": "bd504b83a57b462b7e404fc06c526b2a44f83f0723c688bf3d35c8c416ebccab",
+                    "988298": "5627ed14a4d4f5112116d6f7775bb63a087e5b3f992cabb8b58565ccb89f083e",
+                    "988299": "ef434a0880be43206490ae3d1fbb23a48b5dd2510fd03e3cfad7613b505513bb"
+                },
+                "promo_page": {
+                    "exists": false
+                },
+                "promo_slug_objects": [
+                    {
+                        "id": 12314,
+                        "parent": 0,
+                        "slug": "promo",
+                        "status": "inherit",
+                        "title": "Promo",
+                        "type": "attachment"
+                    }
+                ],
+                "promos": [
+                    {
+                        "active": "1",
+                        "eligible": true,
+                        "end_date": "",
+                        "id": 988297,
+                        "identity": "gloskin-demo-r2-promo-brightening",
+                        "order": "1",
+                        "start_date": "",
+                        "status": "publish"
+                    },
+                    {
+                        "active": "1",
+                        "eligible": true,
+                        "end_date": "",
+                        "id": 988298,
+                        "identity": "gloskin-demo-r2-promo-konsultasi-gratis",
+                        "order": "2",
+                        "start_date": "",
+                        "status": "publish"
+                    },
+                    {
+                        "active": "1",
+                        "eligible": true,
+                        "end_date": "",
+                        "id": 988299,
+                        "identity": "gloskin-demo-r2-promo-acne-program",
+                        "order": "3",
+                        "start_date": "",
+                        "status": "publish"
+                    }
+                ],
+                "woo_page_ids": {
+                    "cart": 988096,
+                    "checkout": 988097,
+                    "myaccount": 988098,
+                    "shop": 988086
+                }
+            },
+            "processed_steps": 4,
+            "revision": "2026-08-20-promo-recovery-v1",
+            "status": "consumed",
+            "total_steps": 4,
+            "updated_at": 1787206007
+        },
+        "gloskin_site_core_sample_products_v1_state": {
+            "bundle_fingerprint": "5ab7a8d45fc1c0042b18c9f5b4464c45d02ba5535c9b0e0a1be5c815842b5205",
+            "bundle_id": "gloskin-sample-products-v1",
+            "cleanup": "complete",
+            "cleanup_error": "",
+            "created_products": 12,
+            "expected_media": 58,
+            "expected_products": 13,
+            "imported_media": 58,
+            "last_error": "",
+            "next_product_index": 13,
+            "processed_products": 13,
+            "reused_media": 0,
+            "source_version": "v1",
+            "status": "consumed",
+            "updated_at": 1786381644,
+            "updated_products": 1
+        },
+        "gloskin_site_core_schema_version": "0.3.0"
+    },
+    "note": "No complete options-table export is performed."
+}

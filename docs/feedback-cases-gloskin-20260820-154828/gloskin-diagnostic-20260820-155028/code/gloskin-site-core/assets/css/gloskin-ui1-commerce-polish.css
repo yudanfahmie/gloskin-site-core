@@ -1,0 +1,351 @@
+/* Final commerce microinteraction polish. Presentation only: native Woo/localStorage state owners remain unchanged. */
+.gloskin-ui1-action-icon--danger{
+	display:grid;
+	width:38px;
+	height:38px;
+	padding:0;
+	border:1px solid var(--gloskin-accent);
+	border-radius:999px;
+	background:var(--gloskin-accent);
+	color:var(--gloskin-inverse);
+	place-items:center;
+}
+.gloskin-ui1-action-icon--danger:hover{
+	border-color:var(--gloskin-accent-strong);
+	background:var(--gloskin-accent-strong);
+	color:var(--gloskin-inverse);
+}
+
+/* Mini-cart remove: one final, narrowly scoped owner wins over Woo's native
+   .woocommerce a.remove geometry without removing the native class/lifecycle.
+   The shared mask remains one primitive; only its paint color is decoupled
+   from Woo's currentColor ownership. */
+body.gloskin-ui1 .woocommerce a.gloskin-ui1-cart-sheet__item-remove{
+	--gloskin-remove-icon-color:var(--gloskin-inverse);
+	display:grid;
+	box-sizing:border-box;
+	flex:0 0 auto;
+	width:38px;
+	height:38px;
+	font-size:0;
+	line-height:1;
+	padding:0;
+	border:1px solid var(--gloskin-accent);
+	border-radius:999px;
+	background:var(--gloskin-accent);
+	color:var(--gloskin-inverse);
+	text-decoration:none;
+	place-items:center;
+}
+body.gloskin-ui1 .woocommerce a.gloskin-ui1-cart-sheet__item-remove:hover,
+body.gloskin-ui1 .woocommerce a.gloskin-ui1-cart-sheet__item-remove:focus-visible{
+	--gloskin-remove-icon-color:var(--gloskin-inverse);
+	width:38px;
+	height:38px;
+	border-color:var(--gloskin-accent-strong);
+	background:var(--gloskin-accent-strong);
+	color:var(--gloskin-inverse);
+}
+
+/* Confirmed-success travel is one temporary fixed decorative orb. JS sets
+   its start point once, then Web Animations moves only transform/opacity.
+   Cart currently opens its native Gloskin sheet immediately on Woo's same
+   added_to_cart event. During the sub-second flight only, lift the existing
+   header destination and orb above that sheet; no drawer timing/state owner
+   is introduced here. */
+html.gloskin-ui1-commerce-fly-active--cart .gloskin-ui1-header,
+html.gloskin-ui1-commerce-fly-active--wishlist .gloskin-ui1-header,
+html.gloskin-ui1-commerce-fly-active--cart .gloskin-ui1-header__nav-row,
+html.gloskin-ui1-commerce-fly-active--wishlist .gloskin-ui1-header__nav-row,
+html.gloskin-ui1-commerce-fly-active--cart [data-gloskin-header="header-2"],
+html.gloskin-ui1-commerce-fly-active--wishlist [data-gloskin-header="header-2"]{
+	z-index:10010;
+}
+.gloskin-ui1-commerce-fly-target{
+	position:fixed;
+	z-index:10020;
+	width:14px;
+	height:14px;
+	margin:-7px 0 0 -7px;
+	border-radius:999px;
+	background:var(--gloskin-accent);
+	box-shadow:0 0 0 6px color-mix(in srgb,var(--gloskin-accent) 16%,transparent);
+	pointer-events:none;
+	transform-origin:center;
+	will-change:transform,opacity;
+}
+.gloskin-ui1-commerce-fly-target::after{
+	position:absolute;
+	inset:-5px;
+	border:1px solid color-mix(in srgb,var(--gloskin-accent) 34%,transparent);
+	border-radius:inherit;
+	content:"";
+}
+
+[data-gloskin-cart-count].is-commerce-badge-added,
+[data-gloskin-wishlist-count].is-commerce-badge-added{
+	transform-origin:center;
+	animation:gloskin-ui1-commerce-badge-added 240ms cubic-bezier(.22,1,.36,1) both;
+}
+/* Core's already-established badge helper still receives the canonical
+   success event. Suppress only its early visual pulse while this matching
+   fly is in flight; the motion helper removes the active class at landing
+   and then reuses this SAME impact class once, so there is one visible final
+   impact owner rather than approach + competing pulse. */
+html.gloskin-ui1-commerce-fly-active--cart [data-gloskin-cart-count].is-commerce-badge-added,
+html.gloskin-ui1-commerce-fly-active--wishlist [data-gloskin-wishlist-count].is-commerce-badge-added{
+	animation:none;
+	transform:none;
+}
+@keyframes gloskin-ui1-commerce-badge-added{
+	0%{opacity:1;transform:scale(1)}
+	58%{opacity:1;transform:scale(1.08)}
+	100%{opacity:1;transform:scale(1)}
+}
+
+/* Cart <-> Checkout editorial journey heading. Woo remains the sole route,
+   session, form, validation, shipping and payment owner; this layer is only
+   semantic navigation and presentation. */
+.gloskin-ui1-commerce-heading--journey{
+	padding:clamp(38px,6vw,72px) 0 clamp(26px,4vw,42px);
+}
+.gloskin-ui1-commerce-progress{
+	display:grid;
+	grid-template-columns:max-content minmax(44px,1fr) max-content;
+	align-items:center;
+	gap:clamp(14px,2vw,28px);
+	width:100%;
+}
+.gloskin-ui1-commerce-progress__step{
+	min-width:0;
+	margin:0;
+	font-family:var(--gloskin-font-heading);
+	font-size:clamp(2.7rem,5vw,4.6rem);
+	font-weight:400;
+	line-height:1;
+	letter-spacing:-.035em;
+	white-space:nowrap;
+	color:var(--gloskin-text);
+}
+.gloskin-ui1-commerce-progress__step--cart{justify-self:start;text-align:left}
+.gloskin-ui1-commerce-progress__step--checkout{justify-self:end;text-align:right}
+.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step{
+	display:inline-flex;
+	min-height:44px;
+	align-items:center;
+	opacity:.26;
+	text-decoration:none;
+	transition:opacity 220ms cubic-bezier(.22,1,.36,1),transform 220ms cubic-bezier(.22,1,.36,1);
+}
+.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step:hover,
+.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step:focus-visible{
+	opacity:.56;
+}
+.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step:hover{
+	transform:translateY(-1px);
+}
+.gloskin-ui1-commerce-progress__step.is-active{opacity:1}
+.gloskin-ui1-commerce-progress__connector{
+	position:relative;
+	display:block;
+	width:100%;
+	min-width:0;
+	height:1px;
+	background:color-mix(in srgb,var(--gloskin-border) 82%,transparent);
+}
+.gloskin-ui1-commerce-progress__connector::before,
+.gloskin-ui1-commerce-progress__connector::after{
+	position:absolute;
+	top:50%;
+	width:4px;
+	height:4px;
+	border-radius:999px;
+	background:var(--gloskin-border);
+	content:"";
+	transform:translateY(-50%);
+}
+.gloskin-ui1-commerce-progress__connector::before{left:0}
+.gloskin-ui1-commerce-progress__connector::after{right:0}
+.gloskin-ui1-commerce-progress__connector-progress{
+	position:absolute;
+	inset:0;
+	background:var(--gloskin-accent);
+	transform:scaleX(0);
+	transform-origin:left center;
+}
+.gloskin-ui1-commerce-progress--checkout .gloskin-ui1-commerce-progress__connector-progress{transform:scaleX(1)}
+/* Cross-document View Transition ownership is intentionally absent here.
+   Cart/Checkout continue through native Woo document navigation, so neither
+   the large journey text nor Woo Blocks' dynamic application area is ever
+   snapshotted by this presentation layer. The small journey runtime can only
+   soften that native handoff: it never replaces Woo markup or lifecycle. */
+body.woocommerce-cart .gloskin-ui1-commerce-native,
+body.woocommerce-checkout .gloskin-ui1-commerce-native{
+	position:relative;
+}
+body.woocommerce-cart .gloskin-ui1-commerce-native > *,
+body.woocommerce-checkout .gloskin-ui1-commerce-native > *{
+	opacity:1;
+	transition:opacity 170ms cubic-bezier(.22,1,.36,1);
+}
+/* Reference-faithful goo loader: one static host, one local SVG goo filter,
+   four phase-shifted blobs. It is presentation-only and never owns loading,
+   routing, Woo state, or document replacement. */
+.gloskin-ui1-commerce-handoff{
+	--gloskin-commerce-handoff-size:clamp(104px,8vw,120px);
+	--gloskin-commerce-handoff-blob-size:clamp(34px,3vw,42px);
+	--gloskin-commerce-handoff-hero-size:clamp(42px,3.6vw,50px);
+	--gloskin-commerce-handoff-travel:clamp(28px,2.7vw,34px);
+	position:fixed;
+	top:50%;
+	left:50%;
+	z-index:40;
+	width:var(--gloskin-commerce-handoff-size);
+	height:var(--gloskin-commerce-handoff-size);
+	opacity:0;
+	pointer-events:none;
+	transform:translate(-50%,-50%) scale(.96);
+	transform-origin:center;
+	transition:opacity 170ms ease-out,transform 170ms ease-out;
+}
+.gloskin-ui1-commerce-handoff__defs{
+	position:absolute;
+	width:0;
+	height:0;
+	overflow:hidden;
+	pointer-events:none;
+}
+.gloskin-ui1-commerce-handoff__goo{
+	position:absolute;
+	inset:0;
+	filter:url("#gloskin-ui1-commerce-handoff-goo");
+}
+.gloskin-ui1-commerce-handoff__blob{
+	position:absolute;
+	top:50%;
+	left:50%;
+	width:var(--gloskin-commerce-handoff-blob-size);
+	height:var(--gloskin-commerce-handoff-blob-size);
+	border-radius:50%;
+	background:var(--gloskin-accent);
+	transform:translate(-50%,-50%) scale(1);
+	transform-origin:center;
+	will-change:transform;
+}
+.gloskin-ui1-commerce-handoff__blob:nth-child(4){
+	width:var(--gloskin-commerce-handoff-hero-size);
+	height:var(--gloskin-commerce-handoff-hero-size);
+	background:var(--gloskin-accent-strong);
+	box-shadow:0 0 20px color-mix(in srgb,var(--gloskin-accent) 38%,transparent);
+}
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-native > *,
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-native > *,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-native > *,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-native > *{
+	opacity:0;
+	pointer-events:none;
+}
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff,
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff{
+	opacity:1;
+	transform:translate(-50%,-50%) scale(1);
+}
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,
+html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob,
+html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob{
+	animation:gloskin-ui1-commerce-handoff-goo-dance 3.5s infinite ease-in-out;
+	animation-delay:var(--gloskin-commerce-handoff-delay,0s);
+}
+.gloskin-ui1-commerce-handoff__blob:nth-child(1){--gloskin-commerce-handoff-delay:0s}
+.gloskin-ui1-commerce-handoff__blob:nth-child(2){--gloskin-commerce-handoff-delay:-.8s}
+.gloskin-ui1-commerce-handoff__blob:nth-child(3){--gloskin-commerce-handoff-delay:-1.6s}
+.gloskin-ui1-commerce-handoff__blob:nth-child(4){--gloskin-commerce-handoff-delay:-2.4s}
+@keyframes gloskin-ui1-commerce-handoff-goo-dance{
+	0%,100%{transform:translate(-50%,-50%) scale(1)}
+	25%{transform:translate(calc(-50% + var(--gloskin-commerce-handoff-travel)),calc(-50% - var(--gloskin-commerce-handoff-travel))) scale(.8)}
+	50%{transform:translate(calc(-50% - var(--gloskin-commerce-handoff-travel)),calc(-50% + var(--gloskin-commerce-handoff-travel))) scale(1.1)}
+	75%{transform:translate(calc(-50% + var(--gloskin-commerce-handoff-travel)),calc(-50% + var(--gloskin-commerce-handoff-travel))) scale(.9)}
+}
+html.gloskin-ui1-commerce-journey-leaving [data-gloskin-commerce-progress]{pointer-events:none}
+
+@media (max-width:760px){
+	.gloskin-ui1-commerce-heading--journey{padding:clamp(30px,6vw,46px) 0 24px}
+	.gloskin-ui1-commerce-progress{
+		grid-template-columns:max-content minmax(24px,1fr) max-content;
+		gap:10px;
+	}
+	.gloskin-ui1-commerce-progress__step{font-size:clamp(1.75rem,8.2vw,2.8rem)}
+	.gloskin-ui1-commerce-handoff{
+		--gloskin-commerce-handoff-size:clamp(82px,23vw,96px);
+		--gloskin-commerce-handoff-blob-size:clamp(28px,8vw,34px);
+		--gloskin-commerce-handoff-hero-size:clamp(36px,10vw,42px);
+		--gloskin-commerce-handoff-travel:clamp(22px,6.5vw,27px);
+	}
+}
+@media (max-width:430px){
+	.gloskin-ui1-commerce-progress{
+		grid-template-columns:max-content minmax(16px,1fr) max-content;
+		gap:6px;
+	}
+	.gloskin-ui1-commerce-progress__step{font-size:clamp(1.4rem,7.3vw,2rem)}
+}
+
+@media (prefers-reduced-motion:reduce){
+	[data-gloskin-cart-count].is-commerce-badge-added,
+	[data-gloskin-wishlist-count].is-commerce-badge-added{
+		animation:none;
+		transform:none;
+	}
+	.gloskin-ui1-commerce-progress a.gloskin-ui1-commerce-progress__step,
+	body.woocommerce-cart .gloskin-ui1-commerce-native > *,
+	body.woocommerce-checkout .gloskin-ui1-commerce-native > *,
+	.gloskin-ui1-commerce-handoff{
+		transition:none;
+	}
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(1),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(1),
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(1),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(1){transform:translate(-50%,-50%) scale(1)}
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(2),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(2),
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(2),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(2){transform:translate(calc(-50% + 20px),calc(-50% - 18px)) scale(.86)}
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(3),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(3),
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(3),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(3){transform:translate(calc(-50% - 20px),calc(-50% + 18px)) scale(.94)}
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(4),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-cart .gloskin-ui1-commerce-handoff__blob:nth-child(4),
+	html.gloskin-ui1-commerce-journey-leaving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(4),
+	html.gloskin-ui1-commerce-journey-arriving body.woocommerce-checkout .gloskin-ui1-commerce-handoff__blob:nth-child(4){transform:translate(calc(-50% + 18px),calc(-50% + 18px)) scale(.9)}
+}
+
+/* Real-staging journey closure: this canonical component owner is explicitly
+   stronger than the global .gloskin-ui1 h1 billboard rule without changing
+   that global typography or Woo's native Cart/Checkout hydration lifecycle. */
+.gloskin-ui1-commerce-heading--journey{
+	padding:clamp(28px,4vw,48px) 0 clamp(20px,3vw,32px);
+}
+.gloskin-ui1 .gloskin-ui1-commerce-progress__step{
+	min-width:0;
+	margin:0;
+	font-family:var(--gloskin-font-heading);
+	font-size:clamp(2.1rem,3.4vw,3.25rem);
+	font-weight:400;
+	line-height:1;
+	letter-spacing:-.028em;
+	white-space:nowrap;
+	color:var(--gloskin-text);
+	text-shadow:none;
+	font-synthesis:none;
+}
+@media (max-width:760px){
+	.gloskin-ui1-commerce-heading--journey{padding:24px 0 18px}
+	.gloskin-ui1 .gloskin-ui1-commerce-progress__step{font-size:clamp(1.75rem,8.2vw,2.8rem)}
+}
+@media (max-width:430px){
+	.gloskin-ui1 .gloskin-ui1-commerce-progress__step{font-size:clamp(1.4rem,7.3vw,2rem)}
+}

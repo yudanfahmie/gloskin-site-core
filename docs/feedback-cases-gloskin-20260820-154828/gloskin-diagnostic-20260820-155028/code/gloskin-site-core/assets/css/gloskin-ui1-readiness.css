@@ -1,0 +1,375 @@
+.gloskin-ui1-search-overlay__body{margin-top:0;min-height:0}
+.gloskin-ui1-search-overlay__body:not(:empty){margin-top:20px}
+
+/* Breadcrumbs: one provider-first slot, quiet and subordinate to the page H1. */
+.gloskin-ui1-breadcrumb-slot{border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 58%,transparent);background:color-mix(in srgb,var(--gloskin-bg) 94%,var(--gloskin-surface))}
+.gloskin-ui1-breadcrumb{overflow-x:auto;padding-block:10px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.gloskin-ui1-breadcrumb::-webkit-scrollbar{display:none}
+.gloskin-ui1-breadcrumb ol,.gloskin-ui1-breadcrumb .rank-math-breadcrumb p{display:flex;align-items:center;gap:8px;min-width:max-content;margin:0;padding:0;list-style:none;color:var(--gloskin-muted);font-size:.82rem;line-height:1.35;white-space:nowrap}
+.gloskin-ui1-breadcrumb li{display:inline-flex;align-items:center;gap:8px}
+.gloskin-ui1-breadcrumb a{color:var(--gloskin-muted);text-decoration:none}
+.gloskin-ui1-breadcrumb a:hover{color:var(--gloskin-accent-readable)}
+.gloskin-ui1-breadcrumb [aria-current="page"],.gloskin-ui1-breadcrumb li:last-child,.gloskin-ui1-breadcrumb .last{color:var(--gloskin-text);font-weight:600}
+.gloskin-ui1-breadcrumb__separator{flex:0 0 auto;color:color-mix(in srgb,var(--gloskin-muted) 72%,transparent)}
+.gloskin-ui1-breadcrumb__separator svg{display:block}
+
+/* Destination-level empty states. SVG remains decorative; text carries meaning. */
+.gloskin-ui1-empty-state{display:grid;justify-items:center;gap:10px;max-width:720px;margin:0 auto;padding:clamp(26px,4vw,42px);border:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);border-radius:var(--gloskin-radius-md);background:color-mix(in srgb,var(--gloskin-surface) 78%,var(--gloskin-bg));text-align:center;animation:gloskin-empty-settle 220ms ease-out both}
+.gloskin-ui1-empty-state__visual{display:grid;width:58px;height:58px;border-radius:50%;background:color-mix(in srgb,var(--gloskin-accent) 5%,var(--gloskin-bg));color:var(--gloskin-muted);place-items:center}
+.gloskin-ui1-empty-state__visual svg{display:block;width:52px;height:52px}
+.gloskin-ui1-empty-state__visual .gloskin-ui1-empty-state__accent{color:var(--gloskin-accent)}
+.gloskin-ui1-empty-state__body{display:grid;justify-items:center;gap:10px}
+.gloskin-ui1-empty-state__title{margin:2px 0 0;font-family:var(--gloskin-font-heading);font-size:clamp(1.2rem,2vw,1.5rem);font-weight:600;line-height:1.2;color:var(--gloskin-text)}
+.gloskin-ui1-empty-state__copy{max-width:52ch;margin:0;color:var(--gloskin-muted)}
+.gloskin-ui1-empty-state__action{margin-top:4px}
+@keyframes gloskin-empty-settle{from{opacity:0;transform:translateY(2px)}to{opacity:1;transform:translateY(0)}}
+.gloskin-ui1-search-overlay__body .gloskin-ui1-empty-state,.gloskin-ui1-cart-sheet__body .gloskin-ui1-empty-state,.gloskin-ui1-wishlist-sheet__body .gloskin-ui1-empty-state{padding:24px 18px;border-color:transparent;background:var(--gloskin-surface)}
+
+/* Native Woo page heading for cart/checkout/account page-mode surfaces. */
+.gloskin-ui1-commerce-heading{padding:clamp(30px,5vw,56px) 0 16px}
+.gloskin-ui1-commerce-heading h1{margin:0;font-family:var(--gloskin-font-heading);font-size:clamp(2rem,4vw,3.4rem);font-weight:600;line-height:1.08;letter-spacing:-.025em}
+.woocommerce-account .gloskin-ui1-commerce-heading{padding:clamp(22px,3.4vw,34px) 0 12px}
+.woocommerce-account .gloskin-ui1-commerce-heading>.gloskin-ui1-container,.woocommerce-account .gloskin-ui1-commerce-native{width:calc(100% - 40px);max-width:980px;margin-inline:auto}
+.woocommerce-account .gloskin-ui1-commerce-heading h1{font-size:clamp(2.2rem,3.1vw,2.9rem)}
+
+/* My Account keeps native Woo markup/endpoints, with one compact tabbed layout owner. */
+.woocommerce-account .gloskin-ui1-commerce-native{margin-block:0 clamp(44px,6vw,72px)}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native{display:block}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native>.woocommerce{display:block;width:100%;max-width:none;margin:0}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation{float:none;width:100%;position:static;overflow-x:auto;margin:0 0 16px;padding:0 0 1px;border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation::-webkit-scrollbar{display:none}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation ul{display:flex;align-items:flex-end;min-width:max-content;gap:2px;margin:0;padding:0;list-style:none}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation li{flex:0 0 auto;margin:0;border:0}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a{position:relative;display:block;padding:9px 11px 11px;border-radius:0;background:transparent;color:var(--gloskin-muted);font-weight:700;text-decoration:none;white-space:nowrap;transition:color 140ms ease}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a:hover{background:transparent;color:var(--gloskin-accent-readable)}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation .is-active>a,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a[aria-current="page"]{background:transparent;color:var(--gloskin-accent-readable)}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation .is-active>a::before,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a[aria-current="page"]::before{position:absolute;right:11px;bottom:-1px;left:11px;height:2px;border-radius:999px;background:var(--gloskin-accent);content:""}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-content{float:none;clear:both;width:100%;min-width:0;box-sizing:border-box;margin:0;padding:clamp(20px,2.5vw,28px);border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);background:color-mix(in srgb,var(--gloskin-surface) 46%,var(--gloskin-bg));box-shadow:none;line-height:1.65}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-content>:first-child{margin-top:0}.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-content>:last-child{margin-bottom:0}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-content>p{max-width:68ch}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-content a:not(.button){color:var(--gloskin-accent-readable)}
+.woocommerce-account .woocommerce-MyAccount-content h2,.woocommerce-account .woocommerce-MyAccount-content h3{font-family:var(--gloskin-font-heading);font-weight:600}
+.woocommerce-account .woocommerce table.shop_table{border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);border-collapse:separate;overflow:hidden;background:var(--gloskin-bg)}
+.woocommerce-account .woocommerce table.shop_table th,.woocommerce-account .woocommerce table.shop_table td{padding:13px 14px;border-color:var(--gloskin-border);vertical-align:middle}
+.woocommerce-account .woocommerce form .form-row input.input-text,.woocommerce-account .woocommerce form .form-row textarea,.woocommerce-account .woocommerce form select{min-height:var(--gloskin-field-height);border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-field-bg);color:var(--gloskin-text)}
+.woocommerce-account .woocommerce fieldset{margin:26px 0 0;padding:20px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md)}
+.woocommerce-account .woocommerce .button{border-radius:var(--gloskin-action-radius)}
+/* Real staging inspection (WooCommerce Blocks is active on Cart/Checkout,
+ * confirmed hydrated -- no classic .woocommerce-cart-form/form.checkout
+ * present on either page): both Cart's "Proceed to Checkout" and
+ * Checkout's "Place Order" render Woo Blocks' own real, shared
+ * .wc-block-components-button class, which renders at Woo Blocks' own 0px
+ * default. Scoped into the same one --gloskin-action-radius owner. */
+.gloskin-ui1 .wc-block-components-button{border-radius:var(--gloskin-action-radius)}
+.gloskin-ui1-commerce-native .gloskin-ui1-empty-state+.return-to-shop{display:none}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-info,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-message,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-error{display:flex;align-items:center;gap:12px;min-height:58px;margin:0;padding:13px 14px 13px 16px;border:1px solid var(--gloskin-border);border-top:2px solid var(--gloskin-accent);border-radius:var(--gloskin-radius-sm);background:var(--gloskin-bg);box-shadow:none;color:var(--gloskin-text)}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-error{border-top-color:var(--gloskin-accent-strong)}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-info .button,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-message .button,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-error .button{order:2;float:none;flex:0 0 auto;width:auto;min-height:40px;margin:0 0 0 auto;padding:9px 16px;background:var(--gloskin-accent);color:#fff;line-height:1.2;white-space:nowrap}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-info .button:hover,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-message .button:hover,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-error .button:hover{background:var(--gloskin-accent-strong);color:#fff}
+
+/* Logged-out native My Account forms share the same editorial surface without overrides. */
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native{display:block}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native>.woocommerce{border-radius:var(--gloskin-radius-lg)}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native:not(:has(>.woocommerce)) {padding:clamp(22px,4vw,42px);border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-lg);background:color-mix(in srgb,var(--gloskin-surface) 68%,var(--gloskin-bg))}
+.woocommerce-account #customer_login{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(24px,5vw,56px)}
+.woocommerce-account #customer_login .col-1,.woocommerce-account #customer_login .col-2{float:none;width:auto;margin:0}
+.woocommerce-account .woocommerce-form-login,.woocommerce-account .woocommerce-form-register{margin:0;padding:0;border:0;background:transparent}
+
+/* Quick Auth: modal CSS owns geometry only. Form/action skin comes from the global kit in core.css. */
+.gloskin-ui1-auth-overlay{position:fixed;z-index:9998;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity 240ms ease;pointer-events:none}
+.gloskin-ui1-auth-overlay[aria-hidden="false"]{opacity:1;pointer-events:auto}.gloskin-ui1-auth-overlay[hidden]{display:none}
+.gloskin-ui1-auth-overlay__backdrop{position:absolute;inset:0;border:0;background:color-mix(in srgb,var(--gloskin-brand-charcoal) 52%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.gloskin-ui1-auth-overlay__panel{position:relative;z-index:1;width:min(100%,720px);max-height:min(86vh,760px);overflow:auto;padding:clamp(22px,4vw,38px);border:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);border-radius:var(--gloskin-radius-lg);background:var(--gloskin-bg);box-shadow:0 28px 78px color-mix(in srgb,var(--gloskin-brand-charcoal) 24%,transparent);transform:translateY(8px);transition:transform 240ms cubic-bezier(.22,1,.36,1)}
+.gloskin-ui1-auth-overlay[aria-hidden="false"] .gloskin-ui1-auth-overlay__panel{transform:translateY(0)}
+.gloskin-ui1-auth-overlay__head{display:grid;grid-template-columns:1fr auto;gap:10px 18px;align-items:start;margin-bottom:20px}
+.gloskin-ui1-auth-overlay__head h2{margin:0;font-family:var(--gloskin-font-heading);font-size:clamp(1.65rem,3vw,2.25rem);font-weight:600}.gloskin-ui1-auth-overlay__head p{grid-column:1;margin:0;color:var(--gloskin-muted)}
+.gloskin-ui1-auth-overlay__head>.gloskin-ui1-sheet__close{grid-column:2;grid-row:1}
+.gloskin-ui1-auth-switch{display:flex;gap:6px;margin:0 0 22px;padding:4px;border-radius:var(--gloskin-action-radius);background:var(--gloskin-surface)}
+.gloskin-ui1-auth-switch button{flex:1;min-height:38px;border:0;border-radius:var(--gloskin-action-radius);background:transparent;color:var(--gloskin-muted);font:inherit;font-weight:700;cursor:pointer}.gloskin-ui1-auth-switch button.is-active{background:var(--gloskin-bg);color:var(--gloskin-text);box-shadow:0 1px 5px color-mix(in srgb,var(--gloskin-text) 8%,transparent)}
+.gloskin-ui1-auth-overlay #customer_login{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}.gloskin-ui1-auth-overlay #customer_login .col-1,.gloskin-ui1-auth-overlay #customer_login .col-2{float:none;width:auto;margin:0}
+.gloskin-ui1-auth-overlay [data-gloskin-auth-forms].is-enhanced #customer_login{display:block}.gloskin-ui1-auth-overlay [data-gloskin-auth-forms].is-enhanced #customer_login .col-1,.gloskin-ui1-auth-overlay [data-gloskin-auth-forms].is-enhanced #customer_login .col-2{width:100%}
+.gloskin-ui1-auth-overlay .woocommerce-form{margin:0;padding:0;border:0;background:transparent}.gloskin-ui1-auth-overlay .woocommerce-form h2,.gloskin-ui1-auth-overlay #customer_login h2{font-family:var(--gloskin-font-heading);font-size:1.3rem}
+.gloskin-ui1-auth-overlay .form-row{margin-bottom:14px}
+.gloskin-ui1-auth-overlay .woocommerce-form-login__rememberme{display:inline-flex;align-items:center;gap:8px}.gloskin-ui1-auth-overlay .woocommerce-form-login__rememberme input{margin:0}
+.gloskin-ui1-auth-overlay .lost_password{margin-bottom:0}.gloskin-ui1-auth-overlay .lost_password a{color:var(--gloskin-accent-readable)}
+
+@media (max-width:782px){
+ .woocommerce-account .gloskin-ui1-commerce-heading>.gloskin-ui1-container,.woocommerce-account .gloskin-ui1-commerce-native{width:calc(100% - 28px)}
+ .woocommerce-account .gloskin-ui1-commerce-heading{padding:22px 0 10px}
+ .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation{margin-bottom:13px}
+ .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a{padding:9px 10px 11px;font-size:.9rem}
+ .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-content{padding:18px;border-radius:var(--gloskin-radius-md)}
+ .woocommerce-account #customer_login{grid-template-columns:1fr}
+ .gloskin-ui1-auth-overlay{align-items:flex-end;padding:0}
+ .gloskin-ui1-auth-overlay__panel{width:100%;max-height:calc(100dvh - max(12px,env(safe-area-inset-top)));padding:22px 18px calc(22px + env(safe-area-inset-bottom));border-radius:var(--gloskin-radius-lg) var(--gloskin-radius-lg) 0 0;transform:translateY(18px)}
+ .gloskin-ui1-auth-overlay #customer_login{grid-template-columns:1fr}
+}
+@media (max-width:600px){
+ .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-info,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-message,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-error{align-items:flex-start;flex-direction:column;padding:14px 15px}
+ .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-info .button,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-message .button,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-error .button{order:2;margin-left:0}
+}
+@media (max-width:480px){.gloskin-ui1-search-overlay__canvas{width:calc(100% - 20px);margin-top:56px}.gloskin-ui1-search-overlay__head{align-items:stretch;flex-direction:column}.gloskin-ui1-empty-state{padding:24px 18px}.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-content{padding:16px}.woocommerce-account .woocommerce table.shop_table_responsive tr td{padding:11px 0}}
+
+/* Reduced motion for overlays/sheets/empty-state settle. */
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-search-overlay__loading span{animation:none}.gloskin-ui1-empty-state{animation:none}}
+
+/* Logged-in My Account polish: Woo keeps sole ownership of navigation,
+   endpoints, forms, validation and persisted account data. */
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation{
+	margin:0 0 20px;
+	padding:4px;
+	border:0;
+	border-radius:12px;
+	background:color-mix(in srgb,var(--gloskin-surface) 78%,var(--gloskin-bg));
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation ul{
+	align-items:stretch;
+	gap:4px;
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a{
+	padding:8px 12px;
+	border-radius:9px;
+	background:transparent;
+	color:var(--gloskin-muted);
+	font-family:var(--gloskin-font-body);
+	font-size:.9rem;
+	font-weight:600;
+	transition:background-color 140ms ease,color 140ms ease,box-shadow 140ms ease;
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a:hover{
+	background:var(--gloskin-accent-soft);
+	color:var(--gloskin-accent-readable);
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation .is-active>a,
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a[aria-current="page"]{
+	background:var(--gloskin-bg);
+	color:var(--gloskin-accent-readable);
+	box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gloskin-border) 78%,transparent),0 1px 5px color-mix(in srgb,var(--gloskin-text) 8%,transparent);
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation .is-active>a::before,
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a[aria-current="page"]::before{content:none}
+
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-content{
+	padding:0;
+	border:0;
+	border-radius:0;
+	background:transparent;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content h2{
+	font-size:clamp(1.4rem,2vw,1.8rem);
+	line-height:1.2;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content h3{
+	font-size:clamp(1.15rem,1.5vw,1.35rem);
+	line-height:1.25;
+}
+
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses{
+	display:grid;
+	grid-template-columns:repeat(2,minmax(0,1fr));
+	gap:18px;
+	margin:0;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address{
+	float:none;
+	width:100%;
+	min-width:0;
+	box-sizing:border-box;
+	margin:0;
+	padding:clamp(20px,2.4vw,24px);
+	border:1px solid var(--gloskin-border);
+	border-radius:var(--gloskin-radius-md);
+	background:color-mix(in srgb,var(--gloskin-surface) 46%,var(--gloskin-bg));
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address-title{
+	display:flex;
+	align-items:flex-start;
+	justify-content:space-between;
+	gap:12px;
+	margin:0 0 12px;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address-title h2{
+	margin:0;
+	font-size:clamp(1.4rem,2vw,1.65rem);
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address-title .edit{
+	float:none;
+	margin:2px 0 0;
+	color:var(--gloskin-accent-readable);
+	font-size:.82rem;
+	font-weight:700;
+	text-decoration:none;
+	white-space:nowrap;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address address{
+	margin:0;
+	color:var(--gloskin-muted);
+	font-style:normal;
+	line-height:1.65;
+}
+
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm{
+	display:grid;
+	grid-template-columns:repeat(2,minmax(0,1fr));
+	column-gap:16px;
+	align-items:start;
+	margin:0;
+	padding:clamp(20px,2.5vw,24px);
+	border:0;
+	border-radius:var(--gloskin-radius-md);
+	background:color-mix(in srgb,var(--gloskin-surface) 46%,var(--gloskin-bg));
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row{
+	float:none;
+	width:100%;
+	min-width:0;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row-first{grid-column:1}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row-last{grid-column:2}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row-wide{grid-column:1/-1}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm fieldset{
+	grid-column:1/-1;
+	min-width:0;
+	margin:8px 0 18px;
+	padding:18px 0 0;
+	border:0;
+	border-top:1px solid var(--gloskin-border);
+	border-radius:0;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm fieldset legend{
+	padding:0 10px 0 0;
+	color:var(--gloskin-text);
+	font-family:var(--gloskin-font-heading);
+	font-size:clamp(1.15rem,1.5vw,1.35rem);
+	font-weight:600;
+	line-height:1.25;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm>p:last-child{
+	grid-column:1/-1;
+	margin-bottom:0;
+}
+
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-info,
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-message,
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-error{
+	border:0;
+	border-left:3px solid var(--gloskin-accent);
+	border-radius:var(--gloskin-radius-sm);
+	background:color-mix(in srgb,var(--gloskin-accent-soft) 44%,var(--gloskin-bg));
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-error{border-left-color:var(--gloskin-accent-strong)}
+
+@media (max-width:782px){
+	.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation{margin-bottom:16px}
+	.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a{padding:8px 10px;font-size:.86rem}
+	.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-content{padding:0;border-radius:0}
+	.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses{grid-template-columns:1fr;gap:14px}
+	.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm{grid-template-columns:1fr;padding:18px}
+	.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row-first,
+	.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row-last,
+	.woocommerce-account.logged-in .woocommerce-MyAccount-content form.woocommerce-EditAccountForm .form-row-wide{grid-column:1/-1}
+}
+
+/* Real-staging closure: make native Woo account geometry deterministic even
+   when legacy col2-set clearfix and notice pseudos are injected after us. */
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation{margin-bottom:18px}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a{
+	display:flex;
+	align-items:center;
+	box-sizing:border-box;
+	min-height:40px;
+	transition:background-color 140ms ease,color 140ms ease;
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation .is-active>a,
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a[aria-current="page"]{
+	box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gloskin-border) 78%,transparent);
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content>p{margin:0 0 16px}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses{
+	align-items:stretch;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses::before,
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses::after{
+	content:none;
+	display:none;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address{
+	float:none;
+	clear:none;
+	width:auto;
+	min-width:0;
+	height:100%;
+	margin:0;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses>.u-column1.col-1.woocommerce-Address{
+	grid-column:1;
+	grid-row:1;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses>.u-column2.col-2.woocommerce-Address{
+	grid-column:2;
+	grid-row:1;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address-title{align-items:center}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address-title h2{
+	font-size:clamp(1.375rem,1.7vw,1.55rem);
+	font-weight:600;
+	line-height:1.2;
+	letter-spacing:-.012em;
+}
+.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Address-title .edit{
+	position:static;
+	display:inline-flex;
+	align-items:center;
+	min-height:32px;
+	margin:0;
+	padding:2px 0;
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native :is(.woocommerce-info,.woocommerce-message,.woocommerce-error){
+	display:flex;
+	align-items:center;
+	gap:12px;
+	min-height:58px;
+	margin:0;
+	padding:13px 14px 13px 16px;
+	border:0;
+	border-left:3px solid var(--gloskin-accent);
+	border-radius:var(--gloskin-radius-sm);
+	background:color-mix(in srgb,var(--gloskin-accent-soft) 44%,var(--gloskin-bg));
+	box-shadow:none;
+	color:var(--gloskin-text);
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native .woocommerce-error{border-left-color:var(--gloskin-accent-strong)}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native :is(.woocommerce-info,.woocommerce-message,.woocommerce-error)::before,
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native :is(.woocommerce-info,.woocommerce-message,.woocommerce-error)::after{
+	content:none;
+	display:none;
+}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native :is(.woocommerce-info,.woocommerce-message,.woocommerce-error)+:is(.woocommerce-info,.woocommerce-message,.woocommerce-error){margin-top:10px}
+.woocommerce-account.logged-in .gloskin-ui1-commerce-native :is(.woocommerce-info,.woocommerce-message,.woocommerce-error) .button{
+	order:2;
+	float:none;
+	flex:0 0 auto;
+	width:auto;
+	min-height:40px;
+	margin:0 0 0 auto;
+	padding:9px 16px;
+	background:var(--gloskin-accent);
+	color:var(--gloskin-inverse);
+	line-height:1.2;
+	white-space:nowrap;
+}
+@media (max-width:782px){
+	.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses>.u-column1.col-1.woocommerce-Address,
+	.woocommerce-account.logged-in .woocommerce-MyAccount-content .woocommerce-Addresses>.u-column2.col-2.woocommerce-Address{
+		grid-column:1;
+		grid-row:auto;
+	}
+}
+@media (max-width:600px){
+	.woocommerce-account.logged-in .gloskin-ui1-commerce-native :is(.woocommerce-info,.woocommerce-message,.woocommerce-error){
+		align-items:flex-start;
+		flex-direction:column;
+		padding:14px 15px;
+	}
+	.woocommerce-account.logged-in .gloskin-ui1-commerce-native :is(.woocommerce-info,.woocommerce-message,.woocommerce-error) .button{margin-left:0}
+}

@@ -1,0 +1,688 @@
+/*
+ * Gloskin UI v1 production visual layer.
+ * Structural component CSS remains in gloskin-ui1-core.css; this file owns the
+ * navigation typography, footer geometry, and editorial-photo presentation.
+ */
+/* ONE canonical navigation component owner: both Header 1 desktop/sticky and
+ * Header 2 desktop use <nav class="gloskin-ui1-nav gloskin-ui1-nav--desktop">;
+ * the mobile drawer uses <nav class="gloskin-ui1-nav gloskin-ui1-nav--mobile">.
+ * Setting font-family here lets every nav descendant inherit Graphik without
+ * repeating the declaration on __link, __toggle, submenu, or mobile variants. */
+.gloskin-ui1-nav{
+	font-family:var(--gloskin-font-nav);
+}
+.gloskin-ui1-nav__link{
+	min-height:40px;
+	padding:8px 13px;
+	border-radius:999px;
+	font-size:.91rem;
+	font-weight:400;
+	letter-spacing:.075em;
+	text-transform:uppercase;
+}
+.gloskin-ui1-search-overlay__input{font-family:var(--gloskin-font-body)}
+.gloskin-ui1-search-results__label{font-family:var(--gloskin-font-body)}
+.gloskin-ui1-search-results__title{font-family:var(--gloskin-font-body)}
+.gloskin-ui1-sheet__head{font-family:var(--gloskin-font-heading);font-weight:400;letter-spacing:-.008em}
+.gloskin-ui1-badge{font-family:var(--gloskin-font-body)}
+.gloskin-ui1-hero__copy,.gloskin-ui1-lead{line-height:1.58}
+.gloskin-ui1-card__title{line-height:1.18}
+.gloskin-ui1-category-card__label,
+.gloskin-ui1-pathway-card strong{font-family:var(--gloskin-font-heading);font-weight:400;letter-spacing:-.008em}
+.gloskin-ui1-footer__cta h2{line-height:1.08}
+
+/* Curated editorial staging photography. Factual entity media remains WP/Woo-owned. */
+.gloskin-ui1-editorial-image{
+	display:block;
+	width:100%;
+	max-width:100%;
+	height:auto;
+	object-fit:cover;
+	background:var(--gloskin-surface-strong);
+}
+.gloskin-ui1-hero__image--editorial{aspect-ratio:16/10}
+.gloskin-ui1-card__image--editorial{aspect-ratio:4/3}
+.gloskin-ui1-category-card__media{
+	width:100%;
+	object-fit:cover;
+	border:0;
+	border-radius:0;
+}
+.gloskin-ui1-editorial-split__media{
+	width:100%;
+	aspect-ratio:4/3;
+	object-fit:cover;
+}
+@media (max-width:760px){
+	.gloskin-ui1-brand{font-size:1.5rem}
+}
+@media (max-width:480px){
+	.gloskin-ui1-nav--mobile .gloskin-ui1-nav__link{font-size:.96rem}
+}
+
+/* Fixed commerce sheets use the single existing WordPress-toolbar offset owner. */
+.gloskin-ui1-sheet{top:var(--gloskin-ui1-admin-bar-height)}
+
+/* Utility counters remain visibly branded even when the count is zero. */
+.gloskin-ui1-badge{background:var(--gloskin-accent);color:var(--gloskin-refresh-blush);opacity:1}
+
+/* Section-level "see more" links close the card group instead of floating
+   directly under the final card row. */
+.gloskin-ui1-section__action{
+	display:flex;
+	align-items:center;
+	justify-content:flex-end;
+	margin:clamp(24px,3vw,34px) 0 0;
+	padding-top:16px;
+	border-top:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);
+}
+.gloskin-ui1-section__action .gloskin-ui1-text-link{
+	padding-block:5px;
+	color:var(--gloskin-accent-readable);
+	text-decoration:none;
+}
+.gloskin-ui1-section__action .gloskin-ui1-text-link:hover{
+	color:var(--gloskin-accent-strong);
+	text-decoration:none;
+}
+.gloskin-ui1-section--contrast .gloskin-ui1-section__action{
+	border-top-color:color-mix(in srgb,currentColor 22%,transparent);
+}
+.gloskin-ui1-section--contrast .gloskin-ui1-section__action .gloskin-ui1-text-link{color:var(--gloskin-inverse)}
+
+/* Top-level desktop navigation: bubble geometry is snapped invisibly by
+   initNavBubble() to the target link's final rectangle. Visible motion is
+   center-origin scale + opacity only: no translate, width/height, left/top
+   transition, liquid bridge or diagonal travel. */
+.gloskin-ui1-nav--desktop{position:relative;z-index:0}
+.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{
+	position:relative;
+	z-index:1;
+	background:transparent;
+	transition:color 160ms ease;
+}
+.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link:hover,
+.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item.is-active>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{
+	background:transparent;
+	color:var(--gloskin-accent-readable);
+}
+body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled,
+body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link.is-bubbled:hover{
+	color:#fff;
+	transition-duration:0s;
+	opacity:1;
+}
+.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__toggle:hover{
+	background:transparent;
+}
+.gloskin-ui1-nav__bubble{
+	position:absolute;
+	z-index:0;
+	top:0;
+	left:0;
+	width:0;
+	height:0;
+	border-radius:999px;
+	background:var(--gloskin-accent);
+	opacity:0;
+	transform:scale(0);
+	transform-origin:center;
+	pointer-events:none;
+	transition:transform 180ms cubic-bezier(.22,1,.36,1),opacity 160ms ease;
+}
+.gloskin-ui1-nav__bubble.is-visible{opacity:1;transform:scale(1)}
+.gloskin-ui1-nav__bubble.is-repositioning{transition:none}
+
+/* Desktop dropdown submenu: single consistent presentational owner (skeleton
+   position/sizing stays in gloskin-ui1-core-base.css). */
+.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu{
+	top:calc(100% + 8px);
+	padding:8px;
+	border:1px solid color-mix(in srgb,var(--gloskin-border) 72%,transparent);
+	border-radius:18px;
+	background:var(--gloskin-refresh-blush);
+	box-shadow:var(--gloskin-shadow);
+}
+.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__list{
+	width:100%;
+	margin:0;
+	padding:0;
+	gap:2px;
+	justify-content:stretch;
+	justify-items:stretch;
+	align-items:stretch;
+}
+.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__item{width:100%}
+.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__link{width:100%;padding:8px 10px;border-radius:8px}
+.gloskin-ui1-nav--desktop .gloskin-ui1-nav__submenu .gloskin-ui1-nav__link:hover{
+	background:var(--gloskin-accent);
+	color:#fff;
+}
+
+/* Premium footer polish without changing its information architecture. */
+.gloskin-ui1-footer__grid{
+	align-items:start;
+	gap:clamp(34px,5.5vw,76px);
+	padding-block:clamp(60px,7vw,92px);
+}
+.gloskin-ui1-footer__brand{display:grid;align-content:start;gap:14px}
+.gloskin-ui1-footer__brand .gloskin-ui1-brand--footer{padding-bottom:0;border-bottom:0}
+.gloskin-ui1-footer__brand::after{
+	width:72px;
+	height:1px;
+	content:"";
+	opacity:.65;
+}
+.gloskin-ui1-footer__brand p{max-width:38ch;margin:0}
+.gloskin-ui1-footer__grid>div:not(.gloskin-ui1-footer__brand){
+	padding-left:clamp(16px,1.6vw,24px);
+	border-left:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);
+}
+.gloskin-ui1-footer h3{margin-bottom:18px}
+.gloskin-ui1-footer ul{gap:12px}
+.gloskin-ui1-footer__grid a{transition:color 140ms ease}
+.gloskin-ui1-footer__grid a:hover{text-decoration:none}
+.gloskin-ui1-footer__bottom{padding-block:22px 30px}
+
+/* Native logged-out My Account: page-only owner that neutralizes Woo's
+   col2-set floats and form.login/register chrome without touching quick auth. */
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-heading>.gloskin-ui1-container,
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native{
+	width:calc(100% - 40px);
+	max-width:900px;
+	margin-inline:auto;
+}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native>.woocommerce{
+	display:block;
+	width:100%;
+	max-width:none;
+	margin:0;
+	padding:0;
+	border:0;
+	background:transparent;
+}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login{
+	display:grid;
+	grid-template-columns:repeat(2,minmax(0,1fr));
+	gap:18px;
+	align-items:start;
+	margin:0;
+	padding:0;
+}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login>.u-column1.col-1,
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login>.u-column2.col-2{
+	float:none;
+	width:100%;
+	max-width:none;
+	min-width:0;
+	margin:0;
+	padding:clamp(20px,2.4vw,28px);
+	border:1px solid var(--gloskin-border);
+	border-radius:var(--gloskin-radius-md);
+	background:color-mix(in srgb,var(--gloskin-surface) 46%,var(--gloskin-bg));
+}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login>.u-column1.col-1{order:1}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login>.u-column2.col-2{order:2}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login>.u-column1:only-child{
+	grid-column:1/-1;
+	max-width:520px;
+	justify-self:center;
+}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login h2{
+	margin:0 0 18px;
+	font-size:clamp(1.55rem,2.2vw,1.9rem);
+	line-height:1.12;
+}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login form.woocommerce-form-login.login,
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login form.woocommerce-form-register.register{
+	width:100%;
+	margin:0;
+	padding:0;
+	border:0;
+	border-radius:0;
+	background:transparent;
+}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login .form-row{margin:0 0 14px}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login input.input-text{width:100%;min-height:46px}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login .woocommerce-form-login p.form-row:has(.woocommerce-form-login__rememberme){
+	display:flex;
+	align-items:center;
+	gap:12px;
+	flex-wrap:wrap;
+}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login .woocommerce-form-login__rememberme{
+	display:inline-flex;
+	align-items:center;
+	gap:7px;
+	margin:0;
+}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login .woocommerce-form-login__submit{
+	float:none;
+	width:auto;
+	margin:0 0 0 auto;
+}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login .lost_password{margin:4px 0 0}
+.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login .woocommerce-privacy-policy-text{
+	color:var(--gloskin-muted);
+	font-size:.92rem;
+	line-height:1.55;
+}
+
+@media (min-width:1041px) and (max-width:1279px){
+	.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list{gap:0}
+	.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{padding-inline:5px}
+}
+@media (min-width:1280px){
+	.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list{gap:5px}
+	.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{padding-inline:10px}
+}
+@media (min-width:1800px){
+	.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list{gap:7px}
+	.gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-nav__item>.gloskin-ui1-nav__row>.gloskin-ui1-nav__link{padding-inline:12px}
+}
+@media (max-width:1040px){
+	.gloskin-ui1-footer__grid>div:last-child{
+		padding-top:28px;
+		padding-left:0;
+		border-top:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);
+		border-left:0;
+	}
+}
+@media (max-width:782px){
+	.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-heading>.gloskin-ui1-container,
+	.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native{width:calc(100% - 28px)}
+	.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login{grid-template-columns:1fr;gap:14px}
+	.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login>.u-column1:only-child{max-width:none}
+}
+@media (max-width:600px){
+	.gloskin-ui1-section__action{justify-content:flex-start}
+}
+@media (max-width:480px){
+	.gloskin-ui1-footer__grid>div:not(.gloskin-ui1-footer__brand){
+		padding-top:24px;
+		padding-left:0;
+		border-top:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);
+		border-left:0;
+	}
+	.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login>.u-column1.col-1,
+	.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login>.u-column2.col-2{padding:18px 16px}
+}
+
+/* Footer brand parity: the primary header and footer share one display-size
+   token. The footer explicitly cancels the global brand grid-column so its
+   logo stays flush-left in the brand column on every breakpoint. */
+:root{--gloskin-ui1-brand-primary-height:clamp(44px,6vw,80px)}
+[data-gloskin-header="header-2"]:not(.is-compact-sticky){--gloskin-ui1-brand-primary-height:60px}
+.gloskin-ui1-header__inner img.gloskin-ui1-brand__image,
+.gloskin-ui1-footer img.gloskin-ui1-brand__image--footer{height:var(--gloskin-ui1-brand-primary-height)}
+.gloskin-ui1-footer__brand{justify-items:start;text-align:left}
+.gloskin-ui1-footer .gloskin-ui1-brand--footer{grid-column:auto;justify-self:start;align-self:start;margin:0}
+
+/* Clinic names are atomic labels. Use content-sized tracks while there is
+   room, then a single safe column on narrow phones rather than wrapping a
+   clinic name across two lines. */
+.gloskin-ui1-footer__clinics{grid-template-columns:repeat(2,max-content);column-gap:clamp(22px,3vw,40px)}
+.gloskin-ui1-footer__clinics li,.gloskin-ui1-footer__clinics a{white-space:nowrap}
+@media (max-width:420px){.gloskin-ui1-footer__clinics{grid-template-columns:1fr}}
+
+/* Gloskin Form Kit -- premium label character. Structure/spacing lives in
+   gloskin-ui1-core.css; this only tunes weight/letter-spacing to match the
+   rest of the Mulish body-copy hierarchy (nav links, eyebrow) above. */
+.gloskin-ui1-form label,.gloskin-ui1 .woocommerce form label,.gloskin-ui1-auth-forms label{font-weight:600;letter-spacing:.01em}
+
+/* Cart item presentation. The WooCommerce Cart block remains the sole
+   markup/state/mutation owner -- same native quantity input, same native
+   remove control, no second cart owner, no custom AJAX flow. This only
+   re-skins the existing wc-block-cart-item__* structure WC already
+   renders, and reuses Gloskin tokens in place of WC Blocks' own default
+   (unthemed) border/spacing values. The line-items block marker and
+   wc-block-cart-items class live on the SAME table in real Woo markup;
+   compound selectors below intentionally encode that DOM contract. */
+table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row,
+table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block thead{border-bottom-color:var(--gloskin-border)}
+/* WC's own cell border also includes a top edge, independent of the
+   bottom-edge divider recolored above -- removed at every width (not just
+   the desktop table polish below) since it renders on the mobile grid row
+   too and is pure cosmetic noise, not a layout dimension. */
+.wc-block-cart__main .wc-block-cart-items td{border-top:0}
+.wc-block-cart-item__image img{
+	border-radius:var(--gloskin-radius-sm);
+	object-fit:cover;
+	background:var(--gloskin-surface-strong);
+}
+
+/* Quantity stepper: the same visual language as the PDP purchase dock's
+   own stepper (.gloskin-ui1-purchase-dock__qty-control in
+   gloskin-ui1-single-product-geometry.css: 46px outer / 44px input / 34px
+   buttons), adapted to the Cart block's own selectors via scoped classes
+   only -- no separate UI system, same native Store API quantity input.
+   Every selector is scoped under .wp-block-woocommerce-cart, the stable
+   top-level Cart block wrapper -- .wc-block-components-quantity-selector
+   and its children are generic Woo Blocks component classes shared with
+   Mini Cart and any future block using the same component, so a bare
+   rule would leak Cart-only presentation onto those. WC's own layout
+   gives the stepper's children flex-grow/shrink, which silently
+   overrides a plain width declaration (computes to a squeezed ~41px
+   instead of 44px); flex:0 0 Npx pins the intended width the same way
+   min-height already pins the intended heights below. */
+.wp-block-woocommerce-cart .wc-block-components-quantity-selector{
+	min-height:46px;
+	width:auto;
+	border:1px solid var(--gloskin-border);
+	border-radius:var(--gloskin-radius-sm);
+	overflow:hidden;
+	background:var(--gloskin-bg);
+}
+.wp-block-woocommerce-cart .wc-block-components-quantity-selector__input{
+	min-height:44px;
+	flex:0 0 44px;
+	padding:0;
+	border:0;
+	border-radius:0;
+	background:transparent;
+	color:var(--gloskin-text);
+	font:inherit;
+	text-align:center;
+}
+.wp-block-woocommerce-cart .wc-block-components-quantity-selector__button{
+	min-height:44px;
+	flex:0 0 34px;
+	padding:0;
+	border:0;
+	border-radius:0;
+	background:transparent;
+	color:var(--gloskin-text);
+	font-weight:700;
+	transition:background-color 140ms ease;
+}
+.wp-block-woocommerce-cart .wc-block-components-quantity-selector__button--minus{border-right:1px solid var(--gloskin-border)}
+.wp-block-woocommerce-cart .wc-block-components-quantity-selector__button--plus{border-left:1px solid var(--gloskin-border)}
+.wp-block-woocommerce-cart .wc-block-components-quantity-selector__button:hover{background:var(--gloskin-surface)}
+.wp-block-woocommerce-cart .wc-block-components-quantity-selector__button:disabled{opacity:.4;cursor:not-allowed}
+/* WC's own :focus state adds a box-shadow ring on top of the global
+   :focus-visible outline (gloskin-ui1-core-base.css) that already gives
+   keyboard users a visible ring here -- :focus fires on every click too,
+   so the extra shadow read as a stray persistent glow, not an
+   accessibility aid. Removing it drops zero focus indication. */
+.wc-block-components-quantity-selector .wc-block-components-quantity-selector__button:focus{box-shadow:none}
+
+/* Remove action: calm, grouped with the stepper by WC's own existing
+   wc-block-cart-item__quantity flex row (no wrapper markup added). WC's
+   own stylesheet pins this control's width/height at !important, which
+   this codebase does not override with !important of its own (see
+   CONTRIBUTING.md) -- so the visible icon stays WC's native 24px, and
+   touch-safety instead comes from an invisible expanded hit area (an
+   effective ~40px target) via ::after, which is not fighting anything. */
+.wc-block-cart-item__remove-link{
+	position:relative;
+	border-radius:var(--gloskin-radius-sm);
+	color:var(--gloskin-muted);
+	transition:background-color 140ms ease,color 140ms ease;
+}
+.wc-block-cart-item__remove-link::after{content:"";position:absolute;inset:-8px}
+.wc-block-cart-item__remove-link:hover{background:var(--gloskin-surface);color:var(--gloskin-accent-strong)}
+
+/* Desktop Cart table: ONE deliberate separator + surface strategy. The real
+   Woo Cart table carries wc-block-cart-items AND
+   wp-block-woocommerce-cart-line-items-block on the same element. Every
+   table-owned selector therefore starts from that same-element compound;
+   rows/cells/components remain descendants of the table. Scoped >=769px so
+   the established Woo mobile grid contract below remains untouched. */
+@media (min-width:769px){
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block{
+		border:1px solid color-mix(in srgb,var(--gloskin-border) 70%,transparent);
+		border-radius:var(--gloskin-radius-md);
+		border-collapse:collapse;
+		background:var(--gloskin-bg);
+		box-shadow:none;
+		overflow:hidden;
+	}
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block th,
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block td{
+		border:0;
+		padding:20px;
+		vertical-align:middle;
+	}
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block thead{
+		display:table-header-group;
+		border:0;
+		background:var(--gloskin-accent);
+	}
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block thead th{
+		padding-block:16px;
+		border:0;
+		background:var(--gloskin-accent);
+		color:var(--gloskin-inverse);
+		font-size:.78rem;
+		font-weight:700;
+		letter-spacing:.06em;
+		text-align:left;
+		text-transform:uppercase;
+	}
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row{
+		border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 70%,transparent);
+	}
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row:last-child{border-bottom:0}
+	body.woocommerce-cart .wp-block-woocommerce-cart .wc-block-cart-item__image img{width:80px;height:80px}
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-components-product-name{
+		color:var(--gloskin-text);
+		font-size:.95rem;
+		font-weight:600;
+		text-decoration:none;
+	}
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-components-product-name:hover,
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-components-product-name:focus-visible{color:var(--gloskin-accent-readable)}
+	body.woocommerce-cart .wp-block-woocommerce-cart .wc-block-cart-item__prices .wc-block-components-product-price__value{
+		color:var(--gloskin-accent-readable);
+		font-size:.86rem;
+		font-weight:600;
+	}
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-components-product-metadata,
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-components-product-details{
+		color:var(--gloskin-muted);
+		font-size:.82rem;
+		line-height:1.4;
+	}
+	body.woocommerce-cart .wp-block-woocommerce-cart table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-cart-item__total{
+		border:0;
+		box-shadow:none;
+		text-align:right;
+	}
+	body.woocommerce-cart .wp-block-woocommerce-cart .wc-block-cart-item__total .wc-block-components-product-price__value{
+		color:var(--gloskin-accent-strong);
+		font-size:.95rem;
+		font-weight:700;
+		text-decoration:none;
+	}
+}
+
+/* Mobile row contract. WC's own Cart block already switches each row from
+   table-row to a bare CSS grid at its own <=768px breakpoint (matched
+   here): image | product-meta | subtotal, sharing one row, with WC's own
+   grid-template-columns/per-item grid-column/row placement all set
+   !important in its stylesheet. This codebase does not add !important
+   (see the remove-action comment above), so none of that placement is
+   fought directly -- two earlier versions of this rule tried to relocate
+   the subtotal (first via grid-area, then via explicit grid-column) and
+   both looked correct in rect math but, verified on real staging with an
+   actual screenshot, rendered the subtotal on top of the product title
+   every time, because the row's height is driven entirely by the
+   product cell's own (unstretchable) content and there is no genuine
+   free row for the subtotal to occupy without either overlapping that
+   content or a second !important.
+   The one property that IS safe to touch is grid-auto-columns, which
+   only sizes the *implicit* tracks the row creates on its own when an
+   item's forced placement runs past the explicit columns -- it does not
+   compete with anything WC marks !important. The product cell's own
+   forced overflow creates the first implicit column; the subtotal (left
+   at its own default "auto" placement) creates a second. Sizing the
+   pattern "0px 80px" collapses the first (product's unused overflow,
+   the original cause of the row's inconsistent height) and gives the
+   second exactly enough width for the subtotal, positioned directly
+   after the product column with no overlap -- a plain, common inline
+   price-beside-title mobile cart pattern, verified with a real
+   screenshot at 375/390px before shipping.
+   The title's own padding-right below is a second, independent layer of
+   the same fix, added after real staging (not the local fixture, whose
+   fallback fonts wrap text differently than the real Gloskin webfont)
+   showed the title's rendered glyphs still reaching into the subtotal's
+   reserved column for some product-name lengths, even though the two
+   boxes/columns themselves never overlap. Reserving space directly on
+   the title makes the guarantee independent of exact glyph metrics --
+   it wraps a little earlier instead of ever reaching the subtotal,
+   confirmed on real staging via the title's actual text-node
+   getClientRects(), not just its own box. */
+@media (max-width:768px){
+	.wc-block-cart-items__row{
+		grid-auto-columns:0px 80px;
+		column-gap:12px;
+		align-items:start;
+	}
+	.wc-block-cart-item__image img{width:76px;height:76px}
+	.wc-block-components-product-name{padding-right:88px}
+}
+@media (max-width:359px){
+	.wc-block-cart-items__row{grid-auto-columns:0px 52px;column-gap:8px}
+	.wc-block-cart-item__total{font-size:.8rem;overflow-wrap:anywhere;text-align:right}
+}
+
+/* Checkout CTA vs. the site-wide floating contact bubble (.talkdock-widget,
+   position:fixed, 56px, right:20px/bottom:20px, z-index:9999 -- confirmed
+   from the live widget itself, not guessed). The bubble is anchored to the
+   viewport, not page content, so it only ever visually reaches the Proceed
+   to Checkout button on genuinely short viewports (confirmed on real
+   staging: no overlap at 812px height, real overlap at 568px) -- the
+   max-height query below scopes the reservation to that same short-
+   viewport case only. An earlier version of this rule had no such
+   scoping and applied everywhere, which shrank the button and left an
+   awkward dead gap on completely normal desktop/tablet viewports where
+   there is no actual collision risk; caught from a real screenshot and
+   corrected here. Cart-page-only reservation of that same right-edge
+   width on the submit button's own container -- not a change to the
+   widget (untouched, no new selector for it) and not JS collision
+   detection, just static clearance so the button's actionable area is
+   never covered on viewports short enough for the risk to be real. */
+@media (max-height:700px){
+	body.woocommerce-cart .wc-block-cart__submit-container{padding-right:76px}
+}
+
+/* Empty Cart: WC's own woocommerce/empty-cart-block (Cart Block, not the
+   classic-cart hook gloskin_ui1_render_native_cart_empty_state() -- that
+   fires on the shortcode cart's own action, which the live Cart Block
+   route never triggers, so this is the actual visible empty state). Only
+   the icon+title is kept and re-skinned in place, CSS-only (no template
+   override, no PHP content filter, no second empty-state markup owner);
+   the dots separator, the "New in store" heading, and the raw Products-
+   New grid below it are dropped entirely -- display:none is the only
+   available way to remove them without touching WordPress content, since
+   all three are WooCommerce's own editorial block content stored on the
+   Cart page itself (not a template this repo owns, and not something a
+   PHP hook can filter for the Cart BLOCK the way the classic-cart hook
+   above does for the shortcode cart). "Your cart is currently empty!" is
+   the one piece of that same editorial content that remains, so its
+   English copy stays outside this repo's reach -- only presentation is
+   fixed here. */
+body.woocommerce-cart .wp-block-woocommerce-empty-cart-block{
+	display:grid;
+	text-align:center;
+}
+body.woocommerce-cart .wp-block-woocommerce-empty-cart-block hr.wp-block-separator,
+body.woocommerce-cart .wp-block-woocommerce-empty-cart-block .wp-block-heading:not(.wc-block-cart__empty-cart__title),
+body.woocommerce-cart .wc-block-grid.wp-block-product-new{
+	display:none;
+}
+/* The looping icon is a self-contained animated SVG (its own <style>/
+   @keyframes, including its own prefers-reduced-motion query -- a data:
+   image is an isolated document, so the parent page's reduced-motion CSS
+   cannot reach inside it), rendered via ::after rather than fighting WC's
+   own ::before content/background-image on the SAME box: WC's Cart Block
+   stylesheet is !important-heavy (already documented above this file's
+   quantity-stepper/mobile-grid rules), and its icon proved to be one of
+   the properties it defends that way -- a non-important override on the
+   same ::before content/background-image lost the cascade regardless of
+   selector specificity (confirmed on real staging, not guessed). Rather
+   than escalate to !important (this codebase adds none, see
+   CONTRIBUTING.md), WC's own ::before is starved via display:none
+   instead -- unlikely to be the one property it protects on a purely
+   decorative icon -- and the real icon is drawn on an independent
+   pseudo-element WC has no rule for at all, so there is nothing left to
+   out-cascade; order:-1 places it visually first, ahead of the title
+   text. Same line-weight/palette as the canonical cart-icon glyph in
+   readiness-helpers.php's gloskin_ui1_empty_state_icon() for visual
+   consistency with the mini-cart's own empty state. */
+body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon{
+	display:grid;
+	justify-items:center;
+	gap:14px;
+	max-width:480px;
+	margin:0 auto;
+	padding:clamp(36px,5vw,54px) clamp(24px,4vw,36px);
+	color:var(--gloskin-text);
+	font-family:var(--gloskin-font-heading);
+	font-size:clamp(1.2rem,2vw,1.5rem);
+	font-weight:600;
+	line-height:1.3;
+	animation:gloskin-empty-settle 220ms ease-out both;
+}
+body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::before{display:none}
+body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::after{
+	content:"";
+	order:-1;
+	display:block;
+	width:72px;
+	height:72px;
+	background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cstyle%3E.gloskin-empty-cart-bag%7Banimation:gloskinEmptyCartFloat 3200ms ease-in-out infinite%7D.gloskin-empty-cart-dot%7Banimation:gloskinEmptyCartPulse 3200ms ease-in-out infinite%7D%40keyframes gloskinEmptyCartFloat%7B0%25,100%25%7Btransform:translateY(0)%7D50%25%7Btransform:translateY(-4px)%7D%7D%40keyframes gloskinEmptyCartPulse%7B0%25,100%25%7Bopacity:.35%7D50%25%7Bopacity:1%7D%7D%40media (prefers-reduced-motion:reduce)%7B.gloskin-empty-cart-bag,.gloskin-empty-cart-dot%7Banimation:none%7D%7D%3C/style%3E%3Cg class='gloskin-empty-cart-bag' fill='none' stroke='%236F6667' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 20h24l2 24H14l2-24Z'/%3E%3Cpath d='M21 20v-3a7 7 0 0 1 14 0v3'/%3E%3C/g%3E%3Ccircle class='gloskin-empty-cart-dot' cx='44' cy='13' r='3' fill='%23B12E2F'/%3E%3C/svg%3E");
+	background-repeat:no-repeat;
+	background-position:center;
+	background-size:contain;
+}
+@media (prefers-reduced-motion:reduce){
+	body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon{animation:none}
+}
+
+/* Home strict video-only mode: a pure full-width native background video,
+   no text/CTA column, player chrome, poster or image/editorial fallback.
+   The section owns stable fold-height geometry; its native video fills the
+   surface through absolute inset cover. Missing/failed sources remain white.
+   No second Hero/video system. */
+.gloskin-ui1-hero--video-only{position:relative;overflow:hidden;width:100%;height:clamp(560px,88svh,980px);background:#fff}
+.gloskin-ui1-hero--video-only.is-video-unavailable,
+.gloskin-ui1-hero--video-only.is-video-failed{background:#fff}
+.gloskin-ui1-hero-bg-video{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;border-radius:0;box-shadow:none;background:transparent}
+.gloskin-ui1-hero-bg-video__media{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto;object-fit:cover;object-position:center center;border-radius:0;box-shadow:none;pointer-events:none}
+.gloskin-ui1-hero-bg-video,
+.gloskin-ui1-hero-bg-video__media{pointer-events:none}
+
+/* White preparing state: the video stays invisible (opacity:0) until JS
+   (initHeroBackgroundVideo() in gloskin-ui1-core.js) proves real playback
+   readiness and adds is-video-ready -- never revealed merely because the
+   <video> node exists. A small centered, aria-hidden spinner is the only
+   loading affordance; it fades out on both the ready and failed outcomes,
+   leaving a clean white hero rather than a broken/black state. */
+.gloskin-ui1-hero-bg-video__media{opacity:0;transition:opacity 360ms ease}
+.gloskin-ui1-hero--video-only.is-video-ready .gloskin-ui1-hero-bg-video__media{opacity:1}
+.gloskin-ui1-hero-bg-video__loader{transition:opacity 280ms ease}
+.gloskin-ui1-hero--video-only.is-video-ready .gloskin-ui1-hero-bg-video__loader,
+.gloskin-ui1-hero--video-only.is-video-failed .gloskin-ui1-hero-bg-video__loader{opacity:0;pointer-events:none}
+@keyframes gloskin-hero-bg-video-spin{to{transform:rotate(360deg)}}
+
+/* Bottom gradient: transparent -> the next section's own surface token,
+   so the video dissolves naturally into the first Home content section
+   instead of a hard edge. A plain absolutely-positioned, aria-hidden,
+   presentation-only layer (not a layout-height trick, not a hard band). */
+.gloskin-ui1-hero__fade{position:absolute;left:0;right:0;bottom:0;height:clamp(80px,14vh,180px);pointer-events:none}
+
+/* One lower-center semantic scroll indicator: small pulsing bubble +
+   downward chevron, a real focusable <button>. */
+.gloskin-ui1-hero__scroll-cue{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);z-index:1;display:grid;justify-items:center;gap:6px;border:0;background:transparent;cursor:pointer;padding:8px}
+.gloskin-ui1-hero__scroll-cue-dot{width:8px;height:8px;border-radius:999px;background:currentColor;opacity:.85;animation:gloskin-hero-scroll-cue-pulse 1.8s ease-in-out infinite}
+.gloskin-ui1-hero__scroll-cue-chevron{animation:gloskin-hero-scroll-cue-bounce 1.8s ease-in-out infinite}
+@keyframes gloskin-hero-scroll-cue-pulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
+@keyframes gloskin-hero-scroll-cue-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+@media (prefers-reduced-motion:reduce){
+	.gloskin-ui1-hero__scroll-cue-dot,.gloskin-ui1-hero__scroll-cue-chevron,.gloskin-ui1-hero-bg-video__loader-dot{animation:none}
+	.gloskin-ui1-hero-bg-video__media{transition:none}
+}
+@media (max-width:760px){
+	.gloskin-ui1-hero--video-only{height:clamp(480px,82svh,760px)}
+}

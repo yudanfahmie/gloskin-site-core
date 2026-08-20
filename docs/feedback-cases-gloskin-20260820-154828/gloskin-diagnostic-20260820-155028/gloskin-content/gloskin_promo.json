@@ -1,0 +1,80 @@
+{
+    "post_type": "gloskin_promo",
+    "records": [
+        {
+            "content": "",
+            "created": "2026-08-20 10:24:41",
+            "excerpt": "Kombinasi eksfoliasi enzimatik, infus vitamin C, dan LED photo-therapy untuk kulit cerah merata dalam 4 sesi.",
+            "featured_media": null,
+            "id": 988297,
+            "menu_order": 0,
+            "meta": {
+                "_gloskin_demo_identity": "gloskin-demo-r2-promo-brightening",
+                "gloskin_promo_active": "1",
+                "gloskin_promo_cta_label": "Cek Paket",
+                "gloskin_promo_cta_url": "/treatments/",
+                "gloskin_promo_eyebrow": "Promo Bulan Ini",
+                "gloskin_promo_order": "1",
+                "gloskin_promo_summary": "Kombinasi eksfoliasi enzimatik, infus vitamin C, dan LED photo-therapy untuk kulit cerah merata dalam 4 sesi."
+            },
+            "modified": "2026-08-20 10:24:41",
+            "parent": 0,
+            "slug": "paket-brightening-intensif",
+            "status": "publish",
+            "terms": [],
+            "title": "Paket Brightening Intensif",
+            "type": "gloskin_promo",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_promo&p=988297"
+        },
+        {
+            "content": "",
+            "created": "2026-08-20 10:24:41",
+            "excerpt": "Periksa kondisi kulit bersama dokter spesialis dan dapatkan rekomendasi perawatan personal tanpa biaya untuk kunjungan pertama.",
+            "featured_media": null,
+            "id": 988298,
+            "menu_order": 0,
+            "meta": {
+                "_gloskin_demo_identity": "gloskin-demo-r2-promo-konsultasi-gratis",
+                "gloskin_promo_active": "1",
+                "gloskin_promo_cta_label": "Daftar Sekarang",
+                "gloskin_promo_cta_url": "/treatments/",
+                "gloskin_promo_eyebrow": "Penawaran Pasien Baru",
+                "gloskin_promo_order": "2",
+                "gloskin_promo_summary": "Periksa kondisi kulit bersama dokter spesialis dan dapatkan rekomendasi perawatan personal tanpa biaya untuk kunjungan pertama."
+            },
+            "modified": "2026-08-20 10:24:41",
+            "parent": 0,
+            "slug": "konsultasi-perdana-bebas-biaya",
+            "status": "publish",
+            "terms": [],
+            "title": "Konsultasi Perdana Bebas Biaya",
+            "type": "gloskin_promo",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_promo&p=988298"
+        },
+        {
+            "content": "",
+            "created": "2026-08-20 10:24:42",
+            "excerpt": "Program terintegrasi: chemical peel, microneedling, dan homecare regimen selama 6 minggu untuk kulit bebas jerawat aktif.",
+            "featured_media": null,
+            "id": 988299,
+            "menu_order": 0,
+            "meta": {
+                "_gloskin_demo_identity": "gloskin-demo-r2-promo-acne-program",
+                "gloskin_promo_active": "1",
+                "gloskin_promo_cta_label": "Lihat Program",
+                "gloskin_promo_cta_url": "/treatments/",
+                "gloskin_promo_eyebrow": "Program Unggulan",
+                "gloskin_promo_order": "3",
+                "gloskin_promo_summary": "Program terintegrasi: chemical peel, microneedling, dan homecare regimen selama 6 minggu untuk kulit bebas jerawat aktif."
+            },
+            "modified": "2026-08-20 10:24:42",
+            "parent": 0,
+            "slug": "acne-clear-program-6-minggu",
+            "status": "publish",
+            "terms": [],
+            "title": "Acne Clear Program — 6 Minggu",
+            "type": "gloskin_promo",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_promo&p=988299"
+        }
+    ]
+}

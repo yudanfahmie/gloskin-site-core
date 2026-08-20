@@ -1,0 +1,77 @@
+{
+    "post_type": "gloskin_achievement",
+    "records": [
+        {
+            "content": "",
+            "created": "2026-08-20 10:24:43",
+            "excerpt": "Penghargaan atas komitmen pelayanan dermatologi dan estetika berkualitas tinggi di wilayah Bandung.",
+            "featured_media": null,
+            "id": 988303,
+            "menu_order": 0,
+            "meta": {
+                "_gloskin_demo_identity": "gloskin-demo-r2-achiev-hba-2024",
+                "gloskin_achievement_active": "1",
+                "gloskin_achievement_feature_on_home": "1",
+                "gloskin_achievement_issuer": "Health & Beauty Awards Indonesia",
+                "gloskin_achievement_order": "1",
+                "gloskin_achievement_year": "2024"
+            },
+            "modified": "2026-08-20 10:24:43",
+            "parent": 0,
+            "slug": "klinik-kulit-terbaik-bandung-2024",
+            "status": "publish",
+            "terms": [],
+            "title": "Klinik Kulit Terbaik Bandung 2024",
+            "type": "gloskin_achievement",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_achievement&p=988303"
+        },
+        {
+            "content": "",
+            "created": "2026-08-20 10:24:43",
+            "excerpt": "Diakui sebagai klinik estetika terkemuka di Jawa Barat oleh Indonesian Aesthetic Medicine Association.",
+            "featured_media": null,
+            "id": 988304,
+            "menu_order": 0,
+            "meta": {
+                "_gloskin_demo_identity": "gloskin-demo-r2-achiev-iama-2023",
+                "gloskin_achievement_active": "1",
+                "gloskin_achievement_feature_on_home": "1",
+                "gloskin_achievement_issuer": "Indonesian Aesthetic Medicine Association",
+                "gloskin_achievement_order": "2",
+                "gloskin_achievement_year": "2023"
+            },
+            "modified": "2026-08-20 10:24:43",
+            "parent": 0,
+            "slug": "top-aesthetic-clinic-west-java-2023",
+            "status": "publish",
+            "terms": [],
+            "title": "Top Aesthetic Clinic West Java 2023",
+            "type": "gloskin_achievement",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_achievement&p=988304"
+        },
+        {
+            "content": "",
+            "created": "2026-08-20 10:24:43",
+            "excerpt": "Sertifikasi standar pelayanan medis tingkat premium dari Kementerian Kesehatan Republik Indonesia.",
+            "featured_media": null,
+            "id": 988305,
+            "menu_order": 0,
+            "meta": {
+                "_gloskin_demo_identity": "gloskin-demo-r2-achiev-kemenkes-2023",
+                "gloskin_achievement_active": "1",
+                "gloskin_achievement_feature_on_home": "1",
+                "gloskin_achievement_issuer": "Kementerian Kesehatan Republik Indonesia",
+                "gloskin_achievement_order": "3",
+                "gloskin_achievement_year": "2023"
+            },
+            "modified": "2026-08-20 10:24:43",
+            "parent": 0,
+            "slug": "sertifikasi-standar-klinis-premium",
+            "status": "publish",
+            "terms": [],
+            "title": "Sertifikasi Standar Klinis Premium",
+            "type": "gloskin_achievement",
+            "url": "https://gloskin-id.markas.cloud/?post_type=gloskin_achievement&p=988305"
+        }
+    ]
+}

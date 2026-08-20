@@ -1,0 +1,807 @@
+{
+    "files": [
+        {
+            "byte_size": 1478,
+            "path": "README.txt",
+            "sha256": "7a4e7cf0d6567a76738b32773a6cfc3ed7b0772d309eda82a712d3681d99aaad"
+        },
+        {
+            "byte_size": 45405,
+            "path": "code-manifest.json",
+            "sha256": "e00f0d6340968c6ee331906fb08d562e2c0ca80868b59f724e893f8fe0488b35"
+        },
+        {
+            "byte_size": 8819,
+            "path": "code/gloskin-site-core/assets/css/gloskin-admin.css",
+            "sha256": "53bd396780115c1bead56b939a8689e7d26bd14f8cb098cabf95e52af9e5aece"
+        },
+        {
+            "byte_size": 7718,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-brand-purchase-polish.css",
+            "sha256": "555d934795b50d7f1bb4d55f0869a901dff4bc89c6d9bb154528524e256f83ca"
+        },
+        {
+            "byte_size": 15265,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-commerce-polish.css",
+            "sha256": "6d56cf85e0dad6f2e0f41d42ece42a0e2018391993daceb9fe1293248ba4f4a2"
+        },
+        {
+            "byte_size": 10037,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-consultation-admin.css",
+            "sha256": "f96c2fef73b74dec845926da18bcbb8f69f0ed64845a1b30d965e434b140a75b"
+        },
+        {
+            "byte_size": 12590,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-consultation.css",
+            "sha256": "dcfa617ad611fc96e08fa793898f06bcd250c1c7cbe334bd060304de7c48a42d"
+        },
+        {
+            "byte_size": 27473,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-core-base.css",
+            "sha256": "5badac76eb55122f3c2e1ab1ba495a79b03791e65cec4ad492cdca1604e4e0da"
+        },
+        {
+            "byte_size": 93703,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-core.css",
+            "sha256": "babf7984ea039e24b628af6efd336e3222424f458cbcb044de503819f4ea4ec8"
+        },
+        {
+            "byte_size": 9079,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-editorial.css",
+            "sha256": "6eb13a415153a95fa000e5d74ace8d7ad73ce3537bf2b69f6b7aaec0d707e16f"
+        },
+        {
+            "byte_size": 1625,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-fonts.css",
+            "sha256": "1999178ecadea42c22135f2e496f5a3bfe4d1cd64e4dfb6564abc87b48f53f4c"
+        },
+        {
+            "byte_size": 12581,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-loader-system.css",
+            "sha256": "fa342760a56a06f879f68c201ecc62c06af1ceadf08009cf438d94a957125882"
+        },
+        {
+            "byte_size": 1063,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-product-grid.css",
+            "sha256": "5b02aa1996d332c06467aca9c102536d6a393ba7fb406971caa65c413d974b5c"
+        },
+        {
+            "byte_size": 34528,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-production.css",
+            "sha256": "e7e6f4f14aad6215aff03224d5b02214acc7f50add62f95a2373c5a1716bc9b4"
+        },
+        {
+            "byte_size": 35354,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-prototype-refresh.css",
+            "sha256": "71f07ac94224bb48d34927d1ec27d6738b8aa7c188fb47e19a84394bcb251fa6"
+        },
+        {
+            "byte_size": 17464,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-quickadd-polish.css",
+            "sha256": "1e3ade5105e6963fd933e9e4ea662074825b3f1a95c3e4ac43a716d6ffe94680"
+        },
+        {
+            "byte_size": 27082,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-readiness.css",
+            "sha256": "bec86f8396866664c4bd5eadf07bb0abcf27c891df1bf46c1bb9fbce35864f1e"
+        },
+        {
+            "byte_size": 17970,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-shop-discovery.css",
+            "sha256": "17adee080d9c8d95243156c99aa96e28b655aa21ed5f4ca9064ca3bfd9949d31"
+        },
+        {
+            "byte_size": 30320,
+            "path": "code/gloskin-site-core/assets/css/gloskin-ui1-single-product-geometry.css",
+            "sha256": "9ddc72736c6cd99151ca3526edb947cb06f568d5f23a06c3e724bbec8ea1536e"
+        },
+        {
+            "byte_size": 1711,
+            "path": "code/gloskin-site-core/assets/fonts/GRAPHIK-SOURCE.md",
+            "sha256": "b526254dc865d2b176b6a9c92e59167b3c30a26ad4e52d20cc336d60dd8bc475"
+        },
+        {
+            "byte_size": 6278,
+            "path": "code/gloskin-site-core/assets/js/gloskin-admin.js",
+            "sha256": "b8170810702e7fe847c39a9d94248fe87f80da17db361ababe430c3616430a4b"
+        },
+        {
+            "byte_size": 1057,
+            "path": "code/gloskin-site-core/assets/js/gloskin-ui1-admin.js",
+            "sha256": "85a3e821d6a3ee8341e79786eec736e5f93385919d66c66cda27f58a184b8d31"
+        },
+        {
+            "byte_size": 7716,
+            "path": "code/gloskin-site-core/assets/js/gloskin-ui1-commerce-journey.js",
+            "sha256": "91345d43f93a696bde27c347417188492ced8db813e3bd11061df0d6ff801d8f"
+        },
+        {
+            "byte_size": 15834,
+            "path": "code/gloskin-site-core/assets/js/gloskin-ui1-commerce-motion.js",
+            "sha256": "21f74b15d49785eeb18c6c2394e3414f61ecf46710d82402d847c272ce9f58d8"
+        },
+        {
+            "byte_size": 11762,
+            "path": "code/gloskin-site-core/assets/js/gloskin-ui1-consultation-admin.js",
+            "sha256": "6f74b5461dc26ea7f64fcc4a0ef6a3a0470e349d0a8e76e216ebb21ebb857123"
+        },
+        {
+            "byte_size": 6368,
+            "path": "code/gloskin-site-core/assets/js/gloskin-ui1-consultation.js",
+            "sha256": "c26523a8e46a35b5672b62a313d9fe69a12b321d8aabba256a4f36616b3ef895"
+        },
+        {
+            "byte_size": 118408,
+            "path": "code/gloskin-site-core/assets/js/gloskin-ui1-core.js",
+            "sha256": "a9d57e8c1c59e2c561c5b97292c3daac486f57d4835611eaf9d7552e9a36f697"
+        },
+        {
+            "byte_size": 4957,
+            "path": "code/gloskin-site-core/assets/js/gloskin-ui1-diagnostic.js",
+            "sha256": "18fa71f1077945abfe0502b9aa1225eca3d867bc9f1aceacd2df9316b70451e2"
+        },
+        {
+            "byte_size": 6921,
+            "path": "code/gloskin-site-core/assets/js/gloskin-ui1-final-migration.js",
+            "sha256": "b5db200556be396d08f3370239c5ceddfbc0b4a20bfb1a34408ed627dff43d77"
+        },
+        {
+            "byte_size": 9354,
+            "path": "code/gloskin-site-core/assets/js/gloskin-ui1-media-cleanup.js",
+            "sha256": "58d5af05ea11831f706051d7e1e38d95374c44e8a769214f30e1003b7d17bd86"
+        },
+        {
+            "byte_size": 29480,
+            "path": "code/gloskin-site-core/assets/js/gloskin-ui1-purchase-dock.js",
+            "sha256": "fe306c71fb989bb1218213f467b73195fba5080c4e34314eedbbeeb4a8c4ca2b"
+        },
+        {
+            "byte_size": 3827,
+            "path": "code/gloskin-site-core/assets/js/gloskin-ui1-sample-product-import.js",
+            "sha256": "7fa02d5ad97ff799e042f7127383b4122438eee71e286a93c043d876959200e3"
+        },
+        {
+            "byte_size": 24681,
+            "path": "code/gloskin-site-core/assets/js/gloskin-ui1-shop-discovery.js",
+            "sha256": "0d650ef73fa104fbfbd3c69574a1ef0833657f7ee0db7f050ec1800b1db06f01"
+        },
+        {
+            "byte_size": 8321,
+            "path": "code/gloskin-site-core/config/assets.php",
+            "sha256": "f7e5ab7d6ec113ec9b27f6a99785d3a31e4824c53a286c3c30f41fea1de352ff"
+        },
+        {
+            "byte_size": 601,
+            "path": "code/gloskin-site-core/gloskin-site-core.php",
+            "sha256": "34641560dcd135d07f8515fa0bf232996601455a551a764785f3f68f5b69e484"
+        },
+        {
+            "byte_size": 104862,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-admin-service.php",
+            "sha256": "cd7b3870710e8cef9632ed5c0b4f241e1d750efb9264b08f72d9113586d116b8"
+        },
+        {
+            "byte_size": 20709,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-asset-service.php",
+            "sha256": "610cc38d984678961930da453134988f7b108bfa404c8698049fb9fc008c31fb"
+        },
+        {
+            "byte_size": 23210,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-consultation-demo-importer.php",
+            "sha256": "764f68ae1f85f0ede8b99acf500252666b1ea22060a3f07a1ae68578105adb34"
+        },
+        {
+            "byte_size": 1062,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-contact-admin.php",
+            "sha256": "ba31ee24e77496285908bd256824651ac3183e7258b5af019d6484c0ade69036"
+        },
+        {
+            "byte_size": 5743,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-contact-mailer.php",
+            "sha256": "1bf082f31a1564d11541b45c8cef07ed14b150c78233a8fe59a7b1031f3f5e40"
+        },
+        {
+            "byte_size": 892,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-contact-service.php",
+            "sha256": "b4ffcd0d24b8bcd8afa9ca23877ef981cdf22b44757b08161116de822c33dc84"
+        },
+        {
+            "byte_size": 27094,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-content-service.php",
+            "sha256": "a10b8e091ee9ef14be367d17a7874b65c5f1623c4a67572091a9ba15e70ffc91"
+        },
+        {
+            "byte_size": 13372,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-demo-content-reset.php",
+            "sha256": "310c9a1eae285abb744c93fceed94d0c189ff101b448bbf2290853c972433746"
+        },
+        {
+            "byte_size": 44519,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-diagnostic-exporter.php",
+            "sha256": "657952e7d0d52915a502460fd03948fa27eef749030d42b05b04ba870fb1ce46"
+        },
+        {
+            "byte_size": 6250,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-doctor-bundle.php",
+            "sha256": "2f184a00f01d35e1e2537c1b336a3b9c4abc9394f30039ba98bc69bdb4a69c10"
+        },
+        {
+            "byte_size": 681,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-doctor-importer.php",
+            "sha256": "8cc76108d3b759e685cf3d625c55f987bf569f1256f19a767cb9acf8e7ac7cab"
+        },
+        {
+            "byte_size": 10319,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-editorial-media-bundle.php",
+            "sha256": "6c66a941a298bc0d820802b87c8d5a54de6b812d9ef233e1505cca7bd607c582"
+        },
+        {
+            "byte_size": 11784,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-final-ia-normalizer.php",
+            "sha256": "f69386c0f10b4c66ac6bcf98ccb0a63a45ae5f66f69ef30544f51880aca1d1c3"
+        },
+        {
+            "byte_size": 7378,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-final-package-validator.php",
+            "sha256": "e3fa1cb1e2650d5b9ed11dd2902db59bb93638089558522c34f34e191cf3bf2c"
+        },
+        {
+            "byte_size": 2376,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-form-adapter.php",
+            "sha256": "284b3c1adc0672b66348a09f0c2d6ef0208266593529a01991b6f9e7f640e1e6"
+        },
+        {
+            "byte_size": 16374,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-insight-bundle.php",
+            "sha256": "91800d320ae7dce215e152c3f13fd76a883eec60b409f1aa5f443df1a95bb4ed"
+        },
+        {
+            "byte_size": 23004,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-insight-importer.php",
+            "sha256": "226e063a5f988c6ec00db93743c2cfab51327f045dcaa398a49d56049afe296b"
+        },
+        {
+            "byte_size": 4962,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-insight-migration-admin.php",
+            "sha256": "e9b047e5856b224ab932116e5086d7f2e3cf18279c61982695de9979ff7cf41d"
+        },
+        {
+            "byte_size": 5469,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-kernel.php",
+            "sha256": "d26f458cbd04f74a3286feb62fbd6b2148e3e5f4f8dc9d9b3590203dab16a774"
+        },
+        {
+            "byte_size": 6733,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-lifecycle-service.php",
+            "sha256": "8847e3b22744417e8561c5f543caf4416fd74b862a9fc749c023838cd5b3aa1b"
+        },
+        {
+            "byte_size": 13993,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-media-cleanup-admin.php",
+            "sha256": "3a4dfbc89272bcbfb00073d818aa255df5e503777666c82228cd54946f0dbbca"
+        },
+        {
+            "byte_size": 32813,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-media-cleanup-resolver.php",
+            "sha256": "ba5da385b04900e0d8fe31eb54493471ef640076f2d34c961dcfc5f5de0d7452"
+        },
+        {
+            "byte_size": 6722,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-navigation-service.php",
+            "sha256": "315d35d3e65dd191e8368ae5e8121870d6a802577839dde4e7e83f781b2b2e48"
+        },
+        {
+            "byte_size": 831,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-page-lookup.php",
+            "sha256": "55de2588998c53d7fe170f1c5705c9d357b8daee8b3c44058dedb6a3c3e3ce69"
+        },
+        {
+            "byte_size": 2382,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-production-batch.php",
+            "sha256": "846ced3f4aeb40305b4227525d837187a89429e9a2b4eb21d212a369f22e64c9"
+        },
+        {
+            "byte_size": 8041,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-prototype-ia-migration-admin.php",
+            "sha256": "b8d6233877de692e054ebe52eea289ef64a170059815044b3b27197b954fb5bf"
+        },
+        {
+            "byte_size": 21404,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-prototype-ia-migration.php",
+            "sha256": "644d57a0bdb2b1d3715d85023bdff91656b0eb4a4d1cd9d05133912a4c2e7d23"
+        },
+        {
+            "byte_size": 10023,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration-admin.php",
+            "sha256": "b7100bdd480b0189d9cd345115dd07b83c1529f415933e9bb296bf3e99fdc539"
+        },
+        {
+            "byte_size": 45369,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration.php",
+            "sha256": "711bcfa2930aef44d68b73029580555e5d29785b79706e68836706958c5d7600"
+        },
+        {
+            "byte_size": 6633,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-migration-admin.php",
+            "sha256": "8645581f412dffbd9b0e6890b0194ced813ad83fa8d9f438afb3fd3f8f27655d"
+        },
+        {
+            "byte_size": 34292,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-migration.php",
+            "sha256": "f708d87ba11927b83103afbe3bf45749b7eedf26c1916e799bb5f0170e3392c0"
+        },
+        {
+            "byte_size": 8079,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-revision-20260820-promo-recovery-admin.php",
+            "sha256": "aaa1b10dac8ef80eff89e4b670af1c25ef647d9b4e97b577bb185d940bc7180d"
+        },
+        {
+            "byte_size": 23276,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-revision-20260820-promo-recovery.php",
+            "sha256": "e17893f33c217a5dad8f75e6a550860192c20ad3ce393f0bdf3417708096698a"
+        },
+        {
+            "byte_size": 1567,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-sample-media-compatibility.php",
+            "sha256": "d75a838d92e714a86618cf2f80125099c1ef71e3c4c4a20d714ba9259b9e2841"
+        },
+        {
+            "byte_size": 22721,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-sample-product-bundle.php",
+            "sha256": "adf304c143d0a5ddf1e02749cd6085b10ae86e3e966fa4b416c47dfbc996249f"
+        },
+        {
+            "byte_size": 38450,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-sample-product-importer.php",
+            "sha256": "37563500e609a9a71579becdfee931ead99454abb63f2161570651fb8d9adb35"
+        },
+        {
+            "byte_size": 303,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-shop-discovery.php",
+            "sha256": "862fced958335b1166ac510b1dc78fa96e340e08421334113edec2b9f9bf235b"
+        },
+        {
+            "byte_size": 54582,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-template-service.php",
+            "sha256": "8de6781e091fe2324c59d668a71a809c5ea45894a4716be3bef726a743593669"
+        },
+        {
+            "byte_size": 16727,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter-shop-catalog.php",
+            "sha256": "dc40d4f2b56ad37821a0c67afc3b55a20d5d864dac9872adf73b63a20045f9cd"
+        },
+        {
+            "byte_size": 67597,
+            "path": "code/gloskin-site-core/includes/class-gloskin-site-core-woocommerce-adapter.php",
+            "sha256": "1bed6dce5da021d5265f826e7f3200965f52db1becd9dd0d2f808a27f857aef1"
+        },
+        {
+            "byte_size": 5222,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-contact-admin-inbox-actions-trait.php",
+            "sha256": "c24232761f6424677856d34eec80ecd1ae219f2b4326b4a7189d3a5411a1036c"
+        },
+        {
+            "byte_size": 6242,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-contact-admin-inbox-list-trait.php",
+            "sha256": "04b84b6c17ce82d98228139412d8c2a15d7bbfc44a1291f28548c166112ce7b6"
+        },
+        {
+            "byte_size": 709,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-contact-admin-readiness-trait.php",
+            "sha256": "fc37fb15875d49f11c332b1d30ba84c6039934179b620961c28a0ba32ac99937"
+        },
+        {
+            "byte_size": 5748,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-contact-admin-render-trait.php",
+            "sha256": "0b6ef752706bc95c3546a5bbba01d7afab4b67f7f50abfc65aa3085a18dbc040"
+        },
+        {
+            "byte_size": 5308,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-contact-admin-settings-actions-trait.php",
+            "sha256": "8b2f9a883afda8b2cba87953dff00531bcdba7def1b86ba0edc5d8c87069fc3b"
+        },
+        {
+            "byte_size": 4431,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-contact-admin-setup-trait.php",
+            "sha256": "8c2137824fc245d26bf9cf583846659ca8dfd245eac0ac4bd0ea9858d4c9ffcc"
+        },
+        {
+            "byte_size": 4271,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-contact-admin-test-trait.php",
+            "sha256": "ce95128aa109cb232d05a701e2bec72d2aa0ad167dbef2d7a5e3ee801e16a57a"
+        },
+        {
+            "byte_size": 3480,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-contact-service-bootstrap-trait.php",
+            "sha256": "43d48d1ecef28f0d8a69c640503adb1b9b9c9c2f18cb02fbd8108a9cf28457b0"
+        },
+        {
+            "byte_size": 5009,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-contact-service-form-trait.php",
+            "sha256": "2e556c65592f881a8c7cfa6dfa43f0345640d440cf457aba3c55510ceb62edef"
+        },
+        {
+            "byte_size": 4339,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-contact-service-mail-trait.php",
+            "sha256": "36393f90a01fe09b35638c99a3a5fde61fcd01d4e4b3d5aedc6143f26cf60f3e"
+        },
+        {
+            "byte_size": 2167,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-contact-service-persist-trait.php",
+            "sha256": "f3250284fe77406991a953983a635153fa70bf077bd7c08b75e8559b0698a00b"
+        },
+        {
+            "byte_size": 2688,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-contact-service-security-trait.php",
+            "sha256": "0142b5d79b045b76ac12a6e4236ee5d8fea5175d1eac5ac9abf819c08e94b503"
+        },
+        {
+            "byte_size": 4243,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-contact-service-settings-trait.php",
+            "sha256": "d1f0ca4d0f1cddb758fe144d73bd83878dcc7045f6f826506a45321826bdcdbd"
+        },
+        {
+            "byte_size": 4102,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-contact-service-submit-trait.php",
+            "sha256": "c213bdcac3c2d2eda90f71d1397a1d1df2e182120b74be17e4a2f8aa6ba964f9"
+        },
+        {
+            "byte_size": 3280,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-doctor-importer-finalize-trait.php",
+            "sha256": "7406b836f82de325517ebcf0323d65420335555ac7631a13a5eedfe110f21d3f"
+        },
+        {
+            "byte_size": 1281,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-doctor-importer-lock-trait.php",
+            "sha256": "dd7969d92d90dfa69a3bb00df7ec63c649bd2d653d1156880c089d8c67177c4c"
+        },
+        {
+            "byte_size": 3911,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-doctor-importer-state-trait.php",
+            "sha256": "1855060a9c945fb5ef1c00631e1547d46f1945d75e97191b6dafc80ab6d32244"
+        },
+        {
+            "byte_size": 3109,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-doctor-importer-upsert-trait.php",
+            "sha256": "ac9d72ba420128c11860642c419b9ca891d9ec907a1801c325e7db6235e7adf2"
+        },
+        {
+            "byte_size": 1697,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-shop-discovery-query-trait.php",
+            "sha256": "436f3436e07f6849af288231fac8c81e8d3649dbe890230d65ef8af2c16a8e45"
+        },
+        {
+            "byte_size": 6852,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-shop-discovery-rest-trait.php",
+            "sha256": "5be70b7f704a8f468a25fe7c3be5179e76e2fa1a626f9b8846c1c820bac2ec76"
+        },
+        {
+            "byte_size": 2951,
+            "path": "code/gloskin-site-core/includes/gloskin-site-core-shop-discovery-route-trait.php",
+            "sha256": "0d3b5115cc7a93fba2bec9ca1fb3b985e48caa6da951b637b60e94433ac64cc5"
+        },
+        {
+            "byte_size": 5623,
+            "path": "code/gloskin-site-core/migration-runtime/gloskin-doctor-photos-v2/manifest.json",
+            "sha256": "1793942da6f884cb7cd7e5a52f083569379bcb8a2fd72b3b5cf321b07b7fabc5"
+        },
+        {
+            "byte_size": 4366,
+            "path": "code/gloskin-site-core/migration-runtime/gloskin-doctors-v1/doctors.json",
+            "sha256": "ba11091a71972f9af1bcf48a093b7f6421cade6f25efa4aa336bcb3cb2c9f941"
+        },
+        {
+            "byte_size": 368,
+            "path": "code/gloskin-site-core/migration-runtime/gloskin-doctors-v1/manifest.json",
+            "sha256": "f72d9c5021801a14ff47fa374ffb6681df994c81dc3c27e19a68b75ff3d0af7d"
+        },
+        {
+            "byte_size": 6507,
+            "path": "code/gloskin-site-core/migration-runtime/gloskin-editorial-media-v1/manifest.json",
+            "sha256": "e81d16283f85c7ad52f4b18e61c0fc0ccaac1ad2940ffc3afe9324ac140e976f"
+        },
+        {
+            "byte_size": 496,
+            "path": "code/gloskin-site-core/migration-runtime/gloskin-insights-v1/manifest.json",
+            "sha256": "92c3e8a84f9fe84bc3b0ac64ffd7567f6856700efd914893c0f9b2a8ee3ceaf8"
+        },
+        {
+            "byte_size": 7471,
+            "path": "code/gloskin-site-core/migration-runtime/gloskin-insights-v1/media.json",
+            "sha256": "6411de6b052cda54de93efd8a835b932a3bbcac3870d91de199e522ea9cdc016"
+        },
+        {
+            "byte_size": 46517,
+            "path": "code/gloskin-site-core/migration-runtime/gloskin-insights-v1/posts.json",
+            "sha256": "ddc07def455f36244e248a692da632e136f89ed3016fb014bef479df4fa7aef4"
+        },
+        {
+            "byte_size": 619,
+            "path": "code/gloskin-site-core/migration-runtime/gloskin-sample-products-v1/manifest.json",
+            "sha256": "d00d508364576c5054d8886ab39ec490e000c08f7a27d44a7e72d42c2f9d7dba"
+        },
+        {
+            "byte_size": 31247,
+            "path": "code/gloskin-site-core/migration-runtime/gloskin-sample-products-v1/media.json",
+            "sha256": "a888ff8241bb55bfb2d01632ccf3296d012e047c049837187e1a93a38dacc989"
+        },
+        {
+            "byte_size": 22401,
+            "path": "code/gloskin-site-core/migration-runtime/gloskin-sample-products-v1/products.json",
+            "sha256": "7d952c381913a34557b72cdd3f4d813b70150d38c95831a8d665cedfe1b79135"
+        },
+        {
+            "byte_size": 4474,
+            "path": "code/gloskin-site-core/templates/pages/about.php",
+            "sha256": "b79de0dc85f7b9161af8805f906f06c7a8ed32c2997295d2915eee793f658bad"
+        },
+        {
+            "byte_size": 6548,
+            "path": "code/gloskin-site-core/templates/pages/clinic.php",
+            "sha256": "211da5e215af1099256a87daf2270a31423e4a41f12f5a0118336b51f102e0c9"
+        },
+        {
+            "byte_size": 3176,
+            "path": "code/gloskin-site-core/templates/pages/clinics.php",
+            "sha256": "efb45d1cc5804dc513df21bed9164a7ac7dcc11a4169750d4e63b4a0819cd28a"
+        },
+        {
+            "byte_size": 3286,
+            "path": "code/gloskin-site-core/templates/pages/contact.php",
+            "sha256": "c242ab060cc4f42943a175dbd87eae7b2ea0d4b5a2db90083cd5e14b382612ef"
+        },
+        {
+            "byte_size": 4615,
+            "path": "code/gloskin-site-core/templates/pages/doctor.php",
+            "sha256": "0fda4561e5e4942a42e8a368d34af98bc1237e461f61446fcfa16fcb2748b222"
+        },
+        {
+            "byte_size": 3072,
+            "path": "code/gloskin-site-core/templates/pages/doctors.php",
+            "sha256": "454d00298e1bf8f03feeb93dee4326add198ac814e65a4576f1b188d1de06684"
+        },
+        {
+            "byte_size": 4716,
+            "path": "code/gloskin-site-core/templates/pages/home.php",
+            "sha256": "4978c1601acc66e9455dd1b36564549dee2814a4c6b5b95375183a6668b25799"
+        },
+        {
+            "byte_size": 3354,
+            "path": "code/gloskin-site-core/templates/pages/insight-single.php",
+            "sha256": "1e56ec8fe615a3ad0134823ff0e06f41da00720704300dd2cd9cbe72fdfa6387"
+        },
+        {
+            "byte_size": 1704,
+            "path": "code/gloskin-site-core/templates/pages/insights.php",
+            "sha256": "08bbd68d210eeb3ec99e4922c072a6e9ae14295fbed2312cb4fca4e2be8906a6"
+        },
+        {
+            "byte_size": 2036,
+            "path": "code/gloskin-site-core/templates/pages/not-found.php",
+            "sha256": "e0316d4caee884e7f73aeba35c22e5055ebe10d39db2221965169e0a1be4bfc5"
+        },
+        {
+            "byte_size": 1165,
+            "path": "code/gloskin-site-core/templates/pages/promo.php",
+            "sha256": "070936b7e168b87a49fe7c368d3a7716fb8b46f5a97f32a880b79d57f7379079"
+        },
+        {
+            "byte_size": 11615,
+            "path": "code/gloskin-site-core/templates/pages/shop.php",
+            "sha256": "fdaa32f22b09ca4f3a4514712d4de1ed99394499626e3618d2d2a3fc4800dd50"
+        },
+        {
+            "byte_size": 2504,
+            "path": "code/gloskin-site-core/templates/pages/skincare-category.php",
+            "sha256": "a5dd771642ea9e11054b74ea79ff7b590d03d77bb7f51ea65d86a4c2bc923dc4"
+        },
+        {
+            "byte_size": 5331,
+            "path": "code/gloskin-site-core/templates/pages/skincare.php",
+            "sha256": "92e62148b88a3da29aaa2f03e7d4222a0f6590736fcd3f3ee915b653ba1f0490"
+        },
+        {
+            "byte_size": 4600,
+            "path": "code/gloskin-site-core/templates/pages/treatment.php",
+            "sha256": "379abe1af862ecb6978230bf43d9a4f851ceb101a460ad470afd21f9405b8f77"
+        },
+        {
+            "byte_size": 6493,
+            "path": "code/gloskin-site-core/templates/pages/treatments.php",
+            "sha256": "133d4c6846f707f9d2c2d28ca66e6888aae2fc8fee97d1bec7a66eafee7bfd1a"
+        },
+        {
+            "byte_size": 3148,
+            "path": "code/gloskin-site-core/templates/parts/composition-helpers.php",
+            "sha256": "523042a729ed9862ee3055d162cdbe42226b11c01a7b37437160c9f970bbe501"
+        },
+        {
+            "byte_size": 3398,
+            "path": "code/gloskin-site-core/templates/parts/footer.php",
+            "sha256": "e11611e2cc63a93918975fc881eb2c1e0647272dee83c7492b4ca1de43fd98be"
+        },
+        {
+            "byte_size": 13886,
+            "path": "code/gloskin-site-core/templates/parts/header.php",
+            "sha256": "5f0b1383f7568dbb301f36114df633e111eee6682ddaa8671cc7e89b458946fe"
+        },
+        {
+            "byte_size": 1584,
+            "path": "code/gloskin-site-core/templates/parts/home-why-local-media.php",
+            "sha256": "7a2d36effc179955266cc41a61a3ff75d5521fe9036a347f20ba8d76dccf3f41"
+        },
+        {
+            "byte_size": 2825,
+            "path": "code/gloskin-site-core/templates/parts/insight-card.php",
+            "sha256": "ff457900800065bc620c0779597823735e210a3558301bb0ac1c65fe11007a3f"
+        },
+        {
+            "byte_size": 3333,
+            "path": "code/gloskin-site-core/templates/parts/mobile-drawer.php",
+            "sha256": "757f4291510d43e676ecb36563eb7884f023ec537541d8cb441a0d92cfe2eefe"
+        },
+        {
+            "byte_size": 7577,
+            "path": "code/gloskin-site-core/templates/parts/product-description-boundary.php",
+            "sha256": "1a3e2fb8db865dd73c9f23c062cbbc51093a55233639292a7d89f9756c8de5db"
+        },
+        {
+            "byte_size": 1735,
+            "path": "code/gloskin-site-core/templates/parts/quick-add.php",
+            "sha256": "f539e0269dd61f93d013de29023306d6866b27ee5943e679723475b7a3f56002"
+        },
+        {
+            "byte_size": 14659,
+            "path": "code/gloskin-site-core/templates/parts/readiness-helpers.php",
+            "sha256": "55fa25893268034c94bf3b4b489e21234ef28b2b3bf7dd58a7f025898c0fccfb"
+        },
+        {
+            "byte_size": 6503,
+            "path": "code/gloskin-site-core/templates/parts/shop-results.php",
+            "sha256": "c564cef1869519c39c1c5a24a69797f308c58e16154e78e9befcc2d4c974ac72"
+        },
+        {
+            "byte_size": 52011,
+            "path": "code/gloskin-site-core/templates/parts/template-helpers.php",
+            "sha256": "391a137c49453910ad8380cb6c5e2e1d70e7d704983d525bd272424ebd8a01e2"
+        },
+        {
+            "byte_size": 6809,
+            "path": "code/gloskin-site-core/templates/shell.php",
+            "sha256": "eae118b135761c6cd2a113654daec5e084d2922a8add40e7797a7937452d2dfa"
+        },
+        {
+            "byte_size": 636,
+            "path": "code/theme/functions.php",
+            "sha256": "3f502df1d49445995a5e07ec5defb894e3239454caf033b27228ba7f0a6bd18e"
+        },
+        {
+            "byte_size": 387,
+            "path": "code/theme/style.css",
+            "sha256": "bc267bee036ef9e5264f337b2bd858da0bd83654a010130dab2104e04d766c57"
+        },
+        {
+            "byte_size": 1378,
+            "path": "environment.json",
+            "sha256": "9303be8c674911ceb4037620132923bf842f99c05e5bbac93421e522f2882ed9"
+        },
+        {
+            "byte_size": 3397,
+            "path": "gloskin-content/gloskin_achievement.json",
+            "sha256": "6d7ad8d03bb8a3e0381cf81ce6de0f24fe06f95ebd44080b1d9fa403c9fc8f79"
+        },
+        {
+            "byte_size": 4933,
+            "path": "gloskin-content/gloskin_clinic.json",
+            "sha256": "781a48b4c6f1557a631532e559892b4a283f8ce7d9400f3efce8b4495964a038"
+        },
+        {
+            "byte_size": 10250,
+            "path": "gloskin-content/gloskin_doctor.json",
+            "sha256": "00e98880ad054b2ea6feeea2aac0b9a895280218be9f2fa679fda1e020526460"
+        },
+        {
+            "byte_size": 3779,
+            "path": "gloskin-content/gloskin_promo.json",
+            "sha256": "bc8bdf91cfd00ddc8cfc3a51e47f79175446a891ed4faf11a9c7bbbccfe2fcd1"
+        },
+        {
+            "byte_size": 17807,
+            "path": "gloskin-content/gloskin_question.json",
+            "sha256": "eb70922678fc8dff45f979d850f96a7472c8fe635468b8e7bd930ba0c187d58e"
+        },
+        {
+            "byte_size": 3417,
+            "path": "gloskin-content/gloskin_testimonial.json",
+            "sha256": "95650c7f3acee29e292cd6b445b8a6d36d4b54033ef5cd4e5a1f15b83cc4818e"
+        },
+        {
+            "byte_size": 60,
+            "path": "gloskin-content/gloskin_treatment.json",
+            "sha256": "dc4f6c26d6fde948cb5afc8db0f8d131c2e7fc73d711531742750535edddfb38"
+        },
+        {
+            "byte_size": 29444,
+            "path": "gloskin-content/page.json",
+            "sha256": "d7476b005addeca96e2461da065f3cc9437db99ad1c2165f9d96ba0e3d6409ea"
+        },
+        {
+            "byte_size": 55869,
+            "path": "gloskin-content/post.json",
+            "sha256": "2f4092e177ff5ed474a3fc4d5c5aa8c44d4e22314395ffe14182d6a27629713a"
+        },
+        {
+            "byte_size": 5811,
+            "path": "gloskin-content/taxonomies.json",
+            "sha256": "1bf6192b9897345fa444d8ad4416846dd49a34ddf53c81ff3e111d9190daada9"
+        },
+        {
+            "byte_size": 69324,
+            "path": "media-manifest.json",
+            "sha256": "252f1d6c721eecd5de6b2a7c060ee5b00825ea29854eed61ef6b6e5bac6ea042"
+        },
+        {
+            "byte_size": 33884,
+            "path": "migration-state.json",
+            "sha256": "f15e5ae85e271c2448e69c1324eecade7cb5709604867878902409960002c71f"
+        },
+        {
+            "byte_size": 3370,
+            "path": "promo-diagnostic.json",
+            "sha256": "e5d9b3527d0222b6ff37501185fd4fac2e4e7d22e38e28c5491d08db463f2d46"
+        },
+        {
+            "byte_size": 4133,
+            "path": "route-checks.json",
+            "sha256": "074e422bdcbe211fc4f61f78f7b7859cea1d2d6eab6112694476f42131f2792e"
+        },
+        {
+            "byte_size": 9622,
+            "path": "runtime-health.json",
+            "sha256": "db5f01c8deaa636176b112f827a1e11bab25dbc465c6a8733c01bbc1efee9719"
+        },
+        {
+            "byte_size": 13933,
+            "path": "site-structure.json",
+            "sha256": "70c6ee2657d25a0de03615619a9244e4d8858a6c75154abb4572bfa0385dc969"
+        },
+        {
+            "byte_size": 37475,
+            "path": "woocommerce-boundary.json",
+            "sha256": "017259a2694149133afa88c7f0b506bfd1a750d8803fce0f67b85a85a291ede4"
+        },
+        {
+            "byte_size": null,
+            "path": "manifest.json",
+            "self_reference": true,
+            "sha256": null
+        }
+    ],
+    "generated_site_time": "2026-08-20T15:50:28+07:00",
+    "generated_utc": "2026-08-20T08:50:28+00:00",
+    "home_url": "https://gloskin-id.markas.cloud/",
+    "limits": {
+        "archive_bytes": 52428800,
+        "route_checks": 20,
+        "source_file_bytes": 1048576,
+        "source_total_bytes": 20971520
+    },
+    "plugin_version": "0.7.165",
+    "redaction_policy": {
+        "absolute_wordpress_paths_removed": true,
+        "commerce_private_data_excluded": true,
+        "embedded_credential_patterns_redacted": true,
+        "media_binaries_excluded": true,
+        "strict_allowlists": true,
+        "structured_secret_keys_redacted": "[REDACTED]",
+        "users_and_usermeta_excluded": true
+    },
+    "schema_version": "1.1",
+    "site_url": "https://gloskin-id.markas.cloud/",
+    "skipped_items": [],
+    "warnings": [
+        "The Promo Page body is empty because the managed Promo renderer owns its public content."
+    ],
+    "woocommerce_version": "11.0.1",
+    "wordpress_version": "7.1"
+}
