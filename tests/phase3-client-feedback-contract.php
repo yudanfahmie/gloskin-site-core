@@ -47,11 +47,11 @@ foreach ( array(
 }
 
 /* ---------------------------------------------------------------------------
- * 1. Version sync at 0.7.172
+ * 1. Version sync at 0.7.173
  * ------------------------------------------------------------------------- */
 $ok(
-	false !== strpos( $plugin_php, 'Version: 0.7.172' ) && false !== strpos( $kernel_php, "const VERSION = '0.7.172';" ),
-	'Phase-3 runtime/cache version must be synchronized at 0.7.172'
+	false !== strpos( $plugin_php, 'Version: 0.7.173' ) && false !== strpos( $kernel_php, "const VERSION = '0.7.173';" ),
+	'Phase-3 runtime/cache version must be synchronized at 0.7.173'
 );
 
 /* ---------------------------------------------------------------------------

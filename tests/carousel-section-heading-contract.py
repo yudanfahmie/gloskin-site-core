@@ -95,12 +95,12 @@ require("!important" not in css,
 
 # ── Version ──────────────────────────────────────────────────────────────────
 
-require("Version: 0.7.172" in plugin and "const VERSION = '0.7.172';" in kernel,
-        "plugin header and Kernel VERSION must both be 0.7.172")
+require("Version: 0.7.173" in plugin and "const VERSION = '0.7.173';" in kernel,
+        "plugin header and Kernel VERSION must both be 0.7.173")
 
 if failures:
     for f in failures:
         print("FAIL:", f)
     sys.exit(1)
 
-print("carousel-section-heading-contract.py: OK (0.7.172)")
+print("carousel-section-heading-contract.py: OK (0.7.173)")
