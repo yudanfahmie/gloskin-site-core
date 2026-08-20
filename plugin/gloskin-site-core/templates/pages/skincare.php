@@ -2,9 +2,6 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 gloskin_ui1_render_hero( $gloskin_context['hero'] );
 ?>
-<section class="gloskin-ui1-section gloskin-ui1-section--tight gloskin-ui1-section--intro-only" data-gloskin-section="skincare-intro"><div class="gloskin-ui1-container">
-	<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?><div class="gloskin-ui1-container--narrow gloskin-ui1-section__intro"><?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?></div><?php else : ?><div class="gloskin-ui1-container--narrow gloskin-ui1-section__intro"><p class="gloskin-ui1-body"><?php echo esc_html__( 'Produk skincare Gloskin dirancang untuk mendukung perawatan kulit sehari-hari. Pilih kategori di bawah untuk mempersempit pilihan, atau lihat semua produk yang tersedia.', 'gloskin-site-core' ); ?></p></div><?php endif; ?>
-</div></section>
 <section class="gloskin-ui1-section gloskin-ui1-section--tight" data-gloskin-section="skincare-shop-gateway" aria-labelledby="gloskin-skincare-shop-gateway-title"><div class="gloskin-ui1-container">
 	<div class="gloskin-ui1-skincare-shop-gateway">
 		<div class="gloskin-ui1-skincare-shop-gateway__copy">

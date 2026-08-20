@@ -47,9 +47,9 @@ require(tight_pos > generic_pos, "final tight rule must follow the generic secti
 mobile = css.split("@media (max-width:760px){", 1)[1]
 require(mobile.index(".gloskin-ui1-section--tight{padding:") > mobile.index(".gloskin-ui1-section{padding:"),
         "mobile tight rule must not be overridden by the later generic shorthand")
-require("gloskin-ui1-section--intro-only" in skincare and
+require("gloskin-ui1-section--intro-only" not in skincare and
         ".gloskin-ui1-section--intro-only .gloskin-ui1-section__intro{margin-bottom:0}" in css,
-        "standalone Skincare intro must remove only its own trailing margin")
+        "skincare-intro section removed from skincare.php (Phase 4.1); CSS rule retained for shop.php")
 require("gloskin-ui1-section--tight gloskin-ui1-section--intro-only" in shop,
         "standalone Shop intro must share the semantic compact modifier")
 
@@ -71,10 +71,9 @@ require(core_js.count("function initSkincareChips()") == 1,
 # Premium Shop gateway must sit between the intro and product listing and own
 # the only Shop CTA on Skincare; the lower Clinic pathway remains useful.
 gateway_pos = skincare.index('data-gloskin-section="skincare-shop-gateway"')
-intro_pos = skincare.index('data-gloskin-section="skincare-intro"')
 products_pos = skincare.index('data-gloskin-section="skincare-products"')
-require(intro_pos < gateway_pos < products_pos,
-        "Skincare Shop gateway must render immediately between intro and products")
+require(gateway_pos < products_pos,
+        "Skincare Shop gateway must render before the products section (Phase 4.1: intro removed)")
 for copy in (
     "BELANJA GLOSKIN",
     "Lengkapi rutinitas skincare Anda.",

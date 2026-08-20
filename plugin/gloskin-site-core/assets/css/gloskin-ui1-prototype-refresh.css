@@ -367,20 +367,25 @@ body.woocommerce-page .gloskin-ui1-commerce-native{background:var(--gloskin-refr
 }
 
 /* ── Treatment Editorial Bands (Scope A) ────────────────────────────────── */
-.gloskin-ui1-treatment-bands{display:flex;flex-direction:column;gap:0}
-.gloskin-ui1-treatment-band{display:grid;grid-template-columns:1fr 1fr;min-height:480px;overflow:hidden}
+.gloskin-ui1-treatment-bands{--gloskin-treatment-band-height:480px;display:flex;flex-direction:column;gap:0}
+.gloskin-ui1-treatment-band{display:grid;grid-template-columns:1fr 1fr;height:var(--gloskin-treatment-band-height);overflow:hidden}
 .gloskin-ui1-treatment-band--reverse{direction:rtl}
 .gloskin-ui1-treatment-band--reverse>*{direction:ltr}
 .gloskin-ui1-treatment-band__media{position:relative;overflow:hidden;background:var(--gloskin-refresh-cream)}
-.gloskin-ui1-treatment-band__image{width:100%;height:100%;object-fit:cover;display:block}
+.gloskin-ui1-treatment-band__image{width:100%;height:100%;object-fit:cover;display:block;transition:transform 320ms ease}
+.gloskin-ui1-treatment-band:hover .gloskin-ui1-treatment-band__image{transform:scale(1.04)}
 .gloskin-ui1-treatment-band__content{display:flex;flex-direction:column;justify-content:center;gap:18px;padding:clamp(40px,5vw,72px) clamp(32px,4vw,62px);background:var(--gloskin-refresh-blush)}
 .gloskin-ui1-treatment-band:nth-child(even) .gloskin-ui1-treatment-band__content{background:var(--gloskin-refresh-cream)}
 .gloskin-ui1-treatment-band__title{font-family:var(--gloskin-font-heading);font-size:clamp(2rem,3.2vw,3rem);font-weight:300;line-height:1.1;margin:0}
 .gloskin-ui1-treatment-band__copy{font-size:1rem;line-height:1.6;color:var(--gloskin-text-secondary);max-width:46ch;margin:0}
 @media (max-width:900px){
-	.gloskin-ui1-treatment-band{grid-template-columns:1fr;min-height:0}
+	.gloskin-ui1-treatment-band{grid-template-columns:1fr;height:auto}
 	.gloskin-ui1-treatment-band__media{min-height:320px;aspect-ratio:4/3}
 	.gloskin-ui1-treatment-band--reverse{direction:ltr}
+}
+@media (prefers-reduced-motion:reduce){
+	.gloskin-ui1-treatment-band__image{transition:none}
+	.gloskin-ui1-treatment-band:hover .gloskin-ui1-treatment-band__image{transform:none}
 }
 
 /* ── Managed Promo Carousel (Scope B) ───────────────────────────────────── */
@@ -621,6 +626,13 @@ body.woocommerce-page .gloskin-ui1-commerce-native{background:var(--gloskin-refr
 @media (max-width:760px){
 	.gloskin-ui1-why__cards{grid-template-columns:1fr}
 }
+
+/* ── Language switcher (static presentational, ID active / EN inert) ──────── */
+.gloskin-ui1-lang-switcher{display:inline-flex;align-items:center;gap:2px;font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.gloskin-ui1-lang-switcher__option{padding:4px 6px;border-radius:4px}
+.gloskin-ui1-lang-switcher__option--current{background:var(--gloskin-accent);color:var(--gloskin-inverse)}
+.gloskin-ui1-lang-switcher__option--inactive{color:var(--gloskin-muted);cursor:default}
+.gloskin-ui1-lang-switcher__sep{color:var(--gloskin-border);font-weight:400}
 
 /* ── Testimonials (Scope E) ─────────────────────────────────────────────── */
 .gloskin-ui1-section--testimonials{background:var(--gloskin-refresh-cream)}
