@@ -1,0 +1,26 @@
+name: phase2-reference-artifact
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  package-reference-images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package Phase 2 reference images
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2-reference-images
+          path: |
+            docs/feedback-cases-gloskin-20260820-154828/FB-989356-skincare-page/evidence/product skincare.jpeg
+            docs/feedback-cases-gloskin-20260820-154828/FB-989356-skincare-page/evidence/feedback-989321-1787213085-0.png
+            docs/feedback-cases-gloskin-20260820-154828/FB-989350-home-page/evidence/home.jpeg
+            docs/feedback-cases-gloskin-20260820-154828/FB-989350-home-page/evidence/feedback-989321-1787211737-0.png
+            docs/feedback-cases-gloskin-20260820-154828/FB-989352-promo-page/evidence/promo.jpeg
+            docs/feedback-cases-gloskin-20260820-154828/FB-989352-promo-page/evidence/feedback-989321-1787211977-0.png
+          if-no-files-found: error
