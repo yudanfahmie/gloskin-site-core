@@ -42,6 +42,7 @@ foreach ( $tests as $file ) {
 				fwrite( STDERR, 'Stale active release assertion in ' . $file->getPathname() . ': ' . $version . "\n" );
 				exit( 1 );
 			}
+		}
 	}
 }
 
