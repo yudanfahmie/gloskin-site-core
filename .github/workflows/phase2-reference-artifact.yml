@@ -8,19 +8,43 @@ permissions:
   contents: read
 
 jobs:
-  package-reference-images:
+  package-working-tree:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Package Phase 2 reference images
+      - name: Package working tree and Phase 2 references
         uses: actions/upload-artifact@v4
         with:
-          name: phase2-reference-images
-          path: |
-            docs/feedback-cases-gloskin-20260820-154828/FB-989356-skincare-page/evidence/product skincare.jpeg
-            docs/feedback-cases-gloskin-20260820-154828/FB-989356-skincare-page/evidence/feedback-989321-1787213085-0.png
-            docs/feedback-cases-gloskin-20260820-154828/FB-989350-home-page/evidence/home.jpeg
-            docs/feedback-cases-gloskin-20260820-154828/FB-989350-home-page/evidence/feedback-989321-1787211737-0.png
-            docs/feedback-cases-gloskin-20260820-154828/FB-989352-promo-page/evidence/promo.jpeg
-            docs/feedback-cases-gloskin-20260820-154828/FB-989352-promo-page/evidence/feedback-989321-1787211977-0.png
+          name: phase2-working-tree
+          path: .
+          include-hidden-files: false
           if-no-files-found: error
+
+  canonical-preflight:
+    name: Direct canonical Phase 2 preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: gd, mbstring, intl
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Playwright Chromium
+        run: |
+          python -m pip install --disable-pip-version-check playwright
+          python -m playwright install chromium
+      - name: Confirm Phase 1 contract
+        run: php tests/phase1-client-feedback-contract.php
+      - name: Run canonical runtime harness directly
+        run: bash tests/check-runtime.sh
+      - name: Verify tests are read-only
+        run: |
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
