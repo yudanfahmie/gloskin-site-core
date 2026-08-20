@@ -61,7 +61,10 @@ if ( ! function_exists( 'gloskin_ui1_render_closing_cta' ) ) {
 			</div>
 			<div class="gloskin-ui1-closing-cta__actions">
 				<?php if ( '' !== trim( $primary_label ) && '' !== trim( $primary_url ) ) : ?><a class="gloskin-ui1-button gloskin-ui1-button--light" href="<?php echo esc_url( $primary_url ); ?>"><?php echo esc_html( $primary_label ); ?></a><?php endif; ?>
-				<?php if ( '' !== trim( $secondary_label ) && '' !== trim( $secondary_url ) ) : ?><a class="gloskin-ui1-button gloskin-ui1-button--ghost gloskin-ui1-button--on-dark" href="<?php echo esc_url( $secondary_url ); ?>"><?php echo esc_html( $secondary_label ); ?></a><?php endif; ?>
+				<?php /* --on-dark owns the transparent light-border surface; --primary
+				       supplies the inverse foreground that the old --ghost composition
+				       lost against the closing CTA's dark background. */ ?>
+				<?php if ( '' !== trim( $secondary_label ) && '' !== trim( $secondary_url ) ) : ?><a class="gloskin-ui1-button gloskin-ui1-button--primary gloskin-ui1-button--on-dark" href="<?php echo esc_url( $secondary_url ); ?>"><?php echo esc_html( $secondary_label ); ?></a><?php endif; ?>
 			</div>
 		</div>
 		<?php
