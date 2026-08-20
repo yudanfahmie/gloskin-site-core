@@ -521,7 +521,16 @@ body.gloskin-ui1 :where(
 	.woocommerce-product-details__short-description,
 	.woocommerce-product-details__short-description p,
 	.woocommerce-Tabs-panel--description p
+<<<<<<< HEAD
 ){
+=======
+),
+.gloskin-ui1-hero .gloskin-ui1-hero__copy,
+.gloskin-ui1-editorial-split__copy>p:not(.gloskin-ui1-eyebrow),
+.gloskin-ui1-pathway-card>span:not(.gloskin-ui1-eyebrow):not(.gloskin-ui1-pathway-card__action),
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-product-details__short-description
+{
+>>>>>>> cd8b8a3e43a2fde30f37702b31ab3cea5f3a617b
 	color:var(--gloskin-copy-ink);
 	font-weight:300;
 }

@@ -21,5 +21,9 @@ for forbidden in ('initHeader2Sticky','initHeader2Scroll','Header2Controller','i
 require('#gloskin-admin-root' in admin_css and '!important' not in admin_css,'admin shell scope/purity regressed');require('function init()' in admin_js,'admin settings progressive enhancement missing');require('localStorage' not in admin_js and 'fetch(' not in admin_js and 'XMLHttpRequest' not in admin_js,'admin settings JS must not become a state/network owner')
 for token in ('$gloskin_commerce_native','woocommerce_content()','is_cart()','is_checkout()','gloskin_ui1_register_product_description_boundary'):require(token in shell,f'native commerce shell boundary lost: {token}')
 for test_command in ('php tests/shop-catalog-contract.php','./tests/single-product-commerce-contract.sh','php tests/rendered-shell-auth-smoke.php','python tests/cart-block-mobile-regression.py','python tests/checkout-block-presentation-regression.py'):require(test_command in check_runtime,f'full suite no longer protects commerce path: {test_command}')
+<<<<<<< HEAD
 require('Version: 0.7.155' in plugin,'plugin header must be 0.7.155');require("const VERSION = '0.7.155';" in kernel,'Kernel VERSION must be 0.7.155');require('0.7.137' not in plugin and '0.7.137' not in kernel,'stale active release version remains')
+=======
+require('Version: 0.7.156' in plugin,'plugin header must be 0.7.156');require("const VERSION = '0.7.156';" in kernel,'Kernel VERSION must be 0.7.156');require('0.7.137' not in plugin and '0.7.137' not in kernel,'stale active release version remains')
+>>>>>>> cd8b8a3e43a2fde30f37702b31ab3cea5f3a617b
 print('header-admin-contract: OK (canonical prototype header)')

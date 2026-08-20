@@ -2,7 +2,11 @@
 /**
  * Plugin Name: Gloskin Site Core
  * Description: Gloskin website presentation, content and integration runtime.
+<<<<<<< HEAD
  * Version: 0.7.155
+=======
+ * Version: 0.7.156
+>>>>>>> cd8b8a3e43a2fde30f37702b31ab3cea5f3a617b
  * Requires PHP: 7.4
  * Text Domain: gloskin-site-core
  */
