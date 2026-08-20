@@ -16,10 +16,42 @@ def require(condition, message):
 
 
 production = read(ASSETS / "css" / "gloskin-ui1-production.css")
+core_base = read(ASSETS / "css" / "gloskin-ui1-core-base.css")
 shop_css = read(ASSETS / "css" / "gloskin-ui1-shop-discovery.css")
 loader_css = read(ASSETS / "css" / "gloskin-ui1-loader-system.css")
 readiness = read(ASSETS / "css" / "gloskin-ui1-readiness.css")
 shop_js = read(ASSETS / "js" / "gloskin-ui1-shop-discovery.js")
+footer = read(ROOT / "plugin" / "gloskin-site-core" / "templates" / "parts" / "footer.php")
+
+# Global footer consultation CTA: keep one existing CTA owner, give the Felix
+# headline enough measure for a natural <=3-line desktop composition, and add
+# one concise explanatory paragraph without hard-coded line breaks/clipping.
+require(footer.count('class="gloskin-ui1-footer__cta-copy"') == 1,
+        "footer consultation CTA needs exactly one semantic copy wrapper")
+require(footer.count('class="gloskin-ui1-footer__cta-description"') == 1,
+        "footer consultation CTA needs exactly one supporting description")
+require("Pilih klinik Gloskin terdekat dan mulai konsultasi." in footer,
+        "footer consultation headline changed unexpectedly")
+require("Temukan cabang yang sesuai dengan lokasi Anda, lalu hubungi tim Gloskin untuk informasi jadwal dan konsultasi yang tersedia." in footer,
+        "footer consultation description copy missing")
+cta_markup = footer[footer.index('gloskin-ui1-footer__cta') : footer.index('gloskin-ui1-footer__grid')]
+require("<br" not in cta_markup.lower(), "footer CTA must wrap naturally without hard-coded line breaks")
+cta_inner = core_base.split(".gloskin-ui1-footer__cta-inner{", 1)[1].split("}", 1)[0]
+for token in ("display:flex", "justify-content:space-between", "gap:clamp(32px,6vw,96px)", "padding-block:clamp(48px,6vw,72px)"):
+    require(token in cta_inner, f"footer CTA desktop composition missing: {token}")
+cta_heading = core_base.split(".gloskin-ui1-footer__cta h2{", 1)[1].split("}", 1)[0]
+for token in ("max-width:24ch", "font-size:clamp(2.1rem,3.2vw,3.35rem)", "text-wrap:balance"):
+    require(token in cta_heading, f"footer CTA max-three-line heading treatment missing: {token}")
+require("max-width:14ch" not in cta_heading, "legacy narrow footer heading measure must stay removed")
+cta_description = core_base.split(".gloskin-ui1-footer__cta-description{", 1)[1].split("}", 1)[0]
+for token in ("max-width:56ch", "line-height:1.55", "text-wrap:pretty"):
+    require(token in cta_description, f"footer CTA description treatment missing: {token}")
+footer_mobile = core_base.split("@media (max-width:900px){", 1)[1].split("@media (max-width:760px){", 1)[0]
+require(".gloskin-ui1-footer__cta-inner{" in footer_mobile and "flex-direction:column" in footer_mobile,
+        "footer CTA must stack before the layout becomes cramped")
+footer_style = core_base[core_base.index(".gloskin-ui1-footer__cta{") : core_base.index(".gloskin-ui1-footer__grid{")]
+require("line-clamp" not in footer_style and "text-overflow:ellipsis" not in footer_style,
+        "footer CTA must never fake line limits by clipping text")
 
 # Cart: desktop owner must match Woo's real SAME-ELEMENT table classes, while
 # the established mobile grid/header contract remains untouched.

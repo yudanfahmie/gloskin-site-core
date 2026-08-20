@@ -6,7 +6,18 @@ $gloskin_show_footer_cta = ! in_array( isset( $gloskin_context['view'] ) ? $glos
 $gloskin_logo_url = isset( $gloskin_context['logo_url'] ) ? (string) $gloskin_context['logo_url'] : '';
 ?>
 <footer class="gloskin-ui1-footer">
-	<?php if ( $gloskin_show_footer_cta ) : ?><div class="gloskin-ui1-footer__cta"><div class="gloskin-ui1-container gloskin-ui1-footer__cta-inner"><div><p class="gloskin-ui1-eyebrow">Gloskin</p><h2><?php echo esc_html__( 'Pilih klinik Gloskin terdekat dan mulai konsultasi.', 'gloskin-site-core' ); ?></h2></div><a class="gloskin-ui1-button gloskin-ui1-button--light" href="<?php echo esc_url( home_url( '/contact/' ) ); ?>"><?php echo esc_html__( 'Hubungi Kami', 'gloskin-site-core' ); ?></a></div></div><?php endif; ?>
+	<?php if ( $gloskin_show_footer_cta ) : ?>
+		<div class="gloskin-ui1-footer__cta">
+			<div class="gloskin-ui1-container gloskin-ui1-footer__cta-inner">
+				<div class="gloskin-ui1-footer__cta-copy">
+					<p class="gloskin-ui1-eyebrow">Gloskin</p>
+					<h2><?php echo esc_html__( 'Pilih klinik Gloskin terdekat dan mulai konsultasi.', 'gloskin-site-core' ); ?></h2>
+					<p class="gloskin-ui1-footer__cta-description"><?php echo esc_html__( 'Temukan cabang yang sesuai dengan lokasi Anda, lalu hubungi tim Gloskin untuk informasi jadwal dan konsultasi yang tersedia.', 'gloskin-site-core' ); ?></p>
+				</div>
+				<a class="gloskin-ui1-button gloskin-ui1-button--light" href="<?php echo esc_url( home_url( '/contact/' ) ); ?>"><?php echo esc_html__( 'Hubungi Kami', 'gloskin-site-core' ); ?></a>
+			</div>
+		</div>
+	<?php endif; ?>
 	<div class="gloskin-ui1-container gloskin-ui1-footer__grid">
 		<div class="gloskin-ui1-footer__brand"><div class="gloskin-ui1-footer__brand-mark"><a class="gloskin-ui1-brand--footer" href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php gloskin_ui1_render_brand_logo( $gloskin_logo_url, 'gloskin-ui1-brand__image--footer' ); ?></a></div><p><?php echo esc_html__( 'Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengedepankan konsultasi dan penanganan dokter di setiap kliniknya.', 'gloskin-site-core' ); ?></p></div>
 		<div>
