@@ -186,6 +186,14 @@ final class Gloskin_Site_Core_Phase3_Migration {
 					$state['audit']['page_media'] = $this->run_page_media( $state );
 					break;
 
+				case 'pre_cleanup_gate':
+					$this->run_pre_cleanup_gate( $state );
+					break;
+
+				case 'legacy_cleanup':
+					$state['audit']['legacy_cleanup'] = $this->run_legacy_cleanup();
+					break;
+
 				case 'verify':
 					$this->run_verify( $state );
 					break;
@@ -237,7 +245,9 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			array( 'key' => 'treatment_products', 'label' => 'Merekonsiliasi 48 Produk Treatment Woo' ),
 			array( 'key' => 'treatment_records',  'label' => 'Merekonsiliasi 8 record informasional gloskin_treatment' ),
 			array( 'key' => 'page_media',         'label' => 'Mengikat media halaman Treatment dan path term' ),
-			array( 'key' => 'verify',             'label' => 'Memverifikasi keamanan dan integritas pasca-tulis' ),
+			array( 'key' => 'pre_cleanup_gate',   'label' => 'Verifikasi pre-cleanup: semua canonical reconcile valid sebelum cleanup' ),
+			array( 'key' => 'legacy_cleanup',     'label' => 'Membersihkan Treatment produk/post/path/concern legacy' ),
+			array( 'key' => 'verify',             'label' => 'Memverifikasi keamanan dan integritas pasca-tulis (state database aktual)' ),
 			array( 'key' => 'complete',           'label' => 'Menyelesaikan dan mengunci migrasi Phase 3' ),
 		);
 	}
@@ -543,42 +553,31 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			return compact( 'sha_to_id', 'audit', 'cursor', 'total', 'last_action' );
 		}
 
-		/* Resolve directory to first image file. */
+		/* Resolve directory to first image file.
+		 * Fix B: non-PSD source failures throw RuntimeException so retry hits the same cursor item. */
 		if ( ! is_file( $abs_path ) ) {
 			$found = $this->find_first_image_in( $abs_path );
 			if ( null === $found ) {
-				$audit['skipped']++;
-				$audit['skipped_assets'][] = $rel_path . ' (no readable file)';
-				$last_action = 'Skipped: ' . basename( $abs_path );
-				$cursor++;
-				$audit['total_processed'] = $audit['imported'] + $audit['reused'] + $audit['recovered'] + $audit['skipped'];
-				return compact( 'sha_to_id', 'audit', 'cursor', 'total', 'last_action' );
+				throw new RuntimeException( 'Aset media wajib tidak terbaca/tidak ditemukan: ' . $rel_path );
 			}
 			$abs_path = $found;
 			$rel_path = ltrim( str_replace( $this->assets_base, '', $abs_path ), '/\\' );
 		}
 
 		if ( ! is_readable( $abs_path ) ) {
-			$audit['skipped']++;
-			$audit['skipped_assets'][] = $rel_path . ' (not readable)';
-			$last_action = 'Skipped: ' . basename( $abs_path );
-			$cursor++;
-			$audit['total_processed'] = $audit['imported'] + $audit['reused'] + $audit['recovered'] + $audit['skipped'];
-			return compact( 'sha_to_id', 'audit', 'cursor', 'total', 'last_action' );
+			throw new RuntimeException( 'Aset media wajib tidak dapat dibaca: ' . $rel_path );
 		}
 
 		$sha = hash_file( 'sha256', $abs_path );
 		if ( false === $sha ) {
-			$audit['skipped']++;
-			$last_action = 'Skipped (hash error): ' . basename( $abs_path );
-			$cursor++;
-			$audit['total_processed'] = $audit['imported'] + $audit['reused'] + $audit['recovered'] + $audit['skipped'];
-			return compact( 'sha_to_id', 'audit', 'cursor', 'total', 'last_action' );
+			throw new RuntimeException( 'SHA-256 gagal dihitung untuk aset wajib: ' . $rel_path );
 		}
 
-		/* 1. SHA dedup — reuse existing attachment if already imported. */
+		/* 1. SHA dedup — reuse existing attachment if already imported.
+		 *    Fix C: repair incomplete metadata before classifying as REUSED. */
 		$existing_id = $this->find_attachment_by_sha( $sha );
 		if ( $existing_id ) {
+			$this->ensure_attachment_metadata( $existing_id );
 			$sha_to_id[ $sha ] = $existing_id;
 			$audit['reused']++;
 			$last_action = 'Reused: ' . basename( $abs_path );
@@ -606,9 +605,7 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			$audit['imported']++;
 			$last_action = 'Imported: ' . basename( $abs_path );
 		} else {
-			$audit['skipped']++;
-			$audit['skipped_assets'][] = $rel_path . ' (import failed)';
-			$last_action = 'Failed: ' . basename( $abs_path );
+			throw new RuntimeException( 'Import aset wajib gagal (upload/copy/insert): ' . $rel_path );
 		}
 
 		$cursor++;
@@ -931,10 +928,243 @@ final class Gloskin_Site_Core_Phase3_Migration {
 	}
 
 	/* -----------------------------------------------------------------
+	 * CHECKPOINT: PRE-CLEANUP GATE
+	 * ----------------------------------------------------------------- */
+
+	/**
+	 * Verify all canonical reconcile results are valid before any legacy cleanup.
+	 * On any failure, throws RuntimeException — legacy cleanup is blocked.
+	 *
+	 * @param array<string,mixed> $state Current migration state.
+	 * @return void
+	 * @throws RuntimeException If canonical gate conditions are not met.
+	 */
+	private function run_pre_cleanup_gate( array $state ) {
+		$errors = array();
+
+		/* 1. Canonical reconcile counts from audit. */
+		$sk_audit      = (array) ( $state['audit']['skincare'] ?? array() );
+		$sk_reconciled = (int) ( $sk_audit['created'] ?? 0 ) + (int) ( $sk_audit['updated'] ?? 0 ) + (int) ( $sk_audit['reused'] ?? 0 );
+		if ( 25 !== $sk_reconciled ) {
+			$errors[] = 'Skincare reconcile belum 25 (ditemukan ' . $sk_reconciled . ').';
+		}
+		$tr_audit      = (array) ( $state['audit']['treatment_products'] ?? array() );
+		$tr_reconciled = (int) ( $tr_audit['created'] ?? 0 ) + (int) ( $tr_audit['updated'] ?? 0 ) + (int) ( $tr_audit['reused'] ?? 0 );
+		if ( 48 !== $tr_reconciled ) {
+			$errors[] = 'Treatment product reconcile belum 48 (ditemukan ' . $tr_reconciled . ').';
+		}
+		$rec_audit = (array) ( $state['audit']['treatment_records'] ?? array() );
+		$rec_total = (int) ( $rec_audit['created'] ?? 0 ) + (int) ( $rec_audit['updated'] ?? 0 ) + (int) ( $rec_audit['reused'] ?? 0 );
+		if ( 8 !== $rec_total ) {
+			$errors[] = 'Treatment record reconcile belum 8 (ditemukan ' . $rec_total . ').';
+		}
+		$paths_audit   = (array) ( $state['audit']['concerns_paths'] ?? array() );
+		$paths_updated = (int) ( $paths_audit['paths_updated'] ?? 0 );
+		if ( 4 !== $paths_updated ) {
+			$errors[] = 'Consultation path update belum 4 (ditemukan ' . $paths_updated . ').';
+		}
+		$page_audit  = (array) ( $state['audit']['page_media'] ?? array() );
+		$paths_bound = (int) ( $page_audit['paths_bound'] ?? 0 );
+		if ( 4 !== $paths_bound ) {
+			$errors[] = 'Path media binding belum 4 (ditemukan ' . $paths_bound . ').';
+		}
+		if ( true !== (bool) ( $page_audit['hero_bound'] ?? false ) ) {
+			$errors[] = 'Treatment hero belum terikat.';
+		}
+
+		/* 2. Required skips must be 0. */
+		$media_audit    = (array) ( $state['audit']['media'] ?? array() );
+		$required_skips = (int) ( $media_audit['skipped'] ?? 0 )
+			+ (int) ( $sk_audit['skipped'] ?? 0 )
+			+ (int) ( $tr_audit['skipped'] ?? 0 )
+			+ (int) ( $rec_audit['skipped'] ?? 0 )
+			+ (int) ( $page_audit['skipped'] ?? 0 );
+		if ( 0 !== $required_skips ) {
+			$errors[] = 'Required skips bukan 0 (ditemukan ' . $required_skips . ').';
+		}
+
+		/* 3. Family taxonomy: spot-check actual DB counts.
+		 *    (Full set verification is done in run_verify after cleanup.) */
+		$skincare_term  = get_term_by( 'slug', 'skincare', Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY );
+		$treatment_term = get_term_by( 'slug', 'treatment', Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY );
+
+		if ( $skincare_term instanceof WP_Term ) {
+			$sk_ids = wc_get_products( array(
+				'status'    => array( 'publish', 'draft', 'private' ),
+				'limit'     => -1,
+				'return'    => 'ids',
+				'tax_query' => array( array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- bounded admin-only gate check
+					'taxonomy' => Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY,
+					'field'    => 'slug',
+					'terms'    => 'skincare',
+				) ),
+			) );
+			if ( is_array( $sk_ids ) && count( $sk_ids ) < 25 ) {
+				$errors[] = 'family=skincare produk di DB kurang dari 25 (ditemukan ' . count( $sk_ids ) . ').';
+			}
+		} else {
+			$errors[] = 'Term family=skincare tidak ditemukan.';
+		}
+
+		if ( $treatment_term instanceof WP_Term ) {
+			$tr_ids = wc_get_products( array(
+				'status'    => array( 'publish', 'draft', 'private' ),
+				'limit'     => -1,
+				'return'    => 'ids',
+				'tax_query' => array( array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- bounded admin-only gate check
+					'taxonomy' => Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY,
+					'field'    => 'slug',
+					'terms'    => 'treatment',
+				) ),
+			) );
+			if ( is_array( $tr_ids ) && count( $tr_ids ) < 48 ) {
+				$errors[] = 'family=treatment produk di DB kurang dari 48 (ditemukan ' . count( $tr_ids ) . ').';
+			}
+		} else {
+			$errors[] = 'Term family=treatment tidak ditemukan.';
+		}
+
+		/* 4. All canonical Woo products must have usable numeric price. */
+		$tr_manifest      = $this->load_json( 'treatment-catalog.json' );
+		$sk_manifest      = $this->load_json( 'skincare-products.json' );
+		$enrichment       = $this->load_enrichment_prices();
+		$unpriced_slugs   = array();
+		$all_canon_slugs  = array_merge(
+			array_column( (array) ( $sk_manifest['records'] ?? array() ), 'slug' ),
+			array_column( (array) ( $tr_manifest['woo_treatment_products'] ?? array() ), 'slug' )
+		);
+		foreach ( $all_canon_slugs as $cslug ) {
+			$canon_post = get_page_by_path( $cslug, OBJECT, 'product' );
+			if ( ! $canon_post instanceof WP_Post ) {
+				continue; /* Will be caught in run_verify. */
+			}
+			$canon_product = wc_get_product( (int) $canon_post->ID );
+			if ( ! $canon_product ) {
+				continue;
+			}
+			$price = (string) $canon_product->get_regular_price();
+			if ( '' === $price || '0' === $price || ! is_numeric( $price ) || (float) $price <= 0 ) {
+				$unpriced_slugs[] = $cslug;
+			}
+		}
+		if ( ! empty( $unpriced_slugs ) ) {
+			$errors[] = 'Produk canonical tanpa harga valid: ' . implode( ', ', array_slice( $unpriced_slugs, 0, 5 ) )
+				. ( count( $unpriced_slugs ) > 5 ? ' (dan ' . ( count( $unpriced_slugs ) - 5 ) . ' lagi)' : '' );
+		}
+
+		if ( $errors ) {
+			throw new RuntimeException( 'Pre-cleanup gate gagal — cleanup diblokir. ' . implode( ' | ', $errors ) );
+		}
+	}
+
+	/* -----------------------------------------------------------------
+	 * CHECKPOINT: LEGACY CLEANUP
+	 * ----------------------------------------------------------------- */
+
+	/**
+	 * Trash legacy Treatment Woo products and CPT records outside the authoritative 77ee allowlists.
+	 * Delete extra consultation path terms and concern terms outside the authoritative 18.
+	 * Idempotent: already-trashed/deleted objects are simply absent.
+	 * Media Library attachments are NOT deleted here.
+	 *
+	 * @return array<string,int> Audit counts.
+	 */
+	private function run_legacy_cleanup() {
+		$audit = array(
+			'treatment_products_trashed' => 0,
+			'treatment_records_trashed'  => 0,
+			'paths_deleted'              => 0,
+			'concerns_deleted'           => 0,
+		);
+
+		$tr_manifest      = $this->load_json( 'treatment-catalog.json' );
+		$allowed_woo      = array_flip( array_column( (array) ( $tr_manifest['woo_treatment_products'] ?? array() ), 'slug' ) );
+		$allowed_cpt      = array_flip( array_column( (array) ( $tr_manifest['informational_cpt_targets'] ?? array() ), 'slug' ) );
+		$allowed_paths    = array_flip( array( 'acne-focus', 'brightening-focus', 'anti-aging-focus', 'skin-health-focus' ) );
+
+		/* Authoritative 18 concern slugs: 10 existing + 8 new from manifest. */
+		$existing_concerns   = (array) ( $tr_manifest['existing_concern_slugs'] ?? array() );
+		$new_concerns_data   = (array) ( $tr_manifest['new_concerns_to_upsert'] ?? array() );
+		$new_concern_slugs   = array_column( $new_concerns_data, 'slug' );
+		$allowed_concerns    = array_flip( array_merge( $existing_concerns, $new_concern_slugs ) );
+
+		/* A. Trash non-allowed Woo Treatment products (family=treatment, not in allowlist). */
+		$all_treatment_ids = wc_get_products( array(
+			'status'    => array( 'publish', 'draft', 'private', 'pending' ),
+			'limit'     => -1,
+			'return'    => 'ids',
+			'tax_query' => array( array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- bounded admin-only cleanup
+				'taxonomy' => Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY,
+				'field'    => 'slug',
+				'terms'    => 'treatment',
+			) ),
+		) );
+		foreach ( (array) $all_treatment_ids as $pid ) {
+			$pid     = (int) $pid;
+			$p_slug  = get_post_field( 'post_name', $pid );
+			if ( ! isset( $allowed_woo[ $p_slug ] ) ) {
+				wp_trash_post( $pid );
+				$audit['treatment_products_trashed']++;
+			}
+		}
+
+		/* B. Trash non-allowed gloskin_treatment CPT records. */
+		$all_cpt_ids = get_posts( array(
+			'post_type'      => Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE,
+			'post_status'    => array( 'publish', 'draft', 'private', 'pending' ),
+			'fields'         => 'ids',
+			'numberposts'    => -1,
+		) );
+		foreach ( (array) $all_cpt_ids as $cid ) {
+			$cid    = (int) $cid;
+			$c_slug = get_post_field( 'post_name', $cid );
+			if ( ! isset( $allowed_cpt[ $c_slug ] ) ) {
+				wp_trash_post( $cid );
+				$audit['treatment_records_trashed']++;
+			}
+		}
+
+		/* C. Delete extra gloskin_consultation_path terms. */
+		$all_path_terms = get_terms( array(
+			'taxonomy'   => Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY,
+			'hide_empty' => false,
+		) );
+		foreach ( (array) $all_path_terms as $path_term ) {
+			if ( ! $path_term instanceof WP_Term ) {
+				continue;
+			}
+			if ( ! isset( $allowed_paths[ $path_term->slug ] ) ) {
+				wp_delete_term( (int) $path_term->term_id, Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY );
+				$audit['paths_deleted']++;
+			}
+		}
+
+		/* D. Delete concern terms outside the authoritative 18 slugs. */
+		$all_concern_terms = get_terms( array(
+			'taxonomy'   => Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY,
+			'hide_empty' => false,
+		) );
+		foreach ( (array) $all_concern_terms as $concern_term ) {
+			if ( ! $concern_term instanceof WP_Term ) {
+				continue;
+			}
+			if ( ! isset( $allowed_concerns[ $concern_term->slug ] ) ) {
+				wp_delete_term( (int) $concern_term->term_id, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY );
+				$audit['concerns_deleted']++;
+			}
+		}
+
+		return $audit;
+	}
+
+	/* -----------------------------------------------------------------
 	 * CHECKPOINT: VERIFY
 	 * ----------------------------------------------------------------- */
 
 	/**
+	 * Final verifier — checks ACTUAL current database state, not only historical audit counters.
+	 * Only allows COMPLETE when all state is confirmed correct.
+	 *
 	 * @param array<string,mixed> $state Current migration state.
 	 * @return void
 	 * @throws RuntimeException On verification failure.
@@ -942,7 +1172,10 @@ final class Gloskin_Site_Core_Phase3_Migration {
 	private function run_verify( array $state ) {
 		$errors = array();
 
-		/* Fail closed against the authoritative 77ee resolved-target contract. */
+		$tr_manifest = $this->load_json( 'treatment-catalog.json' );
+		$sk_manifest = $this->load_json( 'skincare-products.json' );
+
+		/* ---- Audit counter checks (preserved from spec) ---- */
 		$sk_audit      = (array) ( $state['audit']['skincare'] ?? array() );
 		$sk_reconciled = (int) ( $sk_audit['created'] ?? 0 ) + (int) ( $sk_audit['updated'] ?? 0 ) + (int) ( $sk_audit['reused'] ?? 0 );
 		if ( 25 !== $sk_reconciled ) {
@@ -999,16 +1232,177 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			$errors[] = 'Informational Treatment dengan ' . self::HOME_FEATURE_META . '=true harus tepat 3; ditemukan ' . $home_feature_count . '.';
 		}
 
-		/* Verify four path slugs still exist. */
-		$stable_slugs = array( 'acne-focus', 'brightening-focus', 'anti-aging-focus', 'skin-health-focus' );
-		foreach ( $stable_slugs as $slug ) {
-			$term = get_term_by( 'slug', $slug, Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY );
-			if ( ! $term instanceof WP_Term ) {
-				$errors[] = 'Path term hilang setelah migrasi: ' . $slug;
+		/* ---- Actual database state checks ---- */
+
+		/* 48 NON-TRASHED Woo family=treatment, slug set exact. */
+		$auth_tr_slugs   = array_column( (array) ( $tr_manifest['woo_treatment_products'] ?? array() ), 'slug' );
+		$live_tr_ids     = wc_get_products( array(
+			'status'    => array( 'publish', 'draft', 'private', 'pending' ),
+			'limit'     => -1,
+			'return'    => 'ids',
+			'tax_query' => array( array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- bounded Phase-3 verifier
+				'taxonomy' => Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY,
+				'field'    => 'slug',
+				'terms'    => 'treatment',
+			) ),
+		) );
+		$live_tr_slugs = array();
+		foreach ( (array) $live_tr_ids as $tid ) {
+			$live_tr_slugs[] = get_post_field( 'post_name', (int) $tid );
+		}
+		sort( $live_tr_slugs );
+		$auth_tr_sorted = $auth_tr_slugs;
+		sort( $auth_tr_sorted );
+		if ( 48 !== count( $live_tr_slugs ) ) {
+			$errors[] = 'Woo family=treatment non-trashed harus tepat 48 di DB; ditemukan ' . count( $live_tr_slugs ) . '.';
+		} elseif ( $live_tr_slugs !== $auth_tr_sorted ) {
+			$diff = array_diff( $auth_tr_sorted, $live_tr_slugs );
+			$errors[] = 'Slug set Treatment Woo tidak cocok dengan authoritative 48; hilang: ' . implode( ',', array_slice( $diff, 0, 5 ) );
+		}
+
+		/* 8 NON-TRASHED gloskin_treatment, slug set exact. */
+		$auth_cpt_slugs = array_column( (array) ( $tr_manifest['informational_cpt_targets'] ?? array() ), 'slug' );
+		$live_cpt_posts = get_posts( array(
+			'post_type'   => Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE,
+			'post_status' => array( 'publish', 'draft', 'private', 'pending' ),
+			'fields'      => 'ids',
+			'numberposts' => -1,
+		) );
+		$live_cpt_slugs = array();
+		foreach ( (array) $live_cpt_posts as $cid ) {
+			$live_cpt_slugs[] = get_post_field( 'post_name', (int) $cid );
+		}
+		sort( $live_cpt_slugs );
+		$auth_cpt_sorted = $auth_cpt_slugs;
+		sort( $auth_cpt_sorted );
+		if ( 8 !== count( $live_cpt_slugs ) ) {
+			$errors[] = 'gloskin_treatment non-trashed harus tepat 8; ditemukan ' . count( $live_cpt_slugs ) . '.';
+		} elseif ( $live_cpt_slugs !== $auth_cpt_sorted ) {
+			$errors[] = 'Slug set CPT Treatment tidak cocok dengan authoritative 8.';
+		}
+
+		/* 4 consultation path terms, exact slugs. */
+		$stable_slugs      = array( 'acne-focus', 'brightening-focus', 'anti-aging-focus', 'skin-health-focus' );
+		$live_path_terms   = get_terms( array(
+			'taxonomy'   => Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY,
+			'hide_empty' => false,
+		) );
+		$live_path_slugs = array();
+		foreach ( (array) $live_path_terms as $pt ) {
+			if ( $pt instanceof WP_Term ) {
+				$live_path_slugs[] = $pt->slug;
+			}
+		}
+		sort( $live_path_slugs );
+		$stable_sorted = $stable_slugs;
+		sort( $stable_sorted );
+		if ( 4 !== count( $live_path_slugs ) ) {
+			$errors[] = 'Consultation path terms harus tepat 4; ditemukan ' . count( $live_path_slugs ) . '.';
+		} elseif ( $live_path_slugs !== $stable_sorted ) {
+			$errors[] = 'Path term slugs tidak cocok dengan empat slug authoritative.';
+		}
+
+		/* 18 concern terms, exact authoritative slugs. */
+		$existing_concern_slugs = (array) ( $tr_manifest['existing_concern_slugs'] ?? array() );
+		$new_concern_slugs      = array_column( (array) ( $tr_manifest['new_concerns_to_upsert'] ?? array() ), 'slug' );
+		$auth_concern_slugs     = array_merge( $existing_concern_slugs, $new_concern_slugs );
+		sort( $auth_concern_slugs );
+		$live_concern_terms = get_terms( array(
+			'taxonomy'   => Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY,
+			'hide_empty' => false,
+		) );
+		$live_concern_slugs = array();
+		foreach ( (array) $live_concern_terms as $ct ) {
+			if ( $ct instanceof WP_Term ) {
+				$live_concern_slugs[] = $ct->slug;
+			}
+		}
+		sort( $live_concern_slugs );
+		if ( 18 !== count( $live_concern_slugs ) ) {
+			$errors[] = 'Concern terms harus tepat 18; ditemukan ' . count( $live_concern_slugs ) . '.';
+		} elseif ( $live_concern_slugs !== $auth_concern_slugs ) {
+			$diff = array_diff( $auth_concern_slugs, $live_concern_slugs );
+			$errors[] = 'Concern slug set tidak cocok dengan authoritative 18; hilang: ' . implode( ',', $diff );
+		}
+
+		/* 25 skincare family=skincare. */
+		$live_sk_ids = wc_get_products( array(
+			'status'    => array( 'publish', 'draft', 'private', 'pending' ),
+			'limit'     => -1,
+			'return'    => 'ids',
+			'tax_query' => array( array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- bounded Phase-3 verifier
+				'taxonomy' => Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY,
+				'field'    => 'slug',
+				'terms'    => 'skincare',
+			) ),
+		) );
+		if ( 25 !== count( (array) $live_sk_ids ) ) {
+			$errors[] = 'Woo family=skincare non-trashed harus tepat 25; ditemukan ' . count( (array) $live_sk_ids ) . '.';
+		}
+
+		/* All canonical Woo prices must be numeric > 0. */
+		$unpriced = array();
+		$all_canon = array_merge(
+			array_column( (array) ( $sk_manifest['records'] ?? array() ), 'slug' ),
+			$auth_tr_slugs
+		);
+		foreach ( $all_canon as $cslug ) {
+			$cp = get_page_by_path( $cslug, OBJECT, 'product' );
+			if ( ! $cp instanceof WP_Post ) {
+				continue;
+			}
+			$cprod = wc_get_product( (int) $cp->ID );
+			if ( ! $cprod ) {
+				continue;
+			}
+			$cprice = (string) $cprod->get_regular_price();
+			if ( '' === $cprice || ! is_numeric( $cprice ) || (float) $cprice <= 0 ) {
+				$unpriced[] = $cslug;
+			}
+		}
+		if ( ! empty( $unpriced ) ) {
+			$errors[] = 'Produk canonical tanpa harga valid (> 0): ' . implode( ',', array_slice( $unpriced, 0, 5 ) );
+		}
+
+		/* Concern mappings for Treatment products match manifest. */
+		foreach ( (array) ( $tr_manifest['woo_treatment_products'] ?? array() ) as $tp ) {
+			$tp_slug = (string) ( $tp['slug'] ?? '' );
+			$tp_post = get_page_by_path( $tp_slug, OBJECT, 'product' );
+			if ( ! $tp_post instanceof WP_Post ) {
+				continue;
+			}
+			$assigned_terms  = wp_get_object_terms( (int) $tp_post->ID, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY, array( 'fields' => 'slugs' ) );
+			$manifest_conc   = (array) ( $tp['concerns'] ?? array() );
+			$assigned_sorted = is_array( $assigned_terms ) ? $assigned_terms : array();
+			sort( $assigned_sorted );
+			sort( $manifest_conc );
+			if ( $assigned_sorted !== $manifest_conc ) {
+				$errors[] = 'Concern mismatch pada ' . $tp_slug . ': expected [' . implode( ',', $manifest_conc ) . '] got [' . implode( ',', $assigned_sorted ) . '].';
 			}
 		}
 
-		/* No direct SQL mutations — this is a code-level contract verified by tests. */
+		/* Zero active legacy Treatment products. */
+		$legacy_tr = wc_get_products( array(
+			'status'    => array( 'publish', 'draft', 'private', 'pending' ),
+			'limit'     => -1,
+			'return'    => 'ids',
+			'tax_query' => array( array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- bounded Phase-3 verifier
+				'taxonomy' => Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY,
+				'field'    => 'slug',
+				'terms'    => 'treatment',
+			) ),
+		) );
+		$allowed_woo_flip = array_flip( array_column( (array) ( $tr_manifest['woo_treatment_products'] ?? array() ), 'slug' ) );
+		$legacy_active    = 0;
+		foreach ( (array) $legacy_tr as $lid ) {
+			$lslug = get_post_field( 'post_name', (int) $lid );
+			if ( ! isset( $allowed_woo_flip[ $lslug ] ) ) {
+				$legacy_active++;
+			}
+		}
+		if ( $legacy_active > 0 ) {
+			$errors[] = 'Masih ada ' . $legacy_active . ' Treatment Woo produk legacy aktif.';
+		}
 
 		if ( $errors ) {
 			throw new RuntimeException( 'Phase 3 verify gagal. ' . implode( ' | ', $errors ) );
@@ -1082,9 +1476,36 @@ final class Gloskin_Site_Core_Phase3_Migration {
 		}
 		/* No copy_short in 77ee manifests; never invent a short description. */
 
-		/* Treatment products: new products are draft/unpriced. Never invent a price. */
-		if ( 'treatment' === $family && ! $existing_id ) {
-			$woo_product->set_status( 'draft' );
+		/* Commerce enrichment — apply prices from supplemental commerce-enrichment.json.
+		 * For EXISTING products: preserve non-empty real price; fill only when empty.
+		 * For NEW products: apply enrichment price when available.
+		 * No SKU, no stock quantity — never fabricated (77ee global_rules). */
+		$enrichment_prices = $this->load_enrichment_prices();
+		$enrich_price      = isset( $enrichment_prices[ $slug ] ) ? $enrichment_prices[ $slug ] : '';
+		$is_new_product    = ( 0 === $existing_id );
+
+		if ( '' !== $enrich_price ) {
+			if ( $is_new_product ) {
+				/* New product: always apply enrichment price. */
+				$woo_product->set_regular_price( $enrich_price );
+				$woo_product->set_price( $enrich_price );
+			} else {
+				/* Existing product: fill price only when currently empty. */
+				$current_price = (string) $woo_product->get_regular_price();
+				if ( '' === $current_price || '0' === $current_price ) {
+					$woo_product->set_regular_price( $enrich_price );
+					$woo_product->set_price( $enrich_price );
+				}
+			}
+		}
+
+		/* Status: new products publish only after valid price; existing status preserved. */
+		if ( $is_new_product ) {
+			$has_price = '' !== (string) $woo_product->get_regular_price()
+				&& '0' !== (string) $woo_product->get_regular_price();
+			$woo_product->set_status( $has_price ? 'publish' : 'draft' );
+			/* manage_stock=false for new canonical products (no fabricated stock quantity). */
+			$woo_product->set_manage_stock( false );
 		}
 
 		/* Save. */
@@ -1261,17 +1682,10 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			if ( false === $candidate_sha || ! hash_equals( $sha, $candidate_sha ) ) {
 				continue;
 			}
-			/* Exact SHA match — write provenance and ensure metadata is present. */
+			/* Exact SHA match — write provenance and repair metadata via shared helper (fix C). */
 			update_post_meta( $candidate_id, self::ATTACH_SHA256_META, $sha );
 			update_post_meta( $candidate_id, self::ATTACH_SOURCE_META, self::MANIFEST_ID );
-			$metadata = wp_get_attachment_metadata( $candidate_id );
-			if ( empty( $metadata ) || empty( $metadata['file'] ) ) {
-				$this->load_media_functions();
-				$new_meta = wp_generate_attachment_metadata( $candidate_id, $candidate_file );
-				if ( $new_meta ) {
-					wp_update_attachment_metadata( $candidate_id, $new_meta );
-				}
-			}
+			$this->ensure_attachment_metadata( $candidate_id );
 			return $candidate_id;
 		}
 
@@ -1361,6 +1775,30 @@ final class Gloskin_Site_Core_Phase3_Migration {
 		}
 	}
 
+	/**
+	 * Ensure attachment metadata is complete — regenerate only when missing/incomplete (fix C).
+	 * Used after SHA reuse and in partial-attachment recovery so a prior fatal
+	 * (provenance written but metadata generation killed the request) is self-healed.
+	 *
+	 * @param int $attachment_id Attachment post ID.
+	 * @return void
+	 */
+	private function ensure_attachment_metadata( $attachment_id ) {
+		$metadata = wp_get_attachment_metadata( $attachment_id );
+		if ( ! empty( $metadata ) && ! empty( $metadata['file'] ) ) {
+			return; /* Already complete. */
+		}
+		$file = get_attached_file( $attachment_id );
+		if ( ! $file || ! is_readable( $file ) ) {
+			return; /* Cannot regenerate without a readable source file. */
+		}
+		$this->load_media_functions();
+		$new_meta = wp_generate_attachment_metadata( $attachment_id, $file );
+		if ( $new_meta ) {
+			wp_update_attachment_metadata( $attachment_id, $new_meta );
+		}
+	}
+
 	/* -----------------------------------------------------------------
 	 * PROVENANCE HELPERS
 	 * ----------------------------------------------------------------- */
@@ -1422,6 +1860,43 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			throw new RuntimeException( 'Manifest JSON tidak valid: ' . $filename );
 		}
 		return $data;
+	}
+
+	/**
+	 * Load commerce-enrichment.json once and cache per request.
+	 * Returns slug → numeric price (string) map for both skincare and treatment.
+	 * Build-time only — zero external web requests.
+	 *
+	 * @return array<string,string> slug → price string
+	 */
+	private function load_enrichment_prices() {
+		static $cache = null;
+		if ( null !== $cache ) {
+			return $cache;
+		}
+		$path = $this->manifests_dir . DIRECTORY_SEPARATOR . 'commerce-enrichment.json';
+		if ( ! is_readable( $path ) ) {
+			$cache = array();
+			return $cache;
+		}
+		$raw  = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local supplemental manifest read
+		$data = is_string( $raw ) ? json_decode( $raw, true ) : null;
+		if ( ! is_array( $data ) ) {
+			$cache = array();
+			return $cache;
+		}
+		$map = array();
+		foreach ( array( 'skincare', 'treatment' ) as $section ) {
+			foreach ( (array) ( $data[ $section ] ?? array() ) as $entry ) {
+				$slug  = (string) ( $entry['slug'] ?? '' );
+				$price = (string) ( $entry['price'] ?? '' );
+				if ( '' !== $slug && '' !== $price && is_numeric( $price ) ) {
+					$map[ $slug ] = $price;
+				}
+			}
+		}
+		$cache = $map;
+		return $cache;
 	}
 
 	/** @return string */
@@ -1502,6 +1977,7 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			'status'               => 'pending',
 			'next_step_index'      => 0,
 			'current_step'         => 'Siap dijalankan',
+			'current_step_key'     => '',
 			'manifest_fingerprint' => '',
 			'sha_to_id'            => array(),
 			'media_cursor'         => 0,
@@ -1523,6 +1999,12 @@ final class Gloskin_Site_Core_Phase3_Migration {
 				'treatment_products' => array(),
 				'treatment_records'  => array(),
 				'page_media'         => array(),
+				'legacy_cleanup'     => array(
+					'treatment_products_trashed' => 0,
+					'treatment_records_trashed'  => 0,
+					'paths_deleted'              => 0,
+					'concerns_deleted'           => 0,
+				),
 			),
 			'last_error'           => '',
 			'updated_at'           => 0,
@@ -1565,6 +2047,12 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			: (int) floor( ( $processed / max( 1, $total ) ) * 100 );
 		$state['total_steps']       = $total;
 		$state['step_number']       = $processed + 1;
+
+		/* current_step_key — stable machine key for the current step (fix A).
+		 * current_step remains the human-readable label. */
+		$current_index              = max( 0, $index - 1 );
+		$current_step_def           = $steps[ $current_index ] ?? array();
+		$state['current_step_key']  = (string) ( $current_step_def['key'] ?? '' );
 
 		/* Media reconcile fields — always present so JS runner can render counters. */
 		$state['media_cursor']      = (int) ( $state['media_cursor'] ?? 0 );

@@ -47,11 +47,11 @@ foreach ( array(
 }
 
 /* ---------------------------------------------------------------------------
- * 1. Version sync at 0.7.178
+ * 1. Version sync at 0.7.179
  * ------------------------------------------------------------------------- */
 $ok(
-	false !== strpos( $plugin_php, 'Version: 0.7.178' ) && false !== strpos( $kernel_php, "const VERSION = '0.7.178';" ),
-	'Phase-3 runtime/cache version must be synchronized at 0.7.178'
+	false !== strpos( $plugin_php, 'Version: 0.7.179' ) && false !== strpos( $kernel_php, "const VERSION = '0.7.179';" ),
+	'Phase-3 runtime/cache version must be synchronized at 0.7.179'
 );
 
 /* ---------------------------------------------------------------------------
@@ -261,15 +261,60 @@ $ok( false === strpos( $migration, 'wp_delete_post' ), 'Phase-3 migration must n
 $ok( false === strpos( $migration, 'force_delete' ), 'Phase-3 migration must not call force_delete' );
 
 /* ---------------------------------------------------------------------------
- * 13. No fabricated prices for Treatment products
+ * 13. Commerce enrichment: prices from supplemental file, no fabricated SKU/stock (0.7.179)
  * ------------------------------------------------------------------------- */
+/* Prices are now applied from supplemental commerce-enrichment.json — NOT invented inline.
+ * New products with enrichment price are published; without price they remain draft.
+ * SKU and stock quantity are never fabricated. */
+$enrichment_path = $root . '/plugin/gloskin-site-core/resources/phase3/manifests/commerce-enrichment.json';
 $ok(
-	false === strpos( $migration, 'set_regular_price' ) && false === strpos( $migration, 'set_price' ),
-	'Phase-3 migration must not set prices on Treatment products'
+	is_file( $enrichment_path ),
+	'commerce-enrichment.json must exist as a supplemental file separate from 77ee manifests'
+);
+$enrichment_raw  = is_file( $enrichment_path ) ? (string) file_get_contents( $enrichment_path ) : '';
+$enrichment_data = $enrichment_raw ? json_decode( $enrichment_raw, true ) : null;
+$ok(
+	is_array( $enrichment_data ) && ! empty( $enrichment_data['supplemental'] ),
+	'commerce-enrichment.json must declare supplemental:true'
 );
 $ok(
+	is_array( $enrichment_data ) && 25 === count( (array) ( $enrichment_data['skincare'] ?? array() ) ),
+	'commerce-enrichment.json must contain exactly 25 skincare entries'
+);
+$ok(
+	is_array( $enrichment_data ) && 48 === count( (array) ( $enrichment_data['treatment'] ?? array() ) ),
+	'commerce-enrichment.json must contain exactly 48 treatment entries'
+);
+/* All enrichment prices must be numeric strings > 0; no SKU or stock_quantity fields. */
+$bad_prices = false;
+$has_sku_in_enrichment = false;
+$has_stock_in_enrichment = false;
+if ( is_array( $enrichment_data ) ) {
+	foreach ( array_merge( (array) ( $enrichment_data['skincare'] ?? array() ), (array) ( $enrichment_data['treatment'] ?? array() ) ) as $entry ) {
+		$p = (string) ( $entry['price'] ?? '' );
+		if ( '' === $p || ! is_numeric( $p ) || (float) $p <= 0 ) {
+			$bad_prices = true;
+		}
+		if ( isset( $entry['sku'] ) || isset( $entry['stock_quantity'] ) ) {
+			$has_sku_in_enrichment = true;
+		}
+	}
+}
+$ok( ! $bad_prices, 'All commerce-enrichment.json prices must be numeric and > 0' );
+$ok( ! $has_sku_in_enrichment, 'commerce-enrichment.json must not contain sku or stock_quantity fields' );
+/* Migration must not fabricate SKU or stock. */
+$ok(
+	false === strpos( $migration, 'set_sku(' ),
+	'Phase-3 migration must not call set_sku() (no fabricated SKU)'
+);
+$ok(
+	false === strpos( $migration, 'set_stock_quantity(' ),
+	'Phase-3 migration must not call set_stock_quantity() (no fabricated stock)'
+);
+/* Draft fallback still exists for products without enrichment price. */
+$ok(
 	false !== strpos( $migration, "'draft'" ),
-	"Phase-3 migration must create new Treatment products as 'draft' (unpriced/non-purchasable)"
+	"Phase-3 migration must still have 'draft' status fallback for products without valid price"
 );
 
 /* ---------------------------------------------------------------------------

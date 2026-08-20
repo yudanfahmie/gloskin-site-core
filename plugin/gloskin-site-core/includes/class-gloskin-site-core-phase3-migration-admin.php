@@ -72,8 +72,11 @@ final class Gloskin_Site_Core_Phase3_Migration_Admin {
 		$is_complete = 'complete' === $state['status'];
 		$ajax_url    = admin_url( 'admin-ajax.php' );
 		$nonce       = wp_create_nonce( self::NONCE );
-		$audit       = $state['audit'] ?? array();
-		$media_audit = $audit['media'] ?? array();
+		$audit         = $state['audit'] ?? array();
+		$media_audit   = $audit['media'] ?? array();
+		$cleanup_audit = $audit['legacy_cleanup'] ?? array();
+		$sk_id_map     = $audit['skincare']['id_map'] ?? array();
+		$tr_id_map     = $audit['treatment_products']['id_map'] ?? array();
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Gloskin Phase 3 Migration', 'gloskin-site-core' ); ?></h1>
@@ -93,7 +96,7 @@ final class Gloskin_Site_Core_Phase3_Migration_Admin {
 						<span id="p3-current-step"><?php echo esc_html( $state['current_step'] ?? '' ); ?></span>
 					</td>
 				</tr>
-				<tr id="p3-media-row" style="<?php echo ( 'media_reconcile' === ( $state['current_step'] ?? '' ) ) ? '' : 'display:none;'; ?>">
+				<tr id="p3-media-row" style="<?php echo ( 'media_reconcile' === ( $state['current_step_key'] ?? '' ) ) ? '' : 'display:none;'; ?>">
 					<th><?php esc_html_e( 'Media', 'gloskin-site-core' ); ?></th>
 					<td>
 						<span id="p3-media-counter"><?php echo esc_html( ( $state['media_cursor'] ?? 0 ) . '/' . ( $state['media_total'] ?? 0 ) ); ?></span>
@@ -112,6 +115,28 @@ final class Gloskin_Site_Core_Phase3_Migration_Admin {
 							<div id="p3-progress-bar" style="background:#0073aa;height:100%;width:<?php echo esc_attr( (int) ( $state['progress_percent'] ?? 0 ) ); ?>%;transition:width 0.3s;"></div>
 						</div>
 						<span id="p3-progress-pct"><?php echo esc_html( ( $state['progress_percent'] ?? 0 ) . '%' ); ?></span>
+					</td>
+				</tr>
+				<!-- Commerce counters (hidden until skincare_reconcile/treatment_products steps complete) -->
+				<tr id="p3-commerce-row" style="<?php echo ! empty( $sk_id_map ) || ! empty( $tr_id_map ) ? '' : 'display:none;'; ?>">
+					<th><?php esc_html_e( 'Commerce', 'gloskin-site-core' ); ?></th>
+					<td>
+						<?php esc_html_e( 'Skincare priced', 'gloskin-site-core' ); ?>: <span id="p3-sk-priced">0</span>/25
+						&nbsp;&nbsp;
+						<?php esc_html_e( 'Treatment priced', 'gloskin-site-core' ); ?>: <span id="p3-tr-priced">0</span>/48
+					</td>
+				</tr>
+				<!-- Cleanup counters (hidden until legacy_cleanup step runs) -->
+				<tr id="p3-cleanup-row" style="<?php echo ! empty( $cleanup_audit ) && isset( $cleanup_audit['treatment_products_trashed'] ) ? '' : 'display:none;'; ?>">
+					<th><?php esc_html_e( 'Cleanup', 'gloskin-site-core' ); ?></th>
+					<td>
+						<?php esc_html_e( 'Products trashed', 'gloskin-site-core' ); ?>: <span id="p3-products-trashed"><?php echo (int) ( $cleanup_audit['treatment_products_trashed'] ?? 0 ); ?></span>
+						&nbsp;&nbsp;
+						<?php esc_html_e( 'Treatment records trashed', 'gloskin-site-core' ); ?>: <span id="p3-records-trashed"><?php echo (int) ( $cleanup_audit['treatment_records_trashed'] ?? 0 ); ?></span>
+						&nbsp;&nbsp;
+						<?php esc_html_e( 'Paths removed', 'gloskin-site-core' ); ?>: <span id="p3-paths-removed"><?php echo (int) ( $cleanup_audit['paths_deleted'] ?? 0 ); ?></span>
+						&nbsp;&nbsp;
+						<?php esc_html_e( 'Concerns removed', 'gloskin-site-core' ); ?>: <span id="p3-concerns-removed"><?php echo (int) ( $cleanup_audit['concerns_deleted'] ?? 0 ); ?></span>
 					</td>
 				</tr>
 			</table>
@@ -168,7 +193,9 @@ final class Gloskin_Site_Core_Phase3_Migration_Admin {
 				if (el('p3-progress-bar')) el('p3-progress-bar').style.width  = (data.progress_percent || 0) + '%';
 				if (el('p3-progress-pct')) el('p3-progress-pct').textContent  = (data.progress_percent || 0) + '%';
 
-				var isMedia = (data.current_step === 'media_reconcile');
+				/* Use current_step_key (fix A) for stable stage detection. */
+				var stepKey  = data.current_step_key || '';
+				var isMedia  = (stepKey === 'media_reconcile');
 				var mediaRow = el('p3-media-row');
 				if (mediaRow) mediaRow.style.display = isMedia ? '' : 'none';
 				if (isMedia) {
@@ -179,6 +206,31 @@ final class Gloskin_Site_Core_Phase3_Migration_Admin {
 					if (el('p3-reused'))    el('p3-reused').textContent    = ma.reused    || 0;
 					if (el('p3-recovered')) el('p3-recovered').textContent = ma.recovered || 0;
 					if (el('p3-skipped'))   el('p3-skipped').textContent   = ma.skipped   || 0;
+				}
+
+				/* Commerce counters — show after price-bearing steps. */
+				var audit = data.audit || {};
+				var skMap = (audit.skincare && audit.skincare.id_map) ? audit.skincare.id_map : {};
+				var trMap = (audit.treatment_products && audit.treatment_products.id_map) ? audit.treatment_products.id_map : {};
+				if (Object.keys(skMap).length > 0 || Object.keys(trMap).length > 0) {
+					var commerceRow = el('p3-commerce-row');
+					if (commerceRow) commerceRow.style.display = '';
+					/* Count priced: entries whose value is a number (id), not a SKIPPED:... string. */
+					var skPriced = Object.values(skMap).filter(function(v){ return typeof v === 'number' || /^\d+$/.test(String(v)); }).length;
+					var trPriced = Object.values(trMap).filter(function(v){ return typeof v === 'number' || /^\d+$/.test(String(v)); }).length;
+					if (el('p3-sk-priced')) el('p3-sk-priced').textContent = skPriced;
+					if (el('p3-tr-priced')) el('p3-tr-priced').textContent = trPriced;
+				}
+
+				/* Cleanup counters — show after legacy_cleanup step. */
+				var lc = audit.legacy_cleanup || {};
+				if (typeof lc.treatment_products_trashed !== 'undefined') {
+					var cleanupRow = el('p3-cleanup-row');
+					if (cleanupRow) cleanupRow.style.display = '';
+					if (el('p3-products-trashed'))  el('p3-products-trashed').textContent  = lc.treatment_products_trashed || 0;
+					if (el('p3-records-trashed'))    el('p3-records-trashed').textContent   = lc.treatment_records_trashed  || 0;
+					if (el('p3-paths-removed'))      el('p3-paths-removed').textContent     = lc.paths_deleted              || 0;
+					if (el('p3-concerns-removed'))   el('p3-concerns-removed').textContent  = lc.concerns_deleted           || 0;
 				}
 
 				if (data.audit && el('p3-audit-json')) {
