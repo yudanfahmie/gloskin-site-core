@@ -90,18 +90,7 @@ final class Gloskin_Site_Core_Navigation_Service {
 			&& isset( $state['version'], $state['status'] )
 			&& self::APPROVED_LABELS_VERSION === (string) $state['version']
 			&& 'complete' === (string) $state['status']
-			&& array_keys( $defaults ) === array_keys( $labels );
-
-		if ( $valid ) {
-			foreach ( $defaults as $path => $fallback ) {
-				$value = isset( $labels[ $path ] ) ? trim( (string) $labels[ $path ] ) : '';
-				if ( '' === $value ) {
-					$valid = false;
-					break;
-				}
-				$labels[ $path ] = $value;
-			}
-		}
+			&& $defaults === $labels;
 
 		$this->approved_labels = $valid ? $labels : $defaults;
 		return $this->approved_labels;
