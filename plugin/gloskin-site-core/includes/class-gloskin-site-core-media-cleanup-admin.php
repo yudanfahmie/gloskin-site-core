@@ -42,14 +42,9 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 		add_action( 'admin_post_' . self::DOWNLOAD_ACTION, array( $this, 'download_manifest' ) );
 	}
 
-	/* ------------------------------------------------------------------
-	 * Menu, notice, assets
-	 * ---------------------------------------------------------------- */
-
 	/** @return void */
 	public function register_menu() {
 		if ( ! $this->current_user_is_owner() ) { return; }
-		/* Menu stays available after completion so Start New Scan is reachable. */
 		$hook = add_submenu_page(
 			Gloskin_Site_Core_Content_Service::ADMIN_MENU_SLUG,
 			__( 'Media Cleanup', 'gloskin-site-core' ),
@@ -65,7 +60,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 	public function render_notice() {
 		if ( ! $this->current_user_is_owner() ) { return; }
 		$state = $this->resolver->get_state();
-		/* Show notice only when a scan is pending, active, or failed — not after complete. */
 		if ( ! in_array( (string) $state['status'], array( 'pending', 'indexing', 'failed' ), true ) ) { return; }
 		echo '<div class="notice notice-info"><p><strong>' . esc_html__( 'Media Cleanup', 'gloskin-site-core' ) . '</strong> '
 			. esc_html__( 'Scan media library tersedia.', 'gloskin-site-core' )
@@ -81,10 +75,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 			$this->assets->enqueue_admin_media_cleanup();
 		}
 	}
-
-	/* ------------------------------------------------------------------
-	 * Page render
-	 * ---------------------------------------------------------------- */
 
 	/** @return void */
 	public function render() {
@@ -110,11 +100,9 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 			data-cursor="<?php echo esc_attr( (string) $state['deletion_cursor'] ); ?>">
 
 			<div class="gloskin-admin-workspace">
-
 				<h1><?php echo esc_html__( 'Media Cleanup', 'gloskin-site-core' ); ?></h1>
 
 				<?php if ( $is_complete ) : ?>
-				<!-- ── COMPLETE ──────────────────────────────────────── -->
 				<div class="gloskin-admin-card">
 					<h2><?php echo esc_html__( 'Cleanup selesai', 'gloskin-site-core' ); ?></h2>
 					<ul>
@@ -124,15 +112,10 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 						<li><?php echo esc_html__( 'Ruang dibebaskan:', 'gloskin-site-core' ); ?> <strong><?php echo esc_html( size_format( (int) $state['actual_bytes'] ) ); ?></strong></li>
 					</ul>
 					<p><?php echo esc_html__( 'Item yang dilewati dipertahankan karena keamanan tidak lagi dapat dibuktikan saat re-check.', 'gloskin-site-core' ); ?></p>
-					<p>
-						<button type="button" class="button button-primary" data-media-cleanup-reset>
-							<?php echo esc_html__( 'Mulai Scan Baru', 'gloskin-site-core' ); ?>
-						</button>
-					</p>
+					<p><button type="button" class="button button-primary" data-media-cleanup-reset><?php echo esc_html__( 'Mulai Scan Baru', 'gloskin-site-core' ); ?></button></p>
 				</div>
 
 				<?php elseif ( $in_review ) : ?>
-				<!-- ── REVIEW / DELETING / VERIFYING ─────────────────── -->
 				<div class="gloskin-admin-card">
 					<h2><?php
 						if ( 'review_ready' === $effective ) { echo esc_html__( 'Scan selesai — tinjau kandidat', 'gloskin-site-core' ); }
@@ -162,8 +145,7 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 						<a class="button" href="<?php echo esc_url( $download_base . '&format=json' ); ?>"><?php echo esc_html__( 'Unduh JSON', 'gloskin-site-core' ); ?></a>
 						<a class="button" href="<?php echo esc_url( $download_base . '&format=csv' ); ?>"><?php echo esc_html__( 'Unduh CSV', 'gloskin-site-core' ); ?></a>
 					</p>
-					<div style="overflow-x:auto;">
-					<table class="widefat striped">
+					<div style="overflow-x:auto;"><table class="widefat striped">
 						<thead><tr>
 							<th><?php echo esc_html__( 'Thumbnail', 'gloskin-site-core' ); ?></th>
 							<th><?php echo esc_html__( 'File', 'gloskin-site-core' ); ?></th>
@@ -173,20 +155,12 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 							<th><?php echo esc_html__( 'Alasan', 'gloskin-site-core' ); ?></th>
 						</tr></thead>
 						<tbody data-media-cleanup-table></tbody>
-					</table>
-					</div>
+					</table></div>
 					<p data-media-cleanup-pagination></p>
 				</div>
 				<div class="gloskin-admin-card">
-					<label>
-						<input type="checkbox" data-media-cleanup-confirm>
-						<?php echo esc_html__( 'Saya memiliki backup database dan uploads terkini, dan memahami penghapusan bersifat permanen.', 'gloskin-site-core' ); ?>
-					</label>
-					<p>
-						<button type="button" class="button button-primary is-destructive" style="background:#c00;border-color:#c00;color:#fff;" data-media-cleanup-delete disabled>
-							<?php printf( esc_html__( 'Hapus %s gambar terkonfirmasi unused secara permanen', 'gloskin-site-core' ), esc_html( (string) $counts['confirmed-unused'] ) ); ?>
-						</button>
-					</p>
+					<label><input type="checkbox" data-media-cleanup-confirm> <?php echo esc_html__( 'Saya memiliki backup database dan uploads terkini, dan memahami penghapusan bersifat permanen.', 'gloskin-site-core' ); ?></label>
+					<p><button type="button" class="button button-primary is-destructive" style="background:#c00;border-color:#c00;color:#fff;" data-media-cleanup-delete disabled><?php printf( esc_html__( 'Hapus %s gambar terkonfirmasi unused secara permanen', 'gloskin-site-core' ), esc_html( (string) $counts['confirmed-unused'] ) ); ?></button></p>
 				</div>
 				<?php endif; ?>
 
@@ -197,18 +171,13 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 							? esc_html__( 'Menghapus kandidat…', 'gloskin-site-core' )
 							: esc_html__( 'Memverifikasi hasil…', 'gloskin-site-core' );
 					?></p>
-					<progress data-media-cleanup-progress
-						value="<?php echo esc_attr( (string) $state['deletion_cursor'] ); ?>"
-						max="<?php echo esc_attr( (string) max( 1, (int) $counts['confirmed-unused'] ) ); ?>"></progress>
+					<progress data-media-cleanup-progress value="<?php echo esc_attr( (string) $state['deletion_cursor'] ); ?>" max="<?php echo esc_attr( (string) max( 1, (int) $counts['confirmed-unused'] ) ); ?>"></progress>
 					<p data-media-cleanup-current><?php echo esc_html( (string) $state['current_file'] ); ?></p>
-					<p><button type="button" class="button button-primary" data-media-cleanup-delete-continue hidden>
-						<?php echo esc_html__( 'Lanjutkan', 'gloskin-site-core' ); ?>
-					</button></p>
+					<p><button type="button" class="button button-primary" data-media-cleanup-delete-continue><?php echo esc_html__( 'Lanjutkan', 'gloskin-site-core' ); ?></button></p>
 				</div>
 				<?php endif; ?>
 
 				<?php else : ?>
-				<!-- ── SCANNING / PENDING ────────────────────────────── -->
 				<div class="gloskin-admin-card">
 					<?php if ( 'pending' === $effective ) : ?>
 					<p><?php echo esc_html__( 'Scan Media Library untuk gambar lama yang tidak direferensikan.', 'gloskin-site-core' ); ?></p>
@@ -217,69 +186,37 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 						<li><?php echo esc_html__( 'Media terbaru, sistem, dan ambigu tetap terlindungi.', 'gloskin-site-core' ); ?></li>
 						<li><?php echo esc_html__( 'Menutup tab menghentikan request — buka lagi untuk melanjutkan.', 'gloskin-site-core' ); ?></li>
 					</ul>
-					<p>
-						<button type="button" class="button button-primary" data-media-cleanup-index>
-							<?php echo esc_html__( 'Scan Media Library', 'gloskin-site-core' ); ?>
-						</button>
-					</p>
+					<p><button type="button" class="button button-primary" data-media-cleanup-index><?php echo esc_html__( 'Scan Media Library', 'gloskin-site-core' ); ?></button></p>
 					<?php elseif ( 'indexing' === $effective ) : ?>
 					<h2><?php echo esc_html__( 'Memindai Media Library', 'gloskin-site-core' ); ?></h2>
-					<progress data-media-cleanup-progress
-						value="<?php echo esc_attr( (string) $state['processed'] ); ?>"
-						max="<?php echo esc_attr( (string) max( 1, (int) $state['total'] ) ); ?>"></progress>
-					<p role="status" aria-live="polite" data-media-cleanup-stage>
-						<?php echo esc_html( (int) $state['processed'] . ' / ' . (int) $state['total'] . ' ' . __( 'dipindai', 'gloskin-site-core' ) ); ?>
-					</p>
+					<progress data-media-cleanup-progress value="<?php echo esc_attr( (string) $state['processed'] ); ?>" max="<?php echo esc_attr( (string) max( 1, (int) $state['total'] ) ); ?>"></progress>
+					<p role="status" aria-live="polite" data-media-cleanup-stage><?php echo esc_html( (int) $state['processed'] . ' / ' . (int) $state['total'] . ' ' . __( 'dipindai', 'gloskin-site-core' ) ); ?></p>
 					<p data-media-cleanup-current><?php echo esc_html( (string) $state['current_file'] ); ?></p>
-					<p>
-						<strong><?php echo esc_html__( 'Kandidat aman:', 'gloskin-site-core' ); ?></strong>
-						<span data-count-unused><?php echo esc_html( (string) $counts['confirmed-unused'] ); ?></span>
-					</p>
-					<p>
-						<strong><?php echo esc_html__( 'Estimasi ruang:', 'gloskin-site-core' ); ?></strong>
-						<?php echo esc_html( size_format( (int) $state['estimated_bytes'] ) ); ?>
-					</p>
-					<p>
-						<button type="button" class="button button-primary" data-media-cleanup-index>
-							<?php echo esc_html__( 'Lanjutkan Scan', 'gloskin-site-core' ); ?>
-						</button>
-					</p>
-					<?php else : /* failed */ ?>
-					<div class="notice notice-error inline"><p>
-						<strong><?php echo esc_html__( 'Error:', 'gloskin-site-core' ); ?></strong>
-						<?php echo esc_html( (string) $state['last_error'] ); ?>
-					</p></div>
-					<p>
-						<button type="button" class="button button-primary" data-media-cleanup-index>
-							<?php echo esc_html__( 'Coba Lagi', 'gloskin-site-core' ); ?>
-						</button>
-					</p>
+					<p><strong><?php echo esc_html__( 'Kandidat aman:', 'gloskin-site-core' ); ?></strong> <span data-count-unused><?php echo esc_html( (string) $counts['confirmed-unused'] ); ?></span></p>
+					<p><strong><?php echo esc_html__( 'Estimasi ruang:', 'gloskin-site-core' ); ?></strong> <?php echo esc_html( size_format( (int) $state['estimated_bytes'] ) ); ?></p>
+					<p><button type="button" class="button button-primary" data-media-cleanup-index><?php echo esc_html__( 'Lanjutkan Scan', 'gloskin-site-core' ); ?></button></p>
+					<?php else : ?>
+					<div class="notice notice-error inline"><p><strong><?php echo esc_html__( 'Error:', 'gloskin-site-core' ); ?></strong> <?php echo esc_html( (string) $state['last_error'] ); ?></p></div>
+					<p><button type="button" class="button button-primary" data-media-cleanup-index><?php echo esc_html__( 'Coba Lagi', 'gloskin-site-core' ); ?></button></p>
 					<?php endif; ?>
 				</div>
 
 				<?php if ( 'indexing' === $effective || 'failed' === $status ) : ?>
-				<div class="gloskin-admin-card">
-					<ul data-media-cleanup-counts>
-						<li><?php echo esc_html__( 'Dipindai:', 'gloskin-site-core' ); ?> <strong data-count-processed><?php echo esc_html( (string) $state['processed'] ); ?></strong> / <?php echo esc_html( (string) $state['total'] ); ?></li>
-						<li><?php echo esc_html__( 'Digunakan:', 'gloskin-site-core' ); ?> <strong data-count-used><?php echo esc_html( (string) $counts['used'] ); ?></strong></li>
-						<li><?php echo esc_html__( 'Dilindungi:', 'gloskin-site-core' ); ?> <strong data-count-protected><?php echo esc_html( (string) $counts['protected'] ); ?></strong></li>
-						<li><?php echo esc_html__( 'Ambigu:', 'gloskin-site-core' ); ?> <strong data-count-ambiguous><?php echo esc_html( (string) $counts['ambiguous'] ); ?></strong></li>
-						<li><?php echo esc_html__( 'Kandidat unused:', 'gloskin-site-core' ); ?> <strong data-count-unused><?php echo esc_html( (string) $counts['confirmed-unused'] ); ?></strong></li>
-					</ul>
-				</div>
+				<div class="gloskin-admin-card"><ul data-media-cleanup-counts>
+					<li><?php echo esc_html__( 'Dipindai:', 'gloskin-site-core' ); ?> <strong data-count-processed><?php echo esc_html( (string) $state['processed'] ); ?></strong> / <?php echo esc_html( (string) $state['total'] ); ?></li>
+					<li><?php echo esc_html__( 'Digunakan:', 'gloskin-site-core' ); ?> <strong data-count-used><?php echo esc_html( (string) $counts['used'] ); ?></strong></li>
+					<li><?php echo esc_html__( 'Dilindungi:', 'gloskin-site-core' ); ?> <strong data-count-protected><?php echo esc_html( (string) $counts['protected'] ); ?></strong></li>
+					<li><?php echo esc_html__( 'Ambigu:', 'gloskin-site-core' ); ?> <strong data-count-ambiguous><?php echo esc_html( (string) $counts['ambiguous'] ); ?></strong></li>
+					<li><?php echo esc_html__( 'Kandidat unused:', 'gloskin-site-core' ); ?> <strong data-count-unused><?php echo esc_html( (string) $counts['confirmed-unused'] ); ?></strong></li>
+				</ul></div>
 				<?php endif; ?>
 				<?php endif; ?>
 
 				<div data-media-cleanup-error class="notice notice-error inline" hidden><p></p></div>
-
-			</div><!-- .gloskin-admin-workspace -->
-		</div><!-- #gloskin-admin-root -->
+			</div>
+		</div>
 		<?php
 	}
-
-	/* ------------------------------------------------------------------
-	 * AJAX
-	 * ---------------------------------------------------------------- */
 
 	/** @return void */
 	public function ajax() {
@@ -328,15 +265,11 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 		}
 	}
 
-	/* ------------------------------------------------------------------
-	 * Manifest download
-	 * ---------------------------------------------------------------- */
-
 	/** @return void */
 	public function download_manifest() {
 		if ( ! $this->current_user_is_owner() ) { $this->deny(); }
 		check_admin_referer( self::NONCE );
-		$state         = $this->resolver->summary();
+		$state           = $this->resolver->summary();
 		$download_status = 'failed' === (string) $state['status'] ? (string) $state['failed_from'] : (string) $state['status'];
 		if ( ! in_array( $download_status, array( 'review_ready', 'deleting', 'verifying', 'complete' ), true ) ) {
 			wp_die( esc_html__( 'Manifest belum siap.', 'gloskin-site-core' ), '', array( 'response' => 409 ) );
@@ -362,10 +295,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 		exit;
 	}
 
-	/* ------------------------------------------------------------------
-	 * Exact-owner gate
-	 * ---------------------------------------------------------------- */
-
 	/** @return bool */
 	private function current_user_is_owner() {
 		if ( ! current_user_can( self::CAPABILITY ) ) { return false; }
@@ -389,13 +318,13 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 	/** @param string $code @return string */
 	private function safe_error( $code ) {
 		$messages = array(
-			'resolver_locked'      => __( 'Resolver sedang diproses oleh request atau tab lain; akan dicoba kembali.', 'gloskin-site-core' ),
-			'invalid_state'        => __( 'State resolver tidak mengizinkan operasi tersebut.', 'gloskin-site-core' ),
+			'resolver_locked'       => __( 'Resolver sedang diproses oleh request atau tab lain; akan dicoba kembali.', 'gloskin-site-core' ),
+			'invalid_state'         => __( 'State resolver tidak mengizinkan operasi tersebut.', 'gloskin-site-core' ),
 			'confirmation_required' => __( 'Konfirmasi backup wajib sebelum penghapusan permanen.', 'gloskin-site-core' ),
-			'manifest_invalid'     => __( 'Manifest kandidat tidak valid atau berubah; penghapusan dihentikan.', 'gloskin-site-core' ),
-			'scan_failed'          => __( 'Pemindaian tidak lengkap; tidak ada kandidat yang boleh dihapus.', 'gloskin-site-core' ),
-			'verification_failed'  => __( 'Verifikasi akhir menemukan perubahan yang tidak aman.', 'gloskin-site-core' ),
-			'unexpected_error'     => __( 'Resolver gagal secara aman tanpa melanjutkan mutasi.', 'gloskin-site-core' ),
+			'manifest_invalid'      => __( 'Manifest kandidat tidak valid atau berubah; penghapusan dihentikan.', 'gloskin-site-core' ),
+			'scan_failed'           => __( 'Pemindaian tidak lengkap; tidak ada kandidat yang boleh dihapus.', 'gloskin-site-core' ),
+			'verification_failed'   => __( 'Verifikasi akhir menemukan perubahan yang tidak aman.', 'gloskin-site-core' ),
+			'unexpected_error'      => __( 'Resolver gagal secara aman tanpa melanjutkan mutasi.', 'gloskin-site-core' ),
 		);
 		return isset( $messages[ $code ] ) ? $messages[ $code ] : $messages['unexpected_error'];
 	}

@@ -56,7 +56,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 	/** @return array<string,mixed> */
 	public function summary() {
 		$state = $this->get_state();
-		// results holds only candidates — safe to expose count, not items.
 		$state['candidate_count'] = count( (array) $state['results'] );
 		unset( $state['results'] );
 		$state['batch_size']    = self::BATCH_SIZE;
@@ -95,9 +94,7 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 	 */
 	public function index_batch() {
 		$state = $this->get_state();
-		// Already complete: return summary (idempotent).
 		if ( 'complete' === (string) $state['status'] ) { return $this->summary(); }
-		// Recover from failed indexing.
 		if ( 'failed' === (string) $state['status'] && in_array( (string) $state['failed_from'], array( 'pending', 'indexing' ), true ) ) {
 			$state['status'] = (string) $state['failed_from'];
 		}
@@ -112,7 +109,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 				if ( get_option( self::MANIFEST_OPTION, false ) ) {
 					throw new RuntimeException( 'stale_manifest: Manifest lama terdeteksi; gunakan Reset Scan terlebih dahulu.' );
 				}
-				/* Freeze scan boundary: only IDs <= max at scan start enter this run. */
 				$state['scan_max_attachment_id'] = $this->max_image_attachment_id();
 				$state['total']      = $this->image_attachment_count_in_boundary( (int) $state['scan_max_attachment_id'] );
 				$state['status']     = 'indexing';
@@ -128,7 +124,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 			foreach ( $ids as $id ) {
 				if ( $completed > 0 && microtime( true ) - $batch_started >= self::REQUEST_BUDGET_SECONDS ) { break; }
 				$result = $this->classify_attachment( $id );
-				/* Only persist confirmed-unused candidates in results[] to bound storage. */
 				if ( 'confirmed-unused' === (string) $result['classification'] ) {
 					$state['results'][] = $result;
 				}
@@ -143,7 +138,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 			}
 
 			if ( $completed === count( $ids ) && count( $ids ) < self::BATCH_SIZE ) {
-				/* All IDs in boundary processed: seal manifest and move to review. */
 				$this->seal_manifest( $state );
 				$state['status']       = 'review_ready';
 				$state['current_file'] = '';
@@ -181,7 +175,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 			throw new RuntimeException( 'invalid_state: Penghapusan belum tersedia.' );
 		}
 		$manifest = $this->validated_manifest( $state, $manifest_token );
-		/* Idempotent stale cursor: client echoes a cursor we've already passed. */
 		if ( (int) $client_cursor !== (int) $state['deletion_cursor'] ) { return $this->summary(); }
 		$token = $this->acquire_lock();
 		if ( '' === $token ) { throw new RuntimeException( 'resolver_locked: Resolver sedang diproses oleh request lain.' ); }
@@ -197,7 +190,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 				if ( $completed > 0 && microtime( true ) - $batch_start >= self::REQUEST_BUDGET_SECONDS ) { break; }
 				$id = absint( $candidate['id'] );
 				$state['current_file'] = (string) $candidate['filename'];
-				/* JIT reclassification: revalidate immediately before delete. */
 				$fresh = $this->classify_attachment( $id );
 				if ( 'confirmed-unused' !== (string) $fresh['classification'] || ! hash_equals( (string) $candidate['fingerprint'], (string) $fresh['fingerprint'] ) ) {
 					$state['skipped'][ $id ] = array( 'reason' => 'Referensi, metadata, atau file berubah setelah dry-run.', 'classification' => (string) $fresh['classification'] );
@@ -205,7 +197,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 					$completed++;
 					continue;
 				}
-				/* Final safety: confirm attachment type and upload-directory ownership. */
 				$post = get_post( $id );
 				if ( ! ( $post instanceof WP_Post ) || 'attachment' !== (string) $post->post_type || 0 !== strpos( (string) $post->post_mime_type, 'image/' ) || ! $this->is_current_upload_file( (string) get_attached_file( $id ) ) ) {
 					$state['skipped'][ $id ] = array( 'reason' => 'Guard tipe/path attachment akhir gagal.' );
@@ -272,7 +263,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 				if ( $completed > 0 && microtime( true ) - $batch_start >= self::REQUEST_BUDGET_SECONDS ) { break; }
 				$id = absint( $candidate['id'] );
 				if ( isset( $state['deleted'][ $id ] ) ) {
-					/* Deleted: attachment post and files must be gone. */
 					if ( get_post( $id ) instanceof WP_Post ) {
 						throw new RuntimeException( 'verification_failed: Attachment terhapus masih memiliki record: ' . $id );
 					}
@@ -282,7 +272,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 						}
 					}
 				} else {
-					/* Skipped or failed: attachment must still exist. */
 					$post = get_post( $id );
 					if ( ! ( $post instanceof WP_Post ) ) {
 						throw new RuntimeException( 'verification_failed: Attachment non-kandidat hilang setelah run: ' . $id );
@@ -380,7 +369,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 			}
 			$base['bytes'] += (int) filesize( $f );
 		}
-		/* Age protection. */
 		$cutoff   = time() - ( self::RECENT_DAYS * DAY_IN_SECONDS );
 		$uploaded = strtotime( (string) $post->post_date_gmt . ' UTC' );
 		$modified = strtotime( (string) $post->post_modified_gmt . ' UTC' );
@@ -389,13 +377,11 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 			$base['reason'] = 'Diunggah atau diubah dalam 30 hari terakhir.';
 			return $base;
 		}
-		/* System/registry protection. */
 		$sys = $this->system_media_reason( $id );
 		if ( '' !== $sys ) { $base['classification'] = 'protected'; $base['reason'] = $sys; return $base; }
-		/* Reference scan. */
-		$scan              = $this->scan_references( $id, $file, $metadata );
+		$scan               = $this->scan_references( $id, $file, $metadata );
 		$base['references'] = $scan['hard'];
-		$base['warnings']  = array_merge( $scan['soft_reasons'], $scan['warnings'] );
+		$base['warnings']   = array_merge( $scan['soft_reasons'], $scan['warnings'] );
 		if ( $scan['hard'] ) { $base['classification'] = 'used'; $base['reason'] = 'Referensi ditemukan.'; return $base; }
 		if ( $scan['soft_reasons'] || $scan['warnings'] ) { $base['classification'] = 'ambiguous'; $base['reason'] = 'Referensi lemah atau pemindaian tidak lengkap; fail closed.'; return $base; }
 		$base['classification'] = 'confirmed-unused';
@@ -415,55 +401,86 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 	 */
 	private function scan_references( $id, $file, array $metadata ) {
 		global $wpdb;
-		$hard        = array();
+		$hard         = array();
 		$soft_reasons = array();
-		$warnings    = array();
+		$warnings     = array();
+		$candidate_id = (string) absint( $id );
 
-		/* 1. Known structured postmeta keys that store attachment IDs. */
-		$known_meta = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		/* 1a. Featured-image references: bind the candidate before LIMIT. */
+		$thumbnail_rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			"SELECT post_id, meta_key, meta_value FROM {$wpdb->postmeta}
-			 WHERE meta_key IN ('_thumbnail_id','_product_image_gallery')
-			    OR meta_key LIKE %s OR meta_key LIKE %s OR meta_key LIKE %s
+			 WHERE meta_key = '_thumbnail_id' AND meta_value = %s
 			 LIMIT %d",
-			'%_gloskin%image%', '%_gloskin%media%', '%_gloskin%gallery%',
+			$candidate_id,
 			self::MAX_MATCHES_PER_STORE + 1
 		) );
-		if ( '' !== (string) $wpdb->last_error ) { $warnings[] = 'postmeta structured-key query failed'; }
-		foreach ( array_slice( (array) $known_meta, 0, self::MAX_MATCHES_PER_STORE ) as $row ) {
+		if ( '' !== (string) $wpdb->last_error ) { $warnings[] = 'postmeta thumbnail query failed'; }
+		if ( count( (array) $thumbnail_rows ) > self::MAX_MATCHES_PER_STORE ) { $warnings[] = 'postmeta thumbnail match limit exceeded'; }
+		foreach ( array_slice( (array) $thumbnail_rows, 0, self::MAX_MATCHES_PER_STORE ) as $row ) {
+			$hard[] = 'postmeta:' . absint( $row->post_id ) . ':_thumbnail_id';
+		}
+
+		/* 1b. Woo gallery references: exact CSV membership, candidate-bound before LIMIT. */
+		$gallery_rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			"SELECT post_id, meta_key, meta_value FROM {$wpdb->postmeta}
+			 WHERE meta_key = '_product_image_gallery'
+			   AND FIND_IN_SET( %s, REPLACE( meta_value, ' ', '' ) ) > 0
+			 LIMIT %d",
+			$candidate_id,
+			self::MAX_MATCHES_PER_STORE + 1
+		) );
+		if ( '' !== (string) $wpdb->last_error ) { $warnings[] = 'postmeta Woo gallery query failed'; }
+		if ( count( (array) $gallery_rows ) > self::MAX_MATCHES_PER_STORE ) { $warnings[] = 'postmeta Woo gallery match limit exceeded'; }
+		foreach ( array_slice( (array) $gallery_rows, 0, self::MAX_MATCHES_PER_STORE ) as $row ) {
+			$hard[] = 'postmeta:' . absint( $row->post_id ) . ':_product_image_gallery';
+		}
+
+		/* 1c. Gloskin image/media/gallery structured meta: candidate-bound numeric token before LIMIT. */
+		$id_boundary = '(^|[^0-9])' . preg_quote( $candidate_id, '/' ) . '([^0-9]|$)';
+		$gloskin_rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			"SELECT post_id, meta_key, meta_value FROM {$wpdb->postmeta}
+			 WHERE (meta_key LIKE %s OR meta_key LIKE %s OR meta_key LIKE %s)
+			   AND meta_value REGEXP %s
+			 LIMIT %d",
+			'%gloskin%image%', '%gloskin%media%', '%gloskin%gallery%',
+			$id_boundary,
+			self::MAX_MATCHES_PER_STORE + 1
+		) );
+		if ( '' !== (string) $wpdb->last_error ) { $warnings[] = 'postmeta Gloskin structured query failed'; }
+		if ( count( (array) $gloskin_rows ) > self::MAX_MATCHES_PER_STORE ) { $warnings[] = 'postmeta Gloskin structured match limit exceeded'; }
+		foreach ( array_slice( (array) $gloskin_rows, 0, self::MAX_MATCHES_PER_STORE ) as $row ) {
 			if ( $this->structured_value_contains_id( (string) $row->meta_value, $id ) ) {
 				$hard[] = 'postmeta:' . absint( $row->post_id ) . ':' . sanitize_key( $row->meta_key );
+			} else {
+				/* Candidate-bound token exists but the structure is unknown: protect conservatively. */
+				$warnings[] = 'postmeta Gloskin structured value ambiguous for candidate ' . $candidate_id;
 			}
 		}
-		if ( count( (array) $known_meta ) > self::MAX_MATCHES_PER_STORE ) { $warnings[] = 'postmeta structured-key match limit exceeded'; }
 
-		if ( $hard ) { return array( 'hard' => array_values( array_unique( $hard ) ), 'soft_reasons' => array(), 'warnings' => $warnings ); }
+		if ( $hard ) { return array( 'hard' => array_values( array_unique( $hard ) ), 'soft_reasons' => array(), 'warnings' => array_values( array_unique( $warnings ) ) ); }
 
 		/* 2. URL and structured-token LIKE searches. Never naked bare numeric IDs. */
 		$tokens = $this->attachment_reference_tokens( $id, $file, $metadata );
 		foreach ( $tokens as $token_value => $strength ) {
 			$like = '%' . $wpdb->esc_like( $token_value ) . '%';
-			/* Post content / excerpt. */
 			$rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 				"SELECT ID FROM {$wpdb->posts} WHERE ID <> %d AND (post_content LIKE %s OR post_excerpt LIKE %s) LIMIT %d",
 				$id, $like, $like, self::MAX_MATCHES_PER_STORE + 1
 			) );
 			if ( '' !== (string) $wpdb->last_error ) { $warnings[] = 'content query failed'; }
 			$this->append_matches( $rows, 'content', $strength, $hard, $soft_reasons, $warnings );
-			/* Postmeta broad — attachment URL / filename in any meta value. */
 			$rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 				"SELECT meta_id AS ID FROM {$wpdb->postmeta} WHERE post_id <> %d AND meta_value LIKE %s LIMIT %d",
 				$id, $like, self::MAX_MATCHES_PER_STORE + 1
 			) );
 			if ( '' !== (string) $wpdb->last_error ) { $warnings[] = 'postmeta broad query failed'; }
 			$this->append_matches( $rows, 'postmeta', $strength, $hard, $soft_reasons, $warnings );
-			/* Term meta. */
 			$rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 				"SELECT meta_id AS ID FROM {$wpdb->termmeta} WHERE meta_value LIKE %s LIMIT %d",
 				$like, self::MAX_MATCHES_PER_STORE + 1
 			) );
 			if ( '' !== (string) $wpdb->last_error ) { $warnings[] = 'termmeta query failed'; }
 			$this->append_matches( $rows, 'termmeta', $strength, $hard, $soft_reasons, $warnings );
-			/* Options (excluding our own). */
 			$rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 				"SELECT option_id AS ID FROM {$wpdb->options} WHERE option_name NOT IN (%s,%s,%s) AND option_value LIKE %s LIMIT %d",
 				self::STATE_OPTION, self::LOCK_OPTION, self::MANIFEST_OPTION, $like, self::MAX_MATCHES_PER_STORE + 1
@@ -501,8 +518,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 		$tokens  = array();
 		$url     = (string) wp_get_attachment_url( $id );
 		$relative = isset( $metadata['file'] ) ? ltrim( (string) $metadata['file'], '/' ) : '';
-
-		/* Highly specific: full URL, relative upload path, WP Gutenberg class, structured JSON/serialized patterns. */
 		foreach ( array( $url, $relative, basename( $file ), 'wp-image-' . $id,
 			'"id":' . $id, '"mediaId":' . $id, '"media_id":' . $id,
 			'"ids":[' . $id,
@@ -511,8 +526,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 		) as $value ) {
 			if ( '' !== $value ) { $tokens[ $value ] = 'hard'; }
 		}
-
-		/* Generated sizes: filename + full URL variant. */
 		if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
 			foreach ( $metadata['sizes'] as $size ) {
 				if ( ! is_array( $size ) || empty( $size['file'] ) ) { continue; }
@@ -520,14 +533,9 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 				if ( '' !== $url ) { $tokens[ trailingslashit( dirname( $url ) ) . (string) $size['file'] ] = 'hard'; }
 			}
 		}
-		/* original_image filename. */
 		if ( ! empty( $metadata['original_image'] ) ) {
 			$tokens[ (string) $metadata['original_image'] ] = 'hard';
 		}
-
-		/* NOTE: bare numeric ID `(string) $id` is intentionally excluded.
-		 * It would cause broad LIKE '%123%' searches matching unrelated content. */
-
 		return $tokens;
 	}
 
@@ -540,7 +548,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 		if ( $id === absint( get_option( 'site_icon' ) ) || $id === absint( get_theme_mod( 'custom_logo' ) ) ) {
 			return 'Site icon, favicon, atau custom logo.';
 		}
-		/* Check all theme mods for any attachment ID reference (header_image_data, nav_menu_locations imagery, etc.). */
 		foreach ( (array) get_theme_mods() as $mod_value ) {
 			if ( is_numeric( $mod_value ) && (int) $mod_value === $id ) { return 'Digunakan sebagai theme mod (header image, dsb.).'; }
 		}
