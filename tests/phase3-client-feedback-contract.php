@@ -47,11 +47,11 @@ foreach ( array(
 }
 
 /* ---------------------------------------------------------------------------
- * 1. Version sync at 0.7.175
+ * 1. Version sync at 0.7.176
  * ------------------------------------------------------------------------- */
 $ok(
-	false !== strpos( $plugin_php, 'Version: 0.7.175' ) && false !== strpos( $kernel_php, "const VERSION = '0.7.175';" ),
-	'Phase-3 runtime/cache version must be synchronized at 0.7.175'
+	false !== strpos( $plugin_php, 'Version: 0.7.176' ) && false !== strpos( $kernel_php, "const VERSION = '0.7.176';" ),
+	'Phase-3 runtime/cache version must be synchronized at 0.7.176'
 );
 
 /* ---------------------------------------------------------------------------
@@ -324,6 +324,48 @@ $ok( false !== strpos( $admin_php, 'wp_create_nonce' ), 'Admin must generate a n
 $ok( false !== strpos( $kernel_php, 'class-gloskin-site-core-phase3-migration.php' ), 'Kernel must require phase3-migration.php' );
 $ok( false !== strpos( $kernel_php, 'class-gloskin-site-core-phase3-migration-admin.php' ), 'Kernel must require phase3-migration-admin.php' );
 $ok( false !== strpos( $kernel_php, 'Gloskin_Site_Core_Phase3_Migration_Admin' ), 'Kernel must instantiate Phase3 admin' );
+
+/* ---------------------------------------------------------------------------
+ * 20. Fail-closed production verifier + authoritative state owners
+ * ------------------------------------------------------------------------- */
+$verify_start = strpos( $migration, 'private function run_verify( array $state )' );
+$verify_end   = false !== $verify_start ? strpos( $migration, 'private function ', (int) $verify_start + 1 ) : false;
+$verify_body  = ( false !== $verify_start && false !== $verify_end )
+	? substr( $migration, (int) $verify_start, (int) $verify_end - (int) $verify_start )
+	: '';
+$ok( '' !== $verify_body, 'run_verify() must be present for production verification' );
+$ok( false !== strpos( $verify_body, '25 !== $sk_reconciled' ), 'run_verify() must require exactly 25 Skincare reconciled' );
+$ok( false !== strpos( $verify_body, '48 !== $tr_reconciled' ), 'run_verify() must require exactly 48 Woo Treatment Products reconciled' );
+$ok( false !== strpos( $verify_body, '8 !== $rec_total' ), 'run_verify() must require exactly 8 informational Treatments reconciled' );
+$ok( false !== strpos( $verify_body, '4 !== $paths_updated' ), 'run_verify() must require exactly 4 consultation paths updated' );
+$ok( false !== strpos( $verify_body, '4 !== $paths_bound' ), 'run_verify() must require exactly 4 consultation path media bindings' );
+$ok(
+	false !== strpos( $verify_body, "true !== (bool) ( \$page_audit['hero_bound'] ?? false )" ),
+	'run_verify() must require Treatment hero media binding success'
+);
+$ok(
+	false !== strpos( $verify_body, '$required_skips' )
+		&& false !== strpos( $verify_body, "\$media_audit['skipped']" )
+		&& false !== strpos( $verify_body, "\$sk_audit['skipped']" )
+		&& false !== strpos( $verify_body, "\$tr_audit['skipped']" )
+		&& false !== strpos( $verify_body, "\$rec_audit['skipped']" )
+		&& false !== strpos( $verify_body, "\$page_audit['skipped']" )
+		&& false !== strpos( $verify_body, '0 !== $required_skips' ),
+	'run_verify() must fail on any required resolved-target skip'
+);
+$ok(
+	false !== strpos( $verify_body, 'self::HOME_FEATURE_META' )
+		&& false !== strpos( $verify_body, "'numberposts' => -1" )
+		&& false !== strpos( $verify_body, '3 !== $home_feature_count' ),
+	'run_verify() must require exactly 3 informational Treatments with Home-feature meta'
+);
+$ok(
+	false !== strpos( $migration, "STATE_OPTION   = 'gloskin_site_core_client_feedback_phase3_v1_state'" )
+		&& false !== strpos( $migration, "LOCK_OPTION    = 'gloskin_site_core_client_feedback_phase3_v1_lock'" )
+		&& false === strpos( $migration, "'gloskin_site_core_phase3_v1_state'" )
+		&& false === strpos( $migration, "'gloskin_site_core_phase3_v1_lock'" ),
+	'Phase-3 STATE_OPTION / LOCK_OPTION must match authoritative 77ee owners with no alternate state owner'
+);
 
 /* ---------------------------------------------------------------------------
  * Report

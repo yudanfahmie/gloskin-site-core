@@ -29,8 +29,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Gloskin_Site_Core_Phase3_Migration {
 
 	const MANIFEST_ID    = 'gloskin-client-feedback-phase3-migration-v1';
-	const STATE_OPTION   = 'gloskin_site_core_phase3_v1_state';
-	const LOCK_OPTION    = 'gloskin_site_core_phase3_v1_lock';
+	const STATE_OPTION   = 'gloskin_site_core_client_feedback_phase3_v1_state';
+	const LOCK_OPTION    = 'gloskin_site_core_client_feedback_phase3_v1_lock';
 	const LOCK_TTL       = 300;
 
 	/* Attachment provenance meta — SHA-256 dedup. */
@@ -119,8 +119,10 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			$steps = $this->steps();
 
 			if ( $index >= count( $steps ) ) {
-				$state['status']     = 'complete';
-				$state['updated_at'] = time();
+				$this->run_verify( $state );
+				$state['manifest_fingerprint'] = $this->compute_fingerprint();
+				$state['status']               = 'complete';
+				$state['updated_at']           = time();
 				$this->save_state( $state );
 				$this->release_lock( $token );
 				return $this->response_state( $state );
@@ -175,6 +177,7 @@ final class Gloskin_Site_Core_Phase3_Migration {
 					break;
 
 				case 'complete':
+					$this->run_verify( $state );
 					$state['manifest_fingerprint'] = $this->compute_fingerprint();
 					$state['status']               = 'complete';
 					if ( function_exists( 'flush_rewrite_rules' ) ) {
@@ -879,25 +882,61 @@ final class Gloskin_Site_Core_Phase3_Migration {
 	private function run_verify( array $state ) {
 		$errors = array();
 
-		/* Verify skincare product count in audit. */
-		$sk_audit = (array) ( $state['audit']['skincare'] ?? array() );
+		/* Fail closed against the authoritative 77ee resolved-target contract. */
+		$sk_audit      = (array) ( $state['audit']['skincare'] ?? array() );
 		$sk_reconciled = (int) ( $sk_audit['created'] ?? 0 ) + (int) ( $sk_audit['updated'] ?? 0 ) + (int) ( $sk_audit['reused'] ?? 0 );
-		if ( $sk_reconciled < 1 ) {
-			$errors[] = 'Skincare reconcile tidak menghasilkan produk yang diproses.';
+		if ( 25 !== $sk_reconciled ) {
+			$errors[] = 'Skincare reconcile harus tepat 25; ditemukan ' . $sk_reconciled . '.';
 		}
 
-		/* Verify treatment product count in audit. */
-		$tr_audit = (array) ( $state['audit']['treatment_products'] ?? array() );
+		$tr_audit      = (array) ( $state['audit']['treatment_products'] ?? array() );
 		$tr_reconciled = (int) ( $tr_audit['created'] ?? 0 ) + (int) ( $tr_audit['updated'] ?? 0 ) + (int) ( $tr_audit['reused'] ?? 0 );
-		if ( $tr_reconciled < 1 ) {
-			$errors[] = 'Treatment product reconcile tidak menghasilkan produk yang diproses.';
+		if ( 48 !== $tr_reconciled ) {
+			$errors[] = 'Treatment product reconcile harus tepat 48; ditemukan ' . $tr_reconciled . '.';
 		}
 
-		/* Verify treatment record count. */
-		$rec_audit  = (array) ( $state['audit']['treatment_records'] ?? array() );
-		$rec_total  = (int) ( $rec_audit['created'] ?? 0 ) + (int) ( $rec_audit['updated'] ?? 0 ) + (int) ( $rec_audit['reused'] ?? 0 );
-		if ( $rec_total < 1 ) {
-			$errors[] = 'Treatment record reconcile tidak menghasilkan record yang diproses.';
+		$rec_audit = (array) ( $state['audit']['treatment_records'] ?? array() );
+		$rec_total = (int) ( $rec_audit['created'] ?? 0 ) + (int) ( $rec_audit['updated'] ?? 0 ) + (int) ( $rec_audit['reused'] ?? 0 );
+		if ( 8 !== $rec_total ) {
+			$errors[] = 'Treatment record reconcile harus tepat 8; ditemukan ' . $rec_total . '.';
+		}
+
+		$paths_audit   = (array) ( $state['audit']['concerns_paths'] ?? array() );
+		$paths_updated = (int) ( $paths_audit['paths_updated'] ?? 0 );
+		if ( 4 !== $paths_updated ) {
+			$errors[] = 'Consultation path update harus tepat 4; ditemukan ' . $paths_updated . '.';
+		}
+
+		$page_audit  = (array) ( $state['audit']['page_media'] ?? array() );
+		$paths_bound = (int) ( $page_audit['paths_bound'] ?? 0 );
+		if ( 4 !== $paths_bound ) {
+			$errors[] = 'Consultation path media binding harus tepat 4; ditemukan ' . $paths_bound . '.';
+		}
+		if ( true !== (bool) ( $page_audit['hero_bound'] ?? false ) ) {
+			$errors[] = 'Treatment hero media wajib terikat.';
+		}
+
+		$media_audit    = (array) ( $state['audit']['media'] ?? array() );
+		$required_skips = (int) ( $media_audit['skipped'] ?? 0 )
+			+ (int) ( $sk_audit['skipped'] ?? 0 )
+			+ (int) ( $tr_audit['skipped'] ?? 0 )
+			+ (int) ( $rec_audit['skipped'] ?? 0 )
+			+ (int) ( $page_audit['skipped'] ?? 0 );
+		if ( 0 !== $required_skips ) {
+			$errors[] = 'Target resolved wajib tidak memiliki skip; ditemukan ' . $required_skips . '.';
+		}
+
+		$home_feature_ids = get_posts( array(
+			'post_type'   => Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE,
+			'post_status' => 'any',
+			'meta_key'    => self::HOME_FEATURE_META, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- bounded Phase-3 verifier
+			'meta_value'  => '1', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- bounded Phase-3 verifier
+			'fields'      => 'ids',
+			'numberposts' => -1,
+		) );
+		$home_feature_count = is_array( $home_feature_ids ) ? count( array_unique( array_map( 'intval', $home_feature_ids ) ) ) : 0;
+		if ( 3 !== $home_feature_count ) {
+			$errors[] = 'Informational Treatment dengan ' . self::HOME_FEATURE_META . '=true harus tepat 3; ditemukan ' . $home_feature_count . '.';
 		}
 
 		/* Verify four path slugs still exist. */
