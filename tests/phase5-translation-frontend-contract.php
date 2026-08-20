@@ -2,6 +2,7 @@
 $root = dirname(__DIR__);
 $translation = file_get_contents($root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-translation.php');
 $language = file_get_contents($root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-language.php');
+$projection = file_get_contents($root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-language-projection.php');
 $kernel = file_get_contents($root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php');
 $page_lookup = file_get_contents($root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-page-lookup.php');
 $plugin = file_get_contents($root . '/plugin/gloskin-site-core/gloskin-site-core.php');
@@ -28,13 +29,15 @@ $must = array(
     'founder role' => "gloskin_about_founder_role",
     'founder story' => "gloskin_about_founder_story",
     'consultation answer label projection' => "answer_label_",
+    'get_posts projection bridge' => "suppress_filters",
+    'hard-coded interface text bridge' => "translate_interface_html",
 );
 foreach ($must as $name => $needle) {
-    if (strpos($language . $translation . $page_lookup, $needle) === false) { fwrite(STDERR, "FAIL: $name\n"); exit(1); }
+    if (strpos($language . $projection . $translation . $page_lookup, $needle) === false) { fwrite(STDERR, "FAIL: $name\n"); exit(1); }
 }
 if (strpos($kernel, "const VERSION = '0.7.182';") === false || strpos($plugin, 'Version: 0.7.182') === false) { fwrite(STDERR, "FAIL: version\n"); exit(1); }
 if (substr_count($kernel, 'register_frontend') !== 1 || strpos($kernel, 'Gloskin_Site_Core_Language') === false) { fwrite(STDERR, "FAIL: frontend registration\n"); exit(1); }
-if (strpos($language, '@huggingface/transformers') !== false || strpos($language, 'Xenova/opus-mt-id-en') !== false) { fwrite(STDERR, "FAIL: model leaked into frontend runtime\n"); exit(1); }
+if (strpos($language . $projection, '@huggingface/transformers') !== false || strpos($language . $projection, 'Xenova/opus-mt-id-en') !== false) { fwrite(STDERR, "FAIL: model leaked into frontend runtime\n"); exit(1); }
 if (strpos($language, 'set_price') !== false || strpos($language, 'set_stock') !== false || strpos($language, 'set_sku') !== false) { fwrite(STDERR, "FAIL: Woo commercial state touched\n"); exit(1); }
 if (strpos($kernel, 'phase3-migration.php') !== false || strpos($kernel, 'Phase3_Migration_Admin') !== false) { fwrite(STDERR, "FAIL: retired Phase 3 runtime resurrected\n"); exit(1); }
 echo "Phase 5 translation frontend contract: PASS\n";

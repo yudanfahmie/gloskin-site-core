@@ -98,7 +98,10 @@ final class Gloskin_Site_Core_Kernel {
 
 		$language = new Gloskin_Site_Core_Language( $this->plugin_file );
 		$language->register_frontend();
+		$language_projection = new Gloskin_Site_Core_Language_Projection();
+		$language_projection->register();
 		$this->services[] = $language;
+		$this->services[] = $language_projection;
 
 		require_once __DIR__ . '/class-gloskin-site-core-navigation-service.php';
 		require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php';
@@ -145,6 +148,7 @@ final class Gloskin_Site_Core_Kernel {
 		require_once __DIR__ . '/class-gloskin-site-core-page-lookup.php';
 		require_once __DIR__ . '/class-gloskin-site-core-translation.php';
 		require_once __DIR__ . '/class-gloskin-site-core-language.php';
+		require_once __DIR__ . '/class-gloskin-site-core-language-projection.php';
 	}
 
 	/**
