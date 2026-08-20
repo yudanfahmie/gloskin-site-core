@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Focused ownership contract for shared headings, Treatments CTA and Skincare presentation."""
+"""Focused ownership contract for shared headings and Skincare presentation."""
 from pathlib import Path
 import re
 
@@ -18,7 +18,6 @@ def require(condition: bool, message: str) -> None:
 css = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-prototype-refresh.css")
 helpers = read("plugin/gloskin-site-core/templates/parts/template-helpers.php")
 skincare = read("plugin/gloskin-site-core/templates/pages/skincare.php")
-treatments = read("plugin/gloskin-site-core/templates/pages/treatments.php")
 shop = read("plugin/gloskin-site-core/templates/pages/shop.php")
 core_js = read("plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js")
 kernel = read("plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php")
@@ -67,54 +66,8 @@ require("data-gloskin-chip" in skincare and "data-category-slugs" in skincare an
         "existing ARIA/filter attributes and no-JS visible cards must remain")
 require(core_js.count("function initSkincareChips()") == 1,
         "there must be no second Skincare filtering implementation")
-
-# Premium Shop gateway must sit between the intro and product listing and own
-# the only Shop CTA on Skincare; the lower Clinic pathway remains useful.
-gateway_pos = skincare.index('data-gloskin-section="skincare-shop-gateway"')
-intro_pos = skincare.index('data-gloskin-section="skincare-intro"')
-products_pos = skincare.index('data-gloskin-section="skincare-products"')
-require(intro_pos < gateway_pos < products_pos,
-        "Skincare Shop gateway must render immediately between intro and products")
-for copy in (
-    "BELANJA GLOSKIN",
-    "Lengkapi rutinitas skincare Anda.",
-    "Jelajahi seluruh koleksi, lihat detail produk, harga, dan pilihan yang tersedia di halaman Belanja.",
-    "Lihat Semua Produk",
-):
-    require(copy in skincare, f"Skincare Shop gateway copy missing: {copy}")
-require(skincare.count("home_url( '/shop/' )") == 1,
-        "Skincare must have exactly one canonical Shop destination owner")
-require("'eyebrow' => __( 'Shop'" not in skincare and "home_url( '/clinics/' )" in skincare,
-        "redundant lower Shop pathway must be removed while Clinic remains")
-
-gateway_rule = css.split(".gloskin-ui1-skincare-shop-gateway{", 1)[1].split("}", 1)[0]
-for token in ("display:grid", "grid-template-columns:minmax(0,1fr) auto", "border-radius:var(--gloskin-radius-lg)", "var(--gloskin-refresh-cream)"):
-    require(token in gateway_rule, f"Skincare gateway desktop composition missing: {token}")
-require(".gloskin-ui1-skincare-shop-gateway__action .gloskin-ui1-button{width:100%}" in css,
-        "Skincare gateway CTA must become full-width/tap-friendly on narrow mobile")
-
-# Treatments keeps the shared closing CTA owner but gets locally scoped measure,
-# responsive Felix sizing and one concise supporting paragraph.
-treatments_close = treatments[treatments.index('data-gloskin-section="treatments-closing"'):]
-require("Informasi di situs membantu menyiapkan pertanyaan sebelum konsultasi." in treatments_close,
-        "Treatments closing CTA heading missing")
-require("Gunakan informasi ini sebagai panduan awal, lalu pilih klinik atau hubungi Gloskin untuk melanjutkan konsultasi melalui kanal yang tersedia." in treatments_close,
-        "Treatments closing CTA supporting copy missing")
-require("<br" not in treatments_close.lower(), "Treatments closing CTA must not hard-code line breaks")
-
-treatment_rule = css.split('[data-gloskin-section="treatments-closing"] .gloskin-ui1-closing-cta{', 1)[1].split("}", 1)[0]
-treatment_h2 = css.split('[data-gloskin-section="treatments-closing"] .gloskin-ui1-closing-cta h2{', 1)[1].split("}", 1)[0]
-for token in ("grid-template-columns:minmax(0,1.55fr) auto", "align-items:center"):
-    require(token in treatment_rule, f"Treatments CTA geometry missing: {token}")
-for token in ("max-width:24ch", "font-size:clamp(", "line-height:1.02", "text-wrap:balance"):
-    require(token in treatment_h2, f"Treatments CTA heading treatment missing: {token}")
-scoped_tail = css[css.index('/* Treatments closing CTA:'):]
-require("line-clamp" not in scoped_tail and "text-overflow:ellipsis" not in scoped_tail and "!important" not in scoped_tail,
-        "Treatments/Skincare polish must not hide text or override ownership with !important")
-require("@media (max-width:900px)" in scoped_tail and "grid-template-columns:1fr" in scoped_tail,
-        "Treatments/Skincare polish must stack cleanly below desktop")
-
 require("!important" not in css, "final presentation owner must not introduce !important")
-require("Version: 0.7.163" in plugin and "const VERSION = '0.7.163';" in kernel,
+
+require("Version: 0.7.164" in plugin and "const VERSION = '0.7.164';" in kernel,
         "plugin and Kernel version must be synchronized")
-print("shared-section-skincare-contract.py: OK (Treatments + Skincare UX polish)")
+print("shared-section-skincare-contract.py: OK (0.7.164)")

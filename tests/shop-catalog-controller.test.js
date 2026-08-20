@@ -6,12 +6,14 @@ const assert = require('assert');
 
 const rootDir = path.join(__dirname, '..');
 const ownerPath = path.join(rootDir, 'plugin', 'gloskin-site-core', 'assets', 'js', 'gloskin-ui1-shop-discovery.js');
+const cssPath = path.join(rootDir, 'plugin', 'gloskin-site-core', 'assets', 'css', 'gloskin-ui1-shop-discovery.css');
 const corePath = path.join(rootDir, 'plugin', 'gloskin-site-core', 'assets', 'js', 'gloskin-ui1-core.js');
 const templatePath = path.join(rootDir, 'plugin', 'gloskin-site-core', 'templates', 'pages', 'shop.php');
 const routeTraitPath = path.join(rootDir, 'plugin', 'gloskin-site-core', 'includes', 'gloskin-site-core-shop-discovery-route-trait.php');
 const productionBatchPath = path.join(rootDir, 'plugin', 'gloskin-site-core', 'includes', 'class-gloskin-site-core-production-batch.php');
 const assetConfigPath = path.join(rootDir, 'plugin', 'gloskin-site-core', 'config', 'assets.php');
 const source = fs.readFileSync(ownerPath, 'utf8');
+const cssSource = fs.readFileSync(cssPath, 'utf8');
 const coreSource = fs.readFileSync(corePath, 'utf8');
 const templateSource = fs.readFileSync(templatePath, 'utf8');
 const routeTraitSource = fs.readFileSync(routeTraitPath, 'utf8');
@@ -68,6 +70,21 @@ const categoryRequest = source.indexOf('requestFilterState(nextState,', category
 assert(categoryClick !== -1 && categoryState > categoryClick && categoryRequest > categoryState,
     'category active state must update immediately before the AJAX request begins');
 
+assert(templateSource.includes('<nav class="gloskin-ui1-shop-categories"') && templateSource.includes('<li><a href='),
+    'Shop categories must stay crawlable anchor navigation for progressive enhancement');
+assert(!templateSource.includes('role="tablist"') && !templateSource.includes('role="tab"'),
+    'Shop category filters are not ARIA tabs because results are not a tabpanel');
+assert(cssSource.includes('.gloskin-ui1-shop-categories ul {') && cssSource.includes('list-style: none;'),
+    'Shop category presentation must reset global list bullets');
+assert(cssSource.includes('.gloskin-ui1-shop-categories a {') && cssSource.includes('min-height: 44px;') && cssSource.includes('text-decoration: none;'),
+    'Shop category choices need a full touch target and control-like anchor presentation');
+assert(cssSource.includes('.gloskin-ui1-shop-categories a[aria-current="page"] {'),
+    'Shop category active state must be visually keyed from the existing aria-current state');
+const mobileCategoryCss = cssSource.split('@media (max-width: 900px) {', 2)[1] || '';
+assert(mobileCategoryCss.includes('.gloskin-ui1-shop-categories ul {') && mobileCategoryCss.includes('display: flex;') && mobileCategoryCss.includes('overflow-x: auto;'),
+    'narrow Shop category controls must become a horizontal scroll strip rather than a long bullet list');
+assert(!cssSource.includes('!important'), 'Shop route-specific CSS must not introduce !important');
+
 assert(routeTraitSource.includes("if ( ! $this->should_render_shop() )"), 'Shop asset gate must remain route-aware');
 assert(routeTraitSource.includes("assets/js/gloskin-ui1-shop-discovery.js"), 'Shop Discovery JS must be enqueued by the canonical Shop route owner');
 assert(routeTraitSource.includes("assets/css/gloskin-ui1-shop-discovery.css"), 'Shop Discovery CSS must be enqueued by the canonical Shop route owner');
@@ -80,4 +97,4 @@ assert(!/window\.fetch\s*=(?!=)/.test(source), 'global fetch monkeypatch forbidd
 assert(!/(?:window\.)?history\.pushState\s*=(?!=)/.test(source), 'global pushState monkeypatch forbidden');
 assert(!/(?:window\.)?history\.replaceState\s*=(?!=)/.test(source), 'global replaceState monkeypatch forbidden');
 
-console.log('shop-catalog-controller.test.js: OK (single owner + Shop-only assets)');
+console.log('shop-catalog-controller.test.js: OK (single owner + progressive category controls)');

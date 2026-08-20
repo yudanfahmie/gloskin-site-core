@@ -1,4 +1,4 @@
-/* ==========================================================================
+/* ========================================================================== 
    Gloskin Shop Discovery — one editorial filter rail.
    Canonical Gloskin tokens only; no Shop-local brand palette.
    ========================================================================== */
@@ -57,6 +57,67 @@
 	padding: 0;
 	border: 0;
 	overflow: visible;
+}
+
+/* Category choices remain real crawlable anchors for no-JS navigation, but
+   present as one filter/segmented-control family when the Shop enhancement is
+   available. This is deliberately not ARIA tabs: the product results are not
+   a tabpanel and the same canonical catalog state also combines search/price. */
+.gloskin-ui1-shop-categories ul {
+	display: grid;
+	width: 100%;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	gap: 6px;
+	list-style: none;
+}
+
+.gloskin-ui1-shop-categories li {
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.gloskin-ui1-shop-categories a {
+	display: flex;
+	width: 100%;
+	min-height: 44px;
+	align-items: center;
+	justify-content: flex-start;
+	padding: 9px 12px;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--gloskin-text);
+	font-size: 0.9rem;
+	font-weight: 500;
+	line-height: 1.3;
+	text-align: left;
+	text-decoration: none;
+	white-space: normal;
+	transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.gloskin-ui1-shop-categories a:hover {
+	border-color: color-mix(in srgb,var(--gloskin-accent) 34%,var(--gloskin-border));
+	background: color-mix(in srgb,var(--gloskin-accent) 8%,transparent);
+	color: var(--gloskin-accent-strong);
+	text-decoration: none;
+}
+
+.gloskin-ui1-shop-categories a[aria-current="page"] {
+	border-color: var(--gloskin-accent);
+	background: var(--gloskin-accent);
+	color: var(--gloskin-inverse);
+	font-weight: 600;
+}
+
+.gloskin-ui1-shop-categories a[aria-current="page"]:hover {
+	border-color: var(--gloskin-accent-strong);
+	background: var(--gloskin-accent-strong);
+	color: var(--gloskin-inverse);
 }
 
 .gloskin-ui1-shop-rail-section {
@@ -500,7 +561,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   Responsive rail: vertical, normal-flow below the single-column breakpoint.
+   Responsive rail: vertical rail becomes a compact horizontal filter strip.
    -------------------------------------------------------------------------- */
 
 @media (max-width: 900px) {
@@ -514,25 +575,37 @@
 	.gloskin-ui1-shop-categories {
 		position: static;
 		top: auto;
-		overflow: visible;
 		max-width: 100%;
 		padding: 0;
 		border: 0;
+		overflow: hidden;
 	}
 
 	.gloskin-ui1-shop-categories ul {
-		display: grid;
-		width: auto;
+		display: flex;
+		width: 100%;
 		min-width: 0;
-		gap: 4px;
+		gap: 8px;
+		overflow-x: auto;
+		overscroll-behavior-inline: contain;
+		padding: 2px 2px 6px;
+		scroll-snap-type: x proximity;
+		scrollbar-width: none;
+	}
+
+	.gloskin-ui1-shop-categories ul::-webkit-scrollbar {
+		display: none;
 	}
 
 	.gloskin-ui1-shop-categories li {
+		flex: 0 0 auto;
 		min-width: 0;
 	}
 
 	.gloskin-ui1-shop-categories a {
-		white-space: normal;
+		width: auto;
+		white-space: nowrap;
+		scroll-snap-align: start;
 	}
 
 	.gloskin-ui1-shop-search-field,
@@ -552,6 +625,7 @@
 	.gloskin-ui1-shop-search-field,
 	.gloskin-ui1-shop-search-field__icon,
 	.gloskin-ui1-shop-search-field__clear,
+	.gloskin-ui1-shop-categories a,
 	[data-gloskin-shop-catalog-owner].is-loading [data-gloskin-shop-results],
 	.gloskin-ui1-shop-skeleton__grid {
 		transition: none;
