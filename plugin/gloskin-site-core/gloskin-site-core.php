@@ -11,14 +11,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GLOSKIN_SITE_CORE_FILE', __FILE__ );
-
-define( 'GLOSKIN_SITE_CORE_PATH', plugin_dir_path( __FILE__ ) );
-
-require_once GLOSKIN_SITE_CORE_PATH . 'includes/class-gloskin-site-core-kernel.php';
-
-$gloskin_site_core = new Gloskin_Site_Core_Kernel( GLOSKIN_SITE_CORE_FILE );
-$gloskin_site_core->boot();
+require_once __DIR__ . '/includes/class-gloskin-site-core-kernel.php';
 
 register_activation_hook( __FILE__, array( 'Gloskin_Site_Core_Kernel', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'Gloskin_Site_Core_Kernel', 'deactivate' ) );
+
+$gloskin_site_core_kernel = new Gloskin_Site_Core_Kernel( __FILE__ );
+$gloskin_site_core_kernel->boot();
