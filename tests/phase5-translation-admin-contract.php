@@ -1,6 +1,8 @@
 <?php
 $root = dirname(__DIR__);
 $php = file_get_contents($root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-translation.php');
+$language = file_get_contents($root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-language.php');
+$projection = file_get_contents($root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-language-projection.php');
 $kernel = file_get_contents($root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php');
 $admin = file_get_contents($root . '/plugin/gloskin-site-core/assets/js/gloskin-translation-admin.js');
 $worker = file_get_contents($root . '/plugin/gloskin-site-core/assets/js/gloskin-translation-worker.js');
@@ -16,14 +18,19 @@ $checks = array(
     'consultation questions' => "QUESTION_POST_TYPE",
     'answer labels' => "answer_label_",
     'interface records' => "interface_registry",
-    'admin-only boot' => "register_admin",
+    'admin registration' => "register_admin",
+    'page meta admin bridge' => "extend_page_meta_admin",
+    'hero translation field' => "gloskin_hero_heading",
+    'home Why translation field' => "gloskin_why_heading",
 );
 foreach ($checks as $name => $needle) {
-    if (strpos($php . $kernel, $needle) === false) { fwrite(STDERR, "FAIL: $name\n"); exit(1); }
+    if (strpos($php . $language . $projection . $kernel, $needle) === false) { fwrite(STDERR, "FAIL: $name\n"); exit(1); }
 }
 if (strpos($admin, "if (!force && String(field.en || '').trim()) return false") === false) { fwrite(STDERR, "FAIL: Generate Missing overwrite guard\n"); exit(1); }
 if (strpos($admin, 'translateRich') === false || strpos($admin, '<!--[\\s\\S]*?-->') === false) { fwrite(STDERR, "FAIL: rich text preservation\n"); exit(1); }
 if (strpos($worker, '@huggingface/transformers') === false || strpos($worker, 'Xenova/opus-mt-id-en') === false) { fwrite(STDERR, "FAIL: OPUS-MT browser generator\n"); exit(1); }
 if (strpos($worker, "createTranslator('webgpu')") === false || strpos($worker, "createTranslator('wasm')") === false) { fwrite(STDERR, "FAIL: browser device fallback\n"); exit(1); }
-if (substr_count($kernel, "class-gloskin-site-core-translation.php") !== 1 || strpos($kernel, "if ( is_admin() )") > strpos($kernel, "class-gloskin-site-core-translation.php")) { fwrite(STDERR, "FAIL: model/admin service must stay admin branch in part 1\n"); exit(1); }
+if (substr_count($kernel, "class-gloskin-site-core-translation.php") !== 1 || substr_count($kernel, '$translation->register_admin();') !== 1) { fwrite(STDERR, "FAIL: shared registry / single admin registration\n"); exit(1); }
+if (strpos($language . $projection, '@huggingface/transformers') !== false || strpos($language . $projection, 'Xenova/opus-mt-id-en') !== false) { fwrite(STDERR, "FAIL: admin model leaked into frontend PHP runtime\n"); exit(1); }
+if (substr_count($kernel, '$language_projection->register_admin();') !== 1) { fwrite(STDERR, "FAIL: Page-meta Translation bridge not registered once\n"); exit(1); }
 echo "Phase 5 translation admin contract: PASS\n";

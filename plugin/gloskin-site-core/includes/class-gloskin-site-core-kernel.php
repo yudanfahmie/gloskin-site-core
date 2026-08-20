@@ -63,6 +63,8 @@ final class Gloskin_Site_Core_Kernel {
 			$translation->register_admin();
 			$language = new Gloskin_Site_Core_Language( $this->plugin_file );
 			$language->register_admin();
+			$language_projection = new Gloskin_Site_Core_Language_Projection();
+			$language_projection->register_admin();
 
 			$insight_migration = new Gloskin_Site_Core_Insight_Migration_Admin( $this->plugin_file );
 			$insight_migration->register();
@@ -86,6 +88,7 @@ final class Gloskin_Site_Core_Kernel {
 			$this->services[] = $admin;
 			$this->services[] = $translation;
 			$this->services[] = $language;
+			$this->services[] = $language_projection;
 			$this->services[] = $insight_migration;
 			$this->services[] = $lifecycle;
 			$this->services[] = $revision_final_migration;
