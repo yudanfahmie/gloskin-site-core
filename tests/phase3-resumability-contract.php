@@ -395,8 +395,8 @@ $ok(
  * Version sync
  * ------------------------------------------------------------------------- */
 $ok(
-	false !== strpos( $plugin, 'Version: 0.7.179' ) && false !== strpos( $kernel, "const VERSION = '0.7.179';" ),
-	'Version: plugin header and kernel VERSION must both be 0.7.179'
+	false !== strpos( $plugin, 'Version: 0.7.180' ) && false !== strpos( $kernel, "const VERSION = '0.7.180';" ),
+	'Version: plugin header and kernel VERSION must both be 0.7.180'
 );
 
 echo "phase3-resumability-contract.php: OK (17 items verified)\n";

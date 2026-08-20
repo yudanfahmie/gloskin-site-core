@@ -130,7 +130,8 @@ final class Gloskin_Site_Core_Phase3_Migration {
 
 			$step     = $steps[ $index ];
 			$step_key = $step['key'];
-			$state['current_step'] = $step['label'];
+			$state['current_step']     = $step['label'];
+			$state['current_step_key'] = $step_key; /* Fix A: persist stable machine key at step start. */
 			$this->save_state( $state );
 
 			switch ( $step_key ) {
@@ -1477,25 +1478,38 @@ final class Gloskin_Site_Core_Phase3_Migration {
 		/* No copy_short in 77ee manifests; never invent a short description. */
 
 		/* Commerce enrichment — apply prices from supplemental commerce-enrichment.json.
-		 * For EXISTING products: preserve non-empty real price; fill only when empty.
-		 * For NEW products: apply enrichment price when available.
+		 * Fix C: fail-fast price logic.
+		 * — Existing product with legitimate regular_price > 0: preserve it, no mutation.
+		 * — Otherwise (new product or existing with no/zero price): require enrichment price;
+		 *   throw RuntimeException before counting reconciled if price unavailable.
 		 * No SKU, no stock quantity — never fabricated (77ee global_rules). */
 		$enrichment_prices = $this->load_enrichment_prices();
 		$enrich_price      = isset( $enrichment_prices[ $slug ] ) ? $enrichment_prices[ $slug ] : '';
 		$is_new_product    = ( 0 === $existing_id );
 
-		if ( '' !== $enrich_price ) {
-			if ( $is_new_product ) {
-				/* New product: always apply enrichment price. */
+		if ( $is_new_product ) {
+			/* New canonical product: enrichment price is required. */
+			if ( '' === $enrich_price || ! is_numeric( $enrich_price ) || (float) $enrich_price <= 0 ) {
+				throw new RuntimeException(
+					'Harga enrichment wajib tidak tersedia untuk produk canonical baru (slug: ' . $slug . ').'
+				);
+			}
+			$woo_product->set_regular_price( $enrich_price );
+			$woo_product->set_price( $enrich_price );
+		} else {
+			/* Existing product: preserve legitimate price > 0; require enrichment when price absent/zero. */
+			$current_price   = (string) $woo_product->get_regular_price();
+			$has_legit_price = '' !== $current_price && is_numeric( $current_price ) && (float) $current_price > 0;
+			if ( $has_legit_price ) {
+				/* Preserve existing legitimate regular price — do not overwrite. */
+			} else {
+				if ( '' === $enrich_price || ! is_numeric( $enrich_price ) || (float) $enrich_price <= 0 ) {
+					throw new RuntimeException(
+						'Harga enrichment wajib tidak tersedia untuk produk canonical yang ada tanpa harga valid (slug: ' . $slug . ').'
+					);
+				}
 				$woo_product->set_regular_price( $enrich_price );
 				$woo_product->set_price( $enrich_price );
-			} else {
-				/* Existing product: fill price only when currently empty. */
-				$current_price = (string) $woo_product->get_regular_price();
-				if ( '' === $current_price || '0' === $current_price ) {
-					$woo_product->set_regular_price( $enrich_price );
-					$woo_product->set_price( $enrich_price );
-				}
 			}
 		}
 
@@ -1646,6 +1660,11 @@ final class Gloskin_Site_Core_Phase3_Migration {
 			}
 		}
 
+		/* Fail-closed: verify metadata is usable after generation.
+		 * Provenance already written above — SHA dedup finds this attachment on retry,
+		 * so no duplicate is created if this throws (fix B). */
+		$this->ensure_attachment_metadata( $attach_id );
+
 		return $attach_id;
 	}
 
@@ -1776,27 +1795,41 @@ final class Gloskin_Site_Core_Phase3_Migration {
 	}
 
 	/**
-	 * Ensure attachment metadata is complete — regenerate only when missing/incomplete (fix C).
-	 * Used after SHA reuse and in partial-attachment recovery so a prior fatal
-	 * (provenance written but metadata generation killed the request) is self-healed.
+	 * Ensure attachment metadata is complete — regenerate only when missing/incomplete (fix B).
+	 * Fail-closed: throws RuntimeException if metadata cannot be made usable.
+	 * Used after SHA reuse, partial-attachment recovery, and new import so a prior fatal
+	 * (provenance written but metadata generation killed the request) is self-healed;
+	 * unrecoverable attachments are surfaced as errors rather than silently accepted.
+	 *
+	 * On failure the cursor is NOT advanced (caller throws before cursor++),
+	 * and no duplicate attachment is created (provenance is already written for SHA dedup).
 	 *
 	 * @param int $attachment_id Attachment post ID.
 	 * @return void
+	 * @throws RuntimeException When metadata cannot be made usable.
 	 */
 	private function ensure_attachment_metadata( $attachment_id ) {
 		$metadata = wp_get_attachment_metadata( $attachment_id );
 		if ( ! empty( $metadata ) && ! empty( $metadata['file'] ) ) {
-			return; /* Already complete. */
+			return; /* Already usable — accept. */
 		}
+		/* Cannot silently accept: must regenerate and confirm, or throw (fix B). */
 		$file = get_attached_file( $attachment_id );
 		if ( ! $file || ! is_readable( $file ) ) {
-			return; /* Cannot regenerate without a readable source file. */
+			throw new RuntimeException(
+				'ensure_attachment_metadata: file sumber tidak terbaca untuk attachment #'
+				. (int) $attachment_id . '. Metadata tidak dapat dipulihkan.'
+			);
 		}
 		$this->load_media_functions();
 		$new_meta = wp_generate_attachment_metadata( $attachment_id, $file );
-		if ( $new_meta ) {
-			wp_update_attachment_metadata( $attachment_id, $new_meta );
+		if ( ! $new_meta || empty( $new_meta['file'] ) ) {
+			throw new RuntimeException(
+				'ensure_attachment_metadata: wp_generate_attachment_metadata gagal untuk attachment #'
+				. (int) $attachment_id . '.'
+			);
 		}
+		wp_update_attachment_metadata( $attachment_id, $new_meta );
 	}
 
 	/* -----------------------------------------------------------------
@@ -1867,34 +1900,64 @@ final class Gloskin_Site_Core_Phase3_Migration {
 	 * Returns slug → numeric price (string) map for both skincare and treatment.
 	 * Build-time only — zero external web requests.
 	 *
+	 * Fail-closed (fix C): throws RuntimeException when the file is missing, JSON-invalid,
+	 * has fewer than 25 skincare or 48 treatment entries, or any price is non-numeric / ≤ 0.
+	 *
 	 * @return array<string,string> slug → price string
+	 * @throws RuntimeException When enrichment file is missing, malformed, or has invalid prices.
 	 */
 	private function load_enrichment_prices() {
 		static $cache = null;
 		if ( null !== $cache ) {
 			return $cache;
 		}
+
+		/* Fix C: fail-closed — commerce-enrichment.json is required for canonical pricing. */
 		$path = $this->manifests_dir . DIRECTORY_SEPARATOR . 'commerce-enrichment.json';
 		if ( ! is_readable( $path ) ) {
-			$cache = array();
-			return $cache;
+			throw new RuntimeException( 'commerce-enrichment.json tidak dapat dibaca: ' . $path );
 		}
 		$raw  = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local supplemental manifest read
 		$data = is_string( $raw ) ? json_decode( $raw, true ) : null;
 		if ( ! is_array( $data ) ) {
-			$cache = array();
-			return $cache;
+			throw new RuntimeException( 'commerce-enrichment.json JSON tidak valid.' );
 		}
-		$map = array();
+
+		/* Validate coverage: at least 25 skincare + 48 treatment entries required. */
+		$sk_count = count( (array) ( $data['skincare'] ?? array() ) );
+		$tr_count = count( (array) ( $data['treatment'] ?? array() ) );
+		if ( $sk_count < 25 ) {
+			throw new RuntimeException( 'commerce-enrichment.json: butuh ≥25 entri skincare; ditemukan ' . $sk_count . '.' );
+		}
+		if ( $tr_count < 48 ) {
+			throw new RuntimeException( 'commerce-enrichment.json: butuh ≥48 entri treatment; ditemukan ' . $tr_count . '.' );
+		}
+
+		/* Build slug→price map; collect invalid entries rather than silently skipping. */
+		$map     = array();
+		$invalid = array();
 		foreach ( array( 'skincare', 'treatment' ) as $section ) {
 			foreach ( (array) ( $data[ $section ] ?? array() ) as $entry ) {
 				$slug  = (string) ( $entry['slug'] ?? '' );
 				$price = (string) ( $entry['price'] ?? '' );
-				if ( '' !== $slug && '' !== $price && is_numeric( $price ) ) {
+				if ( '' === $slug ) {
+					continue;
+				}
+				if ( '' === $price || ! is_numeric( $price ) || (float) $price <= 0 ) {
+					$invalid[] = $section . ':' . $slug;
+				} else {
 					$map[ $slug ] = $price;
 				}
 			}
 		}
+		if ( ! empty( $invalid ) ) {
+			throw new RuntimeException(
+				'commerce-enrichment.json: harga tidak valid (harus numerik > 0) untuk: '
+				. implode( ', ', array_slice( $invalid, 0, 5 ) )
+				. ( count( $invalid ) > 5 ? ' (dan ' . ( count( $invalid ) - 5 ) . ' lagi)' : '' )
+			);
+		}
+
 		$cache = $map;
 		return $cache;
 	}
@@ -2048,11 +2111,14 @@ final class Gloskin_Site_Core_Phase3_Migration {
 		$state['total_steps']       = $total;
 		$state['step_number']       = $processed + 1;
 
-		/* current_step_key — stable machine key for the current step (fix A).
-		 * current_step remains the human-readable label. */
-		$current_index              = max( 0, $index - 1 );
-		$current_step_def           = $steps[ $current_index ] ?? array();
-		$state['current_step_key']  = (string) ( $current_step_def['key'] ?? '' );
+		/* current_step_key — stable machine key persisted by advance() at step start (fix A).
+		 * Never re-derive from index arithmetic: the key must stay 'media_reconcile'
+		 * for every partial-media advance() while cursor < total. */
+		if ( '' === (string) ( $state['current_step_key'] ?? '' ) ) {
+			$current_index    = max( 0, $index - 1 );
+			$current_step_def = $steps[ $current_index ] ?? array();
+			$state['current_step_key'] = (string) ( $current_step_def['key'] ?? '' );
+		}
 
 		/* Media reconcile fields — always present so JS runner can render counters. */
 		$state['media_cursor']      = (int) ( $state['media_cursor'] ?? 0 );
