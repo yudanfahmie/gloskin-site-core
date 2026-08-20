@@ -1,52 +1,28 @@
-# Phase 4 Final Execution Prompt — Deep-Audit Revision
+# Phase 4 — Final Execution Prompt
 
 Repository: `yudanfahmie/gloskin-site-core`
 
-## MODE 0 — while Phase 3 production is still running
+## Gate
 
-You MAY now:
-
-- fetch/read latest `main`;
-- inspect the Phase-4 docs and original feedback evidence;
-- audit the exact source owners named below;
-- prepare an implementation checklist.
-
-You MUST NOT yet:
-
-- modify Phase-4 runtime code;
-- bump the plugin version;
-- commit/push Phase-4 runtime changes;
-- deploy anything;
-- mutate/reset Phase-3 state.
-
-Runtime implementation starts only after the operator explicitly confirms:
+Do not write Phase-4 runtime until the operator confirms:
 
 `PHASE 3 PRODUCTION ALL CLEAR`
 
-That means production Phase 3 has:
+Required production evidence:
 
-- `COMPLETE`
+- Phase 3 status `COMPLETE`
 - final verifier PASS
 - required skips = 0
-- exact 25 Skincare
-- exact 48 Woo Treatment
-- exact 8 informational Treatments
-- exact 4 consultation paths
-- exact 18 concerns
-- exact 4 path-media bindings
-- Treatment hero bound
-- exactly 3 Home-feature informational Treatments
+- exact 25 Skincare / 48 Woo Treatment / 8 informational Treatments / 4 paths / 18 concerns
+- 4/4 path-media bindings + Treatment hero bound
+- exactly 3 `gloskin_treatment_feature_on_home=1`
 - zero active legacy Treatment products/posts
-- usable canonical prices
-- second run = `already_complete` / no-op
+- canonical prices usable
+- second Phase-3 run = `already_complete` / no-op
 
-Do not infer this gate from source tests. The operator confirms it from production.
+Phase 3 is closed after this gate. Do not reopen or redesign it.
 
----
-
-# START AFTER THE GATE
-
-Before writing:
+## Start
 
 ```bash
 git fetch --prune origin
@@ -54,451 +30,366 @@ git checkout -f main
 git reset --hard origin/main
 ```
 
-Read current runtime version from latest `main`. Preserve all newer Phase-3 work.
-
-Read together:
+Read together before writing:
 
 - `docs/client-feedback-phase-4/phase-4-plan.md`
 - `docs/client-feedback-phase-4/home-promo-wireframe.html`
-- original relevant feedback under `docs/feedback-cases-gloskin-20260820-154828/`
+- `docs/client-feedback-phase-4/phase-4-woo-taxonomy-addendum.md`
+- `docs/client-feedback-phase-4/phase-4-woo-taxonomy-mapping.md`
+- relevant original FB evidence under `docs/feedback-cases-gloskin-20260820-154828/`
 
-Specifically inspect the FB-989358 About evidence image before editing About:
+For About, inspect this image before editing:
 
 `docs/feedback-cases-gloskin-20260820-154828/FB-989358-tentang-kami-page/evidence/feedback-989321-1787213320-0.png`
 
-Language switcher / FB-989348 is NOT part of Phase 4.
+Language switcher / FB-989348 is explicitly deferred until after Phase 4.
 
-Do not touch Phase-3 authoritative manifests, Phase-3 packaged media binaries, Phase-3 state, or canonical Phase-3 mappings.
+## Operating principle
 
----
+Move fast and stay surgical:
 
-# PUBLISHING RULE
+- reuse existing owners;
+- no architecture rewrite;
+- no new CPTs/frameworks/controllers when an owner already exists;
+- no deep research;
+- no broad repo audit;
+- only focused tests after each commit;
+- preserve all Phase-3 manifests/state/media binaries and canonical mappings byte-for-byte.
 
-Preferred project workflow: commit/push directly to `main` in the three sequential commits below.
-
-If your environment has a higher-priority rule that requires a branch before committing, do NOT stop implementation. Create a temporary branch from latest `main`, implement and validate there, then fast-forward `main` to the exact tested commit if permitted. Never force-push. Do not open a PR unless the environment explicitly requires it.
-
-A publishing restriction must not be reported as implementation `FAIL`; distinguish code/test results from the publishing blocker.
-
----
-
-# COMMIT 1 — MEDIA CLEANUP SAFETY ONLY
-
-Target owners:
-
-- `plugin/gloskin-site-core/includes/class-gloskin-site-core-media-cleanup-resolver.php`
-- `plugin/gloskin-site-core/includes/class-gloskin-site-core-media-cleanup-admin.php`
-- `plugin/gloskin-site-core/assets/js/gloskin-ui1-media-cleanup.js`
-- focused Media Cleanup contracts
-
-Do not perform production deletion.
-
-## A. Candidate-bound structured references
-
-Current bug: structured postmeta rows are globally limited first, then candidate attachment references are checked in PHP. A valid reference can exist outside that first limited window.
-
-Replace that unsafe query shape with candidate-bound checks BEFORE any result limit:
-
-- `_thumbnail_id`: exact attachment-ID equality;
-- `_product_image_gallery`: delimiter-safe CSV membership for the exact candidate ID;
-- Gloskin image/media/gallery structured meta: candidate-bound matching only.
-
-Never use broad naked numeric `%ID%` matching.
-
-If an unknown structured value cannot be safely interpreted, fail conservatively to `ambiguous` / protected behavior rather than delete.
-
-Preserve exactly:
-
-- owner auth: `manage_options` AND exact `user_login === 'namaste'`;
-- frozen scan boundary;
-- sealed immutable deletion manifest;
-- candidate-scoped verification;
-- immediate JIT reclassification before deletion;
-- `wp_delete_attachment( $id, true )` as the only attachment deletion owner;
-- short bounded batches;
-- no new pause/resume framework.
-
-## B. Reload/resume delete or verify
-
-Current admin renders `data-media-cleanup-delete-continue` in `deleting` / `verifying` but it is hidden.
-
-When the page loads or syncs in effective state `deleting` or `verifying`:
-
-- reveal the existing Continue control;
-- clicking it resumes the server-issued existing cursor + sealed manifest;
-- do not restart scan/review;
-- do not create another worker;
-- do not auto-start destructive deletion on page load;
-- retain the original explicit backup/destructive-confirmation boundary that began deletion.
-
-Optional trivial UI repairs are allowed only if they do not broaden the safety scope or delay this commit.
-
-Focused tests must prove both bugs are closed.
-
-Commit message:
-
-`Harden Media Cleanup reference safety`
-
-Confirm remote/tested SHA before Commit 2.
+Preferred workflow is three small sequential commits directly to `main`. If the environment forces a temporary branch, implement/test there and fast-forward `main` when permitted; never force-push and do not stop coding merely because direct-main publishing is blocked.
 
 ---
 
-# COMMIT 2 — SHOP AJAX + ONE RETAIL PRODUCT CARD
+# COMMIT 1 — Media Cleanup safety
 
-## A. Shop AJAX selector contract
+Target only existing Media Cleanup owners.
 
-Canonical existing template root:
+Fix these two defects:
 
-`data-gloskin-shop-catalog-owner`
+### 1. Candidate-bound structured references
 
-Current JS owner is:
+Current unsafe shape globally LIMITs postmeta rows before checking the current attachment.
 
-`plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js`
+Replace with candidate-specific checks before any result limit:
 
-Do not look for or create a separate `gloskin-ui1-shop.js` owner.
+- `_thumbnail_id` = exact candidate ID;
+- `_product_image_gallery` = delimiter-safe CSV membership;
+- Gloskin image/media/gallery structured meta = candidate-bound matching only.
 
-Make the existing Shop controller initialize against the canonical root.
+Never use naked `%ID%` numeric LIKE matching.
+If an unknown structure cannot be interpreted safely, classify/protect conservatively rather than delete.
 
 Preserve:
 
-- existing REST endpoint;
-- category/search/price state;
-- SSR results partial;
-- page links/hrefs;
-- History push/pop behavior;
-- AJAX replacement;
-- loading/error semantics.
+- exact owner auth: `manage_options` AND `user_login === 'namaste'`;
+- frozen cohort;
+- sealed manifest;
+- JIT reclassification immediately before delete;
+- candidate-scoped verify;
+- `wp_delete_attachment( $id, true )` as the only deletion owner.
 
-Add a focused regression proving the real Shop root initializes and page-2 pagination can execute through the existing controller.
+### 2. Reload/resume
 
-## B. One Shop/Skincare card
+If page reloads in `deleting` or `verifying`:
 
-Current divergence:
+- show the existing Continue control;
+- resume existing server cursor/manifest;
+- never restart scan;
+- never create a second worker;
+- never auto-start destructive deletion on page load.
 
-- Skincare explicitly requests `gloskin_ui1_render_product_card( ..., 'skincare' )`;
-- Shop results request the default renderer.
+Do not perform production media deletion.
 
-End state: both use ONE canonical retail presentation variant from the existing `gloskin_ui1_render_product_card()` owner.
+Focused validation only.
 
-Target:
+Commit:
 
-- consistent contained product imagery;
-- product title;
-- Woo price;
-- primary Woo purchase/action owner;
-- equal card height and action baseline;
-- no rating/review UI;
-- no dense short-description block;
-- no extra wishlist UI unless independently approved.
-
-Do not duplicate card markup. AJAX Shop results must inherit the same renderer through the existing server partial.
-
-Update the stale Phase-2 contract that deliberately requires Shop/Skincare divergence.
-
-Commit message:
-
-`Fix Shop AJAX and unify retail product cards`
-
-Confirm remote/tested SHA before Commit 3.
+`Harden Media Cleanup reference safety`
 
 ---
 
-# COMMIT 3 — HOME / PROMO / HERO / ABOUT + SMALL CONTENT FINALIZER
+# COMMIT 2 — Shop AJAX + one retail card
 
-Use existing template/helper/context owners. No new presentation framework.
+### 1. Shop AJAX
 
-## A. Home — exact structure
+Canonical template root is:
 
-Final visible order:
+`data-gloskin-shop-catalog-owner`
+
+Current controller owner is:
+
+`plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js`
+
+Make the existing controller initialize against the real root.
+
+Preserve current REST endpoint, search/category/price state, SSR partial, pagination hrefs, History behavior, AJAX replacement, loading/error behavior.
+
+Prove page-2 AJAX works.
+
+### 2. Product card
+
+Shop and Skincare must use the same existing `gloskin_ui1_render_product_card()` retail presentation.
+
+Target:
+
+- contained/consistent product image;
+- title;
+- Woo price;
+- canonical Woo primary action;
+- equal card/action alignment;
+- no rating/review block;
+- no dense description;
+- no duplicate renderer.
+
+Update only stale Phase-2 assertions that intentionally locked the old divergence.
+
+Commit:
+
+`Fix Shop AJAX and unify retail product cards`
+
+---
+
+# COMMIT 3 — Presentation + small idempotent finalizer
+
+Use existing template/helper/context/data owners.
+
+## A. Home
+
+Exact visible structure:
 
 1. navbar
-2. full-width video hero
+2. full-width Home video hero
 3. simple Why Gloskin
 4. Treatment Unggulan — exactly 6 cards, desktop 3×2
-5. Testimoni — exactly 3 static horizontal rows visible together
+5. Testimoni — exactly 3 static horizontal rows
 6. Piagam — exactly 4 image-only cards
 
 Nothing else.
 
-Explicit negative requirements:
+Explicitly absent:
 
-- NO Home Promo block;
-- NO secondary brand-story band;
-- NO testimonial carousel arrows/dots/autoplay on Home;
-- NO text-heavy Achievement cards;
-- NO Home closing CTA.
+- Home Promo
+- extra brand-story band
+- testimonial slider arrows/dots/autoplay on Home
+- text-heavy Achievement cards
+- closing CTA
 
-The current Home template already omits Promo. Preserve that omission.
+### Home Treatment selection
 
-### Home Treatments
+Do not change Phase-3 feature meta.
 
-Phase-3 invariant remains exact:
+Keep exactly 3 records with `gloskin_treatment_feature_on_home=1`.
 
-`gloskin_treatment_feature_on_home=1` = 3 records.
+Existing Home selection owner should return:
 
-Do not change those meta values.
-
-Update the existing `curated_home_treatments()` owner so Home visible selection is:
-
-- first the exact 3 published Phase-3 featured records;
-- then 3 other published canonical `gloskin_treatment` records;
+- those exact 3 first;
+- then deterministic 3 other published canonical `gloskin_treatment` records;
 - no duplicates;
-- deterministic stable order;
-- total exactly 6.
+- total = 6.
 
-### Home Testimonials
+### Hero / FB-989362
 
-Reuse `gloskin_ui1_render_testimonials()` with a bounded Home/static mode or equivalent single-helper seam.
+Extend the shared hero with one Home-only video mode:
 
-Home must render exactly 3 managed records in deterministic managed order as three static rows. Do not copy a second testimonial renderer into `home.php`.
+- full-width native video;
+- complete frame visible / no crop;
+- no eyebrow, heading, copy, CTA, fade, or text overlay;
+- responsive;
+- safe uncropped fallback;
+- other route heroes unchanged.
 
-### Home Piagam
+Do not create another hero owner.
 
-Reuse the existing Achievement renderer with an image-only Home mode.
+### Why Gloskin
 
-Render exactly 4 records, image only. No title/recognition/issuer/year/excerpt in Home cards.
+Keep existing factual Page/Why owner, simplify presentation to:
 
-## B. Home Hero / FB-989362
-
-FB-989362 explicitly requires full video, no crop, no text.
-
-Extend the existing `gloskin_ui1_render_hero()` with ONE Home-only presentation mode (`video-only`, `home-video`, or similarly clear name).
-
-In this mode:
-
-- render full-width native video;
-- preserve the complete video frame / natural aspect ratio;
-- do not use crop behavior such as `object-fit: cover`;
-- render no eyebrow, H1, copy, CTA, campaign fade, or extra overlay controls not shown by the reference;
-- preserve a safe uncropped fallback if video fails;
-- remain responsive;
-- do not change hero presentation on other routes.
-
-Do not create a second hero renderer/data owner.
-
-## C. Why Gloskin
-
-Reuse current managed Page/Why data, but match the latest simple two-column reference:
-
-- one primary image left;
+- image left;
 - concise heading/bullets right;
 - responsive stack;
-- no extra narrative/decorative band;
-- no invented statistics, guarantees, awards, or medical claims.
+- no invented facts/statistics/claims.
 
-## D. Promo / FB-989352
+## B. Promo
 
-Canonical owner remains `gloskin_promo` and `managed_promo_records()`.
+Reuse `gloskin_promo` + `managed_promo_records()`.
 
-Final `/promo/` structure:
+Exact structure:
 
-1. centered `Promo Terbatas`;
-2. large landscape image-led carousel;
-3. `Promo Poster`;
-4. second independent landscape/image-only carousel.
+1. centered `Promo Terbatas`
+2. large landscape image-led carousel
+3. `Promo Poster`
+4. second independent landscape/image-only carousel
 
-Both instances need independent local arrows/dots/state.
+Both carousel roots have independent arrows/dots/state but reuse the existing carousel/controller owner.
 
-Reuse the existing gallery/carousel helper/controller per root. Do not create a second carousel framework.
-
-Artwork/image is the content truth.
-
-Remove from Promo presentation:
+Remove:
 
 - text-heavy campaign card composition;
-- page-content / `Informasi Promo` block;
+- page-content/Informasi Promo block;
 - closing CTA;
 - stale thumbnail-selector presentation.
 
-Use the same managed Promo record collection for both surfaces. If no separate poster asset owner exists, reuse each record's featured/primary image rather than inventing another data model.
+Use the same managed Promo collection for both surfaces. Reuse primary/featured image if no separate poster owner exists.
 
-## E. About / FB-989358 — evidence first
+## C. About / FB-989358
 
-Before changing `about.php`, inspect:
-
-`docs/feedback-cases-gloskin-20260820-154828/FB-989358-tentang-kami-page/evidence/feedback-989321-1787213320-0.png`
-
-In your implementation notes, record:
+Inspect the original evidence image first and record:
 
 `ABOUT SECTION ORDER: ...`
 
-Then implement exactly that section set/order.
+Then render exactly that section set/order.
 
-Current generic About may contain Story, Founder, Vision/Mission/Values, Doctors, Clinics, Achievements, and closing CTA. Do not retain any of them merely because the context already supplies data.
+Do not retain current Story/Founder/Vision-Mission/Doctors/Clinics/Achievements/CTA merely because data exists. Keep only what the evidence supports. Reuse factual existing owners where applicable; invent nothing.
 
-Rules:
+If evidence cannot be inspected, stop only the About portion and report that exact blocker; do not guess.
 
-- render only sections supported by the evidence;
-- reuse existing factual data owners where they match;
-- do not invent business facts;
-- if the sketch excludes Doctors/Clinics/Achievements/closing CTA, remove those callers from About;
-- update stale tests accordingly.
+## D. One small Phase-4 finalizer
 
-If the evidence cannot be inspected, do not guess the About structure. Report that specific evidence-access blocker rather than fabricating a layout.
+Do not build another migration engine.
 
-## F. Phase-4 managed-content finalizer
+Implement one privileged, idempotent finalizer. Coder implements/tests it but does **not** execute it in production.
 
-Do NOT build another Phase-3-sized migration engine.
+Mutation order:
 
-Add/reuse one small privileged, idempotent Phase-4 finalize action.
+replacement ready → media/category bound → verify → Trash legacy → final verify → complete
 
-Coder must implement/test it but MUST NOT execute the production finalize action.
+### Promo content
 
-Required mutation order:
-
-replacement ready
-→ media bound
-→ replacement renderability verified
-→ Trash legacy
-→ final verify
-
-### Promo replacement set
-
-Create/ensure 3–6 stable Phase-4 identities.
-
-Each replacement must:
-
-- be published + active only when a usable landscape featured/primary image is bound;
-- have deterministic order;
-- use suitable local/bundled media or a lightweight local placeholder banner;
-- be clearly marked as Phase-4 placeholder/demo when not client artwork.
-
-Only after all replacements are renderable:
-
-- Trash every active/non-trash `gloskin_promo` outside the replacement allowlist;
-- never hard-delete;
+- ensure 3–6 stable Phase-4 Promo identities;
+- use local/bundled landscape placeholder images when client artwork is unavailable;
+- publish/activate only after usable image binding;
+- deterministic order;
+- clearly mark placeholders;
+- after all replacements verify, Trash obsolete `gloskin_promo` records;
+- never hard-delete posts;
 - never delete Media Library attachments.
 
-### Piagam replacement set
+### Piagam
 
-Create/ensure exactly 4 stable Phase-4 `gloskin_achievement` identities.
+- ensure exactly 4 stable Phase-4 `gloskin_achievement` identities;
+- each must have a usable image;
+- placeholder certificate images are allowed and must be marked;
+- Home renders image only;
+- after all 4 verify, Trash obsolete Achievement records;
+- never hard-delete posts or media.
 
-Each must have a usable image. Placeholder certificate images are acceptable when real artwork is unavailable and must be marked as placeholders.
+Second finalizer run must create/trash/mutate nothing.
 
-Only after all four are renderable:
+### Woo native category alignment
 
-- Trash every active/non-trash `gloskin_achievement` outside the replacement allowlist;
-- never hard-delete;
-- never delete Media Library attachments.
+`docs/client-feedback-phase-4/phase-4-woo-taxonomy-mapping.md` is authoritative.
 
-Ensure replacement attachment IDs are actually bound to the active records so subsequent Media Cleanup recognizes them as referenced.
+Apply only to canonical Phase-3 Woo products:
 
-Second finalize run must create zero records and Trash zero additional records.
+- exact 25 Skincare → exact native `product_cat` mapping from the file;
+- all exact 48 Treatment → ensure `product_cat=perawatan`;
+- `support` → `produk-penunjang`;
+- preserve legitimate additional categories;
+- remove `uncategorized` only after a valid canonical category is attached;
+- never mutate unrelated products;
+- never alter `gloskin_product_family`, `gloskin_concern`, Phase-3 state, manifests, prices, media, provenance, or stock policy.
 
-## G. Retire obsolete Reset Demo mutation
+Do **not** create Woo categories from Treatment groups/concerns.
+Do **not** hide Woo Categories in wp-admin.
 
-Current `Gloskin_Site_Core_Demo_Content_Reset` can hard-delete demo Promo/Testimonial/Achievement records and recreate the obsolete 3/3/3 dataset. The Kernel currently registers that tool.
+Ensure the existing Shop/category path can reach/filter `Perawatan` without adding a second filter-state owner.
 
-After Phase 4 this path must not be able to resurrect obsolete Promo/Piagam data or hard-delete Phase-4 content.
+Expected final taxonomy acceptance:
 
-Use the smallest safe approach:
+- Skincare aligned: 25/25
+- Treatment with `perawatan`: 48/48
+- canonical products only `Uncategorized`: 0
+- unrelated products mutated: 0
 
-- Phase 4 must not call/use Reset Demo;
-- after Phase-4 finalize, stop exposing/registering its destructive mutation OR make its handler fail closed when Phase 4 is complete;
-- it must not recreate old Promo/Achievement data after Phase 4;
-- it must not hard-delete Phase-4 replacement posts;
-- do not replace it with a new broad reset framework.
+### Retire obsolete Reset Demo mutation
 
-Do not rework the separate historical Promo recovery unless a focused test shows it conflicts with Phase 4.
+Current Reset Demo can recreate obsolete Promo/Achievement data and hard-delete demo records.
 
-## H. Stale test contracts
+Use the smallest safe fix so after Phase-4 completion it cannot mutate/resurrect Phase-4 Promo/Piagam or hard-delete the replacement set. Do not replace it with another reset framework.
 
-Update only assertions invalidated by the newest client references.
+## E. Stale contracts
 
-Known stale assertions currently include:
+Update only assertions invalidated by the latest client references.
 
-- Phase 1: exactly one closing CTA caller in Home / Promo / About;
-- Phase 2: Home campaign text/CTA must remain and `video-only` is forbidden;
-- Phase 2: Home closing CTA required;
-- Phase 2: Shop and Skincare must use different card variants;
-- Phase 2: old Promo single-carousel / thumb-selector composition;
-- Phase 2 version assertion may still name an old runtime version.
+Known stale areas:
 
-Preserve:
+- Home/Promo/About closing CTA expectations;
+- Home campaign text hero / prohibition of video-only mode;
+- old Shop/Skincare card divergence;
+- old Promo single-carousel/thumb assumptions;
+- stale runtime-version assertion.
 
-- navbar-label contract;
-- breadcrumb suppression;
-- closing-CTA component readability itself;
-- Woo purchase semantics;
-- canonical managed content owners;
-- unrelated Phase-1/2 behavior.
+Preserve unrelated Phase-1/2 behavior: navbar labels, breadcrumb suppression, CTA component readability, Woo purchase semantics, canonical managed owners.
 
-Commit message:
+Commit:
 
 `Implement Phase 4 presentation fidelity and content cleanup`
 
 ---
 
-# VERSION
+# Version
 
-Read the current runtime version from latest `main` after Phase-3 production all-clear.
-
-Bump exactly one patch version for the completed Phase-4 runtime implementation, synchronized across canonical version owners/contracts.
-
-Do not hard-code an expected Phase-4 version in advance.
+Read the current runtime version from latest `main` at implementation time.
+Bump exactly one patch version for the completed Phase-4 runtime changes and keep canonical version owners synchronized.
 
 ---
 
-# FOCUSED VALIDATION
+# Focused validation
 
-Do not run a broad unrelated repo audit.
+Run only:
 
-Run:
-
-- `php -l` for changed PHP files;
-- focused Media Cleanup contracts;
-- Shop/AJAX pagination contract;
-- retail product-card contract;
-- Phase-1/2 feedback contracts after intentional stale assertion updates;
-- Phase-3 contracts that guard preserved invariants, without modifying Phase-3 source/manifests;
-- new compact Phase-4 fidelity/finalize contract;
+- `php -l` changed PHP;
+- focused Media Cleanup contract;
+- Shop AJAX/pagination contract;
+- retail-card contract;
+- updated Phase-1/2 feedback contracts;
+- Phase-3 preservation contracts without changing Phase-3 source/manifests;
+- one compact Phase-4 fidelity/finalizer contract;
 - `git diff --check`.
 
-The Phase-4 contract must prove:
+Phase-4 contract must prove at minimum:
 
-1. Home exact section order;
-2. Home has no Promo, extra brand-story band, or closing CTA;
-3. Home hero is full-video/no-text with uncropped media behavior;
-4. Home renders exactly 6 Treatment cards while exact-3 Phase-3 Home-feature meta remains untouched;
-5. Home renders exactly 3 static testimonial rows and no Home carousel controls;
-6. Home renders exactly 4 image-only Piagam cards;
-7. Promo renders exactly two independent image-led carousel/gallery roots;
-8. Promo has no legacy campaign/page-content/CTA/thumb-selector presentation;
-9. About implementation records and matches the exact FB-989358 evidence-derived section order;
-10. Shop JS initializes against `data-gloskin-shop-catalog-owner`;
-11. page-2 Shop AJAX pagination remains executable;
-12. Shop + Skincare use the same retail card variant/owner;
-13. Media Cleanup structured refs are candidate-bound before result limiting;
-14. Media Cleanup deleting/verifying reload exposes resumable Continue without auto-deleting;
-15. Phase-4 Promo replacements = 3–6 and all have usable image bindings;
-16. Phase-4 Piagam replacements = exactly 4 and all have usable image bindings;
-17. legacy Promo/Achievement records are Trashed only after replacement readiness;
-18. Phase-4 finalizer hard-deletes zero Promo/Achievement posts;
-19. Phase-4 finalizer deletes zero Media Library attachments;
-20. obsolete Reset Demo cannot mutate/resurrect Phase-4 content after finalize;
-21. second Phase-4 finalize run is a no-op;
-22. Phase-3 manifests/state/media binaries remain untouched.
+- Home exact order, 6 Treatments, 3 static testimonials, 4 image-only Piagam, no Promo/closing CTA;
+- exact-3 Phase-3 Home feature meta preserved;
+- Home hero full-video/no-text/no-crop;
+- Promo has two independent image-led carousel roots and no legacy content/CTA/thumb UI;
+- About order matches FB-989358 evidence;
+- Shop controller uses canonical root and page-2 AJAX works;
+- Shop + Skincare share one card presentation owner;
+- Media Cleanup candidate-bound reference safety + reload resume;
+- Promo replacements 3–6 with images;
+- Piagam replacements exactly 4 with images;
+- legacy Promo/Achievement Trash happens only after replacement readiness;
+- hard-deleted Promo/Achievement posts = 0;
+- media attachments deleted by Phase-4 finalizer = 0;
+- Woo mapping = 25/25 Skincare + 48/48 Treatment Perawatan + 0 canonical-only Uncategorized;
+- unrelated Woo mutations = 0;
+- Reset Demo cannot resurrect Phase-4 content after finalize;
+- second finalizer run = no-op;
+- Phase-3 manifests/state/media binaries untouched.
 
 ---
 
-# DO NOT DO
+# Hard boundaries
 
-- do not implement ID/EN switcher yet;
-- do not reset/restart Phase 3;
-- do not touch authoritative Phase-3 manifests/data mappings/media binaries;
-- do not perform production Media Cleanup deletion;
-- do not execute production Phase-4 content finalize as coder;
-- do not hard-delete Promo/Achievement records;
-- do not delete Media Library attachments from Phase-4 finalizer;
-- do not create new CPTs for Promo/Piagam;
-- do not create a second Shop controller, product-card renderer, hero renderer, testimonial framework, or Promo carousel framework;
-- do not add runtime external media fetches;
-- do not redesign unrelated pages;
-- do not implement deep content research.
+Do not:
+
+- implement ID/EN switcher yet;
+- restart/reset Phase 3;
+- modify Phase-3 authoritative manifests/mappings/state/media binaries;
+- perform production Media Cleanup deletion;
+- execute production Phase-4 finalizer as coder;
+- hard-delete Promo/Achievement posts;
+- delete Media Library attachments from Phase-4 finalizer;
+- create new Promo/Piagam CPTs;
+- create second Shop/product-card/hero/testimonial/carousel frameworks;
+- add runtime external media fetches;
+- redesign unrelated pages;
+- perform deep content research.
 
 ---
 
-# FINAL REPORT
+# Final report
 
 ```text
 BASE MAIN SHA:
@@ -506,53 +397,43 @@ FINAL TESTED SHA:
 PUBLISHED TO:
 VERSION:
 
-PHASE3 SOURCE TOUCHED: NO
-PHASE3 PRODUCTION STATE TOUCHED BY CODER: NO
-
-MEDIA CLEANUP CANDIDATE-BOUND REFS: PASS/FAIL
+MEDIA CLEANUP REFS: PASS/FAIL
 MEDIA CLEANUP RELOAD RESUME: PASS/FAIL
-PRODUCTION MEDIA DELETE EXECUTED: NO
+PRODUCTION MEDIA DELETE: NO
 
-SHOP AJAX CANONICAL ROOT: PASS/FAIL
-SHOP PAGE-2 AJAX REGRESSION: PASS/FAIL
-SHOP/SKINCARE ONE RETAIL CARD: PASS/FAIL
+SHOP AJAX ROOT/PAGE2: PASS/FAIL
+ONE SHOP/SKINCARE CARD: PASS/FAIL
 
-HOME EXACT ORDER: PASS/FAIL
-HOME PROMO ABSENT: PASS/FAIL
-HOME EXTRA BRAND STORY ABSENT: PASS/FAIL
-HOME HERO FULL VIDEO / NO TEXT / NO CROP: PASS/FAIL
-HOME TREATMENTS VISIBLE: 6/6
-PHASE3 HOME FEATURE META PRESERVED: 3/3
-HOME TESTIMONIAL STATIC ROWS: 3/3
-HOME PIAGAM IMAGE-ONLY CARDS: 4/4
-HOME CLOSING CTA ABSENT: PASS/FAIL
+HOME FIDELITY: PASS/FAIL
+HOME TREATMENTS: 6/6
+PHASE3 HOME FEATURE META: 3/3
+HOME TESTIMONIALS: 3/3
+HOME PIAGAM: 4/4
+HOME HERO FULL VIDEO/NO TEXT/NO CROP: PASS/FAIL
 
-PROMO TWO INDEPENDENT CAROUSELS: PASS/FAIL
-PROMO LEGACY CAMPAIGN/CONTENT/CTA/THUMBS ABSENT: PASS/FAIL
-PROMO REPLACEMENTS: N (must be 3–6)
-LEGACY PROMOS TRASHED BY TEST/FINALIZER LOGIC: N
+PROMO TWO CAROUSELS: PASS/FAIL
+PROMO REPLACEMENTS: N (3–6)
+LEGACY PROMOS TRASHED: N
 
 ABOUT SECTION ORDER:
-ABOUT CLIENT-EVIDENCE FIDELITY: PASS/FAIL
+ABOUT FIDELITY: PASS/FAIL
 
 PIAGAM REPLACEMENTS: 4/4
-LEGACY ACHIEVEMENTS TRASHED BY TEST/FINALIZER LOGIC: N
-PHASE4 FINALIZER HARD-DELETES POSTS: 0
-PHASE4 FINALIZER DELETES MEDIA ATTACHMENTS: 0
-PHASE4 FINALIZE SECOND RUN NO-OP: PASS/FAIL
+LEGACY ACHIEVEMENTS TRASHED: N
 
-OBSOLETE RESET DEMO RETIRED AFTER PHASE4: PASS/FAIL
-STALE PHASE1/2 ASSERTIONS UPDATED: PASS/FAIL
+SKINCARE PRODUCT_CAT: 25/25
+TREATMENT PRODUCT_CAT=PERAWATAN: 48/48
+CANONICAL ONLY UNCATEGORIZED: 0
+UNRELATED WOO PRODUCTS MUTATED: 0
+PHASE3 PRIVATE TAXONOMIES PRESERVED: PASS/FAIL
+
+PHASE4 FINALIZER HARD-DELETES POSTS: 0
+PHASE4 FINALIZER DELETES MEDIA: 0
+PHASE4 SECOND RUN NO-OP: PASS/FAIL
+RESET DEMO RETIRED: PASS/FAIL
 PHASE3 PRESERVATION CONTRACTS: PASS/FAIL
 LANGUAGE SWITCHER TOUCHED: NO
-
-PRODUCTION PHASE4 CONTENT FINALIZE EXECUTED BY CODER: NO
+PRODUCTION PHASE4 FINALIZER EXECUTED BY CODER: NO
 ```
 
-If publishing is blocked after implementation/tests, additionally report:
-
-```text
-BRANCH:
-BRANCH SHA:
-EXACT PUBLISHING BLOCKER:
-```
+If publishing is blocked after implementation/tests, additionally report the temporary branch, branch SHA, and exact publishing blocker. Do not mark completed implementation checks as FAIL merely because direct-main publishing was unavailable.
