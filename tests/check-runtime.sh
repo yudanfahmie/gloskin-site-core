@@ -95,6 +95,8 @@ GL_TEST_MODE=failing_query php tests/description-consolidation-bootstrap-contrac
 GL_TEST_MODE=false_complete_selfheal php tests/description-consolidation-bootstrap-contract.php
 GL_TEST_MODE=real_complete_gate php tests/description-consolidation-bootstrap-contract.php
 python tests/readiness-contract-smoke.py
+python tests/media-cleanup-admin-auth-contract.py
+python tests/media-cleanup-resolver-contract.py
 php tests/readiness-php-smoke.php
 php tests/rendered-shell-auth-smoke.php
 GL_TEST_ACCOUNT=1 php tests/rendered-shell-auth-smoke.php

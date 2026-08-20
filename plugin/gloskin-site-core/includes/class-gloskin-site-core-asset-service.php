@@ -472,6 +472,25 @@ final class Gloskin_Site_Core_Asset_Service {
 	}
 
 	/**
+	 * Enqueue the Media Cleanup Resolver controller only on its exact,
+	 * independently authorized admin screen.
+	 *
+	 * @return void
+	 */
+	public function enqueue_admin_media_cleanup() {
+		$registry = $this->registry();
+		if ( ! empty( $registry['admin_styles']['gloskin-admin'] ) ) {
+			$style = $registry['admin_styles']['gloskin-admin'];
+			wp_register_style( 'gloskin-admin', plugins_url( $style['src'], $this->plugin_file ), $style['deps'], $this->version, $style['media'] );
+			wp_enqueue_style( 'gloskin-admin' );
+		}
+		if ( empty( $registry['admin_scripts']['gloskin-ui1-media-cleanup'] ) ) { return; }
+		$asset = $registry['admin_scripts']['gloskin-ui1-media-cleanup'];
+		wp_register_script( 'gloskin-ui1-media-cleanup', plugins_url( $asset['src'], $this->plugin_file ), $asset['deps'], $this->version, true );
+		wp_enqueue_script( 'gloskin-ui1-media-cleanup' );
+	}
+
+	/**
 	 * @return array<string, array<string, array<string, mixed>>>
 	 */
 	private function registry() {

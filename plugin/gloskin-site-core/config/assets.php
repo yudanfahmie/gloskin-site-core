@@ -181,6 +181,10 @@ return array(
 			'src'  => 'assets/js/gloskin-ui1-final-migration.js',
 			'deps' => array(),
 		),
+		'gloskin-ui1-media-cleanup' => array(
+			'src'  => 'assets/js/gloskin-ui1-media-cleanup.js',
+			'deps' => array(),
+		),
 		'gloskin-ui1-diagnostic' => array(
 			'src'  => 'assets/js/gloskin-ui1-diagnostic.js',
 			'deps' => array(),
