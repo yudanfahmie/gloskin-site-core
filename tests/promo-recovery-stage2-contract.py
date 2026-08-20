@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Focused contract for Promo visibility and the bounded Stage 2 recovery."""
 from datetime import datetime
 from pathlib import Path
@@ -109,6 +109,6 @@ ordered = sorted([(0, "Zulu", 9), (2, "Beta", 7), (1, "Alpha", 8)],
                  key=lambda row: (row[0] <= 0, row[0] if row[0] > 0 else 0, row[1], row[2]))
 require([row[2] for row in ordered] == [8, 7, 9], "explicit order then title/ID behavior changed")
 
-require("Version: 0.7.159" in plugin and "const VERSION = '0.7.159';" in kernel,
+require("Version: 0.7.160" in plugin and "const VERSION = '0.7.160';" in kernel,
         "plugin and Kernel version must be synchronized")
-print("promo-recovery-stage2-contract.py: OK (0.7.159)")
+print("promo-recovery-stage2-contract.py: OK (0.7.160)")

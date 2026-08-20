@@ -32,9 +32,9 @@ heading_h2 = css.split(".gloskin-ui1-section-heading h2{", 1)[1].split("}", 1)[0
 heading_p = css.split(".gloskin-ui1-section-heading p{", 1)[1].split("}", 1)[0]
 require("grid-template-columns" in heading_rule and "align-items:end" in heading_rule,
         "desktop heading must use the balanced two-column composition")
-require("12ch" not in heading_h2 and "22ch" in heading_h2 and "text-wrap:balance" in heading_h2,
-        "heading needs enough balanced width for Produk yang Tersedia in at most two desktop lines")
-for token in ("justify-self:end", "max-width:40ch", "line-height:1.65", "text-wrap:pretty", "font-weight:300", "color:var(--gloskin-copy-ink)"):
+require("22ch" not in heading_h2 and "text-wrap:balance" in heading_h2 and "repeat(2,minmax(0,1fr))" in heading_rule,
+        "heading h2 must not have narrow 22ch cap; grid must use exact 50/50 repeat(2,minmax(0,1fr))")
+for token in ("justify-self:end", "max-width:40ch", "line-height:1.65", "text-wrap:pretty", "font-weight:300", "color:var(--gloskin-copy-ink)", "text-align:right"):
     require(token in heading_p, f"desktop description composition missing: {token}")
 tablet = css.split("@media (max-width:1040px){", 1)[1].split("@media (max-width:759px)", 1)[0]
 require("grid-template-columns:1fr" in tablet and "justify-self:start" in tablet and "margin:0" in tablet,
@@ -68,6 +68,6 @@ require(core_js.count("function initSkincareChips()") == 1,
         "there must be no second Skincare filtering implementation")
 require("!important" not in css, "final presentation owner must not introduce !important")
 
-require("Version: 0.7.159" in plugin and "const VERSION = '0.7.159';" in kernel,
+require("Version: 0.7.160" in plugin and "const VERSION = '0.7.160';" in kernel,
         "plugin and Kernel version must be synchronized")
-print("shared-section-skincare-contract.py: OK (0.7.159)")
+print("shared-section-skincare-contract.py: OK (0.7.160)")

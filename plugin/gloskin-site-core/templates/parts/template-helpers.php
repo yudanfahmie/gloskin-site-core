@@ -637,10 +637,11 @@ if ( ! function_exists( 'gloskin_ui1_render_managed_promo_carousel' ) ) {
 
 		$first = $promos[0];
 		?>
-		<section class="<?php echo esc_attr( $classes ); ?>" data-gloskin-promo-carousel aria-label="<?php echo esc_attr__( 'Promo Gloskin', 'gloskin-site-core' ); ?>">
+		<section class="<?php echo esc_attr( $classes ); ?>" data-gloskin-promo-carousel<?php echo ( $compact && $count > 1 ) ? ' data-gloskin-promo-autoplay' : ''; ?> aria-label="<?php echo esc_attr__( 'Promo Gloskin', 'gloskin-site-core' ); ?>">
 			<div class="gloskin-ui1-container">
+				<div class="gloskin-ui1-promo-carousel__live" aria-live="polite" aria-atomic="true" data-gloskin-promo-live></div>
 				<!-- main panel -->
-				<div class="gloskin-ui1-promo-carousel__stage" role="region" aria-live="polite" aria-atomic="true">
+				<div class="gloskin-ui1-promo-carousel__stage" role="region">
 					<?php foreach ( $promos as $promo_index => $promo ) :
 						$is_first = 0 === $promo_index;
 						$slide_heading_tag = $is_first ? $heading_tag : 'h2';
@@ -652,7 +653,7 @@ if ( ! function_exists( 'gloskin_ui1_render_managed_promo_carousel' ) ) {
 						$image_id  = absint( $promo['image_id'] );
 						?>
 						<div class="gloskin-ui1-promo-carousel__slide<?php echo $is_first ? ' is-active' : ''; ?>" data-gloskin-promo-slide="<?php echo esc_attr( (string) $promo_index ); ?>" <?php echo $is_first ? '' : 'hidden'; ?> aria-label="<?php /* translators: %1$d: slide number; %2$d: total slides. */ echo esc_attr( sprintf( __( 'Promo %1$d dari %2$d', 'gloskin-site-core' ), $promo_index + 1, $count ) ); ?>">
-							<div class="gloskin-ui1-promo-carousel__slide-inner">
+							<div class="gloskin-ui1-promo-carousel__slide-inner<?php echo $image_id ? '' : ' gloskin-ui1-promo-carousel__slide-inner--no-media'; ?>">
 								<div class="gloskin-ui1-promo-carousel__copy">
 									<?php if ( '' !== $eyebrow ) : ?><p class="gloskin-ui1-eyebrow"><?php echo esc_html( $eyebrow ); ?></p><?php endif; ?>
 									<<?php echo esc_attr( $slide_heading_tag ); ?> class="gloskin-ui1-promo-carousel__title"><?php echo esc_html( $title ); ?></<?php echo esc_attr( $slide_heading_tag ); ?>>

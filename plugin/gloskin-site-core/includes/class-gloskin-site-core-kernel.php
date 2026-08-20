@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Gloskin Site Core composition root.
  *
@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.7.159';
+	const VERSION = '0.7.160';
 
 	/** @var string */
 	private $plugin_file;

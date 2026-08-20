@@ -2572,65 +2572,189 @@
 	/**
 	 * Promo carousel controller.
 	 * Activates prev/next buttons, dot indicators, and poster thumbnail selectors
-	 * on [data-gloskin-promo-carousel]. No autoplay. Keyboard-accessible.
-	 * Reduced-motion: instant transitions.
+	 * on [data-gloskin-promo-carousel]. Keyboard-accessible.
+	 *
+	 * Autoplay: opt-in only. A carousel with data-gloskin-promo-autoplay and
+	 * more than one slide receives a 5.5 s interval that pauses on hover, focus,
+	 * hidden document, and prefers-reduced-motion. Manual navigation resets
+	 * the timer. Screen-reader announcements happen only on user-triggered changes.
+	 * One-slide carousels never start a timer.
+	 *
+	 * Transition: horizontal slide (~520 ms, cubic-bezier). JS sets
+	 * data-gloskin-promo-enhanced on the root so CSS provides the grid-stacking
+	 * and transition; JS drives inline transform on each slide.
+	 * Reduced-motion: instant swap, no autoplay.
+	 *
+	 * No-JS fallback: first slide has no [hidden] attribute — remains visible.
 	 */
 	function initPromoCarousel() {
-		var carousels = document.querySelectorAll('[data-gloskin-promo-carousel]');
+		var carousels   = document.querySelectorAll('[data-gloskin-promo-carousel]');
+		var reducedMotion = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+		var INTERVAL    = 5500;
+		var DURATION    = 540; /* fallback timeout slightly above CSS 520ms */
+
 		for (var ci = 0; ci < carousels.length; ci++) {
 			(function (root) {
-				var slides = root.querySelectorAll('[data-gloskin-promo-slide]');
-				var dots   = root.querySelectorAll('[data-gloskin-promo-dot]');
-				var thumbs = root.querySelectorAll('[data-gloskin-promo-thumb]');
-				var prev   = root.querySelector('[data-gloskin-promo-prev]');
-				var next   = root.querySelector('[data-gloskin-promo-next]');
+				var slides     = root.querySelectorAll('[data-gloskin-promo-slide]');
+				var dots       = root.querySelectorAll('[data-gloskin-promo-dot]');
+				var thumbs     = root.querySelectorAll('[data-gloskin-promo-thumb]');
+				var prevBtn    = root.querySelector('[data-gloskin-promo-prev]');
+				var nextBtn    = root.querySelector('[data-gloskin-promo-next]');
+				var liveRegion = root.querySelector('[data-gloskin-promo-live]');
 				if (!slides.length) { return; }
-				var current = 0;
 
-				function activate(index) {
-					var n = slides.length;
-					index = ((index % n) + n) % n;
-					for (var i = 0; i < slides.length; i++) {
-						var active = i === index;
-						slides[i].hidden = !active;
-						slides[i].setAttribute('aria-hidden', active ? 'false' : 'true');
-					}
-					for (var j = 0; j < dots.length; j++) {
-						var dotActive = j === index;
-						dots[j].setAttribute('aria-selected', dotActive ? 'true' : 'false');
-						dots[j].setAttribute('tabindex', dotActive ? '0' : '-1');
-						if (dotActive) { dots[j].classList.add('is-active'); }
-						else { dots[j].classList.remove('is-active'); }
-					}
-					for (var t = 0; t < thumbs.length; t++) {
-						var thumbActive = t === index;
-						thumbs[t].setAttribute('aria-selected', thumbActive ? 'true' : 'false');
-						thumbs[t].setAttribute('tabindex', thumbActive ? '0' : '-1');
-						if (thumbActive) { thumbs[t].classList.add('is-active'); }
-						else { thumbs[t].classList.remove('is-active'); }
-					}
-					current = index;
+				var n          = slides.length;
+				var current    = 0;
+				var timer      = null;
+				var wantsPlay  = root.hasAttribute('data-gloskin-promo-autoplay') && n > 1 && !reducedMotion;
+				var hovered    = false;
+				var focused    = false;
+
+				/* ── Enhanced transition setup ───────────────────────────── */
+				root.setAttribute('data-gloskin-promo-enhanced', '');
+				/* Remove [hidden] so all slides participate in the grid stack.
+				 * CSS overflow:hidden on the stage clips the off-screen slides. */
+				for (var ri = 0; ri < n; ri++) {
+					slides[ri].removeAttribute('hidden');
+					/* Position slides: first is on-screen, rest are off-screen right. */
+					slides[ri].style.transform = ri === 0 ? 'translateX(0)' : 'translateX(100%)';
+					slides[ri].setAttribute('aria-hidden', ri === 0 ? 'false' : 'true');
 				}
 
-				if (prev) { prev.addEventListener('click', function () { activate(current - 1); }); }
-				if (next) { next.addEventListener('click', function () { activate(current + 1); }); }
+				/* ── Sync dots / thumbs ──────────────────────────────────── */
+				function syncControls(index) {
+					for (var j = 0; j < dots.length; j++) {
+						var da = j === index;
+						dots[j].setAttribute('aria-selected', da ? 'true' : 'false');
+						dots[j].setAttribute('tabindex', da ? '0' : '-1');
+						da ? dots[j].classList.add('is-active') : dots[j].classList.remove('is-active');
+					}
+					for (var t = 0; t < thumbs.length; t++) {
+						var ta = t === index;
+						thumbs[t].setAttribute('aria-selected', ta ? 'true' : 'false');
+						thumbs[t].setAttribute('tabindex', ta ? '0' : '-1');
+						ta ? thumbs[t].classList.add('is-active') : thumbs[t].classList.remove('is-active');
+					}
+				}
+
+				/* ── Core activate ───────────────────────────────────────── */
+				function activate(index, direction, userTriggered) {
+					index = ((index % n) + n) % n;
+					if (index === current) { return; }
+					var prev_index = current;
+					var dir = direction || 'forward';
+					current = index;
+
+					syncControls(index);
+					slides[prev_index].setAttribute('aria-hidden', 'true');
+					slides[index].setAttribute('aria-hidden', 'false');
+
+					if (reducedMotion) {
+						/* Instant: hide outgoing, show incoming, no animation. */
+						slides[prev_index].style.transform = dir === 'back' ? 'translateX(100%)' : 'translateX(-100%)';
+						slides[index].style.transform = 'translateX(0)';
+						if (userTriggered && liveRegion) {
+							liveRegion.textContent = slides[index].getAttribute('aria-label') || '';
+						}
+						return;
+					}
+
+					/* Position incoming off-screen opposite to direction. */
+					slides[index].style.transition = 'none';
+					slides[index].style.transform = dir === 'back' ? 'translateX(-100%)' : 'translateX(100%)';
+					/* Force reflow before re-enabling transition. */
+					void slides[index].offsetWidth;
+					slides[index].style.transition = '';
+
+					/* Slide both slides simultaneously. */
+					slides[index].style.transform = 'translateX(0)';
+					slides[prev_index].style.transform = dir === 'back' ? 'translateX(100%)' : 'translateX(-100%)';
+
+					if (userTriggered && liveRegion) {
+						var cleanUp = function () {
+							liveRegion.textContent = slides[index].getAttribute('aria-label') || '';
+						};
+						var fired = false;
+						var onEnd = function (e) {
+							if (e && e.target !== slides[index]) { return; }
+							if (fired) { return; }
+							fired = true;
+							slides[index].removeEventListener('transitionend', onEnd);
+							cleanUp();
+						};
+						slides[index].addEventListener('transitionend', onEnd);
+						setTimeout(function () { if (!fired) { fired = true; cleanUp(); } }, DURATION + 60);
+					}
+				}
+
+				/* ── Autoplay timer ──────────────────────────────────────── */
+				function startTimer() {
+					if (!wantsPlay) { return; }
+					stopTimer();
+					timer = setInterval(function () {
+						if (!hovered && !focused && !document.hidden) {
+							activate(current + 1, 'forward', false);
+						}
+					}, INTERVAL);
+				}
+				function stopTimer() {
+					if (timer !== null) { clearInterval(timer); timer = null; }
+				}
+				function resetTimer() { if (wantsPlay) { stopTimer(); startTimer(); } }
+
+				/* ── Pause on hover / focus ──────────────────────────────── */
+				root.addEventListener('mouseenter', function () { hovered = true; stopTimer(); });
+				root.addEventListener('mouseleave', function () { hovered = false; if (!focused) { startTimer(); } });
+				root.addEventListener('focusin',  function () { focused = true; stopTimer(); });
+				root.addEventListener('focusout', function (e) {
+					if (!root.contains(e.relatedTarget)) { focused = false; if (!hovered) { startTimer(); } }
+				});
+				/* Pause when document hidden (tab switch / minimised). */
+				document.addEventListener('visibilitychange', function () {
+					if (document.hidden) { stopTimer(); } else { if (!hovered && !focused) { startTimer(); } }
+				});
+
+				/* ── Manual navigation (resets timer) ───────────────────── */
+				function manualGo(index, direction) {
+					activate(index, direction, true);
+					resetTimer();
+				}
+
+				if (prevBtn) {
+					prevBtn.addEventListener('click', function () { manualGo(current - 1, 'back'); });
+				}
+				if (nextBtn) {
+					nextBtn.addEventListener('click', function () { manualGo(current + 1, 'forward'); });
+				}
 				for (var di = 0; di < dots.length; di++) {
 					(function (dot, idx) {
-						dot.addEventListener('click', function () { activate(idx); });
+						dot.addEventListener('click', function () {
+							manualGo(idx, idx > current ? 'forward' : 'back');
+						});
 						dot.addEventListener('keydown', function (e) {
-							if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(idx); }
+							if (e.key === 'Enter' || e.key === ' ') {
+								e.preventDefault();
+								manualGo(idx, idx > current ? 'forward' : 'back');
+							}
 						});
 					}(dots[di], di));
 				}
 				for (var ti = 0; ti < thumbs.length; ti++) {
 					(function (thumb, idx) {
-						thumb.addEventListener('click', function () { activate(idx); });
+						thumb.addEventListener('click', function () {
+							manualGo(idx, idx > current ? 'forward' : 'back');
+						});
 						thumb.addEventListener('keydown', function (e) {
-							if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(idx); }
+							if (e.key === 'Enter' || e.key === ' ') {
+								e.preventDefault();
+								manualGo(idx, idx > current ? 'forward' : 'back');
+							}
 						});
 					}(thumbs[ti], ti));
 				}
-				activate(0);
+
+				syncControls(0);
+				startTimer();
 			}(carousels[ci]));
 		}
 	}
