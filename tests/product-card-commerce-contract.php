@@ -153,4 +153,22 @@ $fallback = render_card( array_merge( $consultation, array( 'image_id' => 0 ) ),
 ok( false !== strpos( $fallback, 'gloskin-ui1-card--text-first' ), 'consultation: missing Woo image degrades to text-first card' );
 ok( false === strpos( $fallback, 'gloskin-ui1-consultation-card__media' ), 'consultation: missing Woo image renders no media shell' );
 
+/* -----------------------------------------------------------------
+ * E. Phase-2 Skincare is presentation-only: the same Woo action contract
+ * remains wired while dense catalogue/review/wishlist UI is deliberately absent.
+ * ----------------------------------------------------------------- */
+$skincare = array_merge( $simple, array(
+	'short_description' => 'Dense catalogue copy that must not render in Skincare.',
+) );
+$html = render_card( $skincare, 'skincare' );
+$footer = footer_markup( $html );
+ok( false !== strpos( $html, 'gloskin-ui1-card--product-skincare' ), 'skincare: canonical renderer exposes the explicit presentation variant' );
+ok( false !== strpos( $html, 'stub.jpg' ) && false !== strpos( $html, 'Gentle Cleanser' ) && false !== strpos( $html, '<span class="amount">Rp150.000</span>' ), 'skincare: factual Woo image/title/price remain present' );
+foreach ( array( 'button', 'add_to_cart_button', 'ajax_add_to_cart', 'product_type_simple', 'data-product_id="101"', 'data-product_sku="GLS-001"' ) as $required ) {
+	ok( false !== strpos( $footer, $required ), "skincare: Woo commerce action retains {$required}" );
+}
+foreach ( array( 'Dense catalogue copy', 'wishlist', 'rating', 'review', 'star' ) as $forbidden ) {
+	ok( false === stripos( $html, $forbidden ), "skincare: sparse presentation excludes {$forbidden}" );
+}
+
 echo "product card commerce contract: OK\n";

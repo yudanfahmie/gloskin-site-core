@@ -52,7 +52,7 @@ gloskin_ui1_render_hero( $gloskin_context['hero'] );
 			$gloskin_cat_slugs = isset( $gloskin_product['category_slugs'] ) ? (string) $gloskin_product['category_slugs'] : '';
 		?>
 		<div data-gloskin-product-card data-category-slugs="<?php echo esc_attr( $gloskin_cat_slugs ); ?>">
-			<?php gloskin_ui1_render_product_card( $gloskin_product ); ?>
+			<?php gloskin_ui1_render_product_card( $gloskin_product, 'skincare' ); ?>
 		</div>
 		<?php endforeach; ?>
 	</div>

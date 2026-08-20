@@ -90,8 +90,8 @@ with sync_playwright() as pw:
     page.set_content(payload['routes']['home'], wait_until='domcontentloaded')
     if page.locator('[data-gloskin-section="why-gloskin"] .gloskin-ui1-why__primary-media img[data-test-attachment-id]').count() != 1:
         raise SystemExit('home: Why Gloskin did not resolve local home_why media')
-    if page.locator('[data-gloskin-section="home-brand-story"] .gloskin-ui1-home-brand-story__media img[data-test-attachment-id]').count() != 1:
-        raise SystemExit('home: Brand Story did not resolve local home_brand_story media')
+    if page.locator('[data-gloskin-section="home-brand-story"]').count() != 0:
+        raise SystemExit('home: Phase-2 client structure must not render the retired standalone Brand Story section')
 
     page.set_content(payload['routes']['treatments'], wait_until='domcontentloaded')
     if page.locator('img[data-test-attachment-id]').count() < 1:

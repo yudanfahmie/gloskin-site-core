@@ -43,9 +43,9 @@ gh_ok( str_contains( $helpers, "in_array( \$kind, array( 'doctor', 'clinic', 'pr
 gh_ok( ! str_contains( $helpers, "gloskin_ui1_render_presentation_media( 'product'" ) && str_contains( $helpers, 'gloskin-ui1-card--text-first' ), 'product/doctor/clinic normal missing media path is text-first' );
 gh_ok( str_contains( $helpers, "'alt' => \$title" ) && str_contains( $helpers, "'alt' => \$name" ), 'factual media alt uses exact factual entity/product name' );
 
-gh_ok( substr_count( $home, 'data-gloskin-section="home-brand-story"' ) === 1 && str_contains( $home, "home_url( '/about/' )" ), 'Home brand story always exists with /about/ fallback CTA' );
-$brand_pos = strpos($home,'home-brand-story'); $test_pos=strpos($home,'render_testimonials'); $ach_pos=strpos($home,'render_achievements');
-gh_ok( $test_pos !== false && $brand_pos !== false && $ach_pos !== false && $test_pos < $brand_pos && $brand_pos < $ach_pos, 'Home brand story structural order preserved' );
+gh_ok( ! str_contains( $home, 'home-brand-story' ) && ! str_contains( $home, 'home-discovery' ) && ! str_contains( $home, 'render_managed_promo_carousel' ), 'Phase-2 Home omits reference-absent brand-story/discovery/Promo compositions' );
+$why_pos = strpos($home,'home-why-local-media.php'); $treatment_pos=strpos($home,'home-treatments'); $test_pos=strpos($home,'render_testimonials'); $ach_pos=strpos($home,'render_achievements'); $close_pos=strpos($home,'home-closing');
+gh_ok( $why_pos !== false && $treatment_pos !== false && $test_pos !== false && $ach_pos !== false && $close_pos !== false && $why_pos < $treatment_pos && $treatment_pos < $test_pos && $test_pos < $ach_pos && $ach_pos < $close_pos, 'Phase-2 Home structural order preserved' );
 
 gh_ok( is_array($manifest) && count($manifest['items'] ?? array()) === 6, 'six first-party editorial assets remain selected' );
 foreach ( (array)($manifest['items'] ?? array()) as $item ) {

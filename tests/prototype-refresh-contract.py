@@ -80,8 +80,8 @@ consultation = assets[assets.index("'gloskin-ui1-consultation' => array("):]
 require("'deps'  => array( 'gloskin-ui1-prototype-refresh' )" in consultation, "Treatments specialist layer must follow refresh")
 
 require(home.count("gloskin_ui1_render_hero(") == 1, "Home must render exactly one shared hero")
-require("gloskin_ui1_render_managed_promo_carousel( $gloskin_context['promo'], 'h2', true )" in home,
-        "Home must keep the protected managed Promo carousel with h2 + compact presentation")
+require("gloskin_ui1_render_managed_promo_carousel" not in home and "home-discovery" not in home and "home-brand-story" not in home,
+        "Phase-2 Home must omit reference-absent Promo/discovery/brand-story compositions")
 for obsolete in ("home-doctors", "home-clinics", "home-insights"):
     require(obsolete not in home, f"superseded primary Home section remains: {obsolete}")
 require("gloskin_ui1_render_testimonials( $gloskin_context['testimonials'] );" in home,
@@ -114,7 +114,13 @@ require("private function managed_promo_records" in template_service, "managed P
 require("gloskin_ui1_render_managed_promo_carousel( $gloskin_context['promos'], 'h1', false )" in promo
         and "gloskin_ui1_render_page_content" in promo,
         "Promo route must keep managed campaign carousel and native Page long-form content")
-require("function gloskin_ui1_render_promo_campaign" in helpers, "shared Promo renderer missing")
+require("function gloskin_ui1_render_managed_promo_carousel" in helpers
+        and "gloskin-ui1-promo-carousel--page" in helpers
+        and "gloskin-ui1-promo-carousel--compact" in helpers,
+        "managed Promo renderer must keep one page/compact variant owner")
+require("Promo Terbatas" in helpers and "data-gloskin-promo-posters" in helpers,
+        "Promo page variant must expose the verified Phase-2 featured/poster hierarchy")
+require("function gloskin_ui1_render_promo_campaign" in helpers, "legacy shared Page-based Promo helper must remain available to its existing consumers")
 for invented in ("diskon", "harga promo", "berlaku sampai", "syarat promo", "bpom"):
     require(invented not in promo.lower(), f"Promo template must not invent commercial fact: {invented}")
 
@@ -140,6 +146,11 @@ for hardcoded_path in ("Face", "Hair", "Body", "Wellness"):
     require(hardcoded_path not in consultation_rules, f"Treatments CSS rules must not hardcode prototype pathway label: {hardcoded_path}")
 
 require("gloskin-ui1-product-grid" in skincare and "data-gloskin-product-grid" in skincare, "Skincare must reuse the canonical product grid")
+require("gloskin_ui1_render_product_card( $gloskin_product, 'skincare' )" in skincare,
+        "Skincare must request the canonical Phase-2 card variant")
+require('[data-gloskin-section="skincare-products"] .gloskin-ui1-card--product-skincare' in css
+        and "object-fit:contain" in css,
+        "Skincare product presentation must be route-scoped and packshot-first")
 require("Prototype-controlled primary hero/campaign" in page_matrix, "page matrix must record the current Home target")
 require("strict native video-only hero" not in page_matrix, "superseded Home hero requirement remains canonical")
 require("/promo/" in page_matrix, "Promo route missing from current page matrix")

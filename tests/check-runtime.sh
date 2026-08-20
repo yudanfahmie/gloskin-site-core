@@ -50,6 +50,7 @@ php tests/consultation-contract.php
 php tests/consultation-demo-importer-contract.php
 php tests/woo-cart-notice-contract.php
 php tests/phase1-client-feedback-contract.php
+php tests/phase2-client-feedback-contract.php
 php tests/release-version-contract.php
 php tests/diagnostic-export-contract.php
 php tests/shop-catalog-contract.php
@@ -142,6 +143,7 @@ then
   python tests/browser-smoke.py
   python tests/zero-placeholder-browser-smoke.py
   python tests/page-richness-smoke.py
+  python tests/phase2-client-feedback-browser-smoke.py
   python tests/readiness-browser-smoke.py
   python tests/quick-add-browser-smoke.py
   python tests/commerce-closure-browser-smoke.py

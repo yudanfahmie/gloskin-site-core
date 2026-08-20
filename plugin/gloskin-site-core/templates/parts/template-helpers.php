@@ -358,6 +358,7 @@ if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
 		$url      = isset( $product['url'] ) ? (string) $product['url'] : '';
 		$image_id = isset( $product['image_id'] ) ? absint( $product['image_id'] ) : 0;
 		$id       = isset( $product['id'] ) ? absint( $product['id'] ) : 0;
+
 		if ( 'consultation' === $variant ) {
 			$description = ! empty( $product['short_description'] ) ? wp_trim_words( wp_strip_all_tags( (string) $product['short_description'] ), 42 ) : '';
 			/* translators: %s: Treatment Product name. */
@@ -383,10 +384,61 @@ if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
 			<?php
 			return;
 		}
-		$type     = isset( $product['type'] ) ? (string) $product['type'] : '';
-		$is_variable = 'variable' === $type;
+
+		$type         = isset( $product['type'] ) ? (string) $product['type'] : '';
+		$is_variable  = 'variable' === $type;
 		$can_purchase = ! empty( $product['purchasable'] ) && ! empty( $product['in_stock'] );
-		$action_url = $is_variable ? $url : ( isset( $product['add_to_cart_url'] ) ? (string) $product['add_to_cart_url'] : '' );
+		$action_url   = $is_variable ? $url : ( isset( $product['add_to_cart_url'] ) ? (string) $product['add_to_cart_url'] : '' );
+
+		/* One commerce-action owner is shared by catalog and Skincare presentation
+		 * branches. The variant only changes composition/skin; Woo product type,
+		 * native loop classes/data attributes, AJAX eligibility and Quick Add
+		 * enhancement remain identical. */
+		$render_purchase_action = static function () use ( $product, $type, $is_variable, $can_purchase, $action_url, $url, $id ) {
+			if ( $can_purchase && '' !== $action_url ) {
+				$cart_classes = array( 'gloskin-ui1-button', 'gloskin-ui1-button--small', 'button', 'add_to_cart_button' );
+				if ( '' !== $type ) {
+					$cart_classes[] = 'product_type_' . sanitize_html_class( $type );
+				}
+				if ( ! empty( $product['ajax_add_to_cart'] ) ) {
+					$cart_classes[] = 'ajax_add_to_cart';
+				}
+				if ( $is_variable ) {
+					$cart_classes[] = 'gloskin-ui1-quickadd-trigger';
+				}
+				$cart_label = '' !== trim( (string) ( $product['add_to_cart_description'] ?? '' ) )
+					? (string) $product['add_to_cart_description']
+					: (string) ( $product['add_to_cart_text'] ?? '' );
+				$cart_text = $is_variable ? __( 'Pilih Varian', 'gloskin-site-core' ) : (string) ( $product['add_to_cart_text'] ?? '' );
+				?>
+				<a href="<?php echo esc_url( $action_url ); ?>" data-quantity="1" class="<?php echo esc_attr( implode( ' ', $cart_classes ) ); ?>" data-product_id="<?php echo esc_attr( (string) $id ); ?>" data-product_sku="<?php echo esc_attr( (string) ( $product['sku'] ?? '' ) ); ?>"<?php echo $is_variable ? ' data-gloskin-quickadd-open data-gloskin-quickadd-product="' . esc_attr( (string) $id ) . '" aria-haspopup="dialog"' : ''; ?> aria-label="<?php echo esc_attr( $cart_label ); ?>" rel="nofollow"><?php echo esc_html( $cart_text ); ?></a>
+				<?php
+				return;
+			}
+			if ( '' !== $url ) {
+				?>
+				<a class="gloskin-ui1-button gloskin-ui1-button--small gloskin-ui1-button--ghost" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'Lihat Produk', 'gloskin-site-core' ); ?></a>
+				<?php
+			}
+		};
+
+		if ( 'skincare' === $variant ) {
+			?>
+			<article class="gloskin-ui1-card gloskin-ui1-card--product gloskin-ui1-card--product-skincare<?php echo $image_id ? '' : ' gloskin-ui1-card--text-first'; ?>">
+				<?php if ( $image_id ) : ?>
+					<div class="gloskin-ui1-card__media-wrap gloskin-ui1-card__media-wrap--skincare">
+						<a class="gloskin-ui1-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true"><?php echo wp_get_attachment_image( $image_id, 'woocommerce_thumbnail', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-card__image', 'alt' => $name ) ); ?></a>
+					</div>
+				<?php endif; ?>
+				<div class="gloskin-ui1-card__body">
+					<h3 class="gloskin-ui1-card__title"><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $name ); ?></a></h3>
+					<?php if ( ! empty( $product['price_html'] ) ) : ?><div class="gloskin-ui1-product-price"><?php echo wp_kses_post( (string) $product['price_html'] ); ?></div><?php endif; ?>
+					<div class="gloskin-ui1-card__actions"><?php $render_purchase_action(); ?></div>
+				</div>
+			</article>
+			<?php
+			return;
+		}
 		?>
 		<article class="gloskin-ui1-card gloskin-ui1-card--product<?php echo $image_id ? '' : ' gloskin-ui1-card--text-first'; ?>">
 			<?php if ( $image_id ) : ?>
@@ -401,33 +453,7 @@ if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
 				<h3 class="gloskin-ui1-card__title"><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $name ); ?></a></h3>
 				<?php if ( ! empty( $product['price_html'] ) ) : ?><div class="gloskin-ui1-product-price"><?php echo wp_kses_post( (string) $product['price_html'] ); ?></div><?php endif; ?>
 				<?php if ( ! empty( $product['short_description'] ) ) : ?><p class="gloskin-ui1-card__copy"><?php echo esc_html( wp_trim_words( (string) $product['short_description'], 24 ) ); ?></p><?php endif; ?>
-				<div class="gloskin-ui1-card__actions">
-					<?php if ( $can_purchase && '' !== $action_url ) :
-						/* Mirror WooCommerce's own native loop add-to-cart contract
-						 * (class/data-attribute composition) so Woo's own frontend
-						 * scripts can bind exactly where Woo declares AJAX support.
-						 * Variable products keep the canonical product URL as their
-						 * no-JS fallback while Quick Add remains enhancement only. */
-						$cart_classes = array( 'gloskin-ui1-button', 'gloskin-ui1-button--small', 'button', 'add_to_cart_button' );
-						if ( '' !== $type ) {
-							$cart_classes[] = 'product_type_' . sanitize_html_class( $type );
-						}
-						if ( ! empty( $product['ajax_add_to_cart'] ) ) {
-							$cart_classes[] = 'ajax_add_to_cart';
-						}
-						if ( $is_variable ) {
-							$cart_classes[] = 'gloskin-ui1-quickadd-trigger';
-						}
-						$cart_label = '' !== trim( (string) ( $product['add_to_cart_description'] ?? '' ) )
-							? (string) $product['add_to_cart_description']
-							: (string) ( $product['add_to_cart_text'] ?? '' );
-						$cart_text = $is_variable ? __( 'Pilih Varian', 'gloskin-site-core' ) : (string) ( $product['add_to_cart_text'] ?? '' );
-						?>
-						<a href="<?php echo esc_url( $action_url ); ?>" data-quantity="1" class="<?php echo esc_attr( implode( ' ', $cart_classes ) ); ?>" data-product_id="<?php echo esc_attr( (string) $id ); ?>" data-product_sku="<?php echo esc_attr( (string) ( $product['sku'] ?? '' ) ); ?>"<?php echo $is_variable ? ' data-gloskin-quickadd-open data-gloskin-quickadd-product="' . esc_attr( (string) $id ) . '" aria-haspopup="dialog"' : ''; ?> aria-label="<?php echo esc_attr( $cart_label ); ?>" rel="nofollow"><?php echo esc_html( $cart_text ); ?></a>
-					<?php elseif ( '' !== $url ) : ?>
-						<a class="gloskin-ui1-button gloskin-ui1-button--small gloskin-ui1-button--ghost" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'Lihat Produk', 'gloskin-site-core' ); ?></a>
-					<?php endif; ?>
-				</div>
+				<div class="gloskin-ui1-card__actions"><?php $render_purchase_action(); ?></div>
 			</div>
 		</article>
 		<?php
@@ -611,6 +637,10 @@ if ( ! function_exists( 'gloskin_ui1_render_managed_promo_carousel' ) ) {
 	 * Multi-campaign Promo carousel from managed gloskin_promo records.
 	 * Keyboard-accessible, reduced-motion safe, clean empty/one-record state.
 	 *
+	 * The page variant composes the same managed records into the Phase-2
+	 * "Promo Terbatas" featured area plus a large poster selector. Compact
+	 * Home presentation keeps its existing behavior and controller contract.
+	 *
 	 * @param array<int,array<string,mixed>> $promos  Active promo records.
 	 * @param string                         $heading_tag h1 on /promo/ page, h2 on Home.
 	 * @param bool                           $compact True when embedded on Home.
@@ -619,32 +649,39 @@ if ( ! function_exists( 'gloskin_ui1_render_managed_promo_carousel' ) ) {
 	function gloskin_ui1_render_managed_promo_carousel( $promos, $heading_tag = 'h2', $compact = false ) {
 		$heading_tag = in_array( $heading_tag, array( 'h1', 'h2' ), true ) ? $heading_tag : 'h2';
 		$count       = count( $promos );
+		$page        = ! $compact;
 		$classes     = 'gloskin-ui1-promo-carousel' . ( $compact ? ' gloskin-ui1-promo-carousel--compact' : ' gloskin-ui1-promo-carousel--page' );
 
 		if ( 0 === $count ) {
-			/* No published promo records — render editorial fallback */
 			?>
 			<section class="<?php echo esc_attr( $classes ); ?>" data-gloskin-promo-carousel>
 				<div class="gloskin-ui1-container gloskin-ui1-promo-carousel__empty">
 					<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Promo', 'gloskin-site-core' ); ?></p>
-					<<?php echo esc_attr( $heading_tag ); ?> class="gloskin-ui1-promo-carousel__empty-heading"><?php echo esc_html__( 'Promo Gloskin', 'gloskin-site-core' ); ?></<?php echo esc_attr( $heading_tag ); ?>>
+					<?php if ( $page ) : ?>
+						<h1 class="gloskin-ui1-promo-carousel__page-heading"><?php echo esc_html__( 'Promo Terbatas', 'gloskin-site-core' ); ?></h1>
+					<?php else : ?>
+						<<?php echo esc_attr( $heading_tag ); ?> class="gloskin-ui1-promo-carousel__empty-heading"><?php echo esc_html__( 'Promo Gloskin', 'gloskin-site-core' ); ?></<?php echo esc_attr( $heading_tag ); ?>>
+					<?php endif; ?>
 					<p><?php echo esc_html__( 'Informasi promo belum tersedia.', 'gloskin-site-core' ); ?></p>
 				</div>
 			</section>
 			<?php
 			return;
 		}
-
-		$first = $promos[0];
 		?>
 		<section class="<?php echo esc_attr( $classes ); ?>" data-gloskin-promo-carousel<?php echo ( $compact && $count > 1 ) ? ' data-gloskin-promo-autoplay' : ''; ?> aria-label="<?php echo esc_attr__( 'Promo Gloskin', 'gloskin-site-core' ); ?>">
 			<div class="gloskin-ui1-container">
+				<?php if ( $page ) : ?>
+					<header class="gloskin-ui1-promo-carousel__page-intro">
+						<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Promo', 'gloskin-site-core' ); ?></p>
+						<h1 class="gloskin-ui1-promo-carousel__page-heading"><?php echo esc_html__( 'Promo Terbatas', 'gloskin-site-core' ); ?></h1>
+					</header>
+				<?php endif; ?>
 				<div class="gloskin-ui1-promo-carousel__live" aria-live="polite" aria-atomic="true" data-gloskin-promo-live></div>
-				<!-- main panel -->
-				<div class="gloskin-ui1-promo-carousel__stage" role="region">
+				<div class="gloskin-ui1-promo-carousel__stage" role="region" aria-label="<?php echo esc_attr__( 'Promo terpilih', 'gloskin-site-core' ); ?>">
 					<?php foreach ( $promos as $promo_index => $promo ) :
 						$is_first = 0 === $promo_index;
-						$slide_heading_tag = $is_first ? $heading_tag : 'h2';
+						$slide_heading_tag = ( $compact && $is_first ) ? $heading_tag : 'h2';
 						$title     = (string) $promo['title'];
 						$eyebrow   = (string) $promo['eyebrow'];
 						$summary   = '' !== (string) $promo['summary'] ? (string) $promo['summary'] : (string) $promo['excerpt'];
@@ -673,26 +710,51 @@ if ( ! function_exists( 'gloskin_ui1_render_managed_promo_carousel' ) ) {
 				</div>
 
 				<?php if ( $count > 1 ) : ?>
-					<!-- controls -->
 					<div class="gloskin-ui1-promo-carousel__controls" role="group" aria-label="<?php echo esc_attr__( 'Navigasi promo', 'gloskin-site-core' ); ?>">
 						<button type="button" class="gloskin-ui1-promo-carousel__prev" data-gloskin-promo-prev aria-label="<?php echo esc_attr__( 'Promo sebelumnya', 'gloskin-site-core' ); ?>">
 							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M13 4L7 10L13 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
 						</button>
 						<div class="gloskin-ui1-promo-carousel__dots" role="tablist" aria-label="<?php echo esc_attr__( 'Pilih promo', 'gloskin-site-core' ); ?>">
 							<?php foreach ( $promos as $dot_index => $dot_promo ) : ?>
-								<button type="button" class="gloskin-ui1-promo-carousel__dot<?php echo 0 === $dot_index ? ' is-active' : ''; ?>" role="tab" data-gloskin-promo-dot="<?php echo esc_attr( (string) $dot_index ); ?>" aria-selected="<?php echo 0 === $dot_index ? 'true' : 'false'; ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Promo %d', 'gloskin-site-core' ), $dot_index + 1 ) ); ?>"></button>
+								<button type="button" class="gloskin-ui1-promo-carousel__dot<?php echo 0 === $dot_index ? ' is-active' : ''; ?>" role="tab" data-gloskin-promo-dot="<?php echo esc_attr( (string) $dot_index ); ?>" aria-selected="<?php echo 0 === $dot_index ? 'true' : 'false'; ?>" tabindex="<?php echo 0 === $dot_index ? '0' : '-1'; ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Promo %d', 'gloskin-site-core' ), $dot_index + 1 ) ); ?>"></button>
 							<?php endforeach; ?>
 						</div>
 						<button type="button" class="gloskin-ui1-promo-carousel__next" data-gloskin-promo-next aria-label="<?php echo esc_attr__( 'Promo berikutnya', 'gloskin-site-core' ); ?>">
 							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M7 4L13 10L7 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
 						</button>
 					</div>
-					<?php
-					/* Thumbnail/poster selector strip — rendered when at least one record
-					 * has a Featured Image. Selecting a thumbnail activates the exact slide.
-					 * Synced by initPromoCarousel() JS; keyboard accessible via role=tab.
-					 */
-					$promos_with_images = array_filter( $promos, static function ( $p ) { return absint( $p['image_id'] ) > 0; } );
+				<?php endif; ?>
+
+				<?php if ( $page ) : ?>
+					<div class="gloskin-ui1-promo-carousel__poster-section" data-gloskin-promo-posters>
+						<div class="gloskin-ui1-promo-carousel__poster-heading">
+							<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Kampanye', 'gloskin-site-core' ); ?></p>
+							<h2><?php echo esc_html__( 'Promo', 'gloskin-site-core' ); ?></h2>
+						</div>
+						<div class="gloskin-ui1-promo-carousel__posters" role="tablist" aria-label="<?php echo esc_attr__( 'Pilih poster promo', 'gloskin-site-core' ); ?>">
+							<?php foreach ( $promos as $poster_index => $poster_promo ) :
+								$poster_img_id = absint( $poster_promo['image_id'] );
+								$poster_title  = (string) $poster_promo['title'];
+								?>
+								<button
+									type="button"
+									class="gloskin-ui1-promo-carousel__poster<?php echo 0 === $poster_index ? ' is-active' : ''; ?>"
+									role="tab"
+									data-gloskin-promo-thumb="<?php echo esc_attr( (string) $poster_index ); ?>"
+									aria-selected="<?php echo 0 === $poster_index ? 'true' : 'false'; ?>"
+									tabindex="<?php echo 0 === $poster_index ? '0' : '-1'; ?>"
+									aria-label="<?php echo esc_attr( sprintf( /* translators: %1$d: poster number; %2$s: promo title. */ __( 'Poster %1$d: %2$s', 'gloskin-site-core' ), $poster_index + 1, $poster_title ) ); ?>"
+								>
+									<?php if ( $poster_img_id ) : ?>
+										<span class="gloskin-ui1-promo-carousel__poster-media"><?php echo wp_get_attachment_image( $poster_img_id, 'medium_large', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-promo-carousel__poster-image', 'alt' => '' ) ); ?></span>
+									<?php endif; ?>
+									<span class="gloskin-ui1-promo-carousel__poster-title"><?php echo esc_html( $poster_title ); ?></span>
+								</button>
+							<?php endforeach; ?>
+						</div>
+					</div>
+				<?php elseif ( $count > 1 ) :
+					$promos_with_images = array_filter( $promos, static function ( $promo ) { return absint( $promo['image_id'] ) > 0; } );
 					if ( count( $promos_with_images ) > 0 ) :
 					?>
 					<div class="gloskin-ui1-promo-carousel__thumbs" role="tablist" aria-label="<?php echo esc_attr__( 'Pilih poster promo', 'gloskin-site-core' ); ?>">

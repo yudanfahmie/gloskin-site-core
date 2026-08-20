@@ -13,6 +13,7 @@ $ok = static function ( bool $condition, string $message ): void {
 };
 
 $home       = $read( 'plugin/gloskin-site-core/templates/pages/home.php' );
+$skincare   = $read( 'plugin/gloskin-site-core/templates/pages/skincare.php' );
 $results    = $read( 'plugin/gloskin-site-core/templates/parts/shop-results.php' );
 $productcss = $read( 'plugin/gloskin-site-core/assets/css/gloskin-ui1-product-grid.css' );
 $shopcss    = $read( 'plugin/gloskin-site-core/assets/css/gloskin-ui1-shop-discovery.css' );
@@ -21,11 +22,11 @@ $shopjs     = $read( 'plugin/gloskin-site-core/assets/js/gloskin-ui1-shop-discov
 $discovery  = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-shop-discovery.php' );
 $assets     = $read( 'plugin/gloskin-site-core/config/assets.php' );
 
-/* Homepage opts only its real product collection into the dedicated geometry. */
-$ok( false !== strpos( $home, "if ( \$gloskin_context['products'] )" ), 'Homepage product section must remain payload-driven' );
-$ok( false !== strpos( $home, 'data-gloskin-section="home-discovery"' ), 'Unified Homepage skincare/product discovery section missing' );
-$ok( false !== strpos( $home, 'gloskin-ui1-grid--cards gloskin-ui1-product-grid" data-gloskin-product-grid' ), 'Homepage products must opt into shared product grid' );
-$ok( 1 === substr_count( $home, 'data-gloskin-product-grid' ), 'Homepage must expose exactly one product-grid owner marker' );
+/* Phase-2 Home no longer renders the product-discovery surface; Skincare and
+ * Shop remain the two public consumers of the same first-party grid owner. */
+$ok( false === strpos( $home, 'data-gloskin-product-grid' ) && false === strpos( $home, 'data-gloskin-section="home-discovery"' ), 'Phase-2 Home must not retain the retired product-discovery grid' );
+$ok( false !== strpos( $skincare, 'gloskin-ui1-grid--cards gloskin-ui1-product-grid" data-gloskin-product-grid' ), 'Skincare products must keep the shared product grid' );
+$ok( false !== strpos( $skincare, "gloskin_ui1_render_product_card( \$gloskin_product, 'skincare' )" ), 'Skincare grid must use the canonical renderer variant seam' );
 $ok( false === strpos( $productcss, '.gloskin-ui1-grid--cards{' ), 'shared product geometry must not override generic editorial card grids' );
 
 /* Shop SSR and AJAX already share this partial, so one modifier covers both. */
@@ -47,7 +48,7 @@ $ok( false !== strpos( $shopjs, 'var SKELETON_CARD_COUNT = 8;' ), 'Shop skeleton
 $ok( false !== strpos( $shopjs, 'data-gloskin-shop-skeleton aria-hidden="true"' ), 'Shop skeleton must remain aria-hidden' );
 $ok( false !== strpos( $shopcss, '.gloskin-ui1-shop-skeleton__card' ) && false !== strpos( $shopcss, 'border-radius: var(--gloskin-radius-md);' ), 'skeleton card must mirror canonical card radius' );
 $ok( false !== strpos( $shopcss, '.gloskin-ui1-shop-skeleton__media' ) && false !== strpos( $shopcss, 'aspect-ratio: 1;' ), 'skeleton media must remain square' );
-$ok( false !== strpos( $corebase, '.gloskin-ui1-card--product .gloskin-ui1-card__image{aspect-ratio:1}' ), 'real product-card image must remain square' );
+$ok( 1 === preg_match( '/\.gloskin-ui1-card--product\s+\.gloskin-ui1-card__image\s*\{[^}]*aspect-ratio\s*:\s*1/s', $corebase ), 'real catalog product-card image must remain square' );
 $ok( false !== strpos( $shopcss, 'height: 38px;' ) && false !== strpos( $shopcss, '.gloskin-ui1-shop-skeleton__card::after' ), 'skeleton must mirror the persistent small CTA footprint' );
 $ok( false !== strpos( $shopcss, 'animation: gloskin-skeleton-shimmer 1.4s ease-in-out infinite;' ), 'lightweight CSS skeleton shimmer missing' );
 $ok( false !== strpos( $shopcss, '@media (prefers-reduced-motion: reduce)' ) && false !== strpos( $shopcss, 'animation: none;' ), 'skeleton reduced-motion fallback missing' );

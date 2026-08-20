@@ -35,8 +35,9 @@ foreach ( (array) ( $manifest['items'] ?? array() ) as $item ) {
 }
 gl_final_ok( ! str_contains( $home, 'home-orientation' ), 'early home-orientation is removed' );
 gl_final_ok( is_string( $home_why ) && str_contains( $home_why, 'gloskin_ui1_render_why_gloskin' ) && str_contains( $home_why, "'home_why'" ), 'Why slot preserves approved composition while resolving local editorial media' );
-$order = array_map( static fn( $needle ) => strpos( $home, $needle ), array( 'home-why-local-media.php', 'home-treatments', 'render_managed_promo_carousel', 'home-discovery', 'render_testimonials', 'home-brand-story', 'render_achievements', 'home-closing' ) );
+$order = array_map( static fn( $needle ) => strpos( $home, $needle ), array( 'home-why-local-media.php', 'home-treatments', 'render_testimonials', 'render_achievements', 'home-closing' ) );
 $sorted_order = $order; sort( $sorted_order );
-gl_final_ok( ! in_array( false, $order, true ) && $order === $sorted_order, 'Home order matches approved prototype hierarchy' );
-gl_final_ok( substr_count( $home, 'data-gloskin-product-grid' ) === 1, 'unified discovery reuses one supplied product collection without a duplicate Woo query' );
+gl_final_ok( ! in_array( false, $order, true ) && $order === $sorted_order, 'Home order matches the Phase-2 client structure' );
+gl_final_ok( ! str_contains( $home, 'render_managed_promo_carousel' ) && ! str_contains( $home, 'home-discovery' ) && ! str_contains( $home, 'home-brand-story' ), 'reference-absent Home compositions stay retired from the Phase-2 page structure' );
+gl_final_ok( substr_count( $home, 'data-gloskin-product-grid' ) === 0, 'Home no longer renders a product grid outside the client-approved structure' );
 exit( $fail ? 1 : 0 );
