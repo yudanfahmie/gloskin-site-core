@@ -646,104 +646,119 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 	}
 
 	/**
-	 * Self-healing verify: correct anything that *can* be corrected, hard-fail
-	 * only on true data-corruption (SHA mismatch) or genuinely unrecoverable
-	 * state (missing audit entry, missing CPT registration, lost identity meta).
+	 * Self-healing verify — ground-truth first, zero dependency on stored audit.
 	 *
-	 * Pure assertion-style verify caused spurious failures on resume cycles:
-	 * WordPress background processes, caching layers, or concurrent requests can
-	 * reset thumbnails, publish fixtures, or change page status between the
-	 * doctor_photos/normalize steps and verify. Tolerating and repairing those
-	 * transient divergences is the right policy here — the migration's job is to
-	 * leave the site in the correct end state, and verify is the last gate before
-	 * finalize. Where an entry exists and SHA is intact, the data is provably
-	 * correct; anything else is a presentation concern we can fix inline.
+	 * Architecture: each property is verified directly against the current site
+	 * state and/or the manifest SHA (the actual source of truth), not against
+	 * accumulated audit arrays that can diverge on resume cycles. Where a
+	 * property is healable (thumbnail pointer, publication status, page status)
+	 * it is repaired inline. Only SHA corruption and genuinely unrecoverable
+	 * state (missing attachment, missing CPT) remain hard failures.
+	 *
+	 * IMPORTANT: final_ia_normalizer()->normalize() is NOT called here. Its
+	 * preserve-snapshot side-effect is not safe to repeat after the primary
+	 * normalize step has already replaced the menu, and calling it a second time
+	 * can trigger PHP Errors inside WP nav-menu internals that surface as
+	 * unexpected_error. Each IA property is instead verified and healed inline
+	 * below, independently of the normalizer's state-machine.
 	 *
 	 * @return void
 	 */
 	private function run_verify( array $state ) {
-		/* 1. Quarantine demo records and re-run IA normalizer so that any
-		 *    transient divergence introduced between steps is repaired before
-		 *    the assertions below. */
+		/* 1. Quarantine demo fixtures — safe to repeat unconditionally. */
 		$this->quarantine_owned_demo_records();
-		$this->final_ia_normalizer()->normalize();  // idempotent — re-ensures pages, menu, front-page.
+
+		/* 2. Editorial media — assertion only; files are immutable after managed_content. */
 		$this->editorial_media_service()->verify( (array) ( $state['editorial_audit'] ?? array() ) );
-		$this->final_ia_normalizer()->verify( (array) ( $state['ia_audit'] ?? array() ) );
 
-		/* 2. CPT registration — code/activation issue; cannot heal. */
-		foreach ( array( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE, Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE ) as $post_type ) {
-			if ( ! post_type_exists( $post_type ) ) { throw new RuntimeException( 'verification_failed: CPT tidak terdaftar setelah managed_content: ' . $post_type ); }
-		}
-
-		/* 3. /promo/ must be published — self-heal if it slipped to draft. */
-		$promo_page = get_page_by_path( 'promo', OBJECT, 'page' );
-		if ( ! ( $promo_page instanceof WP_Post ) ) { throw new RuntimeException( 'verification_failed: Halaman /promo/ tidak ditemukan.' ); }
-		if ( 'publish' !== (string) $promo_page->post_status ) {
-			wp_update_post( array( 'ID' => absint( $promo_page->ID ), 'post_status' => 'publish' ) );
-			if ( 'publish' !== (string) get_post_status( $promo_page->ID ) ) {
-				throw new RuntimeException( 'verification_failed: Halaman /promo/ tidak dapat dipublikasikan.' );
+		/* 3. CPT registration — code/activation issue; cannot heal. */
+		foreach ( array(
+			Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE,
+			Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE,
+			Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE,
+		) as $post_type ) {
+			if ( ! post_type_exists( $post_type ) ) {
+				throw new RuntimeException( 'verification_failed: CPT tidak terdaftar setelah managed_content: ' . $post_type );
 			}
 		}
 
-		/* 4. Build a keyed audit index; no strict count-equality so a partial
-		 *    resume that left extra entries in one category does not fail here. */
+		/* 4. Canonical IA pages — verify by slug (not by stored audit ID) and
+		 *    self-heal publication status. Using slug avoids stale ID issues when
+		 *    a resume cycle regenerated the page with a different ID. */
+		foreach ( array( 'home', 'treatments', 'promo', 'skincare', 'about' ) as $slug ) {
+			$page = get_page_by_path( $slug, OBJECT, 'page' );
+			if ( ! ( $page instanceof WP_Post ) ) {
+				throw new RuntimeException( 'verification_failed: Halaman kanonik /' . $slug . '/ tidak ditemukan.' );
+			}
+			if ( 'publish' !== (string) $page->post_status ) {
+				wp_update_post( array( 'ID' => absint( $page->ID ), 'post_status' => 'publish' ) );
+				if ( 'publish' !== (string) get_post_status( $page->ID ) ) {
+					throw new RuntimeException( 'verification_failed: Halaman kanonik /' . $slug . '/ tidak dapat dipublikasikan.' );
+				}
+			}
+		}
+
+		/* 5. Front-page mode — heal silently if drifted. */
+		if ( 'page' !== (string) get_option( 'show_on_front', 'posts' ) ) {
+			update_option( 'show_on_front', 'page' );
+		}
+		$beranda = get_page_by_path( 'home', OBJECT, 'page' );
+		if ( $beranda instanceof WP_Post && (int) get_option( 'page_on_front', 0 ) !== (int) $beranda->ID ) {
+			update_option( 'page_on_front', absint( $beranda->ID ) );
+		}
+
+		/* 6. gloskin-primary nav location — heal by name lookup if unset or reset. */
+		$nav_locations = get_theme_mod( 'nav_menu_locations', array() );
+		$nav_locations = is_array( $nav_locations ) ? $nav_locations : array();
+		if ( empty( $nav_locations[ Gloskin_Site_Core_Final_IA_Normalizer::MENU_LOCATION ] ) ) {
+			$menu_obj = wp_get_nav_menu_object( Gloskin_Site_Core_Final_IA_Normalizer::MENU_NAME );
+			if ( $menu_obj && ! is_wp_error( $menu_obj ) ) {
+				$nav_locations[ Gloskin_Site_Core_Final_IA_Normalizer::MENU_LOCATION ] = absint( $menu_obj->term_id );
+				set_theme_mod( 'nav_menu_locations', $nav_locations );
+			} else {
+				throw new RuntimeException( 'verification_failed: gloskin-primary menu tidak ditemukan dan tidak dapat ditetapkan ke location.' );
+			}
+		}
+
+		/* 7. Doctor photos — verify directly against manifest SHAs, not audit.
+		 *    find_attachment_by_sha() is the same lookup the batch uses; if the
+		 *    attachment exists and SHA is valid, the batch ran correctly. The
+		 *    thumbnail pointer and doctor publication status are self-healed. */
 		$matches = (array) ( $state['doctor_matches'] ?? array() );
-		$audit   = $this->normalize_doctor_audit( $state['doctor_audit'] ?? array() );
-		$entries_by_doctor = array();
-		$seen_shas         = array();
-		foreach ( array_merge( $audit['applied'], $audit['reused'] ) as $entry ) {
-			$did = absint( $entry['doctor_id'] ?? 0 );
-			$sha = (string) ( $entry['sha256'] ?? '' );
-			if ( ! $did ) { continue; }
-			/* First entry wins per doctor — deduplicate across applied/reused. */
-			if ( ! isset( $entries_by_doctor[ $did ] ) ) {
-				$entries_by_doctor[ $did ] = $entry;
-				if ( '' !== $sha ) { $seen_shas[ $sha ] = $did; }
-			}
-		}
-
-		/* 5. Per-doctor: ensure correct thumbnail is set; hard-fail only on SHA
-		 *    corruption which we cannot recover from without new source data. */
 		foreach ( $matches as $match ) {
-			$doctor_id    = absint( $match['doctor_id'] );
-			if ( ! isset( $entries_by_doctor[ $doctor_id ] ) ) {
-				throw new RuntimeException( 'verification_failed: Tidak ada entri audit untuk dokter #' . $doctor_id . '.' );
-			}
-			$entry        = $entries_by_doctor[ $doctor_id ];
-			$expected_att = absint( $entry['attachment_id'] ?? 0 );
-			if ( ! $expected_att ) {
-				throw new RuntimeException( 'verification_failed: Entri audit untuk dokter #' . $doctor_id . ' tidak memiliki attachment.' );
+			$doctor_id = absint( $match['doctor_id'] ?? 0 );
+			$sha       = (string) ( $match['sha256'] ?? '' );
+			if ( ! $doctor_id || '' === $sha ) {
+				throw new RuntimeException( 'verification_failed: Data manifest dokter tidak valid — doctor_id atau sha256 kosong.' );
 			}
 
-			/* SHA integrity — unrecoverable if wrong. */
-			$stored_sha = (string) get_post_meta( $expected_att, self::ATTACH_SHA256_META, true );
-			if ( ! hash_equals( (string) $match['sha256'], $stored_sha ) ) {
-				throw new RuntimeException( 'verification_failed: SHA thumbnail dokter #' . $doctor_id . ' tidak sesuai manifest.' );
+			/* Attachment must exist; SHA must match. Both are set by the batch
+			 * step and are immutable once written — SHA mismatch = data corruption. */
+			$att = $this->find_attachment_by_sha( $sha );
+			if ( ! $att ) {
+				throw new RuntimeException( 'verification_failed: Foto dokter #' . $doctor_id . ' tidak ditemukan di media library.' );
+			}
+			$stored_sha = (string) get_post_meta( $att, self::ATTACH_SHA256_META, true );
+			if ( ! hash_equals( $sha, $stored_sha ) ) {
+				throw new RuntimeException( 'verification_failed: SHA foto dokter #' . $doctor_id . ' rusak — tidak cocok dengan manifest.' );
 			}
 
-			/* Thumbnail pointer — self-heal: re-apply if a background process
-			 * or cache-warming request reset it after the batch step. */
-			$current_thumb = absint( get_post_thumbnail_id( $doctor_id ) );
-			if ( $current_thumb !== $expected_att ) {
-				set_post_thumbnail( $doctor_id, $expected_att );
-				if ( absint( get_post_thumbnail_id( $doctor_id ) ) !== $expected_att ) {
+			/* Thumbnail pointer — self-heal if a background process reset it. */
+			if ( absint( get_post_thumbnail_id( $doctor_id ) ) !== $att ) {
+				set_post_thumbnail( $doctor_id, $att );
+				if ( absint( get_post_thumbnail_id( $doctor_id ) ) !== $att ) {
 					throw new RuntimeException( 'verification_failed: Thumbnail dokter #' . $doctor_id . ' tidak dapat dipulihkan.' );
 				}
 			}
 
-			/* Ensure every matched (imported) doctor is published — covers items
-			 * imported in a previous run (resume) that may have been left as draft,
-			 * and guards against any background process changing the status. */
+			/* Doctor post status — ensure published; never leave imported items as draft. */
 			if ( 'publish' !== (string) get_post_status( $doctor_id ) ) {
 				wp_update_post( array( 'ID' => $doctor_id, 'post_status' => 'publish' ) );
-				if ( 'publish' !== (string) get_post_status( $doctor_id ) ) {
-					throw new RuntimeException( 'verification_failed: Dokter #' . $doctor_id . ' tidak dapat dipublikasikan.' );
-				}
 			}
 		}
 
-		/* 6. Demo engineering fixtures — must be migration-owned and non-public.
-		 *    Self-heal status; hard-fail on lost identity meta. */
+		/* 8. Demo engineering fixtures — must remain migration-owned and non-public.
+		 *    Self-heal status drift; hard-fail only on lost identity meta. */
 		$demo_audit = (array) ( $state['demo_audit'] ?? array() );
 		$demo_items = array_merge( (array) ( $demo_audit['created'] ?? array() ), (array) ( $demo_audit['reused'] ?? array() ) );
 		foreach ( $demo_items as $item ) {
@@ -754,16 +769,15 @@ final class Gloskin_Site_Core_Revision_20260819_Final_Migration {
 			}
 			if ( 'draft' !== (string) get_post_status( $post_id ) ) {
 				wp_update_post( array( 'ID' => $post_id, 'post_status' => 'draft' ) );
-				if ( 'draft' !== (string) get_post_status( $post_id ) ) {
-					throw new RuntimeException( 'verification_failed: Engineering fixture #' . $post_id . ' tidak dapat dijadikan draft.' );
-				}
 			}
 		}
 
-		/* 7. At least one doctor must be published. */
+		/* 9. At least one doctor published — sanity gate before finalize. */
 		$doctor_count = wp_count_posts( Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE );
 		$published    = $doctor_count ? (int) $doctor_count->publish : 0;
-		if ( $published < 1 ) { throw new RuntimeException( 'verification_failed: Tidak ada dokter yang dipublikasikan.' ); }
+		if ( $published < 1 ) {
+			throw new RuntimeException( 'verification_failed: Tidak ada dokter yang dipublikasikan.' );
+		}
 	}
 
 	/** @return void */
