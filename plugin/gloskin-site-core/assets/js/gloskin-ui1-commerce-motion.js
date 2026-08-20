@@ -158,7 +158,7 @@
 
 	function typeStillActive(type) {
 		for (var i = 0; i < activeParticles.length; i += 1) {
-				if (activeParticles[i].type === type) { return true; }
+			if (activeParticles[i].type === type) { return true; }
 		}
 		return false;
 	}
@@ -295,7 +295,57 @@
 		return true;
 	}
 
+	function normalizeCommercePath(pathname) {
+		return String(pathname || '').replace(/\/+$/, '') || '/';
+	}
+
+	function isCommerceJourneyPage(doc) {
+		var body = doc && doc.body;
+		return !!(body && body.classList && (
+			body.classList.contains('woocommerce-cart') ||
+			body.classList.contains('woocommerce-checkout')
+		));
+	}
+
+	function isCommerceJourneyDestination(link, root) {
+		if (!link || !root || !root.location || typeof root.URL !== 'function') { return false; }
+		var destination;
+		try {
+			destination = new root.URL(link.href, root.location.href);
+		} catch (error) {
+			return false;
+		}
+		if (destination.host !== root.location.host) { return false; }
+		var config = root.gloskinData || {};
+		var candidates = [config.cartUrl, config.checkoutUrl, '/cart/', '/checkout/'];
+		var destinationPath = normalizeCommercePath(destination.pathname);
+		for (var i = 0; i < candidates.length; i += 1) {
+			if (!candidates[i]) { continue; }
+			try {
+				var candidate = new root.URL(candidates[i], root.location.href);
+				if (candidate.host === root.location.host && normalizeCommercePath(candidate.pathname) === destinationPath) {
+					return true;
+				}
+			} catch (error) {}
+		}
+		return false;
+	}
+
+	/* Commerce owns Cart/Checkout loading and presentation. Mark the existing
+	 * global transition escape hatch during capture so its bubble listener
+	 * declines the native journey without intercepting or replacing navigation. */
+	function markCommerceJourneyTransitionBypass(event, root, doc) {
+		var target = event && event.target;
+		if (!target || typeof target.closest !== 'function') { return false; }
+		var link = target.closest('a[href]');
+		if (!link) { return false; }
+		if (!isCommerceJourneyPage(doc) && !isCommerceJourneyDestination(link, root)) { return false; }
+		link.setAttribute('data-gloskin-no-transition', '');
+		return true;
+	}
+
 	function captureAction(event, root, doc) {
+		markCommerceJourneyTransitionBypass(event, root, doc);
 		var target = event && event.target;
 		if (!target || typeof target.closest !== 'function') { return; }
 		var wishlist = target.closest('[data-gloskin-wishlist-toggle]');
@@ -344,6 +394,10 @@
 		impactTarget: impactTarget,
 		animateCommerceFlyToTarget: animateCommerceFlyToTarget,
 		confirmedSuccess: confirmedSuccess,
+		normalizeCommercePath: normalizeCommercePath,
+		isCommerceJourneyPage: isCommerceJourneyPage,
+		isCommerceJourneyDestination: isCommerceJourneyDestination,
+		markCommerceJourneyTransitionBypass: markCommerceJourneyTransitionBypass,
 		activeParticleCount: function () { return activeParticles.length; },
 		boot: boot
 	};

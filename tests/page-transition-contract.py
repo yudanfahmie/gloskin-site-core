@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 from pathlib import Path
 import re
 ROOT = Path(__file__).resolve().parents[1]
@@ -8,6 +8,7 @@ def require(cond, message):
 shell = read("plugin/gloskin-site-core/templates/shell.php")
 css = read("plugin/gloskin-site-core/assets/css/gloskin-ui1-loader-system.css")
 js = read("plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js")
+motion = read("plugin/gloskin-site-core/assets/js/gloskin-ui1-commerce-motion.js")
 runtime = read("tests/check-runtime.sh")
 canonical_path = 'M647 271H415V239H528V120C528 102 527 88 523 80C520 69 501 56 466 44C428 29 392 21 357 22C300 23 255 53 221 112C187 172 170 249 170 345C170 555 235 665 365 673C481 679 530 624 539 510H569V667C531 682 506 690 495 692C462 700 417 704 360 704C275 704 204 672 145 607C86 539 56 453 55 345C54 246 83 161 142 90C204 21 275 -14 360 -14C419 -14 468 -8 509 2C544 13 578 25 613 35V239H647Z'
 require(shell.count('class="gloskin-ui1-page-transition" data-gloskin-page-transition') == 1, "exactly one transition root")
@@ -43,7 +44,22 @@ require("url.hash && url.pathname === location.pathname" in pt, "same-page ancho
 require("ajax_add_to_cart" in pt and "add-to-cart=" in pt and "wc-ajax=" in pt, "AJAX add-to-cart bypass")
 require("wishlist" in pt.lower() and ".variations" in pt and ".quantity" in pt and "form.checkout" in pt, "Woo action controls bypass")
 require("commerceHandoffOwns" in pt, "existing cart-checkout handoff remains state owner")
+require("data-gloskin-no-transition" in pt, "global transition must retain its explicit ownership escape hatch")
 require("'/product/'" not in pt and '"/product/"' not in pt, "normal PDP link eligible")
+
+require(motion.count("function markCommerceJourneyTransitionBypass") == 1, "one commerce transition-bypass owner")
+require("woocommerce-cart" in motion and "woocommerce-checkout" in motion, "current Cart/Checkout route detection missing")
+require("config.cartUrl" in motion and "config.checkoutUrl" in motion and "'/cart/'" in motion and "'/checkout/'" in motion,
+        "canonical Cart/Checkout destination detection missing")
+require("link.setAttribute('data-gloskin-no-transition', '')" in motion,
+        "commerce owner must tell the global transition to decline Cart/Checkout")
+marker = motion[motion.index("function markCommerceJourneyTransitionBypass"):motion.index("\n\tfunction captureAction", motion.index("function markCommerceJourneyTransitionBypass"))]
+require("preventDefault" not in marker and "stopPropagation" not in marker and "location.href" not in marker and "fetch(" not in marker,
+        "commerce transition bypass must not intercept native navigation")
+capture = motion[motion.index("function captureAction"):motion.index("\n\tfunction boot", motion.index("function captureAction"))]
+require(capture.index("markCommerceJourneyTransitionBypass(event, root, doc);") < capture.index("var target = event && event.target;"),
+        "Cart/Checkout bypass must be marked during capture before the global bubble listener")
+
 require("page-transition-contract.py" in runtime, "contract registered in runtime suite")
 require("gloskin-ui1-commerce-handoff__g" in shell and canonical_path in shell[shell.index("gloskin-ui1-commerce-handoff"):], "commerce handoff reuses canonical white G visually")
-print("page-transition-contract: OK (0.7.163 final closure)")
+print("page-transition-contract: OK (Cart/Checkout global transition bypass)")

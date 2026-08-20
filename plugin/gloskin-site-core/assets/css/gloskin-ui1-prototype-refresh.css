@@ -478,3 +478,68 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocom
 	color:var(--gloskin-copy-ink);
 	font-weight:300;
 }
+
+/* Treatments closing CTA: keep the shared component, but give this instance
+ * enough local measure for natural Felix wrapping and a visible next step. */
+[data-gloskin-section="treatments-closing"] .gloskin-ui1-closing-cta{
+	grid-template-columns:minmax(0,1.55fr) auto;
+	gap:clamp(28px,5vw,72px);
+	align-items:center;
+}
+[data-gloskin-section="treatments-closing"] .gloskin-ui1-closing-cta__copy{max-width:70ch}
+[data-gloskin-section="treatments-closing"] .gloskin-ui1-closing-cta h2{
+	max-width:24ch;
+	font-size:clamp(1.5rem,3.45vw,3.4rem);
+	line-height:1.02;
+	text-wrap:balance;
+}
+[data-gloskin-section="treatments-closing"] .gloskin-ui1-closing-cta__copy>p:not(.gloskin-ui1-eyebrow){
+	max-width:60ch;
+	margin-top:18px;
+	line-height:1.6;
+	text-wrap:pretty;
+}
+[data-gloskin-section="treatments-closing"] .gloskin-ui1-closing-cta__actions{width:max-content;justify-self:end}
+
+/* Skincare editorial-commerce handoff: one prominent Shop gateway immediately
+ * before the existing product listing, using only shared brand tokens. */
+.gloskin-ui1-skincare-shop-gateway{
+	display:grid;
+	grid-template-columns:minmax(0,1fr) auto;
+	gap:clamp(24px,5vw,72px);
+	align-items:center;
+	padding:clamp(28px,4vw,48px);
+	border:1px solid var(--gloskin-border);
+	border-radius:var(--gloskin-radius-lg);
+	background:color-mix(in srgb,var(--gloskin-refresh-cream) 72%,var(--gloskin-refresh-blush));
+}
+.gloskin-ui1-skincare-shop-gateway__copy{max-width:62ch}
+.gloskin-ui1-skincare-shop-gateway h2{
+	max-width:18ch;
+	margin:8px 0 16px;
+	font-size:clamp(1.8rem,3vw,2.8rem);
+	line-height:1.04;
+	text-wrap:balance;
+}
+.gloskin-ui1-skincare-shop-gateway__copy>p:not(.gloskin-ui1-eyebrow){
+	max-width:54ch;
+	margin:0;
+	color:var(--gloskin-copy-ink);
+	font-weight:300;
+	line-height:1.6;
+	text-wrap:pretty;
+}
+.gloskin-ui1-skincare-shop-gateway__action{justify-self:end}
+.gloskin-ui1-skincare-shop-gateway__action .gloskin-ui1-button{white-space:nowrap}
+
+@media (max-width:900px){
+	[data-gloskin-section="treatments-closing"] .gloskin-ui1-closing-cta,
+	.gloskin-ui1-skincare-shop-gateway{grid-template-columns:1fr}
+	[data-gloskin-section="treatments-closing"] .gloskin-ui1-closing-cta__actions,
+	.gloskin-ui1-skincare-shop-gateway__action{width:auto;justify-self:start}
+}
+@media (max-width:520px){
+	[data-gloskin-section="treatments-closing"] .gloskin-ui1-closing-cta h2{max-width:none;line-height:1.06}
+	.gloskin-ui1-skincare-shop-gateway__action{width:100%}
+	.gloskin-ui1-skincare-shop-gateway__action .gloskin-ui1-button{width:100%}
+}

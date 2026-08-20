@@ -4,8 +4,19 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 
-const ownerPath = path.join(__dirname, '..', 'plugin', 'gloskin-site-core', 'assets', 'js', 'gloskin-ui1-shop-discovery.js');
+const rootDir = path.join(__dirname, '..');
+const ownerPath = path.join(rootDir, 'plugin', 'gloskin-site-core', 'assets', 'js', 'gloskin-ui1-shop-discovery.js');
+const corePath = path.join(rootDir, 'plugin', 'gloskin-site-core', 'assets', 'js', 'gloskin-ui1-core.js');
+const templatePath = path.join(rootDir, 'plugin', 'gloskin-site-core', 'templates', 'pages', 'shop.php');
+const routeTraitPath = path.join(rootDir, 'plugin', 'gloskin-site-core', 'includes', 'gloskin-site-core-shop-discovery-route-trait.php');
+const productionBatchPath = path.join(rootDir, 'plugin', 'gloskin-site-core', 'includes', 'class-gloskin-site-core-production-batch.php');
+const assetConfigPath = path.join(rootDir, 'plugin', 'gloskin-site-core', 'config', 'assets.php');
 const source = fs.readFileSync(ownerPath, 'utf8');
+const coreSource = fs.readFileSync(corePath, 'utf8');
+const templateSource = fs.readFileSync(templatePath, 'utf8');
+const routeTraitSource = fs.readFileSync(routeTraitPath, 'utf8');
+const productionBatchSource = fs.readFileSync(productionBatchPath, 'utf8');
+const assetConfigSource = fs.readFileSync(assetConfigPath, 'utf8');
 const shop = require(ownerPath);
 
 const state = shop.parseShopCatalogHash('#category=serum&q=brightening&min_price=100000&max_price=300000&page=2', 1);
@@ -33,6 +44,9 @@ assert.strictEqual(request.searchParams.get('max_price'), '300000');
 assert.strictEqual(request.searchParams.get('page'), '2');
 
 assert(source.includes("document.querySelector('[data-gloskin-shop-catalog-owner]')"), 'dedicated canonical Shop owner marker missing');
+assert(templateSource.includes('data-gloskin-shop-catalog-owner'), 'Shop template must expose the canonical owner root');
+assert(!/\sdata-gloskin-shop-catalog(?:\s|=|>)/.test(templateSource), 'legacy Shop catalog root must stay absent so the old core controller remains inert');
+assert(!coreSource.includes("document.querySelector('[data-gloskin-shop-catalog-owner]')"), 'core must not target the canonical Shop owner root');
 assert.strictEqual((source.match(/function buildShopCatalogRequestUrl\(/g) || []).length, 1, 'one Shop URL builder expected');
 assert.strictEqual((source.match(/function requestCatalog\(/g) || []).length, 1, 'one Shop request owner expected');
 assert.strictEqual((source.match(/return window\.fetch\(/g) || []).length, 1, 'one logical Shop fetch path expected');
@@ -47,8 +61,23 @@ assert(source.includes('syncControls(state);') && source.includes("historyMode: 
 assert(source.includes("searchForm.addEventListener('submit'"), 'Enter/form submit must apply search immediately');
 assert(source.includes('window.clearTimeout(searchTimer);'), 'immediate search must cancel pending debounce');
 assert((source.match(/window\.clearTimeout\(searchTimer\);/g) || []).length >= 5, 'competing filter/page actions must cancel pending search debounce before requesting');
+
+const categoryClick = source.indexOf("var categoryLink = event.target.closest && event.target.closest('[data-gloskin-shop-category]');");
+const categoryState = source.indexOf('updateCategoryState(nextState.category);', categoryClick);
+const categoryRequest = source.indexOf('requestFilterState(nextState,', categoryClick);
+assert(categoryClick !== -1 && categoryState > categoryClick && categoryRequest > categoryState,
+    'category active state must update immediately before the AJAX request begins');
+
+assert(routeTraitSource.includes("if ( ! $this->should_render_shop() )"), 'Shop asset gate must remain route-aware');
+assert(routeTraitSource.includes("assets/js/gloskin-ui1-shop-discovery.js"), 'Shop Discovery JS must be enqueued by the canonical Shop route owner');
+assert(routeTraitSource.includes("assets/css/gloskin-ui1-shop-discovery.css"), 'Shop Discovery CSS must be enqueued by the canonical Shop route owner');
+assert(routeTraitSource.includes("array( 'gloskin-ui1-prototype-refresh' )"), 'Shop Discovery CSS must remain final after prototype refresh');
+assert(productionBatchSource.includes('new Gloskin_Site_Core_Shop_Discovery') && productionBatchSource.includes('$this->shop_discovery->register();'),
+    'production batch must register the Shop discovery route owner');
+assert(!assetConfigSource.includes("'gloskin-ui1-shop-discovery'"), 'Shop Discovery assets must not be duplicated in the global asset registry');
+
 assert(!/window\.fetch\s*=(?!=)/.test(source), 'global fetch monkeypatch forbidden');
 assert(!/(?:window\.)?history\.pushState\s*=(?!=)/.test(source), 'global pushState monkeypatch forbidden');
 assert(!/(?:window\.)?history\.replaceState\s*=(?!=)/.test(source), 'global replaceState monkeypatch forbidden');
 
-console.log('shop-catalog-controller.test.js: OK');
+console.log('shop-catalog-controller.test.js: OK (single owner + Shop-only assets)');

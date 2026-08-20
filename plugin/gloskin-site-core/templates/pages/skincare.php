@@ -5,6 +5,18 @@ gloskin_ui1_render_hero( $gloskin_context['hero'] );
 <section class="gloskin-ui1-section gloskin-ui1-section--tight gloskin-ui1-section--intro-only" data-gloskin-section="skincare-intro"><div class="gloskin-ui1-container">
 	<?php if ( gloskin_ui1_has_content( $gloskin_context['page'] ) ) : ?><div class="gloskin-ui1-container--narrow gloskin-ui1-section__intro"><?php gloskin_ui1_render_page_content( $gloskin_context['page'] ); ?></div><?php else : ?><div class="gloskin-ui1-container--narrow gloskin-ui1-section__intro"><p class="gloskin-ui1-body"><?php echo esc_html__( 'Produk skincare Gloskin dirancang untuk mendukung perawatan kulit sehari-hari. Pilih kategori di bawah untuk mempersempit pilihan, atau lihat semua produk yang tersedia.', 'gloskin-site-core' ); ?></p></div><?php endif; ?>
 </div></section>
+<section class="gloskin-ui1-section gloskin-ui1-section--tight" data-gloskin-section="skincare-shop-gateway" aria-labelledby="gloskin-skincare-shop-gateway-title"><div class="gloskin-ui1-container">
+	<div class="gloskin-ui1-skincare-shop-gateway">
+		<div class="gloskin-ui1-skincare-shop-gateway__copy">
+			<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'BELANJA GLOSKIN', 'gloskin-site-core' ); ?></p>
+			<h2 id="gloskin-skincare-shop-gateway-title"><?php echo esc_html__( 'Lengkapi rutinitas skincare Anda.', 'gloskin-site-core' ); ?></h2>
+			<p><?php echo esc_html__( 'Jelajahi seluruh koleksi, lihat detail produk, harga, dan pilihan yang tersedia di halaman Belanja.', 'gloskin-site-core' ); ?></p>
+		</div>
+		<div class="gloskin-ui1-skincare-shop-gateway__action">
+			<a class="gloskin-ui1-button gloskin-ui1-button--primary" href="<?php echo esc_url( home_url( '/shop/' ) ); ?>"><?php echo esc_html__( 'Lihat Semua Produk', 'gloskin-site-core' ); ?></a>
+		</div>
+	</div>
+</div></section>
 <?php if ( $gloskin_context['products'] ) :
 	/* Build chip list: only include categories that actually have products in our set */
 	$gloskin_active_slugs = array();
@@ -14,7 +26,6 @@ gloskin_ui1_render_hero( $gloskin_context['hero'] );
 				$gloskin_cs = trim( $gloskin_cs );
 				if ( '' !== $gloskin_cs ) { $gloskin_active_slugs[ $gloskin_cs ] = true; }
 			}
-		}
 	}
 	/* Build ordered chip list matching mappings order */
 	$gloskin_chips = array();
@@ -47,4 +58,4 @@ gloskin_ui1_render_hero( $gloskin_context['hero'] );
 </div></section>
 <?php endif; ?>
 <section class="gloskin-ui1-section gloskin-ui1-section--soft" data-gloskin-section="skincare-categories"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_section_heading( __( 'Kategori Skincare', 'gloskin-site-core' ), __( 'Jelajahi halaman kategori untuk produk detail dan konteks perawatan per kebutuhan kulit.', 'gloskin-site-core' ) ); ?><div class="gloskin-ui1-grid gloskin-ui1-grid--categories"><?php foreach ( $gloskin_context['mappings'] as $gloskin_mapping ) { gloskin_ui1_render_category_link( $gloskin_mapping ); } ?></div></div></section>
-<section class="gloskin-ui1-section" data-gloskin-section="skincare-pathways"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_pathway_grid( array( array( 'eyebrow' => __( 'Koleksi', 'gloskin-site-core' ), 'title' => __( 'Lihat seluruh pilihan di Belanja', 'gloskin-site-core' ), 'copy' => __( 'Lihat detail dan cara membeli setiap produk di sana.', 'gloskin-site-core' ), 'label' => __( 'Buka Belanja', 'gloskin-site-core' ), 'url' => home_url( '/shop/' ) ), array( 'eyebrow' => __( 'Klinik', 'gloskin-site-core' ), 'title' => __( 'Ingin bertanya lebih lanjut?', 'gloskin-site-core' ), 'copy' => __( 'Pilih lokasi Gloskin dan lihat kanal kontak yang tersedia.', 'gloskin-site-core' ), 'label' => __( 'Lihat Klinik', 'gloskin-site-core' ), 'url' => home_url( '/clinics/' ) ) ) ); ?></div></section>
+<section class="gloskin-ui1-section" data-gloskin-section="skincare-pathways"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_pathway_grid( array( array( 'eyebrow' => __( 'Klinik', 'gloskin-site-core' ), 'title' => __( 'Ingin bertanya lebih lanjut?', 'gloskin-site-core' ), 'copy' => __( 'Pilih lokasi Gloskin dan lihat kanal kontak yang tersedia.', 'gloskin-site-core' ), 'label' => __( 'Lihat Klinik', 'gloskin-site-core' ), 'url' => home_url( '/clinics/' ) ) ) ); ?></div></section>

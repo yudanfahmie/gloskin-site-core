@@ -597,6 +597,7 @@
 				window.clearTimeout(searchTimer);
 				var nextState = normalizeShopCatalogState(currentState, 1);
 				nextState.category = categoryLink.getAttribute('data-gloskin-shop-category') || '';
+				updateCategoryState(nextState.category);
 				if (searchInput) { nextState.q = String(searchInput.value || '').trim(); }
 				requestFilterState(nextState, categoryLink.getAttribute('href') || shopUrl);
 				return;
