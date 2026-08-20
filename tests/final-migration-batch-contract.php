@@ -1,6 +1,6 @@
 ﻿<?php
 declare(strict_types=1);
-/** Static contract: doctor photo batch processing and cursor-based resume for v0.7.144. */
+/** Static contract: doctor photo batch processing and cursor-based resume for v0.7.145. */
 $root=dirname(__DIR__);$passed=0;$failed=0;
 function ok_batch(bool $cond,string $msg):void{global $passed,$failed;if($cond){echo "ok: {$msg}\n";$passed++;}else{echo "FAIL: {$msg}\n";$failed++;}}
 $migration=file_get_contents($root.'/plugin/gloskin-site-core/includes/class-gloskin-site-core-revision-20260819-final-migration.php');$kernel=file_get_contents($root.'/plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php');$plugin_h=file_get_contents($root.'/plugin/gloskin-site-core/gloskin-site-core.php');if(false===$migration||false===$kernel||false===$plugin_h){fwrite(STDERR,"Cannot read final migration release sources\n");exit(1);}
@@ -18,5 +18,5 @@ ok_batch(str_contains($migration,"'doctor_cursor']       = 0")||str_contains($mi
 ok_batch(str_contains($migration,"'doctor_audit']        = array()")||str_contains($migration,"'doctor_audit'] = array()"),"preflight case must reset doctor_audit to empty array");
 ok_batch(str_contains($migration,'upload_unavailable:'),"run_doctor_photos_batch() must throw 'upload_unavailable:' error when uploads unavailable");
 $has_headroom=(bool)preg_match('/\$limit\s*=\s*count\(\s*\$this->steps\(\)\s*\)\s*\+\s*(\d+)/',$migration,$m)&&(int)$m[1]>3;ok_batch($has_headroom,'run_to_completion() loop limit must have batch headroom (addend > 3)');
-ok_batch((bool)preg_match("/const VERSION\s*=\s*'0\.7\.143'/",$kernel),'Kernel VERSION must be 0.7.144');ok_batch((bool)preg_match('/^ \* Version: 0\.7\.143$/m',$plugin_h),'Plugin header Version must be 0.7.144');
+ok_batch((bool)preg_match("/const VERSION\s*=\s*'0\.7\.145'/",$kernel),'Kernel VERSION must be 0.7.145');ok_batch((bool)preg_match('/^ \* Version: 0\.7\.145$/m',$plugin_h),'Plugin header Version must be 0.7.145');
 echo "\nfinal-migration-batch-contract.php: {$passed} passed, {$failed} failed\n";exit($failed>0?1:0);

@@ -97,14 +97,14 @@ final class Gloskin_Site_Core_Final_IA_Normalizer {
 			if ( $provisioned ) {
 				$result = wp_update_post( array( 'ID' => absint( $page->ID ), 'post_status' => 'publish' ), true );
 				if ( is_wp_error( $result ) || 'publish' !== (string) get_post_status( $page->ID ) ) {
-					throw new RuntimeException( 'Failed to publish migration-provisioned canonical page /' . $slug . '/.' );
+					throw new RuntimeException( 'normalize_failed: Gagal mempublikasikan halaman kanonik /' . $slug . '/.' );
 				}
 				return absint( $page->ID );
 			}
-			throw new RuntimeException( 'Canonical page safe-stop: editor-owned /' . $slug . '/ is ' . (string) $page->post_status . '. Publish it manually before Finalisasi Prototype; content was preserved.' );
+			throw new RuntimeException( 'normalize_failed: Halaman /' . $slug . '/ sudah ada tapi belum dipublikasikan (' . (string) $page->post_status . '). Publikasikan secara manual lalu coba lagi.' );
 		}
 		$result = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => $title, 'post_name' => $slug ), true );
-		if ( is_wp_error( $result ) ) { throw new RuntimeException( 'Failed to ensure /' . $slug . '/: ' . $result->get_error_message() ); }
+		if ( is_wp_error( $result ) ) { throw new RuntimeException( 'normalize_failed: Gagal membuat halaman /' . $slug . '/: ' . $result->get_error_message() ); }
 		$id = absint( $result );
 		update_post_meta( $id, '_gloskin_provisioned_revision', self::REVISION );
 		return $id;
@@ -123,7 +123,7 @@ final class Gloskin_Site_Core_Final_IA_Normalizer {
 			update_option( 'page_on_front', $home_id );
 			return;
 		}
-		throw new RuntimeException( 'Canonical Home safe-stop: current page_on_front is editor-owned "' . (string) $front->post_title . '" (#' . absint( $front->ID ) . '). Configuration was preserved.' );
+		throw new RuntimeException( 'normalize_failed: Halaman depan saat ini adalah "' . (string) $front->post_title . '" (#' . absint( $front->ID ) . ') yang bukan halaman kanonik Beranda. Ubah Page On Front ke halaman Beranda secara manual lalu coba lagi.' );
 	}
 
 	/** @param array<string,int> $page_ids @return array<string,int> */
@@ -133,9 +133,16 @@ final class Gloskin_Site_Core_Final_IA_Normalizer {
 		$menu_id = absint( $locations[ self::MENU_LOCATION ] ?? 0 );
 		$menu = $menu_id ? wp_get_nav_menu_object( $menu_id ) : false;
 		if ( ! $menu ) {
-			$created = wp_create_nav_menu( self::MENU_NAME );
-			if ( is_wp_error( $created ) ) { throw new RuntimeException( $created->get_error_message() ); }
-			$menu_id = absint( $created );
+			/* Recover an orphaned menu from a previous partial run before trying to create a new one.
+			 * wp_create_nav_menu() returns WP_Error('term_exists') if the name is already taken. */
+			$orphan = wp_get_nav_menu_object( self::MENU_NAME );
+			if ( $orphan && ! is_wp_error( $orphan ) ) {
+				$menu_id = absint( $orphan->term_id );
+			} else {
+				$created = wp_create_nav_menu( self::MENU_NAME );
+				if ( is_wp_error( $created ) ) { throw new RuntimeException( 'normalize_failed: Gagal membuat menu navigasi: ' . $created->get_error_message() ); }
+				$menu_id = absint( $created );
+			}
 			$locations[ self::MENU_LOCATION ] = $menu_id;
 			set_theme_mod( 'nav_menu_locations', $locations );
 		}
@@ -166,7 +173,7 @@ final class Gloskin_Site_Core_Final_IA_Normalizer {
 				'menu-item-parent-id' => 0,
 				'menu-item-position' => $position,
 			) );
-			if ( is_wp_error( $result ) || ! $result ) { throw new RuntimeException( 'Failed to normalize primary item ' . $definition['label'] . '.' ); }
+			if ( is_wp_error( $result ) || ! $result ) { throw new RuntimeException( 'normalize_failed: Gagal menormalkan item menu ' . $definition['label'] . '.' ); }
 			$canonical_ids[] = absint( $result );
 			$position++;
 		}
@@ -186,10 +193,10 @@ final class Gloskin_Site_Core_Final_IA_Normalizer {
 		$preserved = wp_get_nav_menu_object( self::PRESERVED_MENU_NAME );
 		if ( ! $preserved ) {
 			$created = wp_create_nav_menu( self::PRESERVED_MENU_NAME );
-			if ( is_wp_error( $created ) ) { throw new RuntimeException( 'Failed to create editor-menu preservation snapshot.' ); }
+			if ( is_wp_error( $created ) ) { throw new RuntimeException( 'normalize_failed: Gagal membuat snapshot preservasi menu editor: ' . $created->get_error_message() ); }
 			$preserved = wp_get_nav_menu_object( absint( $created ) );
 		}
-		if ( ! $preserved ) { throw new RuntimeException( 'Editor-menu preservation snapshot cannot be verified.' ); }
+		if ( ! $preserved ) { throw new RuntimeException( 'normalize_failed: Snapshot preservasi menu editor tidak dapat diverifikasi.' ); }
 		$preserved_id = absint( $preserved->term_id );
 		$copies = wp_get_nav_menu_items( $preserved_id );
 		$copies = is_array( $copies ) ? $copies : array();
@@ -204,7 +211,7 @@ final class Gloskin_Site_Core_Final_IA_Normalizer {
 			$source_id = absint( $item->ID );
 			$copy_id = absint( $source_to_copy[ $source_id ] ?? 0 );
 			$result = wp_update_nav_menu_item( $preserved_id, $copy_id, $this->copy_args( $item, 0, $position ) );
-			if ( is_wp_error( $result ) || ! $result ) { throw new RuntimeException( 'Failed to preserve editor menu item: ' . (string) $item->title . '.' ); }
+			if ( is_wp_error( $result ) || ! $result ) { throw new RuntimeException( 'normalize_failed: Gagal menyimpan item menu editor: ' . (string) $item->title . '.' ); }
 			$copy_id = absint( $result );
 			$source_to_copy[ $source_id ] = $copy_id;
 			update_post_meta( $copy_id, self::PRESERVED_SOURCE_META, $source_id );
@@ -218,7 +225,7 @@ final class Gloskin_Site_Core_Final_IA_Normalizer {
 			$copy_id = absint( $source_to_copy[ $source_id ] ?? 0 );
 			$copy_parent = $parent_source && isset( $source_to_copy[ $parent_source ] ) ? absint( $source_to_copy[ $parent_source ] ) : 0;
 			$result = wp_update_nav_menu_item( $preserved_id, $copy_id, $this->copy_args( $item, $copy_parent, $position ) );
-			if ( is_wp_error( $result ) || ! $result ) { throw new RuntimeException( 'Failed to preserve editor menu hierarchy.' ); }
+			if ( is_wp_error( $result ) || ! $result ) { throw new RuntimeException( 'normalize_failed: Gagal menyimpan hierarki menu editor.' ); }
 			$position++;
 		}
 		return $preserved_id;

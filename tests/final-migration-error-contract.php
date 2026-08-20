@@ -15,6 +15,7 @@ $codes = array(
 	'doctor_unmatched',
 	'doctor_ambiguous',
 	'upload_unavailable',
+	'normalize_failed',
 	'verification_failed',
 	'migration_locked',
 	'unexpected_error',
