@@ -33,6 +33,7 @@ function __( $text, $domain = 'default' ) { return $text; }
 require dirname( __DIR__ ) . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-navigation-service.php';
 $nav = new Gloskin_Site_Core_Navigation_Service();
 
+$_SERVER['REQUEST_URI'] = '/';
 $GLOBALS['gl_has_menu'] = false;
 $tree = $nav->tree();
 ok( array( 'Perawatan', 'Promo', 'Skincare', 'Tentang Gloskin' ) === array_column( $tree, 'label' ), 'fallback primary nav must be the exact approved four' );
@@ -47,10 +48,39 @@ $GLOBALS['gl_menu_items'] = array(
 	(object) array( 'ID' => 3, 'menu_item_parent' => '0', 'title' => 'Partner Shop', 'url' => 'https://partner.example/shop/', 'classes' => array() ),
 	(object) array( 'ID' => 4, 'menu_item_parent' => '0', 'title' => 'Tentang Lama', 'url' => 'https://example.test/about/', 'classes' => array() ),
 );
+$_SERVER['REQUEST_URI'] = '/unrelated/';
 $real_tree = $nav->tree();
 ok( 4 === count( $real_tree ), 'rendered primary must contain exactly four top-level destinations' );
 ok( array( 'Perawatan', 'Promo', 'Skincare', 'Tentang Gloskin' ) === array_column( $real_tree, 'label' ), 'legacy/unknown source menu must project to exact approved primary order' );
 ok( false === in_array( 'Custom Editor Item', array_column( $real_tree, 'label' ), true ), 'unknown editor item must not contaminate primary header' );
 ok( true === $real_tree[1]['active'], 'native canonical Promo state should survive the read-only projection' );
+
+/* wp_get_nav_menu_items() does not guarantee the contextual current-menu-*
+ * classes that wp_nav_menu() normally resolves. Canonical request state must
+ * therefore still mark a native editor item active on the server. */
+$GLOBALS['gl_menu_items'][1]->classes = array();
+$_SERVER['REQUEST_URI'] = '/about/';
+$about_tree = $nav->tree();
+ok( false === $about_tree[1]['active'], 'unrelated Promo item must not stay active without native state' );
+ok( true === $about_tree[3]['active'], 'native About item must become active from the canonical request route' );
+
+/* Detail routes inherit their canonical top-level section without loose prefix
+ * matches that would incorrectly activate /about/ for /aboutness/. */
+$_SERVER['REQUEST_URI'] = '/skincare/routine/';
+$skincare_tree = $nav->tree();
+ok( true === $skincare_tree[2]['active'], 'Skincare detail route must keep the Skincare top level active' );
+$_SERVER['REQUEST_URI'] = '/aboutness/';
+$boundary_tree = $nav->tree();
+ok( false === $boundary_tree[3]['active'], 'route matching must respect path boundaries' );
+
+/* When the editor navigation explicitly models a child relationship, an active
+ * child at a different URL still keeps its approved top-level parent active. */
+$GLOBALS['gl_menu_items'] = array(
+	(object) array( 'ID' => 5, 'menu_item_parent' => '0', 'title' => 'Perawatan Lama', 'url' => 'https://example.test/treatments/', 'classes' => array() ),
+	(object) array( 'ID' => 6, 'menu_item_parent' => '5', 'title' => 'Detail Perawatan', 'url' => 'https://example.test/custom-treatment-detail/', 'classes' => array() ),
+);
+$_SERVER['REQUEST_URI'] = '/custom-treatment-detail/';
+$relationship_tree = $nav->tree();
+ok( true === $relationship_tree[0]['active'], 'active native child relationship must bubble state to Perawatan' );
 
 echo "navigation fallback contract: OK\n";

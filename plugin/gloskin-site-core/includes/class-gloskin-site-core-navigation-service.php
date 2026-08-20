@@ -57,13 +57,15 @@ final class Gloskin_Site_Core_Navigation_Service {
 			if ( empty( $item->ID ) ) {
 				continue;
 			}
+			$path = $this->site_path( (string) $item->url );
 			$nodes[ (int) $item->ID ] = array(
 				'id'       => (int) $item->ID,
 				'parent'   => absint( $item->menu_item_parent ),
 				'label'    => $this->public_label_for_url( (string) $item->title, (string) $item->url ),
 				'url'      => (string) $item->url,
 				'active'   => in_array( 'current-menu-item', (array) $item->classes, true )
-					|| in_array( 'current-menu-ancestor', (array) $item->classes, true ),
+					|| in_array( 'current-menu-ancestor', (array) $item->classes, true )
+					|| ( '' !== $path && $this->path_is_active( $path ) ),
 				'children' => array(),
 			);
 		}
@@ -108,15 +110,35 @@ final class Gloskin_Site_Core_Navigation_Service {
 		$approved = array();
 		foreach ( $targets as $path => $definition ) {
 			if ( isset( $native[ $path ] ) ) {
-				$node          = $native[ $path ];
+				$node           = $native[ $path ];
 				$node['parent'] = 0;
 				$node['label']  = $definition['label'];
-				$approved[]     = $node;
+				$node['active'] = ! empty( $node['active'] )
+					|| $this->path_is_active( $definition['path'] )
+					|| $this->has_active_descendant( isset( $node['children'] ) && is_array( $node['children'] ) ? $node['children'] : array() );
+				$approved[] = $node;
 				continue;
 			}
 			$approved[] = $this->fallback_item( $definition['label'], $definition['path'] );
 		}
 		return $approved;
+	}
+
+	/**
+	 * @param array<int,array<string,mixed>> $children Child nodes.
+	 * @return bool
+	 */
+	private function has_active_descendant( array $children ) {
+		foreach ( $children as $child ) {
+			if ( ! empty( $child['active'] ) ) {
+				return true;
+			}
+			$grandchildren = isset( $child['children'] ) && is_array( $child['children'] ) ? $child['children'] : array();
+			if ( $grandchildren && $this->has_active_descendant( $grandchildren ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -201,10 +223,15 @@ final class Gloskin_Site_Core_Navigation_Service {
 		$current = is_string( $current ) ? strtok( $current, '?' ) : '/';
 		$target  = wp_parse_url( home_url( $path ), PHP_URL_PATH );
 
-		if ( '/' === $path ) {
+		$current = untrailingslashit( '/' . ltrim( (string) $current, '/' ) );
+		$target  = is_string( $target ) ? untrailingslashit( '/' . ltrim( $target, '/' ) ) : '';
+		$current = '' === $current ? '/' : $current;
+		$target  = '' === $target ? '/' : $target;
+
+		if ( '/' === $target ) {
 			return '/' === $current;
 		}
 
-		return is_string( $target ) && 0 === strpos( (string) $current, untrailingslashit( $target ) );
+		return $current === $target || 0 === strpos( $current, $target . '/' );
 	}
 }
