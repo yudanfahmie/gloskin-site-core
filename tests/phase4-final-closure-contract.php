@@ -129,7 +129,7 @@ p4must( false === strpos( $editorial, '.gloskin-ui1-section{padding' ), 'no broa
 p4must( false !== strpos( $p, "gloskin_ui1_render_empty_state( 'generic', __( 'Informasi promo belum tersedia.'" ), 'Promo empty state uses shared renderer' );
 p4must( false !== strpos( $p, "gloskin_ui1_render_presentation_media( 'editorial', 'promo-'" ), 'Promo missing artwork uses shared media renderer' );
 p4must( false === strpos( $p, '<div class="gloskin-ui1-empty">' ), 'legacy Promo empty markup removed' );
-/* Promo carousel JS↔CSS contract: CSS must stack all enhanced slides into one grid area and clip the stage. */
+/* Promo carousel JSâ†”CSS contract: CSS must stack all enhanced slides into one grid area and clip the stage. */
 p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] .gloskin-ui1-promo-carousel__stage{display:grid;grid-template-areas:"slide";overflow:hidden;width:100%;min-width:0}' ), 'Promo carousel enhanced stage stacks slides in one grid area with overflow:hidden' );
 p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{grid-area:slide;min-width:0;transition:transform .52s cubic-bezier(.4,0,.2,1);will-change:transform}' ), 'Promo carousel enhanced slides use grid-area:slide with transition' );
 /* Footer CTA must be absent on Home, Contact, About, and Promo routes. */
@@ -204,6 +204,6 @@ foreach ( array( 'Detail tambahan belum tersedia untuk ditampilkan.', 'Informasi
 	p4must( false !== strpos( $t, $copy ), 'translation/interface owner contains: ' . $copy );
 }
 
-p4must( false !== strpos( $k, "const VERSION = '0.7.194'" ) && false !== strpos( $b, 'Version: 0.7.194' ), 'release owners synchronized at 0.7.194' );
+p4must( false !== strpos( $k, "const VERSION = '0.7.195'" ) && false !== strpos( $b, 'Version: 0.7.195' ), 'release owners synchronized at 0.7.195' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo carousel JS-CSS contract + footer CTA routes + About reconciliation-first + Shop CSS dep + version 0.7.194)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo carousel JS-CSS contract + footer CTA routes + About reconciliation-first + Shop CSS dep + version 0.7.195)\n";

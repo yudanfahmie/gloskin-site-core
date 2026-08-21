@@ -22,6 +22,12 @@ if ( ! function_exists( 'wp_kses_post' ) ) { function wp_kses_post( $v ) { retur
 if ( ! function_exists( 'wp_strip_all_tags' ) ) { function wp_strip_all_tags( $v ) { return strip_tags( (string) $v ); } }
 if ( ! function_exists( 'wp_trim_words' ) ) { function wp_trim_words( $v, $n ) { $words = explode( ' ', (string) $v ); return count( $words ) <= $n ? (string) $v : implode( ' ', array_slice( $words, 0, $n ) ) . '…'; } }
 if ( ! function_exists( 'get_option' ) ) { function get_option( $key, $default = false ) { return $default; } }
+if ( ! defined( 'HOUR_IN_SECONDS' ) ) { define( 'HOUR_IN_SECONDS', 3600 ); }
+// WP object cache stubs — standalone test has no persistent cache; these stubs
+// ensure the wp_cache_* calls in interface_lookup() are no-ops rather than fatals.
+if ( ! function_exists( 'wp_cache_get' ) ) { function wp_cache_get( $key, $group = '', $force = false, &$found = null ) { $found = false; return false; } }
+if ( ! function_exists( 'wp_cache_set' ) ) { function wp_cache_set( $key, $data, $group = '', $expire = 0 ) { return false; } }
+if ( ! function_exists( 'wp_cache_delete' ) ) { function wp_cache_delete( $key, $group = '' ) { return false; } }
 if ( ! function_exists( 'post_type_exists' ) ) { function post_type_exists( $type ) { return in_array( $type, array( 'page', 'product' ), true ); } }
 if ( ! function_exists( 'taxonomy_exists' ) ) { function taxonomy_exists( $t ) { return false; } }
 if ( ! function_exists( 'get_post' ) ) { function get_post( $id ) { return null; } }

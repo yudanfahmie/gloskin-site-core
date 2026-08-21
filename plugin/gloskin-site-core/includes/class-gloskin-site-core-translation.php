@@ -419,10 +419,23 @@ final class Gloskin_Site_Core_Translation {
 	 * delegate here so there is exactly one resolver and one build per request.
 	 * O(1) associative lookup per visible string replaces O(n) foreach scans.
 	 *
+	 * Cross-request persistence: when a persistent object-cache backend (Redis,
+	 * Memcached, APCu) is active, the built map is stored via wp_cache_set() and
+	 * retrieved on the next request at zero DB and zero array-construction cost.
+	 * On sites with no persistent cache the behaviour is identical to before —
+	 * the map is built once per request from the static property.
+	 *
 	 * @return array<string,string> Map: canonical Indonesian source → resolved EN value.
 	 */
 	public static function interface_lookup() {
 		if ( null !== self::$interface_lookup_cache ) { return self::$interface_lookup_cache; }
+		// Cross-request cache layer — transparent upgrade when persistent object
+		// cache is available; graceful no-op when it is not.
+		$cached = wp_cache_get( 'gloskin_interface_lookup', 'gloskin_translation' );
+		if ( is_array( $cached ) ) {
+			self::$interface_lookup_cache = $cached;
+			return self::$interface_lookup_cache;
+		}
 		$registry = self::interface_registry();
 		$saved    = self::interface_translations();
 		self::$interface_lookup_cache = array();
@@ -432,7 +445,22 @@ final class Gloskin_Site_Core_Translation {
 				? (string) $saved[ $key ]
 				: (string) $entry['en'];
 		}
+		wp_cache_set( 'gloskin_interface_lookup', self::$interface_lookup_cache, 'gloskin_translation', HOUR_IN_SECONDS );
 		return self::$interface_lookup_cache;
+	}
+
+	/**
+	 * Whether any interface translations are currently saved.
+	 *
+	 * Used by Language_Projection::start_interface_buffer() as a zero-overhead
+	 * fast path: if no translations exist, ob_start is skipped entirely — the
+	 * buffer would produce no substitutions anyway. Delegates to the cached
+	 * interface_translations() so no extra DB read is issued.
+	 *
+	 * @return bool
+	 */
+	public static function has_interface_translations() {
+		return ! empty( self::interface_translations() );
 	}
 
 	/** @return void */
@@ -627,7 +655,10 @@ final class Gloskin_Site_Core_Translation {
 			$key = sanitize_key( (string) $id_raw ); $translations = self::interface_translations(); $translations[ $key ] = $value; update_option( self::INTERFACE_OPTION, $translations, false );
 			// Reset request-local caches so a same-request re-read reflects the new value.
 			self::$interface_translations_cache = null;
-			self::$interface_lookup_cache = null;
+			self::$interface_lookup_cache       = null;
+			// Invalidate the cross-request object cache so the next frontend
+			// request rebuilds the lookup map from the freshly saved option.
+			wp_cache_delete( 'gloskin_interface_lookup', 'gloskin_translation' );
 		}
 		wp_send_json_success( array( 'value' => $value, 'status' => 'fresh', 'origin' => $origin ) );
 	}

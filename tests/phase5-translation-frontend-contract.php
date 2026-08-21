@@ -37,7 +37,7 @@ function p5must( bool $cond, string $msg ): void {
 }
 
 /* ── Version ─────────────────────────────────────────────────────── */
-p5must( false !== strpos( $kernel, "const VERSION = '0.7.194'" ) && false !== strpos( $plugin, 'Version: 0.7.194' ), 'release owners synchronized at 0.7.194' );
+p5must( false !== strpos( $kernel, "const VERSION = '0.7.195'" ) && false !== strpos( $plugin, 'Version: 0.7.195' ), 'release owners synchronized at 0.7.195' );
 
 /* ── One Language registration, one Projection registration ──────── */
 p5must( 1 === substr_count( $kernel, 'register_frontend' ), 'exactly one frontend Language registration in Kernel' );
@@ -59,7 +59,7 @@ p5must( false !== strpos( $translation, 'self::$interface_registry_cache' ), 'in
 p5must( false !== strpos( $translation, 'self::$interface_translations_cache' ), 'interface_translations() uses request-local static cache' );
 // Projection must NOT contain a per-text-node foreach over interface_registry.
 p5must( false === strpos( $projection, 'foreach ( Gloskin_Site_Core_Translation::interface_registry()' ), 'Projection has no per-text-node foreach over interface_registry' );
-p5must( false === strpos( $projection, 'interface_translations()' ), 'Projection does not call interface_translations() directly (delegates to lookup)' );
+p5must( false === strpos( $projection, '::interface_translations()' ), 'Projection has no direct ::interface_translations() call (delegates to has_interface_translations or lookup)' );
 
 /* ── Exact-node-only interface translation ───────────────────────── */
 // translate_interface_html: must split on HTML tags; exact text-node comparison.
@@ -70,6 +70,22 @@ p5must( false === strpos( $projection, 'str_replace( array_keys(' ), 'no substri
 /* ── Idempotency and re-entrancy guards ──────────────────────────── */
 p5must( false !== strpos( $projection, 'static $started = false' ), 'output buffer has idempotency guard (static $started)' );
 p5must( false !== strpos( $language, 'static $in_lookup = false' ), 'interface_text has re-entrancy guard (static $in_lookup)' );
+
+/* ── Defense-in-depth: memory guard + zero-cost empty path ──────── */
+// Layer 1: ob_start is skipped entirely when no translations are saved.
+p5must( false !== strpos( $translation, 'public static function has_interface_translations()' ), 'Translation has zero-cost empty-translations guard method' );
+p5must( false !== strpos( $projection, 'has_interface_translations()' ), 'Projection uses has_interface_translations() for zero-cost empty guard' );
+// Projection must not call ::interface_translations() directly (would bypass the guard abstraction);
+// it calls ::has_interface_translations() instead. The substring check uses '::interface_translations()'
+// so it is not confused by the 'has_' prefix in the safe delegating call.
+p5must( false === strpos( $projection, '::interface_translations()' ), 'Projection has no direct ::interface_translations() call' );
+// Layer 2: fail-open memory budget guard in the HTML buffer callback.
+p5must( false !== strpos( $projection, 'memory_get_usage()' ), 'HTML buffer has fail-open memory budget guard' );
+p5must( false !== strpos( $projection, 'parse_memory_limit' ), 'memory budget guard uses portable limit parser' );
+// Layer 3: cross-request object cache — transparent upgrade on persistent-cache hosts.
+p5must( false !== strpos( $translation, "wp_cache_get( 'gloskin_interface_lookup'" ), 'interface_lookup seeds WP object cache for cross-request persistence' );
+p5must( false !== strpos( $translation, "wp_cache_set( 'gloskin_interface_lookup'" ), 'interface_lookup populates WP object cache after build' );
+p5must( false !== strpos( $translation, "wp_cache_delete( 'gloskin_interface_lookup'" ), 'ajax_save invalidates object cache on translation update' );
 
 /* ── Raw canonical freshness source ──────────────────────────────── */
 // saved_post_field must use raw post field from get_post(), not the $fallback
@@ -134,4 +150,4 @@ p5must( false === strpos( $kernel, 'Phase3_Migration_Admin' ), 'retired Phase3_M
 p5must( false === strpos( $projection, "'gloskin_hero_cta_url'" ), 'non-copy hero CTA URL not in projection' );
 p5must( false === strpos( $projection, "'gloskin_hero_media_id'" ), 'non-copy hero media ID not in projection' );
 
-echo "phase5-translation-frontend-contract.php: OK (single resolver + cached registries + idempotency + raw source + version 0.7.194)\n";
+echo "phase5-translation-frontend-contract.php: OK (single resolver + cached registries + memory guard + object cache + version 0.7.195)\n";
