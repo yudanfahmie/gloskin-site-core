@@ -1,299 +1,77 @@
 /* Public Treatment Finder. Canonical content and cards are SSR; this file
  * owns only the Treatments-page selection and result presentation. */
 .gloskin-ui1-consultation{display:grid;gap:clamp(32px,5vw,52px)}
-.gloskin-ui1-consultation__panel{
-	display:grid;
-	gap:clamp(24px,4vw,38px);
-	padding:clamp(24px,5vw,54px);
-	border:1px solid var(--gloskin-border);
-	border-radius:var(--gloskin-radius-lg);
-	background:var(--gloskin-bg);
-	box-shadow:var(--gloskin-shadow);
-}
-.gloskin-ui1-consultation__prompt,
-.gloskin-ui1-consultation__concerns-heading,
-.gloskin-ui1-consultation__results-heading{margin:0;text-align:center}
-
-/* Four prototype-style discovery pathways. Labels/images remain the configured
- * canonical path terms; this layer never rewrites them to Face/Hair/Body/
- * Wellness unless those are the actual configured labels supplied by PHP. */
-.gloskin-ui1-consultation__paths{
-	display:grid;
-	grid-template-columns:repeat(4,minmax(0,1fr));
-	gap:clamp(12px,2vw,22px);
-}
-.gloskin-ui1-consultation__path{
-	position:relative;
-	display:flex;
-	flex-direction:column;
-	align-items:center;
-	gap:16px;
-	min-width:0;
-	padding:0;
-	border:0;
-	border-radius:0;
-	background:transparent;
-	color:var(--gloskin-text);
-	font:inherit;
-	text-align:center;
-	cursor:pointer;
-	box-shadow:none;
-	transition:transform 180ms ease;
-}
+.gloskin-ui1-consultation__panel{display:grid;gap:clamp(24px,4vw,38px);padding:clamp(24px,5vw,54px);border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-lg);background:var(--gloskin-bg);box-shadow:var(--gloskin-shadow)}
+.gloskin-ui1-consultation__prompt,.gloskin-ui1-consultation__concerns-heading,.gloskin-ui1-consultation__results-heading{margin:0;text-align:center}
+.gloskin-ui1-consultation__paths{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(12px,2vw,22px)}
+.gloskin-ui1-consultation__path{position:relative;display:flex;flex-direction:column;align-items:center;gap:16px;min-width:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--gloskin-text);font:inherit;text-align:center;cursor:pointer;box-shadow:none;transition:transform 180ms ease}
 .gloskin-ui1-consultation__path:nth-child(2) .gloskin-ui1-consultation__path-media{background:var(--gloskin-refresh-light,var(--gloskin-surface-strong))}
 .gloskin-ui1-consultation__path:nth-child(3) .gloskin-ui1-consultation__path-media{background:var(--gloskin-refresh-gold,var(--gloskin-surface))}
 .gloskin-ui1-consultation__path:nth-child(4) .gloskin-ui1-consultation__path-media{background:var(--gloskin-refresh-cream,var(--gloskin-surface))}
 .gloskin-ui1-consultation__path:hover{transform:translateY(-3px)}
-.gloskin-ui1-consultation__path.is-active .gloskin-ui1-consultation__path-media{
-	outline:3px solid var(--gloskin-accent);
-	outline-offset:2px;
-	box-shadow:0 0 0 4px var(--gloskin-accent-soft),0 18px 42px color-mix(in srgb,var(--gloskin-text) 8%,transparent);
-}
-.gloskin-ui1-consultation__path-media{
-	aspect-ratio:1/1;
-	width:100%;
-	overflow:hidden;
-	border-radius:50%;
-	background:var(--gloskin-refresh-cream,var(--gloskin-surface));
-	box-shadow:none;
-}
-.gloskin-ui1-consultation__path-image,
-.gloskin-ui1-consultation__path-media>.gloskin-ui1-media{
-	display:block;
-	overflow:hidden;
-	width:100%;
-	height:100%;
-	margin:0;
-	padding:0;
-	border:0;
-	border-radius:0;
-}
+.gloskin-ui1-consultation__path.is-active .gloskin-ui1-consultation__path-media{outline:3px solid var(--gloskin-accent);outline-offset:2px;box-shadow:0 0 0 4px var(--gloskin-accent-soft),0 18px 42px color-mix(in srgb,var(--gloskin-text) 8%,transparent)}
+.gloskin-ui1-consultation__path-media{aspect-ratio:1/1;width:100%;overflow:hidden;border-radius:50%;background:var(--gloskin-refresh-cream,var(--gloskin-surface));box-shadow:none}
+.gloskin-ui1-consultation__path-image,.gloskin-ui1-consultation__path-media>.gloskin-ui1-media{display:block;overflow:hidden;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:0}
 .gloskin-ui1-consultation__path-image{object-fit:cover;object-position:center}
-.gloskin-ui1 .gloskin-ui1-consultation__path-media>.gloskin-ui1-consultation__path-image{
-	width:100%;
-	height:100%;
-	min-width:100%;
-	min-height:100%;
-	max-width:none;
-	align-self:stretch;
-	justify-self:stretch;
-	object-fit:cover;
-	object-position:center;
-}
-.gloskin-ui1-consultation__path-media>picture,
-.gloskin-ui1-consultation__path-media>.gloskin-ui1-media picture{
-	display:block;
-	overflow:hidden;
-	width:100%;
-	height:100%;
-	margin:0;
-	padding:0;
-}
-.gloskin-ui1-consultation__path-media>picture>img,
-.gloskin-ui1-consultation__path-media>picture>video,
-.gloskin-ui1-consultation__path-media>.gloskin-ui1-media img,
-.gloskin-ui1-consultation__path-media>.gloskin-ui1-media video{
-	display:block;
-	width:100%;
-	height:100%;
-	margin:0;
-	object-fit:cover;
-	object-position:center;
-}
-.gloskin-ui1-consultation__path-label{
-	display:flex;
-	align-items:center;
-	justify-content:center;
-	padding:0 8px;
-	font-family:var(--gloskin-font-heading);
-	font-size:clamp(1.2rem,2vw,1.75rem);
-	font-weight:400;
-	line-height:1.08;
-	text-align:center;
-}
-.gloskin-ui1-consultation__concerns{
-	display:grid;
-	gap:18px;
-	animation:gloskin-consultation-concerns-in 180ms ease-out both;
-}
+.gloskin-ui1 .gloskin-ui1-consultation__path-media>.gloskin-ui1-consultation__path-image{width:100%;height:100%;min-width:100%;min-height:100%;max-width:none;align-self:stretch;justify-self:stretch;object-fit:cover;object-position:center}
+.gloskin-ui1-consultation__path-media>picture,.gloskin-ui1-consultation__path-media>.gloskin-ui1-media picture{display:block;overflow:hidden;width:100%;height:100%;margin:0;padding:0}
+.gloskin-ui1-consultation__path-media>picture>img,.gloskin-ui1-consultation__path-media>picture>video,.gloskin-ui1-consultation__path-media>.gloskin-ui1-media img,.gloskin-ui1-consultation__path-media>.gloskin-ui1-media video{display:block;width:100%;height:100%;margin:0;object-fit:cover;object-position:center}
+.gloskin-ui1-consultation__path-label{display:flex;align-items:center;justify-content:center;padding:0 8px;font-family:var(--gloskin-font-heading);font-size:clamp(1.2rem,2vw,1.75rem);font-weight:400;line-height:1.08;text-align:center}
+.gloskin-ui1-consultation__concerns{display:grid;gap:18px;animation:gloskin-consultation-concerns-in 180ms ease-out both}
 .gloskin-ui1-consultation__concerns[hidden]{display:none}
-.gloskin-ui1-consultation__helper{
-	display:inline-flex;
-	min-height:34px;
-	align-items:center;
-	justify-self:center;
-	gap:8px;
-	margin:0;
-	padding:6px 12px;
-	border-radius:999px;
-	background:var(--gloskin-accent-soft);
-	color:var(--gloskin-muted);
-	font-size:.88rem;
-	text-align:center;
-}
-.gloskin-ui1-consultation__helper-icon{
-	display:grid;
-	width:18px;
-	height:18px;
-	border-radius:50%;
-	background:var(--gloskin-accent);
-	color:var(--gloskin-inverse);
-	font-size:.82rem;
-	font-weight:700;
-	line-height:1;
-	place-items:center;
-}
+.gloskin-ui1-consultation__helper{display:inline-flex;min-height:34px;align-items:center;justify-self:center;gap:8px;margin:0;padding:6px 12px;border-radius:999px;background:var(--gloskin-accent-soft);color:var(--gloskin-muted);font-size:.88rem;text-align:center}
+.gloskin-ui1-consultation__helper-icon{display:grid;width:18px;height:18px;border-radius:50%;background:var(--gloskin-accent);color:var(--gloskin-inverse);font-size:.82rem;font-weight:700;line-height:1;place-items:center}
 @keyframes gloskin-consultation-concerns-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 .gloskin-ui1-consultation__concern-group{min-width:0;margin:0;padding:0;border:0}
 .gloskin-ui1-consultation__concern-group[hidden]{display:none}
 .gloskin-ui1-consultation__chips{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
 .gloskin-ui1-consultation__chip{position:relative;display:inline-flex;cursor:pointer}
 .gloskin-ui1-consultation__chip input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.gloskin-ui1-consultation__chip span{
-	display:inline-flex;
-	min-height:44px;
-	align-items:center;
-	padding:9px 15px;
-	border:1px solid var(--gloskin-border);
-	border-radius:999px;
-	background:var(--gloskin-surface);
-	font-weight:600;
-	line-height:1.2;
-	transition:border-color 140ms ease,background-color 140ms ease,color 140ms ease;
-}
+.gloskin-ui1-consultation__chip span{display:inline-flex;min-height:44px;align-items:center;padding:9px 15px;border:1px solid var(--gloskin-border);border-radius:999px;background:var(--gloskin-surface);font-weight:600;line-height:1.2;transition:border-color 140ms ease,background-color 140ms ease,color 140ms ease}
 .gloskin-ui1-consultation__chip:hover span{border-color:var(--gloskin-accent)}
 .gloskin-ui1-consultation__chip input:checked+span{border-color:var(--gloskin-accent);background:var(--gloskin-accent-soft);color:var(--gloskin-accent-strong)}
 .gloskin-ui1-consultation__chip input:focus-visible+span{outline:3px solid var(--gloskin-accent-readable);outline-offset:3px}
 .gloskin-ui1-consultation__actions{display:flex;justify-content:center}
 .gloskin-ui1-consultation__submit:disabled{opacity:.48;cursor:not-allowed;transform:none}
-.gloskin-ui1-consultation__panel .gloskin-ui1-consultation__disclaimer{
-	justify-self:center;
-	width:fit-content;
-	max-width:min(100%,52ch);
-	margin-block:0;
-	margin-inline:auto;
-	color:var(--gloskin-muted);
-	font-size:.88rem;
-	text-align:center;
-}
-.gloskin-ui1-consultation__results[hidden],
-.gloskin-ui1-consultation__result[hidden],
-.gloskin-ui1-consultation__empty[hidden]{display:none}
+.gloskin-ui1-consultation__panel .gloskin-ui1-consultation__disclaimer{justify-self:center;width:fit-content;max-width:min(100%,52ch);margin-block:0;margin-inline:auto;color:var(--gloskin-muted);font-size:.88rem;text-align:center}
+.gloskin-ui1-consultation__results[hidden],.gloskin-ui1-consultation__result[hidden],.gloskin-ui1-consultation__empty[hidden]{display:none}
 .gloskin-ui1-consultation__results-heading{margin-bottom:24px}
 .gloskin-ui1-consultation__results-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
 .gloskin-ui1-consultation__result{min-width:0}
 .gloskin-ui1-card--consultation{height:100%;overflow:visible;border:0;background:transparent;box-shadow:none}
-.gloskin-ui1-consultation-card{
-	position:relative;
-	display:grid;
-	height:100%;
-	min-width:0;
-	border:1px solid var(--gloskin-border);
-	border-radius:var(--gloskin-radius-md);
-	background:var(--gloskin-bg);
-	color:var(--gloskin-text);
-	text-decoration:none;
-	box-shadow:0 8px 28px color-mix(in srgb,var(--gloskin-text) 5%,transparent);
-	isolation:isolate;
-}
-.gloskin-ui1-consultation-card::before{
-	position:absolute;
-	z-index:1;
-	inset:0;
-	border-radius:inherit;
-	background:color-mix(in srgb,var(--gloskin-accent) 12%,var(--gloskin-bg));
-	content:"";
-	opacity:0;
-	pointer-events:none;
-	transition:opacity 160ms ease;
-}
-.gloskin-ui1-consultation-card__main{
-	display:grid;
-	grid-template-columns:140px minmax(0,1fr);
-	gap:22px;
-	align-items:center;
-	min-width:0;
-	padding:22px;
-}
+.gloskin-ui1-consultation-card{position:relative;display:grid;height:100%;min-width:0;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);background:var(--gloskin-bg);color:var(--gloskin-text);text-decoration:none;box-shadow:0 8px 28px color-mix(in srgb,var(--gloskin-text) 5%,transparent);isolation:isolate}
+.gloskin-ui1-consultation-card::before{position:absolute;z-index:1;inset:0;border-radius:inherit;background:color-mix(in srgb,var(--gloskin-accent) 12%,var(--gloskin-bg));content:"";opacity:0;pointer-events:none;transition:opacity 160ms ease}
+.gloskin-ui1-consultation-card__main{display:grid;grid-template-columns:140px minmax(0,1fr);gap:22px;align-items:center;min-width:0;padding:22px}
 .gloskin-ui1-consultation-card__media{overflow:hidden;width:140px;aspect-ratio:1;border-radius:var(--gloskin-radius-sm);background:var(--gloskin-surface)}
 .gloskin-ui1-consultation-card__image{width:100%;height:100%;object-fit:cover}
 .gloskin-ui1-consultation-card__media>.gloskin-ui1-media{height:100%;border:0;border-radius:var(--gloskin-radius-sm)}
 .gloskin-ui1-consultation-card__content{min-width:0}
 .gloskin-ui1-consultation-card__title{margin:0 0 10px;color:var(--gloskin-accent-readable);font-size:1.08rem;line-height:1.3}
-.gloskin-ui1-consultation-card__copy{
-	display:-webkit-box;
-	margin:0;
-	overflow:hidden;
-	color:var(--gloskin-muted);
-	-webkit-box-orient:vertical;
-	-webkit-line-clamp:3;
-}
-.gloskin-ui1-consultation-card__footer{
-	display:flex;
-	min-height:72px;
-	align-items:center;
-	justify-content:flex-end;
-	gap:16px;
-	padding:14px 22px;
-	border-radius:0 0 var(--gloskin-radius-md) var(--gloskin-radius-md);
-	background:var(--gloskin-accent-soft);
-}
+.gloskin-ui1-consultation-card__copy{display:-webkit-box;margin:0;overflow:hidden;color:var(--gloskin-muted);-webkit-box-orient:vertical;-webkit-line-clamp:3}
+.gloskin-ui1-consultation-card__footer{display:flex;min-height:72px;align-items:center;justify-content:flex-end;gap:16px;padding:14px 22px;border-radius:0 0 var(--gloskin-radius-md) var(--gloskin-radius-md);background:var(--gloskin-accent-soft)}
 .gloskin-ui1-consultation-card__price{color:var(--gloskin-accent-strong);font-size:1.1rem;font-weight:700}
-.gloskin-ui1-consultation-card__action{
-	position:absolute;
-	z-index:2;
-	top:50%;
-	left:50%;
-	padding:10px 16px;
-	border-radius:var(--gloskin-action-radius);
-	background:var(--gloskin-accent);
-	color:var(--gloskin-inverse);
-	font-weight:700;
-	opacity:0;
-	transform:translate(-50%,-42%);
-	transition:opacity 160ms ease,transform 160ms ease;
-}
-.gloskin-ui1-consultation-card:hover::before,
-.gloskin-ui1-consultation-card:focus-visible::before{opacity:.92}
-.gloskin-ui1-consultation-card:hover .gloskin-ui1-consultation-card__action,
-.gloskin-ui1-consultation-card:focus-visible .gloskin-ui1-consultation-card__action{opacity:1;transform:translate(-50%,-50%)}
-.gloskin-ui1-consultation__empty{
-	max-width:var(--gloskin-reading);
-	margin:0 auto;
-	padding:22px 24px;
-	border:1px dashed var(--gloskin-border);
-	border-radius:var(--gloskin-radius-md);
-	background:var(--gloskin-surface);
-	color:var(--gloskin-muted);
-	text-align:center;
-}
-@media (hover:none),(pointer:coarse){
-	.gloskin-ui1-consultation-card::before{display:none}
-	.gloskin-ui1-consultation-card__footer{justify-content:space-between}
-	.gloskin-ui1-consultation-card__action{position:static;opacity:1;transform:none}
-}
-@media (max-width:900px){
-	.gloskin-ui1-consultation__paths{grid-template-columns:repeat(2,minmax(0,1fr))}
-	.gloskin-ui1-consultation-card__main{grid-template-columns:112px minmax(0,1fr);gap:16px;padding:18px}
-	.gloskin-ui1-consultation-card__media{width:112px}
-}
-@media (max-width:720px){
-	.gloskin-ui1-consultation__results-grid{grid-template-columns:minmax(0,1fr)}
-	.gloskin-ui1-consultation__panel{padding:22px 16px}
-}
-@media (max-width:480px){
-	.gloskin-ui1-consultation__paths{grid-template-columns:1fr}
-	.gloskin-ui1-consultation__submit{width:100%}
-	.gloskin-ui1-consultation-card__main{grid-template-columns:92px minmax(0,1fr);gap:14px;padding:16px}
-	.gloskin-ui1-consultation-card__media{width:92px}
-}
-@media (max-width:360px){.gloskin-ui1-consultation__panel{padding-inline:14px}}
-@media (prefers-reduced-motion:reduce){
-	.gloskin-ui1-consultation__concerns{animation:none}
-	.gloskin-ui1-consultation__path,
-	.gloskin-ui1-consultation__chip span,
-	.gloskin-ui1-consultation-card::before,
-	.gloskin-ui1-consultation-card__action{transition:none}
-	.gloskin-ui1-consultation__path:hover{transform:none}
-}
+.gloskin-ui1-consultation-card__action{position:absolute;z-index:2;top:50%;left:50%;padding:10px 16px;border-radius:var(--gloskin-action-radius);background:var(--gloskin-accent);color:var(--gloskin-inverse);font-weight:700;opacity:0;transform:translate(-50%,-42%);transition:opacity 160ms ease,transform 160ms ease}
+.gloskin-ui1-consultation-card:hover::before,.gloskin-ui1-consultation-card:focus-visible::before{opacity:.92}
+.gloskin-ui1-consultation-card:hover .gloskin-ui1-consultation-card__action,.gloskin-ui1-consultation-card:focus-visible .gloskin-ui1-consultation-card__action{opacity:1;transform:translate(-50%,-50%)}
+.gloskin-ui1-consultation__empty{max-width:var(--gloskin-reading);margin:0 auto;padding:22px 24px;border:1px dashed var(--gloskin-border);border-radius:var(--gloskin-radius-md);background:var(--gloskin-surface);color:var(--gloskin-muted);text-align:center}
 .gloskin-ui1-card--consultation.gloskin-ui1-card--text-first .gloskin-ui1-consultation-card__main{grid-template-columns:minmax(0,1fr)}
+
+/* Treatment discovery bands share the consultation/path owner. */
+.gloskin-ui1-treatment-bands{--gloskin-treatment-band-height:480px;display:flex;flex-direction:column;gap:0}
+.gloskin-ui1-treatment-band{display:grid;grid-template-columns:1fr 1fr;height:var(--gloskin-treatment-band-height);overflow:hidden}
+.gloskin-ui1-treatment-band--reverse{direction:rtl}
+.gloskin-ui1-treatment-band--reverse>*{direction:ltr}
+.gloskin-ui1-treatment-band__media{position:relative;overflow:hidden;background:var(--gloskin-refresh-cream)}
+.gloskin-ui1-treatment-band__image{display:block;width:100%;height:100%;object-fit:cover;transition:transform 320ms ease}
+.gloskin-ui1-treatment-band:hover .gloskin-ui1-treatment-band__image{transform:scale(1.04)}
+.gloskin-ui1-treatment-band__content{display:flex;flex-direction:column;justify-content:center;gap:18px;padding:clamp(40px,5vw,72px) clamp(32px,4vw,62px);background:var(--gloskin-refresh-blush)}
+.gloskin-ui1-treatment-band:nth-child(even) .gloskin-ui1-treatment-band__content{background:var(--gloskin-refresh-cream)}
+.gloskin-ui1-treatment-band__title{margin:0;font-family:var(--gloskin-font-heading);font-size:clamp(2rem,3.2vw,3rem);font-weight:300;line-height:1.1}
+.gloskin-ui1-treatment-band__copy{max-width:46ch;margin:0;color:var(--gloskin-text-secondary);font-size:1rem;line-height:1.6}
+
+@media (hover:none),(pointer:coarse){.gloskin-ui1-consultation-card::before{display:none}.gloskin-ui1-consultation-card__footer{justify-content:space-between}.gloskin-ui1-consultation-card__action{position:static;opacity:1;transform:none}}
+@media (max-width:900px){.gloskin-ui1-consultation__paths{grid-template-columns:repeat(2,minmax(0,1fr))}.gloskin-ui1-consultation-card__main{grid-template-columns:112px minmax(0,1fr);gap:16px;padding:18px}.gloskin-ui1-consultation-card__media{width:112px}.gloskin-ui1-treatment-band{grid-template-columns:1fr;height:auto}.gloskin-ui1-treatment-band__media{min-height:320px;aspect-ratio:4/3}.gloskin-ui1-treatment-band--reverse{direction:ltr}}
+@media (max-width:720px){.gloskin-ui1-consultation__results-grid{grid-template-columns:minmax(0,1fr)}.gloskin-ui1-consultation__panel{padding:22px 16px}}
+@media (max-width:480px){.gloskin-ui1-consultation__paths{grid-template-columns:1fr}.gloskin-ui1-consultation__submit{width:100%}.gloskin-ui1-consultation-card__main{grid-template-columns:92px minmax(0,1fr);gap:14px;padding:16px}.gloskin-ui1-consultation-card__media{width:92px}}
+@media (max-width:360px){.gloskin-ui1-consultation__panel{padding-inline:14px}}
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-consultation__concerns{animation:none}.gloskin-ui1-consultation__path,.gloskin-ui1-consultation__chip span,.gloskin-ui1-consultation-card::before,.gloskin-ui1-consultation-card__action,.gloskin-ui1-treatment-band__image{transition:none}.gloskin-ui1-consultation__path:hover,.gloskin-ui1-treatment-band:hover .gloskin-ui1-treatment-band__image{transform:none}}
