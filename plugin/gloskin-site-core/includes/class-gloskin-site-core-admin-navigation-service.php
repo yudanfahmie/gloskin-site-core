@@ -105,6 +105,7 @@ final class Gloskin_Site_Core_Admin_Navigation_Service {
 				if ( isset( $callback['function'] ) && is_callable( $callback['function'] ) ) {
 					return $callback['function'];
 				}
+			}
 		}
 		return null;
 	}
