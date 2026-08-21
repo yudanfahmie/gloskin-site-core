@@ -121,7 +121,7 @@ p4must( false !== strpos( $helpers, 'function gloskin_ui1_render_empty_state(' )
 p4must( false !== strpos( $core_base, '.gloskin-ui1-empty-state{' ), 'shared core foundation owns generic empty-state CSS' );
 p4must( false === strpos( $readiness, '.gloskin-ui1-empty-state{' ), 'readiness layer no longer duplicates generic empty-state CSS' );
 p4must( false !== strpos( $editorial, '.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:clamp(3rem,6vw,5.5rem)}' ), 'Home vertical rhythm is restored and scoped' );
-p4must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{object-fit:contain;object-position:center center}' ), 'Home hero video uses contain (whole frame visible, authoritative Phase-4 requirement)' );
+p4must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{object-fit:cover;object-position:center center}' ), 'Home hero video uses cover (latest product decision)' );
 p4must( false !== strpos( $editorial, '.gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{max-width:760px;margin:0 auto clamp(1.5rem,3vw,2.5rem);text-align:center}' ), 'Home section heading cadence is restored' );
 p4must( false === strpos( $editorial, '.gloskin-ui1-section{padding' ), 'no broad global section spacing patch' );
 
@@ -129,6 +129,12 @@ p4must( false === strpos( $editorial, '.gloskin-ui1-section{padding' ), 'no broa
 p4must( false !== strpos( $p, "gloskin_ui1_render_empty_state( 'generic', __( 'Informasi promo belum tersedia.'" ), 'Promo empty state uses shared renderer' );
 p4must( false !== strpos( $p, "gloskin_ui1_render_presentation_media( 'editorial', 'promo-'" ), 'Promo missing artwork uses shared media renderer' );
 p4must( false === strpos( $p, '<div class="gloskin-ui1-empty">' ), 'legacy Promo empty markup removed' );
+/* Promo carousel JS↔CSS contract: CSS must stack all enhanced slides into one grid area and clip the stage. */
+p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] .gloskin-ui1-promo-carousel__stage{display:grid;grid-template-areas:"slide";overflow:hidden;width:100%;min-width:0}' ), 'Promo carousel enhanced stage stacks slides in one grid area with overflow:hidden' );
+p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{grid-area:slide;min-width:0;transition:transform .52s cubic-bezier(.4,0,.2,1);will-change:transform}' ), 'Promo carousel enhanced slides use grid-area:slide with transition' );
+/* Footer CTA must be absent on Home, Contact, About, and Promo routes. */
+$footer = p4text( $plugin . '/templates/parts/footer.php' );
+p4must( false !== strpos( $footer, "array( 'home', 'contact', 'about', 'promo' )" ), 'footer CTA excluded on home/contact/about/promo routes' );
 
 /* About surfaces operator readiness notices when factual content is missing — sections never silently collapse. */
 $about_ctx_start = strpos( $ts, 'private function about_context()' );
@@ -159,6 +165,6 @@ foreach ( array( 'Detail tambahan belum tersedia untuk ditampilkan.', 'Informasi
 	p4must( false !== strpos( $t, $copy ), 'translation/interface owner contains: ' . $copy );
 }
 
-p4must( false !== strpos( $k, "const VERSION = '0.7.191'" ) && false !== strpos( $b, 'Version: 0.7.191' ), 'release owners synchronized at 0.7.191' );
+p4must( false !== strpos( $k, "const VERSION = '0.7.192'" ) && false !== strpos( $b, 'Version: 0.7.192' ), 'release owners synchronized at 0.7.192' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home contain/uncropped + Shop CSS dep fixed + About readiness surfacing + version 0.7.191)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo carousel JS-CSS contract + footer CTA routes + About readiness + Shop CSS dep + version 0.7.192)\n";
