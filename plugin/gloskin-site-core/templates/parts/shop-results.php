@@ -41,7 +41,7 @@ $gloskin_shop_total_label = sprintf( __( '%d produk', 'gloskin-site-core' ), $gl
 <div class="gloskin-ui1-shop-status" data-gloskin-shop-status role="status" aria-live="polite"></div>
 <?php if ( $gloskin_shop_products ) : ?>
 	<div class="gloskin-ui1-grid gloskin-ui1-grid--cards gloskin-ui1-product-grid gloskin-ui1-shop-grid" data-gloskin-product-grid data-gloskin-shop-grid>
-		<?php foreach ( $gloskin_shop_products as $gloskin_product ) { gloskin_ui1_render_product_card( $gloskin_product, 'skincare' ); } ?>
+		<?php foreach ( $gloskin_shop_products as $gloskin_product ) { gloskin_ui1_render_product_card( $gloskin_product ); } ?>
 	</div>
 	<?php if ( $gloskin_shop_max_pages > 1 ) : ?>
 		<nav class="gloskin-ui1-pagination gloskin-ui1-shop-pagination" aria-label="<?php echo esc_attr__( 'Navigasi halaman produk', 'gloskin-site-core' ); ?>">

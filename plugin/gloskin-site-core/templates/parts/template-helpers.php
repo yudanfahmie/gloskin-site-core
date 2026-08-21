@@ -125,12 +125,10 @@ if ( ! function_exists( 'gloskin_ui1_render_editorial_media' ) ) {
 
 if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 	/**
-	 * One shared hero renderer for every editorial route. Home uses the
-	 * `campaign` presentation mode: heading/copy/CTA remain visible while an
-	 * optional native Media Library MP4/WebM enhances the same media column.
-	 * The video is never a second hero or second data owner; on missing/failed
-	 * media the existing factual attachment or deterministic editorial fallback
-	 * remains visible behind it.
+	 * One shared hero renderer for every editorial route. Campaign mode keeps
+	 * heading/copy/CTA visible while optional native Media Library video enhances
+	 * the same media column; video_only is the deliberate full-viewport Home mode.
+	 * The video is never a second hero or second data owner.
 	 *
 	 * @param array<string,mixed> $hero Hero context.
 	 * @return void
@@ -152,7 +150,6 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 		} ) ) : array();
 		$has_video  = array() !== $sources;
 
-		/* ── Video-only mode: full-viewport video, no text or editorial fallback ── */
 		if ( $video_only ) {
 			$classes = 'gloskin-ui1-hero gloskin-ui1-hero--video-only' . ( $has_video ? ' is-video-preparing' : ' is-video-unavailable' );
 			?>
@@ -172,7 +169,7 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 			return;
 		}
 
-		$classes   = 'gloskin-ui1-hero' . ( $campaign ? ' gloskin-ui1-hero--campaign' : '' ) . ( $has_video ? ' is-video-preparing' : '' );
+		$classes = 'gloskin-ui1-hero' . ( $campaign ? ' gloskin-ui1-hero--campaign' : '' ) . ( $has_video ? ' is-video-preparing' : '' );
 		?>
 		<section class="<?php echo esc_attr( $classes ); ?>"<?php echo $has_video ? ' data-gloskin-hero-bg-video-root' : ''; ?>>
 			<div class="gloskin-ui1-container gloskin-ui1-hero__grid">
@@ -372,11 +369,14 @@ if ( ! function_exists( 'gloskin_ui1_render_wishlist_toggle' ) ) {
 
 if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
 	/**
+	 * Render the canonical product card. Every first-party retail surface uses
+	 * the normal path; consultation is the only alternate presentation path.
+	 *
 	 * @param array<string,mixed> $product Product data.
-	 * @param string              $variant Presentation variant; catalog remains the default.
+	 * @param string              $variant Presentation path.
 	 * @return void
 	 */
-	function gloskin_ui1_render_product_card( $product, $variant = 'catalog' ) {
+	function gloskin_ui1_render_product_card( $product, $variant = 'retail' ) {
 		$name     = isset( $product['name'] ) ? (string) $product['name'] : '';
 		$url      = isset( $product['url'] ) ? (string) $product['url'] : '';
 		$image_id = isset( $product['image_id'] ) ? absint( $product['image_id'] ) : 0;
@@ -413,10 +413,6 @@ if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
 		$can_purchase = ! empty( $product['purchasable'] ) && ! empty( $product['in_stock'] );
 		$action_url   = $is_variable ? $url : ( isset( $product['add_to_cart_url'] ) ? (string) $product['add_to_cart_url'] : '' );
 
-		/* One commerce-action owner is shared by catalog and Skincare presentation
-		 * branches. The variant only changes composition/skin; Woo product type,
-		 * native loop classes/data attributes, AJAX eligibility and Quick Add
-		 * enhancement remain identical. */
 		$render_purchase_action = static function () use ( $product, $type, $is_variable, $can_purchase, $action_url, $url, $id ) {
 			if ( $can_purchase && '' !== $action_url ) {
 				$cart_classes = array( 'gloskin-ui1-button', 'gloskin-ui1-button--small', 'button', 'add_to_cart_button' );
@@ -444,24 +440,6 @@ if ( ! function_exists( 'gloskin_ui1_render_product_card' ) ) {
 				<?php
 			}
 		};
-
-		if ( 'skincare' === $variant ) {
-			?>
-			<article class="gloskin-ui1-card gloskin-ui1-card--product gloskin-ui1-card--product-skincare<?php echo $image_id ? '' : ' gloskin-ui1-card--text-first'; ?>">
-				<?php if ( $image_id ) : ?>
-					<div class="gloskin-ui1-card__media-wrap gloskin-ui1-card__media-wrap--skincare">
-						<a class="gloskin-ui1-card__media" href="<?php echo esc_url( $url ); ?>" tabindex="-1" aria-hidden="true"><?php echo wp_get_attachment_image( $image_id, 'woocommerce_thumbnail', false, array( 'loading' => 'lazy', 'class' => 'gloskin-ui1-card__image', 'alt' => $name ) ); ?></a>
-					</div>
-				<?php endif; ?>
-				<div class="gloskin-ui1-card__body">
-					<h3 class="gloskin-ui1-card__title"><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $name ); ?></a></h3>
-					<?php if ( ! empty( $product['price_html'] ) ) : ?><div class="gloskin-ui1-product-price"><?php echo wp_kses_post( (string) $product['price_html'] ); ?></div><?php endif; ?>
-					<div class="gloskin-ui1-card__actions"><?php $render_purchase_action(); ?></div>
-				</div>
-			</article>
-			<?php
-			return;
-		}
 		?>
 		<article class="gloskin-ui1-card gloskin-ui1-card--product<?php echo $image_id ? '' : ' gloskin-ui1-card--text-first'; ?>">
 			<?php if ( $image_id ) : ?>
@@ -823,7 +801,6 @@ if ( ! function_exists( 'gloskin_ui1_render_why_gloskin' ) ) {
 	 * @return void
 	 */
 	function gloskin_ui1_render_why_gloskin( $home_page = null ) {
-		/* Read optional editor overrides — fall back to factual copy if blank */
 		$why_heading       = '';
 		$why_lead          = '';
 		$why_primary_title = '';
@@ -903,7 +880,7 @@ if ( ! function_exists( 'gloskin_ui1_render_testimonials' ) ) {
 	 */
 	function gloskin_ui1_render_testimonials( $testimonials ) {
 		if ( ! $testimonials ) {
-			return; /* Omit section entirely when no published factual records */
+			return;
 		}
 		$count = count( $testimonials );
 		?>
@@ -963,7 +940,7 @@ if ( ! function_exists( 'gloskin_ui1_render_achievements' ) ) {
 	 */
 	function gloskin_ui1_render_achievements( $achievements, $variant = 'compact' ) {
 		if ( ! $achievements ) {
-			return; /* Omit section entirely when no published factual records */
+			return;
 		}
 		$classes = 'gloskin-ui1-section gloskin-ui1-achievements' . ( 'full' === $variant ? ' gloskin-ui1-achievements--full' : ' gloskin-ui1-achievements--compact' );
 		?>
