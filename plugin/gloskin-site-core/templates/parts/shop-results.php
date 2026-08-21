@@ -47,17 +47,17 @@ $gloskin_shop_total_label = sprintf( __( '%d produk', 'gloskin-site-core' ), $gl
 		<nav class="gloskin-ui1-pagination gloskin-ui1-shop-pagination" aria-label="<?php echo esc_attr__( 'Navigasi halaman produk', 'gloskin-site-core' ); ?>">
 			<ul>
 				<?php if ( $gloskin_shop_page > 1 ) : ?>
-					<li><a class="prev page-numbers" href="<?php echo esc_url( $gloskin_shop_page_url( $gloskin_shop_page - 1 ) ); ?>" data-gloskin-shop-page="<?php echo esc_attr( (string) ( $gloskin_shop_page - 1 ) ); ?>" aria-label="<?php echo esc_attr__( 'Halaman produk sebelumnya', 'gloskin-site-core' ); ?>">&larr;</a></li>
+					<li><a class="prev page-numbers" href="<?php echo esc_url( $gloskin_shop_page_url( $gloskin_shop_page - 1 ) ); ?>" data-gloskin-shop-page="<?php echo esc_attr( (string) ( $gloskin_shop_page - 1 ) ); ?>" data-gloskin-no-transition aria-label="<?php echo esc_attr__( 'Halaman produk sebelumnya', 'gloskin-site-core' ); ?>">&larr;</a></li>
 				<?php endif; ?>
 				<?php for ( $gloskin_shop_index = 1; $gloskin_shop_index <= $gloskin_shop_max_pages; $gloskin_shop_index++ ) : ?>
 					<?php if ( $gloskin_shop_index === $gloskin_shop_page ) : ?>
 						<li><span class="page-numbers current" aria-current="page"><?php echo esc_html( (string) $gloskin_shop_index ); ?></span></li>
 					<?php else : ?>
-						<li><a class="page-numbers" href="<?php echo esc_url( $gloskin_shop_page_url( $gloskin_shop_index ) ); ?>" data-gloskin-shop-page="<?php echo esc_attr( (string) $gloskin_shop_index ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %d: product catalog page number. */ __( 'Halaman produk %d', 'gloskin-site-core' ), $gloskin_shop_index ) ); ?>"><?php echo esc_html( (string) $gloskin_shop_index ); ?></a></li>
+						<li><a class="page-numbers" href="<?php echo esc_url( $gloskin_shop_page_url( $gloskin_shop_index ) ); ?>" data-gloskin-shop-page="<?php echo esc_attr( (string) $gloskin_shop_index ); ?>" data-gloskin-no-transition aria-label="<?php echo esc_attr( sprintf( /* translators: %d: product catalog page number. */ __( 'Halaman produk %d', 'gloskin-site-core' ), $gloskin_shop_index ) ); ?>"><?php echo esc_html( (string) $gloskin_shop_index ); ?></a></li>
 					<?php endif; ?>
 				<?php endfor; ?>
 				<?php if ( $gloskin_shop_page < $gloskin_shop_max_pages ) : ?>
-					<li><a class="next page-numbers" href="<?php echo esc_url( $gloskin_shop_page_url( $gloskin_shop_page + 1 ) ); ?>" data-gloskin-shop-page="<?php echo esc_attr( (string) ( $gloskin_shop_page + 1 ) ); ?>" aria-label="<?php echo esc_attr__( 'Halaman produk berikutnya', 'gloskin-site-core' ); ?>">&rarr;</a></li>
+					<li><a class="next page-numbers" href="<?php echo esc_url( $gloskin_shop_page_url( $gloskin_shop_page + 1 ) ); ?>" data-gloskin-shop-page="<?php echo esc_attr( (string) ( $gloskin_shop_page + 1 ) ); ?>" data-gloskin-no-transition aria-label="<?php echo esc_attr__( 'Halaman produk berikutnya', 'gloskin-site-core' ); ?>">&rarr;</a></li>
 				<?php endif; ?>
 			</ul>
 		</nav>
