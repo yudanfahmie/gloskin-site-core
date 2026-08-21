@@ -66,8 +66,9 @@
 	.gloskin-ui1-nav--mobile .gloskin-ui1-nav__link{font-size:.96rem}
 }
 
-/* Fixed commerce sheets use the single existing WordPress-toolbar offset owner. */
+/* Fixed commerce sheets use the single existing WordPress-toolbar offset and visual surface owner. */
 .gloskin-ui1-sheet{top:var(--gloskin-ui1-admin-bar-height)}
+.gloskin-ui1-sheet__panel{background:var(--gloskin-refresh-blush)}
 
 /* Utility counters remain visibly branded even when the count is zero. */
 .gloskin-ui1-badge{background:var(--gloskin-accent);color:var(--gloskin-refresh-blush);opacity:1}
