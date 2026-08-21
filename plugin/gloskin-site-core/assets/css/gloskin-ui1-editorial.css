@@ -50,6 +50,7 @@
 .gloskin-ui1 .gloskin-ui1-insight-single__related-head h2{margin:0;font-size:clamp(1.55rem,2.4vw,2.15rem);line-height:1.16}
 
 /* Home composition. */
+.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:clamp(3rem,6vw,5.5rem)}
 .gloskin-home-why__grid,.gloskin-about-story__grid,.gloskin-about-founder__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(2rem,5vw,5rem);align-items:center}
 .gloskin-home-why__media,.gloskin-about-story__media,.gloskin-about-founder__media{min-width:0;overflow:hidden;border-radius:1.5rem}
 .gloskin-home-why__media,.gloskin-about-story__media{aspect-ratio:4/3}
