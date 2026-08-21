@@ -183,7 +183,10 @@ foreach ( array( "'vision'", "'mission'", "'values'" ) as $unsafe_default ) {
 	p4must( false === strpos( $defaults_block, $unsafe_default ), 'VMV is not an automatic reconciliation default: ' . $unsafe_default );
 }
 p4must( false === strpos( $lifecycle, 'wp_insert_attachment' ) && false === strpos( $lifecycle, 'wp_delete_attachment' ), 'About reconciliation never creates/deletes attachments' );
-p4must( false !== strpos( $kernel_t, 'register_about_reconciliation' ), 'kernel wires About reconciliation on all paths' );
+p4must( 1 === substr_count( $kernel_t, 'register_about_reconciliation' ), 'kernel registers About reconciliation exactly once' );
+$frontend_start = strpos( $kernel_t, "\t\t\$language = new Gloskin_Site_Core_Language" );
+$frontend_block = false !== $frontend_start ? substr( $kernel_t, $frontend_start ) : '';
+p4must( false === strpos( $frontend_block, 'register_about_reconciliation' ), 'frontend kernel path never registers About reconciliation' );
 
 /* Shop Discovery CSS must load after the current last global style, not a retired handle. */
 $shop_route = p4text( $plugin . '/includes/gloskin-site-core-shop-discovery-route-trait.php' );
