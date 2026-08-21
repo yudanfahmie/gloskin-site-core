@@ -1972,7 +1972,7 @@
 	}
 
 	function initShopCatalog() {
-		var root = document.querySelector('[data-gloskin-shop-catalog-owner]');
+		var root = document.querySelector('[data-gloskin-shop-catalog]');
 		if (!root || typeof window.fetch !== 'function') { return; }
 		var categories = root.querySelector('[data-gloskin-shop-categories]');
 		var results = root.querySelector('[data-gloskin-shop-results]');
