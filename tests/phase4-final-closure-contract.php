@@ -148,6 +148,6 @@ foreach ( array( 'Detail tambahan belum tersedia untuk ditampilkan.', 'Informasi
 	p4must( false !== strpos( $t, $copy ), 'translation/interface owner contains: ' . $copy );
 }
 
-p4must( false !== strpos( $k, "const VERSION = '0.7.188'" ) && false !== strpos( $b, 'Version: 0.7.188' ), 'release owners remain synchronized before final resilience bump' );
+p4must( false !== strpos( $k, "const VERSION = '0.7.189'" ) && false !== strpos( $b, 'Version: 0.7.189' ), 'release owners synchronized at 0.7.189' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + graceful Home/Promo empty-state resilience + Finalizer separation)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + graceful Home/Promo empty-state resilience + Finalizer separation + version 0.7.189)\n";
