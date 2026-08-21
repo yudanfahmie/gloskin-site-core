@@ -225,15 +225,11 @@ final class Gloskin_Site_Core_Template_Service {
 		$hero = array_merge( $hero, $this->hero_background_video() );
 		$hero['mode'] = 'video_only';
 		return array(
-			'page'          => $page,
-			'hero'          => $hero,
-			'treatments'    => $this->curated_home_treatments(),
-			'promo'         => $this->managed_promo_records( 5 ),
-			'skincare'      => $this->skincare_mappings(),
-			'products'      => $this->woocommerce->products( 4 ),
-			'testimonials'  => $this->published_managed_records( Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_active', 6, null, 'gloskin_testimonial_order' ),
-			'achievements'  => $this->published_managed_records( Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_active', 8, 'gloskin_achievement_feature_on_home', 'gloskin_achievement_order' ),
-			'woo_ready'     => $this->woocommerce->available(),
+			'page'         => $page,
+			'hero'         => $hero,
+			'treatments'   => $this->curated_home_treatments(),
+			'testimonials' => $this->published_managed_records( Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_active', 6, null, 'gloskin_testimonial_order' ),
+			'achievements' => $this->published_managed_records( Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_active', 8, 'gloskin_achievement_feature_on_home', 'gloskin_achievement_order' ),
 		);
 	}
 
@@ -242,15 +238,11 @@ final class Gloskin_Site_Core_Template_Service {
 		$page = $this->content_page( 'about' );
 		$founder = $this->about_founder_context( $page );
 		return array(
-			'page'         => $page,
-			'hero'         => $this->hero_context( $page, __( 'Tentang Gloskin', 'gloskin-site-core' ), __( 'Kenali Gloskin melalui jaringan klinik, informasi perawatan, skincare, dan kanal kontak yang tersedia.', 'gloskin-site-core' ) ),
-			'vision'       => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_vision', true ) : '',
-			'mission'      => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_mission', true ) : '',
-			'values'       => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_values', true ) : '',
-			'founder'      => $founder,
-			'clinics'      => $this->clinic_cards(),
-			'doctors'      => $this->all_published_doctor_cards(),
-			'achievements' => $this->published_managed_records( Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_active', 20, null, 'gloskin_achievement_order' ),
+			'page'    => $page,
+			'vision'  => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_vision', true ) : '',
+			'mission' => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_mission', true ) : '',
+			'values'  => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_values', true ) : '',
+			'founder' => $founder,
 		);
 	}
 

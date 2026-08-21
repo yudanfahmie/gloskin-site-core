@@ -42,10 +42,27 @@ function gloskin_ui1_register_product_description_boundary() {
 /**
  * Render the primary PDP short description through the canonical format pipeline.
  *
+ * Live merge contract: when post_content (the durable full description written
+ * by the Content Finalizer) contains blocks not already present in post_excerpt
+ * (the short description shown on the PDP), those blocks are appended once so
+ * the full content is visible without requiring the one-time admin action to
+ * have run first. For fully consolidated products this is a no-op (no duplication).
+ * The full description remains the authoritative durable companion field written
+ * by the Content Finalizer; this function only bridges presentation until
+ * consolidation is confirmed on every canonical product.
+ *
  * @param string $content Woo's own short-description value for the current product.
  * @return string
  */
 function gloskin_ui1_render_primary_pdp_description( $content ) {
+	global $product;
+	if ( is_object( $product ) && method_exists( $product, 'get_description' ) ) {
+		$full_description = (string) $product->get_description();
+		if ( '' !== trim( wp_strip_all_tags( $full_description ) ) ) {
+			$merged  = Gloskin_Site_Core_WooCommerce_Adapter::consolidate_description_content( $content, $full_description );
+			$content = $merged['result'];
+		}
+	}
 	return gloskin_ui1_format_product_description( $content );
 }
 

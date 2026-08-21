@@ -27,7 +27,7 @@ final class Gloskin_Site_Core_Content_Finalizer_Admin {
 	const CONTENT_SOURCE_META  = '_gloskin_phase4_content_source';
 	const CONTENT_VERSION_META = '_gloskin_phase4_content_version';
 	const CONTENT_SOURCE       = 'product-content-research.md:conservative-fallback';
-	const CONTENT_VERSION      = '2026-08-21.1';
+	const CONTENT_VERSION      = '2026-08-21.2';
 
 	/** @return bool */
 	public static function is_complete() {
@@ -203,21 +203,42 @@ final class Gloskin_Site_Core_Content_Finalizer_Admin {
 		}
 	}
 
-	/** @param array<string,mixed> $canonical Canonical IDs. @return array<string,int> */
+	/**
+	 * Write canonical product copy to Woo post_excerpt and post_content.
+	 *
+	 * post_content (full description) is the durable backend companion: it is
+	 * written here by the one-shot resolver but intentionally not rendered in
+	 * the current Woo tab strip (all tabs are removed; the Short Description
+	 * is the PDP primary body). The live merge in product-description-boundary.php
+	 * bridges the two fields until all canonical products are fully consolidated.
+	 *
+	 * @param array<string,mixed> $canonical Canonical IDs.
+	 * @return array<string,int>
+	 */
 	private function reconcile_product_content( $canonical ) {
 		foreach ( $canonical['skincare'] as $slug => $product_id ) {
-			$copy = $this->skincare_copy( $product_id, self::skincare_category_map()[ $slug ] );
+			$copy = $this->skincare_copy( $product_id, self::skincare_category_map()[ $slug ], $slug );
 			$this->persist_product_copy( $product_id, $copy );
 		}
-		foreach ( $canonical['treatment'] as $product_id ) {
-			$copy = $this->treatment_copy( $product_id );
+		foreach ( $canonical['treatment'] as $slug => $product_id ) {
+			$copy = $this->treatment_copy( $product_id, $slug );
 			$this->persist_product_copy( $product_id, $copy );
 		}
 		return $this->verify_product_content( $canonical );
 	}
 
-	/** @param int $product_id Product ID. @param string $category_slug Canonical category. @return array<string,string> */
-	private function skincare_copy( $product_id, $category_slug ) {
+	/**
+	 * @param int    $product_id    Product ID (used for title in fallback).
+	 * @param string $category_slug Canonical skincare category slug.
+	 * @param string $slug          Canonical product slug for per-product lookup.
+	 * @return array<string,string>
+	 */
+	private function skincare_copy( $product_id, $category_slug, $slug = '' ) {
+		$specific = self::skincare_product_copy_map();
+		if ( '' !== $slug && isset( $specific[ $slug ] ) ) {
+			return $specific[ $slug ];
+		}
+		/* Conservative category-level fallback for products without specific research copy. */
 		$title = trim( (string) get_the_title( $product_id ) );
 		$labels = array(
 			'facial-wash'         => 'pembersih wajah',
@@ -240,8 +261,17 @@ final class Gloskin_Site_Core_Content_Finalizer_Admin {
 		return array( 'post_excerpt' => $short, 'post_content' => $full );
 	}
 
-	/** @param int $product_id Product ID. @return array<string,string> */
-	private function treatment_copy( $product_id ) {
+	/**
+	 * @param int    $product_id Product ID (used for title in fallback).
+	 * @param string $slug       Canonical product slug for per-product lookup.
+	 * @return array<string,string>
+	 */
+	private function treatment_copy( $product_id, $slug = '' ) {
+		$specific = self::treatment_product_copy_map();
+		if ( '' !== $slug && isset( $specific[ $slug ] ) ) {
+			return $specific[ $slug ];
+		}
+		/* Conservative concern-based fallback for treatments without specific research copy. */
 		$title = trim( (string) get_the_title( $product_id ) );
 		$concerns = wp_get_object_terms(
 			$product_id,
@@ -879,6 +909,244 @@ final class Gloskin_Site_Core_Content_Finalizer_Admin {
 			'acne-advance-peeling', 'acne-spot-injection', 'cautery', 'injeksi-keloid', 'korean-comedo-glowing-peel', 'premium-prp', 'rejuran-hb', 'sylfirm-x', 'vip-light',
 			'hollywood-face-sculpting', 'juvederm', 'thread-lift', 'ultralift',
 			'5gf-glo-booster', 'croma-rich', 'ellanse', 'exxoskin', 'juvelook', 'nucleofil', 'profhilo', 'glowing-salmon-dna', 'skinvive',
+		);
+	}
+
+	/**
+	 * Per-product copy for canonical Skincare products with prepared research evidence.
+	 * Products not in this map fall through to the category-level conservative fallback.
+	 *
+	 * Source: docs/client-feedback-phase-4/product-content-research.md
+	 *
+	 * @return array<string,array{post_excerpt:string,post_content:string}>
+	 */
+	public static function skincare_product_copy_map() {
+		return array(
+			'acne-day-protection-cream' => array(
+				'post_excerpt' => 'Acne Day Protection Cream adalah krim perlindungan siang GLOSKIN yang diformulasikan untuk kulit berjerawat, membantu menjaga kulit terlindungi sekaligus merawat kondisi jerawat.',
+				'post_content' => '<p>Acne Day Protection Cream adalah krim perawatan siang dari rangkaian day cream &amp; sunscreen GLOSKIN yang diformulasikan khusus untuk kulit bertipe acne-prone.</p><p>Digunakan sebagai bagian dari rutinitas pagi hari. Konsultasikan penggunaan dengan tim Gloskin untuk rekomendasi kombinasi perawatan yang sesuai kondisi kulit Anda.</p>',
+			),
+			'whitening-sunscreen' => array(
+				'post_excerpt' => 'Whitening Sunscreen adalah tabir surya GLOSKIN dengan manfaat pencerah untuk mendukung rutinitas brightening dan perlindungan harian.',
+				'post_content' => '<p>Whitening Sunscreen adalah produk perlindungan dan pencerah dari rangkaian day cream &amp; sunscreen GLOSKIN yang mendukung perawatan brightening harian.</p><p>Digunakan sebagai langkah perawatan pagi. Ikuti petunjuk penggunaan dan konsultasikan dengan tim Gloskin untuk kombinasi perawatan terbaik bagi kulit Anda.</p>',
+			),
+			'glowing-white-sunscreen' => array(
+				'post_excerpt' => 'Glowing White Sunscreen adalah tabir surya GLOSKIN dengan sentuhan brightening untuk tampilan kulit lebih cerah dan terlindungi sepanjang hari.',
+				'post_content' => '<p>Glowing White Sunscreen merupakan bagian dari rangkaian day cream &amp; sunscreen GLOSKIN yang menggabungkan perlindungan harian dengan manfaat pencerah kulit.</p><p>Gunakan sesuai petunjuk penggunaan sebagai bagian dari rutinitas siang hari. Konsultasikan dengan tim Gloskin bila ingin mengombinasikannya dengan rangkaian perawatan lain.</p>',
+			),
+			'day-protection-cream' => array(
+				'post_excerpt' => 'Day Protection Cream adalah krim perlindungan siang GLOSKIN untuk mendukung kesehatan dan kenyamanan kulit selama beraktivitas.',
+				'post_content' => '<p>Day Protection Cream adalah krim perawatan siang dari rangkaian GLOSKIN yang dirancang untuk memberikan perlindungan saat beraktivitas sehari-hari.</p><p>Digunakan sebagai bagian dari rutinitas perawatan siang hari. Konsultasikan dengan tim Gloskin untuk rekomendasi rangkaian yang sesuai kondisi dan kebutuhan kulit Anda.</p>',
+			),
+			'flawless-high-defences-50' => array(
+				'post_excerpt' => 'Flawless High Defences 50 adalah produk perlindungan tinggi dari rangkaian day cream &amp; sunscreen GLOSKIN untuk kulit yang membutuhkan perlindungan ekstra.',
+				'post_content' => '<p>Flawless High Defences 50 merupakan bagian dari rangkaian day cream &amp; sunscreen GLOSKIN dengan tingkat perlindungan yang lebih tinggi, ditujukan untuk kebutuhan perlindungan ekstra sehari-hari.</p><p>Gunakan sesuai petunjuk penggunaan produk. Konsultasikan dengan tim Gloskin bila membutuhkan rekomendasi kombinasi yang sesuai kondisi kulit.</p>',
+			),
+			'brightening-face-wash' => array(
+				'post_excerpt' => 'Brightening Face Wash adalah pembersih wajah GLOSKIN dengan manfaat pencerah untuk mendukung rutinitas brightening harian sejak tahap pembersihan.',
+				'post_content' => '<p>Brightening Face Wash adalah pembersih wajah dari rangkaian GLOSKIN yang dirancang untuk membersihkan sekaligus memberikan manfaat pencerah pada kulit.</p><p>Digunakan sebagai langkah pembersihan dalam rutinitas brightening harian. Konsultasikan dengan tim Gloskin bila membutuhkan rekomendasi kombinasi produk yang sesuai kondisi kulit.</p>',
+			),
+			'acne-facial-cleanser' => array(
+				'post_excerpt' => 'Acne Facial Cleanser adalah pembersih wajah GLOSKIN yang diformulasikan untuk kulit berjerawat, membantu membersihkan dan merawat kondisi jerawat secara bersamaan.',
+				'post_content' => '<p>Acne Facial Cleanser adalah pembersih wajah dari rangkaian GLOSKIN yang diformulasikan untuk kebutuhan kulit acne-prone.</p><p>Digunakan sebagai langkah pembersihan harian dalam rutinitas perawatan kulit berjerawat. Konsultasikan dengan tim Gloskin bila membutuhkan rekomendasi kombinasi perawatan yang tepat untuk kondisi kulit Anda.</p>',
+			),
+			'hydro-fresh-foaming' => array(
+				'post_excerpt' => 'Hydro Fresh Foaming adalah sabun muka berbusa GLOSKIN yang memberikan sensasi segar sekaligus membersihkan kulit secara lembut.',
+				'post_content' => '<p>Hydro Fresh Foaming adalah pembersih wajah berbusa dari rangkaian GLOSKIN yang diformulasikan untuk membersihkan kulit dengan lembut sambil memberikan sensasi segar dan nyaman.</p><p>Gunakan sesuai petunjuk penggunaan sebagai bagian dari rutinitas pembersihan harian. Konsultasikan dengan tim Gloskin bila membutuhkan rekomendasi rangkaian yang sesuai kondisi kulit.</p>',
+			),
+			'glowing-facial-wash' => array(
+				'post_excerpt' => 'Glowing Facial Wash adalah pembersih wajah GLOSKIN dengan manfaat brightening untuk tampilan kulit lebih cerah sejak tahap pembersihan.',
+				'post_content' => '<p>Glowing Facial Wash adalah pembersih wajah dari rangkaian GLOSKIN yang dirancang untuk memberikan manfaat brightening sekaligus membersihkan kulit secara efektif.</p><p>Digunakan sebagai bagian dari rutinitas pembersihan harian. Konsultasikan dengan tim Gloskin bila ingin mengombinasikan dengan produk lain dalam rangkaian perawatan.</p>',
+			),
+			'clear-xpert-serum' => array(
+				'post_excerpt' => 'Clear Xpert Serum adalah serum GLOSKIN yang diformulasikan untuk membantu mengatasi jerawat dan ketidakmerataan warna kulit sebagai bagian dari rutinitas perawatan.',
+				'post_content' => '<p>Clear Xpert Serum adalah serum dari rangkaian GLOSKIN yang diformulasikan untuk membantu menangani kebutuhan kulit terkait kondisi jerawat dan ketidakrataan tekstur.</p><p>Digunakan sebagai bagian dari rutinitas serum harian. Konsultasikan penggunaan dengan tim Gloskin untuk rekomendasi kombinasi produk yang tepat bagi kondisi kulit Anda.</p>',
+			),
+			'rejuve-xpert-serum' => array(
+				'post_excerpt' => 'Rejuve Xpert Serum adalah serum anti-aging GLOSKIN yang mendukung kebutuhan peremajaan dan perawatan kulit dewasa dalam rutinitas harian.',
+				'post_content' => '<p>Rejuve Xpert Serum adalah serum dari rangkaian GLOSKIN yang ditujukan untuk membantu memenuhi kebutuhan kulit dalam program perawatan anti-aging dan peremajaan.</p><p>Digunakan sebagai bagian dari rutinitas serum harian untuk kulit dewasa. Konsultasikan dengan tim Gloskin untuk rekomendasi kombinasi yang sesuai kondisi kulit.</p>',
+			),
+			'hydra-xpert-serum' => array(
+				'post_excerpt' => 'Hydra Xpert Serum adalah serum hidrasi GLOSKIN yang diformulasikan untuk membantu memenuhi kebutuhan kelembapan kulit dalam rutinitas perawatan harian.',
+				'post_content' => '<p>Hydra Xpert Serum adalah serum dari rangkaian GLOSKIN yang ditujukan untuk mendukung hidrasi dan kelembapan optimal kulit.</p><p>Digunakan sebagai bagian dari rutinitas serum dalam perawatan kulit. Konsultasikan dengan tim Gloskin bila membutuhkan rekomendasi kombinasi produk yang sesuai kondisi dan kebutuhan kulit Anda.</p>',
+			),
+			'skin-fresh-toner' => array(
+				'post_excerpt' => 'Skin Fresh Toner adalah toner GLOSKIN yang menyegarkan kulit setelah pembersihan dan mempersiapkan kulit untuk menyerap produk perawatan berikutnya.',
+				'post_content' => '<p>Skin Fresh Toner adalah toner dari rangkaian GLOSKIN yang dirancang untuk menyegarkan kulit setelah pembersihan dan mengoptimalkan penyerapan produk perawatan selanjutnya.</p><p>Digunakan setelah tahap pembersihan dalam rutinitas perawatan harian. Konsultasikan dengan tim Gloskin bila membutuhkan rekomendasi rangkaian produk yang sesuai.</p>',
+			),
+			'bio-calmskin' => array(
+				'post_excerpt' => 'Bio Calmskin adalah produk penunjang GLOSKIN yang diformulasikan untuk membantu menenangkan kulit sensitif dan memberikan kenyamanan ekstra pada kulit.',
+				'post_content' => '<p>Bio Calmskin adalah produk penunjang dari rangkaian GLOSKIN yang ditujukan untuk kulit yang membutuhkan perawatan calming dan meredakan respons iritasi ringan.</p><p>Digunakan sebagai bagian dari rutinitas perawatan kulit sensitif. Konsultasikan dengan tim Gloskin bila ingin mengombinasikannya dengan produk lain sesuai kondisi kulit Anda.</p>',
+			),
+			'essence-bio-moisturizer' => array(
+				'post_excerpt' => 'Essence Bio Moisturizer adalah esens pelembap GLOSKIN yang membantu menjaga kelembapan kulit secara berkelanjutan sebagai bagian dari rutinitas perawatan harian.',
+				'post_content' => '<p>Essence Bio Moisturizer adalah produk penunjang dari rangkaian GLOSKIN yang menggabungkan fungsi esens dan moisturizer untuk mendukung kelembapan kulit sepanjang hari.</p><p>Digunakan sebagai bagian dari rutinitas perawatan harian. Konsultasikan dengan tim Gloskin bila membutuhkan rekomendasi kombinasi produk yang sesuai kondisi kulit.</p>',
+			),
+			'sense-cleansing-milk' => array(
+				'post_excerpt' => 'Sense Cleansing Milk adalah cleansing milk GLOSKIN yang membersihkan kulit secara lembut sambil menjaga kelembapan alami kulit.',
+				'post_content' => '<p>Sense Cleansing Milk adalah cleansing milk dari rangkaian produk penunjang GLOSKIN yang diformulasikan untuk pembersihan lembut, cocok sebagai langkah pertama pembersihan atau sebagai pembersih mandiri.</p><p>Gunakan sesuai petunjuk penggunaan produk. Konsultasikan dengan tim Gloskin bila ingin mengintegrasikannya ke dalam rangkaian perawatan kulit yang lebih lengkap.</p>',
+			),
+			'ultimate-whitening-cream' => array(
+				'post_excerpt' => 'Ultimate Whitening Cream adalah krim pencerah GLOSKIN yang mendukung program perawatan kulit untuk mencerahkan dan meratakan warna kulit.',
+				'post_content' => '<p>Ultimate Whitening Cream adalah produk penunjang dari rangkaian GLOSKIN yang ditujukan untuk mendukung kebutuhan perawatan pencerah dan perataan warna kulit.</p><p>Digunakan sebagai bagian dari rutinitas perawatan brightening. Konsultasikan dengan tim Gloskin untuk rekomendasi kombinasi produk yang sesuai kondisi dan tujuan perawatan kulit Anda.</p>',
+			),
+			'transforming-night-cream' => array(
+				'post_excerpt' => 'Transforming Night Cream adalah krim malam GLOSKIN yang mendukung regenerasi dan perawatan kulit selama tidur sebagai bagian dari rutinitas perawatan malam.',
+				'post_content' => '<p>Transforming Night Cream adalah krim malam dari rangkaian produk penunjang GLOSKIN yang ditujukan untuk mendukung proses perawatan dan regenerasi kulit selama istirahat malam.</p><p>Digunakan sebagai langkah penutup rutinitas perawatan malam. Konsultasikan dengan tim Gloskin bila membutuhkan rekomendasi kombinasi perawatan malam yang sesuai kondisi kulit Anda.</p>',
+			),
+			'c-power-silk-gel' => array(
+				'post_excerpt' => 'C Power Silk Gel adalah gel perawatan kulit GLOSKIN yang mendukung program brightening dan menjaga kondisi kulit dalam rutinitas harian.',
+				'post_content' => '<p>C Power Silk Gel adalah produk penunjang dari rangkaian GLOSKIN yang hadir dalam tekstur gel untuk mendukung program perawatan brightening dan penjagaan kulit sehari-hari.</p><p>Digunakan sebagai bagian dari rutinitas perawatan harian. Konsultasikan dengan tim Gloskin bila ingin mengombinasikan produk ini dengan rangkaian perawatan yang lebih lengkap.</p>',
+			),
+			'acne-prone-gel' => array(
+				'post_excerpt' => 'Acne Prone Gel adalah gel perawatan GLOSKIN berformula ringan yang diformulasikan untuk membantu merawat kulit bertipe acne-prone sehari-hari.',
+				'post_content' => '<p>Acne Prone Gel adalah produk penunjang dari rangkaian GLOSKIN yang hadir dalam tekstur gel ringan, ditujukan untuk membantu merawat dan menjaga kulit yang rentan berjerawat.</p><p>Digunakan sebagai bagian dari rutinitas perawatan kulit berjerawat. Konsultasikan dengan tim Gloskin bila membutuhkan rekomendasi rangkaian yang tepat untuk kondisi jerawat Anda.</p>',
+			),
+			'cysteamine-advance-plus' => array(
+				'post_excerpt' => 'Cysteamine Advance Plus adalah produk perawatan GLOSKIN yang ditujukan untuk membantu menangani hiperpigmentasi dan meratakan warna kulit.',
+				'post_content' => '<p>Cysteamine Advance Plus adalah produk penunjang dari rangkaian GLOSKIN yang ditujukan untuk membantu menangani kebutuhan perawatan hiperpigmentasi dan perataan warna kulit.</p><p>Digunakan sebagai bagian dari program perawatan brightening atau anti-pigmentasi. Konsultasikan dengan tim Gloskin untuk rekomendasi penggunaan yang tepat sesuai kondisi kulit Anda.</p>',
+			),
+			'glam-air-cushion' => array(
+				'post_excerpt' => 'Glam Air Cushion adalah cushion GLOSKIN yang memadukan tampilan riasan natural dengan manfaat perawatan kulit untuk penggunaan harian.',
+				'post_content' => '<p>Glam Air Cushion adalah produk penunjang dari rangkaian GLOSKIN yang hadir dalam format cushion praktis untuk penggunaan harian dengan hasil tampilan natural.</p><p>Digunakan sebagai bagian dari rutinitas makeup dan perawatan. Konsultasikan dengan tim Gloskin bila ingin mengintegrasikan produk ini ke dalam program perawatan kulit yang lebih lengkap.</p>',
+			),
+			'gloskin-glow-face-tonic' => array(
+				'post_excerpt' => 'Gloskin Glow Face Tonic adalah face tonic GLOSKIN yang membantu mencerahkan dan menyegarkan kulit sebagai bagian dari rutinitas perawatan harian.',
+				'post_content' => '<p>Gloskin Glow Face Tonic adalah produk penunjang dari rangkaian GLOSKIN yang diformulasikan untuk memberikan manfaat pencerah dan menyegarkan pada kulit melalui penggunaan rutin.</p><p>Digunakan sebagai bagian dari rutinitas perawatan harian. Konsultasikan dengan tim Gloskin bila ingin mengombinasikan dengan produk lain dalam rangkaian brightening.</p>',
+			),
+		);
+	}
+
+	/**
+	 * Per-product copy for canonical Treatment products with prepared research evidence.
+	 * Products not in this map fall through to the concern-based conservative fallback.
+	 *
+	 * Source: docs/client-feedback-phase-4/product-content-research.md
+	 *
+	 * @return array<string,array{post_excerpt:string,post_content:string}>
+	 */
+	public static function treatment_product_copy_map() {
+		return array(
+			'glowing-face-therapy' => array(
+				'post_excerpt' => 'Glowing Face Therapy adalah perawatan facial GLOSKIN yang dirancang untuk membantu mencerahkan dan menyegarkan kulit melalui rangkaian prosedur facial khusus.',
+				'post_content' => '<p>Glowing Face Therapy adalah perawatan facial dari rangkaian GLOSKIN yang ditujukan untuk mendukung kecerahan dan vitalitas kulit.</p><p>Kesesuaian perawatan, protokol, dan jumlah sesi ditentukan bersama tenaga medis setelah konsultasi. Informasi ini tidak menggantikan evaluasi klinis individual.</p>',
+			),
+			'derma-oxy-facial-therapy' => array(
+				'post_excerpt' => 'Derma Oxy Facial Therapy adalah perawatan facial GLOSKIN berbasis oksigen yang membantu merevitalisasi dan menyegarkan kulit.',
+				'post_content' => '<p>Derma Oxy Facial Therapy adalah perawatan facial dari rangkaian GLOSKIN yang memanfaatkan teknologi oksigen untuk membantu merevitalisasi dan memperbaiki kondisi kulit.</p><p>Kesesuaian perawatan, protokol, dan jumlah sesi ditentukan setelah konsultasi tenaga medis. Informasi ini tidak menggantikan evaluasi klinis individual.</p>',
+			),
+			'lymphatic-face-therapy' => array(
+				'post_excerpt' => 'Lymphatic Face Therapy adalah perawatan facial GLOSKIN yang mendukung sirkulasi limfatik area wajah untuk kulit lebih segar dan tampak lebih sehat.',
+				'post_content' => '<p>Lymphatic Face Therapy adalah perawatan facial dari rangkaian GLOSKIN yang diarahkan untuk mendukung sirkulasi limfatik dan meredakan pembengkakan ringan pada area wajah.</p><p>Kesesuaian perawatan dan jumlah sesi ditentukan setelah evaluasi tenaga medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'skin-barrier-facial-therapy' => array(
+				'post_excerpt' => 'Skin Barrier Facial Therapy adalah perawatan facial GLOSKIN yang berfokus pada pemulihan dan penguatan skin barrier untuk kulit lebih sehat dan terlindungi.',
+				'post_content' => '<p>Skin Barrier Facial Therapy adalah perawatan facial dari rangkaian GLOSKIN yang ditujukan untuk membantu memulihkan dan memperkuat skin barrier, khususnya bagi kulit sensitif atau yang mengalami gangguan barrier.</p><p>Kesesuaian perawatan ditentukan berdasarkan evaluasi kondisi kulit bersama tenaga medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'oxy-jet-light' => array(
+				'post_excerpt' => 'Oxy Jet Light adalah perawatan GLOSKIN yang mengombinasikan infusi oksigen dan energi cahaya untuk membantu meremajakan dan mencerahkan kulit.',
+				'post_content' => '<p>Oxy Jet Light adalah perawatan dari rangkaian GLOSKIN yang memanfaatkan kombinasi infusi oksigen dan energi cahaya untuk mendukung peremajaan dan kecerahan kulit.</p><p>Kesesuaian perawatan, protokol sesi, dan harapan hasil ditentukan setelah konsultasi tenaga medis. Informasi ini tidak menggantikan evaluasi klinis individual.</p>',
+			),
+			'hydra-glowing-luxury-facial-therapy' => array(
+				'post_excerpt' => 'Hydra Glowing Luxury Facial Therapy adalah perawatan facial premium GLOSKIN yang menggabungkan hidrasi intensif dan brightening untuk pengalaman perawatan menyeluruh.',
+				'post_content' => '<p>Hydra Glowing Luxury Facial Therapy adalah perawatan facial premium dari rangkaian GLOSKIN yang menawarkan kombinasi hidrasi intensif dan manfaat brightening.</p><p>Kesesuaian dan protokol perawatan ditentukan setelah konsultasi tenaga medis. Informasi ini tidak menggantikan evaluasi klinis individual.</p>',
+			),
+			'korean-comedo-glowing-peel' => array(
+				'post_excerpt' => 'Korean Comedo Glowing Peel adalah perawatan eksfoliasi GLOSKIN untuk membantu membersihkan komedo dan memperbaiki tekstur kulit.',
+				'post_content' => '<p>Korean Comedo Glowing Peel adalah perawatan peeling dari rangkaian GLOSKIN yang ditujukan untuk membantu mengatasi komedo dan memperbaiki tekstur kulit melalui proses eksfoliasi terkontrol.</p><p>Kesesuaian perawatan, protokol, dan jumlah sesi ditentukan setelah evaluasi kondisi kulit bersama tenaga medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'acne-advance-peeling' => array(
+				'post_excerpt' => 'Acne Advance Peeling adalah perawatan peeling GLOSKIN yang diarahkan untuk membantu menangani kondisi jerawat aktif dan bekas jerawat.',
+				'post_content' => '<p>Acne Advance Peeling adalah perawatan peeling dari rangkaian GLOSKIN yang dirancang untuk membantu mengelola kondisi jerawat dan memperbaiki tampilan bekas jerawat melalui eksfoliasi terkontrol.</p><p>Kesesuaian tindakan, jumlah sesi, dan ekspektasi hasil ditentukan setelah evaluasi kondisi kulit bersama tenaga medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'pico-laser' => array(
+				'post_excerpt' => 'Pico Laser adalah perawatan laser GLOSKIN untuk membantu mengatasi masalah pigmentasi, bintik hitam, dan ketidakmerataan warna kulit.',
+				'post_content' => '<p>Pico Laser adalah perawatan laser dari rangkaian GLOSKIN yang ditujukan untuk membantu mengatasi masalah pigmentasi, bintik hitam, dan memperbaiki tampilan kulit.</p><p>Kesesuaian tindakan, jumlah sesi, dan ekspektasi hasil ditentukan setelah evaluasi dan konsultasi tenaga medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'laser-4g' => array(
+				'post_excerpt' => 'Laser 4G adalah perawatan laser GLOSKIN yang ditujukan untuk membantu memperbaiki tampilan kulit dan mengatasi berbagai masalah pigmentasi.',
+				'post_content' => '<p>Laser 4G adalah perawatan laser dari rangkaian GLOSKIN yang ditujukan untuk membantu membahas kebutuhan perawatan kulit terkait pigmentasi dan tekstur.</p><p>Kesesuaian tindakan, protokol, dan jumlah sesi ditentukan setelah evaluasi dan konsultasi tenaga medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'glowing-salmon-dna' => array(
+				'post_excerpt' => 'Glowing Salmon DNA adalah perawatan skin booster GLOSKIN berbasis salmon DNA untuk mendukung regenerasi kulit dan tampilan lebih cerah.',
+				'post_content' => '<p>Glowing Salmon DNA adalah perawatan skin booster dari rangkaian GLOSKIN yang menggunakan bahan aktif salmon DNA untuk mendukung regenerasi dan hidrasi kulit.</p><p>Kesesuaian tindakan, jumlah sesi, dan ekspektasi hasil ditentukan setelah evaluasi dan konsultasi tenaga medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'xelarederm' => array(
+				'post_excerpt' => 'Xelarederm adalah perawatan skin booster GLOSKIN untuk mendukung kelembapan, elastisitas, dan revitalisasi kulit dari dalam.',
+				'post_content' => '<p>Xelarederm adalah perawatan dari rangkaian GLOSKIN berupa skin booster yang ditujukan untuk mendukung hidrasi, elastisitas, dan revitalisasi kulit.</p><p>Kesesuaian tindakan, jumlah sesi, dan ekspektasi hasil ditentukan setelah evaluasi dan konsultasi tenaga medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'profhilo' => array(
+				'post_excerpt' => 'Profhilo adalah perawatan injectable GLOSKIN untuk mendukung kualitas, hidrasi, dan tampilan keremajaan kulit melalui prosedur skin booster.',
+				'post_content' => '<p>Profhilo adalah perawatan injectable dari rangkaian GLOSKIN yang ditujukan untuk mendukung bio-remodeling dan hidrasi kulit, membantu tampilan kulit lebih kenyal dan segar.</p><p>Kesesuaian tindakan, jumlah sesi, dan ekspektasi hasil ditentukan setelah evaluasi dan konsultasi tenaga medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'rejuran-hb' => array(
+				'post_excerpt' => 'Rejuran HB adalah perawatan skin booster GLOSKIN untuk mendukung regenerasi kulit dan memperbaiki kualitas serta tampilan kulit.',
+				'post_content' => '<p>Rejuran HB adalah perawatan dari rangkaian GLOSKIN yang ditujukan untuk mendukung regenerasi dan pemulihan kulit melalui prosedur skin booster.</p><p>Kesesuaian tindakan, jumlah sesi, dan ekspektasi hasil ditentukan setelah evaluasi dan konsultasi tenaga medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'croma-rich' => array(
+				'post_excerpt' => 'Croma Rich adalah perawatan injectable GLOSKIN untuk membantu meningkatkan hidrasi, elastisitas, dan kualitas kulit dari dalam.',
+				'post_content' => '<p>Croma Rich adalah perawatan injectable dari rangkaian GLOSKIN yang ditujukan untuk mendukung hidrasi mendalam dan perbaikan kualitas kulit.</p><p>Kesesuaian tindakan, jumlah sesi, dan ekspektasi hasil ditentukan setelah evaluasi dan konsultasi tenaga medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'premium-prp' => array(
+				'post_excerpt' => 'Premium PRP adalah perawatan GLOSKIN berbasis platelet-rich plasma yang memanfaatkan faktor pertumbuhan alami tubuh untuk mendukung regenerasi kulit.',
+				'post_content' => '<p>Premium PRP adalah perawatan dari rangkaian GLOSKIN yang menggunakan plasma kaya platelet — diambil dari darah pasien sendiri — untuk mendukung regenerasi dan peremajaan kulit secara alami.</p><p>Kesesuaian tindakan, protokol, dan jumlah sesi ditentukan setelah evaluasi dan konsultasi tenaga medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'juvelook' => array(
+				'post_excerpt' => 'Juvelook adalah perawatan injectable GLOSKIN untuk mendukung regenerasi kulit dan memperbaiki volume serta kualitas kulit.',
+				'post_content' => '<p>Juvelook adalah perawatan injectable dari rangkaian GLOSKIN yang ditujukan untuk mendukung regenerasi dan kualitas kulit melalui prosedur skin booster.</p><p>Kesesuaian tindakan, jumlah sesi, dan ekspektasi hasil ditentukan setelah evaluasi dan konsultasi tenaga medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'sylfirm-x' => array(
+				'post_excerpt' => 'Sylfirm X adalah perawatan GLOSKIN yang membantu mengatasi masalah vaskular, hiperpigmentasi, dan kondisi kulit tertentu melalui energi radiofrequency.',
+				'post_content' => '<p>Sylfirm X adalah perawatan dari rangkaian GLOSKIN yang menggunakan energi radiofrequency untuk membantu menangani masalah vaskular, pigmentasi, dan memperbaiki kondisi kulit.</p><p>Kesesuaian tindakan, protokol, dan jumlah sesi ditentukan setelah evaluasi dan konsultasi tenaga medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'botox' => array(
+				'post_excerpt' => 'Botox adalah prosedur injectable GLOSKIN untuk membantu mengurangi tampilan garis halus dan kerutan melalui relaksasi otot wajah. Kesesuaian tindakan ditentukan dokter setelah evaluasi.',
+				'post_content' => '<p>Botox adalah prosedur injectable dari rangkaian GLOSKIN yang ditujukan untuk membantu mengurangi tampilan garis halus dan kerutan dengan merelaksasi otot wajah untuk sementara.</p><p>Prosedur ini dilakukan oleh dokter. Kesesuaian tindakan dan area injeksi ditentukan setelah evaluasi dan konsultasi medis. Hasilnya bersifat sementara dan informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'juvederm' => array(
+				'post_excerpt' => 'Juvederm adalah perawatan filler GLOSKIN untuk membantu menambah volume dan membentuk kontur wajah. Kesesuaian tindakan ditentukan dokter setelah evaluasi.',
+				'post_content' => '<p>Juvederm adalah perawatan filler dari rangkaian Face Contour GLOSKIN yang ditujukan untuk membantu menambah volume dan membentuk kontur wajah sesuai kebutuhan individual.</p><p>Prosedur ini dilakukan oleh dokter. Kesesuaian tindakan, area, dan jumlah sesi ditentukan setelah evaluasi dan konsultasi medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'thread-lift' => array(
+				'post_excerpt' => 'Thread Lift adalah prosedur GLOSKIN untuk membantu mengencangkan jaringan wajah menggunakan benang yang dapat terserap. Kesesuaian ditentukan dokter setelah evaluasi.',
+				'post_content' => '<p>Thread Lift adalah prosedur dari rangkaian GLOSKIN yang menggunakan benang dapat terserap untuk membantu mengencangkan jaringan wajah dan memberikan efek pengangkatan.</p><p>Prosedur ini dilakukan oleh dokter. Kesesuaian tindakan, jenis benang, dan area ditentukan setelah evaluasi dan konsultasi medis. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'hollywood-face-sculpting' => array(
+				'post_excerpt' => 'Hollywood Face Sculpting adalah prosedur GLOSKIN untuk membantu membentuk kontur dan memperbaiki proporsi wajah. Kesesuaian ditentukan dokter setelah evaluasi.',
+				'post_content' => '<p>Hollywood Face Sculpting adalah prosedur sculpting wajah dari rangkaian GLOSKIN yang ditujukan untuk membantu membentuk kontur dan memperbaiki keseimbangan proporsi wajah.</p><p>Jenis prosedur, protokol, dan kesesuaian tindakan ditentukan setelah evaluasi dan konsultasi dokter. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'ultralift' => array(
+				'post_excerpt' => 'Ultralift adalah perawatan non-bedah GLOSKIN untuk membantu mengencangkan dan mengangkat kulit wajah. Kesesuaian ditentukan dokter setelah evaluasi.',
+				'post_content' => '<p>Ultralift adalah perawatan non-bedah dari rangkaian GLOSKIN yang menggunakan energi untuk membantu mengencangkan jaringan dan memberikan efek pengangkatan pada kulit wajah.</p><p>Kesesuaian tindakan, protokol, dan jumlah sesi ditentukan setelah evaluasi dan konsultasi dokter. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'hair-transplant' => array(
+				'post_excerpt' => 'Hair Transplant adalah prosedur GLOSKIN untuk memindahkan folikel rambut ke area yang mengalami kerontokan. Kesesuaian kandidat dan prosedur ditentukan dokter setelah evaluasi.',
+				'post_content' => '<p>Hair Transplant adalah prosedur dari rangkaian perawatan rambut GLOSKIN yang ditujukan untuk memindahkan folikel rambut ke area yang mengalami penipisan atau kerontokan permanen.</p><p>Kandidat yang sesuai, teknik, dan ekspektasi hasil ditentukan setelah evaluasi dan konsultasi dokter. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'prp-hair' => array(
+				'post_excerpt' => 'PRP Hair adalah perawatan rambut GLOSKIN berbasis platelet-rich plasma untuk mendukung kesehatan rambut dan mengurangi kerontokan. Kesesuaian ditentukan dokter setelah evaluasi.',
+				'post_content' => '<p>PRP Hair adalah perawatan rambut dari rangkaian GLOSKIN yang menggunakan plasma kaya platelet dari darah pasien sendiri untuk mendukung kesehatan folikel rambut dan mengurangi kerontokan.</p><p>Kesesuaian tindakan, protokol, dan jumlah sesi ditentukan setelah evaluasi dan konsultasi dokter. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'buccal-contour' => array(
+				'post_excerpt' => 'Buccal Contour adalah prosedur GLOSKIN untuk membantu membentuk dan mempertajam kontur wajah bagian bawah. Kesesuaian kandidat ditentukan dokter setelah evaluasi.',
+				'post_content' => '<p>Buccal Contour adalah prosedur dari rangkaian GLOSKIN yang ditujukan untuk membantu membentuk dan mempertegas kontur area pipi dan rahang.</p><p>Kesesuaian kandidat, teknik, dan ekspektasi hasil ditentukan setelah evaluasi dan konsultasi dokter. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'eyebag-removal' => array(
+				'post_excerpt' => 'Eyebag Removal adalah prosedur GLOSKIN untuk membantu mengurangi atau menghilangkan kantong mata yang mengganggu. Kesesuaian kandidat ditentukan dokter setelah evaluasi.',
+				'post_content' => '<p>Eyebag Removal adalah prosedur dari rangkaian GLOSKIN yang ditujukan untuk membantu mengurangi atau menghilangkan kantong mata melalui pendekatan yang disesuaikan dengan kondisi pasien.</p><p>Kesesuaian kandidat, teknik, dan ekspektasi hasil ditentukan setelah evaluasi dan konsultasi dokter. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'upper-lower-eyelid' => array(
+				'post_excerpt' => 'Upper/Lower Eyelid adalah prosedur GLOSKIN untuk memperbaiki tampilan kelopak mata atas dan/atau bawah. Kesesuaian kandidat dan prosedur ditentukan dokter setelah evaluasi.',
+				'post_content' => '<p>Upper/Lower Eyelid adalah prosedur dari rangkaian GLOSKIN yang ditujukan untuk membantu memperbaiki tampilan kelopak mata atas dan/atau bawah melalui pendekatan yang disesuaikan dengan kondisi pasien.</p><p>Kesesuaian kandidat, teknik, dan ekspektasi hasil ditentukan setelah evaluasi dan konsultasi dokter. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'lipoma-removal' => array(
+				'post_excerpt' => 'Lipoma Removal adalah prosedur GLOSKIN untuk mengangkat lipoma (benjolan lemak jinak) yang berada di bawah kulit. Kesesuaian tindakan ditentukan dokter setelah evaluasi.',
+				'post_content' => '<p>Lipoma Removal adalah prosedur dari rangkaian GLOSKIN yang ditujukan untuk mengangkat lipoma — benjolan lemak jinak — yang berada di bawah kulit.</p><p>Kesesuaian kandidat, teknik, dan ekspektasi hasil ditentukan setelah evaluasi dan konsultasi dokter. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
+			'smas-lift' => array(
+				'post_excerpt' => 'SMAS Lift adalah prosedur facelift GLOSKIN untuk membantu mengencangkan dan meremajakan jaringan wajah secara menyeluruh. Kesesuaian kandidat ditentukan dokter setelah evaluasi.',
+				'post_content' => '<p>SMAS Lift adalah prosedur facelift dari rangkaian GLOSKIN yang ditujukan untuk membantu mengencangkan dan meremajakan jaringan wajah melalui pendekatan bedah pada lapisan SMAS.</p><p>Kesesuaian kandidat, teknik, dan ekspektasi hasil ditentukan setelah evaluasi dan konsultasi dokter. Informasi ini tidak menggantikan penilaian klinis individual.</p>',
+			),
 		);
 	}
 }
