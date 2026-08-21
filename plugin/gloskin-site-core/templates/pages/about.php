@@ -4,6 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 $gloskin_founder = isset( $gloskin_context['founder'] ) && is_array( $gloskin_context['founder'] )
 	? $gloskin_context['founder']
 	: array( 'name' => '', 'role' => '', 'story' => '', 'media_id' => 0 );
+$gloskin_founder_image_url = plugin_dir_url( dirname( __DIR__, 2 ) . '/gloskin-site-core.php' ) . 'assets/images/gloskin-founder.webp';
 ?>
 <div class="gloskin-about-page">
 	<header class="gloskin-about-header" data-gloskin-section="about-header">
@@ -35,11 +36,7 @@ $gloskin_founder = isset( $gloskin_context['founder'] ) && is_array( $gloskin_co
 				<div class="gloskin-ui1-prose"><?php echo wp_kses_post( wpautop( (string) $gloskin_founder['story'] ) ); ?></div>
 			</div>
 			<div class="gloskin-about-founder__media">
-				<?php if ( ! empty( $gloskin_founder['media_id'] ) ) : ?>
-					<?php echo wp_get_attachment_image( absint( $gloskin_founder['media_id'] ), 'large', false, array( 'class' => 'gloskin-about-founder__image', 'loading' => 'lazy' ) ); ?>
-				<?php else : ?>
-					<?php gloskin_ui1_render_editorial_media( 'editorial', 'about_founder', 'gloskin-about-founder__image' ); ?>
-				<?php endif; ?>
+				<img class="gloskin-about-founder__image" src="<?php echo esc_url( $gloskin_founder_image_url ); ?>" alt="<?php echo esc_attr( (string) $gloskin_founder['name'] ); ?>" loading="lazy" decoding="async">
 			</div>
 		</div>
 	</section>
