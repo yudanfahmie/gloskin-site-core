@@ -66,19 +66,19 @@ if ( ! function_exists( 'gloskin_ui1_render_nav_tree' ) ) {
 				/* translators: %d: number of items currently in the cart. */
 				$gloskin_cart_count_label = sprintf( __( '%d item di keranjang', 'gloskin-site-core' ), $gloskin_commerce['cart_count'] );
 			?><button class="gloskin-ui1-utility-btn gloskin-ui1-utility-btn--cart" type="button" data-gloskin-cart-open aria-expanded="false" aria-controls="gloskin-cart-sheet" aria-live="polite" aria-label="<?php echo esc_attr__( 'Keranjang', 'gloskin-site-core' ); ?>"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M5 6h10l.8 10H4.2L5 6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.5 6V5a2.5 2.5 0 0 1 5 0v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span class="gloskin-ui1-badge<?php echo $gloskin_commerce['cart_count'] > 0 ? ' is-active' : ''; ?>" data-gloskin-cart-count aria-hidden="true"><?php echo esc_html( $gloskin_commerce['cart_count'] ); ?></span><span class="screen-reader-text" data-gloskin-cart-count-sr><?php echo esc_html( $gloskin_cart_count_label ); ?></span></button><?php endif; ?>
-			<div class="gloskin-ui1-lang-switcher" role="group" aria-label="<?php echo esc_attr__( 'Pilih bahasa', 'gloskin-site-core' ); ?>">
-				<?php if ( 'id' === $gloskin_language ) : ?>
-					<span class="gloskin-ui1-lang-switcher__option gloskin-ui1-lang-switcher__option--current" aria-current="true" aria-label="<?php echo esc_attr__( 'Bahasa Indonesia', 'gloskin-site-core' ); ?>" lang="id"><?php $gloskin_render_language_flag( 'id' ); ?><span>ID</span></span>
-				<?php else : ?>
-					<a class="gloskin-ui1-lang-switcher__option gloskin-ui1-lang-switcher__option--inactive" href="<?php echo esc_url( $gloskin_language_urls['id'] ); ?>" hreflang="id" aria-label="<?php echo esc_attr__( 'Bahasa Indonesia', 'gloskin-site-core' ); ?>" lang="id"><?php $gloskin_render_language_flag( 'id' ); ?><span>ID</span></a>
-				<?php endif; ?>
-				<span class="gloskin-ui1-lang-switcher__sep" aria-hidden="true">/</span>
-				<?php if ( 'en' === $gloskin_language ) : ?>
-					<span class="gloskin-ui1-lang-switcher__option gloskin-ui1-lang-switcher__option--current" aria-current="true" aria-label="English" lang="en"><?php $gloskin_render_language_flag( 'en' ); ?><span>EN</span></span>
-				<?php else : ?>
-					<a class="gloskin-ui1-lang-switcher__option gloskin-ui1-lang-switcher__option--inactive" href="<?php echo esc_url( $gloskin_language_urls['en'] ); ?>" hreflang="en" aria-label="English" lang="en"><?php $gloskin_render_language_flag( 'en' ); ?><span>EN</span></a>
-				<?php endif; ?>
-			</div>
+			<details class="gloskin-ui1-lang-switcher">
+				<summary class="gloskin-ui1-lang-switcher__summary" aria-label="<?php echo esc_attr( 'id' === $gloskin_language ? __( 'Bahasa Indonesia', 'gloskin-site-core' ) : 'English' ); ?>">
+					<span class="gloskin-ui1-lang-switcher__option gloskin-ui1-lang-switcher__option--current" aria-current="true" lang="<?php echo esc_attr( $gloskin_language ); ?>"><?php $gloskin_render_language_flag( $gloskin_language ); ?><span><?php echo esc_html( strtoupper( $gloskin_language ) ); ?></span></span>
+					<svg class="gloskin-ui1-lang-switcher__chevron" viewBox="0 0 12 8" aria-hidden="true" focusable="false"><path d="M1.5 2 6 6l4.5-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+				</summary>
+				<div class="gloskin-ui1-lang-switcher__menu">
+					<?php if ( 'id' === $gloskin_language ) : ?>
+						<a class="gloskin-ui1-lang-switcher__option" href="<?php echo esc_url( $gloskin_language_urls['en'] ); ?>" hreflang="en" aria-label="English" lang="en"><?php $gloskin_render_language_flag( 'en' ); ?><span>EN</span></a>
+					<?php else : ?>
+						<a class="gloskin-ui1-lang-switcher__option" href="<?php echo esc_url( $gloskin_language_urls['id'] ); ?>" hreflang="id" aria-label="<?php echo esc_attr__( 'Bahasa Indonesia', 'gloskin-site-core' ); ?>" lang="id"><?php $gloskin_render_language_flag( 'id' ); ?><span>ID</span></a>
+					<?php endif; ?>
+				</div>
+			</details>
 			<button class="gloskin-ui1-drawer-toggle" type="button" data-gloskin-drawer-open aria-expanded="false" aria-controls="gloskin-mobile-drawer">
 				<span class="screen-reader-text"><?php echo esc_html__( 'Buka navigasi', 'gloskin-site-core' ); ?></span>
 				<svg width="24" height="24" viewBox="0 0 22 22" aria-hidden="true" focusable="false">
