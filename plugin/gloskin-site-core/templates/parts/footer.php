@@ -3,8 +3,12 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 $gloskin_clinic_links = isset( $gloskin_context['clinic_links'] ) && is_array( $gloskin_context['clinic_links'] ) ? $gloskin_context['clinic_links'] : array();
 $gloskin_logo_url = isset( $gloskin_context['logo_url'] ) ? (string) $gloskin_context['logo_url'] : '';
+$gloskin_footer_view = isset( $gloskin_context['view'] ) ? (string) $gloskin_context['view'] : '';
+$gloskin_footer_cta_excluded_views = array( 'home', 'contact', 'about', 'promo', 'skincare', 'skincare-category', 'treatments' );
+$gloskin_show_footer_cta = ! in_array( $gloskin_footer_view, $gloskin_footer_cta_excluded_views, true );
 ?>
 <footer class="gloskin-ui1-footer">
+	<?php if ( $gloskin_show_footer_cta ) : ?>
 	<div class="gloskin-ui1-footer__cta" style="position:relative;overflow:hidden;padding:clamp(28px,4vw,52px) 0;background:#080808;color:#fff;">
 		<svg aria-hidden="true" focusable="false" viewBox="0 0 1440 520" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;color:#fff;opacity:.075;pointer-events:none;">
 			<path d="M-120 430C160 160 430 110 720 260s560 150 840-120" fill="none" stroke="currentColor" stroke-width="1.25"/>
@@ -24,6 +28,7 @@ $gloskin_logo_url = isset( $gloskin_context['logo_url'] ) ? (string) $gloskin_co
 			</div>
 		</div>
 	</div>
+	<?php endif; ?>
 	<div class="gloskin-ui1-container gloskin-ui1-footer__grid">
 		<div class="gloskin-ui1-footer__brand"><div class="gloskin-ui1-footer__brand-mark"><a class="gloskin-ui1-brand--footer" href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php gloskin_ui1_render_brand_logo( $gloskin_logo_url, 'gloskin-ui1-brand__image--footer' ); ?></a></div><p><?php echo esc_html__( 'Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengedepankan konsultasi dan penanganan dokter di setiap kliniknya.', 'gloskin-site-core' ); ?></p></div>
 		<div>
