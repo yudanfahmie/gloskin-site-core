@@ -13,8 +13,8 @@ $gloskin_about_media_id       = $gloskin_about_page ? absint( get_post_thumbnail
 	</div>
 </header>
 
+<?php if ( $gloskin_about_page && gloskin_ui1_has_content( $gloskin_about_page ) ) : ?>
 <section class="gloskin-ui1-section gloskin-about-story" data-gloskin-section="about-story">
-	<?php if ( $gloskin_about_page && gloskin_ui1_has_content( $gloskin_about_page ) ) : ?>
 	<div class="gloskin-ui1-container gloskin-about-story__grid">
 		<div class="gloskin-about-story__media">
 			<?php if ( $gloskin_about_media_id ) : ?>
@@ -29,15 +29,11 @@ $gloskin_about_media_id       = $gloskin_about_page ? absint( get_post_thumbnail
 			<?php gloskin_ui1_render_page_content( $gloskin_about_page ); ?>
 		</div>
 	</div>
-	<?php else : ?>
-	<div class="gloskin-ui1-container">
-		<?php gloskin_ui1_render_empty_state( 'generic', __( 'Tentang GLOSKIN', 'gloskin-site-core' ), __( 'Konten cerita Gloskin belum diisi. Operator: tambahkan konten pada halaman About di WordPress (post_content).', 'gloskin-site-core' ) ); ?>
-	</div>
-	<?php endif; ?>
 </section>
+<?php endif; ?>
 
+<?php if ( is_array( $gloskin_founder ) ) : ?>
 <section class="gloskin-ui1-section gloskin-ui1-section--soft gloskin-about-founder" data-gloskin-section="about-founder">
-	<?php if ( is_array( $gloskin_founder ) ) : ?>
 	<div class="gloskin-ui1-container gloskin-about-founder__grid">
 		<div class="gloskin-about-founder__copy">
 			<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Founder', 'gloskin-site-core' ); ?></p>
@@ -51,24 +47,18 @@ $gloskin_about_media_id       = $gloskin_about_page ? absint( get_post_thumbnail
 		</div>
 		<?php endif; ?>
 	</div>
-	<?php else : ?>
-	<div class="gloskin-ui1-container">
-		<?php gloskin_ui1_render_empty_state( 'generic', __( 'Founder', 'gloskin-site-core' ), __( 'Data founder belum diisi. Operator: tambahkan gloskin_about_founder_name dan gloskin_about_founder_role pada halaman About.', 'gloskin-site-core' ) ); ?>
-	</div>
-	<?php endif; ?>
 </section>
+<?php endif; ?>
 
+<?php if ( $gloskin_has_principles ) : ?>
 <section class="gloskin-ui1-section gloskin-about-principles" data-gloskin-section="about-principles">
 	<div class="gloskin-ui1-container">
-		<?php if ( $gloskin_has_principles ) : ?>
 		<?php gloskin_ui1_render_section_heading( __( 'Visi · Misi · Nilai', 'gloskin-site-core' ) ); ?>
 		<div class="gloskin-about-principles__grid">
 			<?php if ( ! empty( $gloskin_context['vision'] ) ) : ?><article class="gloskin-about-principle"><h3><?php echo esc_html__( 'Visi', 'gloskin-site-core' ); ?></h3><div class="gloskin-ui1-prose"><?php echo wp_kses_post( $gloskin_context['vision'] ); ?></div></article><?php endif; ?>
 			<?php if ( ! empty( $gloskin_context['mission'] ) ) : ?><article class="gloskin-about-principle"><h3><?php echo esc_html__( 'Misi', 'gloskin-site-core' ); ?></h3><div class="gloskin-ui1-prose"><?php echo wp_kses_post( $gloskin_context['mission'] ); ?></div></article><?php endif; ?>
 			<?php if ( ! empty( $gloskin_context['values'] ) ) : ?><article class="gloskin-about-principle"><h3><?php echo esc_html__( 'Nilai', 'gloskin-site-core' ); ?></h3><div class="gloskin-ui1-prose"><?php echo wp_kses_post( $gloskin_context['values'] ); ?></div></article><?php endif; ?>
 		</div>
-		<?php else : ?>
-		<?php gloskin_ui1_render_empty_state( 'generic', __( 'Visi · Misi · Nilai', 'gloskin-site-core' ), __( 'Data visi/misi/nilai belum diisi. Operator: tambahkan gloskin_about_vision, gloskin_about_mission, dan gloskin_about_values pada halaman About.', 'gloskin-site-core' ) ); ?>
-		<?php endif; ?>
 	</div>
 </section>
+<?php endif; ?>
