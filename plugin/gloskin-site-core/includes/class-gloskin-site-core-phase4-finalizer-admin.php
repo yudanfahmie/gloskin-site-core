@@ -695,12 +695,18 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 		return $trashed;
 	}
 
-	/** @param array<int,int> $canonical_ids Canonical IDs. @return array<int,int> */
+	/**
+	 * Resolve only products carrying explicit historical demo/sample provenance.
+	 * Canonical family membership alone is intentionally not disposal evidence.
+	 *
+	 * @param array<int,int> $canonical_ids Canonical IDs.
+	 * @return array<int,int>
+	 */
 	private function explicit_legacy_product_ids( $canonical_ids ) {
 		$canonical_ids = array_map( 'absint', $canonical_ids );
 		$candidates = array();
 
-		foreach ( array( '_gloskin_sample_source_id', '_gloskin_sample_data', '_gloskin_sample_bundle_id', '_gloskin_demo_identity' ) as $meta_key ) {
+		foreach ( array( '_gloskin_sample_source_id', '_gloskin_sample_data', '_gloskin_sample_bundle_id', '_gloskin_demo_identity', '_gloskin_demo_revision' ) as $meta_key ) {
 			$ids = get_posts(
 				array(
 					'post_type'      => 'product',
@@ -709,30 +715,6 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 					'fields'         => 'ids',
 					'meta_query'     => array(
 						array( 'key' => $meta_key, 'compare' => 'EXISTS' ),
-					),
-				)
-			);
-			foreach ( $ids as $id ) {
-				$candidates[] = absint( $id );
-			}
-		}
-
-		if ( taxonomy_exists( Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY ) ) {
-			$ids = get_posts(
-				array(
-					'post_type'      => 'product',
-					'post_status'    => array( 'publish', 'draft', 'pending', 'private', 'future' ),
-					'posts_per_page' => -1,
-					'fields'         => 'ids',
-					'tax_query'      => array(
-						array(
-							'taxonomy' => Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY,
-							'field'    => 'slug',
-							'terms'    => array(
-								Gloskin_Site_Core_Content_Service::FAMILY_SKINCARE,
-								Gloskin_Site_Core_Content_Service::FAMILY_TREATMENT,
-							),
-						),
 					),
 				)
 			);
@@ -754,8 +736,34 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 
 	/** @param int $product_id Product ID. @return bool */
 	private function product_has_explicit_demo_marker( $product_id ) {
-		foreach ( array( '_gloskin_sample_source_id', '_gloskin_sample_data', '_gloskin_sample_bundle_id', '_gloskin_demo_identity' ) as $meta_key ) {
+		foreach ( array( '_gloskin_sample_source_id', '_gloskin_sample_data', '_gloskin_sample_bundle_id', '_gloskin_demo_identity', '_gloskin_demo_revision' ) as $meta_key ) {
 			if ( metadata_exists( 'post', absint( $product_id ), $meta_key ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Auto-clean only records with explicit ownership/provenance evidence.
+	 * Unknown/manual content is preserved and the final verifier fails closed.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool
+	 */
+	private function managed_record_has_explicit_obsolete_evidence( $post_id ) {
+		$post_id = absint( $post_id );
+		foreach (
+			array(
+				self::IDENTITY_META,
+				Gloskin_Site_Core_Content_Service::DEMO_IDENTITY_META,
+				Gloskin_Site_Core_Content_Service::DEMO_REVISION_META,
+				'_gloskin_sample_source_id',
+				'_gloskin_sample_data',
+				'_gloskin_sample_bundle_id',
+			) as $meta_key
+		) {
+			if ( metadata_exists( 'post', $post_id, $meta_key ) ) {
 				return true;
 			}
 		}
@@ -779,6 +787,9 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 			if ( in_array( $post_id, $keep_ids, true ) ) {
 				continue;
 			}
+			if ( ! $this->managed_record_has_explicit_obsolete_evidence( $post_id ) ) {
+				continue;
+			}
 			if ( wp_trash_post( $post_id ) ) {
 				$trashed++;
 			}
@@ -798,10 +809,18 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 		);
 		$ids = array_map( 'absint', $ids );
 		$expected = array_map( 'absint', $keep_ids );
+		$unexpected = array_values( array_diff( $ids, $expected ) );
+		if ( $unexpected ) {
+			$records = array();
+			foreach ( $unexpected as $post_id ) {
+				$records[] = sprintf( '#%d "%s"', $post_id, sanitize_text_field( (string) get_the_title( $post_id ) ) );
+			}
+			throw new RuntimeException( 'Unknown active ' . $post_type . ' records were preserved; manual review required: ' . implode( ', ', $records ) );
+		}
 		sort( $ids, SORT_NUMERIC );
 		sort( $expected, SORT_NUMERIC );
 		if ( $ids !== $expected ) {
-			throw new RuntimeException( 'Obsolete Phase 4 managed records remain active.' );
+			throw new RuntimeException( 'Phase 4 replacement record verification failed.' );
 		}
 	}
 

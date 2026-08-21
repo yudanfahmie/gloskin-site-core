@@ -52,6 +52,26 @@
 	border-radius: 0;
 }
 
+/* Existing header language owner, now with lightweight inline flags. */
+.gloskin-ui1-lang-switcher__option {
+	display: inline-flex;
+	align-items: center;
+	gap: .3rem;
+}
+a.gloskin-ui1-lang-switcher__option {
+	color: inherit;
+	text-decoration: none;
+}
+.gloskin-ui1-lang-switcher__flag {
+	display: block;
+	width: 1rem;
+	height: .68rem;
+	flex: 0 0 auto;
+	border-radius: 1px;
+	overflow: hidden;
+	box-shadow: 0 0 0 1px rgba(0, 0, 0, .14);
+}
+
 .gloskin-phase4-home-why__grid,
 .gloskin-phase4-about-story__grid,
 .gloskin-phase4-about-founder__grid {

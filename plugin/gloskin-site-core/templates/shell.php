@@ -33,7 +33,7 @@ if ( 'home' === $gloskin_view ) {
 	$gloskin_body_classes[] = 'gloskin-ui1--home';
 }
 ?><!doctype html>
-<html lang="id">
+<html <?php language_attributes(); ?>>
 <head>
 	<meta charset="<?php bloginfo( 'charset' ); ?>">
 	<meta name="viewport" content="width=device-width, initial-scale=1">

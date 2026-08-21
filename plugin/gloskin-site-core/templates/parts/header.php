@@ -7,6 +7,18 @@ $gloskin_woo        = ! empty( $gloskin_commerce['available'] );
 $gloskin_logo_url   = isset( $gloskin_context['logo_url'] ) ? (string) $gloskin_context['logo_url'] : '';
 $gloskin_quick_auth = ! empty( $gloskin_commerce['quick_auth'] );
 $gloskin_auth_attrs = $gloskin_quick_auth ? ' data-gloskin-auth-open aria-controls="gloskin-auth-overlay" aria-expanded="false"' : '';
+$gloskin_language   = class_exists( 'Gloskin_Site_Core_Language' ) ? Gloskin_Site_Core_Language::language() : 'id';
+$gloskin_language_urls = array(
+	'id' => class_exists( 'Gloskin_Site_Core_Language' ) ? Gloskin_Site_Core_Language::switch_url( 'id' ) : add_query_arg( 'gloskin_lang', 'id' ),
+	'en' => class_exists( 'Gloskin_Site_Core_Language' ) ? Gloskin_Site_Core_Language::switch_url( 'en' ) : add_query_arg( 'gloskin_lang', 'en' ),
+);
+$gloskin_render_language_flag = static function ( $language ) {
+	if ( 'id' === $language ) {
+		echo '<svg class="gloskin-ui1-lang-switcher__flag" viewBox="0 0 18 12" aria-hidden="true" focusable="false"><path fill="#e70011" d="M0 0h18v6H0z"/><path fill="#fff" d="M0 6h18v6H0z"/></svg>';
+		return;
+	}
+	echo '<svg class="gloskin-ui1-lang-switcher__flag" viewBox="0 0 18 12" aria-hidden="true" focusable="false"><path fill="#012169" d="M0 0h18v12H0z"/><path fill="#fff" d="m0 0 18 12m0-12L0 12" stroke="#fff" stroke-width="2.4"/><path fill="#c8102e" d="m0 0 18 12m0-12L0 12" stroke="#c8102e" stroke-width="1.2"/><path fill="#fff" d="M7.2 0h3.6v12H7.2zM0 4.2h18v3.6H0z"/><path fill="#c8102e" d="M7.9 0h2.2v12H7.9zM0 4.9h18v2.2H0z"/></svg>';
+};
 
 /* The 2026-08-18 prototype is the sole public presentation. Historical
  * presentation settings may remain stored for compatibility, but this renderer
@@ -17,6 +29,7 @@ if ( ! function_exists( 'gloskin_ui1_render_nav_tree' ) ) {
 		foreach ( $items as $index => $item ) {
 			$children = isset( $item['children'] ) && is_array( $item['children'] ) ? $item['children'] : array();
 			$label = isset( $item['label'] ) ? (string) $item['label'] : '';
+			$label = __( $label, 'gloskin-site-core' );
 			$url = isset( $item['url'] ) ? (string) $item['url'] : '';
 			$active = ! empty( $item['active'] );
 			$submenu = 'gloskin-submenu-' . sanitize_html_class( $scope ) . '-' . absint( $index );
@@ -48,12 +61,24 @@ if ( ! function_exists( 'gloskin_ui1_render_nav_tree' ) ) {
 		<div class="gloskin-ui1-header__zone gloskin-ui1-header__zone--end">
 			<button class="gloskin-ui1-utility-btn" type="button" data-gloskin-search-open aria-expanded="false" aria-controls="gloskin-search-overlay" aria-label="<?php echo esc_attr__( 'Cari', 'gloskin-site-core' ); ?>"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="m13 13 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
 			<?php if ( $gloskin_woo && ! empty( $gloskin_commerce['account_url'] ) ) : ?><a class="gloskin-ui1-utility-btn gloskin-ui1-utility-btn--account" href="<?php echo esc_url( $gloskin_commerce['account_url'] ); ?>"<?php echo $gloskin_auth_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed constant attribute string, not user data. ?> aria-label="<?php echo esc_attr( is_user_logged_in() ? __( 'Akun saya', 'gloskin-site-core' ) : __( 'Masuk', 'gloskin-site-core' ) ); ?>"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><circle cx="10" cy="7.5" r="3.5" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 17.5c0-3.3 2.9-6 6.5-6s6.5 2.7 6.5 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></a><?php endif; ?>
-			<?php if ( $gloskin_woo ) : ?><button class="gloskin-ui1-utility-btn gloskin-ui1-utility-btn--wishlist" type="button" data-gloskin-wishlist-open aria-expanded="false" aria-controls="gloskin-wishlist-sheet" aria-label="<?php echo esc_attr__( 'Produk favorit', 'gloskin-site-core' ); ?>"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M10 16.8C8.4 15.5 3 11.4 3 7.8 3 5.6 4.8 3.5 7.2 3.5c1.3 0 2.2.7 2.8 1.3.6-.6 1.5-1.3 2.8-1.3C15.2 3.5 17 5.6 17 7.8c0 3.6-5.4 7.7-7 9z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg><span class="gloskin-ui1-badge" data-gloskin-wishlist-count aria-hidden="true">0</span><span class="screen-reader-text" data-gloskin-wishlist-count-sr aria-live="polite">0 produk favorit</span></button><?php endif; ?>
+			<?php if ( $gloskin_woo ) : ?><button class="gloskin-ui1-utility-btn gloskin-ui1-utility-btn--wishlist" type="button" data-gloskin-wishlist-open aria-expanded="false" aria-controls="gloskin-wishlist-sheet" aria-label="<?php echo esc_attr__( 'Produk favorit', 'gloskin-site-core' ); ?>"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M10 16.8C8.4 15.5 3 11.4 3 7.8 3 5.6 4.8 3.5 7.2 3.5c1.3 0 2.2.7 2.8 1.3.6-.6 1.5-1.3 2.8-1.3C15.2 3.5 17 5.6 17 7.8c0 3.6-5.4 7.7-7 9z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg><span class="gloskin-ui1-badge" data-gloskin-wishlist-count aria-hidden="true">0</span><span class="screen-reader-text" data-gloskin-wishlist-count-sr aria-live="polite"><?php echo esc_html( sprintf( __( '%d produk favorit', 'gloskin-site-core' ), 0 ) ); ?></span></button><?php endif; ?>
 			<?php if ( $gloskin_woo ) :
 				/* translators: %d: number of items currently in the cart. */
 				$gloskin_cart_count_label = sprintf( __( '%d item di keranjang', 'gloskin-site-core' ), $gloskin_commerce['cart_count'] );
 			?><button class="gloskin-ui1-utility-btn gloskin-ui1-utility-btn--cart" type="button" data-gloskin-cart-open aria-expanded="false" aria-controls="gloskin-cart-sheet" aria-live="polite" aria-label="<?php echo esc_attr__( 'Keranjang', 'gloskin-site-core' ); ?>"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M5 6h10l.8 10H4.2L5 6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.5 6V5a2.5 2.5 0 0 1 5 0v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span class="gloskin-ui1-badge<?php echo $gloskin_commerce['cart_count'] > 0 ? ' is-active' : ''; ?>" data-gloskin-cart-count aria-hidden="true"><?php echo esc_html( $gloskin_commerce['cart_count'] ); ?></span><span class="screen-reader-text" data-gloskin-cart-count-sr><?php echo esc_html( $gloskin_cart_count_label ); ?></span></button><?php endif; ?>
-			<div class="gloskin-ui1-lang-switcher" role="group" aria-label="<?php echo esc_attr__( 'Pilih bahasa', 'gloskin-site-core' ); ?>"><span class="gloskin-ui1-lang-switcher__option gloskin-ui1-lang-switcher__option--current" aria-current="true" lang="id">ID</span><span class="gloskin-ui1-lang-switcher__sep" aria-hidden="true">/</span><span class="gloskin-ui1-lang-switcher__option gloskin-ui1-lang-switcher__option--inactive" aria-disabled="true" lang="en">EN</span></div>
+			<div class="gloskin-ui1-lang-switcher" role="group" aria-label="<?php echo esc_attr__( 'Pilih bahasa', 'gloskin-site-core' ); ?>">
+				<?php if ( 'id' === $gloskin_language ) : ?>
+					<span class="gloskin-ui1-lang-switcher__option gloskin-ui1-lang-switcher__option--current" aria-current="true" aria-label="<?php echo esc_attr__( 'Bahasa Indonesia', 'gloskin-site-core' ); ?>" lang="id"><?php $gloskin_render_language_flag( 'id' ); ?><span>ID</span></span>
+				<?php else : ?>
+					<a class="gloskin-ui1-lang-switcher__option gloskin-ui1-lang-switcher__option--inactive" href="<?php echo esc_url( $gloskin_language_urls['id'] ); ?>" hreflang="id" aria-label="<?php echo esc_attr__( 'Bahasa Indonesia', 'gloskin-site-core' ); ?>" lang="id"><?php $gloskin_render_language_flag( 'id' ); ?><span>ID</span></a>
+				<?php endif; ?>
+				<span class="gloskin-ui1-lang-switcher__sep" aria-hidden="true">/</span>
+				<?php if ( 'en' === $gloskin_language ) : ?>
+					<span class="gloskin-ui1-lang-switcher__option gloskin-ui1-lang-switcher__option--current" aria-current="true" aria-label="English" lang="en"><?php $gloskin_render_language_flag( 'en' ); ?><span>EN</span></span>
+				<?php else : ?>
+					<a class="gloskin-ui1-lang-switcher__option gloskin-ui1-lang-switcher__option--inactive" href="<?php echo esc_url( $gloskin_language_urls['en'] ); ?>" hreflang="en" aria-label="English" lang="en"><?php $gloskin_render_language_flag( 'en' ); ?><span>EN</span></a>
+				<?php endif; ?>
+			</div>
 			<button class="gloskin-ui1-drawer-toggle" type="button" data-gloskin-drawer-open aria-expanded="false" aria-controls="gloskin-mobile-drawer">
 				<span class="screen-reader-text"><?php echo esc_html__( 'Buka navigasi', 'gloskin-site-core' ); ?></span>
 				<svg width="24" height="24" viewBox="0 0 22 22" aria-hidden="true" focusable="false">
@@ -105,7 +130,7 @@ if ( ! function_exists( 'gloskin_ui1_render_nav_tree' ) ) {
 <div class="gloskin-ui1-sheet" id="gloskin-wishlist-sheet" data-gloskin-overlay="wishlist" aria-hidden="true" hidden>
 	<button class="gloskin-ui1-sheet__backdrop" type="button" data-gloskin-overlay-close aria-label="<?php echo esc_attr__( 'Tutup favorit', 'gloskin-site-core' ); ?>"></button>
 	<div class="gloskin-ui1-sheet__panel gloskin-ui1-wishlist-sheet" role="dialog" aria-modal="true" aria-labelledby="gloskin-wishlist-title">
-		<div class="gloskin-ui1-sheet__head"><strong id="gloskin-wishlist-title"><?php echo esc_html__( 'Produk Favorit', 'gloskin-site-core' ); ?></strong><button class="gloskin-ui1-sheet__close" type="button" data-gloskin-overlay-close aria-label="<?php echo esc_attr__( 'Tutup favorit', 'gloskin-site-core' ); ?>"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true" focusable="false"><path d="M4 4l10 10M14 4 4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></div>
+		<div class="gloskin-ui1-sheet__head"><strong id="gloskin-wishlist-title"><?php echo esc_html__( 'Produk Favorit', 'gloskin-site-core' ); ?></strong><button class="gloskin-ui1-sheet__close" type="button" data-gloskin-overlay-close aria-label="<?php echo esc_attr__( 'Tutup favorit', 'gloskin-site-core' ); ?>"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true" focusable="false"><path d="M4 4l10 10M14 4 4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
 		<div class="gloskin-ui1-wishlist-sheet__body" data-gloskin-wishlist-body></div>
 	</div>
 </div>

@@ -43,7 +43,6 @@ final class Gloskin_Site_Core_Language {
 		add_filter( 'woocommerce_product_get_name', array( $this, 'translate_product_name' ), 20, 2 );
 		add_filter( 'woocommerce_product_get_short_description', array( $this, 'translate_product_short_description' ), 20, 2 );
 		add_filter( 'woocommerce_product_get_description', array( $this, 'translate_product_description' ), 20, 2 );
-		add_action( 'wp_footer', array( $this, 'activate_existing_switcher' ), 100 );
 	}
 
 	/** @return string id|en */
@@ -57,6 +56,23 @@ final class Gloskin_Site_Core_Language {
 			if ( in_array( $cookie, array( 'id', 'en' ), true ) ) { return $cookie; }
 		}
 		return 'id';
+	}
+
+	/**
+	 * Build the current-request URL for the other first-party language.
+	 * The switch remains a normal link, so basic ID/EN switching works with JS disabled.
+	 *
+	 * @param string $language id|en.
+	 * @return string
+	 */
+	public static function switch_url( $language ) {
+		$language = sanitize_key( (string) $language );
+		if ( ! in_array( $language, array( 'id', 'en' ), true ) ) {
+			$language = 'id';
+		}
+		$uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( (string) $_SERVER['REQUEST_URI'] ) : '/';
+		$uri = remove_query_arg( 'gloskin_lang', $uri );
+		return add_query_arg( 'gloskin_lang', $language, $uri );
 	}
 
 	/** @return void */
@@ -251,17 +267,4 @@ final class Gloskin_Site_Core_Language {
 	/** @return string */ public function translate_product_name( $value, $product ) { return is_object( $product ) && method_exists( $product, 'get_id' ) ? self::saved_post_field( $product->get_id(), 'post_title', $value ) : $value; }
 	/** @return string */ public function translate_product_short_description( $value, $product ) { return is_object( $product ) && method_exists( $product, 'get_id' ) ? self::saved_post_field( $product->get_id(), 'post_excerpt', $value ) : $value; }
 	/** @return string */ public function translate_product_description( $value, $product ) { return is_object( $product ) && method_exists( $product, 'get_id' ) ? self::saved_post_field( $product->get_id(), 'post_content', $value ) : $value; }
-
-	/** Reuse Phase 4.1's existing static switcher; no second switcher is rendered. */
-	public function activate_existing_switcher() {
-		$lang = self::language();
-		$uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '/';
-		$current = home_url( '/' . ltrim( strtok( (string) $uri, '?' ), '/' ) );
-		$query = array(); $parts = wp_parse_url( (string) $uri ); if ( ! empty( $parts['query'] ) ) { parse_str( $parts['query'], $query ); }
-		unset( $query['gloskin_lang'] );
-		$urls = array( 'id' => add_query_arg( array_merge( $query, array( 'gloskin_lang' => 'id' ) ), $current ), 'en' => add_query_arg( array_merge( $query, array( 'gloskin_lang' => 'en' ) ), $current ) );
-		?>
-		<script>(function(){var root=document.querySelector('.gloskin-ui1-lang-switcher');if(!root)return;var current=<?php echo wp_json_encode( $lang ); ?>,urls=<?php echo wp_json_encode( $urls ); ?>;root.querySelectorAll('[lang="id"],[lang="en"]').forEach(function(el){var l=el.getAttribute('lang'),on=l===current;el.classList.toggle('gloskin-ui1-lang-switcher__option--current',on);el.classList.toggle('gloskin-ui1-lang-switcher__option--inactive',!on);if(on){el.setAttribute('aria-current','true');el.removeAttribute('aria-disabled');el.removeAttribute('role');el.removeAttribute('tabindex');el.style.cursor='default';}else{el.removeAttribute('aria-current');el.removeAttribute('aria-disabled');el.setAttribute('role','link');el.setAttribute('tabindex','0');el.style.cursor='pointer';var go=function(){window.location.assign(urls[l]);};el.addEventListener('click',go);el.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});}});})();</script>
-		<?php
-	}
 }
