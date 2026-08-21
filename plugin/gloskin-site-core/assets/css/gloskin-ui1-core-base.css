@@ -889,3 +889,18 @@ color:var(--gloskin-inverse)}
 color:var(--gloskin-accent-strong)}
 .gloskin-ui1 .gloskin-ui1-button--ghost{
 color:var(--gloskin-text)}
+
+/* Compact, native language switcher. <details>/<summary> owns interaction;
+ * this foundation only defines header geometry and presentation. */
+.gloskin-ui1-lang-switcher{position:relative;display:inline-block;font-family:var(--gloskin-font-body);font-size:.78rem;font-weight:700;line-height:1}
+.gloskin-ui1-lang-switcher__summary{display:flex;min-height:40px;align-items:center;gap:5px;padding:7px 8px;border-radius:999px;cursor:pointer;list-style:none;user-select:none}
+.gloskin-ui1-lang-switcher__summary::-webkit-details-marker{display:none}
+.gloskin-ui1-lang-switcher__summary::marker{content:""}
+.gloskin-ui1-lang-switcher__option{display:inline-flex;align-items:center;gap:5px;color:var(--gloskin-text);text-decoration:none;white-space:nowrap}
+.gloskin-ui1-lang-switcher__flag{display:block;width:18px;height:12px;flex:0 0 auto;border-radius:2px;box-shadow:0 0 0 1px color-mix(in srgb,var(--gloskin-border) 72%,transparent)}
+.gloskin-ui1-lang-switcher__chevron{display:block;width:10px;height:7px;flex:0 0 auto;transition:transform 160ms ease}
+.gloskin-ui1-lang-switcher[open] .gloskin-ui1-lang-switcher__chevron{transform:rotate(180deg)}
+.gloskin-ui1-lang-switcher__menu{position:absolute;z-index:30;top:calc(100% + 6px);right:0;min-width:74px;padding:6px;border:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);border-radius:12px;background:var(--gloskin-bg);box-shadow:var(--gloskin-shadow)}
+.gloskin-ui1-lang-switcher__menu .gloskin-ui1-lang-switcher__option{width:100%;min-height:34px;padding:7px 8px;border-radius:8px}
+.gloskin-ui1-lang-switcher__menu .gloskin-ui1-lang-switcher__option:hover{background:var(--gloskin-surface)}
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-lang-switcher__chevron{transition:none}}
