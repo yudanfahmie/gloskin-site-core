@@ -56,6 +56,7 @@ final class Gloskin_Site_Core_Kernel {
 
 			$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();
 			$lifecycle->register_upgrade();
+			$lifecycle->register_about_reconciliation();
 			$lifecycle->register_historical_upgrade_admins( $assets, $this->plugin_file );
 
 			$media_cleanup = new Gloskin_Site_Core_Media_Cleanup_Admin( $assets );
@@ -96,6 +97,11 @@ final class Gloskin_Site_Core_Kernel {
 			$this->services[] = $contact_admin;
 			return;
 		}
+
+		require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
+		$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();
+		$lifecycle->register_about_reconciliation();
+		$this->services[] = $lifecycle;
 
 		$language = new Gloskin_Site_Core_Language( $this->plugin_file );
 		$language->register_frontend();
