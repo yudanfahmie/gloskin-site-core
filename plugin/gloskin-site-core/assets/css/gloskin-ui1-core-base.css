@@ -357,12 +357,19 @@ transition:border-color 160ms ease,transform 160ms ease}
 .gloskin-ui1-category-link:hover{
 transform:translateY(-2px);
 border-color:var(--gloskin-accent)}
-.gloskin-ui1-empty{
-padding:22px 24px;
-border:1px dashed var(--gloskin-border);
-border-radius:var(--gloskin-radius-md);
-background:var(--gloskin-surface);
-color:var(--gloskin-muted)}
+/* Shared generic frontend empty state. Domain-specific states keep their own copy/flow. */
+.gloskin-ui1-empty-state{display:grid;justify-items:center;gap:10px;max-width:720px;margin:0 auto;padding:clamp(26px,4vw,42px);border:1px solid color-mix(in srgb,var(--gloskin-border) 78%,transparent);border-radius:var(--gloskin-radius-md);background:color-mix(in srgb,var(--gloskin-surface) 78%,var(--gloskin-bg));text-align:center;animation:gloskin-empty-settle 220ms ease-out both}
+.gloskin-ui1-empty-state__visual{display:grid;width:58px;height:58px;border-radius:50%;background:color-mix(in srgb,var(--gloskin-accent) 5%,var(--gloskin-bg));color:var(--gloskin-muted);place-items:center}
+.gloskin-ui1-empty-state__visual svg{display:block;width:52px;height:52px}
+.gloskin-ui1-empty-state__visual .gloskin-ui1-empty-state__accent{color:var(--gloskin-accent)}
+.gloskin-ui1-empty-state__body{display:grid;justify-items:center;gap:10px}
+.gloskin-ui1-empty-state__title{margin:2px 0 0;font-family:var(--gloskin-font-heading);font-size:clamp(1.2rem,2vw,1.5rem);font-weight:600;line-height:1.2;color:var(--gloskin-text)}
+.gloskin-ui1-empty-state__copy{max-width:52ch;margin:0;color:var(--gloskin-muted)}
+.gloskin-ui1-empty-state__action{margin-top:4px}
+@keyframes gloskin-empty-settle{from{opacity:0;transform:translateY(2px)}to{opacity:1;transform:translateY(0)}}
+.gloskin-ui1-search-overlay__body .gloskin-ui1-empty-state,.gloskin-ui1-cart-sheet__body .gloskin-ui1-empty-state,.gloskin-ui1-wishlist-sheet__body .gloskin-ui1-empty-state{padding:24px 18px;border-color:transparent;background:var(--gloskin-surface)}
+@media (max-width:480px){.gloskin-ui1-empty-state{padding:24px 18px}}
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-empty-state{animation:none}}
 .gloskin-ui1-discovery-panel{
 display:flex;
 align-items:center;
