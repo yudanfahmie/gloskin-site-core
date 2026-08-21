@@ -558,7 +558,7 @@ final class Gloskin_Site_Core_Content_Finalizer_Admin {
 			return $attachment_id;
 		}
 
-		$path = dirname( __DIR__ ) . '/assets/images/phase4/' . basename( $filename );
+		$path = dirname( __DIR__ ) . '/assets/images/content-replacements/' . basename( $filename );
 		if ( ! is_file( $path ) || ! is_readable( $path ) ) {
 			throw new RuntimeException( 'Committed artwork is missing: ' . $filename );
 		}
