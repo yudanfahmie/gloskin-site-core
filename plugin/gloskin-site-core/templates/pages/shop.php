@@ -8,7 +8,8 @@ $gloskin_shop_url = home_url( '/shop/' );
  * catalog component used by AJAX. The older context field remains tolerated
  * for compatibility, but it is never allowed to invent a range for an
  * equal-price or empty catalog. */
-$gloskin_shop_price_bounds = array( 'state' => 'empty', 'min' => null, 'max' => null );
+$gloskin_shop_price_bounds  = array( 'state' => 'empty', 'min' => null, 'max' => null );
+$gloskin_shop_price_catalog = null;
 if ( ! empty( $gloskin_context['woo_ready'] )
 	&& class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' )
 	&& class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog' )
@@ -36,6 +37,24 @@ if ( 'single' === $gloskin_shop_price_state && ( null === $gloskin_shop_availabl
 	$gloskin_shop_price_state = 'empty';
 	$gloskin_shop_available_min = null;
 	$gloskin_shop_available_max = null;
+}
+
+/* Category hygiene is resolved before any category HTML is emitted. Reuse the
+ * existing bounded Shop catalog authority so visibility matches the same
+ * published/catalog-visible rules as the product results. "Semua Produk" is
+ * rendered separately and therefore always remains available. */
+$gloskin_shop_mappings = isset( $gloskin_context['mappings'] ) && is_array( $gloskin_context['mappings'] )
+	? array_values( $gloskin_context['mappings'] )
+	: array();
+if ( $gloskin_shop_price_catalog instanceof Gloskin_Site_Core_WooCommerce_Adapter_Shop_Catalog ) {
+	$gloskin_shop_mappings = array_values( array_filter( $gloskin_shop_mappings, static function ( $mapping ) use ( $gloskin_shop_price_catalog ) {
+		$category = isset( $mapping['woo_slug'] ) ? sanitize_title( (string) $mapping['woo_slug'] ) : '';
+		if ( '' === $category ) {
+			return false;
+		}
+		$catalog = $gloskin_shop_price_catalog->products_paginated_filtered( 1, 1, array( 'category' => $category ) );
+		return ! empty( $catalog['total'] );
+	} ) );
 }
 
 $gloskin_shop_results = array(
@@ -165,7 +184,7 @@ $gloskin_shop_results_partial = dirname( __DIR__ ) . '/parts/shop-results.php';
 					<nav class="gloskin-ui1-shop-categories" data-gloskin-shop-categories aria-label="<?php echo esc_attr__( 'Kategori produk', 'gloskin-site-core' ); ?>">
 						<ul>
 							<li><a href="<?php echo esc_url( $gloskin_shop_url ); ?>" data-gloskin-shop-category="" data-gloskin-no-transition aria-current="page"><?php echo esc_html__( 'Semua Produk', 'gloskin-site-core' ); ?></a></li>
-							<?php foreach ( (array) $gloskin_context['mappings'] as $gloskin_mapping ) :
+							<?php foreach ( $gloskin_shop_mappings as $gloskin_mapping ) :
 								$gloskin_mapping_slug = isset( $gloskin_mapping['woo_slug'] ) ? sanitize_title( (string) $gloskin_mapping['woo_slug'] ) : '';
 								$gloskin_mapping_url  = isset( $gloskin_mapping['url'] ) ? (string) $gloskin_mapping['url'] : '';
 								?>
