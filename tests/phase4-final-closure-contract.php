@@ -136,7 +136,9 @@ p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] [data-glosk
 $footer = p4text( $plugin . '/templates/parts/footer.php' );
 p4must( false !== strpos( $footer, "array( 'home', 'contact', 'about', 'promo' )" ), 'footer CTA excluded on home/contact/about/promo routes' );
 
-/* About surfaces operator readiness notices when factual content is missing — sections never silently collapse. */
+/* About uses reconciliation-first: lifecycle pre-fills genuinely empty fields
+   before rendering, so the template can remain authoritative and section-conditional.
+   Sections still never silently collapse — content is guaranteed by reconciliation. */
 $about_ctx_start = strpos( $ts, 'private function about_context()' );
 $about_ctx_end   = strpos( $ts, 'private function about_founder_context', $about_ctx_start );
 $about_ctx       = false !== $about_ctx_start && false !== $about_ctx_end ? substr( $ts, $about_ctx_start, $about_ctx_end - $about_ctx_start ) : '';
@@ -145,10 +147,12 @@ p4must( false !== strpos( $about_ctx, "'founder'" ) && false !== strpos( $about_
 foreach ( array( 'about-header', 'about-story', 'about-founder', 'about-principles' ) as $class ) {
 	p4must( false !== strpos( $a, $class ), 'About structure preserved: ' . $class );
 }
-/* All three factual sections surface a readiness notice when content is missing — no silent collapse. */
-p4must( false !== strpos( $a, "gloskin_ui1_render_empty_state( 'generic', __( 'Tentang GLOSKIN'" ), 'About Story surfaces readiness notice when post_content missing' );
-p4must( false !== strpos( $a, "gloskin_ui1_render_empty_state( 'generic', __( 'Founder'" ), 'About Founder surfaces readiness notice when founder meta missing' );
-p4must( false !== strpos( $a, "gloskin_ui1_render_empty_state( 'generic', __( 'Visi · Misi · Nilai'" ), 'About Principles surfaces readiness notice when vision/mission/values missing' );
+/* Reconciliation-first: lifecycle fills empty About fields; kernel runs it on both admin and frontend paths. */
+$lifecycle = p4text( $plugin . '/includes/class-gloskin-site-core-lifecycle-service.php' );
+$kernel_t  = p4text( $plugin . '/includes/class-gloskin-site-core-kernel.php' );
+p4must( false !== strpos( $lifecycle, 'register_about_reconciliation' ) && false !== strpos( $lifecycle, 'maybe_reconcile_about_content' ), 'lifecycle service owns About reconciliation' );
+p4must( false !== strpos( $lifecycle, 'ABOUT_RECONCILIATION_OPTION' ) && false !== strpos( $lifecycle, 'ABOUT_RECONCILIATION_VERSION' ), 'lifecycle service tracks reconciliation state with versioned option key' );
+p4must( false !== strpos( $kernel_t, 'register_about_reconciliation' ), 'kernel wires About reconciliation on all paths' );
 /* Shop Discovery CSS must load after the current last global style, not a retired handle. */
 $shop_route = p4text( $plugin . '/includes/gloskin-site-core-shop-discovery-route-trait.php' );
 p4must( false !== strpos( $shop_route, "array( 'gloskin-ui1-product-grid' )" ), 'Shop Discovery CSS depends on gloskin-ui1-product-grid (not retired prototype-refresh)' );
@@ -165,6 +169,6 @@ foreach ( array( 'Detail tambahan belum tersedia untuk ditampilkan.', 'Informasi
 	p4must( false !== strpos( $t, $copy ), 'translation/interface owner contains: ' . $copy );
 }
 
-p4must( false !== strpos( $k, "const VERSION = '0.7.192'" ) && false !== strpos( $b, 'Version: 0.7.192' ), 'release owners synchronized at 0.7.192' );
+p4must( false !== strpos( $k, "const VERSION = '0.7.193'" ) && false !== strpos( $b, 'Version: 0.7.193' ), 'release owners synchronized at 0.7.193' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo carousel JS-CSS contract + footer CTA routes + About readiness + Shop CSS dep + version 0.7.192)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo carousel JS-CSS contract + footer CTA routes + About reconciliation-first + Shop CSS dep + version 0.7.193)\n";

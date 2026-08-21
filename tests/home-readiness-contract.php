@@ -131,6 +131,6 @@ $home_ctx       = false !== $home_ctx_start && false !== $home_ctx_end ? substr(
 home_must( false !== strpos( $home_ctx, "\$hero['mode'] = 'video_only';" ), 'Home uses video-only hero mode' );
 home_must( false !== strpos( $home, 'gloskin_ui1_render_hero' ), 'Home template retains one shared hero renderer' );
 
-home_must( false !== strpos( $kernel, "const VERSION = '0.7.192'" ) && false !== strpos( $bootstrap, 'Version: 0.7.192' ), 'release owners are synchronized at 0.7.192' );
+home_must( false !== strpos( $kernel, "const VERSION = '0.7.193'" ) && false !== strpos( $bootstrap, 'Version: 0.7.193' ), 'release owners are synchronized at 0.7.193' );
 
-echo "home-readiness-contract.php: OK (Home cover hero, Promo carousel JS-CSS contract, footer CTA routes, polish, version 0.7.192)\n";
+echo "home-readiness-contract.php: OK (Home cover hero, Promo carousel JS-CSS contract, footer CTA routes, polish, version 0.7.193)\n";
