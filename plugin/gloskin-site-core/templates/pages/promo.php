@@ -14,7 +14,7 @@ $gloskin_render_promo_carousel = static function ( $heading, $heading_tag, $inst
 		<div class="gloskin-ui1-container">
 			<<?php echo esc_attr( $heading_tag ); ?> class="gloskin-promo__heading"><?php echo esc_html( $heading ); ?></<?php echo esc_attr( $heading_tag ); ?>>
 			<?php if ( 0 === $count ) : ?>
-				<div class="gloskin-ui1-empty"><?php echo esc_html__( 'Informasi promo belum tersedia.', 'gloskin-site-core' ); ?></div>
+				<?php gloskin_ui1_render_empty_state( 'generic', __( 'Informasi promo belum tersedia.', 'gloskin-site-core' ) ); ?>
 			<?php else : ?>
 			<div class="gloskin-ui1-promo-carousel gloskin-ui1-promo-carousel--page gloskin-promo__carousel" data-gloskin-promo-carousel aria-label="<?php echo esc_attr( $heading ); ?>">
 				<div class="gloskin-ui1-promo-carousel__live" aria-live="polite" aria-atomic="true" data-gloskin-promo-live></div>
@@ -22,14 +22,13 @@ $gloskin_render_promo_carousel = static function ( $heading, $heading_tag, $inst
 					<?php foreach ( $gloskin_promos as $gloskin_promo_index => $gloskin_promo ) :
 						$gloskin_promo_first = 0 === $gloskin_promo_index;
 						$gloskin_promo_image = absint( $gloskin_promo['image_id'] ?? 0 );
-						$gloskin_promo_title = trim( (string) ( $gloskin_promo['title'] ?? '' ) );
 					?>
 					<div class="gloskin-ui1-promo-carousel__slide gloskin-promo__slide<?php echo $gloskin_promo_first ? ' is-active' : ''; ?>" data-gloskin-promo-slide="<?php echo esc_attr( (string) $gloskin_promo_index ); ?>"<?php echo $gloskin_promo_first ? '' : ' hidden'; ?> aria-label="<?php echo esc_attr( sprintf( __( 'Promo %1$d dari %2$d', 'gloskin-site-core' ), $gloskin_promo_index + 1, $count ) ); ?>">
 						<div class="gloskin-promo__media">
 							<?php if ( $gloskin_promo_image ) : ?>
 								<?php echo wp_get_attachment_image( $gloskin_promo_image, 'large', false, array( 'class' => 'gloskin-promo__image', 'loading' => $gloskin_promo_first ? 'eager' : 'lazy', 'alt' => '' ) ); ?>
 							<?php else : ?>
-								<div class="gloskin-promo__missing" role="img" aria-label="<?php echo esc_attr( $gloskin_promo_title ); ?>"></div>
+								<?php gloskin_ui1_render_presentation_media( 'editorial', 'promo-' . $gloskin_promo_index, 'gloskin-promo__missing' ); ?>
 							<?php endif; ?>
 						</div>
 					</div>
