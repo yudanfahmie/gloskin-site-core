@@ -77,21 +77,9 @@ return array(
 			'deps'  => array( 'gloskin-ui1-editorial' ),
 			'media' => 'all',
 		),
-		'gloskin-ui1-prototype-refresh' => array(
-			'src'   => 'assets/css/gloskin-ui1-prototype-refresh.css',
-			'deps'  => array( 'gloskin-ui1-product-grid' ),
-			'media' => 'all',
-		),
-		/* Phase 4 final fidelity layer. Selectors are bounded to the approved
-		 * Home/Promo/About seams; data and interaction owners stay intact. */
-		'gloskin-ui1-phase4' => array(
-			'src'   => 'assets/css/gloskin-ui1-phase4.css',
-			'deps'  => array( 'gloskin-ui1-prototype-refresh' ),
-			'media' => 'all',
-		),
 		'gloskin-ui1-consultation' => array(
 			'src'   => 'assets/css/gloskin-ui1-consultation.css',
-			'deps'  => array( 'gloskin-ui1-phase4' ),
+			'deps'  => array( 'gloskin-ui1-product-grid' ),
 			'media' => 'all',
 		),
 	),

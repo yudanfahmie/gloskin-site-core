@@ -651,11 +651,11 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::af
    The section owns stable fold-height geometry; its native video fills the
    surface through absolute inset cover. Missing/failed sources remain white.
    No second Hero/video system. */
-.gloskin-ui1-hero--video-only{position:relative;overflow:hidden;width:100%;height:clamp(560px,88svh,980px);background:#fff}
+.gloskin-ui1-hero--video-only{position:relative;overflow:hidden;width:100%;height:100vh;height:100svh;min-height:100vh;min-height:100svh;background:#000}
 .gloskin-ui1-hero--video-only.is-video-unavailable,
-.gloskin-ui1-hero--video-only.is-video-failed{background:#fff}
+.gloskin-ui1-hero--video-only.is-video-failed{background:#000}
 .gloskin-ui1-hero-bg-video{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;border-radius:0;box-shadow:none;background:transparent}
-.gloskin-ui1-hero-bg-video__media{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto;object-fit:cover;object-position:center center;border-radius:0;box-shadow:none;pointer-events:none}
+.gloskin-ui1-hero-bg-video__media{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto;object-fit:contain;object-position:center center;border-radius:0;box-shadow:none;pointer-events:none}
 .gloskin-ui1-hero-bg-video,
 .gloskin-ui1-hero-bg-video__media{pointer-events:none}
 
@@ -690,5 +690,5 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::af
 	.gloskin-ui1-hero-bg-video__media{transition:none}
 }
 @media (max-width:760px){
-	.gloskin-ui1-hero--video-only{height:clamp(480px,82svh,760px)}
+	.gloskin-ui1-hero--video-only{height:100vh;height:100svh;min-height:100vh;min-height:100svh}
 }

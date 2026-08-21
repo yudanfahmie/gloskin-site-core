@@ -223,7 +223,7 @@ final class Gloskin_Site_Core_Template_Service {
 			home_url( '/treatments/' )
 		);
 		$hero = array_merge( $hero, $this->hero_background_video() );
-		$hero['mode'] = 'campaign';
+		$hero['mode'] = 'video_only';
 		return array(
 			'page'          => $page,
 			'hero'          => $hero,
@@ -662,9 +662,11 @@ final class Gloskin_Site_Core_Template_Service {
 	/**
 	 * Up to 3 curated published treatments for the Home page.
 	 * Explicitly featured treatments (gloskin_treatment_feature_on_home = '1') are
-	 * sorted by post_title for determinism and capped at 3. If none are featured,
-	 * falls back to the 3 most-recently-published treatments — always deterministic,
-	 * never random.
+	 * sorted by post_title for determinism. Up to 3 featured (meta-flagged)
+	 * cards are placed first; the remaining slots (up to 6 total) are filled
+	 * with other published treatments ordered by title, excluding the featured
+	 * ones. If no treatments are featured the 3 most-recently-published are
+	 * used as the primary set and filled to 6 the same way.
 	 *
 	 * @return array<int,array<string,mixed>>
 	 */
@@ -683,15 +685,7 @@ final class Gloskin_Site_Core_Template_Service {
 				),
 			),
 		) );
-		if ( count( $featured ) > 0 ) {
-			$cards = array();
-			foreach ( $featured as $post ) {
-				$cards[] = $this->post_card( $post, Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE );
-			}
-			return $cards;
-		}
-		/* Deterministic fallback: 3 latest published treatments by date */
-		$fallback = get_posts( array(
+		$primary = count( $featured ) > 0 ? $featured : get_posts( array(
 			'post_type'      => Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE,
 			'post_status'    => 'publish',
 			'posts_per_page' => 3,
@@ -699,10 +693,26 @@ final class Gloskin_Site_Core_Template_Service {
 			'order'          => 'DESC',
 		) );
 		$cards = array();
-		foreach ( $fallback as $post ) {
+		foreach ( $primary as $post ) {
 			$cards[] = $this->post_card( $post, Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE );
 		}
-		return $cards;
+		/* Fill to 6 with non-duplicate published treatments, ordered by title. */
+		$exclude   = array_values( array_filter( array_map( static function ( $c ) { return absint( $c['id'] ); }, $cards ) ) );
+		$remaining = max( 0, 6 - count( $cards ) );
+		if ( $remaining > 0 ) {
+			$more = get_posts( array(
+				'post_type'      => Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE,
+				'post_status'    => 'publish',
+				'posts_per_page' => $remaining,
+				'post__not_in'   => $exclude,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			) );
+			foreach ( $more as $post ) {
+				$cards[] = $this->post_card( $post, Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE );
+			}
+		}
+		return array_values( array_slice( $cards, 0, 6 ) );
 	}
 
 	/** @return array<string,mixed> */

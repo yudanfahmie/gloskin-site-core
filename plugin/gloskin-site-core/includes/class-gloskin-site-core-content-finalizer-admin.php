@@ -1,6 +1,6 @@
 <?php
 /**
- * Permanent Phase 4 presentation/content resolver.
+ * Canonical content resolver.
  *
  * Operator-triggered only. This class owns one durable WordPress/WooCommerce
  * reconciliation pass: canonical product copy + native product_cat, image-ready
@@ -14,11 +14,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
-	const SLUG                 = 'gloskin-phase4-finalizer';
-	const POST_ACTION          = 'gloskin_phase4_finalize';
-	const NONCE_KEY            = 'gloskin_phase4_finalize_nonce';
+final class Gloskin_Site_Core_Content_Finalizer_Admin {
+	const SLUG                 = 'gloskin-content-finalizer';
+	const POST_ACTION          = 'gloskin_content_finalize';
+	const NONCE_KEY            = 'gloskin_content_finalize_nonce';
 	const CAPABILITY           = 'manage_options';
+	/* Persisted DB keys — never rename these after first deploy. */
 	const STATE_OPTION         = 'gloskin_site_core_phase4_finalizer_v1_state';
 	const IDENTITY_META        = '_gloskin_phase4_identity';
 	const PLACEHOLDER_META     = '_gloskin_phase4_placeholder';
@@ -44,8 +45,8 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 	public function register_page() {
 		add_submenu_page(
 			Gloskin_Site_Core_Content_Service::ADMIN_MENU_SLUG,
-			'Finalisasi Phase 4',
-			'Finalisasi Phase 4',
+			'Finalisasi Konten',
+			'Finalisasi Konten',
 			self::CAPABILITY,
 			self::SLUG,
 			array( $this, 'render_page' )
@@ -61,16 +62,16 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 		$status = is_array( $state ) && ! empty( $state['status'] ) ? (string) $state['status'] : 'not_started';
 		?>
 		<div class="wrap">
-			<h1>Finalisasi Phase 4</h1>
+			<h1>Finalisasi Konten</h1>
 			<p>Resolver satu kali untuk konten produk canonical, kategori WooCommerce, media Promo/Piagam, dan cleanup legacy/demo ke Trash. Tidak ada hard delete post atau penghapusan Media Library.</p>
 			<p><strong>Status:</strong> <code><?php echo esc_html( $status ); ?></code></p>
 			<?php if ( 'complete' === $status ) : ?>
-				<div class="notice notice-success inline"><p>Phase 4 sudah lengkap. Run berikutnya adalah no-op.</p></div>
+				<div class="notice notice-success inline"><p>Finalisasi konten sudah lengkap. Run berikutnya adalah no-op.</p></div>
 			<?php else : ?>
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<input type="hidden" name="action" value="<?php echo esc_attr( self::POST_ACTION ); ?>">
 					<?php wp_nonce_field( self::POST_ACTION, self::NONCE_KEY ); ?>
-					<button type="submit" class="button button-primary">Jalankan Finalisasi Phase 4</button>
+					<button type="submit" class="button button-primary">Jalankan Finalisasi Konten</button>
 				</form>
 			<?php endif; ?>
 			<?php if ( is_array( $state ) && ! empty( $state['last_error'] ) ) : ?>
@@ -358,7 +359,7 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 			48 !== absint( $content['treatment_short'] ?? 0 ) ||
 			48 !== absint( $content['treatment_full'] ?? 0 )
 		) {
-			throw new RuntimeException( 'Phase 4 canonical product description verification failed.' );
+			throw new RuntimeException( 'Canonical product description verification failed.' );
 		}
 	}
 
@@ -418,7 +419,7 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 			48 !== absint( $commerce['treatment'] ?? 0 ) ||
 			0 !== absint( $commerce['uncategorized'] ?? -1 )
 		) {
-			throw new RuntimeException( 'Phase 4 Woo product_cat verification failed.' );
+			throw new RuntimeException( 'Canonical Woo product_cat verification failed.' );
 		}
 	}
 
@@ -552,22 +553,22 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 		if ( $existing ) {
 			$attachment_id = absint( $existing[0] );
 			if ( ! $this->attachment_is_usable_image( $attachment_id ) ) {
-				throw new RuntimeException( 'Existing Phase 4 artwork attachment is unusable: ' . $identity );
+				throw new RuntimeException( 'Existing artwork attachment is unusable: ' . $identity );
 			}
 			return $attachment_id;
 		}
 
 		$path = dirname( __DIR__ ) . '/assets/images/phase4/' . basename( $filename );
 		if ( ! is_file( $path ) || ! is_readable( $path ) ) {
-			throw new RuntimeException( 'Committed Phase 4 artwork is missing: ' . $filename );
+			throw new RuntimeException( 'Committed artwork is missing: ' . $filename );
 		}
 		$bytes = file_get_contents( $path );
 		if ( false === $bytes || '' === $bytes ) {
-			throw new RuntimeException( 'Committed Phase 4 artwork cannot be read: ' . $filename );
+			throw new RuntimeException( 'Committed artwork cannot be read: ' . $filename );
 		}
 		$upload = wp_upload_bits( sanitize_file_name( 'gloskin-' . $identity . '.png' ), null, $bytes );
 		if ( ! empty( $upload['error'] ) || empty( $upload['file'] ) ) {
-			throw new RuntimeException( 'Unable to write Phase 4 artwork into Media Library.' );
+			throw new RuntimeException( 'Unable to write artwork into Media Library.' );
 		}
 		$attachment_id = wp_insert_attachment(
 			array(
@@ -579,7 +580,7 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 			$upload['file']
 		);
 		if ( is_wp_error( $attachment_id ) || ! $attachment_id ) {
-			throw new RuntimeException( 'Unable to create Phase 4 artwork attachment.' );
+			throw new RuntimeException( 'Unable to create artwork attachment.' );
 		}
 		$attachment_id = absint( $attachment_id );
 		update_post_meta( $attachment_id, self::ASSET_META, $identity );
@@ -593,7 +594,7 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 			wp_update_attachment_metadata( $attachment_id, $metadata );
 		}
 		if ( ! $this->attachment_is_usable_image( $attachment_id ) ) {
-			throw new RuntimeException( 'New Phase 4 artwork attachment is unusable.' );
+			throw new RuntimeException( 'New artwork attachment is unusable.' );
 		}
 		return $attachment_id;
 	}
@@ -643,7 +644,7 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 			true
 		);
 		if ( is_wp_error( $post_id ) || ! $post_id ) {
-			throw new RuntimeException( 'Unable to create Phase 4 replacement post: ' . $identity );
+			throw new RuntimeException( 'Unable to create replacement post: ' . $identity );
 		}
 		$post_id = absint( $post_id );
 		update_post_meta( $post_id, self::IDENTITY_META, $identity );
@@ -674,11 +675,11 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 	/** @param array<int,int> $promo_ids Promo IDs. @param array<int,int> $piagam_ids Piagam IDs. @return void */
 	private function assert_replacements_ready( $promo_ids, $piagam_ids ) {
 		if ( 3 !== count( $promo_ids ) || 4 !== count( $piagam_ids ) ) {
-			throw new RuntimeException( 'Phase 4 replacement cardinality mismatch.' );
+			throw new RuntimeException( 'Replacement cardinality mismatch.' );
 		}
 		foreach ( array_merge( $promo_ids, $piagam_ids ) as $post_id ) {
 			if ( 'publish' !== get_post_status( $post_id ) || ! $this->attachment_is_usable_image( get_post_thumbnail_id( $post_id ) ) ) {
-				throw new RuntimeException( 'Phase 4 replacement readiness verification failed.' );
+				throw new RuntimeException( 'Replacement readiness verification failed.' );
 			}
 		}
 	}
@@ -820,7 +821,7 @@ final class Gloskin_Site_Core_Phase4_Finalizer_Admin {
 		sort( $ids, SORT_NUMERIC );
 		sort( $expected, SORT_NUMERIC );
 		if ( $ids !== $expected ) {
-			throw new RuntimeException( 'Phase 4 replacement record verification failed.' );
+			throw new RuntimeException( 'Replacement record verification failed.' );
 		}
 	}
 

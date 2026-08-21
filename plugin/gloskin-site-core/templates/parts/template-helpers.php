@@ -136,19 +136,42 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 	 * @return void
 	 */
 	function gloskin_ui1_render_hero( $hero ) {
-		$heading  = isset( $hero['heading'] ) ? (string) $hero['heading'] : '';
-		$copy     = isset( $hero['copy'] ) ? (string) $hero['copy'] : '';
-		$label    = isset( $hero['cta_label'] ) ? (string) $hero['cta_label'] : '';
-		$url      = isset( $hero['cta_url'] ) ? (string) $hero['cta_url'] : '';
-		$media    = isset( $hero['media_id'] ) ? absint( $hero['media_id'] ) : 0;
-		$campaign = isset( $hero['mode'] ) && 'campaign' === $hero['mode'];
-		$sources  = $campaign && isset( $hero['sources'] ) && is_array( $hero['sources'] ) ? array_values( array_filter( $hero['sources'], static function ( $source ) {
+		$heading    = isset( $hero['heading'] ) ? (string) $hero['heading'] : '';
+		$copy       = isset( $hero['copy'] ) ? (string) $hero['copy'] : '';
+		$label      = isset( $hero['cta_label'] ) ? (string) $hero['cta_label'] : '';
+		$url        = isset( $hero['cta_url'] ) ? (string) $hero['cta_url'] : '';
+		$media      = isset( $hero['media_id'] ) ? absint( $hero['media_id'] ) : 0;
+		$mode       = isset( $hero['mode'] ) ? (string) $hero['mode'] : '';
+		$campaign   = 'campaign' === $mode;
+		$video_only = 'video_only' === $mode;
+		$sources    = ( $campaign || $video_only ) && isset( $hero['sources'] ) && is_array( $hero['sources'] ) ? array_values( array_filter( $hero['sources'], static function ( $source ) {
 			return is_array( $source )
 				&& ! empty( $source['src'] )
 				&& isset( $source['type'] )
 				&& in_array( (string) $source['type'], array( 'video/mp4', 'video/webm' ), true );
 		} ) ) : array();
-		$has_video = array() !== $sources;
+		$has_video  = array() !== $sources;
+
+		/* ── Video-only mode: full-viewport video, no text or editorial fallback ── */
+		if ( $video_only ) {
+			$classes = 'gloskin-ui1-hero gloskin-ui1-hero--video-only' . ( $has_video ? ' is-video-preparing' : ' is-video-unavailable' );
+			?>
+			<section class="<?php echo esc_attr( $classes ); ?>"<?php echo $has_video ? ' data-gloskin-hero-bg-video-root' : ''; ?>>
+				<?php if ( $has_video ) : ?>
+					<div class="gloskin-ui1-hero-bg-video" data-gloskin-hero-bg-video-wrap>
+						<video class="gloskin-ui1-hero-bg-video__media" data-gloskin-hero-bg-video muted autoplay loop playsinline preload="auto" aria-hidden="true" tabindex="-1">
+							<?php foreach ( $sources as $source ) : ?>
+								<source src="<?php echo esc_url( (string) $source['src'] ); ?>" type="<?php echo esc_attr( (string) $source['type'] ); ?>" />
+							<?php endforeach; ?>
+						</video>
+						<div class="gloskin-ui1-hero-bg-video__loader" aria-hidden="true"><span class="gloskin-ui1-hero-bg-video__loader-dot"></span></div>
+					</div>
+				<?php endif; ?>
+			</section>
+			<?php
+			return;
+		}
+
 		$classes   = 'gloskin-ui1-hero' . ( $campaign ? ' gloskin-ui1-hero--campaign' : '' ) . ( $has_video ? ' is-video-preparing' : '' );
 		?>
 		<section class="<?php echo esc_attr( $classes ); ?>"<?php echo $has_video ? ' data-gloskin-hero-bg-video-root' : ''; ?>>
