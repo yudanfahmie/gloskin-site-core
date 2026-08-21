@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.7.182';
+	const VERSION = '0.7.183';
 
 	/** @var string */
 	private $plugin_file;
@@ -44,6 +44,7 @@ final class Gloskin_Site_Core_Kernel {
 			require_once __DIR__ . '/class-gloskin-site-core-revision-20260819-final-migration-admin.php';
 			require_once __DIR__ . '/class-gloskin-site-core-revision-20260820-promo-recovery-admin.php';
 			require_once __DIR__ . '/class-gloskin-site-core-media-cleanup-admin.php';
+			require_once __DIR__ . '/class-gloskin-site-core-phase4-finalizer-admin.php';
 
 			$media_compatibility = new Gloskin_Site_Core_Sample_Media_Compatibility();
 			$media_compatibility->register();
@@ -73,6 +74,9 @@ final class Gloskin_Site_Core_Kernel {
 			$media_cleanup = new Gloskin_Site_Core_Media_Cleanup_Admin( $assets );
 			$media_cleanup->register();
 
+			$phase4_finalizer = new Gloskin_Site_Core_Phase4_Finalizer_Admin();
+			$phase4_finalizer->register();
+
 			$this->services[] = $media_compatibility;
 			$this->services[] = $admin;
 			$this->services[] = $translation;
@@ -83,6 +87,7 @@ final class Gloskin_Site_Core_Kernel {
 			$this->services[] = $revision_final_migration;
 			$this->services[] = $promo_recovery;
 			$this->services[] = $media_cleanup;
+			$this->services[] = $phase4_finalizer;
 			$this->boot_production_batch();
 			return;
 		}

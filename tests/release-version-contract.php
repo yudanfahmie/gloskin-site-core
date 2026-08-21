@@ -16,13 +16,13 @@ if ( ! preg_match( "/const VERSION = '([0-9]+\\.[0-9]+\\.[0-9]+)';/", $kernel, $
 	fwrite( STDERR, "Kernel VERSION missing\n" );
 	exit( 1 );
 }
-$expected = '0.7.182';
+$expected = '0.7.183';
 if ( $plugin_match[1] !== $expected || $kernel_match[1] !== $expected ) {
 	fwrite( STDERR, 'Release version mismatch: header=' . $plugin_match[1] . ', kernel=' . $kernel_match[1] . ', expected=' . $expected . "\n" );
 	exit( 1 );
 }
 
-/* Phase 5 is a focused release pass. Historical feature contracts intentionally
- * retain the release they documented; this contract owns only canonical runtime
- * version synchronization and does not turn a patch bump into a broad audit. */
+/* Phase 4 closure is a focused release pass. Historical feature contracts
+ * retain the releases they documented; this owns only canonical runtime
+ * version synchronization. */
 echo "release-version-contract.php: OK ({$expected})\n";
