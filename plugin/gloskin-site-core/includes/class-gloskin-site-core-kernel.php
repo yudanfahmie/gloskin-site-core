@@ -41,6 +41,7 @@ final class Gloskin_Site_Core_Kernel {
 			require_once __DIR__ . '/class-gloskin-site-core-sample-media-compatibility.php';
 			require_once __DIR__ . '/class-gloskin-site-core-media-cleanup-admin.php';
 			require_once __DIR__ . '/class-gloskin-site-core-content-finalizer-admin.php';
+			require_once __DIR__ . '/class-gloskin-site-core-home-readiness-contract.php';
 
 			$media_compatibility = new Gloskin_Site_Core_Sample_Media_Compatibility();
 			$media_compatibility->register();
@@ -60,6 +61,9 @@ final class Gloskin_Site_Core_Kernel {
 
 			$media_cleanup = new Gloskin_Site_Core_Media_Cleanup_Admin( $assets );
 			$media_cleanup->register();
+
+			$home_readiness = new Gloskin_Site_Core_Home_Readiness_Contract();
+			$home_readiness->register();
 
 			$content_finalizer = new Gloskin_Site_Core_Content_Finalizer_Admin();
 			$content_finalizer->register();
@@ -91,6 +95,7 @@ final class Gloskin_Site_Core_Kernel {
 			$this->services[] = $translation;
 			$this->services[] = $lifecycle;
 			$this->services[] = $media_cleanup;
+			$this->services[] = $home_readiness;
 			$this->services[] = $content_finalizer;
 			$this->services[] = $contact;
 			$this->services[] = $contact_admin;
