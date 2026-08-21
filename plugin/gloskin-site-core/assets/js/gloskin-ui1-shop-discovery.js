@@ -126,13 +126,12 @@
 
 		function setPriceInteraction(state) {
 			var normal = state === 'normal';
-			var single = state === 'single';
 
 			if (priceFilter) {
 				priceFilter.setAttribute('data-gloskin-price-state', state);
 			}
 			if (priceSlider) {
-				priceSlider.hidden = !normal && !single;
+				priceSlider.hidden = !normal;
 			}
 			[minSlider, maxSlider].forEach(function (slider) {
 				if (!slider) { return; }
@@ -400,6 +399,10 @@
 			var heading = results.querySelector('[data-gloskin-shop-results-heading]');
 			if (!heading) { return; }
 			try { heading.focus({ preventScroll: true }); } catch (e) { heading.focus(); }
+			if (typeof heading.getBoundingClientRect !== 'function') { return; }
+			var rect = heading.getBoundingClientRect();
+			var viewportHeight = window.innerHeight || (document.documentElement ? document.documentElement.clientHeight : 0);
+			if (viewportHeight <= 0 || (rect.top >= 0 && rect.bottom <= viewportHeight)) { return; }
 			if (typeof heading.scrollIntoView === 'function') {
 				var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 				heading.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });

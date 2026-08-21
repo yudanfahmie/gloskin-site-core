@@ -130,7 +130,7 @@ $gloskin_shop_results_partial = dirname( __DIR__ ) . '/parts/shop-results.php';
 							<span class="gloskin-ui1-price-filter__label-sep"<?php echo 'normal' === $gloskin_shop_price_state ? '' : ' hidden'; ?> aria-hidden="true">&ndash;</span>
 							<span class="gloskin-ui1-price-filter__label-max" data-gloskin-price-label-max<?php echo 'normal' === $gloskin_shop_price_state ? '' : ' hidden'; ?>><?php echo esc_html( $gloskin_shop_price_label_max ); ?></span>
 						</div>
-						<div class="gloskin-ui1-price-slider" data-gloskin-price-slider<?php echo 'empty' === $gloskin_shop_price_state ? ' hidden' : ''; ?>>
+						<div class="gloskin-ui1-price-slider" data-gloskin-price-slider<?php echo 'normal' === $gloskin_shop_price_state ? '' : ' hidden'; ?>>
 							<div class="gloskin-ui1-price-slider__track" data-gloskin-price-track aria-hidden="true"></div>
 							<input
 								type="range"

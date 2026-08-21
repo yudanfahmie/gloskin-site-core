@@ -33,6 +33,11 @@
 	--gloskin-shop-loading-opacity: 0.62;
 }
 
+/* Shop owns its own closing cadence; shared/global section rhythm is untouched. */
+[data-gloskin-section="shop-products"] {
+	padding-block: clamp(48px, 6vw, 72px) clamp(72px, 8vw, 112px);
+}
+
 /* --------------------------------------------------------------------------
    Rail layout — sole sticky owner on wide layouts
    -------------------------------------------------------------------------- */
@@ -284,8 +289,7 @@
 	font-weight: 400;
 }
 
-.gloskin-ui1-price-filter[data-gloskin-price-state="empty"] .gloskin-ui1-price-filter__labels,
-.gloskin-ui1-price-filter[data-gloskin-price-state="single"] .gloskin-ui1-price-filter__labels {
+.gloskin-ui1-price-filter[data-gloskin-price-state="empty"] .gloskin-ui1-price-filter__labels {
 	color: var(--gloskin-muted);
 }
 
@@ -322,14 +326,6 @@
 	right: calc(100% - var(--gloskin-price-max-pct, 100%));
 	background: var(--gloskin-shop-slider-fill);
 	border-radius: 100px;
-}
-
-.gloskin-ui1-price-filter[data-gloskin-price-state="single"] .gloskin-ui1-price-slider__track {
-	background: color-mix(in srgb,var(--gloskin-border) 70%,var(--gloskin-accent-soft));
-}
-
-.gloskin-ui1-price-filter[data-gloskin-price-state="single"] .gloskin-ui1-price-slider__track::after {
-	display: none;
 }
 
 .gloskin-ui1-price-slider__input {
