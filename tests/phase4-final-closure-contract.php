@@ -16,12 +16,14 @@ if ( ! class_exists( 'Gloskin_Site_Core_Content_Service' ) ) {
 $fpath = $plugin . '/includes/class-gloskin-site-core-content-finalizer-admin.php';
 require_once $fpath;
 $f = p4text( $fpath );
+$r = p4text( $plugin . '/includes/class-gloskin-site-core-home-readiness-contract.php' );
 $k = p4text( $plugin . '/includes/class-gloskin-site-core-kernel.php' );
 $b = p4text( $plugin . '/gloskin-site-core.php' );
 $t = p4text( $plugin . '/includes/class-gloskin-site-core-translation.php' );
 $h = p4text( $plugin . '/templates/pages/home.php' );
 $p = p4text( $plugin . '/templates/pages/promo.php' );
 $a = p4text( $plugin . '/templates/pages/about.php' );
+$css = p4text( $plugin . '/assets/css/gloskin-ui1-editorial.css' );
 
 /* --- Canonical product scope --- */
 $skin  = Gloskin_Site_Core_Content_Finalizer_Admin::skincare_category_map();
@@ -96,6 +98,23 @@ p4must( strpos( $home_ctx, 'curated_home_treatments' ) !== false, 'Home context 
 p4must( strpos( $home_ctx, 'testimonials' ) !== false, 'Home context still prepares testimonials' );
 p4must( strpos( $home_ctx, 'achievements' ) !== false, 'Home context still prepares achievements' );
 
+/* --- Home presentation rhythm is scoped to the four final sections only --- */
+p4must( strpos( $css, '.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:clamp(3rem,6vw,5.5rem)}' ) !== false, 'Home section rhythm restored in editorial owner' );
+p4must( strpos( $css, '.gloskin-ui1-section{padding' ) === false, 'no broad global section padding hotfix' );
+
+/* --- Home readiness closes through the existing Content Finalizer state --- */
+p4must( strpos( $r, "const STATE_OPTION = 'gloskin_site_core_phase4_finalizer_v1_state'" ) !== false, 'Home guard reuses existing Finalizer state option' );
+p4must( strpos( $r, 'pre_update_option_' ) !== false && strpos( $r, 'guard_completion' ) !== false, 'Home guard intercepts Finalizer complete transition' );
+p4must( strpos( $r, 'option_' ) !== false && strpos( $r, "['status']     = 'stale'" ) !== false, 'pre-contract complete state becomes stale until explicit rerun' );
+p4must( strpos( $r, '3 !== count( $featured )' ) !== false && strpos( $r, '6 !== count( $selected_ids )' ) !== false, 'Treatment Home contract is exactly 3 featured + 3 additional = 6' );
+p4must( strpos( $r, '3 !== count( $posts )' ) !== false && strpos( $r, 'gloskin_testimonial_active' ) !== false && strpos( $r, 'gloskin_testimonial_attribution' ) !== false, 'Testimonial Home contract is exactly 3 factual active records' );
+p4must( strpos( $r, '4 !== count( $posts )' ) !== false && strpos( $r, 'gloskin_achievement_active' ) !== false && strpos( $r, 'gloskin_achievement_feature_on_home' ) !== false && strpos( $r, 'attachment_is_usable_image' ) !== false, 'Piagam Home contract is exactly 4 active featured usable images' );
+p4must( strpos( $r, 'RuntimeException' ) !== false && strpos( $f, 'catch ( Throwable $e )' ) !== false && strpos( $f, "['status']     = 'failed'" ) !== false, 'Home readiness failures are caught by existing Finalizer and persist failed status' );
+foreach ( array( 'wp_update_post', 'wp_insert_post', 'wp_trash_post', 'wp_delete_post', 'wp_delete_attachment', 'wp_delete_file' ) as $n ) {
+	p4must( strpos( $r, $n ) === false, 'Home readiness guard is verification-only: ' . $n );
+}
+p4must( substr_count( $r, 'STATE_OPTION' ) >= 3 && strpos( $r, 'register_page' ) === false && strpos( $r, 'admin_post_' ) === false, 'Home readiness creates no second runner/admin flow' );
+
 /* --- About context cleanup: unused keys must not be prepared --- */
 $about_ctx_start = strpos( $ts, 'private function about_context()' );
 $about_ctx_end   = strpos( $ts, 'private function about_founder_context', $about_ctx_start );
@@ -124,15 +143,16 @@ foreach ( array( 'promo-content', 'promo-closing', 'data-gloskin-promo-thumb' ) 
 	p4must( strpos( $p, $n ) === false, 'obsolete Promo ' . $n );
 }
 
-/* --- Kernel wiring: ContentFinalizer (renamed), no ProductionBatch --- */
+/* --- Kernel wiring: ContentFinalizer + Home readiness guard, no ProductionBatch --- */
 p4must( strpos( $k, 'class-gloskin-site-core-content-finalizer-admin.php' ) !== false && strpos( $k, 'Gloskin_Site_Core_Content_Finalizer_Admin' ) !== false, 'Kernel uses content-finalizer (renamed)' );
+p4must( strpos( $k, 'class-gloskin-site-core-home-readiness-contract.php' ) !== false && strpos( $k, 'Gloskin_Site_Core_Home_Readiness_Contract' ) !== false, 'Kernel wires Home readiness guard' );
 p4must( strpos( $k, 'class-gloskin-site-core-phase4-finalizer-admin.php' ) === false, 'Kernel no longer references phase4 finalizer file' );
 p4must( strpos( $k, 'Production_Batch' ) === false && strpos( $k, 'production-batch' ) === false, 'Kernel no longer references ProductionBatch' );
-p4must( strpos( $k, "const VERSION = '0.7.187'" ) !== false && strpos( $b, 'Version: 0.7.187' ) !== false, 'version 0.7.187 sync' );
+p4must( strpos( $k, "const VERSION = '0.7.188'" ) !== false && strpos( $b, 'Version: 0.7.188' ) !== false, 'version 0.7.188 sync' );
 
 /* --- Phase-5 translation contract preserved --- */
 foreach ( array( "'product' => array( 'label' => 'Product', 'fields' => \$base", 'Promo Poster', 'Kenapa Memilih GLOSKIN', 'Testimoni', 'Piagam', 'Tentang GLOSKIN', 'Visi · Misi · Nilai' ) as $n ) {
 	p4must( strpos( $t, $n ) !== false, 'Phase5 translation ' . $n );
 }
 
-echo "phase4-final-closure-contract.php: OK (73 canonical, 25+48 copy/category, per-product copy maps, context cleanup, 3+4 image-ready, Trash-only, Home/Promo/About, Phase-5 preserved)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical, Home rhythm, Home readiness 6/3/4 fail-closed, 25+48 copy/category, context cleanup, 3+4 image-ready, Trash-only, Phase-5 preserved)\n";
