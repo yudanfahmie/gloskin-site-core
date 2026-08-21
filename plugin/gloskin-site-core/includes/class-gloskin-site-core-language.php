@@ -88,13 +88,23 @@ final class Gloskin_Site_Core_Language {
 		return trim( $output . ' lang="' . $lang . '"' );
 	}
 
-	/** Return saved EN only when its source hash matches the current source. */
+	/**
+	 * Return saved EN only when its source hash matches the current canonical source.
+	 *
+	 * Uses the raw post field from the WP object cache (get_post) rather than
+	 * $fallback, which may already have passed through a the_posts projection.
+	 * Freshness hashing always runs against the canonical Indonesian source so
+	 * already-projected EN values never silently become the hash input.
+	 */
 	private static function saved_post_field( $post_id, $field, $fallback ) {
 		if ( 'en' !== self::language() ) { return $fallback; }
 		$post = get_post( absint( $post_id ) );
 		$registry = Gloskin_Site_Core_Translation::registry();
 		if ( ! $post || ! isset( $registry['post_types'][ $post->post_type ]['fields'][ $field ] ) ) { return $fallback; }
-		return Gloskin_Site_Core_Translation::fresh_post_value( $post->ID, $field, (string) $fallback );
+		// $post from get_post() is the raw canonical post, not a translated clone —
+		// translate_post_object() clones are not stored in the WP object cache.
+		$raw_source = isset( $post->$field ) ? (string) $post->$field : (string) $fallback;
+		return Gloskin_Site_Core_Translation::fresh_post_value( $post->ID, $field, $raw_source );
 	}
 
 	/** @param WP_Post $post Post. @return WP_Post */
@@ -163,15 +173,22 @@ final class Gloskin_Site_Core_Language {
 		return $copy;
 	}
 
-	/** @return string */
+	/**
+	 * Resolve one interface string to its EN equivalent via the shared O(1) lookup.
+	 *
+	 * Delegates to Translation::interface_lookup() — the single canonical resolver
+	 * shared by both the gettext filter and the HTML output buffer.  A narrow
+	 * re-entrancy guard returns the original value if unexpected plugin/filter
+	 * recursion tries to re-enter while the lookup is being built.
+	 */
 	private static function interface_text( $source ) {
 		if ( 'en' !== self::language() ) { return $source; }
-		$saved = Gloskin_Site_Core_Translation::interface_translations();
-		foreach ( Gloskin_Site_Core_Translation::interface_registry() as $key => $entry ) {
-			if ( (string) $entry['source'] !== (string) $source ) { continue; }
-			return isset( $saved[ $key ] ) && '' !== trim( (string) $saved[ $key ] ) ? (string) $saved[ $key ] : (string) $entry['en'];
-		}
-		return $source;
+		static $in_lookup = false;
+		if ( $in_lookup ) { return $source; } // Fail-open re-entrancy guard.
+		$in_lookup = true;
+		$lookup    = Gloskin_Site_Core_Translation::interface_lookup();
+		$in_lookup = false;
+		return isset( $lookup[ (string) $source ] ) ? $lookup[ (string) $source ] : (string) $source;
 	}
 
 	/** @return string */ public function translate_interface( $translation, $text, $domain ) { return 'gloskin-site-core' === $domain ? self::interface_text( $text ) : $translation; }

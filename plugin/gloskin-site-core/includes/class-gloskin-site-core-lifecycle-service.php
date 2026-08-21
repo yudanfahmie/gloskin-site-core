@@ -93,9 +93,12 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 			return;
 		}
 
-		$mutations = $previous_mutations;
-		$defaults  = $this->about_reconciliation_defaults();
+		$mutations    = $previous_mutations;
+		$defaults     = $this->about_reconciliation_defaults();
+		$has_raw_meta = function_exists( 'get_metadata_raw' );
 
+		// Read post_content directly from the post object — get_page_by_path() returns
+		// the raw WP_Post without applying any presentation filters.
 		if ( '' === trim( (string) $page->post_content ) ) {
 			$result = wp_update_post(
 				array(
@@ -115,14 +118,23 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 			'gloskin_about_founder_story' => $defaults['founder_story'],
 		);
 		foreach ( $meta_defaults as $key => $value ) {
-			if ( '' !== trim( (string) get_post_meta( $page->ID, $key, true ) ) ) {
+			// Use get_metadata_raw() to bypass the English translation projection filter —
+			// we must check the canonical Indonesian value, not a saved EN translation.
+			$current = $has_raw_meta
+				? get_metadata_raw( 'post', $page->ID, $key, true )
+				: get_post_meta( $page->ID, $key, true );
+			if ( '' !== trim( (string) $current ) ) {
 				continue;
 			}
 			update_post_meta( $page->ID, $key, $value );
 			$mutations[] = $key;
 		}
 
-		$founder_media_id = absint( get_post_meta( $page->ID, 'gloskin_about_founder_media_id', true ) );
+		// Use get_metadata_raw() to bypass the EN projection for founder media check too.
+		$raw_founder_media = $has_raw_meta
+			? get_metadata_raw( 'post', $page->ID, 'gloskin_about_founder_media_id', true )
+			: get_post_meta( $page->ID, 'gloskin_about_founder_media_id', true );
+		$founder_media_id  = absint( $raw_founder_media );
 		if ( ! $founder_media_id ) {
 			$founder = get_page_by_path(
 				'dr-nanang-masrani-m-biomed-aam',
@@ -146,16 +158,27 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 			$missing[] = 'post_content';
 		}
 		foreach ( array_keys( $meta_defaults ) as $key ) {
-			if ( '' === trim( (string) get_post_meta( $page->ID, $key, true ) ) ) {
+			$raw_val = $has_raw_meta
+				? get_metadata_raw( 'post', $page->ID, $key, true )
+				: get_post_meta( $page->ID, $key, true );
+			if ( '' === trim( (string) $raw_val ) ) {
 				$missing[] = $key;
 			}
 		}
+		// Use raw reads for reviewable fields too — prevents EN translation projection from
+		// reporting a field as populated when the canonical ID value is actually empty.
 		foreach ( $reviewable_fields as $key ) {
-			if ( '' === trim( (string) get_post_meta( $page->ID, $key, true ) ) ) {
+			$raw_val = $has_raw_meta
+				? get_metadata_raw( 'post', $page->ID, $key, true )
+				: get_post_meta( $page->ID, $key, true );
+			if ( '' === trim( (string) $raw_val ) ) {
 				$missing[] = $key;
 			}
 		}
-		if ( ! absint( get_post_meta( $page->ID, 'gloskin_about_founder_media_id', true ) ) ) {
+		$raw_media_check = $has_raw_meta
+			? get_metadata_raw( 'post', $page->ID, 'gloskin_about_founder_media_id', true )
+			: get_post_meta( $page->ID, 'gloskin_about_founder_media_id', true );
+		if ( ! absint( $raw_media_check ) ) {
 			$missing[] = 'gloskin_about_founder_media_id';
 		}
 

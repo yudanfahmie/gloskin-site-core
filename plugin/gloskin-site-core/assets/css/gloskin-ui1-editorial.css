@@ -65,6 +65,20 @@ body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video_
 .gloskin-home-why__copy ul li{line-height:1.65;color:var(--gloskin-muted)}
 .gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{max-width:760px;margin:0 auto clamp(1.5rem,3vw,2.5rem);text-align:center}
 .gloskin-home-treatments__grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+/* Home treatment card precision — scoped to the Home editorial context only.
+   Visual principles: medical-premium, image-led, restrained, editorial, equal-height.
+   Uses existing markup: article.gloskin-ui1-card--treatment > .card__media + .card__body */
+.gloskin-home-treatments .gloskin-ui1-card--treatment{display:flex;flex-direction:column;background:var(--gloskin-surface);border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);overflow:hidden;transition:box-shadow .22s ease,transform .22s ease}
+.gloskin-home-treatments .gloskin-ui1-card--treatment:is(:hover,:focus-within){box-shadow:0 4px 18px color-mix(in srgb,var(--gloskin-accent) 9%,transparent);transform:translateY(-2px)}
+.gloskin-home-treatments .gloskin-ui1-card__media{display:block;aspect-ratio:3/2;overflow:hidden}
+.gloskin-home-treatments .gloskin-ui1-card__image{width:100%;height:100%;object-fit:cover;object-position:center center;transition:transform .32s ease}
+.gloskin-home-treatments .gloskin-ui1-card--treatment:hover .gloskin-ui1-card__image{transform:scale(1.04)}
+.gloskin-home-treatments .gloskin-ui1-card__body{display:flex;flex-direction:column;flex:1;padding:clamp(.9rem,2.2vw,1.3rem)}
+.gloskin-home-treatments .gloskin-ui1-card__title{font-size:1.05rem;font-weight:600;line-height:1.4;margin:0 0 .45rem}
+.gloskin-home-treatments .gloskin-ui1-card__title a{color:inherit;text-decoration:none}
+.gloskin-home-treatments .gloskin-ui1-card__title a:hover{color:var(--gloskin-accent)}
+.gloskin-home-treatments .gloskin-ui1-card__copy{font-size:.875rem;line-height:1.65;color:var(--gloskin-muted);margin:0 0 1rem;flex:1}
+.gloskin-home-treatments .gloskin-ui1-text-link{margin-top:auto;font-size:.85rem;font-weight:500;color:var(--gloskin-accent)}
 .gloskin-home-testimonials__rows{display:grid;gap:1.25rem}
 .gloskin-home-testimonial{display:grid;grid-template-columns:auto minmax(0,1fr);gap:1.1rem;align-items:center;margin:0;padding:clamp(1rem,2.5vw,1.5rem);border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);background:color-mix(in srgb,var(--gloskin-surface) 52%,var(--gloskin-bg))}
 .gloskin-home-testimonial__avatar{width:3.75rem;height:3.75rem;border-radius:50%;object-fit:cover;border:2px solid var(--gloskin-border)}
@@ -111,4 +125,4 @@ body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video_
 @media (max-width:900px){.gloskin-home-why__grid,.gloskin-about-story__grid,.gloskin-about-founder__grid{grid-template-columns:1fr}.gloskin-home-treatments__grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gloskin-home-piagam__grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gloskin-promo__media,.gloskin-promo--poster .gloskin-promo__media{aspect-ratio:4/3}.gloskin-about-principles__grid{grid-template-columns:1fr}}
 @media (max-width:640px){.gloskin-ui1-insights-archive__grid{grid-template-columns:1fr}.gloskin-ui1-insights-archive__card--lead .gloskin-ui1-insights-archive__body{padding:24px}.gloskin-ui1-insight-single__hero{width:calc(100% - 32px)}}
 @media (max-width:560px){.gloskin-home-treatments__grid{grid-template-columns:1fr}.gloskin-home-testimonial{grid-template-columns:1fr}.gloskin-home-piagam__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (prefers-reduced-motion:reduce){.gloskin-ui1-insights-archive__image{transition:none}.gloskin-ui1-insights-archive__card:hover .gloskin-ui1-insights-archive__image{transform:none}[data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{transition:none;will-change:auto}}
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-insights-archive__image{transition:none}.gloskin-ui1-insights-archive__card:hover .gloskin-ui1-insights-archive__image{transform:none}[data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{transition:none;will-change:auto}.gloskin-home-treatments .gloskin-ui1-card--treatment{transition:none}.gloskin-home-treatments .gloskin-ui1-card--treatment:is(:hover,:focus-within){transform:none}.gloskin-home-treatments .gloskin-ui1-card__image{transition:none}.gloskin-home-treatments .gloskin-ui1-card--treatment:hover .gloskin-ui1-card__image{transform:none}}

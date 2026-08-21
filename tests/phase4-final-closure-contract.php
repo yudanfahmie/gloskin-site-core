@@ -206,4 +206,4 @@ foreach ( array( 'Detail tambahan belum tersedia untuk ditampilkan.', 'Informasi
 
 p4must( false !== strpos( $k, "const VERSION = '0.7.194'" ) && false !== strpos( $b, 'Version: 0.7.194' ), 'release owners synchronized at 0.7.194' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo stack/CTA routes + final About structure/provenance + Shop CSS dep + version 0.7.194)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo carousel JS-CSS contract + footer CTA routes + About reconciliation-first + Shop CSS dep + version 0.7.194)\n";

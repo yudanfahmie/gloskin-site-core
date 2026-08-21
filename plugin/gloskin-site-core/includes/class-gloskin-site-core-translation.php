@@ -25,6 +25,26 @@ final class Gloskin_Site_Core_Translation {
 	const AJAX_SAVE           = 'gloskin_translation_save';
 	const NONCE_ACTION        = 'gloskin_translation_save';
 
+	/**
+	 * Request-local immutable caches. Built once per request; never persisted.
+	 * Eliminates per-text-node and per-filter-call array reconstruction and
+	 * redundant get_option() calls — root cause of the EN memory exhaustion.
+	 *
+	 * @var array<string,mixed>|null
+	 */
+	private static $registry_cache = null;
+	/** @var array<string,array{source:string,en:string}>|null */
+	private static $interface_registry_cache = null;
+	/** @var array<string,string>|null */
+	private static $interface_translations_cache = null;
+	/**
+	 * One canonical O(1) source-text → resolved-EN lookup shared by both
+	 * transport owners (gettext filter and HTML output buffer).
+	 *
+	 * @var array<string,string>|null
+	 */
+	private static $interface_lookup_cache = null;
+
 	/** @var string */
 	private $plugin_file;
 
@@ -50,6 +70,7 @@ final class Gloskin_Site_Core_Translation {
 
 	/** @return array<string,mixed> */
 	public static function registry() {
+		if ( null !== self::$registry_cache ) { return self::$registry_cache; }
 		$base = array( 'post_title' => 'Title', 'post_excerpt' => 'Excerpt', 'post_content' => 'Content' );
 		$page_meta = array(
 			'gloskin_hero_heading' => array( 'label' => 'Hero heading', 'rich' => false ),
@@ -65,7 +86,7 @@ final class Gloskin_Site_Core_Translation {
 			'gloskin_about_founder_role' => array( 'label' => 'Founder role', 'rich' => false ),
 			'gloskin_about_founder_story' => array( 'label' => 'Founder story', 'rich' => true ),
 		);
-		return array(
+		self::$registry_cache = array(
 			'post_types' => array(
 				'page' => array( 'label' => 'Page', 'fields' => $base, 'meta' => $page_meta ),
 				Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE => array(
@@ -124,10 +145,12 @@ final class Gloskin_Site_Core_Translation {
 			),
 			'interface' => self::interface_registry(),
 		);
+		return self::$registry_cache;
 	}
 
-	/** Small Gloskin-owned frontend interface registry. */
+	/** Small Gloskin-owned frontend interface registry. Built once per request. */
 	public static function interface_registry() {
+		if ( null !== self::$interface_registry_cache ) { return self::$interface_registry_cache; }
 		$pairs = array(
 			'home' => array( 'Beranda', 'Home' ),
 			'about' => array( 'Tentang Kami', 'About Us' ),
@@ -384,7 +407,32 @@ final class Gloskin_Site_Core_Translation {
 		);
 		$out = array();
 		foreach ( $pairs as $key => $pair ) { $out[ $key ] = array( 'source' => $pair[0], 'en' => $pair[1] ); }
-		return $out;
+		self::$interface_registry_cache = $out;
+		return self::$interface_registry_cache;
+	}
+
+	/**
+	 * One canonical O(1) source-text → resolved EN lookup, built once per request.
+	 *
+	 * Both transport owners — the gettext filter (Language::translate_interface)
+	 * and the HTML output buffer (Language_Projection::translate_text_segment) —
+	 * delegate here so there is exactly one resolver and one build per request.
+	 * O(1) associative lookup per visible string replaces O(n) foreach scans.
+	 *
+	 * @return array<string,string> Map: canonical Indonesian source → resolved EN value.
+	 */
+	public static function interface_lookup() {
+		if ( null !== self::$interface_lookup_cache ) { return self::$interface_lookup_cache; }
+		$registry = self::interface_registry();
+		$saved    = self::interface_translations();
+		self::$interface_lookup_cache = array();
+		foreach ( $registry as $key => $entry ) {
+			$source = (string) $entry['source'];
+			self::$interface_lookup_cache[ $source ] = isset( $saved[ $key ] ) && '' !== trim( (string) $saved[ $key ] )
+				? (string) $saved[ $key ]
+				: (string) $entry['en'];
+		}
+		return self::$interface_lookup_cache;
 	}
 
 	/** @return void */
@@ -440,7 +488,12 @@ final class Gloskin_Site_Core_Translation {
 	/** @return array<string,string> */
 	public static function term_translations( $term_id ) { $value = get_term_meta( absint( $term_id ), self::TERM_META_KEY, true ); return is_array( $value ) ? array_map( 'strval', $value ) : array(); }
 	/** @return array<string,string> */
-	public static function interface_translations() { $value = get_option( self::INTERFACE_OPTION, array() ); return is_array( $value ) ? array_map( 'strval', $value ) : array(); }
+	public static function interface_translations() {
+		if ( null !== self::$interface_translations_cache ) { return self::$interface_translations_cache; }
+		$value = get_option( self::INTERFACE_OPTION, array() );
+		self::$interface_translations_cache = is_array( $value ) ? array_map( 'strval', $value ) : array();
+		return self::$interface_translations_cache;
+	}
 	/** @return array<string,array{source_hash:string,origin:string}> */
 	public static function post_translation_state( $post_id ) { $value = get_post_meta( absint( $post_id ), self::POST_STATE_META_KEY, true ); return is_array( $value ) ? $value : array(); }
 	/** @return array<string,array{source_hash:string,origin:string}> */
@@ -572,6 +625,9 @@ final class Gloskin_Site_Core_Translation {
 			$state = self::term_translation_state( $id ); $state[ $field ] = array( 'source_hash' => self::source_hash( $source ), 'origin' => $origin ); update_term_meta( $id, self::TERM_STATE_META_KEY, $state );
 		} else {
 			$key = sanitize_key( (string) $id_raw ); $translations = self::interface_translations(); $translations[ $key ] = $value; update_option( self::INTERFACE_OPTION, $translations, false );
+			// Reset request-local caches so a same-request re-read reflects the new value.
+			self::$interface_translations_cache = null;
+			self::$interface_lookup_cache = null;
 		}
 		wp_send_json_success( array( 'value' => $value, 'status' => 'fresh', 'origin' => $origin ) );
 	}

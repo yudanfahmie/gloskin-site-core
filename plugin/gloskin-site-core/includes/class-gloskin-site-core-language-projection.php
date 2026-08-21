@@ -37,9 +37,17 @@ final class Gloskin_Site_Core_Language_Projection {
 		}
 	}
 
-	/** Begin a lightweight visible-text interface resolver. */
+	/**
+	 * Begin the visible-text interface resolver output buffer.
+	 *
+	 * A request-local static flag prevents the buffer from being started twice
+	 * in one request (idempotency guard), which would nest ob_start callbacks
+	 * and could double-translate text that passes through the outer buffer.
+	 */
 	public function start_interface_buffer() {
-		if ( 'en' !== Gloskin_Site_Core_Language::language() || is_admin() || is_feed() || wp_doing_ajax() ) { return; }
+		static $started = false;
+		if ( $started || 'en' !== Gloskin_Site_Core_Language::language() || is_admin() || is_feed() || wp_doing_ajax() ) { return; }
+		$started = true;
 		ob_start( array( $this, 'translate_interface_html' ) );
 	}
 
@@ -66,18 +74,27 @@ final class Gloskin_Site_Core_Language_Projection {
 		return implode( '', $parts );
 	}
 
-	/** @param string $text Visible text. @return string */
+	/**
+	 * Translate one complete visible text node using the shared O(1) lookup.
+	 *
+	 * Exact-node matching is preserved — only a complete trimmed text node that
+	 * exactly equals a canonical source string is translated.  Substring
+	 * replacement is deliberately forbidden.  Delegates to
+	 * Translation::interface_lookup() so this transport and the gettext filter
+	 * share one resolver and one build per request.
+	 *
+	 * @param string $text Visible text node.
+	 * @return string
+	 */
 	private function translate_text_segment( $text ) {
 		$needle = trim( (string) $text );
 		if ( '' === $needle ) { return $text; }
-		$saved = Gloskin_Site_Core_Translation::interface_translations();
-		foreach ( Gloskin_Site_Core_Translation::interface_registry() as $key => $entry ) {
-			if ( (string) $entry['source'] !== $needle ) { continue; }
-			$replacement = isset( $saved[ $key ] ) && '' !== trim( (string) $saved[ $key ] ) ? (string) $saved[ $key ] : (string) $entry['en'];
-			$leading = substr( $text, 0, strlen( $text ) - strlen( ltrim( $text ) ) );
-			$trailing = substr( $text, strlen( rtrim( $text ) ) );
-			return $leading . $replacement . $trailing;
-		}
-		return $text;
+		// O(1) lookup via the shared canonical resolver — no per-node foreach scan.
+		$lookup = Gloskin_Site_Core_Translation::interface_lookup();
+		if ( ! isset( $lookup[ $needle ] ) ) { return $text; }
+		$replacement = $lookup[ $needle ];
+		$leading  = substr( $text, 0, strlen( $text ) - strlen( ltrim( $text ) ) );
+		$trailing = substr( $text, strlen( rtrim( $text ) ) );
+		return $leading . $replacement . $trailing;
 	}
 }
