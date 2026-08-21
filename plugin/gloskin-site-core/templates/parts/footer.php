@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 $gloskin_clinic_links = isset( $gloskin_context['clinic_links'] ) && is_array( $gloskin_context['clinic_links'] ) ? $gloskin_context['clinic_links'] : array();
 $gloskin_logo_url = isset( $gloskin_context['logo_url'] ) ? (string) $gloskin_context['logo_url'] : '';
 $gloskin_footer_view = isset( $gloskin_context['view'] ) ? (string) $gloskin_context['view'] : '';
-$gloskin_footer_cta_excluded_views = array( 'home', 'contact', 'about', 'promo', 'skincare', 'skincare-category', 'treatments' );
+$gloskin_footer_cta_excluded_views = array( 'home', 'contact', 'about', 'promo', 'skincare', 'skincare-category', 'treatments', 'clinic', 'doctors' );
 $gloskin_show_footer_cta = ! in_array( $gloskin_footer_view, $gloskin_footer_cta_excluded_views, true );
 ?>
 <footer class="gloskin-ui1-footer">
