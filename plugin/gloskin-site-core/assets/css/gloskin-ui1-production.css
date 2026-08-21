@@ -8,7 +8,7 @@
  * the mobile drawer uses <nav class="gloskin-ui1-nav gloskin-ui1-nav--mobile">.
  * Every nav descendant inherits the same existing Montserrat retail resource
  * without repeating the declaration on __link, __toggle or submenu variants. */
-.gloskin-ui1-nav{font-family:"Montserrat","Helvetica Neue",Arial,sans-serif}
+.gloskin-ui1-nav{font-family:var(--gloskin-font-nav)}
 .gloskin-ui1-nav__link{
 	min-height:40px;
 	padding:8px 13px;
@@ -688,12 +688,12 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::af
 /* Canonical Clinic / Doctors presentation and the shared consultation close.
  * These routes own their page composition; content/data remain WordPress-owned. */
 .gloskin-clinic-page,.gloskin-doctors-page{background:var(--gloskin-refresh-cream);color:var(--gloskin-text)}
-.gloskin-clinic-page .gloskin-ui1-container,.gloskin-doctors-page .gloskin-ui1-container{width:min(100%,1200px);padding-inline:5%}
+
 .gloskin-clinic-page .gloskin-ui1-eyebrow,.gloskin-doctors-page .gloskin-ui1-eyebrow{margin:0 0 15px;color:var(--gloskin-brand-champagne);font-size:.85rem;font-weight:700;letter-spacing:3px;text-transform:uppercase}
 
 /* One dark consultation primitive for Clinic, Doctors and Skincare Category. */
 .gloskin-ui1-dark-consultation{position:relative;overflow:hidden;padding:80px 5%;background:var(--gloskin-brand-charcoal);color:var(--gloskin-inverse)}
-.gloskin-ui1-dark-consultation>.gloskin-ui1-container{width:min(100%,1200px);padding-inline:0}
+
 .gloskin-ui1-dark-consultation::before,.gloskin-ui1-dark-consultation::after{position:absolute;border:1px solid color-mix(in srgb,var(--gloskin-inverse) 5%,transparent);border-radius:50%;content:"";pointer-events:none}
 .gloskin-ui1-dark-consultation::before{top:-50%;right:-10%;width:600px;height:600px}
 .gloskin-ui1-dark-consultation::after{top:-30%;right:-5%;width:800px;height:800px;border-color:color-mix(in srgb,var(--gloskin-inverse) 3%,transparent)}
@@ -817,7 +817,7 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::af
 	.gloskin-ui1 .gloskin-ui1-dark-consultation__copy h2{font-size:2.2rem}
 }
 @media (max-width:420px){
-	.gloskin-clinic-page .gloskin-ui1-container,.gloskin-doctors-page .gloskin-ui1-container{padding-inline:20px}
+
 	.gloskin-clinic-detail__media{height:320px}
 	.gloskin-doctors-hero__media{height:320px}
 	.gloskin-doctors-wayfinding__panel{padding:34px 22px}
@@ -826,4 +826,22 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::af
 @media (prefers-reduced-motion:reduce){
 	.gloskin-ui1-dark-consultation__button,.gloskin-doctors-profiles .gloskin-ui1-card--doctor,.gloskin-doctors-profiles .gloskin-ui1-card--doctor .gloskin-ui1-card__image{transition:none}
 	.gloskin-ui1-dark-consultation__button:hover,.gloskin-doctors-profiles .gloskin-ui1-card--doctor:is(:hover,:focus-within),.gloskin-doctors-profiles .gloskin-ui1-card--doctor:is(:hover,:focus-within) .gloskin-ui1-card__image{transform:none}
+}
+
+/* Scroll reveal — ONE IntersectionObserver primitive.
+ * JS (initReveal in gloskin-ui1-core.js) adds data-gloskin-reveal and is-visible.
+ * Initial state: invisible and offset down. Visible state: full opacity, no offset.
+ * Reduced-motion/saveData/unsupported: immediately visible (JS skips reveal entirely). */
+[data-gloskin-reveal]{
+	opacity:0;
+	transform:translateY(16px);
+	transition:opacity 540ms cubic-bezier(.22,1,.36,1),transform 540ms cubic-bezier(.22,1,.36,1);
+	transition-delay:var(--gloskin-reveal-delay,0ms);
+}
+[data-gloskin-reveal].is-visible{
+	opacity:1;
+	transform:none;
+}
+@media (prefers-reduced-motion:reduce){
+	[data-gloskin-reveal]{opacity:1;transform:none;transition:none}
 }

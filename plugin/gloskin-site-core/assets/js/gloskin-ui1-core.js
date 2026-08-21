@@ -2843,28 +2843,103 @@
 			}(ctaElements[bi]));
 		}
 
-		/* No-JS fallback auto-select: when the page loaded with ?path=<id> in the URL,
-		 * select that path automatically so the user lands in the correct consultation state. */
-		if (typeof window !== 'undefined' && window.location && window.location.search) {
-			var searchStr = window.location.search;
-			var pathMatch = searchStr.match(/(?:^|[?&])path=([^&]+)/);
-			if (pathMatch) {
-				var autoPathId = decodeURIComponent(pathMatch[1]);
-				var autoBtn = document.querySelector('[data-gloskin-consultation-path="' + autoPathId + '"]');
-				if (autoBtn) {
-					autoBtn.click();
-					var autoConsultation = document.querySelector('[data-gloskin-consultation]');
-					if (autoConsultation) {
-						var autoReduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-						autoConsultation.scrollIntoView({ behavior: autoReduceMotion ? 'auto' : 'smooth', block: 'start' });
-					}
-				}
-			}
+	}
+
+	/* Scroll reveal — ONE IntersectionObserver for the whole page lifecycle.
+	 * Discovers semantic content by class, adds data-gloskin-reveal + a bounded
+	 * stagger delay, then marks each element is-visible once and unobserves.
+	 * Excludes: header/nav, overlays/drawers, forms, Woo cart/checkout controls,
+	 * hidden Finder states, loaders.
+	 * Reduced motion / saveData / no IO support: immediately visible, no observer. */
+	function initReveal() {
+		if (typeof IntersectionObserver === 'undefined') {
+			document.querySelectorAll('[data-gloskin-reveal]').forEach(function (el) {
+				el.classList.add('is-visible');
+			});
+			return;
 		}
+		var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		var saveData = navigator.connection && navigator.connection.saveData;
+		if (reduceMotion || saveData) { return; }
+
+		/* Candidate selectors: semantic content worth revealing. */
+		var REVEAL_SELECTORS = [
+			'.gloskin-ui1-section-heading',
+			'.gloskin-ui1-eyebrow',
+			'.gloskin-ui1-treatment-band__content',
+			'.gloskin-ui1-treatment-band__media',
+			'.gloskin-skincare-hero__content',
+			'.gloskin-skincare-hero__media',
+			'.gloskin-skincare-category-hero__content',
+			'.gloskin-skincare-category-hero__media',
+			'.gloskin-skincare-category-section-head',
+			'.gloskin-skincare-category-related__grid > *',
+			'.gloskin-doctors-hero__copy',
+			'.gloskin-doctors-hero__media',
+			'.gloskin-doctors-intro__copy',
+			'.gloskin-doctors-intro__media',
+			'.gloskin-doctors-profiles__head',
+			'.gloskin-doctors-wayfinding__panel',
+			'.gloskin-clinic-hero > .gloskin-ui1-container',
+			'.gloskin-clinic-detail__card',
+			'.gloskin-clinic-detail__media',
+			'.gloskin-clinic-contact__copy',
+			'.gloskin-treatments-hero__content',
+			'.gloskin-treatments-hero__media',
+			'.gloskin-ui1-consultation__intro',
+			'.gloskin-ui1-consultation__panel',
+			'.gloskin-treatments-info__copy',
+			'.gloskin-ui1-dark-consultation__copy',
+			'.gloskin-ui1-dark-consultation__actions',
+			'.gloskin-ui1-product-grid > *',
+			'.gloskin-ui1-grid--cards > *',
+		].join(',');
+
+		/* Exclusion check: skip elements inside overlays, nav, drawers, forms,
+		 * Woo controls, or hidden Finder states. */
+		function isExcluded(el) {
+			return !!el.closest(
+				'[data-gloskin-overlay],[data-gloskin-drawer],' +
+				'.gloskin-ui1-header,.gloskin-ui1-nav,' +
+				'.gloskin-ui1-page-transition,' +
+				'form,.wc-block-checkout,.wc-block-cart,' +
+				'.gloskin-ui1-consultation__results[hidden],' +
+				'.gloskin-ui1-consultation__concerns[hidden],' +
+				'.gloskin-ui1-quickadd,.gloskin-ui1-commerce-handoff'
+			);
+		}
+
+		var candidates = Array.prototype.slice.call(document.querySelectorAll(REVEAL_SELECTORS));
+		var toReveal = candidates.filter(function (el) { return !isExcluded(el); });
+		if (!toReveal.length) { return; }
+
+		/* Assign attribute + stagger; max stagger cap = 4 items per group. */
+		var staggerMs = 80;
+		var maxStagger = 4;
+		var groupMap = {};
+		toReveal.forEach(function (el) {
+			var parent = el.parentElement || document.body;
+			var siblings = Array.prototype.slice.call(parent.children);
+			var pos = siblings.indexOf(el);
+			var delay = Math.min(pos, maxStagger - 1) * staggerMs;
+			el.setAttribute('data-gloskin-reveal', '');
+			el.style.setProperty('--gloskin-reveal-delay', delay + 'ms');
+		});
+
+		var io = new IntersectionObserver(function (entries) {
+			entries.forEach(function (entry) {
+				if (entry.isIntersecting) {
+					entry.target.classList.add('is-visible');
+					io.unobserve(entry.target);
+				}
+			});
+		}, { threshold: 0.1 });
+
+		toReveal.forEach(function (el) { io.observe(el); });
 	}
 
 	/* Page-to-page cross-document transition.
-	 * Navigation timing is intentionally independent from CSS motion. The jelly
+	 * Navigation timing is intentionally independent from CSS motion. The goo
 	 * paints immediately, receives up to two RAF opportunities, and document
 	 * navigation is attempted exactly once inside a <=120ms intentional budget.
 	 * Woo mutation/action controls remain native; ordinary same-origin document
@@ -2990,6 +3065,7 @@
 		initTestimonials();
 		initTreatmentBands();
 		initSkincareChips();
+		initReveal();
 		initPageTransitions();
 	}
 
@@ -3029,6 +3105,7 @@
 			initTestimonials: initTestimonials,
 			initTreatmentBands: initTreatmentBands,
 			initSkincareChips: initSkincareChips,
+			initReveal: initReveal,
 			initPageTransitions: initPageTransitions
 		};
 	}

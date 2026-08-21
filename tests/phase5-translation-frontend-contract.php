@@ -37,7 +37,7 @@ function p5must( bool $cond, string $msg ): void {
 }
 
 /* ── Version ─────────────────────────────────────────────────────── */
-p5must( false !== strpos( $kernel, "const VERSION = '0.7.197'" ) && false !== strpos( $plugin, 'Version: 0.7.197' ), 'release owners synchronized at 0.7.197' );
+p5must( false !== strpos( $kernel, "const VERSION = '0.7.206'" ) && false !== strpos( $plugin, 'Version: 0.7.206' ), 'release owners synchronized at 0.7.206' );
 
 /* ── One Language registration, one Projection registration ──────── */
 p5must( 1 === substr_count( $kernel, 'register_frontend' ), 'exactly one frontend Language registration in Kernel' );
@@ -158,4 +158,4 @@ p5must( false === strpos( $kernel, 'Phase3_Migration_Admin' ), 'retired Phase3_M
 p5must( false === strpos( $projection, "'gloskin_hero_cta_url'" ), 'non-copy hero CTA URL not in projection' );
 p5must( false === strpos( $projection, "'gloskin_hero_media_id'" ), 'non-copy hero media ID not in projection' );
 
-echo "phase5-translation-frontend-contract.php: OK (single resolver + cached registries + circuit breaker + memory guard + object cache + version 0.7.197)\n";
+echo "phase5-translation-frontend-contract.php: OK (single resolver + cached registries + circuit breaker + memory guard + object cache + version 0.7.206)\n";

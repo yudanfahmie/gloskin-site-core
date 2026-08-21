@@ -69,19 +69,4 @@ $gloskin_related_mappings  = array_slice( isset( $gloskin_context['related_mappi
 		</div>
 	</section>
 
-	<section class="gloskin-ui1-dark-consultation" data-gloskin-section="skincare-category-consultation">
-		<div class="gloskin-ui1-container">
-			<div class="gloskin-ui1-dark-consultation__inner">
-				<div class="gloskin-ui1-dark-consultation__copy">
-					<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Konsultasi', 'gloskin-site-core' ); ?></p>
-					<h2><?php echo esc_html__( 'Siap Membicarakan Kebutuhan Kulit Anda?', 'gloskin-site-core' ); ?></h2>
-					<p><?php echo esc_html__( 'Pilih klinik Gloskin terdekat atau hubungi tim kami untuk menjadwalkan konsultasi.', 'gloskin-site-core' ); ?></p>
-				</div>
-				<div class="gloskin-ui1-dark-consultation__actions">
-					<a class="gloskin-ui1-dark-consultation__button gloskin-ui1-dark-consultation__button--primary" href="<?php echo esc_url( home_url( '/clinics/' ) ); ?>"><?php echo esc_html__( 'Pilih Klinik', 'gloskin-site-core' ); ?></a>
-					<a class="gloskin-ui1-dark-consultation__button gloskin-ui1-dark-consultation__button--secondary" href="<?php echo esc_url( home_url( '/contact/' ) ); ?>"><?php echo esc_html__( 'Hubungi Kami', 'gloskin-site-core' ); ?></a>
-				</div>
-			</div>
-		</div>
-	</section>
 </div>

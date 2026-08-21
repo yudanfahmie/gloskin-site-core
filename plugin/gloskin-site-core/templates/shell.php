@@ -45,9 +45,8 @@ if ( 'home' === $gloskin_view ) {
        * the is-active class lifecycle. Static markup only — no state or data attributes.
        * G path is the canonical first letterform from assets/images/gloskin-logotext.svg. */ ?>
 <div class="gloskin-ui1-page-transition" data-gloskin-page-transition aria-hidden="true">
-	<div class="gloskin-ui1-page-transition__blob">
-		<svg class="gloskin-ui1-page-transition__g" viewBox="82 74 185 232" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M647 271H415V239H528V120C528 102 527 88 523 80C520 69 501 56 466 44C428 29 392 21 357 22C300 23 255 53 221 112C187 172 170 249 170 345C170 555 235 665 365 673C481 679 530 624 539 510H569V667C531 682 506 690 495 692C462 700 417 704 360 704C275 704 204 672 145 607C86 539 56 453 55 345C54 246 83 161 142 90C204 21 275 -14 360 -14C419 -14 468 -8 509 2C544 13 578 25 613 35V239H647Z" fill="#fff" transform="translate(65,300) scale(0.3117268,-0.32)"/></svg>
-	</div>
+	<div class="gloskin-ui1-page-transition__blob"><span></span></div>
+	<svg class="gloskin-ui1-page-transition__g" viewBox="82 74 185 232" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M647 271H415V239H528V120C528 102 527 88 523 80C520 69 501 56 466 44C428 29 392 21 357 22C300 23 255 53 221 112C187 172 170 249 170 345C170 555 235 665 365 673C481 679 530 624 539 510H569V667C531 682 506 690 495 692C462 700 417 704 360 704C275 704 204 672 145 607C86 539 56 453 55 345C54 246 83 161 142 90C204 21 275 -14 360 -14C419 -14 468 -8 509 2C544 13 578 25 613 35V239H647Z" fill="#fff" transform="translate(65,300) scale(0.3117268,-0.32)"/></svg>
 </div>
 <svg class="gloskin-ui1-goo-loader-defs" xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs><filter id="gloskin-ui1-commerce-handoff-goo" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur"/><feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10" result="goo"/></filter></defs></svg>
 <?php require __DIR__ . '/parts/header.php'; ?>

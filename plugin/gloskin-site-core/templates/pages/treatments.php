@@ -5,12 +5,22 @@ $gloskin_hero = isset( $gloskin_context['hero'] ) && is_array( $gloskin_context[
 $gloskin_hero_heading = trim( (string) ( $gloskin_hero['heading'] ?? __( 'Perawatan', 'gloskin-site-core' ) ) );
 $gloskin_hero_copy = trim( (string) ( $gloskin_hero['copy'] ?? '' ) );
 $gloskin_hero_media_id = absint( $gloskin_hero['media_id'] ?? 0 );
-$gloskin_band_copy = array(
+// Stable band copy pool: keyed by path term ID so copy survives taxonomy reordering.
+// First-seen order assigns each path its string from the pool; wraps if more than 4 paths.
+$gloskin_band_copy_pool = array(
 	__( 'Temukan pilihan perawatan yang berfokus pada jerawat aktif dan bekas jerawat untuk membantu menyiapkan diskusi konsultasi Anda.', 'gloskin-site-core' ),
 	__( 'Pelajari pilihan perawatan untuk flek dan pigmentasi agar kebutuhan warna kulit yang tidak merata dapat dibahas lebih terarah saat konsultasi.', 'gloskin-site-core' ),
 	__( 'Jelajahi pilihan perawatan untuk tanda penuaan dan kontur wajah sebelum menentukan pendekatan yang sesuai bersama dokter Gloskin.', 'gloskin-site-core' ),
 	__( 'Kenali pilihan perawatan yang berfokus pada kualitas kulit dan skin barrier untuk membantu menjaga kulit tampak sehat dan terawat.', 'gloskin-site-core' ),
 );
+$gloskin_band_copy  = array(); // keyed by path term ID.
+$gloskin_band_pool_n = count( $gloskin_band_copy_pool );
+foreach ( array_values( $gloskin_context['paths'] ?? array() ) as $i => $gloskin_p ) {
+	$gloskin_pid = absint( $gloskin_p['id'] ?? 0 );
+	if ( $gloskin_pid ) {
+		$gloskin_band_copy[ $gloskin_pid ] = $gloskin_band_copy_pool[ $i % $gloskin_band_pool_n ];
+	}
+}
 ?>
 <div class="gloskin-treatments-page">
 	<section class="gloskin-treatments-hero" data-gloskin-section="treatments-hero">
@@ -37,7 +47,7 @@ $gloskin_band_copy = array(
 			$gloskin_image_id = isset( $gloskin_path['image_id'] ) ? absint( $gloskin_path['image_id'] ) : 0;
 			$gloskin_path_id = isset( $gloskin_path['id'] ) ? absint( $gloskin_path['id'] ) : 0;
 			$gloskin_reverse = 1 === ( $gloskin_index % 2 );
-			$gloskin_copy = $gloskin_band_copy[ $gloskin_index % count( $gloskin_band_copy ) ];
+			$gloskin_copy = $gloskin_band_copy[ $gloskin_path_id ] ?? $gloskin_band_copy_pool[0];
 			?>
 			<article class="gloskin-ui1-treatment-band<?php echo $gloskin_reverse ? ' gloskin-ui1-treatment-band--reverse' : ''; ?>" data-gloskin-treatment-band="<?php echo esc_attr( (string) $gloskin_path_id ); ?>">
 				<div class="gloskin-ui1-treatment-band__media">
@@ -51,7 +61,7 @@ $gloskin_band_copy = array(
 					<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Perawatan', 'gloskin-site-core' ); ?></p>
 					<h2 class="gloskin-ui1-treatment-band__title"><?php echo esc_html( $gloskin_label ); ?></h2>
 					<p class="gloskin-ui1-treatment-band__copy"><?php echo esc_html( $gloskin_copy ); ?></p>
-					<a class="gloskin-ui1-button gloskin-ui1-button--primary gloskin-ui1-treatment-band__button" href="<?php echo esc_url( home_url( '/treatments/?path=' . $gloskin_path_id . '#consultation' ) ); ?>" data-gloskin-band-path="<?php echo esc_attr( (string) $gloskin_path_id ); ?>"><?php echo esc_html__( 'Jelajahi Solusi', 'gloskin-site-core' ); ?></a>
+					<button type="button" class="gloskin-ui1-button gloskin-ui1-button--primary gloskin-ui1-treatment-band__button" data-gloskin-band-path="<?php echo esc_attr( (string) $gloskin_path_id ); ?>"><?php echo esc_html__( 'Jelajahi Solusi', 'gloskin-site-core' ); ?></button>
 				</div>
 			</article>
 		<?php endforeach; ?>
@@ -85,7 +95,7 @@ $gloskin_band_copy = array(
 										<?php gloskin_ui1_render_editorial_media( 'treatment', $gloskin_path['label'], 'gloskin-ui1-consultation__path-image' ); ?>
 									<?php endif; ?>
 								</span>
-								<span class="gloskin-ui1-consultation__path-label" style="font-family:&quot;Montserrat&quot;,&quot;Helvetica Neue&quot;,Arial,sans-serif;font-size:1.1rem;font-weight:600;line-height:1.3;letter-spacing:0;"><?php echo esc_html( $gloskin_path['label'] ); ?></span>
+								<span class="gloskin-ui1-consultation__path-label"><?php echo esc_html( $gloskin_path['label'] ); ?></span>
 							</button>
 						<?php endforeach; ?>
 					</div>
@@ -132,8 +142,8 @@ $gloskin_band_copy = array(
 	</section>
 	<?php endif; ?>
 
-	<section class="gloskin-treatments-info" data-gloskin-section="treatments-information" style="padding:0;background:var(--gloskin-treatments-white);">
-		<div class="gloskin-ui1-container gloskin-treatments-info__inner" style="width:100%;max-width:none;margin:0;padding:clamp(64px,7vw,96px) 5%;border-top:1px solid #ebdcd5;border-bottom:1px solid #ebdcd5;background:var(--gloskin-treatments-white);">
+	<section class="gloskin-treatments-info" data-gloskin-section="treatments-information">
+		<div class="gloskin-ui1-container gloskin-treatments-info__inner">
 			<div class="gloskin-treatments-info__copy">
 				<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Edukasi', 'gloskin-site-core' ); ?></p>
 				<h2><?php echo esc_html__( 'Informasi di Situs Membantu Menyiapkan Pertanyaan Sebelum Konsultasi.', 'gloskin-site-core' ); ?></h2>

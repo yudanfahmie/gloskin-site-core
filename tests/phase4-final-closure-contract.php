@@ -132,9 +132,17 @@ p4must( false === strpos( $p, '<div class="gloskin-ui1-empty">' ), 'legacy Promo
 /* Promo carousel JS↔CSS contract: CSS must stack all enhanced slides into one grid area and clip the stage. */
 p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] .gloskin-ui1-promo-carousel__stage{display:grid;grid-template-areas:"slide";overflow:hidden;width:100%;min-width:0}' ), 'Promo carousel enhanced stage stacks slides in one grid area with overflow:hidden' );
 p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{grid-area:slide;min-width:0;transition:transform .52s cubic-bezier(.4,0,.2,1);will-change:transform}' ), 'Promo carousel enhanced slides use grid-area:slide with transition' );
-/* Footer CTA must be absent on Home, Contact, About, and Promo routes. */
-$footer = p4text( $plugin . '/templates/parts/footer.php' );
-p4must( false !== strpos( $footer, "array( 'home', 'contact', 'about', 'promo' )" ), 'footer CTA excluded on home/contact/about/promo routes' );
+/* Footer owns universal dark CTA; page templates must not duplicate it. */
+$footer    = p4text( $plugin . '/templates/parts/footer.php' );
+$skincat   = p4text( $plugin . '/templates/pages/skincare-category.php' );
+$doctors_t = p4text( $plugin . '/templates/pages/doctors.php' );
+$clinic_t  = p4text( $plugin . '/templates/pages/clinic.php' );
+p4must( false === strpos( $footer, 'gloskin_footer_cta_excluded_views' ), 'footer CTA exclusion array absent' );
+p4must( false === strpos( $footer, 'gloskin_show_footer_cta' ), 'footer CTA gate absent' );
+p4must( false !== strpos( $footer, 'gloskin-ui1-dark-consultation' ), 'footer owns universal dark consultation CTA' );
+p4must( false === strpos( $skincat, 'gloskin-ui1-dark-consultation' ), 'skincare-category has no duplicate dark consultation' );
+p4must( false === strpos( $doctors_t, 'gloskin-ui1-dark-consultation' ), 'doctors has no duplicate dark consultation' );
+p4must( false === strpos( $clinic_t, 'gloskin-ui1-dark-consultation' ), 'clinic has no duplicate dark consultation' );
 
 /* About final public structure is contractual: Header -> Story -> Founder ->
    Visi/Misi/Nilai -> END. Internal readiness/provenance state must never be
@@ -194,6 +202,6 @@ foreach ( array( 'Detail tambahan belum tersedia untuk ditampilkan.', 'Informasi
 	p4must( false !== strpos( $t, $copy ), 'translation/interface owner contains: ' . $copy );
 }
 
-p4must( false !== strpos( $k, "const VERSION = '0.7.197'" ) && false !== strpos( $b, 'Version: 0.7.197' ), 'release owners synchronized at 0.7.197' );
+p4must( false !== strpos( $k, "const VERSION = '0.7.206'" ) && false !== strpos( $b, 'Version: 0.7.206' ), 'release owners synchronized at 0.7.206' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo carousel JS-CSS contract + footer CTA routes + About static copy + Shop CSS dep + version 0.7.197)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo carousel JS-CSS contract + footer universal CTA + About static copy + Shop CSS dep + version 0.7.206)\n";
