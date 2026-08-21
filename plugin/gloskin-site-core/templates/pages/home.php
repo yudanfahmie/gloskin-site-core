@@ -1,15 +1,8 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-/*
- * Home canonical reference intentionally uses the shared hero renderer without
- * the campaign video source. The reference is an image-led, full-bleed hero;
- * Home-specific geometry lives in the canonical editorial stylesheet.
- */
-$gloskin_home_hero = isset( $gloskin_context['hero'] ) && is_array( $gloskin_context['hero'] ) ? $gloskin_context['hero'] : array();
-$gloskin_home_hero['mode']    = 'home_reference';
-$gloskin_home_hero['sources'] = array();
-gloskin_ui1_render_hero( $gloskin_home_hero );
+/* Home uses the native managed video hero resolved by TemplateService. */
+gloskin_ui1_render_hero( isset( $gloskin_context['hero'] ) && is_array( $gloskin_context['hero'] ) ? $gloskin_context['hero'] : array() );
 
 ?>
 <section class="gloskin-ui1-section gloskin-home-why" data-gloskin-section="why-gloskin">
@@ -110,22 +103,26 @@ $gloskin_home_testimonials = array_slice( $gloskin_home_testimonials, 0, 4 );
 	<div class="gloskin-ui1-container">
 		<?php gloskin_ui1_render_section_heading( __( 'PIAGAM & PENGHARGAAN', 'gloskin-site-core' ), __( 'Bukti komitmen dan dedikasi tinggi kami dalam menjaga standar mutu pelayanan estetika dan inovasi medis terbaik di Indonesia.', 'gloskin-site-core' ) ); ?>
 		<?php if ( $gloskin_home_piagam ) : ?>
-			<div class="gloskin-home-piagam__rail" data-gloskin-piagam>
-				<?php foreach ( $gloskin_home_piagam as $gloskin_home_achievement ) :
-					$gloskin_home_achievement_title  = trim( (string) ( $gloskin_home_achievement['title'] ?? '' ) );
-					$gloskin_home_achievement_issuer = trim( (string) ( $gloskin_home_achievement['meta']['issuer'] ?? '' ) );
-					$gloskin_home_achievement_year   = trim( (string) ( $gloskin_home_achievement['meta']['year'] ?? '' ) );
-					$gloskin_home_achievement_meta   = implode( ' · ', array_filter( array( $gloskin_home_achievement_issuer, $gloskin_home_achievement_year ) ) );
-					if ( '' === $gloskin_home_achievement_meta ) {
-						$gloskin_home_achievement_meta = trim( wp_trim_words( wp_strip_all_tags( (string) ( $gloskin_home_achievement['excerpt'] ?? '' ) ), 8 ) );
-					}
-				?>
-					<article class="gloskin-home-piagam__card">
-						<?php if ( '' !== $gloskin_home_achievement_title ) : ?><h3 class="gloskin-home-piagam__title"><?php echo esc_html( $gloskin_home_achievement_title ); ?></h3><?php endif; ?>
-						<div class="gloskin-home-piagam__icon" aria-hidden="true">G</div>
-						<?php if ( '' !== $gloskin_home_achievement_meta ) : ?><p class="gloskin-home-piagam__meta"><?php echo esc_html( $gloskin_home_achievement_meta ); ?></p><?php endif; ?>
-					</article>
-				<?php endforeach; ?>
+			<div class="gloskin-home-piagam__marquee" data-gloskin-piagam aria-label="<?php echo esc_attr__( 'Piagam dan penghargaan Gloskin', 'gloskin-site-core' ); ?>">
+				<div class="gloskin-home-piagam__track">
+					<?php for ( $gloskin_home_piagam_loop = 0; $gloskin_home_piagam_loop < 2; $gloskin_home_piagam_loop++ ) : ?>
+						<?php foreach ( $gloskin_home_piagam as $gloskin_home_achievement ) :
+							$gloskin_home_achievement_title  = trim( (string) ( $gloskin_home_achievement['title'] ?? '' ) );
+							$gloskin_home_achievement_issuer = trim( (string) ( $gloskin_home_achievement['meta']['issuer'] ?? '' ) );
+							$gloskin_home_achievement_year   = trim( (string) ( $gloskin_home_achievement['meta']['year'] ?? '' ) );
+							$gloskin_home_achievement_meta   = implode( ' · ', array_filter( array( $gloskin_home_achievement_issuer, $gloskin_home_achievement_year ) ) );
+							if ( '' === $gloskin_home_achievement_meta ) {
+								$gloskin_home_achievement_meta = trim( wp_trim_words( wp_strip_all_tags( (string) ( $gloskin_home_achievement['excerpt'] ?? '' ) ), 8 ) );
+							}
+						?>
+							<article class="gloskin-home-piagam__card" data-gloskin-piagam-item<?php echo 1 === $gloskin_home_piagam_loop ? ' aria-hidden="true"' : ''; ?>>
+								<?php if ( '' !== $gloskin_home_achievement_title ) : ?><h3 class="gloskin-home-piagam__title"><?php echo esc_html( $gloskin_home_achievement_title ); ?></h3><?php endif; ?>
+								<div class="gloskin-home-piagam__icon" aria-hidden="true">G</div>
+								<?php if ( '' !== $gloskin_home_achievement_meta ) : ?><p class="gloskin-home-piagam__meta"><?php echo esc_html( $gloskin_home_achievement_meta ); ?></p><?php endif; ?>
+							</article>
+						<?php endforeach; ?>
+					<?php endfor; ?>
+				</div>
 			</div>
 		<?php else : ?>
 			<?php gloskin_ui1_render_empty_state( 'generic', __( 'Piagam & Penghargaan', 'gloskin-site-core' ), __( 'Detail tambahan belum tersedia untuk ditampilkan.', 'gloskin-site-core' ) ); ?>
