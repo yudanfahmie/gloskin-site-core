@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gloskin Clinic - Treatment</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Palette Perjalanan (Journey Palette) */
+            --bg-white: #ffffff;
+            --bg-peach: #fcf9f7;
+            --bg-blush: #f7ebe8;
+            
+            --header-bg: #f7ebe8; 
+            --text-dark: #2a2a2a;
+            --text-muted: #666666; 
+            --accent-red: #a81c31; 
+            --accent-gold: #c3a378; 
+            --card-cream: #fbf5ef; 
+            --bg-gold-light: #f5eedf; 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-white);
+            color: var(--text-dark);
+            line-height: 1.8; /* Line height ekstra agar teks bernapas */
+        }
+
+        h1, h2, h3, h4, h5, h6 { font-family: 'Playfair Display', serif; font-weight: 500; }
+        a { text-decoration: none; color: inherit; transition: all 0.3s ease; }
+        ul { list-style: none; }
+
+        /* --- NAVBAR --- */
+        header {
+            background-color: var(--header-bg); padding: 15px 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 20px rgba(0,0,0,0.03);
+        }
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--accent-red); letter-spacing: 2px; }
+        .nav-links { display: flex; gap: 40px; align-items: center; }
+        .nav-links a { font-size: 0.85rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dark); }
+        .nav-links a:hover { color: var(--accent-red); }
+        
+        /* Menu Aktif (Pill Merah di TREATMENT) */
+        .nav-links a.active { background-color: var(--accent-red); color: #ffffff; padding: 8px 20px; border-radius: 25px; }
+        .nav-icons { display: flex; gap: 25px; align-items: center; font-size: 1.1rem; }
+        
+        /* --- UTILITY CLASSES --- */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 5%; }
+        .overline { display: block; font-size: 0.85rem; font-weight: 700; color: var(--accent-gold); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 15px; }
+        .btn-solid-red { background-color: var(--accent-red); color: white; padding: 16px 35px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; border: none; cursor: pointer; transition: all 0.3s; display: inline-block; text-align: center; width: max-content; }
+        .btn-solid-red:hover { background-color: #8a1527; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(168,28,49,0.2); }
+
+        /* --- HERO SECTION --- */
+        .section-hero { background-color: var(--bg-blush); padding: 100px 5% 120px; }
+        .hero-container { display: flex; align-items: center; gap: 80px; max-width: 1200px; margin: 0 auto; }
+        .hero-content { flex: 1; }
+        .hero-title { font-size: 4.5rem; letter-spacing: 4px; margin-bottom: 25px; text-transform: uppercase; color: var(--text-dark); line-height: 1.1; }
+        .hero-desc { font-size: 1.1rem; color: var(--text-muted); font-weight: 300; line-height: 1.8; max-width: 450px; }
+        .hero-image { flex: 1; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.06); }
+        .hero-image img { width: 100%; display: block; object-fit: cover; }
+
+        /* --- SPLIT FEATURE SECTIONS (Edge to Edge) --- */
+        .split-section { display: flex; width: 100%; min-height: 600px; }
+        .split-section.reverse { flex-direction: row-reverse; }
+        
+        .split-image { width: 50%; position: relative; overflow: hidden; }
+        .split-image img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; transition: transform 0.7s ease; }
+        .split-section:hover .split-image img { transform: scale(1.05); } /* Efek slow zoom yang estetik saat seksi dihover */
+        
+        .split-content { 
+            width: 50%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            padding: 10% 8%; /* Ruang bernapas ekstra luas */
+        }
+        
+        .split-bg-white { background-color: var(--bg-white); }
+        .split-bg-gold { background-color: var(--bg-gold-light); }
+
+        .split-content .section-title { font-size: 3rem; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-dark); line-height: 1.2; }
+        .split-content .content-desc { font-size: 1.05rem; color: var(--text-muted); font-weight: 300; line-height: 1.8; margin-bottom: 40px; }
+        .split-content .btn-solid-red { width: 100%; max-width: 400px; } /* Tombol panjang seperti di referensi */
+
+        /* --- FINDER SECTION (Temukan Perawatan) --- */
+        .section-finder { padding: 120px 5%; background-color: var(--bg-peach); }
+        .finder-card { background-color: var(--bg-white); border-radius: 24px; padding: 80px 40px; text-align: center; max-width: 1000px; margin: 0 auto; box-shadow: 0 15px 40px rgba(0,0,0,0.03); border: 1px solid #f2e9e4; }
+        
+        .finder-title { font-size: 2.8rem; margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase; }
+        .finder-subtitle { color: var(--text-muted); margin-bottom: 60px; font-weight: 300; }
+        
+        .finder-label { font-size: 0.9rem; font-weight: 600; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 40px; display: block; }
+
+        .finder-grid { display: flex; justify-content: center; gap: 50px; margin-bottom: 60px; flex-wrap: wrap; }
+        .finder-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; max-width: 160px; }
+        
+        .finder-img-wrap { width: 150px; height: 150px; border-radius: 50%; overflow: hidden; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border: 4px solid var(--bg-white); transition: all 0.4s ease; }
+        .finder-item:hover .finder-img-wrap { transform: translateY(-10px); border-color: var(--bg-blush); box-shadow: 0 15px 30px rgba(168,28,49,0.15); }
+        .finder-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .finder-item-text { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--text-dark); text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s; }
+        .finder-item:hover .finder-item-text { color: var(--accent-red); }
+
+        .btn-muted-pill { background-color: #e6a9a9; color: white; padding: 12px 35px; border-radius: 25px; font-weight: 600; font-size: 0.9rem; border: none; letter-spacing: 1px; margin-bottom: 20px; cursor: pointer; transition: 0.3s; }
+        .btn-muted-pill:hover { background-color: var(--accent-red); }
+        .finder-note { font-size: 0.8rem; color: #999; }
+
+        /* --- FAQ BANNER (Informasi di Situs) --- */
+        .section-faq { background-color: var(--bg-peach); padding: 0 5% 100px; }
+        .faq-card { background-color: var(--bg-white); border-top: 1px solid #ebdcd5; border-bottom: 1px solid #ebdcd5; padding: 60px 0; display: flex; justify-content: space-between; align-items: center; max-width: 1000px; margin: 0 auto; gap: 40px; }
+        .faq-text h3 { font-size: 2.2rem; line-height: 1.2; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .faq-text p { color: var(--text-muted); font-weight: 300; }
+        .faq-link { color: var(--accent-red); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 0.9rem; white-space: nowrap; }
+        .faq-link:hover { color: var(--accent-gold); }
+
+        /* --- CTA BANNER MERAH --- */
+        .section-cta { background-color: var(--accent-red); color: white; padding: 80px 5%; }
+        .cta-container { display: flex; justify-content: space-between; align-items: center; gap: 40px; max-width: 1200px; margin: 0 auto; }
+        .cta-content { flex: 2; }
+        .cta-content .overline { color: rgba(255,255,255,0.8); }
+        .cta-content .section-title { color: white; margin-bottom: 15px; font-size: 2.5rem; letter-spacing: 2px; text-transform: uppercase; }
+        .cta-content p { font-size: 1.05rem; font-weight: 300; opacity: 0.9; }
+        .cta-action { flex: 1; text-align: right; }
+        .btn-white { background-color: white; color: var(--accent-red); padding: 16px 40px; border-radius: 30px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; display: inline-block; box-shadow: 0 10px 20px rgba(0,0,0,0.1); transition: 0.3s; }
+        .btn-white:hover { background-color: var(--bg-peach); transform: translateY(-3px); }
+
+        /* --- FOOTER --- */
+        footer { background-color: var(--bg-peach); padding: 80px 5% 30px; border-top: 1px solid #ebdcd5;}
+        .footer-container { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 50px; max-width: 1200px; margin: 0 auto 50px; }
+        .footer-logo p { margin-top: 20px; font-size: 0.95rem; color: var(--text-muted); max-width: 320px; }
+        .footer-col h5 { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-col ul { display: flex; flex-direction: column; gap: 15px; }
+        .footer-col a { font-size: 0.95rem; color: var(--text-muted); }
+        .footer-col a:hover { color: var(--accent-red); }
+        .footer-bottom { text-align: center; padding-top: 30px; border-top: 1px solid #ebdcd5; font-size: 0.9rem; color: var(--text-muted); }
+
+        /* --- FLOATING WA BUTTON --- */
+        .float-wa { position: fixed; bottom: 40px; right: 40px; background-color: var(--accent-red); color: white; width: 65px; height: 65px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 32px; box-shadow: 0 10px 25px rgba(168, 28, 49, 0.4); z-index: 1000; transition: transform 0.3s ease; }
+        .float-wa:hover { transform: scale(1.1) translateY(-5px); color: white; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            .hero-title { font-size: 3.5rem; }
+            .split-content .section-title { font-size: 2.5rem; }
+            .finder-grid { gap: 30px; }
+            .faq-card { flex-direction: column; text-align: center; gap: 20px; padding: 50px 20px; }
+            .footer-container { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero-container { flex-direction: column; text-align: center; }
+            .hero-desc { margin: 0 auto; }
+            
+            /* Split Section pada mobile menjadi tertumpuk */
+            .split-section, .split-section.reverse { flex-direction: column; min-height: auto; }
+            .split-image { width: 100%; height: 400px; }
+            .split-content { width: 100%; padding: 80px 5%; text-align: center; align-items: center; }
+            
+            .finder-card { padding: 60px 20px; }
+            .finder-title { font-size: 2.2rem; }
+            .cta-container { flex-direction: column; text-align: center; }
+            .cta-action { text-align: center; margin-top: 20px; }
+            .footer-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="logo">GLOSKIN</div>
+        <nav class="nav-links">
+            <a href="#" class="active">Treatment</a> <!-- Menu Aktif di Treatment -->
+            <a href="#">Promo</a>
+            <a href="#">Skincare</a>
+            <a href="#">Tentang Kami</a>
+        </nav>
+        <div class="nav-icons">
+            <a href="#"><i class="fas fa-search"></i></a>
+            <a href="#"><i class="far fa-user"></i></a>
+            <a href="#"><i class="far fa-heart"></i></a>
+            <a href="#"><i class="fas fa-shopping-bag"></i></a>
+            <a href="#"><img src="https://flagcdn.com/w20/id.png" alt="ID" style="width: 20px;"></a>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="section-hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <span class="overline">TREATMENT</span>
+                <h1 class="hero-title">PERAWATAN</h1>
+                <p class="hero-desc">Pelajari informasi perawatan Gloskin sebelum menentukan langkah konsultasi.</p>
+            </div>
+            <div class="hero-image">
+                <img src="https://images.unsplash.com/photo-1615397323136-1e0e8f702336?auto=format&fit=crop&w=800&q=80" alt="Gloskin Perawatan">
+            </div>
+        </div>
+    </section>
+
+    <!-- SPLIT FEATURE 1: Jerawat (Image Left) -->
+    <div class="split-section split-bg-white">
+        <div class="split-image">
+            <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1000&q=80" alt="Jerawat & Bekas Jerawat">
+        </div>
+        <div class="split-content">
+            <span class="overline">PERAWATAN</span>
+            <h2 class="section-title">JERAWAT & BEKAS JERAWAT</h2>
+            <p class="content-desc">Temukan pilihan perawatan yang dirancang khusus untuk mengatasi masalah jerawat hingga ke akarnya dan memudarkan bekas luka (scar) demi kulit yang lebih bersih.</p>
+            <a href="#" class="btn-solid-red">Jelajahi Solusi</a>
+        </div>
+    </div>
+
+    <!-- SPLIT FEATURE 2: Flek (Image Right / Reverse) -->
+    <div class="split-section reverse split-bg-gold">
+        <div class="split-image">
+            <img src="https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&w=1000&q=80" alt="Flek & Pigmentasi">
+        </div>
+        <div class="split-content">
+            <span class="overline">PERAWATAN</span>
+            <h2 class="section-title">FLEK & PIGMENTASI</h2>
+            <p class="content-desc">Kembalikan warna kulit merata dengan teknologi estetik mutakhir yang menargetkan hiperpigmentasi, melasma, serta flek hitam akibat paparan sinar matahari.</p>
+            <a href="#" class="btn-solid-red">Jelajahi Solusi</a>
+        </div>
+    </div>
+
+    <!-- SPLIT FEATURE 3: Aging & Kontur (Image Left) -->
+    <div class="split-section split-bg-white">
+        <div class="split-image">
+            <img src="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=1000&q=80" alt="Aging & Kontur">
+        </div>
+        <div class="split-content">
+            <span class="overline">PERAWATAN</span>
+            <h2 class="section-title">AGING & KONTUR</h2>
+            <p class="content-desc">Tingkatkan elastisitas kulit dan raih kontur wajah (V-shape) yang lebih ideal dengan perawatan pengencangan kulit non-invasif dari dokter ahli kami.</p>
+            <a href="#" class="btn-solid-red">Jelajahi Solusi</a>
+        </div>
+    </div>
+
+    <!-- SPLIT FEATURE 4: Skin Quality (Image Right / Reverse) -->
+    <div class="split-section reverse split-bg-gold">
+        <div class="split-image">
+            <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1000&q=80" alt="Skin Quality & Barrier">
+        </div>
+        <div class="split-content">
+            <span class="overline">PERAWATAN</span>
+            <h2 class="section-title">SKIN QUALITY & BARRIER</h2>
+            <p class="content-desc">Perkuat lapisan perlindungan kulit (Skin Barrier) dan perbaiki tekstur kulit secara keseluruhan dengan nutrisi intensif untuk kilau yang sehat alami.</p>
+            <a href="#" class="btn-solid-red">Jelajahi Solusi</a>
+        </div>
+    </div>
+
+    <!-- FINDER SECTION -->
+    <section class="section-finder">
+        <div class="finder-card">
+            <h2 class="finder-title">TEMUKAN PERAWATAN YANG TEPAT</h2>
+            <p class="finder-subtitle">Informasi seputar masalah dan prosedur Anda untuk memandu Anda menemukan solusi ideal.</p>
+            
+            <span class="finder-label">PILIH FOKUS UTAMA ANDA</span>
+            
+            <div class="finder-grid">
+                <!-- Item 1 -->
+                <div class="finder-item">
+                    <div class="finder-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=300&q=80" alt="Jerawat">
+                    </div>
+                    <span class="finder-item-text">JERAWAT & BEKAS JERAWAT</span>
+                </div>
+                <!-- Item 2 -->
+                <div class="finder-item">
+                    <div class="finder-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&w=300&q=80" alt="Flek">
+                    </div>
+                    <span class="finder-item-text">FLEK & PIGMENTASI</span>
+                </div>
+                <!-- Item 3 -->
+                <div class="finder-item">
+                    <div class="finder-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=300&q=80" alt="Aging">
+                    </div>
+                    <span class="finder-item-text">AGING & KONTUR</span>
+                </div>
+                <!-- Item 4 -->
+                <div class="finder-item">
+                    <div class="finder-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=300&q=80" alt="Barrier">
+                    </div>
+                    <span class="finder-item-text">SKIN QUALITY & BARRIER</span>
+                </div>
+            </div>
+
+            <button class="btn-muted-pill">Cari Perawatan Yang Tepat</button>
+            <p class="finder-note">Pilihan perawatan ini dapat Anda diskusikan lebih lanjut saat konsultasi.</p>
+        </div>
+    </section>
+
+    <!-- FAQ BANNER -->
+    <section class="section-faq">
+        <div class="faq-card">
+            <div class="faq-text">
+                <span class="overline">EDUKASI</span>
+                <h3>INFORMASI DI SITUS MEMBANTU<br>MENYIAPKAN PERTANYAAN SEBELUM KONSULTASI.</h3>
+                <p>Gloskin merekomendasikan layanan konsultasi langsung di klinik. Temukan klinik terdekat dan mulai jadwalkan kunjungan Anda.</p>
+            </div>
+            <a href="#" class="faq-link">FAQ KAMI <i class="fas fa-arrow-right" style="margin-left: 8px;"></i></a>
+        </div>
+    </section>
+
+    <!-- CTA BANNER MERAH -->
+    <section class="section-cta">
+        <div class="cta-container">
+            <div class="cta-content">
+                <span class="overline">LOKASI</span>
+                <h2 class="section-title">PILIH KLINIK GLOSKIN TERDEKAT DAN MULAI KONSULTASI.</h2>
+                <p>Temukan cabang yang sesuai dengan tempat tinggal Anda, dan rencanakan langkah pertama perjalanan estetika Anda bersama kami.</p>
+            </div>
+            <div class="cta-action">
+                <a href="#" class="btn-white">Hubungi Kami</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">
+                <h2 class="logo">GLOSKIN</h2>
+                <p>Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengedepankan konsultasi dan penanganan dokter di setiap kliniknya.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Layanan</h5>
+                <ul>
+                    <li><a href="#">Perawatan</a></li>
+                    <li><a href="#">Promo</a></li>
+                    <li><a href="#">Skincare</a></li>
+                    <li><a href="#">Belanja</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Informasi</h5>
+                <ul>
+                    <li><a href="#">Tentang</a></li>
+                    <li><a href="#">Dokter</a></li>
+                    <li><a href="#">Insight</a></li>
+                    <li><a href="#">Kontak</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Jaringan Klinik</h5>
+                <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <li><a href="#">Kebayoran Baru</a></li>
+                    <li><a href="#">Tebet</a></li>
+                    <li><a href="#">Bekasi</a></li>
+                    <li><a href="#">Cibubur</a></li>
+                    <li><a href="#">Serpong</a></li>
+                    <li><a href="#">Surabaya</a></li>
+                    <li><a href="#">Banjarmasin</a></li>
+                    <li><a href="#">Balikpapan</a></li>
+                    <li><a href="#">Denpasar</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Gloskin.</p>
+        </div>
+    </footer>
+
+    <!-- FLOATING WHATSAPP -->
+    <a href="#" class="float-wa" title="Hubungi Kami di WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+</body>
+</html>
