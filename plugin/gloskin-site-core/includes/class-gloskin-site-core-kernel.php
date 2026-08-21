@@ -56,7 +56,6 @@ final class Gloskin_Site_Core_Kernel {
 
 			$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();
 			$lifecycle->register_upgrade();
-			$lifecycle->register_about_reconciliation();
 			$lifecycle->register_historical_upgrade_admins( $assets, $this->plugin_file );
 
 			$media_cleanup = new Gloskin_Site_Core_Media_Cleanup_Admin( $assets );
