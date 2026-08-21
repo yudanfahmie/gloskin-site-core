@@ -125,6 +125,6 @@ $curated       = false !== $curated_start && false !== $curated_end ? substr( $t
 home_must( false !== strpos( $curated, "'gloskin_treatment_feature_on_home'" ) && false !== strpos( $curated, "'post__not_in'   => \$exclude" ) && false !== strpos( $curated, 'array_slice( $cards, 0, 6 )' ), 'canonical Home treatment selection remains deterministic and bounded' );
 home_must( false !== strpos( $home, 'gloskin_ui1_render_hero' ) && false === strpos( $home, 'object-fit:cover' ), 'Home template does not crop or duplicate video presentation' );
 
-home_must( false !== strpos( $kernel, "const VERSION = '0.7.188'" ) && false !== strpos( $bootstrap, 'Version: 0.7.188' ), 'release owners remain synchronized before final batch bump' );
+home_must( false !== strpos( $kernel, "const VERSION = '0.7.189'" ) && false !== strpos( $bootstrap, 'Version: 0.7.189' ), 'release owners are synchronized at 0.7.189' );
 
-echo "home-readiness-contract.php: OK (central empty state, persistent Home shells, graceful media, specialized states preserved, Finalizer integrity separated)\n";
+echo "home-readiness-contract.php: OK (central empty state, persistent Home shells, graceful media, specialized states preserved, Finalizer integrity separated, version 0.7.189)\n";
