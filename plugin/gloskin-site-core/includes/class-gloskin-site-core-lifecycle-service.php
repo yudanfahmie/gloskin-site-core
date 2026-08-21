@@ -13,6 +13,8 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 	const BASE_SCHEMA_VERSION = '0.2.2';
 	const SCHEMA_VERSION      = '0.3.0';
 	const VERSION_OPTION      = 'gloskin_site_core_schema_version';
+	const ABOUT_RECONCILIATION_OPTION  = 'gloskin_site_core_about_reconciliation_v1_state';
+	const ABOUT_RECONCILIATION_VERSION = '2026-08-21.1';
 
 	/**
 	 * Register narrowly scoped upgrades for already-active installs.
@@ -24,6 +26,151 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 	 */
 	public function register_upgrade() {
 		add_action( 'admin_init', array( $this, 'maybe_upgrade' ), 5 );
+	}
+
+	/**
+	 * Register the one bounded About content reconciliation on normal init.
+	 * Existing editor-owned values are never overwritten and a completed state
+	 * is terminal. This is deliberately separate from historical migrations so
+	 * resolving the final About fields cannot reopen Phase-3/Phase-4 runners.
+	 *
+	 * @return void
+	 */
+	public function register_about_reconciliation() {
+		add_action( 'init', array( $this, 'maybe_reconcile_about_content' ), 30 );
+	}
+
+	/**
+	 * Fill only genuinely empty About fields from factual, documented sources.
+	 *
+	 * Story/founder/current values are grounded in Gloskin's current first-party
+	 * pages. Vision and mission preserve documented historical Gloskin wording.
+	 * Founder media reuses the existing canonical dr. Nanang doctor thumbnail;
+	 * no attachment is created or copied here. If any required target cannot be
+	 * resolved, the state records the exact missing field for operator/release
+	 * reporting while the public template remains free of implementation text.
+	 *
+	 * @return void
+	 */
+	public function maybe_reconcile_about_content() {
+		$state = get_option( self::ABOUT_RECONCILIATION_OPTION, array() );
+		if ( is_array( $state )
+			&& self::ABOUT_RECONCILIATION_VERSION === (string) ( $state['version'] ?? '' )
+			&& 'complete' === (string) ( $state['status'] ?? '' ) ) {
+			return;
+		}
+
+		$page = get_page_by_path( 'about', OBJECT, 'page' );
+		if ( ! ( $page instanceof WP_Post ) || 'trash' === $page->post_status ) {
+			update_option(
+				self::ABOUT_RECONCILIATION_OPTION,
+				array(
+					'version' => self::ABOUT_RECONCILIATION_VERSION,
+					'status'  => 'needs_attention',
+					'missing' => array( 'about_page' ),
+				),
+				false
+			);
+			return;
+		}
+
+		$mutations = array();
+		$defaults  = $this->about_reconciliation_defaults();
+
+		if ( '' === trim( (string) $page->post_content ) ) {
+			$result = wp_update_post(
+				array(
+					'ID'           => (int) $page->ID,
+					'post_content' => $defaults['post_content'],
+				),
+				true
+			);
+			if ( ! is_wp_error( $result ) ) {
+				$mutations[] = 'post_content';
+			}
+		}
+
+		$meta_defaults = array(
+			'gloskin_about_founder_name'  => $defaults['founder_name'],
+			'gloskin_about_founder_role'  => $defaults['founder_role'],
+			'gloskin_about_founder_story' => $defaults['founder_story'],
+			'gloskin_about_vision'         => $defaults['vision'],
+			'gloskin_about_mission'        => $defaults['mission'],
+			'gloskin_about_values'         => $defaults['values'],
+		);
+		foreach ( $meta_defaults as $key => $value ) {
+			if ( '' !== trim( (string) get_post_meta( $page->ID, $key, true ) ) ) {
+				continue;
+			}
+			update_post_meta( $page->ID, $key, $value );
+			$mutations[] = $key;
+		}
+
+		$founder_media_id = absint( get_post_meta( $page->ID, 'gloskin_about_founder_media_id', true ) );
+		if ( ! $founder_media_id ) {
+			$founder = get_page_by_path(
+				'dr-nanang-masrani-m-biomed-aam',
+				OBJECT,
+				Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE
+			);
+			if ( $founder instanceof WP_Post ) {
+				$canonical_media_id = absint( get_post_thumbnail_id( $founder->ID ) );
+				if ( $canonical_media_id ) {
+					update_post_meta( $page->ID, 'gloskin_about_founder_media_id', $canonical_media_id );
+					$mutations[] = 'gloskin_about_founder_media_id';
+				}
+			}
+		}
+
+		$verified_page = get_post( $page->ID );
+		$missing       = array();
+		if ( ! ( $verified_page instanceof WP_Post ) || '' === trim( (string) $verified_page->post_content ) ) {
+			$missing[] = 'post_content';
+		}
+		foreach ( array_keys( $meta_defaults ) as $key ) {
+			if ( '' === trim( (string) get_post_meta( $page->ID, $key, true ) ) ) {
+				$missing[] = $key;
+			}
+		}
+		if ( ! absint( get_post_meta( $page->ID, 'gloskin_about_founder_media_id', true ) ) ) {
+			$missing[] = 'gloskin_about_founder_media_id';
+		}
+
+		update_option(
+			self::ABOUT_RECONCILIATION_OPTION,
+			array(
+				'version'   => self::ABOUT_RECONCILIATION_VERSION,
+				'status'    => empty( $missing ) ? 'complete' : 'needs_attention',
+				'missing'   => $missing,
+				'mutations' => array_values( array_unique( $mutations ) ),
+				'sources'   => array(
+					'current_story_founder_values' => 'https://gloskin.id/mengapa-harus-gloskin-',
+					'current_founder_profile'      => 'https://gloskin.id/founder-and-dokter-gloskin',
+					'vision_history'               => 'https://diahask.com/gloskin-fdx-beauty/',
+					'mission_history'              => 'https://aiyukiaikawaii.blogspot.com/2018/03/?m=0',
+					'founder_media'                => 'canonical gloskin_doctor thumbnail: dr-nanang-masrani-m-biomed-aam',
+				),
+			),
+			false
+		);
+	}
+
+	/**
+	 * Factual About defaults used only when the managed WordPress fields are
+	 * empty. Once written, normal editor content remains authoritative.
+	 *
+	 * @return array<string,string>
+	 */
+	private function about_reconciliation_defaults() {
+		return array(
+			'post_content' => 'Gloskin Aesthetic, Anti-Aging & Hair Clinic didirikan oleh dr. Nanang Masrani, M.Biomed (AAM) sebagai klinik aesthetic berbasis medis. Dengan pendekatan evidence-based dan konsep Skin Barrier & Quality Xpert, Gloskin berfokus pada peningkatan kualitas kulit, kesehatan rambut, serta hasil perawatan yang aman, natural, dan berkelanjutan.',
+			'founder_name' => 'dr. Nanang Masrani, M.Biomed (AAM)',
+			'founder_role' => 'Pendiri & Medical Director',
+			'founder_story' => 'dr. Nanang mulai menekuni dunia estetika sejak 2007 dan mendirikan GLOSKIN Aesthetic Clinic pada 2012. Dengan latar belakang Magister Biomedik (Anti-Aging Medicine) serta pelatihan internasional di Eropa, Amerika, dan Asia, beliau mengembangkan Gloskin dengan pendekatan medical aesthetic berbasis evidence-based dan konsep Skin Barrier & Quality Xpert.',
+			'vision'       => 'Menjadi Sahabat Terbaik Perawatan Wajah dan Tubuh.',
+			'mission'      => 'Memberikan pelayanan perawatan kesehatan wajah dan tubuh yang profesional serta berkualitas tinggi dan memberikan solusi kesehatan wajah dan tubuh yang aman bagi masyarakat.',
+			'values'       => 'Evidence-based · Aman · Natural · Berkelanjutan',
+		);
 	}
 
 	/**
