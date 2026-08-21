@@ -50,7 +50,7 @@
 .gloskin-ui1 .gloskin-ui1-insight-single__related-head h2{margin:0;font-size:clamp(1.55rem,2.4vw,2.15rem);line-height:1.16}
 
 /* Home composition. */
-.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:clamp(3rem,6vw,5.5rem)}
+.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:min(var(--gloskin-section),5.5rem)}
 .gloskin-home-why__grid,.gloskin-about-story__grid,.gloskin-about-founder__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(2rem,5vw,5rem);align-items:center}
 .gloskin-home-why__media,.gloskin-about-story__media,.gloskin-about-founder__media{min-width:0;overflow:hidden;border-radius:1.5rem}
 .gloskin-home-why__media,.gloskin-about-story__media{aspect-ratio:4/3}
@@ -58,6 +58,7 @@
 .gloskin-home-why__image,.gloskin-home-why__media>img,.gloskin-about-story__image,.gloskin-about-founder__image{display:block;width:100%;height:100%;object-fit:cover}
 .gloskin-home-why__copy h2,.gloskin-about-story__copy h2,.gloskin-about-founder__copy h2{margin-top:0}
 .gloskin-home-why__copy ul{display:grid;gap:.8rem;margin:1.25rem 0 0;padding-left:1.25rem}
+.gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{margin-bottom:clamp(1.5rem,3vw,2.5rem)}
 .gloskin-home-treatments__grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 .gloskin-home-testimonials__rows{display:grid;gap:1rem}
 .gloskin-home-testimonial{display:grid;grid-template-columns:auto minmax(0,1fr);gap:1.1rem;align-items:center;margin:0;padding:1.25rem;border:1px solid currentColor;border-radius:1rem}
@@ -65,7 +66,7 @@
 .gloskin-home-testimonial blockquote,.gloskin-home-testimonial blockquote p{margin:0}
 .gloskin-home-testimonial figcaption{display:flex;flex-wrap:wrap;gap:.6rem;align-items:baseline;margin-top:.6rem}
 .gloskin-home-piagam__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}
-.gloskin-home-piagam__card{margin:0}
+.gloskin-home-piagam__card{overflow:hidden;margin:0;border-radius:1rem}
 .gloskin-home-piagam__image{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:contain}
 
 /* Promo final composition. */
