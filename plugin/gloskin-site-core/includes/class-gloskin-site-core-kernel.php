@@ -18,9 +18,7 @@ final class Gloskin_Site_Core_Kernel {
 	/** @var array<int, object> */
 	private $services = array();
 
-	/**
-	 * @param string $plugin_file Main plugin file.
-	 */
+	/** @param string $plugin_file Main plugin file. */
 	public function __construct( $plugin_file ) {
 		$this->plugin_file = $plugin_file;
 	}
@@ -51,10 +49,6 @@ final class Gloskin_Site_Core_Kernel {
 
 			$translation = new Gloskin_Site_Core_Translation( $this->plugin_file, self::VERSION );
 			$translation->register_admin();
-			$language = new Gloskin_Site_Core_Language( $this->plugin_file );
-			$language->register_admin();
-			$language_projection = new Gloskin_Site_Core_Language_Projection();
-			$language_projection->register_admin();
 
 			$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();
 			$lifecycle->register_upgrade();
@@ -90,8 +84,6 @@ final class Gloskin_Site_Core_Kernel {
 			$this->services[] = $media_compatibility;
 			$this->services[] = $admin;
 			$this->services[] = $translation;
-			$this->services[] = $language;
-			$this->services[] = $language_projection;
 			$this->services[] = $lifecycle;
 			$this->services[] = $media_cleanup;
 			$this->services[] = $content_finalizer;
@@ -174,14 +166,12 @@ final class Gloskin_Site_Core_Kernel {
 	public static function activate() {
 		require_once __DIR__ . '/class-gloskin-site-core-content-service.php';
 		require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
-
 		$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();
 		$lifecycle->activate();
 	}
 
 	public static function deactivate() {
 		require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
-
 		$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();
 		$lifecycle->deactivate();
 	}

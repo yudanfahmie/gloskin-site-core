@@ -2,8 +2,9 @@
 /**
  * Lightweight companion English translation registry, storage and admin console.
  *
- * Canonical Indonesian content is never mutated. English is stored only in
- * companion post/term meta or the interface option map.
+ * Canonical Indonesian content is never mutated. English values stay in the
+ * existing companion meta; freshness state records which canonical source each
+ * saved value was generated or edited against.
  *
  * @package GloskinSiteCore
  */
@@ -13,13 +14,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Translation {
-	const POST_META_KEY   = '_gloskin_translation_en';
-	const TERM_META_KEY   = '_gloskin_translation_en';
-	const INTERFACE_OPTION = 'gloskin_translation_en_interface';
-	const ADMIN_SLUG      = 'gloskin-translation';
-	const CAPABILITY      = 'manage_options';
-	const AJAX_SAVE       = 'gloskin_translation_save';
-	const NONCE_ACTION    = 'gloskin_translation_save';
+	const POST_META_KEY       = '_gloskin_translation_en';
+	const TERM_META_KEY       = '_gloskin_translation_en';
+	const POST_STATE_META_KEY = '_gloskin_translation_en_state';
+	const TERM_STATE_META_KEY = '_gloskin_translation_en_state';
+	const INTERFACE_OPTION    = 'gloskin_translation_en_interface';
+	const BOOTSTRAP_OPTION    = 'gloskin_translation_en_state_bootstrap';
+	const ADMIN_SLUG          = 'gloskin-translation';
+	const CAPABILITY          = 'manage_options';
+	const AJAX_SAVE           = 'gloskin_translation_save';
+	const NONCE_ACTION        = 'gloskin_translation_save';
 
 	/** @var string */
 	private $plugin_file;
@@ -30,28 +34,40 @@ final class Gloskin_Site_Core_Translation {
 	/** @var string */
 	private $admin_hook = '';
 
-	/**
-	 * @param string $plugin_file Main plugin file.
-	 * @param string $version Runtime version.
-	 */
+	/** @param string $plugin_file Main plugin file. @param string $version Runtime version. */
 	public function __construct( $plugin_file, $version ) {
 		$this->plugin_file = (string) $plugin_file;
 		$this->version     = (string) $version;
 	}
 
-	/** Register the admin-only surface. */
+	/** Register the one translation administration/save owner. */
 	public function register_admin() {
 		add_action( 'admin_menu', array( $this, 'register_menu' ), 10 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ), 30 );
+		add_action( 'admin_init', array( $this, 'bootstrap_legacy_freshness' ), 20 );
 		add_action( 'wp_ajax_' . self::AJAX_SAVE, array( $this, 'ajax_save' ) );
 	}
 
 	/** @return array<string,mixed> */
 	public static function registry() {
 		$base = array( 'post_title' => 'Title', 'post_excerpt' => 'Excerpt', 'post_content' => 'Content' );
+		$page_meta = array(
+			'gloskin_hero_heading' => array( 'label' => 'Hero heading', 'rich' => false ),
+			'gloskin_hero_copy' => array( 'label' => 'Hero copy', 'rich' => false ),
+			'gloskin_hero_cta_label' => array( 'label' => 'Hero CTA label', 'rich' => false ),
+			'gloskin_why_heading' => array( 'label' => 'Why Gloskin heading', 'rich' => false ),
+			'gloskin_why_lead' => array( 'label' => 'Why Gloskin lead', 'rich' => false ),
+			'gloskin_why_primary_title' => array( 'label' => 'Why Gloskin primary title', 'rich' => false ),
+			'gloskin_why_primary_copy' => array( 'label' => 'Why Gloskin primary copy', 'rich' => false ),
+			'gloskin_about_vision' => array( 'label' => 'Vision', 'rich' => true ),
+			'gloskin_about_mission' => array( 'label' => 'Mission', 'rich' => true ),
+			'gloskin_about_values' => array( 'label' => 'Values', 'rich' => true ),
+			'gloskin_about_founder_role' => array( 'label' => 'Founder role', 'rich' => false ),
+			'gloskin_about_founder_story' => array( 'label' => 'Founder story', 'rich' => true ),
+		);
 		return array(
 			'post_types' => array(
-				'page' => array( 'label' => 'Page', 'fields' => $base, 'meta' => array() ),
+				'page' => array( 'label' => 'Page', 'fields' => $base, 'meta' => $page_meta ),
 				Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE => array(
 					'label' => 'Treatment', 'fields' => $base,
 					'meta' => array(
@@ -98,9 +114,7 @@ final class Gloskin_Site_Core_Translation {
 				),
 				'product' => array( 'label' => 'Product', 'fields' => $base, 'meta' => array() ),
 				Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE => array(
-					'label' => 'Consultation',
-					'fields' => array( 'post_title' => 'Question' ),
-					'meta' => array(),
+					'label' => 'Consultation', 'fields' => array( 'post_title' => 'Question' ), 'meta' => array(),
 				),
 			),
 			'taxonomies' => array(
@@ -112,12 +126,7 @@ final class Gloskin_Site_Core_Translation {
 		);
 	}
 
-	/**
-	 * Small Gloskin-owned frontend interface registry. Default EN values are
-	 * presentation defaults and can be overridden by the saved option map.
-	 *
-	 * @return array<string,array{source:string,en:string}>
-	 */
+	/** Small Gloskin-owned frontend interface registry. */
 	public static function interface_registry() {
 		$pairs = array(
 			'home' => array( 'Beranda', 'Home' ),
@@ -154,8 +163,6 @@ final class Gloskin_Site_Core_Translation {
 			'clinic_network' => array( 'Jaringan Klinik', 'Clinic Network' ),
 			'next_step' => array( 'Langkah Berikutnya', 'Next Step' ),
 			'choose_clinic' => array( 'Pilih Klinik', 'Choose Clinic' ),
-
-			/* Current shared frontend shell/header/utility labels. */
 			'skip_main' => array( 'Lewati ke konten utama', 'Skip to main content' ),
 			'home_label' => array( 'Beranda Gloskin', 'Gloskin Home' ),
 			'primary_navigation' => array( 'Navigasi utama', 'Primary navigation' ),
@@ -184,8 +191,6 @@ final class Gloskin_Site_Core_Translation {
 			'contact_gloskin' => array( 'Hubungi Gloskin', 'Contact Gloskin' ),
 			'open_page' => array( 'Buka halaman', 'Open page' ),
 			'scroll_next' => array( 'Gulir ke konten berikutnya', 'Scroll to the next section' ),
-
-			/* Current Promo controls and shared Promo rendering. */
 			'promo_navigation' => array( 'Navigasi promo', 'Promotion navigation' ),
 			'promo_previous' => array( 'Promo sebelumnya', 'Previous promotion' ),
 			'promo_next' => array( 'Promo berikutnya', 'Next promotion' ),
@@ -200,8 +205,6 @@ final class Gloskin_Site_Core_Translation {
 			'campaign' => array( 'Kampanye', 'Campaign' ),
 			'choose_promo_poster' => array( 'Pilih poster promo', 'Choose promotion poster' ),
 			'promo_poster_position' => array( 'Poster %1$d: %2$s', 'Poster %1$d: %2$s' ),
-
-			/* Current product/card controls. */
 			'view_detail' => array( 'Lihat Detail', 'View Details' ),
 			'view_detail_named' => array( 'Lihat detail %s', 'View details for %s' ),
 			'view_product' => array( 'Lihat Produk', 'View Product' ),
@@ -211,8 +214,6 @@ final class Gloskin_Site_Core_Translation {
 			'choose_variant' => array( 'Pilih Varian', 'Choose Variant' ),
 			'close_variant_picker' => array( 'Tutup pilih varian', 'Close variant selector' ),
 			'loading' => array( 'Memuat…', 'Loading…' ),
-
-			/* Current Treatments hub/detail presentation. */
 			'treatment_finder_title' => array( 'Temukan Perawatan yang Tepat', 'Find the Right Treatment' ),
 			'treatment_finder_copy' => array( 'Pilih fokus dan keluhan yang ingin Anda eksplorasi sebelum melanjutkan ke detail perawatan.', 'Choose the focus and concerns you want to explore before viewing treatment details.' ),
 			'choose_treatment_focus' => array( 'Pilih fokus perawatan', 'Choose treatment focus' ),
@@ -241,8 +242,6 @@ final class Gloskin_Site_Core_Translation {
 			'all_treatments' => array( 'Semua Perawatan', 'All Treatments' ),
 			'treatment_band_copy' => array( 'Temukan pilihan perawatan yang relevan dan diskusikan dengan dokter Gloskin saat konsultasi.', 'Explore relevant treatment options and discuss them with a Gloskin doctor during consultation.' ),
 			'explore_solutions' => array( 'Jelajahi Solusi', 'Explore Solutions' ),
-
-			/* Current Skincare/category presentation. */
 			'shop_gloskin' => array( 'BELANJA GLOSKIN', 'SHOP GLOSKIN' ),
 			'complete_skincare' => array( 'Lengkapi rutinitas skincare Anda.', 'Complete your skincare routine.' ),
 			'explore_collection' => array( 'Jelajahi seluruh koleksi, lihat detail produk, harga, dan pilihan yang tersedia di halaman Belanja.', 'Explore the full collection, product details, prices, and available options on the Shop page.' ),
@@ -269,8 +268,6 @@ final class Gloskin_Site_Core_Translation {
 			'choose_next_path' => array( 'Pilih jalur yang paling sesuai dengan apa yang ingin Anda lihat berikutnya.', 'Choose the path that best matches what you want to view next.' ),
 			'all_categories' => array( 'Semua Kategori', 'All Categories' ),
 			'open_shop' => array( 'Buka Belanja', 'Open Shop' ),
-
-			/* Current Shop discovery/results. */
 			'price_unavailable' => array( 'Harga belum tersedia', 'Price unavailable' ),
 			'product_filters' => array( 'Penyaring produk', 'Product filters' ),
 			'search_products' => array( 'Cari produk', 'Search products' ),
@@ -294,8 +291,6 @@ final class Gloskin_Site_Core_Translation {
 			'reset_search' => array( 'Reset pencarian', 'Reset search' ),
 			'no_products' => array( 'Belum ada produk yang dapat ditampilkan', 'No products are available to display yet' ),
 			'products_appear' => array( 'Produk akan tampil di sini setelah item tersedia dalam katalog.', 'Products will appear here once items are available in the catalog.' ),
-
-			/* Current clinic/contact/doctor presentation. */
 			'clinic_map' => array( 'Peta %s', '%s map' ),
 			'clinic_gloskin' => array( 'Klinik Gloskin', 'Gloskin Clinic' ),
 			'clinic_branch_info' => array( 'Lihat informasi cabang dan kanal kontak yang tersedia.', 'View branch information and available contact channels.' ),
@@ -360,8 +355,6 @@ final class Gloskin_Site_Core_Translation {
 			'contact_questions' => array( 'Gunakan halaman kontak untuk menanyakan jadwal, lokasi, atau informasi lain yang Anda perlukan.', 'Use the contact page to ask about schedules, locations, or other information you need.' ),
 			'choose_profile_or_location' => array( 'Pilih jalur berdasarkan profil atau lokasi yang tersedia.', 'Choose a path based on an available profile or location.' ),
 			'open_branch_or_contact' => array( 'Buka cabang yang relevan atau hubungi Gloskin untuk informasi lebih lanjut.', 'Open a relevant branch or contact Gloskin for more information.' ),
-
-			/* Current Insight presentation. */
 			'insight_pagination' => array( 'Navigasi halaman insight', 'Insight page navigation' ),
 			'no_articles' => array( 'Belum ada artikel yang dipublikasikan', 'No articles have been published yet' ),
 			'articles_appear' => array( 'Artikel dan pembaruan Gloskin akan tampil di sini setelah tersedia.', 'Gloskin articles and updates will appear here when available.' ),
@@ -372,8 +365,6 @@ final class Gloskin_Site_Core_Translation {
 			'continue_reading' => array( 'Lanjut membaca', 'Continue reading' ),
 			'related_articles' => array( 'Artikel terkait', 'Related Articles' ),
 			'read_article' => array( 'Baca artikel', 'Read article' ),
-
-			/* Current footer/drawer. */
 			'footer_consult_title' => array( 'Pilih klinik Gloskin terdekat dan mulai konsultasi.', 'Choose your nearest Gloskin clinic and start a consultation.' ),
 			'footer_consult_copy' => array( 'Temukan cabang yang sesuai dengan lokasi Anda, lalu hubungi tim Gloskin untuk informasi jadwal dan konsultasi yang tersedia.', 'Find a clinic that suits your location, then contact the Gloskin team for available schedules and consultations.' ),
 			'footer_brand_copy' => array( 'Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengedepankan konsultasi dan penanganan dokter di setiap kliniknya.', 'Gloskin is an aesthetics, anti-aging, and hair-care clinic focused on consultation and doctor-led care at every clinic.' ),
@@ -383,8 +374,6 @@ final class Gloskin_Site_Core_Translation {
 			'about_short' => array( 'Tentang', 'About' ),
 			'insight' => array( 'Insight', 'Insights' ),
 			'contact_short' => array( 'Kontak', 'Contact' ),
-
-			/* Current branded 404/fallback pages. */
 			'not_found_title' => array( 'Halaman Gloskin ini tidak tersedia', 'This Gloskin page is unavailable' ),
 			'not_found_copy' => array( 'Gunakan navigasi utama untuk melanjutkan ke halaman lain.', 'Use the primary navigation to continue to another page.' ),
 			'back_home' => array( 'Kembali ke Beranda', 'Back to Home' ),
@@ -394,267 +383,233 @@ final class Gloskin_Site_Core_Translation {
 			'page_choices' => array( 'Pilihan halaman Gloskin', 'Gloskin page options' ),
 		);
 		$out = array();
-		foreach ( $pairs as $key => $pair ) {
-			$out[ $key ] = array( 'source' => $pair[0], 'en' => $pair[1] );
-		}
+		foreach ( $pairs as $key => $pair ) { $out[ $key ] = array( 'source' => $pair[0], 'en' => $pair[1] ); }
 		return $out;
 	}
 
 	/** @return void */
 	public function register_menu() {
-		$hook = add_submenu_page(
-			Gloskin_Site_Core_Content_Service::ADMIN_MENU_SLUG,
-			__( 'Translation', 'gloskin-site-core' ),
-			__( 'Translation', 'gloskin-site-core' ),
-			self::CAPABILITY,
-			self::ADMIN_SLUG,
-			array( $this, 'render_admin_page' )
-		);
-		if ( is_string( $hook ) ) {
-			$this->admin_hook = $hook;
-		}
+		$hook = add_submenu_page( Gloskin_Site_Core_Content_Service::ADMIN_MENU_SLUG, __( 'Translation', 'gloskin-site-core' ), __( 'Translation', 'gloskin-site-core' ), self::CAPABILITY, self::ADMIN_SLUG, array( $this, 'render_admin_page' ) );
+		if ( is_string( $hook ) ) { $this->admin_hook = $hook; }
 	}
 
 	/** @param string $hook Current admin hook. */
 	public function enqueue_admin_assets( $hook ) {
-		if ( '' === $this->admin_hook || $hook !== $this->admin_hook ) {
-			return;
-		}
+		if ( '' === $this->admin_hook || $hook !== $this->admin_hook ) { return; }
 		$base = plugin_dir_url( $this->plugin_file );
 		wp_enqueue_style( 'gloskin-translation-admin', $base . 'assets/css/gloskin-translation-admin.css', array(), $this->version );
 		wp_enqueue_script( 'gloskin-translation-admin', $base . 'assets/js/gloskin-translation-admin.js', array(), $this->version, true );
-		wp_localize_script(
-			'gloskin-translation-admin',
-			'GloskinTranslationAdmin',
-			array(
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce' => wp_create_nonce( self::NONCE_ACTION ),
-				'action' => self::AJAX_SAVE,
-				'workerUrl' => $base . 'assets/js/gloskin-translation-worker.js?ver=' . rawurlencode( $this->version ),
-				'records' => $this->records(),
-				'protectedTerms' => $this->protected_terms(),
-			)
-		);
+		wp_localize_script( 'gloskin-translation-admin', 'GloskinTranslationAdmin', array(
+			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+			'nonce' => wp_create_nonce( self::NONCE_ACTION ),
+			'action' => self::AJAX_SAVE,
+			'workerUrl' => $base . 'assets/js/gloskin-translation-worker.js?ver=' . rawurlencode( $this->version ),
+			'records' => $this->records(),
+			'protectedTerms' => $this->protected_terms(),
+		) );
 	}
 
 	/** @return void */
 	public function render_admin_page() {
-		if ( ! current_user_can( self::CAPABILITY ) ) {
-			wp_die( esc_html__( 'You are not allowed to manage translations.', 'gloskin-site-core' ), '', array( 'response' => 403 ) );
-		}
+		if ( ! current_user_can( self::CAPABILITY ) ) { wp_die( esc_html__( 'You are not allowed to manage translations.', 'gloskin-site-core' ), '', array( 'response' => 403 ) ); }
 		?>
 		<div class="wrap gloskin-translation" data-gloskin-translation-root>
 			<h1><?php echo esc_html__( 'Translation', 'gloskin-site-core' ); ?></h1>
-			<p class="description"><?php echo esc_html__( 'English is stored beside canonical Indonesian content. Generate Missing never overwrites populated English fields.', 'gloskin-site-core' ); ?></p>
+			<p class="description"><?php echo esc_html__( 'Fresh English is served only while it matches the current Indonesian source. Generated stale fields sync automatically here; manual and legacy fields wait for review.', 'gloskin-site-core' ); ?></p>
 			<div class="gloskin-translation__controls">
 				<input type="search" data-translation-search placeholder="<?php echo esc_attr__( 'Search…', 'gloskin-site-core' ); ?>">
 				<select data-translation-type><option value=""><?php echo esc_html__( 'All types', 'gloskin-site-core' ); ?></option></select>
-				<label><input type="checkbox" data-translation-missing> <?php echo esc_html__( 'Only missing', 'gloskin-site-core' ); ?></label>
-				<button type="button" class="button button-primary" data-translation-generate><?php echo esc_html__( 'Generate Missing', 'gloskin-site-core' ); ?></button>
+				<label><input type="checkbox" data-translation-missing> <?php echo esc_html__( 'Needs sync', 'gloskin-site-core' ); ?></label>
+				<button type="button" class="button button-primary" data-translation-generate><?php echo esc_html__( 'Sync Missing & Changed', 'gloskin-site-core' ); ?></button>
 			</div>
 			<p class="gloskin-translation__status" data-translation-status role="status" aria-live="polite"></p>
-			<table class="widefat striped gloskin-translation__table">
-				<thead><tr><th><?php echo esc_html__( 'Type', 'gloskin-site-core' ); ?></th><th><?php echo esc_html__( 'Record', 'gloskin-site-core' ); ?></th><th><?php echo esc_html__( 'EN', 'gloskin-site-core' ); ?></th></tr></thead>
-				<tbody data-translation-rows></tbody>
-			</table>
+			<table class="widefat striped gloskin-translation__table"><thead><tr><th><?php echo esc_html__( 'Type', 'gloskin-site-core' ); ?></th><th><?php echo esc_html__( 'Record', 'gloskin-site-core' ); ?></th><th><?php echo esc_html__( 'Fresh EN', 'gloskin-site-core' ); ?></th></tr></thead><tbody data-translation-rows></tbody></table>
 			<section class="gloskin-translation__editor" data-translation-editor hidden></section>
 		</div>
 		<?php
 	}
 
-	/**
-	 * Discover dynamic records while field definitions remain explicit.
-	 *
-	 * @return array<int,array<string,mixed>>
-	 */
-	private function records() {
+	/** Normalize line endings only, then hash the exact canonical source. */
+	public static function source_hash( $source ) {
+		$normalized = str_replace( array( "\r\n", "\r" ), "\n", (string) $source );
+		return hash( 'sha256', $normalized );
+	}
+
+	/** @return array<string,string> */
+	public static function post_translations( $post_id ) { $value = get_post_meta( absint( $post_id ), self::POST_META_KEY, true ); return is_array( $value ) ? array_map( 'strval', $value ) : array(); }
+	/** @return array<string,string> */
+	public static function term_translations( $term_id ) { $value = get_term_meta( absint( $term_id ), self::TERM_META_KEY, true ); return is_array( $value ) ? array_map( 'strval', $value ) : array(); }
+	/** @return array<string,string> */
+	public static function interface_translations() { $value = get_option( self::INTERFACE_OPTION, array() ); return is_array( $value ) ? array_map( 'strval', $value ) : array(); }
+	/** @return array<string,array{source_hash:string,origin:string}> */
+	public static function post_translation_state( $post_id ) { $value = get_post_meta( absint( $post_id ), self::POST_STATE_META_KEY, true ); return is_array( $value ) ? $value : array(); }
+	/** @return array<string,array{source_hash:string,origin:string}> */
+	public static function term_translation_state( $term_id ) { $value = get_term_meta( absint( $term_id ), self::TERM_STATE_META_KEY, true ); return is_array( $value ) ? $value : array(); }
+
+	/** Fresh saved post value, otherwise canonical Indonesian source. */
+	public static function fresh_post_value( $post_id, $field, $source ) {
+		$saved = self::post_translations( $post_id );
+		if ( ! isset( $saved[ $field ] ) || '' === trim( (string) $saved[ $field ] ) ) { return (string) $source; }
+		$state = self::post_translation_state( $post_id );
+		if ( ! isset( $state[ $field ]['source_hash'] ) || ! hash_equals( (string) $state[ $field ]['source_hash'], self::source_hash( $source ) ) ) { return (string) $source; }
+		return (string) $saved[ $field ];
+	}
+
+	/** Fresh saved term value, otherwise canonical Indonesian source. */
+	public static function fresh_term_value( $term_id, $field, $source ) {
+		$saved = self::term_translations( $term_id );
+		if ( ! isset( $saved[ $field ] ) || '' === trim( (string) $saved[ $field ] ) ) { return (string) $source; }
+		$state = self::term_translation_state( $term_id );
+		if ( ! isset( $state[ $field ]['source_hash'] ) || ! hash_equals( (string) $state[ $field ]['source_hash'], self::source_hash( $source ) ) ) { return (string) $source; }
+		return (string) $saved[ $field ];
+	}
+
+	/** @return array{status:string,origin:string} */
+	private static function freshness( $entity, $entity_id, $field, $source, $en ) {
+		if ( '' === trim( (string) $en ) ) { return array( 'status' => 'missing', 'origin' => '' ); }
+		$state = 'term' === $entity ? self::term_translation_state( $entity_id ) : self::post_translation_state( $entity_id );
+		$entry = isset( $state[ $field ] ) && is_array( $state[ $field ] ) ? $state[ $field ] : array();
+		$origin = isset( $entry['origin'] ) && in_array( $entry['origin'], array( 'generated', 'manual', 'legacy' ), true ) ? (string) $entry['origin'] : 'legacy';
+		$fresh = isset( $entry['source_hash'] ) && hash_equals( (string) $entry['source_hash'], self::source_hash( $source ) );
+		return array( 'status' => $fresh ? 'fresh' : 'stale', 'origin' => $origin );
+	}
+
+	/** One-time state bootstrap for existing translations; values are never changed. */
+	public function bootstrap_legacy_freshness() {
+		if ( ! current_user_can( self::CAPABILITY ) || '1' === (string) get_option( self::BOOTSTRAP_OPTION, '' ) ) { return; }
 		$registry = self::registry();
-		$records  = array();
 		foreach ( $registry['post_types'] as $post_type => $definition ) {
-			if ( ! post_type_exists( $post_type ) ) {
-				continue;
-			}
-			$posts = get_posts( array(
-				'post_type' => $post_type,
-				'post_status' => array( 'publish', 'draft', 'pending', 'private', 'future' ),
-				'posts_per_page' => -1,
-				'orderby' => 'title',
-				'order' => 'ASC',
-				'suppress_filters' => true,
-			) );
-			foreach ( $posts as $post ) {
-				$fields = array();
-				$saved  = self::post_translations( $post->ID );
-				foreach ( $definition['fields'] as $field => $label ) {
-					$source = isset( $post->$field ) ? (string) $post->$field : '';
-					if ( '' === trim( wp_strip_all_tags( $source ) ) ) { continue; }
-					$fields[] = $this->field_payload( $field, $label, $source, isset( $saved[ $field ] ) ? $saved[ $field ] : '', 'post_content' === $field );
-				}
-				foreach ( $definition['meta'] as $field => $meta_definition ) {
-					$source = (string) get_post_meta( $post->ID, $field, true );
-					if ( '' === trim( wp_strip_all_tags( $source ) ) ) { continue; }
-					$fields[] = $this->field_payload( $field, $meta_definition['label'], $source, isset( $saved[ $field ] ) ? $saved[ $field ] : '', ! empty( $meta_definition['rich'] ) );
-				}
-				if ( Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE === $post_type ) {
-					$answers = get_post_meta( $post->ID, Gloskin_Site_Core_Content_Service::ANSWER_META_KEY, true );
-					if ( is_array( $answers ) ) {
-						foreach ( $answers as $index => $answer ) {
-							if ( ! is_array( $answer ) || empty( $answer['label'] ) ) { continue; }
-							$key = 'answer_label_' . absint( $index );
-							$fields[] = $this->field_payload( $key, sprintf( 'Answer %d', absint( $index ) + 1 ), (string) $answer['label'], isset( $saved[ $key ] ) ? $saved[ $key ] : '', false );
-						}
-					}
-				}
-				if ( $fields ) {
-					$records[] = $this->record_payload( 'post', $post->ID, $definition['label'], (string) $post->post_title, $fields );
-				}
-			}
+			if ( ! post_type_exists( $post_type ) ) { continue; }
+			$ids = get_posts( array( 'post_type' => $post_type, 'post_status' => 'any', 'posts_per_page' => -1, 'fields' => 'ids', 'suppress_filters' => true ) );
+			foreach ( $ids as $post_id ) { $this->bootstrap_post_state( absint( $post_id ), $definition ); }
 		}
 		foreach ( $registry['taxonomies'] as $taxonomy => $definition ) {
 			if ( ! taxonomy_exists( $taxonomy ) ) { continue; }
 			$terms = get_terms( array( 'taxonomy' => $taxonomy, 'hide_empty' => false ) );
 			if ( is_wp_error( $terms ) ) { continue; }
-			foreach ( $terms as $term ) {
-				$saved = self::term_translations( $term->term_id );
-				$fields = array();
-				foreach ( $definition['fields'] as $field => $label ) {
-					$source = isset( $term->$field ) ? (string) $term->$field : '';
-					if ( '' === trim( wp_strip_all_tags( $source ) ) ) { continue; }
-					$fields[] = $this->field_payload( $field, $label, $source, isset( $saved[ $field ] ) ? $saved[ $field ] : '', 'description' === $field );
-				}
-				if ( $fields ) { $records[] = $this->record_payload( 'term', $term->term_id, $definition['label'], $term->name, $fields, $taxonomy ); }
+			foreach ( $terms as $term ) { $this->bootstrap_term_state( $term, $definition ); }
+		}
+		update_option( self::BOOTSTRAP_OPTION, '1', false );
+	}
+
+	/** @param int $post_id Post ID. @param array<string,mixed> $definition Definition. */
+	private function bootstrap_post_state( $post_id, $definition ) {
+		$post = get_post( $post_id ); if ( ! $post ) { return; }
+		$saved = self::post_translations( $post_id ); if ( ! $saved ) { return; }
+		$state = self::post_translation_state( $post_id ); $changed = false;
+		foreach ( $definition['fields'] as $field => $label ) { unset( $label ); $source = isset( $post->$field ) ? (string) $post->$field : ''; $changed = $this->bootstrap_state_field( $state, $saved, $field, $source ) || $changed; }
+		foreach ( $definition['meta'] as $field => $meta_definition ) { unset( $meta_definition ); $source = (string) get_post_meta( $post_id, $field, true ); $changed = $this->bootstrap_state_field( $state, $saved, $field, $source ) || $changed; }
+		if ( Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE === $post->post_type ) {
+			$answers = get_post_meta( $post_id, Gloskin_Site_Core_Content_Service::ANSWER_META_KEY, true );
+			if ( is_array( $answers ) ) { foreach ( $answers as $index => $answer ) { if ( ! is_array( $answer ) || ! isset( $answer['label'] ) ) { continue; } $field = 'answer_label_' . absint( $index ); $changed = $this->bootstrap_state_field( $state, $saved, $field, (string) $answer['label'] ) || $changed; } }
+		}
+		if ( $changed ) { update_post_meta( $post_id, self::POST_STATE_META_KEY, $state ); }
+	}
+
+	/** @param WP_Term $term Term. @param array<string,mixed> $definition Definition. */
+	private function bootstrap_term_state( $term, $definition ) {
+		$saved = self::term_translations( $term->term_id ); if ( ! $saved ) { return; }
+		$state = self::term_translation_state( $term->term_id ); $changed = false;
+		foreach ( $definition['fields'] as $field => $label ) { unset( $label ); $source = isset( $term->$field ) ? (string) $term->$field : ''; $changed = $this->bootstrap_state_field( $state, $saved, $field, $source ) || $changed; }
+		if ( $changed ) { update_term_meta( $term->term_id, self::TERM_STATE_META_KEY, $state ); }
+	}
+
+	/** @param array<string,mixed> $state State. @param array<string,string> $saved Saved values. */
+	private function bootstrap_state_field( &$state, $saved, $field, $source ) {
+		if ( ! isset( $saved[ $field ] ) || '' === trim( (string) $saved[ $field ] ) || isset( $state[ $field ]['source_hash'] ) ) { return false; }
+		$state[ $field ] = array( 'source_hash' => self::source_hash( $source ), 'origin' => 'legacy' ); return true;
+	}
+
+	/** Discover dynamic records while field definitions remain explicit. */
+	private function records() {
+		$registry = self::registry(); $records = array();
+		foreach ( $registry['post_types'] as $post_type => $definition ) {
+			if ( ! post_type_exists( $post_type ) ) { continue; }
+			$posts = get_posts( array( 'post_type' => $post_type, 'post_status' => array( 'publish', 'draft', 'pending', 'private', 'future' ), 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC', 'suppress_filters' => true ) );
+			foreach ( $posts as $post ) {
+				$fields = array(); $saved = self::post_translations( $post->ID );
+				foreach ( $definition['fields'] as $field => $label ) { $source = isset( $post->$field ) ? (string) $post->$field : ''; if ( '' === trim( wp_strip_all_tags( $source ) ) ) { continue; } $fields[] = $this->field_payload( 'post', $post->ID, $field, $label, $source, isset( $saved[ $field ] ) ? $saved[ $field ] : '', 'post_content' === $field ); }
+				foreach ( $definition['meta'] as $field => $meta_definition ) { $source = (string) get_post_meta( $post->ID, $field, true ); if ( '' === trim( wp_strip_all_tags( $source ) ) ) { continue; } $fields[] = $this->field_payload( 'post', $post->ID, $field, $meta_definition['label'], $source, isset( $saved[ $field ] ) ? $saved[ $field ] : '', ! empty( $meta_definition['rich'] ) ); }
+				if ( Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE === $post_type ) { $answers = get_post_meta( $post->ID, Gloskin_Site_Core_Content_Service::ANSWER_META_KEY, true ); if ( is_array( $answers ) ) { foreach ( $answers as $index => $answer ) { if ( ! is_array( $answer ) || empty( $answer['label'] ) ) { continue; } $key = 'answer_label_' . absint( $index ); $fields[] = $this->field_payload( 'post', $post->ID, $key, sprintf( 'Answer %d', absint( $index ) + 1 ), (string) $answer['label'], isset( $saved[ $key ] ) ? $saved[ $key ] : '', false ); } } }
+				if ( $fields ) { $records[] = $this->record_payload( 'post', $post->ID, $definition['label'], (string) $post->post_title, $fields ); }
 			}
 		}
-		$saved_interface = self::interface_translations();
-		foreach ( $registry['interface'] as $key => $entry ) {
-			$en = isset( $saved_interface[ $key ] ) && '' !== trim( (string) $saved_interface[ $key ] ) ? (string) $saved_interface[ $key ] : (string) $entry['en'];
-			$records[] = $this->record_payload( 'interface', $key, 'Interface', $entry['source'], array( $this->field_payload( 'text', 'Text', $entry['source'], $en, false ) ) );
+		foreach ( $registry['taxonomies'] as $taxonomy => $definition ) {
+			if ( ! taxonomy_exists( $taxonomy ) ) { continue; }
+			$terms = get_terms( array( 'taxonomy' => $taxonomy, 'hide_empty' => false ) ); if ( is_wp_error( $terms ) ) { continue; }
+			foreach ( $terms as $term ) { $saved = self::term_translations( $term->term_id ); $fields = array(); foreach ( $definition['fields'] as $field => $label ) { $source = isset( $term->$field ) ? (string) $term->$field : ''; if ( '' === trim( wp_strip_all_tags( $source ) ) ) { continue; } $fields[] = $this->field_payload( 'term', $term->term_id, $field, $label, $source, isset( $saved[ $field ] ) ? $saved[ $field ] : '', 'description' === $field ); } if ( $fields ) { $records[] = $this->record_payload( 'term', $term->term_id, $definition['label'], $term->name, $fields, $taxonomy ); } }
 		}
+		$saved_interface = self::interface_translations();
+		foreach ( $registry['interface'] as $key => $entry ) { $en = isset( $saved_interface[ $key ] ) && '' !== trim( (string) $saved_interface[ $key ] ) ? (string) $saved_interface[ $key ] : (string) $entry['en']; $records[] = $this->record_payload( 'interface', $key, 'Interface', $entry['source'], array( array( 'key' => 'text', 'label' => 'Text', 'source' => $entry['source'], 'en' => $en, 'rich' => false, 'status' => 'fresh', 'origin' => 'generated' ) ) ); }
 		return $records;
 	}
 
 	/** @return array<string,string> */
 	private function protected_terms() {
 		$terms = array( 'Gloskin', 'Skinvive', 'Botox' );
-		foreach ( array( Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 'product' ) as $type ) {
-			if ( ! post_type_exists( $type ) ) { continue; }
-			$names = get_posts( array( 'post_type' => $type, 'post_status' => 'publish', 'posts_per_page' => -1, 'fields' => 'ids', 'suppress_filters' => true ) );
-			foreach ( $names as $id ) {
-				$name = get_post_field( 'post_title', $id, 'raw' );
-				if ( is_string( $name ) && '' !== trim( $name ) ) { $terms[] = trim( $name ); }
-			}
-		}
+		foreach ( array( Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 'product' ) as $type ) { if ( ! post_type_exists( $type ) ) { continue; } $names = get_posts( array( 'post_type' => $type, 'post_status' => 'publish', 'posts_per_page' => -1, 'fields' => 'ids', 'suppress_filters' => true ) ); foreach ( $names as $id ) { $name = get_post_field( 'post_title', $id, 'raw' ); if ( is_string( $name ) && '' !== trim( $name ) ) { $terms[] = trim( $name ); } } }
 		return array_values( array_unique( $terms ) );
 	}
 
-	/** @return array<string,string> */
-	public static function post_translations( $post_id ) {
-		$value = get_post_meta( absint( $post_id ), self::POST_META_KEY, true );
-		return is_array( $value ) ? array_map( 'strval', $value ) : array();
-	}
-
-	/** @return array<string,string> */
-	public static function term_translations( $term_id ) {
-		$value = get_term_meta( absint( $term_id ), self::TERM_META_KEY, true );
-		return is_array( $value ) ? array_map( 'strval', $value ) : array();
-	}
-
-	/** @return array<string,string> */
-	public static function interface_translations() {
-		$value = get_option( self::INTERFACE_OPTION, array() );
-		return is_array( $value ) ? array_map( 'strval', $value ) : array();
-	}
-
-	/** @return void */
+	/** One save endpoint: manual and generated saves both refresh source_hash. */
 	public function ajax_save() {
-		if ( ! current_user_can( self::CAPABILITY ) ) {
-			wp_send_json_error( array( 'message' => 'Forbidden.' ), 403 );
-		}
+		if ( ! current_user_can( self::CAPABILITY ) ) { wp_send_json_error( array( 'message' => 'Forbidden.' ), 403 ); }
 		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
 		$entity = isset( $_POST['entity'] ) ? sanitize_key( wp_unslash( $_POST['entity'] ) ) : '';
-		$field  = isset( $_POST['field'] ) ? sanitize_key( wp_unslash( $_POST['field'] ) ) : '';
+		$field = isset( $_POST['field'] ) ? sanitize_key( wp_unslash( $_POST['field'] ) ) : '';
 		$id_raw = isset( $_POST['entity_id'] ) ? wp_unslash( $_POST['entity_id'] ) : '';
-		$value  = isset( $_POST['value'] ) ? wp_unslash( $_POST['value'] ) : '';
-		if ( ! is_string( $value ) || ! $this->field_is_allowed( $entity, $id_raw, $field ) ) {
-			wp_send_json_error( array( 'message' => 'Invalid translation target.' ), 400 );
-		}
+		$value = isset( $_POST['value'] ) ? wp_unslash( $_POST['value'] ) : '';
+		$origin = isset( $_POST['origin'] ) && 'generated' === sanitize_key( wp_unslash( $_POST['origin'] ) ) ? 'generated' : 'manual';
+		if ( ! is_string( $value ) || ! $this->field_is_allowed( $entity, $id_raw, $field ) ) { wp_send_json_error( array( 'message' => 'Invalid translation target.' ), 400 ); }
 		$value = $this->sanitize_translation( $entity, $field, $value );
+		$source = $this->current_source( $entity, $id_raw, $field );
+		if ( null === $source ) { wp_send_json_error( array( 'message' => 'Translation source is unavailable.' ), 400 ); }
 		if ( 'post' === $entity ) {
-			$id = absint( $id_raw );
-			$translations = self::post_translations( $id );
-			$translations[ $field ] = $value;
-			update_post_meta( $id, self::POST_META_KEY, $translations );
+			$id = absint( $id_raw ); $translations = self::post_translations( $id ); $translations[ $field ] = $value; update_post_meta( $id, self::POST_META_KEY, $translations );
+			$state = self::post_translation_state( $id ); $state[ $field ] = array( 'source_hash' => self::source_hash( $source ), 'origin' => $origin ); update_post_meta( $id, self::POST_STATE_META_KEY, $state );
 		} elseif ( 'term' === $entity ) {
-			$id = absint( $id_raw );
-			$translations = self::term_translations( $id );
-			$translations[ $field ] = $value;
-			update_term_meta( $id, self::TERM_META_KEY, $translations );
+			$id = absint( $id_raw ); $translations = self::term_translations( $id ); $translations[ $field ] = $value; update_term_meta( $id, self::TERM_META_KEY, $translations );
+			$state = self::term_translation_state( $id ); $state[ $field ] = array( 'source_hash' => self::source_hash( $source ), 'origin' => $origin ); update_term_meta( $id, self::TERM_STATE_META_KEY, $state );
 		} else {
-			$key = sanitize_key( (string) $id_raw );
-			$translations = self::interface_translations();
-			$translations[ $key ] = $value;
-			update_option( self::INTERFACE_OPTION, $translations, false );
+			$key = sanitize_key( (string) $id_raw ); $translations = self::interface_translations(); $translations[ $key ] = $value; update_option( self::INTERFACE_OPTION, $translations, false );
 		}
-		wp_send_json_success( array( 'value' => $value ) );
+		wp_send_json_success( array( 'value' => $value, 'status' => 'fresh', 'origin' => $origin ) );
 	}
 
 	/** @return bool */
 	private function field_is_allowed( $entity, $id_raw, $field ) {
 		$registry = self::registry();
-		if ( 'post' === $entity ) {
-			$id = absint( $id_raw );
-			$post = $id ? get_post( $id ) : null;
-			if ( ! $post || ! isset( $registry['post_types'][ $post->post_type ] ) ) { return false; }
-			$definition = $registry['post_types'][ $post->post_type ];
-			if ( isset( $definition['fields'][ $field ] ) || isset( $definition['meta'][ $field ] ) ) { return true; }
-			if ( Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE === $post->post_type && 0 === strpos( $field, 'answer_label_' ) ) {
-				$index = absint( substr( $field, strlen( 'answer_label_' ) ) );
-				$answers = get_post_meta( $id, Gloskin_Site_Core_Content_Service::ANSWER_META_KEY, true );
-				return is_array( $answers ) && isset( $answers[ $index ]['label'] );
-			}
-			return false;
-		}
-		if ( 'term' === $entity ) {
-			$id = absint( $id_raw );
-			$term = $id ? get_term( $id ) : null;
-			return $term && ! is_wp_error( $term ) && isset( $registry['taxonomies'][ $term->taxonomy ]['fields'][ $field ] );
-		}
-		if ( 'interface' === $entity && 'text' === $field ) {
-			return isset( $registry['interface'][ sanitize_key( (string) $id_raw ) ] );
-		}
-		return false;
+		if ( 'post' === $entity ) { $id = absint( $id_raw ); $post = $id ? get_post( $id ) : null; if ( ! $post || ! isset( $registry['post_types'][ $post->post_type ] ) ) { return false; } $definition = $registry['post_types'][ $post->post_type ]; if ( isset( $definition['fields'][ $field ] ) || isset( $definition['meta'][ $field ] ) ) { return true; } if ( Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE === $post->post_type && 0 === strpos( $field, 'answer_label_' ) ) { $index = absint( substr( $field, strlen( 'answer_label_' ) ) ); $answers = get_post_meta( $id, Gloskin_Site_Core_Content_Service::ANSWER_META_KEY, true ); return is_array( $answers ) && isset( $answers[ $index ]['label'] ); } return false; }
+		if ( 'term' === $entity ) { $id = absint( $id_raw ); $term = $id ? get_term( $id ) : null; return $term && ! is_wp_error( $term ) && isset( $registry['taxonomies'][ $term->taxonomy ]['fields'][ $field ] ); }
+		return 'interface' === $entity && 'text' === $field && isset( $registry['interface'][ sanitize_key( (string) $id_raw ) ] );
+	}
+
+	/** @return string|null */
+	private function current_source( $entity, $id_raw, $field ) {
+		if ( 'post' === $entity ) { $post = get_post( absint( $id_raw ) ); if ( ! $post ) { return null; } $registry = self::registry(); $definition = isset( $registry['post_types'][ $post->post_type ] ) ? $registry['post_types'][ $post->post_type ] : null; if ( ! $definition ) { return null; } if ( isset( $definition['fields'][ $field ] ) ) { return isset( $post->$field ) ? (string) $post->$field : ''; } if ( isset( $definition['meta'][ $field ] ) ) { return (string) get_post_meta( $post->ID, $field, true ); } if ( Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE === $post->post_type && 0 === strpos( $field, 'answer_label_' ) ) { $answers = get_post_meta( $post->ID, Gloskin_Site_Core_Content_Service::ANSWER_META_KEY, true ); $index = absint( substr( $field, strlen( 'answer_label_' ) ) ); return is_array( $answers ) && isset( $answers[ $index ]['label'] ) ? (string) $answers[ $index ]['label'] : null; } return null; }
+		if ( 'term' === $entity ) { $term = get_term( absint( $id_raw ) ); return $term && ! is_wp_error( $term ) && isset( $term->$field ) ? (string) $term->$field : null; }
+		if ( 'interface' === $entity ) { $key = sanitize_key( (string) $id_raw ); $registry = self::interface_registry(); return isset( $registry[ $key ]['source'] ) ? (string) $registry[ $key ]['source'] : null; }
+		return null;
 	}
 
 	/** @return string */
 	private function sanitize_translation( $entity, $field, $value ) {
-		if ( 'post_content' === $field || 'description' === $field || in_array( $field, array( 'gloskin_benefits', 'gloskin_contraindications' ), true ) ) {
-			return wp_kses_post( $value );
-		}
-		if ( 'post_excerpt' === $field || false !== strpos( $field, 'summary' ) || false !== strpos( $field, 'source_note' ) || false !== strpos( $field, 'address' ) || false !== strpos( $field, 'hours' ) ) {
-			return sanitize_textarea_field( $value );
-		}
+		unset( $entity );
+		$registry = self::registry();
+		if ( 'post_content' === $field || 'description' === $field || in_array( $field, array( 'gloskin_benefits', 'gloskin_contraindications', 'gloskin_about_vision', 'gloskin_about_mission', 'gloskin_about_values', 'gloskin_about_founder_story' ), true ) ) { return wp_kses_post( $value ); }
+		if ( 'post_excerpt' === $field || false !== strpos( $field, 'summary' ) || false !== strpos( $field, 'source_note' ) || false !== strpos( $field, 'address' ) || false !== strpos( $field, 'hours' ) || false !== strpos( $field, 'copy' ) || false !== strpos( $field, 'lead' ) ) { return sanitize_textarea_field( $value ); }
 		return sanitize_text_field( $value );
 	}
 
 	/** @return array<string,mixed> */
-	private function field_payload( $key, $label, $source, $en, $rich ) {
-		return array( 'key' => (string) $key, 'label' => (string) $label, 'source' => (string) $source, 'en' => (string) $en, 'rich' => (bool) $rich );
+	private function field_payload( $entity, $entity_id, $key, $label, $source, $en, $rich ) {
+		$freshness = self::freshness( $entity, $entity_id, $key, $source, $en );
+		return array( 'key' => (string) $key, 'label' => (string) $label, 'source' => (string) $source, 'en' => (string) $en, 'rich' => (bool) $rich, 'status' => $freshness['status'], 'origin' => $freshness['origin'] );
 	}
 
 	/** @return array<string,mixed> */
 	private function record_payload( $entity, $entity_id, $type, $label, $fields, $taxonomy = '' ) {
-		$filled = 0;
-		foreach ( $fields as $field ) { if ( '' !== trim( (string) $field['en'] ) ) { ++$filled; } }
-		return array(
-			'key' => $entity . ':' . (string) $entity_id . ( $taxonomy ? ':' . $taxonomy : '' ),
-			'entity' => $entity,
-			'entityId' => (string) $entity_id,
-			'taxonomy' => (string) $taxonomy,
-			'type' => (string) $type,
-			'label' => (string) $label,
-			'filled' => $filled,
-			'total' => count( $fields ),
-			'fields' => array_values( $fields ),
-		);
+		$fresh = 0; foreach ( $fields as $field ) { if ( 'fresh' === (string) $field['status'] ) { ++$fresh; } }
+		return array( 'key' => $entity . ':' . (string) $entity_id . ( $taxonomy ? ':' . $taxonomy : '' ), 'entity' => $entity, 'entityId' => (string) $entity_id, 'taxonomy' => (string) $taxonomy, 'type' => (string) $type, 'label' => (string) $label, 'filled' => $fresh, 'total' => count( $fields ), 'fields' => array_values( $fields ) );
 	}
 }
