@@ -60,58 +60,51 @@ ok( array() === $resolver->invoke( $service )['sources'], 'unsupported video MIM
 $GLOBALS['hero_mime'] = 'image/jpeg';
 ok( array() === $resolver->invoke( $service )['sources'], 'non-video MIME must be rejected' );
 
-$campaign = array(
+$video_only = array(
 	'heading' => 'Perawatan kulit',
 	'copy' => 'Konsultasi dan perawatan yang disesuaikan.',
 	'cta_label' => 'Jelajahi Perawatan',
 	'cta_url' => 'https://example.test/treatments/',
-	'mode' => 'campaign',
+	'mode' => 'video_only',
 	'media_id' => 88,
 	'sources' => array( array( 'src' => 'https://example.test/hero.mp4', 'type' => 'video/mp4' ) ),
 );
-ob_start(); gloskin_ui1_render_hero( $campaign ); $html = (string) ob_get_clean();
-ok( 1 === substr_count( $html, '<section class="gloskin-ui1-hero' ), 'Home must render exactly one shared hero section' );
-ok( 1 === substr_count( $html, '<h1 class="gloskin-ui1-hero__title">Perawatan kulit</h1>' ), 'Home H1 must be visible and semantic' );
-ok( false === strpos( $html, 'screen-reader-text' ), 'Home H1 must not be screen-reader-only' );
-ok( false !== strpos( $html, 'gloskin-ui1-hero__copy' ) && false !== strpos( $html, 'Jelajahi Perawatan' ), 'visible supporting copy and CTA must remain' );
-ok( 1 === substr_count( $html, '<video ' ), 'configured Home campaign must render exactly one native video' );
-ok( 1 === substr_count( $html, '<img ' ), 'configured Home campaign retains one factual fallback image behind video' );
+ob_start(); gloskin_ui1_render_hero( $video_only ); $html = (string) ob_get_clean();
+ok( 1 === substr_count( $html, '<section class="gloskin-ui1-hero gloskin-ui1-hero--video-only' ), 'Home must render exactly one video-only hero section' );
+ok( 1 === substr_count( $html, '<video ' ), 'configured Home must render exactly one native video' );
+ok( false === strpos( $html, '<h1' ) && false === strpos( $html, 'gloskin-ui1-hero__copy' ) && false === strpos( $html, 'gloskin-ui1-hero__actions' ), 'video-only Home must not overlay campaign text/CTA' );
+ok( false === strpos( $html, '<iframe' ) && false === strpos( $html, ' controls' ) && false === strpos( $html, ' poster=' ), 'Home video must remain native, decorative and control-free' );
 foreach ( array( ' muted', ' autoplay', ' loop', ' playsinline', 'preload="auto"' ) as $attribute ) {
 	ok( false !== strpos( $html, $attribute ), "native video missing {$attribute}" );
 }
-foreach ( array( '<iframe', ' controls', ' poster=', 'data-gloskin-hero-video-play' ) as $forbidden ) {
-	ok( false === strpos( $html, $forbidden ), "Home campaign must not render {$forbidden}" );
-}
-ok( 1 === substr_count( $html, 'data-gloskin-hero-scroll-cue' ), 'Home campaign must retain one scroll cue' );
 
-$campaign['sources'] = array();
-ob_start(); gloskin_ui1_render_hero( $campaign ); $fallback = (string) ob_get_clean();
-ok( 1 === substr_count( $fallback, '<h1 class="gloskin-ui1-hero__title">Perawatan kulit</h1>' ), 'no-video Home must keep visible H1' );
-ok( 0 === substr_count( $fallback, '<video ' ), 'no-video Home must not fabricate a video' );
-ok( 1 === substr_count( $fallback, '<img ' ), 'no-video Home must retain the same editorial/factual media composition' );
-ok( false !== strpos( $fallback, 'Konsultasi dan perawatan yang disesuaikan.' ), 'no-video Home must retain visible copy' );
+$video_only['sources'] = array();
+ob_start(); gloskin_ui1_render_hero( $video_only ); $unavailable = (string) ob_get_clean();
+ok( false !== strpos( $unavailable, 'gloskin-ui1-hero--video-only is-video-unavailable' ), 'no-source Home keeps the same hero shell in unavailable state' );
+ok( 0 === substr_count( $unavailable, '<video ' ), 'no-source Home must not fabricate a video' );
 
 $root = dirname( __DIR__ );
-$template = file_get_contents( $root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php' );
-$helpers = file_get_contents( $root . '/plugin/gloskin-site-core/templates/parts/template-helpers.php' );
-$home = file_get_contents( $root . '/plugin/gloskin-site-core/templates/pages/home.php' );
-$refresh = file_get_contents( $root . '/plugin/gloskin-site-core/assets/css/gloskin-ui1-prototype-refresh.css' );
-$js = file_get_contents( $root . '/plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js' );
+$template  = file_get_contents( $root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php' );
+$helpers   = file_get_contents( $root . '/plugin/gloskin-site-core/templates/parts/template-helpers.php' );
+$home      = file_get_contents( $root . '/plugin/gloskin-site-core/templates/pages/home.php' );
+$editorial = file_get_contents( $root . '/plugin/gloskin-site-core/assets/css/gloskin-ui1-editorial.css' );
+$js        = file_get_contents( $root . '/plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js' );
 $home_start = strpos( $template, 'private function home_context()' );
 $home_end = strpos( $template, 'private function about_context()', $home_start );
 $home_context = substr( $template, $home_start, $home_end - $home_start );
-ok( false !== strpos( $home_context, "\$hero['mode'] = 'campaign';" ), 'Home context must use visible campaign mode' );
-ok( false === strpos( $home_context, "'video-only'" ), 'strict video-only final mode must be removed from Home' );
-ok( false === strpos( $home_context, "\$hero['media_id'] = 0;" ), 'Home must not neutralize factual fallback media' );
+ok( false !== strpos( $home_context, "\$hero['mode'] = 'video_only';" ), 'Home context must use video-only mode' );
+ok( false !== strpos( $home_context, 'hero_background_video()' ), 'Home context must keep native Media Library video resolver' );
 ok( 1 === substr_count( $home, 'gloskin_ui1_render_hero(' ), 'Home template must own exactly one hero renderer call' );
-ok( false !== strpos( $helpers, 'gloskin-ui1-hero--campaign' ) && false !== strpos( $helpers, '<h1 class="gloskin-ui1-hero__title">' ), 'shared hero renderer must expose visible campaign H1' );
-ok( false !== strpos( $refresh, '.gloskin-ui1-hero--campaign.is-video-ready .gloskin-ui1-hero-bg-video__media' ), 'campaign CSS must reveal native video only after controller readiness' );
+ok( false !== strpos( $helpers, 'gloskin-ui1-hero--video-only' ), 'shared hero renderer must expose video-only path' );
+ok( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{object-fit:cover;object-position:center center}' ), 'Home video-only hero must use cover geometry' );
 
-$controller = substr( $js, strpos( $js, 'function setupHeroBackgroundVideo' ), strpos( $js, 'function initHeroBackgroundVideo' ) - strpos( $js, 'function setupHeroBackgroundVideo' ) );
+$controller_start = strpos( $js, 'function setupHeroBackgroundVideo' );
+$controller_end   = strpos( $js, 'function initHeroBackgroundVideo', $controller_start );
+$controller       = false !== $controller_start && false !== $controller_end ? substr( $js, $controller_start, $controller_end - $controller_start ) : '';
 foreach ( array( 'video.muted = true', 'video.defaultMuted = true', 'video.autoplay = true', 'video.loop = true', 'video.playsInline = true' ) as $property ) {
 	ok( false !== strpos( $controller, $property ), "controller must enforce {$property} before play" );
 }
 ok( 1 === substr_count( $controller, 'video.play()' ), 'controller must attempt play at most once' );
 ok( false === strpos( $js, 'setInterval' ), 'hero controller must not poll' );
 
-echo "hero-video-contract: OK\n";
+echo "hero-video-contract: OK (video-only + cover)\n";
