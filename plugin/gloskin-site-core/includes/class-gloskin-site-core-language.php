@@ -42,6 +42,12 @@ final class Gloskin_Site_Core_Language {
 
 	/** @return string id|en */
 	public static function language() {
+		// Request-level fail-open memory circuit breaker.  Every translation
+		// filter calls language() first, so one guard here covers all paths.
+		// Once tripped (>80 % of memory_limit), all subsequent calls cost one
+		// bool check and return 'id'.  Serves the original Indonesian page
+		// gracefully rather than letting the request crash with a fatal OOM.
+		if ( ! self::within_memory_budget() ) { return 'id'; }
 		if ( isset( $_GET['gloskin_lang'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- presentation preference only.
 			$request = sanitize_key( wp_unslash( $_GET['gloskin_lang'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			if ( in_array( $request, array( 'id', 'en' ), true ) ) { return $request; }
@@ -51,6 +57,37 @@ final class Gloskin_Site_Core_Language {
 			if ( in_array( $cookie, array( 'id', 'en' ), true ) ) { return $cookie; }
 		}
 		return 'id';
+	}
+
+	/**
+	 * Whether the request still has memory headroom for translation work.
+	 *
+	 * Parses memory_limit once per request (static local); trips a static
+	 * flag on breach so every subsequent call is a single bool check with
+	 * no ini_get / memory_get_usage overhead.
+	 *
+	 * @return bool False once memory exceeds 80 % of the configured limit.
+	 */
+	private static function within_memory_budget() {
+		static $tripped = false, $limit = null;
+		if ( $tripped ) { return false; }
+		if ( null === $limit ) {
+			$raw = trim( (string) ini_get( 'memory_limit' ) );
+			if ( '' === $raw || '-1' === $raw ) { return true; } // unlimited
+			$unit  = strtoupper( $raw[ strlen( $raw ) - 1 ] );
+			$value = (int) $raw;
+			switch ( $unit ) {
+				case 'G': $limit = $value * 1024 * 1024 * 1024; break;
+				case 'M': $limit = $value * 1024 * 1024; break;
+				case 'K': $limit = $value * 1024; break;
+				default:  $limit = $value; break;
+			}
+		}
+		if ( memory_get_usage() > (int) ( $limit * 0.80 ) ) {
+			$tripped = true;
+			return false;
+		}
+		return true;
 	}
 
 	/** Build the current-request URL for a first-party language. */

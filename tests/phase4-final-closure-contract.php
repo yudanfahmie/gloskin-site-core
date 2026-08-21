@@ -140,7 +140,7 @@ p4must( false !== strpos( $footer, "array( 'home', 'contact', 'about', 'promo' )
    Visi/Misi/Nilai -> END. Internal readiness/provenance state must never be
    rendered as visitor-facing debug copy. */
 $about_ctx_start = strpos( $ts, 'private function about_context()' );
-$about_ctx_end   = strpos( $ts, 'private function about_founder_context', $about_ctx_start );
+$about_ctx_end   = strpos( $ts, 'private function about_static_content', $about_ctx_start );
 $about_ctx       = false !== $about_ctx_start && false !== $about_ctx_end ? substr( $ts, $about_ctx_start, $about_ctx_end - $about_ctx_start ) : '';
 p4must( false === strpos( $about_ctx, 'hero_context' ) && false === strpos( $about_ctx, 'clinic_cards' ) && false === strpos( $about_ctx, 'all_published_doctor_cards' ) && false === strpos( $about_ctx, 'published_managed_records' ), 'About does not regain unused context owners' );
 p4must( false !== strpos( $about_ctx, "'founder'" ) && false !== strpos( $about_ctx, "'vision'" ), 'About retains founder and principles data' );
@@ -167,26 +167,16 @@ foreach ( array( 'render_doctor', 'render_clinic', 'render_achievements', 'about
 }
 p4must( false === strpos( $a, 'gloskin-ui1-footer__cta' ), 'About template has no generic closing CTA markup' );
 
-/* Reconciliation remains bounded and provenance-aware. Story/Founder may
-   auto-fill only when empty; VMV never auto-write without operator authority. */
+/* About copy is now release-controlled static content.
+   The runtime About reconciliation was intentionally removed; copy lives in
+   TemplateService::about_static_content().  No lifecycle runtime writes it. */
 $lifecycle = p4text( $plugin . '/includes/class-gloskin-site-core-lifecycle-service.php' );
-$kernel_t  = p4text( $plugin . '/includes/class-gloskin-site-core-kernel.php' );
-p4must( false !== strpos( $lifecycle, 'register_about_reconciliation' ) && false !== strpos( $lifecycle, 'maybe_reconcile_about_content' ), 'lifecycle service owns About reconciliation' );
-p4must( false !== strpos( $lifecycle, "ABOUT_RECONCILIATION_VERSION = '2026-08-21.2'" ), 'About reconciliation provenance contract version is current' );
-p4must( false !== strpos( $lifecycle, "'requires_operator_approval'" ) && false !== strpos( $lifecycle, 'array_intersect( $mutations, $reviewable_fields )' ), 'reconciliation distinguishes its own VMV mutations for operator review' );
-p4must( false !== strpos( $lifecycle, "'needs_attention' === \$status && ! is_admin()" ), 'unchanged needs_attention state cannot write repeatedly on frontend requests' );
-p4must( false !== strpos( $lifecycle, 'if ( $next_state !== $state )' ), 'reconciliation avoids unchanged state writes' );
-$defaults_start = strpos( $lifecycle, 'private function about_reconciliation_defaults()' );
-$defaults_end   = strpos( $lifecycle, 'public function register_historical_upgrade_admins', $defaults_start );
-$defaults_block = false !== $defaults_start && false !== $defaults_end ? substr( $lifecycle, $defaults_start, $defaults_end - $defaults_start ) : '';
-foreach ( array( "'vision'", "'mission'", "'values'" ) as $unsafe_default ) {
-	p4must( false === strpos( $defaults_block, $unsafe_default ), 'VMV is not an automatic reconciliation default: ' . $unsafe_default );
-}
-p4must( false === strpos( $lifecycle, 'wp_insert_attachment' ) && false === strpos( $lifecycle, 'wp_delete_attachment' ), 'About reconciliation never creates/deletes attachments' );
-p4must( 1 === substr_count( $kernel_t, 'register_about_reconciliation' ), 'kernel registers About reconciliation exactly once' );
-$frontend_start = strpos( $kernel_t, "\t\t\$language = new Gloskin_Site_Core_Language" );
-$frontend_block = false !== $frontend_start ? substr( $kernel_t, $frontend_start ) : '';
-p4must( false === strpos( $frontend_block, 'register_about_reconciliation' ), 'frontend kernel path never registers About reconciliation' );
+p4must( false === strpos( $lifecycle, 'register_about_reconciliation' ) && false === strpos( $lifecycle, 'maybe_reconcile_about_content' ), 'About reconciliation runtime is retired from lifecycle service' );
+p4must( false === strpos( $lifecycle, 'wp_insert_attachment' ) && false === strpos( $lifecycle, 'wp_delete_attachment' ), 'lifecycle service never creates/deletes attachments' );
+p4must( false !== strpos( $ts, 'private function about_static_content()' ), 'About copy is owned by about_static_content() in TemplateService' );
+p4must( false !== strpos( $about_ctx, 'about_static_content()' ), 'about_context() delegates to static copy owner' );
+// Kernel must not register the retired runtime.
+p4must( false === strpos( $k, 'register_about_reconciliation' ), 'kernel does not register retired About reconciliation runtime' );
 
 /* Shop Discovery CSS must load after the current last global style, not a retired handle. */
 $shop_route = p4text( $plugin . '/includes/gloskin-site-core-shop-discovery-route-trait.php' );
@@ -204,6 +194,6 @@ foreach ( array( 'Detail tambahan belum tersedia untuk ditampilkan.', 'Informasi
 	p4must( false !== strpos( $t, $copy ), 'translation/interface owner contains: ' . $copy );
 }
 
-p4must( false !== strpos( $k, "const VERSION = '0.7.195'" ) && false !== strpos( $b, 'Version: 0.7.195' ), 'release owners synchronized at 0.7.195' );
+p4must( false !== strpos( $k, "const VERSION = '0.7.196'" ) && false !== strpos( $b, 'Version: 0.7.196' ), 'release owners synchronized at 0.7.196' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo carousel JS-CSS contract + footer CTA routes + About reconciliation-first + Shop CSS dep + version 0.7.195)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo carousel JS-CSS contract + footer CTA routes + About static copy + Shop CSS dep + version 0.7.196)\n";

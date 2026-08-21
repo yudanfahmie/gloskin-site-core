@@ -37,7 +37,7 @@ function p5must( bool $cond, string $msg ): void {
 }
 
 /* ── Version ─────────────────────────────────────────────────────── */
-p5must( false !== strpos( $kernel, "const VERSION = '0.7.195'" ) && false !== strpos( $plugin, 'Version: 0.7.195' ), 'release owners synchronized at 0.7.195' );
+p5must( false !== strpos( $kernel, "const VERSION = '0.7.196'" ) && false !== strpos( $plugin, 'Version: 0.7.196' ), 'release owners synchronized at 0.7.196' );
 
 /* ── One Language registration, one Projection registration ──────── */
 p5must( 1 === substr_count( $kernel, 'register_frontend' ), 'exactly one frontend Language registration in Kernel' );
@@ -72,6 +72,14 @@ p5must( false !== strpos( $projection, 'static $started = false' ), 'output buff
 p5must( false !== strpos( $language, 'static $in_lookup = false' ), 'interface_text has re-entrancy guard (static $in_lookup)' );
 
 /* ── Defense-in-depth: memory guard + zero-cost empty path ──────── */
+// Layer 0: request-level circuit breaker in language() — universal chokepoint.
+// Every translation filter calls language() first.  One check here covers all
+// paths simultaneously.  Once tripped (>80 % of limit), all filter callbacks
+// see 'id' and skip their EN work; subsequent calls pay only a bool check.
+p5must( false !== strpos( $language, 'private static function within_memory_budget()' ), 'Language has within_memory_budget() circuit-breaker helper' );
+p5must( false !== strpos( $language, 'self::within_memory_budget()' ), 'language() calls within_memory_budget() before reading GET/COOKIE' );
+// Verify the helper uses a static trip flag and a cached limit parse.
+p5must( false !== strpos( $language, 'static $tripped = false, $limit = null' ), 'within_memory_budget() caches limit parse and trip flag in static locals' );
 // Layer 1: ob_start is skipped entirely when no translations are saved.
 p5must( false !== strpos( $translation, 'public static function has_interface_translations()' ), 'Translation has zero-cost empty-translations guard method' );
 p5must( false !== strpos( $projection, 'has_interface_translations()' ), 'Projection uses has_interface_translations() for zero-cost empty guard' );
@@ -150,4 +158,4 @@ p5must( false === strpos( $kernel, 'Phase3_Migration_Admin' ), 'retired Phase3_M
 p5must( false === strpos( $projection, "'gloskin_hero_cta_url'" ), 'non-copy hero CTA URL not in projection' );
 p5must( false === strpos( $projection, "'gloskin_hero_media_id'" ), 'non-copy hero media ID not in projection' );
 
-echo "phase5-translation-frontend-contract.php: OK (single resolver + cached registries + memory guard + object cache + version 0.7.195)\n";
+echo "phase5-translation-frontend-contract.php: OK (single resolver + cached registries + circuit breaker + memory guard + object cache + version 0.7.196)\n";
