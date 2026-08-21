@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gloskin Clinic - Dokter Gloskin</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Palette Perjalanan (Journey Palette) */
+            --bg-white: #ffffff;
+            --bg-peach: #fcf9f7;
+            --bg-blush: #f8eee9;
+            
+            --header-bg: #f8eee9; 
+            --text-dark: #2a2a2a;
+            --text-muted: #666666; 
+            --accent-red: #a81c31; 
+            --accent-gold: #c3a378; 
+            --border-light: #f2e9e4;
+            
+            /* Dark Mode Palette untuk CTA */
+            --bg-dark: #0f0f0f;
+            --border-dark: #2a2a2a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-peach);
+            color: var(--text-dark);
+            line-height: 1.7;
+        }
+
+        h1, h2, h3, h4, h5, h6 { font-family: 'Playfair Display', serif; font-weight: 500; }
+        a { text-decoration: none; color: inherit; transition: all 0.3s ease; }
+        ul { list-style: none; }
+
+        /* --- NAVBAR --- */
+        header {
+            background-color: var(--header-bg); padding: 15px 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 20px rgba(0,0,0,0.03);
+        }
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--accent-red); letter-spacing: 2px; }
+        .nav-links { display: flex; gap: 40px; align-items: center; }
+        .nav-links a { font-size: 0.85rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dark); }
+        .nav-links a:hover { color: var(--accent-red); }
+        .nav-icons { display: flex; gap: 25px; align-items: center; font-size: 1.1rem; }
+        
+        /* --- UTILITY CLASSES --- */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 5%; }
+        .overline { display: block; font-size: 0.85rem; font-weight: 700; color: var(--accent-gold); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 15px; }
+        .btn-solid-red { background-color: var(--accent-red); color: white; padding: 15px 35px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; border: none; cursor: pointer; transition: all 0.3s; display: inline-block; }
+        .btn-solid-red:hover { background-color: #8a1527; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(168,28,49,0.15); }
+
+        /* --- HERO SECTION --- */
+        .section-hero { background-color: var(--bg-blush); padding: 80px 0 100px; }
+        .hero-container { display: flex; align-items: center; gap: 60px; max-width: 1200px; margin: 0 auto; padding: 0 5%; }
+        .hero-content { flex: 1.2; }
+        .hero-title { font-size: 4rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dark); line-height: 1.1; margin-bottom: 20px; }
+        .hero-desc { font-size: 1.1rem; color: var(--text-muted); font-weight: 300; line-height: 1.6; max-width: 500px; }
+        .hero-image { flex: 1; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.06); height: 350px; }
+        .hero-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        /* --- INTRO BANNER (Kenali Dokter) --- */
+        .intro-banner-wrapper { background-color: var(--bg-peach); padding: 80px 5% 40px; }
+        .intro-banner {
+            display: flex; background-color: var(--bg-white);
+            border-radius: 20px; overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.04);
+            max-width: 1200px; margin: 0 auto;
+            border: 1px solid var(--border-light);
+        }
+        .intro-banner-img { flex: 1; }
+        .intro-banner-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .intro-banner-content { flex: 1; padding: 60px 50px; display: flex; flex-direction: column; justify-content: center; }
+        .intro-banner-content .section-title { font-size: 2.2rem; margin-bottom: 20px; line-height: 1.2; text-transform: uppercase; letter-spacing: 1px; }
+        .intro-banner-content p { color: var(--text-muted); font-weight: 300; margin-bottom: 30px; font-size: 1.05rem; }
+
+        /* --- DOCTOR GRID SECTION --- */
+        .section-doctors { padding: 40px 5% 100px; background-color: var(--bg-peach); }
+        .section-doctors .overline { font-size: 2.5rem; color: var(--text-dark); margin-bottom: 10px; font-family: 'Playfair Display', serif; letter-spacing: 2px; font-weight: 500; }
+        .section-doctors > .container > p { color: var(--text-muted); margin-bottom: 50px; font-weight: 300; }
+
+        .doctor-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+        
+        /* Doctor Card (Kreatif & Elegan) */
+        .doctor-card { cursor: pointer; transition: transform 0.4s ease; }
+        .doctor-card:hover { transform: translateY(-10px); }
+        
+        .doctor-img-wrap {
+            width: 100%; aspect-ratio: 3/4; /* Proporsi portrait elegan */
+            border-radius: 12px; overflow: hidden; margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            position: relative;
+            background-color: #f0f0f0;
+        }
+        
+        .doctor-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
+        .doctor-card:hover .doctor-img-wrap img { transform: scale(1.06); }
+        
+        /* Aksen garis tipis di dalam foto saat hover */
+        .doctor-img-wrap::after {
+            content: ''; position: absolute; top: 15px; left: 15px; right: 15px; bottom: 15px;
+            border: 1px solid rgba(255,255,255,0); border-radius: 8px; transition: border-color 0.4s ease; pointer-events: none;
+        }
+        .doctor-card:hover .doctor-img-wrap::after { border-color: rgba(255,255,255,0.4); }
+
+        .doctor-info { text-align: left; padding: 0 10px; }
+        .doctor-name { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s ease; }
+        .doctor-card:hover .doctor-name { color: var(--accent-red); }
+        
+        .link-detail { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 8px; transition: color 0.3s; }
+        .link-detail i { transition: transform 0.3s; }
+        .doctor-card:hover .link-detail { color: var(--accent-gold); }
+        .doctor-card:hover .link-detail i { transform: translateX(5px); }
+
+        /* --- WAYFINDING / PILIH JALUR SECTION --- */
+        .section-wayfinding { padding: 40px 5% 100px; background-color: var(--bg-peach); }
+        .wayfinding-banner {
+            background-color: var(--bg-white); border-radius: 20px; padding: 60px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.03); border: 1px solid var(--border-light);
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+        }
+        .wayfinding-title { font-size: 2.2rem; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 2px; }
+        
+        .wayfinding-split { display: flex; width: 100%; border-top: 1px solid var(--border-light); padding-top: 40px; }
+        .wf-box { flex: 1; padding: 0 40px; display: flex; flex-direction: column; justify-content: space-between; }
+        .wf-box:first-child { border-right: 1px solid var(--border-light); }
+        
+        .wf-box h4 { font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 15px; text-transform: uppercase; }
+        .wf-box p { color: var(--text-muted); font-weight: 300; font-size: 0.95rem; margin-bottom: 25px; }
+        
+        .wf-link { color: var(--accent-red); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.9rem; align-self: flex-start; margin: 0 auto; display: inline-flex; align-items: center; gap: 10px; }
+        .wf-link:hover { color: var(--accent-gold); }
+        .wf-link:hover i { transform: translateX(5px); transition: 0.3s; }
+
+        /* --- DARK CTA BANNER --- */
+        .section-dark-cta { background-color: var(--bg-dark); padding: 80px 5%; position: relative; overflow: hidden; }
+        .section-dark-cta::before { content: ''; position: absolute; top: -50%; right: -10%; width: 600px; height: 600px; border: 1px solid rgba(255,255,255,0.05); border-radius: 50%; pointer-events: none; }
+        .section-dark-cta::after { content: ''; position: absolute; top: -30%; right: -5%; width: 800px; height: 800px; border: 1px solid rgba(255,255,255,0.03); border-radius: 50%; pointer-events: none; }
+        .cta-dark-box { max-width: 1200px; margin: 0 auto; border: 1px solid var(--border-dark); border-radius: 30px; padding: 80px 60px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; }
+        .cta-dark-content { flex: 1.5; color: white; }
+        .cta-dark-content .overline { color: var(--accent-gold); margin-bottom: 10px; }
+        .cta-dark-title { font-size: 3.5rem; line-height: 1.1; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; font-family: 'Playfair Display', serif; }
+        .cta-dark-content p { color: #aaaaaa; font-weight: 300; font-size: 1rem; }
+        .cta-dark-actions { flex: 1; display: flex; justify-content: flex-end; gap: 20px; }
+        .btn-outline-white { background-color: transparent; color: white; padding: 15px 35px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; transition: all 0.3s; }
+        .btn-outline-white:hover { border-color: white; transform: translateY(-3px); background-color: rgba(255,255,255,0.1); }
+
+        /* --- FOOTER --- */
+        footer { background-color: var(--bg-peach); padding: 80px 5% 30px; }
+        .footer-container { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 50px; max-width: 1200px; margin: 0 auto 50px; }
+        .footer-logo p { margin-top: 20px; font-size: 0.95rem; color: var(--text-muted); max-width: 320px; }
+        .footer-col h5 { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-col ul { display: flex; flex-direction: column; gap: 15px; }
+        .footer-col a { font-size: 0.95rem; color: var(--text-muted); }
+        .footer-col a:hover { color: var(--accent-red); }
+        .footer-bottom { text-align: center; padding-top: 30px; border-top: 1px solid #ebdcd5; font-size: 0.9rem; color: var(--text-muted); }
+
+        /* --- FLOATING WA BUTTON --- */
+        .float-wa { position: fixed; bottom: 40px; right: 40px; background-color: var(--accent-red); color: white; width: 65px; height: 65px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 32px; box-shadow: 0 10px 25px rgba(168, 28, 49, 0.4); z-index: 1000; transition: transform 0.3s ease; }
+        .float-wa:hover { transform: scale(1.1) translateY(-5px); color: white; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            .doctor-grid { grid-template-columns: repeat(2, 1fr); }
+            .cta-dark-box { flex-direction: column; text-align: center; gap: 40px; padding: 60px 40px; }
+            .cta-dark-title { font-size: 3rem; }
+            .cta-dark-actions { justify-content: center; }
+            .footer-container { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero-container { flex-direction: column; text-align: center; gap: 40px; }
+            .intro-banner { flex-direction: column; }
+            .intro-banner-content { padding: 40px 30px; text-align: center; }
+            .doctor-grid { grid-template-columns: 1fr; }
+            .wayfinding-split { flex-direction: column; gap: 30px; }
+            .wf-box:first-child { border-right: none; border-bottom: 1px solid var(--border-light); padding-bottom: 30px; }
+            .wf-box { padding: 0 10px; }
+            .cta-dark-actions { flex-direction: column; width: 100%; }
+            .cta-dark-actions button { width: 100%; }
+            .cta-dark-title { font-size: 2.2rem; }
+            .footer-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="logo">GLOSKIN</div>
+        <nav class="nav-links">
+            <a href="#">Treatment</a>
+            <a href="#">Promo</a>
+            <a href="#">Skincare</a>
+            <a href="#">Tentang Kami</a>
+        </nav>
+        <div class="nav-icons">
+            <a href="#"><i class="fas fa-search"></i></a>
+            <a href="#"><i class="far fa-user"></i></a>
+            <a href="#"><i class="far fa-heart"></i></a>
+            <a href="#"><i class="fas fa-shopping-bag"></i></a>
+            <a href="#"><img src="https://flagcdn.com/w20/id.png" alt="ID" style="width: 20px;"></a>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="section-hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <span class="overline">KAMI HADIR UNTUK ANDA</span>
+                <h1 class="hero-title">DOKTER<br>GLOSKIN</h1>
+                <p class="hero-desc">Perawatan estetik medis terbaik dan personal yang ditangani langsung oleh tenaga ahli medis profesional di setiap klinik Gloskin.</p>
+            </div>
+            <div class="hero-image">
+                <img src="https://images.unsplash.com/photo-1615397323136-1e0e8f702336?auto=format&fit=crop&w=800&q=80" alt="Perawatan Dokter Gloskin">
+            </div>
+        </div>
+    </section>
+
+    <!-- INTRO BANNER (Kenali Dokter) -->
+    <div class="intro-banner-wrapper">
+        <div class="intro-banner">
+            <div class="intro-banner-img">
+                <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80" alt="Dokter Spesialis">
+            </div>
+            <div class="intro-banner-content">
+                <span class="overline" style="color: var(--accent-red);">EKSPERTISE KAMI</span>
+                <h2 class="section-title">KENALI DOKTER GLOSKIN MELALUI PROFIL YANG TERSEDIA.</h2>
+                <p>Setiap penanganan estetika diawasi ketat oleh direktur medis dan dieksekusi oleh dokter yang terus berinovasi dalam memberikan hasil memuaskan.</p>
+                <a href="#profil" class="btn-solid-red" style="width: max-content;">Jelajahi Profil</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOCTOR GRID SECTION -->
+    <section id="profil" class="section-doctors">
+        <div class="container">
+            <h2 class="overline">PROFIL DOKTER</h2>
+            <p>Jelajahi keahlian dan latar belakang tenaga medis estetika kami.</p>
+            
+            <div class="doctor-grid">
+                
+                <!-- Doctor 1 -->
+                <div class="doctor-card">
+                    <div class="doctor-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1594824432258-86f2b45050f2?auto=format&fit=crop&w=500&q=80" alt="Dr. Ajeng">
+                    </div>
+                    <div class="doctor-info">
+                        <h3 class="doctor-name">DR. AJENG RETNA</h3>
+                        <a href="#" class="link-detail">Lihat Detail <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+
+                <!-- Doctor 2 -->
+                <div class="doctor-card">
+                    <div class="doctor-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=500&q=80" alt="Dr. Chintia">
+                    </div>
+                    <div class="doctor-info">
+                        <h3 class="doctor-name">DR. CHINTIA WIDYA</h3>
+                        <a href="#" class="link-detail">Lihat Detail <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+
+                <!-- Doctor 3 -->
+                <div class="doctor-card">
+                    <div class="doctor-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1614608682850-e0d6ed316d47?auto=format&fit=crop&w=500&q=80" alt="Dr. Desy">
+                    </div>
+                    <div class="doctor-info">
+                        <h3 class="doctor-name">DR. DESY TRI RINA SARI</h3>
+                        <a href="#" class="link-detail">Lihat Detail <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+
+                <!-- Doctor 4 -->
+                <div class="doctor-card">
+                    <div class="doctor-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1598539969446-2d1844b1cda9?auto=format&fit=crop&w=500&q=80" alt="Dr. Christina">
+                    </div>
+                    <div class="doctor-info">
+                        <h3 class="doctor-name">DR. CHRISTINA EKA</h3>
+                        <a href="#" class="link-detail">Lihat Detail <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+
+                <!-- Doctor 5 -->
+                <div class="doctor-card">
+                    <div class="doctor-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=500&q=80" alt="Dr. Nanang">
+                    </div>
+                    <div class="doctor-info">
+                        <h3 class="doctor-name">DR. NANANG MASRANI, M.BIOMED (AAM)</h3>
+                        <a href="#" class="link-detail">Lihat Detail <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+
+                <!-- Doctor 6 -->
+                <div class="doctor-card">
+                    <div class="doctor-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1605634568019-35a1215b8045?auto=format&fit=crop&w=500&q=80" alt="Dr. Maria">
+                    </div>
+                    <div class="doctor-info">
+                        <h3 class="doctor-name">DR. MARIA MAGDALENA</h3>
+                        <a href="#" class="link-detail">Lihat Detail <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- WAYFINDING / PILIH JALUR SECTION -->
+    <section class="section-wayfinding">
+        <div class="container">
+            <div class="wayfinding-banner">
+                <h2 class="wayfinding-title">PILIH JALUR BERDASARKAN PROFIL<br>ATAU LOKASI YANG TERSEDIA.</h2>
+                <div class="wayfinding-split">
+                    
+                    <div class="wf-box">
+                        <h4>INFORMASI PROFIL</h4>
+                        <p>Telusuri daftar ekstensif dokter kami berdasarkan spesialisasi atau cabang untuk menemukan pakar yang paling sesuai dengan kebutuhan Anda.</p>
+                        <a href="#" class="wf-link">Lihat Profil <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="wf-box">
+                        <h4>INFORMASI LOKASI</h4>
+                        <p>Temukan cabang Gloskin terdekat dari lokasi Anda saat ini. Kami memiliki jaringan klinik yang tersebar luas di berbagai kota besar.</p>
+                        <a href="#" class="wf-link" style="color: var(--accent-gold);">Cari Lokasi <i class="fas fa-arrow-right"></i></a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DARK CTA SECTION (Premium) -->
+    <section class="section-dark-cta">
+        <div class="cta-dark-box">
+            <div class="cta-dark-content">
+                <span class="overline">KONSULTASI</span>
+                <h2 class="cta-dark-title">SIAP<br>MEMBICARAKAN<br>KEBUTUHAN<br>KULIT ANDA?</h2>
+                <p>Pilih klinik Gloskin terdekat atau hubungi tim kami untuk menjadwalkan konsultasi.</p>
+            </div>
+            <div class="cta-dark-actions">
+                <button class="btn-solid-red">Pilih Klinik</button>
+                <button class="btn-outline-white">Hubungi Kami</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">
+                <h2 class="logo">GLOSKIN</h2>
+                <p>Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengedepankan konsultasi dan penanganan dokter di setiap kliniknya.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Layanan</h5>
+                <ul>
+                    <li><a href="#">Perawatan</a></li>
+                    <li><a href="#">Promo</a></li>
+                    <li><a href="#">Skincare</a></li>
+                    <li><a href="#">Belanja</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Informasi</h5>
+                <ul>
+                    <li><a href="#">Tentang</a></li>
+                    <li><a href="#">Dokter</a></li>
+                    <li><a href="#">Insight</a></li>
+                    <li><a href="#">Kontak</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Jaringan Klinik</h5>
+                <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <li><a href="#">Kebayoran Baru</a></li>
+                    <li><a href="#">Tebet</a></li>
+                    <li><a href="#">Bekasi</a></li>
+                    <li><a href="#">Cibubur</a></li>
+                    <li><a href="#">Serpong</a></li>
+                    <li><a href="#">Surabaya</a></li>
+                    <li><a href="#">Banjarmasin</a></li>
+                    <li><a href="#">Balikpapan</a></li>
+                    <li><a href="#">Denpasar</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Gloskin.</p>
+        </div>
+    </footer>
+
+    <!-- FLOATING WHATSAPP -->
+    <a href="#" class="float-wa" title="Hubungi Kami di WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+</body>
+</html>
