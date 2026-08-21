@@ -1,8 +1,15 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-/* Full-width video hero — mode is resolved in TemplateService::home_context(). */
-gloskin_ui1_render_hero( isset( $gloskin_context['hero'] ) && is_array( $gloskin_context['hero'] ) ? $gloskin_context['hero'] : array() );
+/*
+ * Home canonical reference intentionally uses the shared hero renderer without
+ * the campaign video source. The reference is an image-led, full-bleed hero;
+ * Home-specific geometry lives in the canonical editorial stylesheet.
+ */
+$gloskin_home_hero = isset( $gloskin_context['hero'] ) && is_array( $gloskin_context['hero'] ) ? $gloskin_context['hero'] : array();
+$gloskin_home_hero['mode']    = 'home_reference';
+$gloskin_home_hero['sources'] = array();
+gloskin_ui1_render_hero( $gloskin_home_hero );
 
 ?>
 <section class="gloskin-ui1-section gloskin-home-why" data-gloskin-section="why-gloskin">
@@ -23,19 +30,17 @@ gloskin_ui1_render_hero( isset( $gloskin_context['hero'] ) && is_array( $gloskin
 </section>
 
 <?php $gloskin_home_treatments = array_slice( isset( $gloskin_context['treatments'] ) && is_array( $gloskin_context['treatments'] ) ? $gloskin_context['treatments'] : array(), 0, 3 ); ?>
-<section class="gloskin-ui1-section gloskin-ui1-section--soft gloskin-home-treatments" data-gloskin-section="home-treatments">
+<section class="gloskin-ui1-section gloskin-home-treatments" data-gloskin-section="home-treatments">
 	<div class="gloskin-ui1-container">
 		<?php gloskin_ui1_render_section_heading( __( 'TREATMENT UNGGULAN', 'gloskin-site-core' ), __( 'Rangkaian perawatan eksklusif yang dirancang secara personal dengan teknologi mutakhir untuk memancarkan kecantikan sejati kulit Anda.', 'gloskin-site-core' ) ); ?>
 		<?php if ( $gloskin_home_treatments ) : ?>
 			<div class="gloskin-ui1-grid gloskin-ui1-grid--cards gloskin-home-treatments__grid">
 				<?php foreach ( $gloskin_home_treatments as $gloskin_home_treatment ) : ?>
 					<?php
-					/* Home prefers the managed Treatment summary, but a factual post excerpt
-					 * is a safe short-description fallback when that summary is still blank. */
-					$gloskin_home_treatment_card = $gloskin_home_treatment;
-					if ( '' === trim( (string) ( $gloskin_home_treatment_card['summary'] ?? '' ) ) && '' !== trim( (string) ( $gloskin_home_treatment_card['excerpt'] ?? '' ) ) ) {
-						$gloskin_home_treatment_card['summary'] = (string) $gloskin_home_treatment_card['excerpt'];
-					}
+					/* Canonical Home cards are image + title + detail link only. */
+					$gloskin_home_treatment_card            = $gloskin_home_treatment;
+					$gloskin_home_treatment_card['summary'] = '';
+					$gloskin_home_treatment_card['excerpt'] = '';
 					gloskin_ui1_render_card( $gloskin_home_treatment_card, 'treatment' );
 					?>
 				<?php endforeach; ?>
@@ -51,7 +56,7 @@ $gloskin_home_testimonials = isset( $gloskin_context['testimonials'] ) && is_arr
 $gloskin_home_testimonials = array_values( array_filter( $gloskin_home_testimonials, static function ( $gloskin_home_testimonial ) {
 	return '' !== trim( (string) ( $gloskin_home_testimonial['excerpt'] ?? '' ) );
 } ) );
-$gloskin_home_testimonials = array_slice( $gloskin_home_testimonials, 0, 3 );
+$gloskin_home_testimonials = array_slice( $gloskin_home_testimonials, 0, 4 );
 ?>
 <section class="gloskin-ui1-section gloskin-home-testimonials" data-gloskin-section="testimonials">
 	<div class="gloskin-ui1-container">
@@ -70,6 +75,7 @@ $gloskin_home_testimonials = array_slice( $gloskin_home_testimonials, 0, 3 );
 							<?php echo wp_get_attachment_image( absint( $gloskin_home_testimonial['image_id'] ), 'thumbnail', false, array( 'class' => 'gloskin-home-testimonial__avatar', 'loading' => 'lazy' ) ); ?>
 						<?php endif; ?>
 						<div class="gloskin-home-testimonial__body">
+							<span class="gloskin-home-testimonial__quote" aria-hidden="true">“</span>
 							<blockquote><p>"<?php echo esc_html( wp_trim_words( wp_strip_all_tags( $gloskin_home_quote ), 48 ) ); ?>"</p></blockquote>
 							<?php if ( '' !== $gloskin_home_attribution || '' !== $gloskin_home_subtitle ) : ?>
 							<figcaption>
@@ -105,21 +111,20 @@ $gloskin_home_testimonials = array_slice( $gloskin_home_testimonials, 0, 3 );
 		<?php gloskin_ui1_render_section_heading( __( 'PIAGAM & PENGHARGAAN', 'gloskin-site-core' ), __( 'Bukti komitmen dan dedikasi tinggi kami dalam menjaga standar mutu pelayanan estetika dan inovasi medis terbaik di Indonesia.', 'gloskin-site-core' ) ); ?>
 		<?php if ( $gloskin_home_piagam ) : ?>
 			<div class="gloskin-home-piagam__rail" data-gloskin-piagam>
-				<?php foreach ( $gloskin_home_piagam as $gloskin_home_piagam_index => $gloskin_home_achievement ) :
+				<?php foreach ( $gloskin_home_piagam as $gloskin_home_achievement ) :
 					$gloskin_home_achievement_title  = trim( (string) ( $gloskin_home_achievement['title'] ?? '' ) );
 					$gloskin_home_achievement_issuer = trim( (string) ( $gloskin_home_achievement['meta']['issuer'] ?? '' ) );
 					$gloskin_home_achievement_year   = trim( (string) ( $gloskin_home_achievement['meta']['year'] ?? '' ) );
 					$gloskin_home_achievement_meta   = implode( ' · ', array_filter( array( $gloskin_home_achievement_issuer, $gloskin_home_achievement_year ) ) );
+					if ( '' === $gloskin_home_achievement_meta ) {
+						$gloskin_home_achievement_meta = trim( wp_trim_words( wp_strip_all_tags( (string) ( $gloskin_home_achievement['excerpt'] ?? '' ) ), 8 ) );
+					}
 				?>
-					<figure class="gloskin-home-piagam__card">
+					<article class="gloskin-home-piagam__card">
 						<?php if ( '' !== $gloskin_home_achievement_title ) : ?><h3 class="gloskin-home-piagam__title"><?php echo esc_html( $gloskin_home_achievement_title ); ?></h3><?php endif; ?>
-						<?php if ( ! empty( $gloskin_home_achievement['image_id'] ) ) : ?>
-							<?php echo wp_get_attachment_image( absint( $gloskin_home_achievement['image_id'] ), 'medium_large', false, array( 'class' => 'gloskin-home-piagam__image', 'loading' => 'lazy', 'alt' => $gloskin_home_achievement_title ) ); ?>
-						<?php else : ?>
-							<?php gloskin_ui1_render_presentation_media( 'editorial', 'piagam-' . ( $gloskin_home_piagam_index + 1 ), 'gloskin-home-piagam__image' ); ?>
-						<?php endif; ?>
-						<?php if ( '' !== $gloskin_home_achievement_meta ) : ?><figcaption class="gloskin-home-piagam__meta"><?php echo esc_html( $gloskin_home_achievement_meta ); ?></figcaption><?php endif; ?>
-					</figure>
+						<div class="gloskin-home-piagam__icon" aria-hidden="true">G</div>
+						<?php if ( '' !== $gloskin_home_achievement_meta ) : ?><p class="gloskin-home-piagam__meta"><?php echo esc_html( $gloskin_home_achievement_meta ); ?></p><?php endif; ?>
+					</article>
 				<?php endforeach; ?>
 			</div>
 		<?php else : ?>
