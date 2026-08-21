@@ -2,7 +2,7 @@
 /** Global Gloskin footer. @package GloskinSiteCore */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 $gloskin_clinic_links = isset( $gloskin_context['clinic_links'] ) && is_array( $gloskin_context['clinic_links'] ) ? $gloskin_context['clinic_links'] : array();
-$gloskin_show_footer_cta = ! in_array( isset( $gloskin_context['view'] ) ? $gloskin_context['view'] : '', array( 'home', 'contact', 'about', 'promo' ), true );
+$gloskin_show_footer_cta = ! in_array( isset( $gloskin_context['view'] ) ? $gloskin_context['view'] : '', array( 'home', 'contact', 'promo' ), true );
 $gloskin_logo_url = isset( $gloskin_context['logo_url'] ) ? (string) $gloskin_context['logo_url'] : '';
 ?>
 <footer class="gloskin-ui1-footer">
