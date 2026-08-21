@@ -16,10 +16,11 @@ $adapter_shop = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-cor
 $query_trait  = $read( 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-query-trait.php' );
 $rest_trait   = $read( 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-rest-trait.php' );
 $discovery    = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-shop-discovery.php' );
-$batch        = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-production-batch.php' );
+$kernel       = $read( 'plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php' );
 $route        = $read( 'plugin/gloskin-site-core/includes/gloskin-site-core-shop-discovery-route-trait.php' );
 $shop_tpl     = $read( 'plugin/gloskin-site-core/templates/pages/shop.php' );
 $results_tpl  = $read( 'plugin/gloskin-site-core/templates/parts/shop-results.php' );
+$core_js      = $read( 'plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js' );
 $js           = $read( 'plugin/gloskin-site-core/assets/js/gloskin-ui1-shop-discovery.js' );
 $css          = $read( 'plugin/gloskin-site-core/assets/css/gloskin-ui1-shop-discovery.css' );
 
@@ -38,14 +39,20 @@ $ok( false !== strpos( $adapter_shop, 'gloskin_price_lookup.max_price >= %f' ) &
 $ok( false === strpos( $query_trait, 'WP_Query' ) && false === strpos( $query_trait, 'posts_clauses' ) && false === strpos( $query_trait, 'global $wpdb' ), 'Shop Discovery must own zero product SQL/query mechanics' );
 $ok( false !== strpos( $query_trait, 'products_paginated_filtered( $page, self::PER_PAGE, $filters )' ), 'Discovery must delegate filters to adapter owner' );
 $ok( false === strpos( $discovery, 'Shop_Discovery_Search_Trait' ) && false === strpos( $discovery, 'Shop_Discovery_Normalize_Trait' ), 'retired Discovery query/search owners must stay absent' );
-$ok( false !== strpos( $batch, 'class-gloskin-site-core-woocommerce-adapter-shop-catalog.php' ) && false !== strpos( $batch, "array( 'route', 'rest', 'query' )" ), 'Production Batch adapter/query ownership regression' );
+$ok( false !== strpos( $kernel, 'class-gloskin-site-core-woocommerce-adapter-shop-catalog.php' ) && false !== strpos( $kernel, "array( 'route', 'rest', 'query' )" ), 'Kernel must own current adapter/query composition after ProductionBatch retirement' );
+$ok( false === strpos( $kernel, 'class-gloskin-site-core-production-batch.php' ), 'retired ProductionBatch runtime must stay absent' );
 
-/* One existing endpoint and one browser request owner. */
+/* One existing endpoint and exactly one ACTIVE browser request owner. */
 $ok( false !== strpos( $route, "\$route = '/gloskin/v1/shop/catalog';" ), 'existing Shop endpoint extension missing' );
-$ok( 1 === substr_count( $js, 'function requestCatalog(' ) && 1 === substr_count( $js, 'return window.fetch(' ), 'one catalog request/fetch owner expected' );
+$ok( 1 === substr_count( $js, 'function requestCatalog(' ) && 1 === substr_count( $js, 'return window.fetch(' ), 'dedicated discovery must own one catalog request/fetch path' );
+$ok( 1 === substr_count( $js, "document.querySelector('[data-gloskin-shop-catalog-owner]')" ), 'dedicated discovery must bind the canonical rendered Shop root exactly once' );
+$ok( false === strpos( $core_js, "document.querySelector('[data-gloskin-shop-catalog-owner]')" ), 'shared core must never bind the canonical Shop root' );
+$ok( false !== strpos( $core_js, "document.querySelector('[data-gloskin-shop-catalog]')" ), 'legacy core catalog code must remain dormant on its retired root until source deletion' );
+$ok( 1 === substr_count( $shop_tpl, 'data-gloskin-shop-catalog-owner' ), 'Shop template must render exactly one canonical catalog owner root' );
+$ok( false === strpos( $shop_tpl, 'data-gloskin-shop-catalog="' ), 'Shop template must not render the retired legacy core root' );
 $ok( false !== strpos( $js, 'new window.AbortController()' ) && false !== strpos( $js, 'sequence !== requestSequence' ), 'AbortController/stale guard missing' );
-$ok( ! preg_match( '/window\.fetch\s*=(?!=)/', $js ), 'window.fetch monkeypatch forbidden' );
-$ok( ! preg_match( '/(?:window\.)?history\.(?:pushState|replaceState)\s*=(?!=)/', $js ), 'History monkeypatch forbidden' );
+$ok( ! preg_match( '/window\.fetch\s*=(?!=)/', $js . $core_js ), 'window.fetch monkeypatch forbidden' );
+$ok( ! preg_match( '/(?:window\.)?history\.(?:pushState|replaceState)\s*=(?!=)/', $js . $core_js ), 'History monkeypatch forbidden' );
 
 /* Canonical Gloskin skin only. */
 $ok( false === stripos( $css, '#2d6a4f' ) && false === stripos( $css, '45 106 79' ), 'non-Gloskin green palette drift must be zero' );
@@ -53,19 +60,21 @@ foreach ( array( '--gloskin-accent', '--gloskin-accent-readable', '--gloskin-acc
 	$ok( false !== strpos( $css, $token ), "canonical token missing: {$token}" );
 }
 $ok( 0 === substr_count( $css, '!important' ), 'discovery CSS must add zero !important declarations' );
+$ok( false !== strpos( $css, '[data-gloskin-section="shop-products"] {' ) && false !== strpos( $css, 'padding-block: clamp(48px, 6vw, 72px) clamp(72px, 8vw, 112px);' ), 'Shop closing cadence must stay route-scoped' );
+$ok( false === strpos( $css, '.gloskin-ui1-section{padding' ), 'Shop discovery must not add a global section rhythm patch' );
 
 /* Dead numeric/Apply generation is gone. */
 $ok( false === strpos( $shop_tpl, 'type="number"' ) && false === strpos( $css, 'input[type="number"]' ), 'legacy numeric price inputs/rules must be absent' );
 $ok( false === strpos( $css, 'price-grid' ) && false === strpos( $css, 'shop-filter__actions' ), 'legacy price-grid/filter-action CSS must be absent' );
 $ok( false === strpos( $shop_tpl, '>Terapkan<' ) && false === strpos( $shop_tpl, '>Apply<' ), 'legacy Apply button must be absent' );
 
-/* Rail is the effective sticky owner; categories are explicitly neutralized. */
+/* Rail is the effective sticky owner; mobile becomes one horizontal filter strip. */
 $ok( false !== strpos( $css, '.gloskin-ui1-shop-catalog__rail {' ) && false !== strpos( $css, 'position: sticky;' ), 'complete Shop rail must be desktop sticky owner' );
 $ok( false !== strpos( $css, 'top: calc(var(--gloskin-ui1-nav-sticky-top) + var(--gloskin-shop-rail-sticky-clearance));' ), 'sticky top must use canonical nav/admin offset token' );
 $ok( false !== strpos( $css, '.gloskin-ui1-shop-categories {' ) && false !== strpos( $css, 'position: static;' ) && false !== strpos( $css, 'border: 0;' ), 'category-only sticky/border owner must be neutralized' );
 $ok( false !== strpos( $css, '.gloskin-ui1-shop-rail-section:not(:last-of-type)' ), 'dividers must exist only between logical rail sections' );
 $ok( false !== strpos( $css, '@media (max-width: 900px)' ) && false !== strpos( $css, '.gloskin-ui1-shop-catalog__rail {' ) && false !== strpos( $css, 'top: auto;' ), 'single-column breakpoint must disable rail sticky' );
-$ok( false === strpos( $css, 'overflow-x: auto' ) && false === strpos( $css, 'width: max-content' ), 'mobile categories must remain coherent vertical flow without horizontal strip overflow' );
+$ok( false !== strpos( $css, 'overflow-x: auto;' ) && false === strpos( $css, 'width: max-content' ), 'mobile categories must use the bounded horizontal strip without max-content overflow geometry' );
 $ok( false !== strpos( $css, '.gloskin-ui1-shop-filter__clear {' ) && false !== strpos( $css, 'background: transparent;' ) && false !== strpos( $css, 'width: auto;' ), 'Clear All must be lightweight rather than a full-width bordered box' );
 $ok( false === strpos( $js, "addEventListener('scroll'" ) && false === strpos( $js, 'IntersectionObserver' ), 'sticky behavior must have zero JS owner' );
 
@@ -90,17 +99,30 @@ $ok( false !== strpos( $rest_trait, "'price_state'         => \$price_state" ), 
 $ok( false !== strpos( $shop_tpl, 'data-gloskin-price-state=' ), 'SSR price state hydration missing' );
 $ok( false !== strpos( $shop_tpl, "__( 'Harga belum tersedia', 'gloskin-site-core' )" ), 'empty price availability copy missing' );
 $ok( 2 === substr_count( $shop_tpl, 'type="range"' ), 'normal price control remains dual native range inputs' );
+$ok( false !== strpos( $shop_tpl, "data-gloskin-price-slider<?php echo 'normal' === \$gloskin_shop_price_state ? '' : ' hidden'; ?>" ), 'single/empty SSR must hide the entire slider stage' );
 $ok( false !== strpos( $shop_tpl, "'normal' === \$gloskin_shop_price_state ? '' : ' hidden disabled'" ), 'single/empty must expose no focusable ghost range handles' );
 
 $ok( false !== strpos( $js, 'function normalizePriceState(' ) && false !== strpos( $js, 'function applySliderBounds(' ), 'client price-state normalization missing' );
 $ok( false !== strpos( $js, "priceState === 'single'" ) && false !== strpos( $js, "priceState === 'empty'" ), 'single/empty client states missing' );
 $ok( false !== strpos( $js, "priceMinLabel.textContent = 'Harga belum tersedia'" ), 'empty client copy missing' );
+$ok( false !== strpos( $js, 'priceSlider.hidden = !normal;' ), 'single/empty client state must hide the entire slider stage' );
 $ok( false !== strpos( $js, 'slider.disabled = !normal;' ) && false !== strpos( $js, 'slider.hidden = !normal;' ), 'single/empty handles must be disabled and hidden' );
+$ok( false === strpos( $css, '[data-gloskin-price-state="single"] .gloskin-ui1-price-slider__track' ), 'single-price state must not paint a fictional slider track' );
 $ok( false !== strpos( $js, 'applySliderBounds(' ) && false !== strpos( $js, 'data.price_state' ) && false !== strpos( $js, 'data.available_min_price' ) && false !== strpos( $js, 'data.available_max_price' ), 'same catalog response must apply price state/bounds' );
 $ok( 1 === substr_count( $js, 'return window.fetch(' ), 'price availability must not add a second REST request' );
+
+/* Pagination performs at most one conditional reposition after focus. */
+$pagination_start = strpos( $js, 'function revealPaginationContext()' );
+$pagination_end   = false === $pagination_start ? false : strpos( $js, 'function requestCatalog(', $pagination_start );
+$pagination_src   = false !== $pagination_start && false !== $pagination_end ? substr( $js, $pagination_start, $pagination_end - $pagination_start ) : '';
+$ok( '' !== $pagination_src, 'pagination context helper missing' );
+$ok( false !== strpos( $pagination_src, 'focus({ preventScroll: true })' ), 'pagination focus must not trigger its own scroll' );
+$ok( false !== strpos( $pagination_src, 'getBoundingClientRect()' ) && false !== strpos( $pagination_src, 'rect.top >= 0 && rect.bottom <= viewportHeight' ), 'pagination must skip reposition when heading is already visible' );
+$ok( 1 === substr_count( $pagination_src, 'scrollIntoView(' ), 'pagination may perform at most one explicit reposition' );
+$ok( false !== strpos( $pagination_src, 'prefers-reduced-motion: reduce' ), 'pagination reposition must respect reduced motion' );
 
 /* Existing result/semantic wiring remains. */
 $ok( false !== strpos( $results_tpl, '$gloskin_shop_filtered' ) && false !== strpos( $results_tpl, 'gloskin-ui1-shop-empty-search' ), 'filtered empty-state regression' );
 $ok( false !== strpos( $shop_tpl, 'data-gloskin-shop-search-form' ) && false !== strpos( $shop_tpl, 'Cari produk, SKU, atau kebutuhan kulit' ), 'smart search presentation missing' );
 
-echo "shop smart-search contract: OK\n";
+echo "shop smart-search contract: OK (one active owner + factual price states + bounded pagination)\n";
