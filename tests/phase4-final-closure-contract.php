@@ -94,7 +94,7 @@ foreach ( array( 'promo-01.png', 'promo-02.png', 'promo-03.png', 'piagam-01.png'
 p4must( 3 === substr_count( $f, "'asset' => 'promo-" ) && 4 === substr_count( $f, "'asset' => 'piagam-" ), 'Finalizer still owns exactly 3 Promo + 4 Piagam replacement definitions' );
 p4must( false !== strpos( $f, 'set_post_thumbnail' ) && false !== strpos( $f, 'attachment_is_usable_image' ), 'resolver-owned replacement image verification remains' );
 
-/* Home data owner remains lean; frontend now owns graceful presentation gaps. */
+/* Home data owner remains lean; frontend owns graceful presentation gaps. */
 $home_ctx_start = strpos( $ts, 'private function home_context()' );
 $home_ctx_end   = strpos( $ts, 'private function about_context()', $home_ctx_start );
 $home_ctx       = false !== $home_ctx_start && false !== $home_ctx_end ? substr( $ts, $home_ctx_start, $home_ctx_end - $home_ctx_start ) : '';
@@ -103,6 +103,7 @@ p4must( false === strpos( $home_ctx, 'skincare_mappings' ), 'Home context does n
 p4must( false === strpos( $home_ctx, "'products'" ), 'Home context does not reintroduce Products' );
 p4must( false === strpos( $home_ctx, 'woo_ready' ), 'Home context does not reintroduce Woo readiness' );
 p4must( false !== strpos( $home_ctx, 'curated_home_treatments' ) && false !== strpos( $home_ctx, 'testimonials' ) && false !== strpos( $home_ctx, 'achievements' ), 'Home keeps its three dynamic content owners' );
+p4must( false !== strpos( $home_ctx, "\$hero['mode'] = 'video_only';" ), 'Home remains video-only hero mode' );
 
 /* Contractual Home sections cannot silently collapse. */
 foreach ( array( 'data-gloskin-section="home-treatments"', 'data-gloskin-section="testimonials"', 'data-gloskin-section="achievements"' ) as $section ) {
@@ -115,11 +116,13 @@ p4must( false !== strpos( $h, "gloskin_ui1_render_presentation_media( 'editorial
 p4must( false !== strpos( $h, "trim( (string) ( \$gloskin_home_testimonial['excerpt'] ?? '' ) )" ), 'Testimonial uses factual excerpt' );
 p4must( false === strpos( $h, "\$gloskin_home_testimonial['title'] ?? ''" ), 'no fabricated Testimonial quote from title' );
 
-/* One generic empty-state presentation owner. */
+/* One generic empty-state owner plus scoped Home composition. */
 p4must( false !== strpos( $helpers, 'function gloskin_ui1_render_empty_state(' ), 'shared generic empty-state renderer exists' );
 p4must( false !== strpos( $core_base, '.gloskin-ui1-empty-state{' ), 'shared core foundation owns generic empty-state CSS' );
 p4must( false === strpos( $readiness, '.gloskin-ui1-empty-state{' ), 'readiness layer no longer duplicates generic empty-state CSS' );
-p4must( false !== strpos( $editorial, '.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:min(var(--gloskin-section),5.5rem)}' ), 'Home vertical rhythm is scoped and token based' );
+p4must( false !== strpos( $editorial, '.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:clamp(3rem,6vw,5.5rem)}' ), 'Home vertical rhythm is restored and scoped' );
+p4must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{object-fit:cover;object-position:center center}' ), 'Home hero video uses cover' );
+p4must( false !== strpos( $editorial, '.gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{max-width:760px;margin:0 auto clamp(1.5rem,3vw,2.5rem);text-align:center}' ), 'Home section heading cadence is restored' );
 p4must( false === strpos( $editorial, '.gloskin-ui1-section{padding' ), 'no broad global section spacing patch' );
 
 /* Promo remains structurally stable with shared empty/media fallbacks. */
@@ -143,11 +146,11 @@ p4must( false === strpos( $k, 'Gloskin_Site_Core_Home_Readiness_Contract' ) && f
 p4must( false !== strpos( $k, 'Gloskin_Site_Core_Content_Finalizer_Admin' ), 'Content Finalizer remains registered as durable reconciliation owner' );
 p4must( false === strpos( $k, 'Production_Batch' ) && false === strpos( $k, 'production-batch' ), 'retired ProductionBatch stays retired' );
 
-/* Existing translation/interface owner covers all newly reused visible copy. */
+/* Existing translation/interface owner covers reused visible copy. */
 foreach ( array( 'Detail tambahan belum tersedia untuk ditampilkan.', 'Informasi promo belum tersedia.', 'Treatment Unggulan', 'Testimoni', 'Piagam' ) as $copy ) {
 	p4must( false !== strpos( $t, $copy ), 'translation/interface owner contains: ' . $copy );
 }
 
-p4must( false !== strpos( $k, "const VERSION = '0.7.189'" ) && false !== strpos( $b, 'Version: 0.7.189' ), 'release owners synchronized at 0.7.189' );
+p4must( false !== strpos( $k, "const VERSION = '0.7.190'" ) && false !== strpos( $b, 'Version: 0.7.190' ), 'release owners synchronized at 0.7.190' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + graceful Home/Promo empty-state resilience + Finalizer separation + version 0.7.189)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/structure hotfix + resilient frontend + version 0.7.190)\n";
