@@ -22,6 +22,12 @@ return array(
 			'deps'  => array(),
 			'media' => 'all',
 		),
+		'gloskin-ui1-montserrat' => array(
+			'src'      => 'https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap',
+			'deps'     => array(),
+			'media'    => 'all',
+			'external' => true,
+		),
 		'gloskin-ui1-core-base' => array(
 			'src'   => 'assets/css/gloskin-ui1-core-base.css',
 			'deps'  => array( 'gloskin-ui1-fonts' ),
@@ -74,7 +80,7 @@ return array(
 		),
 		'gloskin-ui1-product-grid' => array(
 			'src'   => 'assets/css/gloskin-ui1-product-grid.css',
-			'deps'  => array( 'gloskin-ui1-editorial' ),
+			'deps'  => array( 'gloskin-ui1-editorial', 'gloskin-ui1-montserrat' ),
 			'media' => 'all',
 		),
 		'gloskin-ui1-consultation' => array(

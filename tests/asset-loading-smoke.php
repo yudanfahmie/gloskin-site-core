@@ -49,17 +49,25 @@ foreach ( array( 'gloskin-ui1-fonts', 'gloskin-ui1-core-base', 'gloskin-ui1-core
 if ( ! in_array( 'gloskin-ui1-core', $GLOBALS['gl_scripts'], true ) ) { fwrite( STDERR, "frontend script missing on Gloskin shell request\n" ); exit( 1 ); }
 $font = $GLOBALS['gl_registered_styles']['gloskin-ui1-fonts'] ?? array();
 if ( empty( $font['src'] ) || $font['src'] !== '/plugins/gloskin/assets/css/gloskin-ui1-fonts.css' ) { fwrite( STDERR, "self-hosted Graphik/Felix Titling font stylesheet registration failed\n" ); exit( 1 ); }
+
+$montserrat = $GLOBALS['gl_registered_styles']['gloskin-ui1-montserrat'] ?? array();
+$montserrat_src = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap';
+if ( ( $montserrat['src'] ?? '' ) !== $montserrat_src ) {
+	fwrite( STDERR, "scoped Montserrat stylesheet registration failed\n" ); exit( 1 );
+}
 foreach ( $GLOBALS['gl_registered_styles'] as $handle => $asset ) {
-	if ( false !== strpos( (string) ( $asset['src'] ?? '' ), 'fonts.googleapis.com' ) || false !== strpos( (string) ( $asset['src'] ?? '' ), 'fonts.gstatic.com' ) ) {
-		fwrite( STDERR, "external Google Fonts dependency still registered: {$handle}\n" ); exit( 1 );
+	$src = (string) ( $asset['src'] ?? '' );
+	if ( ( false !== strpos( $src, 'fonts.googleapis.com' ) || false !== strpos( $src, 'fonts.gstatic.com' ) ) && 'gloskin-ui1-montserrat' !== $handle ) {
+		fwrite( STDERR, "unexpected external Google Fonts dependency registered: {$handle}\n" ); exit( 1 );
 	}
 }
 $base = $GLOBALS['gl_registered_styles']['gloskin-ui1-core-base'] ?? array();
 $core = $GLOBALS['gl_registered_styles']['gloskin-ui1-core'] ?? array();
 $production = $GLOBALS['gl_registered_styles']['gloskin-ui1-production'] ?? array();
+$product_grid = $GLOBALS['gl_registered_styles']['gloskin-ui1-product-grid'] ?? array();
 $core_script = $GLOBALS['gl_registered_scripts']['gloskin-ui1-core'] ?? array();
-if ( ( $base['deps'] ?? array() ) !== array( 'gloskin-ui1-fonts' ) || ( $core['deps'] ?? array() ) !== array( 'gloskin-ui1-core-base' ) || ( $production['deps'] ?? array() ) !== array( 'gloskin-ui1-readiness' ) ) { fwrite( STDERR, "frontend stylesheet dependency order failed\n" ); exit( 1 ); }
-foreach ( array( 'font' => $font, 'core-base' => $base, 'core' => $core, 'production' => $production, 'core-script' => $core_script ) as $label => $asset ) {
+if ( ( $base['deps'] ?? array() ) !== array( 'gloskin-ui1-fonts' ) || ( $core['deps'] ?? array() ) !== array( 'gloskin-ui1-core-base' ) || ( $production['deps'] ?? array() ) !== array( 'gloskin-ui1-readiness' ) || ( $product_grid['deps'] ?? array() ) !== array( 'gloskin-ui1-editorial', 'gloskin-ui1-montserrat' ) ) { fwrite( STDERR, "frontend stylesheet dependency order failed\n" ); exit( 1 ); }
+foreach ( array( 'font' => $font, 'montserrat' => $montserrat, 'core-base' => $base, 'core' => $core, 'production' => $production, 'product-grid' => $product_grid, 'core-script' => $core_script ) as $label => $asset ) {
 	if ( ( $asset['version'] ?? null ) !== $asset_version ) { fwrite( STDERR, "stale frontend asset version for {$label}\n" ); exit( 1 ); }
 }
 
