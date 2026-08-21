@@ -1,29 +1,80 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
-gloskin_ui1_render_hero( $gloskin_context['hero'] );
 
-/* Large alternating editorial bands — discovery presentation over canonical path terms.
- * The consultation/recommendation engine below remains the authoritative interactive layer. */
-if ( $gloskin_context['paths'] ) :
+$gloskin_hero = isset( $gloskin_context['hero'] ) && is_array( $gloskin_context['hero'] ) ? $gloskin_context['hero'] : array();
+$gloskin_hero_heading = trim( (string) ( $gloskin_hero['heading'] ?? __( 'Perawatan', 'gloskin-site-core' ) ) );
+$gloskin_hero_copy = trim( (string) ( $gloskin_hero['copy'] ?? '' ) );
+$gloskin_hero_media_id = absint( $gloskin_hero['media_id'] ?? 0 );
+$gloskin_band_copy = array(
+	__( 'Temukan pilihan perawatan yang berfokus pada jerawat aktif dan bekas jerawat untuk membantu menyiapkan diskusi konsultasi Anda.', 'gloskin-site-core' ),
+	__( 'Pelajari pilihan perawatan untuk flek dan pigmentasi agar kebutuhan warna kulit yang tidak merata dapat dibahas lebih terarah saat konsultasi.', 'gloskin-site-core' ),
+	__( 'Jelajahi pilihan perawatan untuk tanda penuaan dan kontur wajah sebelum menentukan pendekatan yang sesuai bersama dokter Gloskin.', 'gloskin-site-core' ),
+	__( 'Kenali pilihan perawatan yang berfokus pada kualitas kulit dan skin barrier untuk membantu menjaga kulit tampak sehat dan terawat.', 'gloskin-site-core' ),
+);
 ?>
-<div data-gloskin-section="treatments-bands">
-	<?php gloskin_ui1_render_treatment_bands( $gloskin_context['paths'] ); ?>
-</div>
-<?php endif; ?>
+<div class="gloskin-treatments-page">
+	<section class="gloskin-treatments-hero" data-gloskin-section="treatments-hero">
+		<div class="gloskin-ui1-container gloskin-treatments-hero__grid">
+			<div class="gloskin-treatments-hero__content">
+				<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Treatment', 'gloskin-site-core' ); ?></p>
+				<h1><?php echo esc_html( $gloskin_hero_heading ); ?></h1>
+				<?php if ( '' !== $gloskin_hero_copy ) : ?><p class="gloskin-treatments-hero__copy"><?php echo esc_html( $gloskin_hero_copy ); ?></p><?php endif; ?>
+			</div>
+			<div class="gloskin-treatments-hero__media">
+				<?php if ( $gloskin_hero_media_id ) : ?>
+					<?php echo wp_get_attachment_image( $gloskin_hero_media_id, 'large', false, array( 'class' => 'gloskin-treatments-hero__image', 'fetchpriority' => 'high', 'decoding' => 'async' ) ); ?>
+				<?php else : ?>
+					<?php gloskin_ui1_render_editorial_media( 'treatment', 'treatment_discovery', 'gloskin-treatments-hero__image', true ); ?>
+				<?php endif; ?>
+			</div>
+		</div>
+	</section>
 
-<?php
-/* The finder is a read-only presentation over canonical path/concern terms
- * and SSR Woo Treatment Product cards. Private questions remain admin data
- * and are intentionally absent from this public payload. */
-$gloskin_consultation = $gloskin_context['consultation'];
-if ( ! empty( $gloskin_consultation['paths'] ) ) :
+	<?php if ( ! empty( $gloskin_context['paths'] ) ) : ?>
+	<div class="gloskin-ui1-treatment-bands" data-gloskin-section="treatments-bands">
+		<?php foreach ( array_values( $gloskin_context['paths'] ) as $gloskin_index => $gloskin_path ) :
+			$gloskin_label = isset( $gloskin_path['label'] ) ? (string) $gloskin_path['label'] : '';
+			$gloskin_image_id = isset( $gloskin_path['image_id'] ) ? absint( $gloskin_path['image_id'] ) : 0;
+			$gloskin_path_id = isset( $gloskin_path['id'] ) ? absint( $gloskin_path['id'] ) : 0;
+			$gloskin_reverse = 1 === ( $gloskin_index % 2 );
+			$gloskin_copy = $gloskin_band_copy[ $gloskin_index % count( $gloskin_band_copy ) ];
+			?>
+			<article class="gloskin-ui1-treatment-band<?php echo $gloskin_reverse ? ' gloskin-ui1-treatment-band--reverse' : ''; ?>" data-gloskin-treatment-band="<?php echo esc_attr( (string) $gloskin_path_id ); ?>">
+				<div class="gloskin-ui1-treatment-band__media">
+					<?php if ( $gloskin_image_id ) : ?>
+						<?php echo wp_get_attachment_image( $gloskin_image_id, 'large', false, array( 'loading' => 0 === $gloskin_index ? 'eager' : 'lazy', 'class' => 'gloskin-ui1-treatment-band__image' ) ); ?>
+					<?php else : ?>
+						<?php gloskin_ui1_render_editorial_media( 'treatment', $gloskin_label, 'gloskin-ui1-treatment-band__image', 0 === $gloskin_index ); ?>
+					<?php endif; ?>
+				</div>
+				<div class="gloskin-ui1-treatment-band__content">
+					<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Perawatan', 'gloskin-site-core' ); ?></p>
+					<h2 class="gloskin-ui1-treatment-band__title"><?php echo esc_html( $gloskin_label ); ?></h2>
+					<p class="gloskin-ui1-treatment-band__copy"><?php echo esc_html( $gloskin_copy ); ?></p>
+					<a class="gloskin-ui1-button gloskin-ui1-button--primary gloskin-ui1-treatment-band__button" href="<?php echo esc_url( home_url( '/treatments/?path=' . $gloskin_path_id . '#consultation' ) ); ?>" data-gloskin-band-path="<?php echo esc_attr( (string) $gloskin_path_id ); ?>"><?php echo esc_html__( 'Jelajahi Solusi', 'gloskin-site-core' ); ?></a>
+				</div>
+			</article>
+		<?php endforeach; ?>
+	</div>
+	<?php endif; ?>
+
+	<?php
+	$gloskin_consultation = isset( $gloskin_context['consultation'] ) && is_array( $gloskin_context['consultation'] ) ? $gloskin_context['consultation'] : array();
+	if ( ! empty( $gloskin_consultation['paths'] ) ) :
+		$gloskin_finder_note = trim( (string) ( $gloskin_consultation['disclaimer'] ?? '' ) );
+		if ( '' === $gloskin_finder_note ) {
+			$gloskin_finder_note = __( 'Pilihan perawatan ini dapat Anda diskusikan lebih lanjut saat konsultasi.', 'gloskin-site-core' );
+		}
 	?>
-	<section class="gloskin-ui1-section" data-gloskin-section="treatments-consultation">
+	<section class="gloskin-treatments-finder" id="consultation" data-gloskin-section="treatments-consultation">
 		<div class="gloskin-ui1-container">
-			<?php gloskin_ui1_render_section_heading( __( 'Temukan Perawatan yang Tepat', 'gloskin-site-core' ), __( 'Pilih fokus dan keluhan yang ingin Anda eksplorasi sebelum melanjutkan ke detail perawatan.', 'gloskin-site-core' ) ); ?>
 			<div class="gloskin-ui1-consultation" data-gloskin-consultation data-gloskin-consultation-data="<?php echo esc_attr( wp_json_encode( array( 'paths' => $gloskin_consultation['paths'] ) ) ); ?>">
 				<div class="gloskin-ui1-consultation__panel">
-					<h3 class="gloskin-ui1-consultation__prompt"><?php echo esc_html__( 'Pilih fokus utama Anda', 'gloskin-site-core' ); ?></h3>
+					<div class="gloskin-ui1-consultation__intro">
+						<h2><?php echo esc_html__( 'Temukan Perawatan yang Tepat', 'gloskin-site-core' ); ?></h2>
+						<p><?php echo esc_html__( 'Informasi seputar masalah dan prosedur Anda untuk memandu Anda menemukan solusi yang relevan.', 'gloskin-site-core' ); ?></p>
+					</div>
+					<h3 class="gloskin-ui1-consultation__prompt"><?php echo esc_html__( 'Pilih Fokus Utama Anda', 'gloskin-site-core' ); ?></h3>
 					<div class="gloskin-ui1-consultation__paths" data-gloskin-consultation-paths role="group" aria-label="<?php echo esc_attr__( 'Pilih fokus perawatan', 'gloskin-site-core' ); ?>">
 						<?php foreach ( $gloskin_consultation['paths'] as $gloskin_path ) : ?>
 							<button type="button" class="gloskin-ui1-consultation__path" data-gloskin-consultation-path="<?php echo esc_attr( (string) $gloskin_path['id'] ); ?>" aria-pressed="false">
@@ -31,7 +82,7 @@ if ( ! empty( $gloskin_consultation['paths'] ) ) :
 									<?php if ( $gloskin_path['image_id'] ) : ?>
 										<?php echo wp_get_attachment_image( $gloskin_path['image_id'], 'medium', false, array( 'class' => 'gloskin-ui1-consultation__path-image', 'loading' => 'lazy' ) ); ?>
 									<?php else : ?>
-										<?php gloskin_ui1_render_editorial_media( 'treatment', $gloskin_path['label'], 'gloskin-ui1-consultation__path-image gloskin-ui1-consultation__path-image--decorative' ); ?>
+										<?php gloskin_ui1_render_editorial_media( 'treatment', $gloskin_path['label'], 'gloskin-ui1-consultation__path-image' ); ?>
 									<?php endif; ?>
 								</span>
 								<span class="gloskin-ui1-consultation__path-label"><?php echo esc_html( $gloskin_path['label'] ); ?></span>
@@ -60,15 +111,15 @@ if ( ! empty( $gloskin_consultation['paths'] ) ) :
 					</div>
 
 					<div class="gloskin-ui1-consultation__actions">
-						<button type="button" class="gloskin-ui1-button gloskin-ui1-button--primary gloskin-ui1-consultation__submit" data-gloskin-consultation-submit disabled><?php echo esc_html__( 'Cari Perawatan yang Tepat', 'gloskin-site-core' ); ?></button>
+						<button type="button" class="gloskin-ui1-consultation__submit" data-gloskin-consultation-submit disabled><?php echo esc_html__( 'Cari Perawatan yang Tepat', 'gloskin-site-core' ); ?></button>
 					</div>
-					<p class="gloskin-ui1-consultation__disclaimer"><?php echo esc_html( $gloskin_consultation['disclaimer'] ); ?></p>
+					<p class="gloskin-ui1-consultation__disclaimer"><?php echo esc_html( $gloskin_finder_note ); ?></p>
 				</div>
 
 				<div class="gloskin-ui1-consultation__results" data-gloskin-consultation-results hidden aria-live="polite">
 					<h3 class="gloskin-ui1-consultation__results-heading"><?php echo esc_html__( 'Rekomendasi Perawatan', 'gloskin-site-core' ); ?></h3>
 					<div class="gloskin-ui1-consultation__results-grid" data-gloskin-consultation-results-grid>
-						<?php foreach ( $gloskin_consultation['products'] as $gloskin_treatment_product ) : ?>
+						<?php foreach ( (array) ( $gloskin_consultation['products'] ?? array() ) as $gloskin_treatment_product ) : ?>
 							<div class="gloskin-ui1-consultation__result" data-gloskin-consultation-result data-gloskin-concern-ids="<?php echo esc_attr( implode( ',', $gloskin_treatment_product['concern_ids'] ) ); ?>" hidden>
 								<?php gloskin_ui1_render_product_card( $gloskin_treatment_product, 'consultation' ); ?>
 							</div>
@@ -79,6 +130,27 @@ if ( ! empty( $gloskin_consultation['paths'] ) ) :
 			</div>
 		</div>
 	</section>
-<?php endif; ?>
+	<?php endif; ?>
 
-<section class="gloskin-ui1-section gloskin-ui1-section--cta" data-gloskin-section="treatments-closing"><div class="gloskin-ui1-container"><?php gloskin_ui1_render_closing_cta( __( 'Konsultasi', 'gloskin-site-core' ), __( 'Informasi di situs membantu menyiapkan pertanyaan sebelum konsultasi.', 'gloskin-site-core' ), __( 'Gunakan informasi ini sebagai panduan awal, lalu pilih klinik atau hubungi Gloskin untuk melanjutkan konsultasi melalui kanal yang tersedia.', 'gloskin-site-core' ), __( 'Pilih Klinik', 'gloskin-site-core' ), home_url( '/clinics/' ), __( 'Hubungi Gloskin', 'gloskin-site-core' ), home_url( '/contact/' ) ); ?></div></section>
+	<section class="gloskin-treatments-info" data-gloskin-section="treatments-information">
+		<div class="gloskin-ui1-container gloskin-treatments-info__inner">
+			<div class="gloskin-treatments-info__copy">
+				<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Edukasi', 'gloskin-site-core' ); ?></p>
+				<h2><?php echo esc_html__( 'Informasi di Situs Membantu Menyiapkan Pertanyaan Sebelum Konsultasi.', 'gloskin-site-core' ); ?></h2>
+				<p><?php echo esc_html__( 'Gunakan informasi ini sebagai panduan awal, lalu diskusikan kebutuhan dan pilihan perawatan Anda secara langsung di klinik Gloskin.', 'gloskin-site-core' ); ?></p>
+			</div>
+			<a class="gloskin-treatments-info__link" href="<?php echo esc_url( home_url( '/insights/' ) ); ?>"><?php echo esc_html__( 'Insight Kami', 'gloskin-site-core' ); ?><span aria-hidden="true">→</span></a>
+		</div>
+	</section>
+
+	<section class="gloskin-treatments-closing" data-gloskin-section="treatments-closing">
+		<div class="gloskin-ui1-container gloskin-treatments-closing__inner">
+			<div class="gloskin-treatments-closing__copy">
+				<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Lokasi', 'gloskin-site-core' ); ?></p>
+				<h2><?php echo esc_html__( 'Pilih Klinik Gloskin Terdekat dan Mulai Konsultasi.', 'gloskin-site-core' ); ?></h2>
+				<p><?php echo esc_html__( 'Temukan cabang yang sesuai dan rencanakan langkah pertama perjalanan estetika Anda bersama Gloskin.', 'gloskin-site-core' ); ?></p>
+			</div>
+			<a class="gloskin-treatments-closing__button" href="<?php echo esc_url( home_url( '/contact/' ) ); ?>"><?php echo esc_html__( 'Hubungi Kami', 'gloskin-site-core' ); ?></a>
+		</div>
+	</section>
+</div>
