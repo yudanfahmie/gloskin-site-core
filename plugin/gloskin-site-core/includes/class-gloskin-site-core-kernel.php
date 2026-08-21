@@ -98,11 +98,6 @@ final class Gloskin_Site_Core_Kernel {
 			return;
 		}
 
-		require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
-		$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();
-		$lifecycle->register_about_reconciliation();
-		$this->services[] = $lifecycle;
-
 		$language = new Gloskin_Site_Core_Language( $this->plugin_file );
 		$language->register_frontend();
 		$language_projection = new Gloskin_Site_Core_Language_Projection();
