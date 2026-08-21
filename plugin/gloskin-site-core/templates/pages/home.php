@@ -25,7 +25,7 @@ gloskin_ui1_render_hero( isset( $gloskin_context['hero'] ) && is_array( $gloskin
 <?php $gloskin_home_treatments = array_slice( isset( $gloskin_context['treatments'] ) && is_array( $gloskin_context['treatments'] ) ? $gloskin_context['treatments'] : array(), 0, 3 ); ?>
 <section class="gloskin-ui1-section gloskin-ui1-section--soft gloskin-home-treatments" data-gloskin-section="home-treatments">
 	<div class="gloskin-ui1-container">
-		<?php gloskin_ui1_render_section_heading( __( 'Treatment Unggulan', 'gloskin-site-core' ), __( 'Rangkaian perawatan eksklusif yang dirancang secara personal dengan teknologi mutakhir untuk memancarkan kecantikan sejati kulit Anda.', 'gloskin-site-core' ) ); ?>
+		<?php gloskin_ui1_render_section_heading( __( 'TREATMENT UNGGULAN', 'gloskin-site-core' ), __( 'Rangkaian perawatan eksklusif yang dirancang secara personal dengan teknologi mutakhir untuk memancarkan kecantikan sejati kulit Anda.', 'gloskin-site-core' ) ); ?>
 		<?php if ( $gloskin_home_treatments ) : ?>
 			<div class="gloskin-ui1-grid gloskin-ui1-grid--cards gloskin-home-treatments__grid">
 				<?php foreach ( $gloskin_home_treatments as $gloskin_home_treatment ) : ?>
@@ -55,7 +55,7 @@ $gloskin_home_testimonials = array_slice( $gloskin_home_testimonials, 0, 3 );
 ?>
 <section class="gloskin-ui1-section gloskin-home-testimonials" data-gloskin-section="testimonials">
 	<div class="gloskin-ui1-container">
-		<?php gloskin_ui1_render_section_heading( __( 'Testimoni', 'gloskin-site-core' ), __( 'Pengalaman nyata dari mereka yang telah mempercayakan perjalanan kecantikannya dan merasakan transformasi luar biasa bersama GLOSKIN.', 'gloskin-site-core' ) ); ?>
+		<?php gloskin_ui1_render_section_heading( __( 'TESTIMONI', 'gloskin-site-core' ), __( 'Pengalaman nyata dari mereka yang telah mempercayakan perjalanan kecantikannya dan merasakan transformasi luar biasa bersama GLOSKIN.', 'gloskin-site-core' ) ); ?>
 		<?php if ( $gloskin_home_testimonials ) : ?>
 			<div class="gloskin-home-testimonials__slider" data-gloskin-testimonials>
 				<div class="gloskin-home-testimonials__stage">
@@ -102,7 +102,7 @@ $gloskin_home_testimonials = array_slice( $gloskin_home_testimonials, 0, 3 );
 <?php $gloskin_home_piagam = array_slice( isset( $gloskin_context['achievements'] ) && is_array( $gloskin_context['achievements'] ) ? $gloskin_context['achievements'] : array(), 0, 5 ); ?>
 <section class="gloskin-ui1-section gloskin-home-piagam" data-gloskin-section="achievements">
 	<div class="gloskin-ui1-container">
-		<?php gloskin_ui1_render_section_heading( __( 'Piagam & Penghargaan', 'gloskin-site-core' ), __( 'Bukti komitmen dan dedikasi tinggi kami dalam menjaga standar mutu pelayanan estetika dan inovasi medis terbaik di Indonesia.', 'gloskin-site-core' ) ); ?>
+		<?php gloskin_ui1_render_section_heading( __( 'PIAGAM & PENGHARGAAN', 'gloskin-site-core' ), __( 'Bukti komitmen dan dedikasi tinggi kami dalam menjaga standar mutu pelayanan estetika dan inovasi medis terbaik di Indonesia.', 'gloskin-site-core' ) ); ?>
 		<?php if ( $gloskin_home_piagam ) : ?>
 			<div class="gloskin-home-piagam__rail" data-gloskin-piagam>
 				<?php foreach ( $gloskin_home_piagam as $gloskin_home_piagam_index => $gloskin_home_achievement ) :
