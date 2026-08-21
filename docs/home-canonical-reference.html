@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gloskin Clinic - Premium Journey</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Palette Perjalanan (Journey Palette) */
+            --bg-white: #ffffff;
+            --bg-peach: #fcf9f7;
+            --bg-blush: #f7ebe8;
+            
+            --header-bg: #f7ebe8;
+            --text-dark: #2a2a2a;
+            --text-muted: #666666; 
+            --accent-red: #a81c31; 
+            --accent-gold: #c3a378; 
+            --card-cream: #fbf5ef; 
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-white);
+            color: var(--text-dark);
+            line-height: 1.7;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 500;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: color 0.3s ease;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        /* --- NAVBAR --- */
+        header {
+            background-color: var(--header-bg);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.03);
+        }
+
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--accent-red); letter-spacing: 2px; }
+        .nav-links { display: flex; gap: 40px; }
+        .nav-links a { font-size: 0.85rem; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; }
+        .nav-links a:hover { color: var(--accent-red); }
+        .nav-icons { display: flex; gap: 25px; align-items: center; font-size: 1.1rem; }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            width: 100%; height: 80vh;
+            background: url('https://images.unsplash.com/photo-1615397323136-1e0e8f702336?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+            position: relative;
+        }
+        .hero::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(168,28,49,0.5) 0%, rgba(168,28,49,0.2) 100%);
+        }
+
+        /* --- LAYOUTING SECTIONS --- */
+        section { padding: 120px 5%; width: 100%; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section-about { background-color: var(--bg-white); }
+        .section-treatment { background-color: var(--bg-peach); }
+        .section-testimonial { background-color: var(--bg-blush); }
+        .section-awards { background-color: var(--bg-white); }
+
+        .section-header { text-align: center; margin-bottom: 70px; }
+        .section-title { font-size: 2.8rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 3px; color: var(--text-dark); }
+        .section-subtitle { max-width: 700px; margin: 0 auto 60px; font-size: 1.05rem; color: var(--text-muted); line-height: 1.6; font-weight: 300; }
+
+        /* --- ABOUT --- */
+        .about-container { display: flex; align-items: center; gap: 80px; }
+        .about-image { flex: 1; border-radius: 20px 20px 0 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
+        .about-image img { width: 100%; display: block; object-fit: cover; }
+        .about-content { flex: 1; }
+        .about-content h2 { font-size: 2.8rem; margin-bottom: 20px; line-height: 1.2; letter-spacing: 1px; }
+        .about-content p { font-size: 1.05rem; color: var(--text-muted); margin-bottom: 30px; line-height: 1.6; font-weight: 300; }
+        .about-content ul { display: flex; flex-direction: column; gap: 20px; }
+        .about-content li { position: relative; padding-left: 30px; font-size: 1.05rem; color: var(--text-muted); }
+        .about-content li::before { content: "•"; color: var(--accent-gold); font-size: 1.8rem; position: absolute; left: 0; top: -8px; }
+
+        /* --- TREATMENTS GRID --- */
+        .treatment-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+        .treatment-card {
+            background-color: var(--bg-white); border-radius: 12px; overflow: hidden;
+            transition: transform 0.4s ease, box-shadow 0.4s ease; display: flex; flex-direction: column;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+        }
+        .treatment-card:hover { transform: translateY(-12px); box-shadow: 0 25px 50px rgba(195,163,120,0.15); }
+        .treatment-img { width: 100%; height: 250px; object-fit: cover; }
+        .treatment-info { padding: 30px 25px; text-align: left; flex-grow: 1; }
+        .treatment-info h3 { font-family: 'Montserrat', sans-serif; font-size: 1.15rem; font-weight: 600; margin-bottom: 12px; text-transform: uppercase; }
+        .treatment-info a { color: var(--accent-red); font-size: 0.9rem; font-weight: 600; display: inline-block; margin-top: 15px; }
+        .treatment-info a:hover { color: var(--accent-gold); }
+
+        /* --- TESTIMONIAL (Update Elegan) --- */
+        .testimonial-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .testimonial-card {
+            background-color: var(--bg-white);
+            margin-top: 60px; /* Ruang untuk foto yang overlap */
+            padding: 60px 50px 40px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.04);
+            position: relative;
+        }
+
+        /* Foto Overlap di atas card */
+        .testimonial-photo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid var(--bg-blush); /* Menyesuaikan dengan bg luar */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+        .testimonial-icon { font-size: 2rem; color: var(--accent-gold); margin-bottom: 25px; margin-top: 10px; }
+        .testimonial-text { font-size: 1.25rem; font-style: italic; color: var(--text-dark); margin-bottom: 30px; line-height: 1.8; }
+        
+        .testimonial-author-name { font-weight: 600; font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; color: var(--accent-red); margin-bottom: 5px; }
+        .testimonial-author-role { font-size: 0.9rem; color: var(--text-muted); font-weight: 300; }
+
+        /* Navigasi Testimoni */
+        .testimonial-nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            margin-top: 40px;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-btn:hover {
+            color: var(--accent-red);
+        }
+
+        .nav-dots {
+            display: flex;
+            gap: 10px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #dfd1cc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            background-color: var(--accent-gold);
+            transform: scale(1.3);
+        }
+
+        .dot:hover:not(.active) {
+            background-color: var(--text-muted);
+        }
+
+        /* --- AWARDS MARQUEE --- */
+        .marquee-wrapper { position: relative; width: 100%; overflow: hidden; padding: 20px 0; }
+        .marquee-wrapper::before, .marquee-wrapper::after { content: ''; position: absolute; top: 0; width: 120px; height: 100%; z-index: 2; pointer-events: none; }
+        .marquee-wrapper::before { left: 0; background: linear-gradient(to right, var(--bg-white) 0%, rgba(255, 255, 255, 0) 100%); }
+        .marquee-wrapper::after { right: 0; background: linear-gradient(to left, var(--bg-white) 0%, rgba(255, 255, 255, 0) 100%); }
+        .marquee-track { display: flex; gap: 30px; width: max-content; animation: scroll-marquee 25s linear infinite; }
+        .marquee-track:hover { animation-play-state: paused; }
+        @keyframes scroll-marquee { 0% { transform: translateX(0); } 100% { transform: translateX(calc(-50% - 15px)); } }
+        .award-card { width: 260px; flex-shrink: 0; background-color: var(--bg-white); border: 1px solid var(--accent-gold); padding: 40px 20px; text-align: center; border-radius: 4px; position: relative; box-shadow: 0 5px 20px rgba(0,0,0,0.02); transition: all 0.3s ease; cursor: default; }
+        .award-card:hover { background-color: var(--card-cream); }
+        .award-card::before { content: ''; position: absolute; top: 6px; left: 6px; right: 6px; bottom: 6px; border: 1px solid rgba(195, 163, 120, 0.4); pointer-events: none; }
+        .award-card h4 { font-size: 1.2rem; margin-bottom: 20px; letter-spacing: 2px; }
+        .award-icon { width: 60px; height: 60px; background-color: var(--bg-peach); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-weight: bold; color: var(--accent-gold); font-size: 1.4rem; }
+
+        /* --- FOOTER --- */
+        footer { background-color: var(--bg-peach); padding: 80px 5% 30px; }
+        .footer-container { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 50px; max-width: 1200px; margin: 0 auto 50px; }
+        .footer-logo p { margin-top: 20px; font-size: 0.95rem; color: var(--text-muted); max-width: 320px; }
+        .footer-col h5 { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-col ul { display: flex; flex-direction: column; gap: 15px; }
+        .footer-col a { font-size: 0.95rem; color: var(--text-muted); }
+        .footer-col a:hover { color: var(--accent-red); }
+        .footer-bottom { text-align: center; padding-top: 30px; border-top: 1px solid #ebdcd5; font-size: 0.9rem; color: var(--text-muted); }
+
+        /* --- FLOATING WA BUTTON --- */
+        .float-wa { position: fixed; bottom: 40px; right: 40px; background-color: var(--accent-red); color: white; width: 65px; height: 65px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 32px; box-shadow: 0 10px 25px rgba(168, 28, 49, 0.4); z-index: 1000; transition: transform 0.3s ease; }
+        .float-wa:hover { transform: scale(1.1) translateY(-5px); color: white; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            .treatment-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-container { grid-template-columns: repeat(2, 1fr); }
+            section { padding: 80px 5%; }
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .about-container { flex-direction: column; gap: 40px; }
+            .treatment-grid, .footer-container { grid-template-columns: 1fr; }
+            .section-header { margin-bottom: 40px; }
+            .section-title { font-size: 2.2rem; }
+            .about-content h2 { font-size: 2.2rem; }
+            .testimonial-card { padding: 50px 30px 30px; }
+            .marquee-wrapper::before, .marquee-wrapper::after { width: 60px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER & HERO & ABOUT & TREATMENT (Sama seperti sebelumnya) -->
+    <header>
+        <div class="logo">GLOSKIN</div>
+        <nav class="nav-links">
+            <a href="#">Treatment</a>
+            <a href="#">Produk</a>
+            <a href="#">Promo</a>
+            <a href="#">Tentang Kami</a>
+        </nav>
+        <div class="nav-icons">
+            <a href="#"><i class="fas fa-search"></i></a>
+            <a href="#"><i class="far fa-user"></i></a>
+            <a href="#"><i class="fas fa-shopping-bag"></i></a>
+            <a href="#"><img src="https://flagcdn.com/w20/id.png" alt="ID" style="width: 20px;"></a>
+        </div>
+    </header>
+
+    <div class="hero"></div>
+
+    <section class="section-about">
+        <!-- Konten About -->
+        <div class="container about-container">
+            <div class="about-image">
+                <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80" alt="Facial Treatment Gloskin">
+            </div>
+            <div class="about-content">
+                <h2>KENAPA MEMILIH<br>GLOSKIN</h2>
+                <p>Kami hadir untuk memberikan solusi estetika terdepan yang tidak hanya merawat, tetapi juga menyehatkan kulit Anda dari dalam.</p>
+                <ul>
+                    <li>Tersedia pilihan perawatan yang lengkap dan inovatif berdasarkan keilmuan estetik terkini.</li>
+                    <li>Ditangani oleh dokter dan terapis yang berpengalaman, tersertifikasi, dan terus mendapatkan update ilmu.</li>
+                    <li>Produk skincare dirancang khusus dan teruji klinis untuk menjawab berbagai masalah kulit masyarakat.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-treatment">
+        <!-- Konten Treatment -->
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">TREATMENT UNGGULAN</h2>
+                <p class="section-subtitle">Rangkaian perawatan eksklusif yang dirancang secara personal dengan teknologi mutakhir untuk memancarkan kecantikan sejati kulit Anda.</p>
+            </div>
+            
+            <div class="treatment-grid">
+                <div class="treatment-card">
+                    <img src="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=600&q=80" alt="V Shape Contour" class="treatment-img">
+                    <div class="treatment-info">
+                        <h3>V SHAPE CONTOUR WAJAH</h3>
+                        <a href="#">Lihat Detail &rarr;</a>
+                    </div>
+                </div>
+                <div class="treatment-card">
+                    <img src="https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&w=600&q=80" alt="Flek & Pigmentasi" class="treatment-img">
+                    <div class="treatment-info">
+                        <h3>FLEK & PIGMENTASI</h3>
+                        <a href="#">Lihat Detail &rarr;</a>
+                    </div>
+                </div>
+                <div class="treatment-card">
+                    <img src="https://images.unsplash.com/photo-1614859324967-bdf760cbab15?auto=format&fit=crop&w=600&q=80" alt="Jerawat & Bekas" class="treatment-img">
+                    <div class="treatment-info">
+                        <h3>JERAWAT & BEKAS JERAWAT</h3>
+                        <a href="#">Lihat Detail &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TESTIMONI (Update Tampilan Elegan & Navigasi) -->
+    <section class="section-testimonial">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">TESTIMONI</h2>
+                <p class="section-subtitle">Pengalaman nyata dari mereka yang telah mempercayakan perjalanan kecantikannya dan merasakan transformasi luar biasa bersama GLOSKIN.</p>
+            </div>
+            
+            <div class="testimonial-wrapper">
+                
+                <div class="testimonial-card">
+                    <!-- Foto Overlap -->
+                    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80" alt="Pasien Gloskin" class="testimonial-photo">
+                    
+                    <i class="fas fa-quote-left testimonial-icon"></i>
+                    <p class="testimonial-text">"Pelayanan luar biasa dan dokternya sangat informatif. Kulit saya jauh lebih sehat, cerah, dan teksturnya membaik setelah rutin melakukan treatment dan menggunakan produk Gloskin."</p>
+                    
+                    <div class="testimonial-author">
+                        <p class="testimonial-author-name">Amanda Pratama</p>
+                        <p class="testimonial-author-role">Entrepreneur</p>
+                    </div>
+                </div>
+
+                <!-- Navigasi Slider -->
+                <div class="testimonial-nav">
+                    <button class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+                    <div class="nav-dots">
+                        <span class="dot active"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                    <button class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- PIAGAM & PENGHARGAAN (Marquee) -->
+    <section class="section-awards">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">PIAGAM & PENGHARGAAN</h2>
+                <p class="section-subtitle">Bukti komitmen dan dedikasi tinggi kami dalam menjaga standar mutu pelayanan estetika dan inovasi medis terbaik di Indonesia.</p>
+            </div>
+
+            <div class="marquee-wrapper">
+                <div class="marquee-track">
+                    <!-- Cards -->
+                    <div class="award-card"><h4>TOP CLINIC</h4><div class="award-icon">G</div><p>Penghargaan 2023</p></div>
+                    <div class="award-card"><h4>INNOVATION</h4><div class="award-icon">G</div><p>Estetika Award</p></div>
+                    <div class="award-card"><h4>BEST SERVICE</h4><div class="award-icon">G</div><p>Customer Choice</p></div>
+                    <div class="award-card"><h4>EXCELLENCE</h4><div class="award-icon">G</div><p>Medical Grade</p></div>
+                    <div class="award-card"><h4>TRUSTED</h4><div class="award-icon">G</div><p>Brand Award</p></div>
+                    
+                    <!-- Duplikat untuk Loop -->
+                    <div class="award-card"><h4>TOP CLINIC</h4><div class="award-icon">G</div><p>Penghargaan 2023</p></div>
+                    <div class="award-card"><h4>INNOVATION</h4><div class="award-icon">G</div><p>Estetika Award</p></div>
+                    <div class="award-card"><h4>BEST SERVICE</h4><div class="award-icon">G</div><p>Customer Choice</p></div>
+                    <div class="award-card"><h4>EXCELLENCE</h4><div class="award-icon">G</div><p>Medical Grade</p></div>
+                    <div class="award-card"><h4>TRUSTED</h4><div class="award-icon">G</div><p>Brand Award</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">
+                <h2 class="logo">GLOSKIN</h2>
+                <p>Klinik Estetika dan Skincare Terpercaya yang berdedikasi untuk kecantikan dan kesehatan kulit Anda melalui teknologi mutakhir.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Layanan</h5>
+                <ul>
+                    <li><a href="#">Treatment</a></li>
+                    <li><a href="#">Produk</a></li>
+                    <li><a href="#">Promo</a></li>
+                    <li><a href="#">Artikel</a></li>
+                </ul>
+            </div>
+            <!-- Sisanya Sama -->
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Gloskin. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- FLOATING WA -->
+    <a href="#" class="float-wa" title="Hubungi Kami di WhatsApp"><i class="fab fa-whatsapp"></i></a>
+
+</body>
+</html>
