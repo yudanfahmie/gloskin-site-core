@@ -75,7 +75,7 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloski
  * baseline rule was involved. This is the exact same class of conflict, and
  * the exact same fix, already applied above for Related Products'
  * ul.products::before/::after. */
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{position:static;grid-column:1/-1;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:12px clamp(18px,2vw,28px);border:0;border-radius:var(--gloskin-radius-sm);background:var(--gloskin-accent);color:var(--gloskin-inverse);box-shadow:none;visibility:visible;opacity:1;will-change:transform,opacity}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock{--gloskin-purchase-action-height:46px;--gloskin-purchase-secondary-bg:color-mix(in srgb,var(--gloskin-brand-champagne) 28%,var(--gloskin-inverse));--gloskin-purchase-secondary-bg-hover:color-mix(in srgb,var(--gloskin-brand-champagne) 36%,var(--gloskin-inverse));--gloskin-purchase-secondary-border:color-mix(in srgb,var(--gloskin-brand-champagne) 58%,var(--gloskin-inverse));--gloskin-purchase-secondary-border-strong:color-mix(in srgb,var(--gloskin-brand-champagne) 70%,var(--gloskin-inverse));position:static;grid-column:1/-1;z-index:5;bottom:auto;width:100%;max-width:none;margin:0;padding:12px clamp(18px,2vw,28px);border:0;border-radius:var(--gloskin-radius-sm);background:var(--gloskin-accent);color:var(--gloskin-inverse);box-shadow:none;visibility:visible;opacity:1;will-change:transform,opacity}
 
 /* Stable footer-handoff sentinel (task: "Deeply harden Purchase Dock
  * transitions", section 6): permanently zero-footprint, never reparented,
@@ -192,15 +192,31 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloski
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-plus:hover{background:var(--gloskin-surface)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-minus:disabled,
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__qty-plus:disabled{opacity:.4;cursor:not-allowed;background:transparent}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;padding-inline:18px;background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit:hover{background:color-mix(in srgb,var(--gloskin-inverse) 92%,var(--gloskin-accent-soft));border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
 
-/* Buy Now: a JS-composed sibling of the SAME native submit button (never a
- * second form/mutation owner -- it triggers the real submit button's own
- * click, see gloskin-ui1-purchase-dock.js), styled as an outline CTA on
- * the same accent surface, sharing the one Action Kit radius token. */
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now{width:auto;min-width:clamp(140px,11vw,180px);max-width:220px;border-width:1px;border-style:solid;font-family:inherit;font-size:inherit;font-style:inherit;font-weight:700;cursor:pointer}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:disabled{cursor:not-allowed}
+/* One semantic purchase-action owner. All actions share one height/radius,
+ * while each action keeps its own hierarchy. Woo still owns View Cart href
+ * and cart mutation; Buy Now remains only a bridge to the same native submit. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock a.added_to_cart.wc-forward,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now{display:inline-flex;box-sizing:border-box;height:var(--gloskin-purchase-action-height);min-height:var(--gloskin-purchase-action-height);align-items:center;justify-content:center;margin-block:0;border-radius:var(--gloskin-action-radius);line-height:1;vertical-align:middle;text-decoration:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit{width:auto;min-width:clamp(160px,13vw,210px);max-width:240px;padding:0 18px;background:var(--gloskin-inverse);border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit:hover{background:color-mix(in srgb,var(--gloskin-inverse) 92%,var(--gloskin-accent-soft));border-color:var(--gloskin-inverse);color:var(--gloskin-accent-strong)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock a.added_to_cart.wc-forward{width:auto;min-width:0;padding:0 16px;border:1px solid var(--gloskin-purchase-secondary-border);background:var(--gloskin-purchase-secondary-bg);color:var(--gloskin-accent-strong);font-family:inherit;font-size:inherit;font-weight:700;white-space:nowrap;transition:background-color 140ms ease,border-color 140ms ease,color 140ms ease,box-shadow 140ms ease}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock a.added_to_cart.wc-forward:hover,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock a.added_to_cart.wc-forward:focus-visible{border-color:var(--gloskin-purchase-secondary-border-strong);background:var(--gloskin-purchase-secondary-bg-hover);color:var(--gloskin-accent-strong)}
+
+/* Buy Now is deliberately the strongest transactional affordance: near-black
+ * contrast, a restrained champagne line ornament, and an infrequent radial
+ * wave that suggests tactility without moving the label or changing behavior. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now{position:relative;isolation:isolate;overflow:hidden;width:auto;min-width:clamp(140px,11vw,180px);max-width:220px;padding:0 18px;border:1px solid color-mix(in srgb,var(--gloskin-brand-champagne) 34%,#090909);background-color:#090909;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='48' viewBox='0 0 120 48' fill='none'%3E%3Cpath d='M10 37C35 13 61 11 86 25C99 32 108 30 120 21' stroke='%23D6B477' stroke-opacity='.24' stroke-width='.8'/%3E%3Ccircle cx='102' cy='9' r='20' stroke='%23D6B477' stroke-opacity='.15' stroke-width='.8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right -8px center;background-size:120px 48px;color:#fff;font-family:inherit;font-size:inherit;font-style:inherit;font-weight:700;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 20px rgba(0,0,0,.16);transition:background-color 160ms ease,border-color 160ms ease,box-shadow 180ms ease,transform 140ms ease}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now::after{position:absolute;z-index:-1;top:50%;left:50%;width:16px;height:16px;border:1px solid rgba(255,255,255,.30);border-radius:50%;content:"";opacity:0;pointer-events:none;transform:translate(-50%,-50%) scale(.25);animation:gloskin-buy-now-wave 5.4s cubic-bezier(.2,.7,.2,1) infinite}
+@keyframes gloskin-buy-now-wave{0%,68%{opacity:0;transform:translate(-50%,-50%) scale(.25)}72%{opacity:.25}86%{opacity:0;transform:translate(-50%,-50%) scale(9)}100%{opacity:0;transform:translate(-50%,-50%) scale(9)}}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:hover,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:focus-visible{border-color:color-mix(in srgb,var(--gloskin-brand-champagne) 72%,#090909);background-color:#151515;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 26px rgba(0,0,0,.24);transform:translateY(-1px)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:active{transform:scale(.985)}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:disabled{border-color:rgba(255,255,255,.14);background-color:#5b5553;background-image:none;color:rgba(255,255,255,.64);box-shadow:none;opacity:.58;cursor:not-allowed;transform:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:disabled::after,
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now[aria-busy="true"]::after{animation:none;opacity:0}
 
 @media (max-width:1040px){
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.summary{margin-top:clamp(24px,4vw,32px)}
@@ -231,7 +247,8 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloski
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__variation-state{max-width:none}
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .woocommerce-variation-add-to-cart{display:grid;width:100%;grid-template-columns:auto minmax(0,1fr)}
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product.product-type-simple>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__action{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px}
-	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit{width:100%;max-width:none;min-width:0}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__submit,
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now{width:100%;max-width:none;min-width:0}
 }
 @media (prefers-reduced-motion:reduce){
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating-enter,
@@ -240,4 +257,7 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .gloski
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-lifting{transition:none}
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating-enter{opacity:1;transform:none}
 	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock.is-floating::before{animation:none;display:none}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now::after{animation:none;opacity:0}
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:hover,
+	body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.gloskin-ui1-purchase-dock-home>.gloskin-ui1-purchase-dock .gloskin-ui1-purchase-dock__buy-now:active{transform:none}
 }
