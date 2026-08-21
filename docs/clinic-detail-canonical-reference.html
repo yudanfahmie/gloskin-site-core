@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gloskin Clinic - Serpong</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Palette Perjalanan (Journey Palette) */
+            --bg-white: #ffffff;
+            --bg-peach: #fdfaf8; 
+            --bg-blush: #f8eee9;
+            
+            --header-bg: #fdfaf8; 
+            --text-dark: #2a2a2a;
+            --text-muted: #666666; 
+            --accent-red: #a81c31; 
+            --accent-gold: #c3a378; 
+            
+            /* Dark Mode Palette untuk CTA */
+            --bg-dark: #0f0f0f;
+            --border-dark: #2a2a2a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-peach);
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-dark);
+            line-height: 1.7;
+        }
+
+        h1, h2, h3, h4, h5, h6 { font-family: 'Playfair Display', serif; font-weight: 500; }
+        a { text-decoration: none; color: inherit; transition: all 0.3s ease; }
+        ul { list-style: none; }
+
+        /* --- NAVBAR --- */
+        header {
+            background-color: var(--header-bg); padding: 15px 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 20px rgba(0,0,0,0.02);
+        }
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--accent-red); letter-spacing: 2px; }
+        .nav-links { display: flex; gap: 40px; align-items: center; }
+        .nav-links a { font-size: 0.85rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dark); }
+        .nav-links a:hover { color: var(--accent-red); }
+        .nav-icons { display: flex; gap: 25px; align-items: center; font-size: 1.1rem; }
+        
+        /* --- UTILITY CLASSES --- */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 5%; }
+        .overline { display: block; font-size: 0.85rem; font-weight: 700; color: var(--accent-gold); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 15px; }
+        
+        .btn-solid-red { background-color: var(--accent-red); color: white; padding: 15px 35px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; border: none; cursor: pointer; transition: all 0.3s; display: inline-block; }
+        .btn-solid-red:hover { background-color: #8a1527; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(168,28,49,0.15); }
+
+        /* --- CLINIC HERO (Title Area) --- */
+        .clinic-hero { padding: 80px 0 40px; }
+        .clinic-hero .page-title { font-size: 4.5rem; letter-spacing: 3px; color: var(--text-dark); margin-bottom: 20px; line-height: 1; text-transform: uppercase; }
+        .clinic-hero .content-desc { font-size: 1.1rem; color: var(--text-muted); font-weight: 300; max-width: 600px; }
+
+        /* --- OVERLAP DETAIL SECTION (Sentuhan Kreatif) --- */
+        .clinic-detail-section { padding: 40px 0 100px; }
+        .overlap-container {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .overlap-text-card {
+            flex: 0 0 45%; /* Mengambil 45% lebar */
+            background-color: var(--bg-white);
+            padding: 60px 50px;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.05);
+            position: relative;
+            z-index: 2; /* Berada di atas gambar */
+            border: 1px solid #f9f2ef;
+        }
+
+        .overlap-image {
+            flex: 0 0 65%; /* Mengambil 65% lebar, sehingga overlap dengan text card */
+            margin-left: -10%; /* Menarik gambar ke kiri agar bertumpuk dengan card */
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.03);
+            height: 500px;
+        }
+
+        .overlap-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            object-position: top center;
+        }
+
+        .overlap-text-card .section-title { font-size: 2.8rem; margin-bottom: 25px; line-height: 1.2; text-transform: uppercase; letter-spacing: 1px; }
+        .overlap-text-card .content-desc { color: var(--text-muted); font-weight: 300; line-height: 1.7; margin-bottom: 40px; font-size: 1.05rem; }
+
+        /* --- CONTACT BANNER STRIP --- */
+        .contact-strip {
+            background-color: var(--bg-blush);
+            border-top: 1px solid #ebdcd5;
+            border-bottom: 1px solid #ebdcd5;
+            padding: 60px 0;
+            margin-bottom: 0; /* Menempel dengan Dark CTA */
+        }
+
+        .contact-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .contact-text { flex: 2; }
+        .contact-text h3 { font-size: 2.2rem; line-height: 1.3; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .contact-text p { color: var(--text-muted); font-weight: 300; font-size: 1.05rem; max-width: 700px; }
+
+        .contact-action { flex: 1; text-align: right; }
+        .link-arrow {
+            color: var(--accent-red);
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .link-arrow i { transition: transform 0.3s ease; }
+        .link-arrow:hover { color: var(--accent-gold); }
+        .link-arrow:hover i { transform: translateX(8px); }
+
+        /* --- DARK CTA BANNER --- */
+        .section-dark-cta { background-color: var(--bg-dark); padding: 80px 5%; position: relative; overflow: hidden; }
+        
+        .section-dark-cta::before { content: ''; position: absolute; top: -50%; right: -10%; width: 600px; height: 600px; border: 1px solid rgba(255,255,255,0.05); border-radius: 50%; pointer-events: none; }
+        .section-dark-cta::after { content: ''; position: absolute; top: -30%; right: -5%; width: 800px; height: 800px; border: 1px solid rgba(255,255,255,0.03); border-radius: 50%; pointer-events: none; }
+
+        .cta-dark-box {
+            max-width: 1200px; margin: 0 auto;
+            border: 1px solid var(--border-dark);
+            border-radius: 30px; padding: 80px 60px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: relative; z-index: 2;
+        }
+        
+        .cta-dark-content { flex: 1.5; color: white; }
+        .cta-dark-content .overline { color: var(--accent-gold); margin-bottom: 10px; }
+        .cta-dark-title { font-size: 3.5rem; line-height: 1.1; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; font-family: 'Playfair Display', serif; }
+        .cta-dark-content p { color: #aaaaaa; font-weight: 300; font-size: 1rem; }
+
+        .cta-dark-actions { flex: 1; display: flex; justify-content: flex-end; gap: 20px; }
+        
+        .btn-outline-white { background-color: transparent; color: white; padding: 15px 35px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; transition: all 0.3s; }
+        .btn-outline-white:hover { border-color: white; transform: translateY(-3px); background-color: rgba(255,255,255,0.1); }
+
+        /* --- FOOTER --- */
+        footer { background-color: var(--bg-peach); padding: 80px 5% 30px; }
+        .footer-container { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 50px; max-width: 1200px; margin: 0 auto 50px; }
+        .footer-logo p { margin-top: 20px; font-size: 0.95rem; color: var(--text-muted); max-width: 320px; }
+        .footer-col h5 { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-col ul { display: flex; flex-direction: column; gap: 15px; }
+        .footer-col a { font-size: 0.95rem; color: var(--text-muted); }
+        .footer-col a:hover { color: var(--accent-red); }
+        .footer-bottom { text-align: center; padding-top: 30px; border-top: 1px solid #ebdcd5; font-size: 0.9rem; color: var(--text-muted); }
+
+        /* --- FLOATING WA BUTTON --- */
+        .float-wa { position: fixed; bottom: 40px; right: 40px; background-color: var(--accent-red); color: white; width: 65px; height: 65px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 32px; box-shadow: 0 10px 25px rgba(168, 28, 49, 0.4); z-index: 1000; transition: transform 0.3s ease; }
+        .float-wa:hover { transform: scale(1.1) translateY(-5px); color: white; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            .overlap-text-card { padding: 40px 30px; flex: 0 0 50%; }
+            .overlap-image { flex: 0 0 60%; }
+            .overlap-text-card .section-title { font-size: 2.2rem; }
+            
+            .cta-dark-box { flex-direction: column; text-align: center; gap: 40px; padding: 60px 40px; }
+            .cta-dark-title { font-size: 3rem; }
+            .cta-dark-actions { justify-content: center; }
+            .footer-container { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .clinic-hero .page-title { font-size: 3rem; }
+            
+            /* Hapus overlap di mobile, jadikan stack atas bawah */
+            .overlap-container { flex-direction: column-reverse; gap: 30px; }
+            .overlap-text-card { width: 100%; flex: none; border: none; box-shadow: none; background: transparent; padding: 0; text-align: center; }
+            .overlap-image { width: 100%; flex: none; margin-left: 0; height: 350px; }
+            
+            .contact-flex { flex-direction: column; text-align: center; }
+            .contact-action { text-align: center; }
+            
+            .cta-dark-actions { flex-direction: column; width: 100%; }
+            .cta-dark-actions button { width: 100%; }
+            .cta-dark-title { font-size: 2.2rem; }
+            .footer-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="logo">GLOSKIN</div>
+        <nav class="nav-links">
+            <a href="#">Treatment</a>
+            <a href="#">Promo</a>
+            <a href="#">Skincare</a>
+            <a href="#">Tentang Kami</a>
+        </nav>
+        <div class="nav-icons">
+            <a href="#"><i class="fas fa-search"></i></a>
+            <a href="#"><i class="far fa-user"></i></a>
+            <a href="#"><i class="far fa-heart"></i></a>
+            <a href="#"><i class="fas fa-shopping-bag"></i></a>
+            <a href="#"><img src="https://flagcdn.com/w20/id.png" alt="ID" style="width: 20px;"></a>
+        </div>
+    </header>
+
+    <!-- CLINIC HERO -->
+    <section class="clinic-hero">
+        <div class="container">
+            <span class="overline">KLINIK GLOSKIN</span>
+            <h1 class="page-title">SERPONG</h1>
+            <p class="content-desc">Lihat informasi cabang dan kanal kontak yang tersedia.</p>
+        </div>
+    </section>
+
+    <!-- OVERLAP DETAIL SECTION -->
+    <section class="clinic-detail-section">
+        <div class="container overlap-container">
+            
+            <!-- Text Card yang meng-overlap gambar -->
+            <div class="overlap-text-card">
+                <span class="overline">INFORMASI CABANG</span>
+                <h2 class="section-title">DETAIL CABANG BELUM TERSEDIA UNTUK DITAMPILKAN.</h2>
+                <p class="content-desc">Anda dapat kembali ke jaringan klinik atau menggunakan halaman kontak untuk mendapatkan informasi lebih lanjut.</p>
+                <a href="#" class="btn-solid-red">Semua Klinik</a>
+            </div>
+
+            <!-- Gambar di sebelah kanan yang sedikit tertutup -->
+            <div class="overlap-image">
+                <img src="https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=1000&q=80" alt="Gloskin Aesthetic Team">
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CONTACT STRIP -->
+    <section class="contact-strip">
+        <div class="container contact-flex">
+            <div class="contact-text">
+                <span class="overline">HUBUNGI CABANG</span>
+                <h3>GUNAKAN KANAL YANG TERSEDIA<br>UNTUK MELANJUTKAN.</h3>
+                <p>Hubungi cabang melalui WhatsApp bila tersedia, atau gunakan halaman kontak Gloskin untuk pertanyaan lebih lanjut.</p>
+            </div>
+            <div class="contact-action">
+                <a href="#" class="link-arrow">
+                    Hubungi Gloskin <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- DARK CTA SECTION (Premium) -->
+    <section class="section-dark-cta">
+        <div class="cta-dark-box">
+            <div class="cta-dark-content">
+                <span class="overline">KONSULTASI</span>
+                <h2 class="cta-dark-title">SIAP<br>MEMBICARAKAN<br>KEBUTUHAN<br>KULIT ANDA?</h2>
+                <p>Pilih klinik Gloskin terdekat atau hubungi tim kami untuk menjadwalkan konsultasi.</p>
+            </div>
+            <div class="cta-dark-actions">
+                <button class="btn-solid-red">Pilih Klinik</button>
+                <button class="btn-outline-white">Hubungi Kami</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">
+                <h2 class="logo">GLOSKIN</h2>
+                <p>Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengedepankan konsultasi dan penanganan dokter di setiap kliniknya.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Layanan</h5>
+                <ul>
+                    <li><a href="#">Perawatan</a></li>
+                    <li><a href="#">Promo</a></li>
+                    <li><a href="#">Skincare</a></li>
+                    <li><a href="#">Belanja</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Informasi</h5>
+                <ul>
+                    <li><a href="#">Tentang</a></li>
+                    <li><a href="#">Dokter</a></li>
+                    <li><a href="#">Insight</a></li>
+                    <li><a href="#">Kontak</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Jaringan Klinik</h5>
+                <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <li><a href="#">Kebayoran Baru</a></li>
+                    <li><a href="#">Tebet</a></li>
+                    <li><a href="#">Bekasi</a></li>
+                    <li><a href="#">Cibubur</a></li>
+                    <li><a href="#">Serpong</a></li>
+                    <li><a href="#">Surabaya</a></li>
+                    <li><a href="#">Banjarmasin</a></li>
+                    <li><a href="#">Balikpapan</a></li>
+                    <li><a href="#">Denpasar</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Gloskin.</p>
+        </div>
+    </footer>
+
+    <!-- FLOATING WHATSAPP -->
+    <a href="#" class="float-wa" title="Hubungi Kami di WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+</body>
+</html>
