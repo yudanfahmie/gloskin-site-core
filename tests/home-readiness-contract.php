@@ -69,51 +69,58 @@ home_must( false !== strpos( $home, "__( 'PIAGAM & PENGHARGAAN'" ), 'Piagam head
 home_must( false !== strpos( $helpers, 'function gloskin_ui1_render_section_heading( $title, $copy = \'\' )' ), 'shared section heading helper supports copy' );
 home_must( substr_count( $home, 'gloskin_ui1_render_section_heading(' ) === 3, 'all three reference section headers use the shared heading helper' );
 
-/* Reference composition: three Treatment cards, up to four testimonial dots, five award cards in the rail. */
+/* Reference composition: three Treatment cards, up to four testimonial dots, five factual award cards. */
 home_must( false !== strpos( $home, "array_slice( isset( \$gloskin_context['treatments'] ) && is_array( \$gloskin_context['treatments'] ) ? \$gloskin_context['treatments'] : array(), 0, 3 )" ), 'Home Treatment row is bounded to 3' );
 home_must( false !== strpos( $home, 'array_slice( $gloskin_home_testimonials, 0, 4 )' ), 'Home testimonials are bounded to 4' );
-home_must( false !== strpos( $home, "array_slice( isset( \$gloskin_context['achievements'] ) && is_array( \$gloskin_context['achievements'] ) ? \$gloskin_context['achievements'] : array(), 0, 5 )" ), 'Home awards are bounded to 5' );
+home_must( false !== strpos( $home, "array_slice( isset( \$gloskin_context['achievements'] ) && is_array( \$gloskin_context['achievements'] ) ? \$gloskin_context['achievements'] : array(), 0, 5 )" ), 'Home awards are bounded to 5 source records' );
 
 /* Canonical Treatment cards are image + title + detail link only. */
 home_must( false !== strpos( $home, "\$gloskin_home_treatment_card['summary'] = '';" ), 'Home suppresses Treatment summary copy' );
 home_must( false !== strpos( $home, "\$gloskin_home_treatment_card['excerpt'] = '';" ), 'Home suppresses Treatment excerpt copy' );
 home_must( false !== strpos( $editorial, '.gloskin-home-treatments .gloskin-ui1-card__copy{display:none}' ), 'Home Treatment card copy stays visually absent' );
 
-/* Home explicitly disables the legacy campaign-video path while reusing the shared hero renderer. */
-home_must( false !== strpos( $home, "\$gloskin_home_hero['mode']    = 'home_reference';" ), 'Home canonical hero mode is explicit' );
-home_must( false !== strpos( $home, "\$gloskin_home_hero['sources'] = array();" ), 'Home canonical hero disables video sources' );
-home_must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero{min-height:clamp(440px,80vh,780px);background:#cf9aa2}' ), 'Home hero owns the reference full-bleed geometry' );
-home_must( false !== strpos( $editorial, 'linear-gradient(135deg,rgba(168,28,49,.5) 0%,rgba(168,28,49,.2) 100%)' ), 'Home hero owns the reference rose tint' );
+/* Home must use TemplateService's native managed video; the template may not downgrade it to a static image. */
+home_must( false === strpos( $home, "['mode']    = 'home_reference'" ), 'Home does not override the managed hero mode' );
+home_must( false === strpos( $home, "['sources'] = array()" ), 'Home does not discard managed video sources' );
+$home_ctx_start = strpos( $template, 'private function home_context()' );
+$home_ctx_end   = strpos( $template, 'private function about_context()', $home_ctx_start );
+$home_ctx       = false !== $home_ctx_start && false !== $home_ctx_end ? substr( $template, $home_ctx_start, $home_ctx_end - $home_ctx_start ) : '';
+home_must( false !== strpos( $home_ctx, '$this->hero_background_video()' ), 'Home context resolves the native background video' );
+home_must( false !== strpos( $home_ctx, "\$hero['mode'] = 'video_only';" ), 'Home context keeps video-only hero mode' );
+home_must( false !== strpos( $editorial, '.gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{display:block;width:100%;height:100%;object-fit:cover;' ), 'Home video covers the hero without letterboxing' );
+home_must( false !== strpos( $editorial, 'linear-gradient(135deg,rgba(168,28,49,.30) 0%,rgba(168,28,49,.12) 100%)' ), 'Home video retains the restrained rose tint' );
 
-/* Awards follow the canonical small text-card treatment; production facts remain managed CPT data. */
+/* Awards mirror the reference infinite marquee: duplicated set, seamless 50% travel, edge fades and hover pause. */
 foreach ( array( "['title'] ?? ''", "['meta']['issuer'] ?? ''", "['meta']['year'] ?? ''", 'gloskin-home-piagam__title', 'gloskin-home-piagam__icon', 'gloskin-home-piagam__meta' ) as $needle ) {
 	home_must( false !== strpos( $home, $needle ), 'Piagam factual presentation missing: ' . $needle );
 }
-home_must( false === strpos( $home, "wp_get_attachment_image( absint( \$gloskin_home_achievement['image_id'] )" ), 'Home no longer renders giant certificate images' );
+home_must( false !== strpos( $home, '$gloskin_home_piagam_loop < 2' ), 'Piagam duplicates the factual set exactly once for seamless looping' );
+home_must( false !== strpos( $home, 'gloskin-home-piagam__marquee' ) && false !== strpos( $home, 'gloskin-home-piagam__track' ), 'Piagam marquee structure is present' );
+home_must( false !== strpos( $editorial, '@keyframes gloskin-home-piagam-marquee' ), 'Piagam marquee keyframes exist' );
+home_must( false !== strpos( $editorial, 'animation:gloskin-home-piagam-marquee 25s linear infinite' ), 'Piagam marquee runs continuously at the canonical desktop pace' );
+home_must( false !== strpos( $editorial, 'translateX(calc(-50% - 15px))' ), 'Piagam desktop loop travels exactly one duplicated set plus half-gap' );
+home_must( false !== strpos( $editorial, 'animation-play-state:paused' ), 'Piagam marquee pauses on interaction' );
+home_must( false !== strpos( $editorial, '.gloskin-home-piagam__marquee::before,.gloskin-home-piagam__marquee::after' ), 'Piagam marquee has reference edge fades' );
+home_must( false === strpos( $home, "wp_get_attachment_image( absint( \$gloskin_home_achievement['image_id'] )" ), 'Home does not render giant certificate images' );
 foreach ( array( 'TOP CLINIC', 'INNOVATION', 'BEST SERVICE', 'Customer Choice', 'Brand Award' ) as $dummy ) {
 	home_must( false === strpos( $home, $dummy ), 'reference dummy content must not become production fact: ' . $dummy );
 }
 
-/* Canonical journey palette and component geometry stay local to Home. */
+/* Responsive contract: desktop 3-col Treatment, tablet 2-col, mobile 1-col; video and marquee have dedicated mobile geometry. */
 foreach ( array(
-	'--gloskin-home-white:#fff',
-	'--gloskin-home-peach:#fcf9f7',
-	'--gloskin-home-blush:#f7ebe8',
-	'.gloskin-home-why{background:var(--gloskin-home-white)}',
-	'.gloskin-home-treatments{background:var(--gloskin-home-peach)}',
-	'.gloskin-home-testimonials{background:var(--gloskin-home-blush)}',
-	'.gloskin-home-piagam{background:var(--gloskin-home-white)}',
 	'.gloskin-home-treatments__grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:40px}',
-	'.gloskin-home-testimonials__slider{width:min(100%,900px);margin:0 auto}',
-	'.gloskin-home-piagam__card{position:relative;flex:0 0 260px;',
+	'@media (max-width:1024px){.gloskin-home-treatments__grid{grid-template-columns:repeat(2,minmax(0,1fr))}',
+	'@media (max-width:768px){body.gloskin-ui1--home .gloskin-ui1-hero--video-only{min-height:62vh}',
+	'.gloskin-home-treatments__grid{grid-template-columns:1fr}',
+	'.gloskin-home-piagam__marquee::before,.gloskin-home-piagam__marquee::after{width:60px}',
+	'@media (max-width:480px){body.gloskin-ui1--home .gloskin-ui1-hero--video-only{min-height:56vh}',
+	'@media (prefers-reduced-motion:reduce)',
+	'.gloskin-home-piagam__track{animation:none;will-change:auto}',
 ) as $needle ) {
-	home_must( false !== strpos( $editorial, $needle ), 'Home editorial primitive missing: ' . $needle );
+	home_must( false !== strpos( $editorial, $needle ), 'Home responsive/reduced-motion primitive missing: ' . $needle );
 }
 
 /* Existing canonical data owners remain in TemplateService. */
-$home_ctx_start = strpos( $template, 'private function home_context()' );
-$home_ctx_end   = strpos( $template, 'private function about_context()', $home_ctx_start );
-$home_ctx       = false !== $home_ctx_start && false !== $home_ctx_end ? substr( $template, $home_ctx_start, $home_ctx_end - $home_ctx_start ) : '';
 home_must( false !== strpos( $home_ctx, '$this->curated_home_treatments()' ), 'Treatment data owner remains TemplateService' );
 home_must( false !== strpos( $home_ctx, 'published_managed_records' ), 'testimonial/achievement data owner remains managed CPT records' );
 
@@ -123,4 +130,4 @@ home_must( preg_match( "/const VERSION = '([^']+)'/", $kernel, $kernel_version )
 home_must( preg_match( '/Version:\s*([^\s]+)/', $bootstrap, $bootstrap_version ) === 1, 'plugin header version is readable' );
 home_must( $kernel_version[1] === $bootstrap_version[1], 'release owners remain synchronized' );
 
-echo "home-readiness-contract.php: OK (canonical visual reference, static tinted hero, 3 Treatments, testimonial slider, compact awards)\n";
+echo "home-readiness-contract.php: OK (native video hero, 3 Treatments, testimonial slider, infinite responsive awards marquee)\n";
