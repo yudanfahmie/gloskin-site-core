@@ -85,7 +85,7 @@ $gloskin_band_copy = array(
 										<?php gloskin_ui1_render_editorial_media( 'treatment', $gloskin_path['label'], 'gloskin-ui1-consultation__path-image' ); ?>
 									<?php endif; ?>
 								</span>
-								<span class="gloskin-ui1-consultation__path-label"><?php echo esc_html( $gloskin_path['label'] ); ?></span>
+								<span class="gloskin-ui1-consultation__path-label" style="font-family:&quot;Montserrat&quot;,&quot;Helvetica Neue&quot;,Arial,sans-serif;font-size:1.1rem;font-weight:600;line-height:1.3;letter-spacing:0;"><?php echo esc_html( $gloskin_path['label'] ); ?></span>
 							</button>
 						<?php endforeach; ?>
 					</div>
@@ -123,7 +123,7 @@ $gloskin_band_copy = array(
 							<div class="gloskin-ui1-consultation__result" data-gloskin-consultation-result data-gloskin-concern-ids="<?php echo esc_attr( implode( ',', $gloskin_treatment_product['concern_ids'] ) ); ?>" hidden>
 								<?php gloskin_ui1_render_product_card( $gloskin_treatment_product, 'consultation' ); ?>
 							</div>
-						<?php endforeach; ?>
+					<?php endforeach; ?>
 					</div>
 					<p class="gloskin-ui1-consultation__empty" data-gloskin-consultation-empty hidden><?php echo esc_html__( 'Belum ada produk yang cocok dengan keluhan pilihan Anda. Hubungi kami untuk konsultasi lebih lanjut.', 'gloskin-site-core' ); ?></p>
 				</div>
@@ -132,25 +132,14 @@ $gloskin_band_copy = array(
 	</section>
 	<?php endif; ?>
 
-	<section class="gloskin-treatments-info" data-gloskin-section="treatments-information">
-		<div class="gloskin-ui1-container gloskin-treatments-info__inner">
+	<section class="gloskin-treatments-info" data-gloskin-section="treatments-information" style="padding:0;background:var(--gloskin-treatments-white);">
+		<div class="gloskin-ui1-container gloskin-treatments-info__inner" style="width:100%;max-width:none;margin:0;padding:clamp(64px,7vw,96px) 5%;border-top:1px solid #ebdcd5;border-bottom:1px solid #ebdcd5;background:var(--gloskin-treatments-white);">
 			<div class="gloskin-treatments-info__copy">
 				<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Edukasi', 'gloskin-site-core' ); ?></p>
 				<h2><?php echo esc_html__( 'Informasi di Situs Membantu Menyiapkan Pertanyaan Sebelum Konsultasi.', 'gloskin-site-core' ); ?></h2>
 				<p><?php echo esc_html__( 'Gunakan informasi ini sebagai panduan awal, lalu diskusikan kebutuhan dan pilihan perawatan Anda secara langsung di klinik Gloskin.', 'gloskin-site-core' ); ?></p>
 			</div>
 			<a class="gloskin-treatments-info__link" href="<?php echo esc_url( home_url( '/insights/' ) ); ?>"><?php echo esc_html__( 'Insight Kami', 'gloskin-site-core' ); ?><span aria-hidden="true">→</span></a>
-		</div>
-	</section>
-
-	<section class="gloskin-treatments-closing" data-gloskin-section="treatments-closing">
-		<div class="gloskin-ui1-container gloskin-treatments-closing__inner">
-			<div class="gloskin-treatments-closing__copy">
-				<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Lokasi', 'gloskin-site-core' ); ?></p>
-				<h2><?php echo esc_html__( 'Pilih Klinik Gloskin Terdekat dan Mulai Konsultasi.', 'gloskin-site-core' ); ?></h2>
-				<p><?php echo esc_html__( 'Temukan cabang yang sesuai dan rencanakan langkah pertama perjalanan estetika Anda bersama Gloskin.', 'gloskin-site-core' ); ?></p>
-			</div>
-			<a class="gloskin-treatments-closing__button" href="<?php echo esc_url( home_url( '/contact/' ) ); ?>"><?php echo esc_html__( 'Hubungi Kami', 'gloskin-site-core' ); ?></a>
 		</div>
 	</section>
 </div>
