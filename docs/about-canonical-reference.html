@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gloskin Clinic - Tentang Kami</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Palette Perjalanan (Journey Palette) konsisten dengan Homepage */
+            --bg-white: #ffffff;
+            --bg-peach: #fcf9f7;
+            --bg-blush: #f7ebe8;
+            
+            --header-bg: #f7ebe8; /* Sama dengan bg-blush untuk continuity */
+            --text-dark: #2a2a2a;
+            --text-muted: #555555; 
+            --accent-red: #a81c31; 
+            --accent-gold: #c3a378; 
+            --card-cream: #fbf5ef; 
+            --card-gold-light: #f5eedf; /* Warna khusus untuk kartu Visi Misi */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-white);
+            color: var(--text-dark);
+            line-height: 1.7;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 500;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+        }
+
+        ul { list-style: none; }
+
+        /* --- NAVBAR --- */
+        header {
+            background-color: var(--header-bg);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.03);
+        }
+
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--accent-red); letter-spacing: 2px; }
+        .nav-links { display: flex; gap: 40px; align-items: center; }
+        .nav-links a { font-size: 0.85rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dark); }
+        .nav-links a:hover { color: var(--accent-red); }
+        
+        /* Menu Aktif (Bentuk Pill Merah) */
+        .nav-links a.active {
+            background-color: var(--accent-red);
+            color: #ffffff;
+            padding: 8px 20px;
+            border-radius: 25px;
+        }
+
+        .nav-icons { display: flex; gap: 25px; align-items: center; font-size: 1.1rem; }
+        
+        /* --- LAYOUTING SECTIONS --- */
+        section { padding: 120px 5%; width: 100%; }
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        /* Alternating Backgrounds */
+        .page-header-section { background-color: var(--bg-blush); padding: 80px 5% 100px; text-align: center; }
+        .section-about-gloskin { background-color: var(--bg-white); }
+        .section-founder { background-color: var(--bg-peach); }
+        .section-visi-misi { background-color: var(--bg-white); }
+
+        /* Typografi Elegan */
+        .overline {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+        
+        .page-title {
+            font-size: 4rem;
+            letter-spacing: 4px;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        .section-title {
+            font-size: 2.8rem;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-dark);
+            line-height: 1.2;
+        }
+
+        .content-desc {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        /* --- ZIG-ZAG LAYOUT (Tentang & Founder) --- */
+        .split-container {
+            display: flex;
+            align-items: center;
+            gap: 80px;
+        }
+
+        .split-image {
+            flex: 1;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.06);
+            position: relative;
+        }
+
+        /* Border estetik (opsional, menambah kesan premium) */
+        .split-image::after {
+            content: '';
+            position: absolute;
+            top: 20px; left: 20px; right: 20px; bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: 10px;
+            pointer-events: none;
+        }
+
+        .split-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .split-content {
+            flex: 1;
+        }
+
+        .role-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        /* --- VISI MISI NILAI CARDS --- */
+        .vmn-header {
+            margin-bottom: 50px;
+        }
+
+        .vmn-title {
+            font-size: 2.5rem;
+            letter-spacing: 3px;
+        }
+
+        .vmn-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .vmn-card {
+            background-color: var(--card-gold-light);
+            padding: 50px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            height: 100%;
+        }
+
+        .vmn-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(195,163,120,0.15);
+        }
+
+        .vmn-card h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            color: var(--text-dark);
+        }
+
+        .vmn-card p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-weight: 400;
+        }
+
+        /* --- FOOTER --- */
+        footer { background-color: var(--bg-peach); padding: 80px 5% 30px; border-top: 1px solid #ebdcd5;}
+        .footer-container { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 50px; max-width: 1200px; margin: 0 auto 50px; }
+        .footer-logo p { margin-top: 20px; font-size: 0.95rem; color: var(--text-muted); max-width: 320px; }
+        .footer-col h5 { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-col ul { display: flex; flex-direction: column; gap: 15px; }
+        .footer-col a { font-size: 0.95rem; color: var(--text-muted); }
+        .footer-col a:hover { color: var(--accent-red); }
+        .footer-bottom { text-align: center; padding-top: 30px; border-top: 1px solid #ebdcd5; font-size: 0.9rem; color: var(--text-muted); }
+
+        /* --- FLOATING WA BUTTON --- */
+        .float-wa { position: fixed; bottom: 40px; right: 40px; background-color: var(--accent-red); color: white; width: 65px; height: 65px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 32px; box-shadow: 0 10px 25px rgba(168, 28, 49, 0.4); z-index: 1000; transition: transform 0.3s ease; }
+        .float-wa:hover { transform: scale(1.1) translateY(-5px); color: white; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            .vmn-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-container { grid-template-columns: repeat(2, 1fr); }
+            section { padding: 90px 5%; }
+            .split-container { gap: 40px; }
+            .page-title { font-size: 3rem; }
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .split-container { flex-direction: column; }
+            
+            /* Memaksa urutan pada mobile agar gambar selalu di atas teks */
+            .section-founder .split-container { flex-direction: column-reverse; } 
+
+            .vmn-grid, .footer-container { grid-template-columns: 1fr; }
+            .section-title { font-size: 2.2rem; }
+            .page-title { font-size: 2.5rem; }
+            .page-header-section { padding: 60px 5% 70px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="logo">GLOSKIN</div>
+        <nav class="nav-links">
+            <a href="#">Treatment</a>
+            <a href="#">Promo</a>
+            <a href="#">Skincare</a>
+            <a href="#" class="active">Tentang Kami</a> <!-- Menu Aktif -->
+        </nav>
+        <div class="nav-icons">
+            <a href="#"><i class="fas fa-search"></i></a>
+            <a href="#"><i class="far fa-user"></i></a>
+            <a href="#"><i class="far fa-heart"></i></a>
+            <a href="#"><i class="fas fa-shopping-bag"></i></a>
+            <a href="#"><img src="https://flagcdn.com/w20/id.png" alt="ID" style="width: 20px;"></a>
+        </div>
+    </header>
+
+    <!-- PAGE HEADER TITLE -->
+    <section class="page-header-section">
+        <div class="container">
+            <span class="overline">ABOUT</span>
+            <h1 class="page-title">TENTANG KAMI</h1>
+        </div>
+    </section>
+
+    <!-- TENTANG GLOSKIN (Gambar Kiri, Teks Kanan) -->
+    <section class="section-about-gloskin">
+        <div class="container split-container">
+            <div class="split-image">
+                <!-- Placeholder elegan bernuansa grup/klinik -->
+                <img src="https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=800&q=80" alt="Gloskin Aesthetic Clinic Team">
+            </div>
+            <div class="split-content">
+                <span class="overline">GLOSKIN</span>
+                <h2 class="section-title">TENTANG GLOSKIN</h2>
+                <p class="content-desc">
+                    Gloskin Aesthetic, Anti-Aging & Hair Clinic didirikan oleh dr. Nanang Masrani, M.Biomed (AAM) sebagai klinik aesthetic berbasis medis. Dengan pendekatan evidence-based dan konsep Skin Barrier & Quality Xpert, Gloskin berfokus pada peningkatan kualitas kulit, kesehatan rambut, serta hasil perawatan yang aman, natural, dan berkelanjutan.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOUNDER (Teks Kiri, Gambar Kanan) -->
+    <section class="section-founder">
+        <div class="container split-container">
+            <div class="split-content">
+                <span class="overline">FOUNDER</span>
+                <h2 class="section-title">DR. NANANG MASRANI,<br>M.BIOMED (AAM)</h2>
+                <span class="role-title">Pendiri & Medical Director</span>
+                <p class="content-desc">
+                    dr. Nanang mulai menekuni dunia estetika sejak 2007 dan mendirikan GLOSKIN Aesthetic Clinic pada 2012. Dengan latar belakang Magister Biomedik (Anti-Aging Medicine) serta pelatihan internasional di Eropa, Amerika, dan Asia, beliau mengembangkan Gloskin dengan pendekatan medical aesthetic berbasis evidence-based dan konsep Skin Barrier & Quality Xpert.
+                </p>
+            </div>
+            <div class="split-image">
+                <!-- Placeholder elegan profesional untuk dokter -->
+                <img src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=800&q=80" alt="Dr. Nanang Masrani">
+            </div>
+        </div>
+    </section>
+
+    <!-- VISI MISI NILAI -->
+    <section class="section-visi-misi">
+        <div class="container">
+            <div class="vmn-header">
+                <h2 class="section-title vmn-title">VISI • MISI • NILAI</h2>
+            </div>
+            <div class="vmn-grid">
+                
+                <div class="vmn-card">
+                    <h3>VISI</h3>
+                    <p>Menjadi Sahabat Terbaik Perawatan Wajah dan Tubuh.</p>
+                </div>
+
+                <div class="vmn-card">
+                    <h3>MISI</h3>
+                    <p>Memberikan pelayanan perawatan kesehatan wajah dan tubuh yang profesional serta berkualitas tinggi dan memberikan solusi kesehatan wajah dan tubuh yang aman bagi masyarakat.</p>
+                </div>
+
+                <div class="vmn-card">
+                    <h3>NILAI</h3>
+                    <p>Evidence-based - Aman - Natural - Berkelanjutan</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">
+                <h2 class="logo">GLOSKIN</h2>
+                <p>Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengedepankan konsultasi dan penanganan dokter di setiap kliniknya.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Layanan</h5>
+                <ul>
+                    <li><a href="#">Perawatan</a></li>
+                    <li><a href="#">Promo</a></li>
+                    <li><a href="#">Skincare</a></li>
+                    <li><a href="#">Belanja</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Informasi</h5>
+                <ul>
+                    <li><a href="#">Tentang</a></li>
+                    <li><a href="#">Dokter</a></li>
+                    <li><a href="#">Insight</a></li>
+                    <li><a href="#">Kontak</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Jaringan Klinik</h5>
+                <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <li><a href="#">Kebayoran Baru</a></li>
+                    <li><a href="#">Tebet</a></li>
+                    <li><a href="#">Bekasi</a></li>
+                    <li><a href="#">Cibubur</a></li>
+                    <li><a href="#">Serpong</a></li>
+                    <li><a href="#">Surabaya</a></li>
+                    <li><a href="#">Banjarmasin</a></li>
+                    <li><a href="#">Balikpapan</a></li>
+                    <li><a href="#">Denpasar</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Gloskin.</p>
+        </div>
+    </footer>
+
+    <!-- FLOATING WHATSAPP -->
+    <a href="#" class="float-wa" title="Hubungi Kami di WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+</body>
+</html>
