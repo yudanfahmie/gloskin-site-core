@@ -40,7 +40,7 @@ gloskin_ui1_render_hero( isset( $gloskin_context['hero'] ) && is_array( $gloskin
 		<?php gloskin_ui1_render_section_heading( __( 'Testimoni', 'gloskin-site-core' ) ); ?>
 		<div class="gloskin-home-testimonials__rows" data-gloskin-static-testimonials>
 			<?php foreach ( $gloskin_home_testimonials as $gloskin_home_testimonial ) :
-				$gloskin_home_quote = '' !== trim( (string) ( $gloskin_home_testimonial['excerpt'] ?? '' ) ) ? (string) $gloskin_home_testimonial['excerpt'] : (string) ( $gloskin_home_testimonial['title'] ?? '' );
+				$gloskin_home_quote = trim( (string) ( $gloskin_home_testimonial['excerpt'] ?? '' ) );
 				$gloskin_home_attribution = (string) ( $gloskin_home_testimonial['meta']['attribution'] ?? '' );
 				$gloskin_home_subtitle = (string) ( $gloskin_home_testimonial['meta']['subtitle'] ?? '' );
 			?>
