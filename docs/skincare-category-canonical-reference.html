@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gloskin Clinic - Day Cream / Sunscreen</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Palette Perjalanan (Journey Palette) */
+            --bg-white: #ffffff;
+            --bg-peach: #fdfaf8; /* Sangat pucat untuk background kategori */
+            --bg-blush: #f8eee9;
+            
+            --header-bg: #f8eee9; 
+            --text-dark: #2a2a2a;
+            --text-muted: #666666; 
+            --accent-red: #a81c31; 
+            --accent-gold: #c3a378; 
+            --card-cream: #fbf5ef; 
+            --card-gold-light: #f5eedf;
+            
+            /* Dark Mode Palette untuk CTA */
+            --bg-dark: #0f0f0f;
+            --border-dark: #2a2a2a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-peach); /* Dasar warna halaman peach pucat */
+            color: var(--text-dark);
+            line-height: 1.7;
+        }
+
+        h1, h2, h3, h4, h5, h6 { font-family: 'Playfair Display', serif; font-weight: 500; }
+        a { text-decoration: none; color: inherit; transition: all 0.3s ease; }
+        ul { list-style: none; }
+
+        /* --- NAVBAR --- */
+        header {
+            background-color: var(--header-bg); padding: 15px 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 20px rgba(0,0,0,0.03);
+        }
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--accent-red); letter-spacing: 2px; }
+        .nav-links { display: flex; gap: 40px; align-items: center; }
+        .nav-links a { font-size: 0.85rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dark); }
+        .nav-links a:hover { color: var(--accent-red); }
+        .nav-links a.active { background-color: var(--accent-red); color: #ffffff; padding: 8px 20px; border-radius: 25px; }
+        .nav-icons { display: flex; gap: 25px; align-items: center; font-size: 1.1rem; }
+        
+        /* --- UTILITY CLASSES --- */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 5%; }
+        .overline { display: block; font-size: 0.85rem; font-weight: 700; color: var(--accent-gold); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 15px; }
+        .section-title { font-size: 2.5rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-dark); line-height: 1.2; }
+        .content-desc { font-size: 1.05rem; color: var(--text-muted); font-weight: 300; line-height: 1.6; margin-bottom: 40px; }
+
+        /* --- HERO SECTION --- */
+        .section-hero { background-color: var(--bg-blush); padding: 80px 0 100px; }
+        .hero-container { display: flex; align-items: center; gap: 80px; }
+        .hero-content { flex: 1; }
+        .hero-title { font-size: 4rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dark); line-height: 1.1; }
+        .hero-image { flex: 1; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.06); height: 350px; }
+        .hero-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        /* --- PRODUK KATEGORI SECTION --- */
+        .section-products { padding: 100px 0; background-color: var(--bg-peach); }
+        .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; margin-top: 20px; }
+        
+        .product-card { 
+            background-color: var(--bg-white); 
+            border-radius: 12px; 
+            padding: 25px 20px; 
+            text-align: center; 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+            transition: all 0.3s ease; 
+            border: 1px solid #f2e9e4; 
+        }
+        .product-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.05); border-color: var(--accent-gold); }
+        
+        /* Ikon love kecil */
+        .wishlist-icon { 
+            position: absolute; top: 15px; right: 15px; 
+            width: 28px; height: 28px; 
+            border-radius: 50%; background-color: var(--bg-peach); 
+            display: flex; align-items: center; justify-content: center; 
+            color: var(--text-muted); font-size: 0.8rem; cursor: pointer; transition: 0.3s; 
+        }
+        .wishlist-icon:hover { color: var(--accent-red); background-color: #ffe6e6; }
+
+        .product-img-wrapper { width: 100%; height: 180px; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; }
+        .product-img-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+        .product-title { font-size: 1rem; font-weight: 700; margin-bottom: 10px; line-height: 1.4; }
+        .product-price { font-size: 1.15rem; font-weight: 600; margin-bottom: 15px; }
+        .product-desc-short { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 25px; line-height: 1.5; flex-grow: 1; }
+
+        .btn-outline { 
+            width: 100%; padding: 12px 0; border: 1px solid var(--text-dark); 
+            background: transparent; border-radius: 6px; font-weight: 600; 
+            font-size: 0.85rem; cursor: pointer; transition: all 0.3s; 
+            font-family: 'Montserrat', sans-serif; letter-spacing: 0.5px; 
+        }
+        .product-card:hover .btn-outline { background-color: var(--accent-red); border-color: var(--accent-red); color: white; }
+
+        /* --- KATEGORI LAIN (Related) --- */
+        .section-related { padding: 40px 0 100px; background-color: var(--bg-peach); }
+        .category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 60px; }
+        
+        .category-card { border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.3s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
+        .category-card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); }
+        .category-img { width: 100%; height: 260px; object-fit: cover; }
+        .category-banner { background-color: var(--card-gold-light); padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .category-banner h3 { font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin: 0; }
+        .category-banner i { color: var(--text-muted); transition: color 0.3s; }
+        .category-card:hover .category-banner i { color: var(--accent-red); }
+
+        /* Transition Banner */
+        .transition-banner { border-top: 1px solid #ebdcd5; padding-top: 50px; display: flex; justify-content: space-between; align-items: center; }
+        .tb-left .overline { margin-bottom: 5px; }
+        .tb-left h3 { font-size: 1.8rem; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+        .tb-left p { color: var(--text-muted); font-size: 0.95rem; }
+        .tb-right a { color: var(--accent-red); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.95rem; }
+        .tb-right a:hover { color: var(--accent-gold); }
+
+        /* --- DARK CTA BANNER --- */
+        .section-dark-cta { background-color: var(--bg-dark); padding: 80px 5%; position: relative; overflow: hidden; }
+        
+        /* Lingkaran artistik latar belakang */
+        .section-dark-cta::before {
+            content: ''; position: absolute; top: -50%; right: -10%;
+            width: 600px; height: 600px; border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 50%; pointer-events: none;
+        }
+        .section-dark-cta::after {
+            content: ''; position: absolute; top: -30%; right: -5%;
+            width: 800px; height: 800px; border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 50%; pointer-events: none;
+        }
+
+        .cta-dark-box {
+            max-width: 1200px; margin: 0 auto;
+            border: 1px solid var(--border-dark);
+            border-radius: 30px; padding: 80px 60px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: relative; z-index: 2;
+        }
+        
+        .cta-dark-content { flex: 1.5; color: white; }
+        .cta-dark-content .overline { color: var(--accent-gold); margin-bottom: 10px; }
+        .cta-dark-title { font-size: 3.5rem; line-height: 1.1; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; font-family: 'Playfair Display', serif; }
+        .cta-dark-content p { color: #aaaaaa; font-weight: 300; font-size: 1rem; }
+
+        .cta-dark-actions { flex: 1; display: flex; justify-content: flex-end; gap: 20px; }
+        
+        .btn-solid-red { background-color: var(--accent-red); color: white; padding: 15px 35px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; border: none; cursor: pointer; transition: all 0.3s; }
+        .btn-solid-red:hover { background-color: #8a1527; transform: translateY(-3px); }
+        
+        .btn-outline-white { background-color: transparent; color: white; padding: 15px 35px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; transition: all 0.3s; }
+        .btn-outline-white:hover { border-color: white; transform: translateY(-3px); background-color: rgba(255,255,255,0.1); }
+
+        /* --- FOOTER --- */
+        footer { background-color: var(--bg-peach); padding: 80px 5% 30px; }
+        .footer-container { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 50px; max-width: 1200px; margin: 0 auto 50px; }
+        .footer-logo p { margin-top: 20px; font-size: 0.95rem; color: var(--text-muted); max-width: 320px; }
+        .footer-col h5 { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-col ul { display: flex; flex-direction: column; gap: 15px; }
+        .footer-col a { font-size: 0.95rem; color: var(--text-muted); }
+        .footer-col a:hover { color: var(--accent-red); }
+        .footer-bottom { text-align: center; padding-top: 30px; border-top: 1px solid #ebdcd5; font-size: 0.9rem; color: var(--text-muted); }
+
+        /* --- FLOATING WA BUTTON --- */
+        .float-wa { position: fixed; bottom: 40px; right: 40px; background-color: var(--accent-red); color: white; width: 65px; height: 65px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 32px; box-shadow: 0 10px 25px rgba(168, 28, 49, 0.4); z-index: 1000; transition: transform 0.3s ease; }
+        .float-wa:hover { transform: scale(1.1) translateY(-5px); color: white; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            .product-grid { grid-template-columns: repeat(3, 1fr); }
+            .category-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+            .cta-dark-box { flex-direction: column; text-align: center; gap: 40px; padding: 60px 40px; }
+            .cta-dark-title { font-size: 3rem; }
+            .cta-dark-actions { justify-content: center; }
+            .footer-container { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero-container { flex-direction: column; text-align: center; gap: 40px; }
+            .product-grid { grid-template-columns: repeat(2, 1fr); }
+            .category-grid { grid-template-columns: 1fr; }
+            .transition-banner { flex-direction: column; text-align: center; gap: 20px; }
+            .cta-dark-actions { flex-direction: column; width: 100%; }
+            .cta-dark-actions button { width: 100%; }
+            .cta-dark-title { font-size: 2.2rem; }
+            .footer-container { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 480px) {
+            .product-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="logo">GLOSKIN</div>
+        <nav class="nav-links">
+            <a href="#">Treatment</a>
+            <a href="#">Promo</a>
+            <a href="#" class="active">Skincare</a>
+            <a href="#">Tentang Kami</a>
+        </nav>
+        <div class="nav-icons">
+            <a href="#"><i class="fas fa-search"></i></a>
+            <a href="#"><i class="far fa-user"></i></a>
+            <a href="#"><i class="far fa-heart"></i></a>
+            <a href="#"><i class="fas fa-shopping-bag"></i></a>
+            <a href="#"><img src="https://flagcdn.com/w20/id.png" alt="ID" style="width: 20px;"></a>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="section-hero">
+        <div class="container hero-container">
+            <div class="hero-content">
+                <span class="overline">GLOSKIN</span>
+                <h1 class="hero-title">DAY CREAM /<br>SUNSCREEN</h1>
+            </div>
+            <div class="hero-image">
+                <img src="https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=800&q=80" alt="Gloskin Day Cream">
+            </div>
+        </div>
+    </section>
+
+    <!-- PRODUCT LISTING -->
+    <section class="section-products">
+        <div class="container">
+            <h2 class="section-title">PRODUK DALAM KATEGORI INI</h2>
+            <p class="content-desc">Buka produk untuk melihat detail dan cara membelinya.</p>
+            
+            <div class="product-grid">
+                
+                <!-- Product 1 -->
+                <div class="product-card">
+                    <div class="wishlist-icon"><i class="far fa-heart"></i></div>
+                    <div class="product-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1611078508930-761361b2cb0c?auto=format&fit=crop&w=400&q=80" alt="Acne Day Protection">
+                    </div>
+                    <h3 class="product-title">Acne Day Protection Cream</h3>
+                    <p class="product-price">Rp 105.000</p>
+                    <p class="product-desc-short">Acne Day Protection Cream adalah tabir surya khusus kulit berjerawat untuk melindungi kulit dari sinar UV sekaligus merawat kondisi jerawat.</p>
+                    <button class="btn-outline">+ Keranjang</button>
+                </div>
+
+                <!-- Product 2 -->
+                <div class="product-card">
+                    <div class="wishlist-icon"><i class="far fa-heart"></i></div>
+                    <div class="product-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=400&q=80" alt="Glowing White Sunscreen">
+                    </div>
+                    <h3 class="product-title">Glowing White Sunscreen</h3>
+                    <p class="product-price">Rp 150.000</p>
+                    <p class="product-desc-short">Glowing White Sunscreen adalah krim pagi dengan sentuhan pencerah agar kulit tampak bercahaya dan terlindungi sepanjang hari.</p>
+                    <button class="btn-outline">+ Keranjang</button>
+                </div>
+
+                <!-- Product 3 -->
+                <div class="product-card">
+                    <div class="wishlist-icon"><i class="far fa-heart"></i></div>
+                    <div class="product-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=400&q=80" alt="Day Protection Cream">
+                    </div>
+                    <h3 class="product-title">Day Protection Cream</h3>
+                    <p class="product-price">Rp 155.000</p>
+                    <p class="product-desc-short">Krim tabir surya andalan GLOSKIN untuk menjaga kelembapan serta menepis radikal bebas selama beraktivitas.</p>
+                    <button class="btn-outline">+ Keranjang</button>
+                </div>
+
+                <!-- Product 4 -->
+                <div class="product-card">
+                    <div class="wishlist-icon"><i class="far fa-heart"></i></div>
+                    <div class="product-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1608248593875-af07153a79f5?auto=format&fit=crop&w=400&q=80" alt="Flawless High Defense">
+                    </div>
+                    <h3 class="product-title">Flawless High Defense 50</h3>
+                    <p class="product-price">Rp 162.000</p>
+                    <p class="product-desc-short">Flawless High Defense 50 adalah produk perlindungan tinggi dari paparan UVA & UVB, ideal untuk kulit yang sangat rentan.</p>
+                    <button class="btn-outline">+ Keranjang</button>
+                </div>
+
+                <!-- Product 5 -->
+                <div class="product-card">
+                    <div class="wishlist-icon"><i class="far fa-heart"></i></div>
+                    <div class="product-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=400&q=80" alt="Whitening Sunscreen">
+                    </div>
+                    <h3 class="product-title">Whitening Sunscreen</h3>
+                    <p class="product-price">Rp 150.000</p>
+                    <p class="product-desc-short">Sunscreen yang memberikan perlindungan sekaligus mencerahkan dan menyamarkan noda hitam dengan pemakaian rutin.</p>
+                    <button class="btn-outline">+ Keranjang</button>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- OTHER CATEGORIES & TRANSITION -->
+    <section class="section-related">
+        <div class="container">
+            <h2 class="section-title">KATEGORI LAIN UNTUK DILIHAT</h2>
+            <p class="content-desc">Lihat kategori skincare lain yang tersedia.</p>
+            
+            <div class="category-grid">
+                <!-- Cat 1 -->
+                <div class="category-card">
+                    <img src="https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&w=600&q=80" alt="Facial Wash" class="category-img">
+                    <div class="category-banner">
+                        <h3>FACIAL WASH</h3>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+                <!-- Cat 2 -->
+                <div class="category-card">
+                    <img src="https://images.unsplash.com/photo-1614859324967-bdf760cbab15?auto=format&fit=crop&w=600&q=80" alt="Toner" class="category-img">
+                    <div class="category-banner">
+                        <h3>TONER</h3>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+                <!-- Cat 3 -->
+                <div class="category-card">
+                    <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80" alt="Serum" class="category-img">
+                    <div class="category-banner">
+                        <h3>SERUM</h3>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transition Banner -->
+            <div class="transition-banner">
+                <div class="tb-left">
+                    <span class="overline">SKINCARE</span>
+                    <h3>LANJUTKAN KE KATEGORI LAIN ATAU<br>LIHAT SELURUH PRODUK.</h3>
+                    <p>Pilih alur yang paling sesuai dengan apa yang ingin Anda lihat berikutnya.</p>
+                </div>
+                <div class="tb-right">
+                    <a href="#">Semua Kategori</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DARK CTA SECTION (Premium) -->
+    <section class="section-dark-cta">
+        <div class="cta-dark-box">
+            <div class="cta-dark-content">
+                <span class="overline">KONSULTASI</span>
+                <h2 class="cta-dark-title">SIAP<br>MEMBICARAKAN<br>KEBUTUHAN<br>KULIT ANDA?</h2>
+                <p>Pilih klinik Gloskin terdekat atau hubungi tim kami untuk menjadwalkan konsultasi.</p>
+            </div>
+            <div class="cta-dark-actions">
+                <button class="btn-solid-red">Pilih Klinik</button>
+                <button class="btn-outline-white">Hubungi Kami</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">
+                <h2 class="logo">GLOSKIN</h2>
+                <p>Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengedepankan konsultasi dan penanganan dokter di setiap kliniknya.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Layanan</h5>
+                <ul>
+                    <li><a href="#">Perawatan</a></li>
+                    <li><a href="#">Promo</a></li>
+                    <li><a href="#">Skincare</a></li>
+                    <li><a href="#">Belanja</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Informasi</h5>
+                <ul>
+                    <li><a href="#">Tentang</a></li>
+                    <li><a href="#">Dokter</a></li>
+                    <li><a href="#">Insight</a></li>
+                    <li><a href="#">Kontak</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Jaringan Klinik</h5>
+                <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <li><a href="#">Kebayoran Baru</a></li>
+                    <li><a href="#">Tebet</a></li>
+                    <li><a href="#">Bekasi</a></li>
+                    <li><a href="#">Cibubur</a></li>
+                    <li><a href="#">Serpong</a></li>
+                    <li><a href="#">Surabaya</a></li>
+                    <li><a href="#">Banjarmasin</a></li>
+                    <li><a href="#">Balikpapan</a></li>
+                    <li><a href="#">Denpasar</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Gloskin.</p>
+        </div>
+    </footer>
+
+    <!-- FLOATING WHATSAPP -->
+    <a href="#" class="float-wa" title="Hubungi Kami di WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+</body>
+</html>
