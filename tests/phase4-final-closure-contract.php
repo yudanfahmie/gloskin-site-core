@@ -128,7 +128,7 @@ foreach ( array( 'promo-content', 'promo-closing', 'data-gloskin-promo-thumb' ) 
 p4must( strpos( $k, 'class-gloskin-site-core-content-finalizer-admin.php' ) !== false && strpos( $k, 'Gloskin_Site_Core_Content_Finalizer_Admin' ) !== false, 'Kernel uses content-finalizer (renamed)' );
 p4must( strpos( $k, 'class-gloskin-site-core-phase4-finalizer-admin.php' ) === false, 'Kernel no longer references phase4 finalizer file' );
 p4must( strpos( $k, 'Production_Batch' ) === false && strpos( $k, 'production-batch' ) === false, 'Kernel no longer references ProductionBatch' );
-p4must( strpos( $k, "const VERSION = '0.7.186'" ) !== false && strpos( $b, 'Version: 0.7.186' ) !== false, 'version 0.7.186 sync' );
+p4must( strpos( $k, "const VERSION = '0.7.187'" ) !== false && strpos( $b, 'Version: 0.7.187' ) !== false, 'version 0.7.187 sync' );
 
 /* --- Phase-5 translation contract preserved --- */
 foreach ( array( "'product' => array( 'label' => 'Product', 'fields' => \$base", 'Promo Poster', 'Kenapa Memilih GLOSKIN', 'Testimoni', 'Piagam', 'Tentang GLOSKIN', 'Visi · Misi · Nilai' ) as $n ) {
