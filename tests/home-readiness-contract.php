@@ -37,6 +37,7 @@ $core_base   = home_text( $plugin . '/assets/css/gloskin-ui1-core-base.css' );
 $readiness   = home_text( $plugin . '/assets/css/gloskin-ui1-readiness.css' );
 $assets      = home_text( $plugin . '/config/assets.php' );
 $not_found   = home_text( $plugin . '/templates/pages/not-found.php' );
+$footer      = home_text( $plugin . '/templates/parts/footer.php' );
 
 /* One shared generic frontend empty-state renderer and one CSS owner. */
 home_must( false !== strpos( $helpers, 'function gloskin_ui1_render_empty_state(' ), 'shared empty-state renderer exists' );
@@ -86,7 +87,7 @@ home_must( false !== strpos( $home, "gloskin_ui1_render_presentation_media( 'edi
 /* Home rhythm and video geometry are scoped; no global section hotfix. */
 home_must( false !== strpos( $editorial, '.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:clamp(3rem,6vw,5.5rem)}' ), 'Home roots own restored responsive vertical rhythm' );
 home_must( false !== strpos( $editorial, '.gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{max-width:760px;margin:0 auto clamp(1.5rem,3vw,2.5rem);text-align:center}' ), 'Home section headings retain centered wireframe cadence' );
-home_must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{object-fit:cover;object-position:center center}' ), 'Home video-only hero uses cover (latest product decision, fills viewport)' );
+home_must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{object-fit:cover;object-position:center center}' ), 'Home video-only hero uses cover with centered focal point' );
 home_must( false === strpos( $editorial, '.gloskin-ui1-section{padding' ), 'no broad global section padding patch' );
 home_must( false !== strpos( $editorial, '.gloskin-home-treatments__grid{grid-template-columns:repeat(3,minmax(0,1fr))}' ), 'Treatment desktop grid remains 3 columns' );
 home_must( false !== strpos( $editorial, '.gloskin-home-piagam__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}' ), 'Piagam desktop grid remains 4 columns' );
@@ -98,10 +99,13 @@ $editorial_media_end   = strpos( $media, "\n}\n", $editorial_media_start );
 $editorial_media_block = false !== $editorial_media_start && false !== $editorial_media_end ? substr( $media, $editorial_media_start, $editorial_media_end - $editorial_media_start + 3 ) : '';
 home_must( false !== strpos( $editorial_media_block, 'gloskin_ui1_render_presentation_media(' ), 'editorial media falls back to neutral presentation media' );
 
-/* Promo uses the same generic empty state and shared media fallback. */
+/* Promo uses the shared fallback and the enhanced carousel stacking contract. */
 home_must( false !== strpos( $promo, "gloskin_ui1_render_empty_state( 'generic', __( 'Informasi promo belum tersedia.'" ), 'empty Promo collection uses shared empty state' );
 home_must( false !== strpos( $promo, "gloskin_ui1_render_presentation_media( 'editorial', 'promo-'" ), 'missing Promo artwork uses shared media fallback' );
 home_must( false === strpos( $promo, '<div class="gloskin-ui1-empty">' ), 'Promo no longer duplicates generic empty markup' );
+home_must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] .gloskin-ui1-promo-carousel__stage{display:grid;grid-template-areas:"slide";overflow:hidden;width:100%;min-width:0}' ), 'enhanced Promo stage stacks slides and clips inactive slides' );
+home_must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{grid-area:slide;min-width:0;transition:transform .52s cubic-bezier(.4,0,.2,1);will-change:transform}' ), 'enhanced Promo slides share one grid area' );
+home_must( false !== strpos( $footer, "array( 'home', 'contact', 'about', 'promo' )" ), 'footer CTA stays excluded on Home, Contact, About, and Promo' );
 
 /* Existing specialized states remain specialized. */
 home_must( false !== strpos( $not_found, 'class="gloskin-ui1-not-found"' ) && false !== strpos( $not_found, 'status_header( 404 )' ), 'specialized 404 remains intact' );
@@ -131,6 +135,6 @@ $home_ctx       = false !== $home_ctx_start && false !== $home_ctx_end ? substr(
 home_must( false !== strpos( $home_ctx, "\$hero['mode'] = 'video_only';" ), 'Home uses video-only hero mode' );
 home_must( false !== strpos( $home, 'gloskin_ui1_render_hero' ), 'Home template retains one shared hero renderer' );
 
-home_must( false !== strpos( $kernel, "const VERSION = '0.7.193'" ) && false !== strpos( $bootstrap, 'Version: 0.7.193' ), 'release owners are synchronized at 0.7.193' );
+home_must( false !== strpos( $kernel, "const VERSION = '0.7.194'" ) && false !== strpos( $bootstrap, 'Version: 0.7.194' ), 'release owners are synchronized at 0.7.194' );
 
-echo "home-readiness-contract.php: OK (Home cover hero, Promo carousel JS-CSS contract, footer CTA routes, polish, version 0.7.193)\n";
+echo "home-readiness-contract.php: OK (Home cover hero, Promo stacked carousel contract, footer CTA routes, version 0.7.194)\n";
