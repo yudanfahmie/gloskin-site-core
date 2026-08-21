@@ -1,7 +1,49 @@
 /* Canonical first-party retail catalog/card owner.
  * Shop SSR/AJAX, Skincare and Skincare Category render the same normal retail
  * card markup. Filtering wrappers only carry behavior metadata and never alter
- * the card presentation. */
+ * the card presentation. Skincare page composition also lives here. */
+
+/* Skincare canonical reference composition. */
+.gloskin-skincare-page{--gloskin-skincare-white:#fff;--gloskin-skincare-peach:#fcf9f7;--gloskin-skincare-blush:#f7ebe8;--gloskin-skincare-text:#2a2a2a;--gloskin-skincare-muted:#666;--gloskin-skincare-red:#a81c31;--gloskin-skincare-gold:#c3a378;--gloskin-skincare-gold-light:#f6eedf;background:var(--gloskin-skincare-white);color:var(--gloskin-skincare-text)}
+.gloskin-skincare-page>.gloskin-skincare-hero,.gloskin-skincare-products,.gloskin-skincare-categories{padding:100px 0}
+.gloskin-skincare-page>.gloskin-skincare-hero{padding-block:80px;background:var(--gloskin-skincare-blush)}
+.gloskin-skincare-page .gloskin-ui1-container{width:min(90%,1200px)}
+.gloskin-skincare-page .gloskin-ui1-eyebrow{margin:0 0 15px;color:var(--gloskin-skincare-gold);font-size:.85rem;font-weight:700;letter-spacing:3px}
+.gloskin-skincare-hero__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:80px}
+.gloskin-skincare-hero__content{min-width:0}
+.gloskin-ui1 .gloskin-skincare-hero__content h1{margin:0 0 20px;color:var(--gloskin-skincare-text);font-size:clamp(3rem,4.45vw,4rem);line-height:1.08;letter-spacing:4px;text-transform:uppercase}
+.gloskin-skincare-hero__copy{max-width:520px;margin:0;color:var(--gloskin-skincare-muted);font-size:1.05rem;font-weight:300;line-height:1.8}
+.gloskin-skincare-hero__media{overflow:hidden;min-width:0;aspect-ratio:4/3;border-radius:20px;background:var(--gloskin-skincare-peach);box-shadow:0 20px 50px rgba(0,0,0,.06)}
+.gloskin-skincare-hero__image,.gloskin-skincare-hero__media>.gloskin-ui1-media,.gloskin-skincare-hero__media picture{display:block;width:100%;height:100%}
+.gloskin-skincare-hero__image,.gloskin-skincare-hero__media img,.gloskin-skincare-hero__media video{width:100%;height:100%;object-fit:cover;object-position:center}
+.gloskin-skincare-products{background:var(--gloskin-skincare-peach)}
+.gloskin-skincare-products__head{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:40px}
+.gloskin-skincare-products__intro{min-width:0;max-width:760px}
+.gloskin-ui1 .gloskin-skincare-products__intro h2,.gloskin-ui1 .gloskin-skincare-categories__head h2{margin:0 0 20px;color:var(--gloskin-skincare-text);font-size:clamp(2.2rem,3.15vw,2.8rem);line-height:1.2;letter-spacing:2px;text-transform:uppercase}
+.gloskin-skincare-products__intro>p:last-child,.gloskin-skincare-categories__head p{margin:0;color:var(--gloskin-skincare-muted);font-size:1.05rem;font-weight:300;line-height:1.8}
+.gloskin-skincare-products__shop{flex:0 0 auto;min-height:46px;padding:12px 25px;background:var(--gloskin-skincare-red);color:#fff;font-size:.9rem;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.gloskin-skincare-products .gloskin-ui1-chip-filter{gap:15px;margin:0 0 50px}
+.gloskin-skincare-products .gloskin-ui1-chip{min-height:38px;padding:8px 20px;border-color:var(--gloskin-skincare-gold);background:transparent;color:var(--gloskin-skincare-text);font-size:.9rem;font-weight:500}
+.gloskin-skincare-products .gloskin-ui1-chip:hover{border-color:var(--gloskin-skincare-gold);background:var(--gloskin-skincare-gold-light)}
+.gloskin-skincare-products .gloskin-ui1-chip.is-active,.gloskin-skincare-products .gloskin-ui1-chip[aria-selected="true"]{border-color:var(--gloskin-skincare-red);background:var(--gloskin-skincare-red);color:#fff}
+.gloskin-skincare-products .gloskin-ui1-product-grid{gap:30px}
+.gloskin-skincare-categories{background:var(--gloskin-skincare-white)}
+.gloskin-skincare-categories__head{max-width:760px;margin-bottom:40px}
+.gloskin-skincare-categories__grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px}
+.gloskin-skincare-categories .gloskin-ui1-category-card{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:260px auto;min-width:0;overflow:hidden;border:0;border-radius:12px;background:var(--gloskin-skincare-gold-light);color:var(--gloskin-skincare-text);text-decoration:none;box-shadow:none;transition:transform .3s ease,box-shadow .3s ease}
+.gloskin-skincare-categories .gloskin-ui1-category-card:hover{transform:translateY(-8px);box-shadow:0 15px 30px rgba(0,0,0,.08)}
+.gloskin-skincare-categories .gloskin-ui1-category-card__media{grid-column:1/-1;grid-row:1;display:block;width:100%;height:260px;aspect-ratio:auto;object-fit:cover;object-position:center;background:var(--gloskin-skincare-peach);border-radius:0}
+.gloskin-skincare-categories .gloskin-ui1-category-card__media img,.gloskin-skincare-categories .gloskin-ui1-category-card__media video{width:100%;height:100%;object-fit:cover;object-position:center}
+.gloskin-skincare-categories .gloskin-ui1-category-card__label{display:flex;align-items:center;min-width:0;padding:20px 10px 20px 20px;font-family:var(--gloskin-font-body);font-size:1rem;font-weight:600;line-height:1.35;letter-spacing:1px;text-transform:uppercase}
+.gloskin-skincare-categories .gloskin-ui1-category-card__arrow{display:flex;align-items:center;justify-content:center;padding:20px;color:var(--gloskin-skincare-red);font-size:1.2rem}
+.gloskin-skincare-clinic-cta{padding:80px 0;background:var(--gloskin-skincare-red);color:#fff}
+.gloskin-skincare-clinic-cta__inner{display:grid;grid-template-columns:minmax(0,2fr) minmax(220px,1fr);align-items:center;gap:40px}
+.gloskin-skincare-clinic-cta .gloskin-ui1-eyebrow{color:rgba(255,255,255,.8)}
+.gloskin-ui1 .gloskin-skincare-clinic-cta__copy h2{margin:0 0 15px;color:#fff;font-size:clamp(2rem,2.8vw,2.5rem);line-height:1.2;letter-spacing:2px;text-transform:uppercase}
+.gloskin-skincare-clinic-cta__copy>p:last-child{max-width:760px;margin:0;color:rgba(255,255,255,.9);font-size:1.05rem;font-weight:300;line-height:1.7}
+.gloskin-skincare-clinic-cta__button{justify-self:end;display:inline-flex;min-height:52px;align-items:center;justify-content:center;padding:15px 35px;border-radius:30px;background:#fff;color:var(--gloskin-skincare-red);font-size:.9rem;font-weight:700;letter-spacing:1.5px;text-decoration:none;text-transform:uppercase;box-shadow:0 10px 20px rgba(0,0,0,.1);transition:background-color .3s ease,transform .3s ease}
+.gloskin-skincare-clinic-cta__button:hover{background:var(--gloskin-skincare-peach);transform:translateY(-3px)}
+
 .gloskin-ui1-product-grid,
 .gloskin-ui1-shop-skeleton__grid {
 	display:grid;
@@ -245,30 +287,41 @@
 .gloskin-ui1-catalog-header h2{margin:0;font-family:var(--gloskin-font-heading);font-size:clamp(1.4rem,2.4vw,1.9rem);font-weight:600}
 .gloskin-ui1-catalog-header__count{color:var(--gloskin-muted);font-size:.94rem}
 
-/* Skincare category discovery/gateway composition belongs with retail discovery,
- * not the Home/About/Promo/Insights editorial root. */
+/* Reusable Skincare category card geometry. */
 .gloskin-ui1-category-card{overflow:hidden;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-lg);background:var(--gloskin-refresh-cream);box-shadow:none}
 .gloskin-ui1-category-card__media{aspect-ratio:4/3}
 .gloskin-ui1-category-card__label{padding:18px 20px 22px;font-size:1.2rem}
-.gloskin-ui1-skincare-shop-gateway{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:clamp(24px,5vw,64px)}
-.gloskin-ui1-skincare-shop-gateway__action{justify-self:end}
-.gloskin-ui1-skincare-shop-gateway__action .gloskin-ui1-button{white-space:nowrap}
 
 @media (max-width:1100px){
 	.gloskin-ui1-product-grid,.gloskin-ui1-shop-skeleton__grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 	.gloskin-ui1-card--product .gloskin-ui1-card__media-wrap{height:220px}
 }
-@media (max-width:900px){.gloskin-ui1-skincare-shop-gateway{grid-template-columns:1fr}.gloskin-ui1-skincare-shop-gateway__action{width:auto;justify-self:start}}
+@media (max-width:1024px){.gloskin-skincare-hero__grid{gap:40px}.gloskin-skincare-categories__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:820px){.gloskin-ui1-product-grid,.gloskin-ui1-shop-skeleton__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:768px){
+	.gloskin-skincare-page>.gloskin-skincare-hero,.gloskin-skincare-products,.gloskin-skincare-categories{padding-block:80px}
+	.gloskin-skincare-hero__grid{grid-template-columns:1fr;gap:36px}
+	.gloskin-skincare-hero__content{order:2;text-align:center}
+	.gloskin-skincare-hero__media{order:1;width:100%;max-width:680px;margin-inline:auto}
+	.gloskin-skincare-hero__copy{margin-inline:auto}
+	.gloskin-skincare-products__head{align-items:flex-start;flex-direction:column;gap:20px}
+	.gloskin-skincare-categories__grid{grid-template-columns:1fr}
+	.gloskin-skincare-clinic-cta__inner{grid-template-columns:1fr;text-align:center}
+	.gloskin-skincare-clinic-cta__button{justify-self:center}
+}
 @media (max-width:760px){.gloskin-ui1-chip-filter{max-width:100%;flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;overscroll-behavior-inline:contain;scrollbar-width:thin}.gloskin-ui1-catalog-rail{margin-top:18px}.gloskin-ui1-catalog-rail__chip{padding:8px 14px;font-size:.88rem}}
 @media (max-width:520px){
 	.gloskin-ui1-product-grid,.gloskin-ui1-shop-skeleton__grid{grid-template-columns:minmax(0,1fr)}
 	.gloskin-ui1-card--product .gloskin-ui1-card__media-wrap{height:240px}
-	.gloskin-ui1-skincare-shop-gateway__action{width:100%}
-	.gloskin-ui1-skincare-shop-gateway__action .gloskin-ui1-button{width:100%}
+	.gloskin-skincare-products__shop{width:100%}
+	.gloskin-skincare-categories .gloskin-ui1-category-card{grid-template-rows:230px auto}
+	.gloskin-skincare-categories .gloskin-ui1-category-card__media{height:230px}
 }
 @media (prefers-reduced-motion:reduce){
 	.gloskin-ui1-card--product,
-	.gloskin-ui1-card--product .gloskin-ui1-card__image{transition:none}
+	.gloskin-ui1-card--product .gloskin-ui1-card__image,
+	.gloskin-skincare-categories .gloskin-ui1-category-card,
+	.gloskin-skincare-clinic-cta__button{transition:none}
 	.gloskin-ui1-card--product:is(:hover,:focus-within) .gloskin-ui1-card__image{transform:none}
+	.gloskin-skincare-categories .gloskin-ui1-category-card:hover,.gloskin-skincare-clinic-cta__button:hover{transform:none}
 }
