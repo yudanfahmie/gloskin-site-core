@@ -26,6 +26,48 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 		add_action( 'admin_init', array( $this, 'maybe_upgrade' ), 5 );
 	}
 
+	/**
+	 * Register historical admin runners only while their supported upgrade
+	 * checkpoint is genuinely pending. Consumed migrations never participate in
+	 * normal Kernel boot; their persisted state remains authoritative.
+	 *
+	 * @param Gloskin_Site_Core_Asset_Service $assets      Asset owner.
+	 * @param string                          $plugin_file Main plugin file.
+	 * @return void
+	 */
+	public function register_historical_upgrade_admins( $assets, $plugin_file ) {
+		if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$current        = (string) get_option( self::VERSION_OPTION, '' );
+		$schema_pending = '' === $current || version_compare( $current, self::SCHEMA_VERSION, '<' );
+
+		if ( $schema_pending ) {
+			$insight_state = get_option( 'gloskin_site_core_insights_v1_state', array() );
+			if ( ! is_array( $insight_state ) || 'consumed' !== (string) ( $insight_state['status'] ?? '' ) ) {
+				require_once __DIR__ . '/class-gloskin-site-core-insight-migration-admin.php';
+				$insight_migration = new Gloskin_Site_Core_Insight_Migration_Admin( $plugin_file );
+				$insight_migration->register();
+			}
+
+			$final_state = get_option( 'gloskin_site_core_revision_20260819f_state', array() );
+			if ( ! is_array( $final_state ) || 'consumed' !== (string) ( $final_state['status'] ?? '' ) ) {
+				require_once __DIR__ . '/class-gloskin-site-core-revision-20260819-final-migration-admin.php';
+				$final_migration = new Gloskin_Site_Core_Revision_20260819_Final_Migration_Admin( $assets, $plugin_file );
+				$final_migration->register();
+			}
+			return;
+		}
+
+		$promo_state = get_option( 'gloskin_site_core_revision_20260820_promo_recovery_state', array() );
+		if ( ! is_array( $promo_state ) || 'consumed' !== (string) ( $promo_state['status'] ?? '' ) ) {
+			require_once __DIR__ . '/class-gloskin-site-core-revision-20260820-promo-recovery-admin.php';
+			$promo_recovery = new Gloskin_Site_Core_Revision_20260820_Promo_Recovery_Admin( $assets );
+			$promo_recovery->register();
+		}
+	}
+
 	/** @return void */
 	public function maybe_upgrade() {
 		if ( ! current_user_can( 'manage_options' ) ) {
