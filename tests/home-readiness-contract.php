@@ -23,20 +23,20 @@ function home_text( string $path ): string {
 	return $value;
 }
 
-$home       = home_text( $plugin . '/templates/pages/home.php' );
-$promo      = home_text( $plugin . '/templates/pages/promo.php' );
-$helpers    = home_text( $plugin . '/templates/parts/readiness-helpers.php' );
-$media      = home_text( $plugin . '/templates/parts/template-helpers.php' );
-$template   = home_text( $plugin . '/includes/class-gloskin-site-core-template-service.php' );
-$finalizer  = home_text( $plugin . '/includes/class-gloskin-site-core-content-finalizer-admin.php' );
-$kernel     = home_text( $plugin . '/includes/class-gloskin-site-core-kernel.php' );
-$bootstrap  = home_text( $plugin . '/gloskin-site-core.php' );
-$translation= home_text( $plugin . '/includes/class-gloskin-site-core-translation.php' );
-$editorial  = home_text( $plugin . '/assets/css/gloskin-ui1-editorial.css' );
-$core_base  = home_text( $plugin . '/assets/css/gloskin-ui1-core-base.css' );
-$readiness  = home_text( $plugin . '/assets/css/gloskin-ui1-readiness.css' );
-$assets     = home_text( $plugin . '/config/assets.php' );
-$not_found  = home_text( $plugin . '/templates/pages/not-found.php' );
+$home        = home_text( $plugin . '/templates/pages/home.php' );
+$promo       = home_text( $plugin . '/templates/pages/promo.php' );
+$helpers     = home_text( $plugin . '/templates/parts/readiness-helpers.php' );
+$media       = home_text( $plugin . '/templates/parts/template-helpers.php' );
+$template    = home_text( $plugin . '/includes/class-gloskin-site-core-template-service.php' );
+$finalizer   = home_text( $plugin . '/includes/class-gloskin-site-core-content-finalizer-admin.php' );
+$kernel      = home_text( $plugin . '/includes/class-gloskin-site-core-kernel.php' );
+$bootstrap   = home_text( $plugin . '/gloskin-site-core.php' );
+$translation = home_text( $plugin . '/includes/class-gloskin-site-core-translation.php' );
+$editorial   = home_text( $plugin . '/assets/css/gloskin-ui1-editorial.css' );
+$core_base   = home_text( $plugin . '/assets/css/gloskin-ui1-core-base.css' );
+$readiness   = home_text( $plugin . '/assets/css/gloskin-ui1-readiness.css' );
+$assets      = home_text( $plugin . '/config/assets.php' );
+$not_found   = home_text( $plugin . '/templates/pages/not-found.php' );
 
 /* One shared generic frontend empty-state renderer and one CSS owner. */
 home_must( false !== strpos( $helpers, 'function gloskin_ui1_render_empty_state(' ), 'shared empty-state renderer exists' );
@@ -83,11 +83,13 @@ home_must( false === strpos( $home, "\$gloskin_home_testimonial['title'] ?? ''" 
 home_must( false !== strpos( $home, "if ( ! empty( \$gloskin_home_testimonial['image_id'] ) )" ), 'missing testimonial avatar is optional' );
 home_must( false !== strpos( $home, "gloskin_ui1_render_presentation_media( 'editorial', 'piagam-'" ), 'missing Piagam image gets shared neutral media fallback' );
 
-/* Home rhythm is scoped and token-based; no global section padding hotfix. */
-home_must( false !== strpos( $editorial, '.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:min(var(--gloskin-section),5.5rem)}' ), 'Home roots own token-based vertical rhythm' );
-home_must( false !== strpos( $editorial, '.gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{margin-bottom:' ), 'Home heading-to-content cadence is explicit' );
+/* Home rhythm and video geometry are scoped; no global section hotfix. */
+home_must( false !== strpos( $editorial, '.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:clamp(3rem,6vw,5.5rem)}' ), 'Home roots own restored responsive vertical rhythm' );
+home_must( false !== strpos( $editorial, '.gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{max-width:760px;margin:0 auto clamp(1.5rem,3vw,2.5rem);text-align:center}' ), 'Home section headings retain centered wireframe cadence' );
+home_must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{object-fit:cover;object-position:center center}' ), 'Home video-only hero must cover its viewport' );
 home_must( false === strpos( $editorial, '.gloskin-ui1-section{padding' ), 'no broad global section padding patch' );
 home_must( false !== strpos( $editorial, '.gloskin-home-treatments__grid{grid-template-columns:repeat(3,minmax(0,1fr))}' ), 'Treatment desktop grid remains 3 columns' );
+home_must( false !== strpos( $editorial, '.gloskin-home-piagam__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}' ), 'Piagam desktop grid remains 4 columns' );
 
 /* Existing shared media owner degrades editorial media gracefully. */
 home_must( false !== strpos( $media, 'function gloskin_ui1_render_editorial_media(' ), 'shared editorial media renderer exists' );
@@ -118,13 +120,17 @@ home_must( false !== strpos( $finalizer, 'catch ( Throwable $e )' ) && false !==
 home_must( false !== strpos( $translation, 'Detail tambahan belum tersedia untuk ditampilkan.' ), 'generic Home fallback copy stays in translation owner' );
 home_must( false !== strpos( $translation, 'Informasi promo belum tersedia.' ), 'Promo fallback copy stays in translation owner' );
 
-/* Treatment data owner stays deterministic and Home video contract is untouched here. */
+/* Treatment data owner stays deterministic and Home remains video-only. */
 $curated_start = strpos( $template, 'private function curated_home_treatments()' );
 $curated_end   = strpos( $template, 'private function skincare_category_context()', $curated_start );
 $curated       = false !== $curated_start && false !== $curated_end ? substr( $template, $curated_start, $curated_end - $curated_start ) : '';
 home_must( false !== strpos( $curated, "'gloskin_treatment_feature_on_home'" ) && false !== strpos( $curated, "'post__not_in'   => \$exclude" ) && false !== strpos( $curated, 'array_slice( $cards, 0, 6 )' ), 'canonical Home treatment selection remains deterministic and bounded' );
-home_must( false !== strpos( $home, 'gloskin_ui1_render_hero' ) && false === strpos( $home, 'object-fit:cover' ), 'Home template does not crop or duplicate video presentation' );
+$home_ctx_start = strpos( $template, 'private function home_context()' );
+$home_ctx_end   = strpos( $template, 'private function about_context()', $home_ctx_start );
+$home_ctx       = false !== $home_ctx_start && false !== $home_ctx_end ? substr( $template, $home_ctx_start, $home_ctx_end - $home_ctx_start ) : '';
+home_must( false !== strpos( $home_ctx, "\$hero['mode'] = 'video_only';" ), 'Home uses video-only hero mode' );
+home_must( false !== strpos( $home, 'gloskin_ui1_render_hero' ), 'Home template retains one shared hero renderer' );
 
-home_must( false !== strpos( $kernel, "const VERSION = '0.7.189'" ) && false !== strpos( $bootstrap, 'Version: 0.7.189' ), 'release owners are synchronized at 0.7.189' );
+home_must( false !== strpos( $kernel, "const VERSION = '0.7.190'" ) && false !== strpos( $bootstrap, 'Version: 0.7.190' ), 'release owners are synchronized at 0.7.190' );
 
-echo "home-readiness-contract.php: OK (central empty state, persistent Home shells, graceful media, specialized states preserved, Finalizer integrity separated, version 0.7.189)\n";
+echo "home-readiness-contract.php: OK (Home cover hero, restored structure/rhythm, resilient sections, version 0.7.190)\n";
