@@ -47,8 +47,8 @@
 /* Single Skincare category canonical composition. Page geometry only: the
  * shared product-card system below remains the sole retail-card authority. */
 .gloskin-skincare-category-page{--gloskin-skincare-category-white:#fff;--gloskin-skincare-category-peach:#fdfaf8;--gloskin-skincare-category-blush:#f8eee9;--gloskin-skincare-category-text:#2a2a2a;--gloskin-skincare-category-muted:#666;--gloskin-skincare-category-red:#a81c31;--gloskin-skincare-category-gold:#c3a378;--gloskin-skincare-category-gold-light:#f5eedf;background:var(--gloskin-skincare-category-peach);color:var(--gloskin-skincare-category-text)}
-.gloskin-skincare-category-page .gloskin-ui1-container{width:min(100%,1200px);padding-inline:5%}
-.gloskin-skincare-category-page .gloskin-ui1-eyebrow{margin:0 0 15px;color:var(--gloskin-skincare-category-gold);font-size:.85rem;font-weight:700;letter-spacing:3px;text-transform:uppercase}
+.gloskin-skincare-category-hero>.gloskin-ui1-container,.gloskin-skincare-category-products>.gloskin-ui1-container,.gloskin-skincare-category-related>.gloskin-ui1-container{width:min(100%,1200px);padding-inline:5%}
+.gloskin-skincare-category-hero .gloskin-ui1-eyebrow,.gloskin-skincare-category-transition .gloskin-ui1-eyebrow{margin:0 0 15px;color:var(--gloskin-skincare-category-gold);font-size:.85rem;font-weight:700;letter-spacing:3px;text-transform:uppercase}
 .gloskin-skincare-category-hero{padding:80px 0 100px;background:var(--gloskin-skincare-category-blush)}
 .gloskin-skincare-category-hero__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:80px}
 .gloskin-skincare-category-hero__content{min-width:0}
