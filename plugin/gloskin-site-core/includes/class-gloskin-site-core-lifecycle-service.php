@@ -31,12 +31,16 @@ final class Gloskin_Site_Core_Lifecycle_Service {
 	 * checkpoint is genuinely pending. Consumed migrations never participate in
 	 * normal Kernel boot; their persisted state remains authoritative.
 	 *
+	 * This method runs during plugin bootstrap, before WordPress has loaded the
+	 * pluggable current-user API. Do not perform capability checks here; each
+	 * registered admin callback enforces its own capability at the proper hook.
+	 *
 	 * @param Gloskin_Site_Core_Asset_Service $assets      Asset owner.
 	 * @param string                          $plugin_file Main plugin file.
 	 * @return void
 	 */
 	public function register_historical_upgrade_admins( $assets, $plugin_file ) {
-		if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+		if ( ! is_admin() ) {
 			return;
 		}
 
