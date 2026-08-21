@@ -59,7 +59,6 @@ body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video_
 body.gloskin-ui1--home .gloskin-ui1-hero--video-only::after{position:absolute;z-index:2;inset:0;background:linear-gradient(135deg,rgba(168,28,49,.30) 0%,rgba(168,28,49,.12) 100%);content:"";pointer-events:none}
 body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__loader{z-index:3}
 .gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding:clamp(80px,8vw,120px) 0}
-.gloskin-home-why>.gloskin-ui1-container,.gloskin-home-treatments>.gloskin-ui1-container,.gloskin-home-testimonials>.gloskin-ui1-container,.gloskin-home-piagam>.gloskin-ui1-container{width:min(90%,1200px)}
 .gloskin-home-why{background:var(--gloskin-home-white)}
 .gloskin-home-treatments{background:var(--gloskin-home-peach)}
 .gloskin-home-testimonials{background:var(--gloskin-home-blush)}
@@ -135,11 +134,6 @@ body.gloskin-ui1--home .gloskin-ui1-footer{background:var(--gloskin-home-peach)}
 .gloskin-promo__heading{margin:0 0 clamp(1.5rem,3vw,2.5rem);text-align:center}
 .gloskin-promo__carousel{position:relative;padding:0;background:transparent}
 .gloskin-promo__carousel .gloskin-ui1-promo-carousel__stage{margin:0}
-/* Carousel enhanced state — JS sets data-gloskin-promo-enhanced once it removes
-   [hidden] from all slides and drives inline translateX() per slide.
-   CSS must stack all slides into one grid area and clip the stage so
-   off-screen slides are invisible. Without this contract, un-hidden slides
-   render as normal-flow block siblings, expanding document width/height. */
 [data-gloskin-promo-enhanced] .gloskin-ui1-promo-carousel__stage{display:grid;grid-template-areas:"slide";overflow:hidden;width:100%;min-width:0}
 [data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{grid-area:slide;min-width:0;transition:transform .52s cubic-bezier(.4,0,.2,1);will-change:transform}
 .gloskin-promo__slide{margin:0;padding:0}
