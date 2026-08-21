@@ -40,9 +40,6 @@ final class Gloskin_Site_Core_Kernel {
 			require_once __DIR__ . '/class-gloskin-site-core-admin-service.php';
 			require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
 			require_once __DIR__ . '/class-gloskin-site-core-sample-media-compatibility.php';
-			require_once __DIR__ . '/class-gloskin-site-core-insight-migration-admin.php';
-			require_once __DIR__ . '/class-gloskin-site-core-revision-20260819-final-migration-admin.php';
-			require_once __DIR__ . '/class-gloskin-site-core-revision-20260820-promo-recovery-admin.php';
 			require_once __DIR__ . '/class-gloskin-site-core-media-cleanup-admin.php';
 			require_once __DIR__ . '/class-gloskin-site-core-content-finalizer-admin.php';
 
@@ -59,17 +56,9 @@ final class Gloskin_Site_Core_Kernel {
 			$language_projection = new Gloskin_Site_Core_Language_Projection();
 			$language_projection->register_admin();
 
-			$insight_migration = new Gloskin_Site_Core_Insight_Migration_Admin( $this->plugin_file );
-			$insight_migration->register();
-
 			$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();
 			$lifecycle->register_upgrade();
-
-			$revision_final_migration = new Gloskin_Site_Core_Revision_20260819_Final_Migration_Admin( $assets, $this->plugin_file );
-			$revision_final_migration->register();
-
-			$promo_recovery = new Gloskin_Site_Core_Revision_20260820_Promo_Recovery_Admin( $assets );
-			$promo_recovery->register();
+			$lifecycle->register_historical_upgrade_admins( $assets, $this->plugin_file );
 
 			$media_cleanup = new Gloskin_Site_Core_Media_Cleanup_Admin( $assets );
 			$media_cleanup->register();
@@ -103,10 +92,7 @@ final class Gloskin_Site_Core_Kernel {
 			$this->services[] = $translation;
 			$this->services[] = $language;
 			$this->services[] = $language_projection;
-			$this->services[] = $insight_migration;
 			$this->services[] = $lifecycle;
-			$this->services[] = $revision_final_migration;
-			$this->services[] = $promo_recovery;
 			$this->services[] = $media_cleanup;
 			$this->services[] = $content_finalizer;
 			$this->services[] = $contact;
