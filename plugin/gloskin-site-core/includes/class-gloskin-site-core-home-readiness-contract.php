@@ -164,7 +164,6 @@ final class Gloskin_Site_Core_Home_Readiness_Contract {
 		foreach ( $posts as $post ) {
 			$ids[]       = absint( $post->ID );
 			$quote       = trim( wp_strip_all_tags( (string) get_the_excerpt( $post ) ) );
-			$quote       = '' !== $quote ? $quote : trim( wp_strip_all_tags( (string) get_the_title( $post ) ) );
 			$attribution = trim( (string) get_post_meta( $post->ID, 'gloskin_testimonial_attribution', true ) );
 			if ( '' === $quote || '' === $attribution ) {
 				throw new RuntimeException( 'Home readiness failed: every Testimoni needs factual quote content and attribution.' );
