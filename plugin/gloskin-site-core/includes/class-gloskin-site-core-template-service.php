@@ -235,40 +235,43 @@ final class Gloskin_Site_Core_Template_Service {
 
 	/** @return array<string,mixed> */
 	private function about_context() {
-		$page = $this->content_page( 'about' );
-		$founder = $this->about_founder_context( $page );
+		$copy    = $this->about_static_content();
+		$founder = get_page_by_path(
+			'dr-nanang-masrani-m-biomed-aam',
+			OBJECT,
+			Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE
+		);
+		$founder_media_id = $founder instanceof WP_Post ? absint( get_post_thumbnail_id( $founder->ID ) ) : 0;
+
 		return array(
-			'page'    => $page,
-			'vision'  => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_vision', true ) : '',
-			'mission' => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_mission', true ) : '',
-			'values'  => $page ? (string) get_post_meta( $page->ID, 'gloskin_about_values', true ) : '',
-			'founder' => $founder,
+			'story' => $copy['story'],
+			'founder' => array(
+				'name'     => $copy['founder_name'],
+				'role'     => $copy['founder_role'],
+				'story'    => $copy['founder_story'],
+				'media_id' => $founder_media_id,
+			),
+			'vision'  => $copy['vision'],
+			'mission' => $copy['mission'],
+			'values'  => $copy['values'],
 		);
 	}
 
 	/**
-	 * Optional founder block for About page. Renders only when required fields exist.
+	 * Release-controlled About copy. WordPress owns only route identity and the
+	 * canonical founder/editorial media attachments; it does not own About copy.
 	 *
-	 * @param WP_Post|null $about_page About page.
-	 * @return array<string,mixed>|null Founder data, or null if required fields missing.
+	 * @return array<string,string>
 	 */
-	private function about_founder_context( $about_page ) {
-		if ( ! ( $about_page instanceof WP_Post ) ) {
-			return null;
-		}
-		$name  = trim( (string) get_post_meta( $about_page->ID, 'gloskin_about_founder_name', true ) );
-		$role  = trim( (string) get_post_meta( $about_page->ID, 'gloskin_about_founder_role', true ) );
-		$story = trim( (string) get_post_meta( $about_page->ID, 'gloskin_about_founder_story', true ) );
-		/* Render only when both name and role are populated — prevents a blank
-		 * "founder" block from appearing before the editor fills in the fields. */
-		if ( '' === $name || '' === $role ) {
-			return null;
-		}
+	private function about_static_content() {
 		return array(
-			'name'     => $name,
-			'role'     => $role,
-			'story'    => $story,
-			'media_id' => absint( get_post_meta( $about_page->ID, 'gloskin_about_founder_media_id', true ) ),
+			'story'         => __( 'Gloskin Aesthetic, Anti-Aging & Hair Clinic didirikan oleh dr. Nanang Masrani, M.Biomed (AAM) sebagai klinik aesthetic berbasis medis. Dengan pendekatan evidence-based dan konsep Skin Barrier & Quality Xpert, Gloskin berfokus pada peningkatan kualitas kulit, kesehatan rambut, serta hasil perawatan yang aman, natural, dan berkelanjutan.', 'gloskin-site-core' ),
+			'founder_name'  => __( 'dr. Nanang Masrani, M.Biomed (AAM)', 'gloskin-site-core' ),
+			'founder_role'  => __( 'Pendiri & Medical Director', 'gloskin-site-core' ),
+			'founder_story' => __( 'dr. Nanang mulai menekuni dunia estetika sejak 2007 dan mendirikan GLOSKIN Aesthetic Clinic pada 2012. Dengan latar belakang Magister Biomedik (Anti-Aging Medicine) serta pelatihan internasional di Eropa, Amerika, dan Asia, beliau mengembangkan Gloskin dengan pendekatan medical aesthetic berbasis evidence-based dan konsep Skin Barrier & Quality Xpert.', 'gloskin-site-core' ),
+			'vision'        => __( 'Menjadi Sahabat Terbaik Perawatan Wajah dan Tubuh.', 'gloskin-site-core' ),
+			'mission'       => __( 'Memberikan pelayanan perawatan kesehatan wajah dan tubuh yang profesional serta berkualitas tinggi dan memberikan solusi kesehatan wajah dan tubuh yang aman bagi masyarakat.', 'gloskin-site-core' ),
+			'values'        => __( 'Evidence-based · Aman · Natural · Berkelanjutan', 'gloskin-site-core' ),
 		);
 	}
 
