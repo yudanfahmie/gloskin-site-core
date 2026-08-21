@@ -23,15 +23,33 @@ function home_text( string $path ): string {
 	return $value;
 }
 
-$home      = home_text( $plugin . '/templates/pages/home.php' );
-$template  = home_text( $plugin . '/includes/class-gloskin-site-core-template-service.php' );
-$guard     = home_text( $plugin . '/includes/class-gloskin-site-core-home-readiness-contract.php' );
-$finalizer = home_text( $plugin . '/includes/class-gloskin-site-core-content-finalizer-admin.php' );
-$kernel    = home_text( $plugin . '/includes/class-gloskin-site-core-kernel.php' );
-$bootstrap = home_text( $plugin . '/gloskin-site-core.php' );
-$css       = home_text( $plugin . '/assets/css/gloskin-ui1-editorial.css' );
+$home       = home_text( $plugin . '/templates/pages/home.php' );
+$promo      = home_text( $plugin . '/templates/pages/promo.php' );
+$helpers    = home_text( $plugin . '/templates/parts/readiness-helpers.php' );
+$media      = home_text( $plugin . '/templates/parts/template-helpers.php' );
+$template   = home_text( $plugin . '/includes/class-gloskin-site-core-template-service.php' );
+$finalizer  = home_text( $plugin . '/includes/class-gloskin-site-core-content-finalizer-admin.php' );
+$kernel     = home_text( $plugin . '/includes/class-gloskin-site-core-kernel.php' );
+$bootstrap  = home_text( $plugin . '/gloskin-site-core.php' );
+$translation= home_text( $plugin . '/includes/class-gloskin-site-core-translation.php' );
+$editorial  = home_text( $plugin . '/assets/css/gloskin-ui1-editorial.css' );
+$core_base  = home_text( $plugin . '/assets/css/gloskin-ui1-core-base.css' );
+$readiness  = home_text( $plugin . '/assets/css/gloskin-ui1-readiness.css' );
+$assets     = home_text( $plugin . '/config/assets.php' );
+$not_found  = home_text( $plugin . '/templates/pages/not-found.php' );
 
-/* Final Home order: Hero -> Why -> Treatments -> Testimonials -> Piagam. */
+/* One shared generic frontend empty-state renderer and one CSS owner. */
+home_must( false !== strpos( $helpers, 'function gloskin_ui1_render_empty_state(' ), 'shared empty-state renderer exists' );
+foreach ( array( 'gloskin-ui1-empty-state', 'gloskin-ui1-empty-state__title', 'gloskin-ui1-empty-state__copy', 'gloskin-ui1-empty-state__action' ) as $class ) {
+	home_must( false !== strpos( $helpers, $class ), 'renderer owns canonical class ' . $class );
+}
+home_must( false !== strpos( $core_base, '.gloskin-ui1-empty-state{' ), 'generic empty-state CSS lives in shared core foundation' );
+home_must( false === strpos( $readiness, '.gloskin-ui1-empty-state{' ), 'readiness layer no longer owns generic empty-state CSS' );
+foreach ( array( 'empty-state.css', 'frontend-hotfix.css', 'final.css' ) as $forbidden_css ) {
+	home_must( false === strpos( $assets, $forbidden_css ), 'no new stylesheet owner: ' . $forbidden_css );
+}
+
+/* Final Home structure is contractual even when collections are empty. */
 $order = array(
 	'gloskin_ui1_render_hero',
 	'data-gloskin-section="why-gloskin"',
@@ -45,52 +63,68 @@ foreach ( $order as $needle ) {
 	home_must( false !== $position && $position > $last, 'Home order ' . $needle );
 	$last = $position;
 }
-home_must( 1 === substr_count( $home, 'data-gloskin-section="achievements"' ), 'Piagam is the final unique Home content section' );
-home_must( strpos( substr( $home, $last ), '<section' ) === false, 'nothing renders after Piagam inside Home template' );
+home_must( 1 === substr_count( $home, 'data-gloskin-section="home-treatments"' ), 'Treatment shell is unique' );
+home_must( 1 === substr_count( $home, 'data-gloskin-section="testimonials"' ), 'Testimonial shell is unique' );
+home_must( 1 === substr_count( $home, 'data-gloskin-section="achievements"' ), 'Piagam shell is unique and final' );
+home_must( false === strpos( substr( $home, $last ), '<section' ), 'nothing renders after Piagam inside Home template' );
 
-/* Presentation remains scoped: no broad section padding ownership. */
-home_must(
-	false !== strpos( $css, '.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:clamp(3rem,6vw,5.5rem)}' ),
-	'four Home roots own restored vertical rhythm'
-);
-home_must( false === strpos( $css, '.gloskin-ui1-section{padding' ), 'no global section padding hotfix' );
-home_must( false !== strpos( $css, '.gloskin-home-treatments__grid{grid-template-columns:repeat(3,minmax(0,1fr))}' ), 'Treatments remain 3-column desktop' );
+/* Empty collections use the centralized fallback inside those persistent shells. */
+home_must( substr_count( $home, 'gloskin_ui1_render_empty_state(' ) >= 3, 'Home has centralized fallbacks for its contractual dynamic sections' );
+home_must( false !== strpos( $home, "gloskin_ui1_render_empty_state( 'generic', __( 'Testimoni'" ), 'Testimoni empty state is explicit' );
+home_must( false !== strpos( $home, "gloskin_ui1_render_empty_state( 'generic', __( 'Piagam'" ), 'Piagam empty state is explicit' );
+home_must( false !== strpos( $home, "gloskin_ui1_render_empty_state( 'treatment', __( 'Treatment Unggulan'" ), 'Treatment empty state is explicit' );
 
-/* Frontend cardinality and factual Testimonial rendering. */
-home_must( false !== strpos( $home, 'array_slice( $gloskin_home_treatments, 0, 6 )' ), 'Home renders at most 6 Treatments' );
-home_must( false !== strpos( $home, "array(), 0, 3 );" ), 'Home renders at most 3 Testimonials' );
-home_must( false !== strpos( $home, "array(), 0, 4 );" ), 'Home renders at most 4 Piagam' );
+/* Real content replaces the fallback without fabricated facts. */
+home_must( false !== strpos( $home, "array_slice( \$gloskin_context['treatments'], 0, 6 )" ), 'Treatment collection remains bounded to 6' );
+home_must( false !== strpos( $home, 'array_slice( $gloskin_home_testimonials, 0, 3 )' ), 'Testimonial collection remains bounded to 3' );
+home_must( false !== strpos( $home, "array_slice( \$gloskin_context['achievements'], 0, 4 )" ), 'Piagam collection remains bounded to 4' );
 home_must( false !== strpos( $home, "trim( (string) ( \$gloskin_home_testimonial['excerpt'] ?? '' ) )" ), 'Testimonial quote comes from factual excerpt' );
-home_must( false === strpos( $home, "\$gloskin_home_testimonial['title'] ?? ''" ), 'Testimonial title is never substituted as quote' );
-home_must( false === strpos( $home, 'carousel' ) && false === strpos( $home, 'gloskin-promo' ), 'no Testimonial carousel or Promo reintroduced' );
+home_must( false === strpos( $home, "\$gloskin_home_testimonial['title'] ?? ''" ), 'Testimonial title is never fabricated as quote' );
+home_must( false !== strpos( $home, "if ( ! empty( \$gloskin_home_testimonial['image_id'] ) )" ), 'missing testimonial avatar is optional' );
+home_must( false !== strpos( $home, "gloskin_ui1_render_presentation_media( 'editorial', 'piagam-'" ), 'missing Piagam image gets shared neutral media fallback' );
 
-/* TemplateService still gives Home one canonical deterministic treatment owner. */
+/* Home rhythm is scoped and token-based; no global section padding hotfix. */
+home_must( false !== strpos( $editorial, '.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:min(var(--gloskin-section),5.5rem)}' ), 'Home roots own token-based vertical rhythm' );
+home_must( false !== strpos( $editorial, '.gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{margin-bottom:' ), 'Home heading-to-content cadence is explicit' );
+home_must( false === strpos( $editorial, '.gloskin-ui1-section{padding' ), 'no broad global section padding patch' );
+home_must( false !== strpos( $editorial, '.gloskin-home-treatments__grid{grid-template-columns:repeat(3,minmax(0,1fr))}' ), 'Treatment desktop grid remains 3 columns' );
+
+/* Existing shared media owner degrades editorial media gracefully. */
+home_must( false !== strpos( $media, 'function gloskin_ui1_render_editorial_media(' ), 'shared editorial media renderer exists' );
+$editorial_media_start = strpos( $media, 'function gloskin_ui1_render_editorial_media(' );
+$editorial_media_end   = strpos( $media, "\n}\n", $editorial_media_start );
+$editorial_media_block = false !== $editorial_media_start && false !== $editorial_media_end ? substr( $media, $editorial_media_start, $editorial_media_end - $editorial_media_start + 3 ) : '';
+home_must( false !== strpos( $editorial_media_block, 'gloskin_ui1_render_presentation_media(' ), 'editorial media falls back to neutral presentation media' );
+
+/* Promo uses the same generic empty state and shared media fallback. */
+home_must( false !== strpos( $promo, "gloskin_ui1_render_empty_state( 'generic', __( 'Informasi promo belum tersedia.'" ), 'empty Promo collection uses shared empty state' );
+home_must( false !== strpos( $promo, "gloskin_ui1_render_presentation_media( 'editorial', 'promo-'" ), 'missing Promo artwork uses shared media fallback' );
+home_must( false === strpos( $promo, '<div class="gloskin-ui1-empty">' ), 'Promo no longer duplicates generic empty markup' );
+
+/* Existing specialized states remain specialized. */
+home_must( false !== strpos( $not_found, 'class="gloskin-ui1-not-found"' ) && false !== strpos( $not_found, 'status_header( 404 )' ), 'specialized 404 remains intact' );
+home_must( false !== strpos( $helpers, 'function gloskin_ui1_render_native_cart_empty_state()' ), 'purpose-built Woo empty-cart path remains intact' );
+
+/* Frontend completeness no longer blocks the durable Content Finalizer. */
+home_must( ! is_file( $plugin . '/includes/class-gloskin-site-core-home-readiness-contract.php' ), 'frontend completeness guard file is removed' );
+home_must( false === strpos( $kernel, 'Gloskin_Site_Core_Home_Readiness_Contract' ), 'Kernel no longer wires frontend readiness into Finalizer completion' );
+home_must( false !== strpos( $finalizer, 'resolve_canonical_products()' ) && false !== strpos( $finalizer, 'reconcile_product_content( $canonical )' ) && false !== strpos( $finalizer, 'apply_woo_categories( $canonical )' ), 'Finalizer hard durable reconciliation remains' );
+foreach ( array( 'unrelated_woo_mutations', 'hard_deleted_posts', 'media_deletions' ) as $zero_invariant ) {
+	home_must( (bool) preg_match( "/'" . preg_quote( $zero_invariant, '/' ) . "'\\s*=>\\s*0/", $finalizer ), 'hard zero invariant remains: ' . $zero_invariant );
+}
+home_must( false !== strpos( $finalizer, 'catch ( Throwable $e )' ) && false !== strpos( $finalizer, "['status']     = 'failed'" ), 'real Finalizer failures still fail closed' );
+
+/* Existing translation/interface owner already covers the reused public copy. */
+home_must( false !== strpos( $translation, 'Detail tambahan belum tersedia untuk ditampilkan.' ), 'generic Home fallback copy stays in translation owner' );
+home_must( false !== strpos( $translation, 'Informasi promo belum tersedia.' ), 'Promo fallback copy stays in translation owner' );
+
+/* Treatment data owner stays deterministic and Home video contract is untouched here. */
 $curated_start = strpos( $template, 'private function curated_home_treatments()' );
 $curated_end   = strpos( $template, 'private function skincare_category_context()', $curated_start );
-home_must( false !== $curated_start && false !== $curated_end, 'curated Home Treatment owner exists' );
-$curated = substr( $template, $curated_start, $curated_end - $curated_start );
-home_must( false !== strpos( $curated, "'posts_per_page' => 3" ), 'featured set capped at 3' );
-home_must( false !== strpos( $curated, "'gloskin_treatment_feature_on_home'" ), 'feature flag is canonical' );
-home_must( false !== strpos( $curated, "'post__not_in'   => \$exclude" ), 'additional set excludes featured IDs' );
-home_must( false !== strpos( $curated, "'orderby'        => 'title'" ), 'additional selection is deterministic' );
-home_must( false !== strpos( $curated, 'array_slice( $cards, 0, 6 )' ), 'frontend collection capped at 6' );
+$curated       = false !== $curated_start && false !== $curated_end ? substr( $template, $curated_start, $curated_end - $curated_start ) : '';
+home_must( false !== strpos( $curated, "'gloskin_treatment_feature_on_home'" ) && false !== strpos( $curated, "'post__not_in'   => \$exclude" ) && false !== strpos( $curated, 'array_slice( $cards, 0, 6 )' ), 'canonical Home treatment selection remains deterministic and bounded' );
+home_must( false !== strpos( $home, 'gloskin_ui1_render_hero' ) && false === strpos( $home, 'object-fit:cover' ), 'Home template does not crop or duplicate video presentation' );
 
-/* Existing Finalizer state is guarded fail-closed; no second runner/state. */
-home_must( false !== strpos( $guard, "const STATE_OPTION = 'gloskin_site_core_phase4_finalizer_v1_state'" ), 'guard reuses Content Finalizer state' );
-home_must( false !== strpos( $guard, 'pre_update_option_' ) && false !== strpos( $guard, 'guard_completion' ), 'complete transition is guarded' );
-home_must( false !== strpos( $guard, "3 !== count( \$featured )" ) && false !== strpos( $guard, "6 !== count( \$selected_ids )" ), 'Treatment readiness is exactly 3 featured + 3 additional' );
-home_must( false !== strpos( $guard, "3 !== count( \$posts )" ) && false !== strpos( $guard, 'gloskin_testimonial_active' ) && false !== strpos( $guard, 'gloskin_testimonial_attribution' ), 'Testimonial readiness is exactly 3 active factual records' );
-home_must( false !== strpos( $guard, "4 !== count( \$posts )" ) && false !== strpos( $guard, 'gloskin_achievement_active' ) && false !== strpos( $guard, 'gloskin_achievement_feature_on_home' ) && false !== strpos( $guard, 'attachment_is_usable_image' ), 'Piagam readiness is exactly 4 active featured usable images' );
-home_must( false !== strpos( $guard, "\$quote       = trim( wp_strip_all_tags( (string) get_the_excerpt( \$post ) ) );" ), 'guard requires real Testimonial quote content' );
-home_must( false === strpos( $guard, 'get_the_title( $post )' ), 'guard never treats Testimonial title as quote' );
-foreach ( array( 'wp_insert_post', 'wp_update_post', 'wp_trash_post', 'wp_delete_post', 'wp_delete_attachment', 'wp_delete_file' ) as $forbidden ) {
-	home_must( false === strpos( $guard, $forbidden ), 'guard remains verification-only: ' . $forbidden );
-}
-home_must( false === strpos( $guard, 'admin_post_' ) && false === strpos( $guard, 'add_submenu_page' ), 'no second Finalizer runner/admin UI' );
-home_must( false !== strpos( $finalizer, 'catch ( Throwable $e )' ) && false !== strpos( $finalizer, "['status']     = 'failed'" ), 'readiness exception lands in existing failed-state path' );
+home_must( false !== strpos( $kernel, "const VERSION = '0.7.188'" ) && false !== strpos( $bootstrap, 'Version: 0.7.188' ), 'release owners remain synchronized before final batch bump' );
 
-/* Kernel wiring and one release bump. */
-home_must( false !== strpos( $kernel, 'class-gloskin-site-core-home-readiness-contract.php' ) && false !== strpos( $kernel, 'Gloskin_Site_Core_Home_Readiness_Contract' ), 'Home readiness guard is wired once' );
-home_must( false !== strpos( $kernel, "const VERSION = '0.7.188'" ) && false !== strpos( $bootstrap, 'Version: 0.7.188' ), 'release owners are synchronized at 0.7.188' );
-
-echo "home-readiness-contract.php: OK (Home order/rhythm, Treatments 6, Testimoni 3 factual, Piagam 4 usable, fail-closed Finalizer, version 0.7.188)\n";
+echo "home-readiness-contract.php: OK (central empty state, persistent Home shells, graceful media, specialized states preserved, Finalizer integrity separated)\n";
