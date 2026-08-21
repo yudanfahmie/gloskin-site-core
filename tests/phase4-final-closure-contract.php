@@ -121,7 +121,7 @@ p4must( false !== strpos( $helpers, 'function gloskin_ui1_render_empty_state(' )
 p4must( false !== strpos( $core_base, '.gloskin-ui1-empty-state{' ), 'shared core foundation owns generic empty-state CSS' );
 p4must( false === strpos( $readiness, '.gloskin-ui1-empty-state{' ), 'readiness layer no longer duplicates generic empty-state CSS' );
 p4must( false !== strpos( $editorial, '.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:clamp(3rem,6vw,5.5rem)}' ), 'Home vertical rhythm is restored and scoped' );
-p4must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{object-fit:cover;object-position:center center}' ), 'Home hero video uses cover' );
+p4must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{object-fit:contain;object-position:center center}' ), 'Home hero video uses contain (whole frame visible, authoritative Phase-4 requirement)' );
 p4must( false !== strpos( $editorial, '.gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{max-width:760px;margin:0 auto clamp(1.5rem,3vw,2.5rem);text-align:center}' ), 'Home section heading cadence is restored' );
 p4must( false === strpos( $editorial, '.gloskin-ui1-section{padding' ), 'no broad global section spacing patch' );
 
@@ -130,7 +130,7 @@ p4must( false !== strpos( $p, "gloskin_ui1_render_empty_state( 'generic', __( 'I
 p4must( false !== strpos( $p, "gloskin_ui1_render_presentation_media( 'editorial', 'promo-'" ), 'Promo missing artwork uses shared media renderer' );
 p4must( false === strpos( $p, '<div class="gloskin-ui1-empty">' ), 'legacy Promo empty markup removed' );
 
-/* About remains deliberately optional where absence legitimately means no section. */
+/* About surfaces operator readiness notices when factual content is missing — sections never silently collapse. */
 $about_ctx_start = strpos( $ts, 'private function about_context()' );
 $about_ctx_end   = strpos( $ts, 'private function about_founder_context', $about_ctx_start );
 $about_ctx       = false !== $about_ctx_start && false !== $about_ctx_end ? substr( $ts, $about_ctx_start, $about_ctx_end - $about_ctx_start ) : '';
@@ -139,6 +139,14 @@ p4must( false !== strpos( $about_ctx, "'founder'" ) && false !== strpos( $about_
 foreach ( array( 'about-header', 'about-story', 'about-founder', 'about-principles' ) as $class ) {
 	p4must( false !== strpos( $a, $class ), 'About structure preserved: ' . $class );
 }
+/* All three factual sections surface a readiness notice when content is missing — no silent collapse. */
+p4must( false !== strpos( $a, "gloskin_ui1_render_empty_state( 'generic', __( 'Tentang GLOSKIN'" ), 'About Story surfaces readiness notice when post_content missing' );
+p4must( false !== strpos( $a, "gloskin_ui1_render_empty_state( 'generic', __( 'Founder'" ), 'About Founder surfaces readiness notice when founder meta missing' );
+p4must( false !== strpos( $a, "gloskin_ui1_render_empty_state( 'generic', __( 'Visi · Misi · Nilai'" ), 'About Principles surfaces readiness notice when vision/mission/values missing' );
+/* Shop Discovery CSS must load after the current last global style, not a retired handle. */
+$shop_route = p4text( $plugin . '/includes/gloskin-site-core-shop-discovery-route-trait.php' );
+p4must( false !== strpos( $shop_route, "array( 'gloskin-ui1-product-grid' )" ), 'Shop Discovery CSS depends on gloskin-ui1-product-grid (not retired prototype-refresh)' );
+p4must( false === strpos( $shop_route, "'gloskin-ui1-prototype-refresh'" ), 'retired prototype-refresh dependency removed from Shop Discovery enqueue' );
 
 /* Frontend completeness is not a Finalizer blocker anymore. */
 p4must( ! is_file( $plugin . '/includes/class-gloskin-site-core-home-readiness-contract.php' ), 'obsolete Home Finalizer readiness guard removed' );
@@ -151,6 +159,6 @@ foreach ( array( 'Detail tambahan belum tersedia untuk ditampilkan.', 'Informasi
 	p4must( false !== strpos( $t, $copy ), 'translation/interface owner contains: ' . $copy );
 }
 
-p4must( false !== strpos( $k, "const VERSION = '0.7.190'" ) && false !== strpos( $b, 'Version: 0.7.190' ), 'release owners synchronized at 0.7.190' );
+p4must( false !== strpos( $k, "const VERSION = '0.7.191'" ) && false !== strpos( $b, 'Version: 0.7.191' ), 'release owners synchronized at 0.7.191' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/structure hotfix + resilient frontend + version 0.7.190)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home contain/uncropped + Shop CSS dep fixed + About readiness surfacing + version 0.7.191)\n";

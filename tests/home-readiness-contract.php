@@ -86,7 +86,7 @@ home_must( false !== strpos( $home, "gloskin_ui1_render_presentation_media( 'edi
 /* Home rhythm and video geometry are scoped; no global section hotfix. */
 home_must( false !== strpos( $editorial, '.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:clamp(3rem,6vw,5.5rem)}' ), 'Home roots own restored responsive vertical rhythm' );
 home_must( false !== strpos( $editorial, '.gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{max-width:760px;margin:0 auto clamp(1.5rem,3vw,2.5rem);text-align:center}' ), 'Home section headings retain centered wireframe cadence' );
-home_must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{object-fit:cover;object-position:center center}' ), 'Home video-only hero must cover its viewport' );
+home_must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{object-fit:contain;object-position:center center}' ), 'Home video-only hero must show whole frame (object-fit:contain, Phase-4 authoritative requirement)' );
 home_must( false === strpos( $editorial, '.gloskin-ui1-section{padding' ), 'no broad global section padding patch' );
 home_must( false !== strpos( $editorial, '.gloskin-home-treatments__grid{grid-template-columns:repeat(3,minmax(0,1fr))}' ), 'Treatment desktop grid remains 3 columns' );
 home_must( false !== strpos( $editorial, '.gloskin-home-piagam__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}' ), 'Piagam desktop grid remains 4 columns' );
@@ -131,6 +131,6 @@ $home_ctx       = false !== $home_ctx_start && false !== $home_ctx_end ? substr(
 home_must( false !== strpos( $home_ctx, "\$hero['mode'] = 'video_only';" ), 'Home uses video-only hero mode' );
 home_must( false !== strpos( $home, 'gloskin_ui1_render_hero' ), 'Home template retains one shared hero renderer' );
 
-home_must( false !== strpos( $kernel, "const VERSION = '0.7.190'" ) && false !== strpos( $bootstrap, 'Version: 0.7.190' ), 'release owners are synchronized at 0.7.190' );
+home_must( false !== strpos( $kernel, "const VERSION = '0.7.191'" ) && false !== strpos( $bootstrap, 'Version: 0.7.191' ), 'release owners are synchronized at 0.7.191' );
 
-echo "home-readiness-contract.php: OK (Home cover hero, restored structure/rhythm, resilient sections, version 0.7.190)\n";
+echo "home-readiness-contract.php: OK (Home contain hero, restored structure/rhythm, resilient sections, version 0.7.191)\n";
