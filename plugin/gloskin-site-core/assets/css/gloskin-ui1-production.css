@@ -6,16 +6,16 @@
 /* ONE canonical navigation component owner: both Header 1 desktop/sticky and
  * Header 2 desktop use <nav class="gloskin-ui1-nav gloskin-ui1-nav--desktop">;
  * the mobile drawer uses <nav class="gloskin-ui1-nav gloskin-ui1-nav--mobile">.
- * Setting font-family here lets every nav descendant inherit Graphik without
- * repeating the declaration on __link, __toggle, submenu, or mobile variants. */
-.gloskin-ui1-nav{font-family:var(--gloskin-font-nav)}
+ * Every nav descendant inherits the same existing Montserrat retail resource
+ * without repeating the declaration on __link, __toggle or submenu variants. */
+.gloskin-ui1-nav{font-family:"Montserrat","Helvetica Neue",Arial,sans-serif}
 .gloskin-ui1-nav__link{
 	min-height:40px;
 	padding:8px 13px;
 	border-radius:999px;
 	font-size:.91rem;
-	font-weight:400;
-	letter-spacing:.075em;
+	font-weight:500;
+	letter-spacing:.055em;
 	text-transform:uppercase;
 	transition:color 160ms ease,background-color 160ms ease;
 }
@@ -347,10 +347,6 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
    compound selectors below intentionally encode that DOM contract. */
 table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block .wc-block-cart-items__row,
 table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block thead{border-bottom-color:var(--gloskin-border)}
-/* WC's own cell border also includes a top edge, independent of the
-   bottom-edge divider recolored above -- removed at every width (not just
-   the desktop table polish below) since it renders on the mobile grid row
-   too and is pure cosmetic noise, not a layout dimension. */
 .wc-block-cart__main .wc-block-cart-items td{border-top:0}
 .wc-block-cart-item__image img{
 	border-radius:var(--gloskin-radius-sm);
@@ -406,11 +402,6 @@ table.wc-block-cart-items.wp-block-woocommerce-cart-line-items-block thead{borde
 .wp-block-woocommerce-cart .wc-block-components-quantity-selector__button--plus{border-left:1px solid var(--gloskin-border)}
 .wp-block-woocommerce-cart .wc-block-components-quantity-selector__button:hover{background:var(--gloskin-surface)}
 .wp-block-woocommerce-cart .wc-block-components-quantity-selector__button:disabled{opacity:.4;cursor:not-allowed}
-/* WC's own :focus state adds a box-shadow ring on top of the global
-   :focus-visible outline (gloskin-ui1-core-base.css) that already gives
-   keyboard users a visible ring here -- :focus fires on every click too,
-   so the extra shadow read as a stray persistent glow, not an
-   accessibility aid. Removing it drops zero focus indication. */
 .wc-block-components-quantity-selector .wc-block-components-quantity-selector__button:focus{box-shadow:none}
 
 /* Remove action: calm, grouped with the stepper by WC's own existing
