@@ -136,23 +136,55 @@ p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] [data-glosk
 $footer = p4text( $plugin . '/templates/parts/footer.php' );
 p4must( false !== strpos( $footer, "array( 'home', 'contact', 'about', 'promo' )" ), 'footer CTA excluded on home/contact/about/promo routes' );
 
-/* About uses reconciliation-first: lifecycle pre-fills genuinely empty fields
-   before rendering, so the template can remain authoritative and section-conditional.
-   Sections still never silently collapse — content is guaranteed by reconciliation. */
+/* About final public structure is contractual: Header -> Story -> Founder ->
+   Visi/Misi/Nilai -> END. Internal readiness/provenance state must never be
+   rendered as visitor-facing debug copy. */
 $about_ctx_start = strpos( $ts, 'private function about_context()' );
 $about_ctx_end   = strpos( $ts, 'private function about_founder_context', $about_ctx_start );
 $about_ctx       = false !== $about_ctx_start && false !== $about_ctx_end ? substr( $ts, $about_ctx_start, $about_ctx_end - $about_ctx_start ) : '';
 p4must( false === strpos( $about_ctx, 'hero_context' ) && false === strpos( $about_ctx, 'clinic_cards' ) && false === strpos( $about_ctx, 'all_published_doctor_cards' ) && false === strpos( $about_ctx, 'published_managed_records' ), 'About does not regain unused context owners' );
 p4must( false !== strpos( $about_ctx, "'founder'" ) && false !== strpos( $about_ctx, "'vision'" ), 'About retains founder and principles data' );
-foreach ( array( 'about-header', 'about-story', 'about-founder', 'about-principles' ) as $class ) {
-	p4must( false !== strpos( $a, $class ), 'About structure preserved: ' . $class );
+$about_order = array(
+	'data-gloskin-section="about-header"',
+	'data-gloskin-section="about-story"',
+	'data-gloskin-section="about-founder"',
+	'data-gloskin-section="about-principles"',
+);
+$about_last = -1;
+foreach ( $about_order as $section ) {
+	$position = strpos( $a, $section );
+	p4must( false !== $position && $position > $about_last, 'About final order: ' . $section );
+	p4must( 1 === substr_count( $a, $section ), 'About section is unique: ' . $section );
+	$about_last = $position;
 }
-/* Reconciliation-first: lifecycle fills empty About fields; kernel runs it on both admin and frontend paths. */
+p4must( false === strpos( substr( $a, $about_last + 1 ), 'data-gloskin-section=' ), 'About ends after Visi/Misi/Nilai' );
+foreach ( array( 'Operator:', 'gloskin_about_vision', 'gloskin_about_mission', 'gloskin_about_values', 'gloskin_about_founder_name', 'gloskin_about_founder_role' ) as $debug_copy ) {
+	p4must( false === strpos( $a, $debug_copy ), 'About public template does not expose internal field/debug token: ' . $debug_copy );
+}
+p4must( false === strpos( $a, 'gloskin_ui1_render_empty_state(' ), 'About has no temporary public readiness cards' );
+foreach ( array( 'render_doctor', 'render_clinic', 'render_achievements', 'about-team', 'about-network', 'about-achievements' ) as $removed_surface ) {
+	p4must( false === strpos( $a, $removed_surface ), 'About removed surface stays absent: ' . $removed_surface );
+}
+p4must( false === strpos( $a, 'gloskin-ui1-footer__cta' ), 'About template has no generic closing CTA markup' );
+
+/* Reconciliation remains bounded and provenance-aware. Story/Founder may
+   auto-fill only when empty; VMV never auto-write without operator authority. */
 $lifecycle = p4text( $plugin . '/includes/class-gloskin-site-core-lifecycle-service.php' );
 $kernel_t  = p4text( $plugin . '/includes/class-gloskin-site-core-kernel.php' );
 p4must( false !== strpos( $lifecycle, 'register_about_reconciliation' ) && false !== strpos( $lifecycle, 'maybe_reconcile_about_content' ), 'lifecycle service owns About reconciliation' );
-p4must( false !== strpos( $lifecycle, 'ABOUT_RECONCILIATION_OPTION' ) && false !== strpos( $lifecycle, 'ABOUT_RECONCILIATION_VERSION' ), 'lifecycle service tracks reconciliation state with versioned option key' );
+p4must( false !== strpos( $lifecycle, "ABOUT_RECONCILIATION_VERSION = '2026-08-21.2'" ), 'About reconciliation provenance contract version is current' );
+p4must( false !== strpos( $lifecycle, "'requires_operator_approval'" ) && false !== strpos( $lifecycle, 'array_intersect( $mutations, $reviewable_fields )' ), 'reconciliation distinguishes its own VMV mutations for operator review' );
+p4must( false !== strpos( $lifecycle, "'needs_attention' === \$status && ! is_admin()" ), 'unchanged needs_attention state cannot write repeatedly on frontend requests' );
+p4must( false !== strpos( $lifecycle, 'if ( $next_state !== $state )' ), 'reconciliation avoids unchanged state writes' );
+$defaults_start = strpos( $lifecycle, 'private function about_reconciliation_defaults()' );
+$defaults_end   = strpos( $lifecycle, 'public function register_historical_upgrade_admins', $defaults_start );
+$defaults_block = false !== $defaults_start && false !== $defaults_end ? substr( $lifecycle, $defaults_start, $defaults_end - $defaults_start ) : '';
+foreach ( array( "'vision'", "'mission'", "'values'" ) as $unsafe_default ) {
+	p4must( false === strpos( $defaults_block, $unsafe_default ), 'VMV is not an automatic reconciliation default: ' . $unsafe_default );
+}
+p4must( false === strpos( $lifecycle, 'wp_insert_attachment' ) && false === strpos( $lifecycle, 'wp_delete_attachment' ), 'About reconciliation never creates/deletes attachments' );
 p4must( false !== strpos( $kernel_t, 'register_about_reconciliation' ), 'kernel wires About reconciliation on all paths' );
+
 /* Shop Discovery CSS must load after the current last global style, not a retired handle. */
 $shop_route = p4text( $plugin . '/includes/gloskin-site-core-shop-discovery-route-trait.php' );
 p4must( false !== strpos( $shop_route, "array( 'gloskin-ui1-product-grid' )" ), 'Shop Discovery CSS depends on gloskin-ui1-product-grid (not retired prototype-refresh)' );
@@ -171,4 +203,4 @@ foreach ( array( 'Detail tambahan belum tersedia untuk ditampilkan.', 'Informasi
 
 p4must( false !== strpos( $k, "const VERSION = '0.7.193'" ) && false !== strpos( $b, 'Version: 0.7.193' ), 'release owners synchronized at 0.7.193' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo carousel JS-CSS contract + footer CTA routes + About reconciliation-first + Shop CSS dep + version 0.7.193)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo stack/CTA routes + final About structure/provenance + Shop CSS dep + version 0.7.193)\n";
