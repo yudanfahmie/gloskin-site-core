@@ -1,4 +1,4 @@
-"""Static contract: Promo carousel controls and accessible live-region presentation."""
+"""Static contract: Promo carousel accessibility + canonical 1648:928 focal geometry."""
 import os
 import re
 import sys
@@ -18,6 +18,8 @@ def require(condition, message):
 promo = read('plugin/gloskin-site-core/templates/pages/promo.php')
 js = read('plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js')
 core_base = read('plugin/gloskin-site-core/assets/css/gloskin-ui1-core-base.css')
+editorial = read('plugin/gloskin-site-core/assets/css/gloskin-ui1-editorial.css')
+template_service = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php')
 plugin_header = read('plugin/gloskin-site-core/gloskin-site-core.php')
 kernel = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php')
 
@@ -42,6 +44,20 @@ require(bool(screen_reader_rule), 'canonical .screen-reader-text CSS primitive m
 if screen_reader_rule:
     require('display:none' not in screen_reader_rule.group(1).replace(' ', ''), 'screen-reader-text must not use display:none')
 
+# Frontend owns one fixed production crop ratio across all responsive widths.
+require(editorial.count('aspect-ratio:1648 / 928') == 1, 'frontend editorial CSS must own exactly one canonical Promo ratio declaration')
+require('.gloskin-promo__media{position:relative;width:100%;aspect-ratio:1648 / 928;overflow:hidden' in editorial, 'Promo media geometry must be width-driven, not intrinsic-image-driven')
+require('.gloskin-promo__image{display:block;width:100%;height:100%;object-fit:cover;object-position:var(--gloskin-promo-focus-x,50%) var(--gloskin-promo-focus-y,50%)}' in editorial, 'Promo image must cover and consume per-record focal state')
+require('.gloskin-promo__media{height:' not in editorial, 'Promo media must not switch to fixed pixel heights at breakpoints')
+require('--gloskin-promo-focus-x:' in promo and '--gloskin-promo-focus-y:' in promo, 'Promo template may inline only dynamic focal custom-property values')
+require('focus_x' in promo and 'focus_y' in promo, 'Promo template must consume projected focal state')
+require("'focus_x'  => $this->managed_focus_percent" in template_service and "'focus_y'  => $this->managed_focus_percent" in template_service, 'TemplateService must project focal state for each Promo')
+require('return 50.0;' in template_service, 'missing historical focal metadata defaults to center without data rewrite')
+
+# Both limited and regular collections share exactly the same renderer/geometry owner.
+require(promo.count('$gloskin_render_promo_carousel(') == 2, 'limited and regular Promo collections must use the same renderer')
+require("'limited' );" in promo and "'regular' );" in promo, 'both Promo types must enter the shared renderer')
+
 plugin_version = re.search(r'Version:\s*([^\s]+)', plugin_header)
 kernel_version = re.search(r"const VERSION = '([^']+)';", kernel)
 require(bool(plugin_version and kernel_version), 'release owners must be readable')
@@ -52,4 +68,4 @@ if failures:
     for failure in failures:
         print('FAIL:', failure)
     sys.exit(1)
-print('promo-thumbnail-contract.py: OK')
+print('promo-thumbnail-contract.py: OK (a11y live region + shared 1648:928 focal geometry)')
