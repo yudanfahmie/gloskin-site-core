@@ -22,6 +22,8 @@
 	var pageSelect = form.querySelector('[data-gloskin-promo-page-select]');
 	var pageSearch = form.querySelector('[data-gloskin-promo-page-search]');
 	var specificWrap = form.querySelector('[data-gloskin-promo-specific-pages]');
+	var popupSettings = form.querySelector('.gloskin-editorial-popup-settings');
+	var popupNotice = null;
 
 	function label(name, fallback) {
 		return config.labels && config.labels[name] ? config.labels[name] : fallback;
@@ -40,7 +42,26 @@
 		data.append('action', 'gloskin_editorial_toggle');
 		data.append('nonce', config.nonce);
 		Object.keys(payload).forEach(function (key) { data.append(key, payload[key]); });
-		return window.fetch(config.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: data }).then(function (response) { return response.json(); });
+		return window.fetch(config.ajaxUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			body: data
+		}).then(function (response) {
+			return response.text().then(function (text) {
+				var payloadJson = null;
+				try { payloadJson = text ? JSON.parse(text) : null; } catch (ignore) { payloadJson = null; }
+				if (!response.ok || !payloadJson || !payloadJson.success) {
+					var message = payloadJson && payloadJson.data && payloadJson.data.message
+						? payloadJson.data.message
+						: (response.ok ? label('popupFailed', 'Popup state could not be updated.') : 'The server could not update this popup. No changes were made.');
+					var error = new Error(message);
+					error.status = response.status || 0;
+					error.payload = payloadJson;
+					throw error;
+				}
+				return payloadJson;
+			});
+		});
 	}
 
 	function selectedPageIds() {
@@ -73,8 +94,31 @@
 		syncPageIdsField();
 	}
 
+	function clearPopupGuidance() {
+		if (popupNotice) {
+			popupNotice.remove();
+			popupNotice = null;
+		}
+	}
+
+	function showPopupGuidance(message) {
+		if (!popupSettings) { return; }
+		clearPopupGuidance();
+		popupNotice = document.createElement('div');
+		popupNotice.className = 'gloskin-editorial-popup-settings__notice';
+		popupNotice.setAttribute('role', 'status');
+		var strong = document.createElement('strong');
+		strong.textContent = 'Popup needs one more setting';
+		var body = document.createElement('span');
+		body.textContent = message;
+		popupNotice.appendChild(strong);
+		popupNotice.appendChild(body);
+		popupSettings.insertBefore(popupNotice, popupSettings.firstElementChild);
+	}
+
 	function syncForm(record) {
 		record = record || {};
+		clearPopupGuidance();
 		if (popupField) { popupField.checked = !!record.popup_enabled; }
 		if (visibilityField) { visibilityField.value = record.visibility || 'homepage'; }
 		if (destinationField) { destinationField.value = record.destination_url || ''; }
@@ -119,16 +163,58 @@
 		button.textContent = enabled ? label('popupOn', 'Popup On') : label('popupOff', 'Popup Off');
 	}
 
+	function readinessIssue(record) {
+		if (!record) { return null; }
+		if (!(parseInt(record.image_id, 10) > 0)) {
+			return { message: 'Choose a featured Promo image before enabling popup display.', focus: 'media' };
+		}
+		if (!String(record.destination_url || '').trim()) {
+			return { message: 'Add the destination URL, then save this Promo. Popup display will be enabled with that save.', focus: 'destination' };
+		}
+		if ((record.visibility || 'homepage') === 'specific_pages' && (!Array.isArray(record.visibility_page_ids) || !record.visibility_page_ids.length)) {
+			return { message: 'Select at least one WordPress page for Specific Pages visibility, then save this Promo.', focus: 'pages' };
+		}
+		return null;
+	}
+
+	function focusPopupField(kind) {
+		var target = null;
+		if (kind === 'destination') { target = destinationField; }
+		else if (kind === 'pages') { target = pageSearch || pageSelect; }
+		else if (kind === 'media') { target = form.querySelector('[data-gloskin-editorial-media]'); }
+		else { target = popupField; }
+		if (target && typeof target.focus === 'function') { target.focus(); }
+	}
+
+	function openPopupEditor(id, message, focusKind) {
+		setStatus('', false);
+		var record = Object.assign({}, records[id] || {}, { popup_enabled: true });
+		var edit = document.querySelector('[data-gloskin-editorial-edit="' + String(id).replace(/[^0-9]/g, '') + '"]');
+		if (edit) {
+			edit.click();
+			window.setTimeout(function () {
+				syncForm(record);
+				if (popupField) { popupField.checked = true; }
+				updatePopupRequirements();
+				showPopupGuidance(message || 'Complete the popup settings and save this Promo.');
+				focusPopupField(focusKind);
+			}, 0);
+			return;
+		}
+
+		try {
+			var url = new URL(window.location.href);
+			url.searchParams.set('post_type', 'gloskin_promo');
+			url.searchParams.set('gloskin_edit', id);
+			window.location.assign(url.toString());
+		} catch (ignore) {
+			setStatus(message || label('popupFailed', 'Popup state could not be updated.'), true);
+		}
+	}
+
 	function applyPendingSave() {
 		if (!pendingSave) { return; }
 		var id = pendingSave.id;
-		if (!id) {
-			var candidates = document.querySelectorAll('#the-list > tr[id^="post-"]');
-			if (candidates.length) {
-				var last = candidates[candidates.length - 1];
-				id = parseInt(last.id.replace('post-', ''), 10) || 0;
-			}
-		}
 		if (!id) { return; }
 		var row = document.getElementById('post-' + id);
 		if (row) { paintPopupButton(row, pendingSave.popup_enabled); }
@@ -139,12 +225,14 @@
 	if (pageSearch) { pageSearch.addEventListener('input', function () { filterPages(pageSearch.value); }); }
 	if (pageSelect) { pageSelect.addEventListener('change', syncPageIdsField); }
 	if (visibilityField) { visibilityField.addEventListener('change', updateSpecificVisibility); }
-	if (popupField) { popupField.addEventListener('change', updatePopupRequirements); }
+	if (popupField) { popupField.addEventListener('change', function () { clearPopupGuidance(); updatePopupRequirements(); }); }
+	if (destinationField) { destinationField.addEventListener('input', clearPopupGuidance); }
 
 	form.addEventListener('submit', function () {
 		syncPageIdsField();
 		pendingSave = {
 			id: parseInt(form.elements.post_id ? form.elements.post_id.value : '0', 10) || 0,
+			image_id: parseInt(form.elements.image_id ? form.elements.image_id.value : '0', 10) || 0,
 			popup_enabled: !!(popupField && popupField.checked),
 			visibility: visibilityField ? visibilityField.value : 'homepage',
 			visibility_page_ids: selectedPageIds(),
@@ -154,7 +242,7 @@
 
 	document.addEventListener('click', function (event) {
 		var close = event.target.closest('[data-gloskin-editorial-close]');
-		if (close) { pendingSave = null; return; }
+		if (close) { pendingSave = null; clearPopupGuidance(); return; }
 
 		var edit = event.target.closest('[data-gloskin-editorial-edit], a[href*="gloskin_edit="]');
 		if (edit) {
@@ -175,12 +263,16 @@
 		event.stopPropagation();
 		var id = String(toggle.getAttribute('data-id') || '');
 		var next = toggle.getAttribute('data-popup') === '1' ? '0' : '1';
+		if (next === '1') {
+			var issue = readinessIssue(records[id]);
+			if (issue) {
+				openPopupEditor(id, issue.message, issue.focus);
+				return;
+			}
+		}
+
 		toggle.disabled = true;
 		ajax({ post_id: id, field: 'popup', active: next }).then(function (response) {
-			if (!response || !response.success) {
-				var message = response && response.data && response.data.message ? response.data.message : label('popupFailed', 'Popup state could not be updated.');
-				throw new Error(message);
-			}
 			var enabled = !!response.data.active;
 			var row = document.getElementById('post-' + id);
 			if (row) { paintPopupButton(row, enabled); }
@@ -189,7 +281,12 @@
 			setStatus(label('popupUpdated', 'Popup display state updated.'), false);
 		}).catch(function (error) {
 			toggle.disabled = false;
-			setStatus(error.message || label('popupFailed', 'Popup state could not be updated.'), true);
+			if (next === '1' && error && error.status === 400) {
+				openPopupEditor(id, error.message || label('popupFailed', 'Complete the popup settings and save this Promo.'), 'destination');
+				return;
+			}
+			var message = error && error.message ? error.message : 'Could not reach the server. No popup changes were made; please try again.';
+			setStatus(message, true);
 		});
 	});
 
@@ -200,6 +297,7 @@
 				Array.prototype.slice.call(mutation.addedNodes || []).forEach(function (node) {
 					if (!node || node.nodeType !== 1 || !node.matches('tr[id^="post-"]')) { return; }
 					var id = node.id.replace('post-', '');
+					if (pendingSave && !pendingSave.id) { pendingSave.id = parseInt(id, 10) || 0; }
 					var state = pendingSave && (!pendingSave.id || String(pendingSave.id) === id) ? pendingSave.popup_enabled : !!(records[id] && records[id].popup_enabled);
 					paintPopupButton(node, state);
 				});
