@@ -21,6 +21,8 @@ final class Gloskin_Site_Core_Language {
 
 	/** Public-only language context and saved translation resolvers. */
 	public function register_frontend() {
+		add_filter( 'pre_determine_locale', array( $this, 'request_locale' ), 1 );
+		add_filter( 'locale', array( $this, 'request_locale' ), 1 );
 		add_action( 'init', array( $this, 'capture_language' ), 1 );
 		add_filter( 'language_attributes', array( $this, 'language_attributes' ), 20, 2 );
 		add_filter( 'the_posts', array( $this, 'translate_posts' ), 20, 2 );
@@ -38,14 +40,16 @@ final class Gloskin_Site_Core_Language {
 		add_filter( 'woocommerce_product_get_description', array( $this, 'translate_product_description' ), 20, 2 );
 	}
 
-	/** @return string id|en */
-	public static function language() {
-		// Request-level fail-open memory circuit breaker.  Every translation
-		// filter calls language() first, so one guard here covers all paths.
-		// Once tripped (>80 % of memory_limit), all subsequent calls cost one
-		// bool check and return 'id'.  Serves the original Indonesian page
-		// gracefully rather than letting the request crash with a fatal OOM.
-		if ( ! self::within_memory_budget() ) { return 'id'; }
+	/**
+	 * Resolve the first-party language preference once from the request.
+	 *
+	 * GET wins so the first ?gloskin_lang=en request changes native locale
+	 * before capture_language() persists the cookie. Invalid values fail open
+	 * to the Indonesian presentation context.
+	 *
+	 * @return string id|en
+	 */
+	private static function requested_language() {
 		if ( isset( $_GET['gloskin_lang'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- presentation preference only.
 			$request = sanitize_key( wp_unslash( $_GET['gloskin_lang'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			if ( in_array( $request, array( 'id', 'en' ), true ) ) { return $request; }
@@ -55,6 +59,31 @@ final class Gloskin_Site_Core_Language {
 			if ( in_array( $cookie, array( 'id', 'en' ), true ) ) { return $cookie; }
 		}
 		return 'id';
+	}
+
+	/**
+	 * Request-scoped native WordPress/Woo locale bridge.
+	 *
+	 * English explicitly selects the installed en_US catalogs. Indonesian (and
+	 * the no-preference state) returns the incoming value untouched so the site
+	 * language remains the single installation-locale owner.
+	 *
+	 * @param string|null $locale Core's current/determined locale value.
+	 * @return string|null
+	 */
+	public function request_locale( $locale ) {
+		return 'en' === self::requested_language() ? 'en_US' : $locale;
+	}
+
+	/** @return string id|en */
+	public static function language() {
+		// Request-level fail-open memory circuit breaker. Every translation
+		// filter calls language() first, so one guard here covers all paths.
+		// Once tripped (>80 % of memory_limit), all subsequent calls cost one
+		// bool check and return 'id'. Serves the original Indonesian page
+		// gracefully rather than letting the request crash with a fatal OOM.
+		if ( ! self::within_memory_budget() ) { return 'id'; }
+		return self::requested_language();
 	}
 
 	/**
@@ -142,6 +171,26 @@ final class Gloskin_Site_Core_Language {
 		return Gloskin_Site_Core_Translation::fresh_post_value( $post->ID, $field, $raw_source );
 	}
 
+	/**
+	 * Whether a post is one of WooCommerce's structural special pages.
+	 *
+	 * Their post_content may be a shortcode or block document and must remain
+	 * canonical in every presentation language. Only the structural body is
+	 * protected; titles/excerpts continue through normal saved translation.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool
+	 */
+	private static function is_woocommerce_structural_page( $post_id ) {
+		if ( ! function_exists( 'wc_get_page_id' ) ) { return false; }
+		$post_id = absint( $post_id );
+		foreach ( array( 'myaccount', 'cart', 'checkout' ) as $page_key ) {
+			$page_id = (int) wc_get_page_id( $page_key );
+			if ( $page_id > 0 && $post_id === $page_id ) { return true; }
+		}
+		return false;
+	}
+
 	/** @param WP_Post $post Post. @return WP_Post */
 	public static function translate_post_object( $post ) {
 		if ( 'en' !== self::language() || ! ( $post instanceof WP_Post ) ) { return $post; }
@@ -150,6 +199,7 @@ final class Gloskin_Site_Core_Language {
 		$copy = clone $post;
 		foreach ( $registry['post_types'][ $post->post_type ]['fields'] as $field => $label ) {
 			unset( $label );
+			if ( 'post_content' === $field && self::is_woocommerce_structural_page( $post->ID ) ) { continue; }
 			$source = isset( $post->$field ) ? (string) $post->$field : '';
 			$copy->$field = Gloskin_Site_Core_Translation::fresh_post_value( $post->ID, $field, $source );
 		}
@@ -210,7 +260,7 @@ final class Gloskin_Site_Core_Language {
 	 * Resolve one interface string to its EN equivalent via the shared O(1) lookup.
 	 *
 	 * Delegates to Translation::interface_lookup() — the single canonical resolver
-	 * shared by both the gettext filter and the HTML output buffer.  A narrow
+	 * shared by both the gettext filter and the HTML output buffer. A narrow
 	 * re-entrancy guard returns the original value if unexpected plugin/filter
 	 * recursion tries to re-enter while the lookup is being built.
 	 */
