@@ -142,12 +142,12 @@ editorial_must(false !== strpos($content, "'default'           => 50") && false 
 editorial_must(false !== strpos($content, 'return max( 0.0, min( 100.0, $value ) );'), 'server focus sanitizer clamps 0..100');
 editorial_must(false !== strpos($manager, 'data-gloskin-promo-crop') && false !== strpos($manager, 'data-gloskin-promo-crop-apply') && false !== strpos($manager, 'data-gloskin-promo-crop-reset'), 'existing Promo modal contains one bounded crop stage');
 editorial_must(false !== strpos($manager, "'focus_x'        => \$this->promo_focus_value") && false !== strpos($manager, "'focus_y'        => \$this->promo_focus_value"), 'normalized Promo record response includes focal state');
-editorial_must(false !== strpos($manager, "\$current_image_id !== \$image_id") && false !== strpos($manager, "'Promo image must be at least %1\$d × %2\$d pixels.'"), 'new Promo replacement image is dimension-validated without blocking unchanged legacy artwork');
+editorial_must(false !== strpos($manager, "\$current_image_id !== \$image_id") && false !== strpos($manager, 'Promo image must be at least %1$d × %2$d pixels.'), 'new Promo replacement image is dimension-validated without blocking unchanged legacy artwork');
 editorial_must(false !== strpos($manager, "update_post_meta( \$saved_id, (string) ( \$profile['focus_x_meta']") && false !== strpos($manager, "update_post_meta( \$saved_id, (string) ( \$profile['focus_y_meta']"), 'existing AJAX save persists focal state');
 editorial_must(false !== strpos($js, 'function applyPromoCrop()') && false !== strpos($js, 'pointerdown') && false !== strpos($js, 'ArrowLeft'), 'crop interaction supports pointer/touch and keyboard focal adjustment');
 editorial_must(false !== strpos($js, "config.postType === 'gloskin_promo'"), 'client crop behavior is explicitly Promo-profile bounded');
 editorial_must(false === strpos($manager . $js, 'PromoCropManager'), 'no second Promo crop manager exists');
-editorial_must(false === strpos($manager . $js, 'media_handle_sideload') || false !== strpos($manager, 'seed_attachment('), 'Crop & Apply does not introduce derivative attachment generation');
+editorial_must(1 === substr_count($manager, 'media_handle_sideload(') && false === strpos($js, 'media_handle_sideload'), 'Crop & Apply introduces no derivative attachment generation beyond the pre-existing one-shot seed importer');
 editorial_must(1 === substr_count($css, 'aspect-ratio:1648 / 928'), 'admin crop viewport owns exactly one fixed canonical ratio declaration');
 editorial_must(false !== strpos($css, 'object-fit:cover') && false !== strpos($css, 'object-position:var(--gloskin-promo-focus-x,50%) var(--gloskin-promo-focus-y,50%)'), 'admin crop preview uses production cover/focal geometry');
 
