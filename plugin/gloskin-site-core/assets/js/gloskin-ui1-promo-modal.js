@@ -16,12 +16,9 @@
 	var campaign = root.getAttribute('data-campaign') || '';
 	var originalSlides = track ? Array.prototype.slice.call(track.querySelectorAll('[data-gloskin-promo-slide]')) : [];
 	var reducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-	var sessionKey = 'gloskinPromoDismissedSession';
 	var persistentKey = 'gloskinPromoDismissedCampaign';
 	var isOpen = false;
 	var lastFocus = null;
-	var engagementTimer = null;
-	var interactionSeen = false;
 	var autoplayTimer = null;
 	var physicalIndex = originalSlides.length > 1 ? 1 : 0;
 	var realIndex = 0;
@@ -29,6 +26,7 @@
 	var pointerStartX = null;
 	var isTransitioning = false;
 	var transitionFallback = null;
+	var initialShowTimer = null;
 
 	function storageGet(storage, key) {
 		try { return storage ? storage.getItem(key) : null; } catch (ignore) { return null; }
@@ -38,7 +36,9 @@
 		try { if (storage) { storage.setItem(key, value); } } catch (ignore) { /* Preference storage is best-effort. */ }
 	}
 
-	if (storageGet(window.sessionStorage, sessionKey) === '1' || (campaign && storageGet(window.localStorage, persistentKey) === campaign)) {
+	/* X closes only the current presentation. The explicit "never" action is
+	 * the sole persistent suppression owner, scoped to this campaign signature. */
+	if (campaign && storageGet(window.localStorage, persistentKey) === campaign) {
 		root.remove();
 		return;
 	}
@@ -60,17 +60,6 @@
 			image.style.setProperty('--gloskin-promo-focus-y', focusY + '%');
 			image.style.setProperty('--gloskin-promo-scale', String(zoom));
 		});
-	}
-
-	function removeEngagementListeners() {
-		window.removeEventListener('scroll', onScrollEngagement);
-		document.removeEventListener('pointerdown', onInteraction, true);
-		document.removeEventListener('keydown', onInteraction, true);
-		document.removeEventListener('touchstart', onInteraction, true);
-		if (engagementTimer) {
-			window.clearTimeout(engagementTimer);
-			engagementTimer = null;
-		}
 	}
 
 	function focusables() {
@@ -168,8 +157,11 @@
 	}
 
 	function show() {
-		if (isOpen) { return; }
-		removeEngagementListeners();
+		if (isOpen || !root.isConnected) { return; }
+		if (initialShowTimer) {
+			window.clearTimeout(initialShowTimer);
+			initialShowTimer = null;
+		}
 		lastFocus = document.activeElement;
 		root.hidden = false;
 		root.setAttribute('aria-hidden', 'false');
@@ -186,7 +178,6 @@
 
 	function close(persistent) {
 		if (!isOpen) { return; }
-		storageSet(window.sessionStorage, sessionKey, '1');
 		if (persistent && campaign) { storageSet(window.localStorage, persistentKey, campaign); }
 		if (autoplayTimer) { window.clearInterval(autoplayTimer); autoplayTimer = null; }
 		if (transitionFallback) { window.clearTimeout(transitionFallback); transitionFallback = null; }
@@ -199,26 +190,6 @@
 			root.setAttribute('aria-hidden', 'true');
 			if (lastFocus && typeof lastFocus.focus === 'function') { lastFocus.focus({ preventScroll: true }); }
 		}, reducedMotion ? 0 : 560);
-	}
-
-	function onScrollEngagement() {
-		var threshold = Math.max(220, Math.min(520, window.innerHeight * 0.32));
-		if (window.scrollY >= threshold) { show(); }
-	}
-
-	function onInteraction() {
-		interactionSeen = true;
-	}
-
-	function armEngagementTrigger() {
-		window.addEventListener('scroll', onScrollEngagement, { passive: true });
-		document.addEventListener('pointerdown', onInteraction, true);
-		document.addEventListener('keydown', onInteraction, true);
-		document.addEventListener('touchstart', onInteraction, { capture: true, passive: true });
-		engagementTimer = window.setTimeout(function () {
-			if (interactionSeen && !document.hidden) { show(); }
-		}, 6500);
-		onScrollEngagement();
 	}
 
 	closeButtons.forEach(function (button) {
@@ -305,5 +276,7 @@
 	document.addEventListener('visibilitychange', resetAutoplay);
 	applyCropFraming();
 	initializeSlider();
-	armEngagementTrigger();
+	/* Popup means popup: no scroll or interaction prerequisite. A short delay
+	 * lets first paint settle while keeping the behavior deterministic. */
+	initialShowTimer = window.setTimeout(show, reducedMotion ? 0 : 450);
 })();
