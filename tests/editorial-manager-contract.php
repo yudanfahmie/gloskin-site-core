@@ -7,6 +7,7 @@ $js_path      = $root . '/plugin/gloskin-site-core/assets/js/gloskin-editorial-m
 $css_path     = $root . '/plugin/gloskin-site-core/assets/css/gloskin-editorial-manager.css';
 $kernel_path  = $root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php';
 $admin_path   = $root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-admin-service.php';
+$content_path = $root . '/plugin/gloskin-site-core/includes/class-gloskin-site-core-content-service.php';
 
 function editorial_fail(string $message): void {
     fwrite(STDERR, "editorial-manager-contract.php: FAIL: {$message}\n");
@@ -30,6 +31,7 @@ $js      = editorial_text($js_path);
 $css     = editorial_text($css_path);
 $kernel  = editorial_text($kernel_path);
 $admin   = editorial_text($admin_path);
+$content = editorial_text($content_path);
 
 editorial_must(1 === substr_count($kernel, 'new Gloskin_Site_Core_Editorial_Manager'), 'EditorialManager is instantiated exactly once');
 editorial_must(1 === substr_count($kernel, '$editorial_manager->register();'), 'EditorialManager is registered exactly once');
@@ -44,6 +46,31 @@ editorial_must(false !== strpos($managed, 'PROMO_POST_TYPE') && false !== strpos
 foreach (array('ACHIEVEMENT_POST_TYPE', 'TREATMENT_POST_TYPE', 'CLINIC_POST_TYPE', 'DOCTOR_POST_TYPE', "'page'") as $forbidden_profile) {
     editorial_must(false === strpos($managed, $forbidden_profile), 'managed profiles stay bounded: ' . $forbidden_profile);
 }
+
+/* Canonical editorial schema lives once in ContentService. */
+editorial_must(1 === substr_count($content, 'public static function editorial_profile('), 'ContentService owns exactly one editorial display profile');
+foreach (array(
+    "'gloskin_promo_active'", "'gloskin_promo_order'", "'gloskin_promo_type'",
+    "'gloskin_testimonial_active'", "'gloskin_testimonial_order'", "'post_excerpt'",
+    "'gloskin_achievement_active'", "'gloskin_achievement_order'", "'gloskin_achievement_feature_on_home'",
+) as $profile_field) {
+    editorial_must(false !== strpos($content, $profile_field), 'editorial profile field missing: ' . $profile_field);
+}
+editorial_must(false !== strpos($manager, 'Gloskin_Site_Core_Content_Service::editorial_profile( $post_type )'), 'EditorialManager reads canonical profile for active/order/type fields');
+
+/* Active Testimonial must always be genuinely displayable. */
+editorial_must(false !== strpos($manager, '<textarea name="quote" rows="6" required>'), 'Testimonial modal marks quote required');
+editorial_must(false !== strpos($manager, "'Testimonial quote is required.'") && false !== strpos($manager, "'' === trim( \$quote )"), 'save boundary rejects empty testimonial quote');
+editorial_must(false !== strpos($manager, "'Add a testimonial quote before activating this record.'"), 'toggle boundary rejects activating an empty testimonial');
+editorial_must(false !== strpos($manager, "'' === \$quote && '1' === (string) get_post_meta( \$post->ID, 'gloskin_testimonial_active', true )"), 'setup normalizes historical active empty testimonials to inactive');
+
+/* Setup identity may own only its seeds; editor-created Promo must survive reruns. */
+editorial_must(false === strpos($manager, '$all_promos'), 'setup has no broad all-Promo ownership loop');
+editorial_must(false === strpos($manager, "! in_array( (int) \$post_id, \$seed_ids, true )"), 'setup never deactivates arbitrary non-seed Promo');
+editorial_must(false !== strpos($manager, 'foreach ( $seed_ids as $post_id )'), 'seed cleanup is bounded to known seed IDs');
+editorial_must(false !== strpos($manager, 'maybe_normalize_display_state') && false !== strpos($manager, 'normalize_display_state'), 'bounded historical display normalization exists');
+editorial_must(false !== strpos($manager, 'Gloskin_Site_Core_Content_Service::DEMO_IDENTITY_META') && false !== strpos($manager, "\$this->set_meta_if_changed( \$post->ID, \$active_meta, '0' )"), 'legacy identity is translated once into explicit inactive state');
+editorial_must(false !== strpos($manager, "'display_contract_v1'") && false !== strpos($manager, "'complete' === (string) ( \$state['display_contract_v1'] ?? '' )"), 'normalization is idempotently marked in existing setup state');
 
 editorial_must(1 === substr_count($manager, 'wp_enqueue_media();'), 'WordPress Media Library is enqueued once');
 editorial_must(false !== strpos($manager, "array( 'jquery', 'jquery-ui-sortable', 'media-editor' )"), 'EditorialManager explicitly depends on WordPress media-editor');
@@ -87,4 +114,4 @@ foreach (array('PromoManager', 'TestimonialManager') as $forked_owner) {
     editorial_must(false === strpos($manager . $js, $forked_owner), 'no forked manager owner: ' . $forked_owner);
 }
 
-echo "editorial-manager-contract.php: OK (lifecycle + bounded profiles + native media dependency/frame/keyboard + native delete + fail-closed edit + safe reorder + accessibility/status)\n";
+echo "editorial-manager-contract.php: OK (canonical schema + save/active validation + bounded setup/normalization + lifecycle + native media + native delete + safe reorder + accessibility/status)\n";
