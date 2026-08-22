@@ -10,7 +10,7 @@ gloskin_ui1_render_hero( isset( $gloskin_context['hero'] ) && is_array( $gloskin
 		<div class="gloskin-home-trust__bar">
 			<article class="gloskin-home-trust__item">
 				<div class="gloskin-home-trust__icon" aria-hidden="true">
-					<svg viewBox="0 0 24 24" focusable="false"><path d="M12 11c2.21 0 4-1.79 4-4s-1.79-4-4-4 1.79-4 4 1.79 4 4 4z"></path><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><path d="M16 12l2 2 4-4"></path></svg>
+					<svg viewBox="0 0 24 24" focusable="false"><circle cx="9" cy="7" r="4"></circle><path d="M2.5 21v-2.5A6.5 6.5 0 0 1 9 12h2"></path><path d="m15 16 2 2 4-4"></path></svg>
 				</div>
 				<div class="gloskin-home-trust__text">
 					<h3><?php echo esc_html__( 'Ditangani Ahli', 'gloskin-site-core' ); ?></h3>
