@@ -84,12 +84,14 @@ $gloskin_founder_image_url = plugin_dir_url( dirname( __DIR__, 2 ) . '/gloskin-s
 	</section>
 
 	<section class="gloskin-ui1-section gloskin-about-philosophy" data-gloskin-section="about-philosophy">
-		<div class="gloskin-ui1-container gloskin-ui1-container--narrow">
-			<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Prinsip Kami', 'gloskin-site-core' ); ?></p>
-			<h2><?php echo esc_html__( 'Filosofi dalam Praktik', 'gloskin-site-core' ); ?></h2>
-			<div class="gloskin-ui1-prose gloskin-about-philosophy__body">
-				<p><?php echo esc_html__( 'Di Gloskin, filosofi kami diterapkan melalui layanan estetika medis berbasis bukti dengan fokus pada kualitas kulit dan rambut, sejalan dengan pendekatan Skin Barrier & Quality Xpert.', 'gloskin-site-core' ); ?></p>
-				<p><?php echo esc_html__( 'Setiap layanan diarahkan untuk menghadirkan solusi yang aman, natural, dan berkelanjutan melalui pelayanan profesional yang konsisten dengan visi Gloskin.', 'gloskin-site-core' ); ?></p>
+		<div class="gloskin-ui1-container">
+			<div class="gloskin-about-philosophy__inner">
+				<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Tentang Kami', 'gloskin-site-core' ); ?></p>
+				<h2><?php echo esc_html__( 'Filosofi dalam Praktik', 'gloskin-site-core' ); ?></h2>
+				<div class="gloskin-ui1-prose gloskin-about-philosophy__body">
+					<p><?php echo esc_html__( 'Di Gloskin, kami mendedikasikan waktu sepenuhnya untuk memahami setiap keluhan dan memberikan rencana perawatan terpersonalisasi dengan pendekatan Skin Barrier & Quality Xpert.', 'gloskin-site-core' ); ?></p>
+					<p><?php echo esc_html__( 'Jelajahi jangkauan dan ruang lingkup klinik kami, pengobatan canggih, dan komitmen kami untuk memberikan hasil optimal yang selalu mengutamakan kulit Anda.', 'gloskin-site-core' ); ?></p>
+				</div>
 			</div>
 		</div>
 	</section>
@@ -98,9 +100,9 @@ $gloskin_founder_image_url = plugin_dir_url( dirname( __DIR__, 2 ) . '/gloskin-s
 		<div class="gloskin-ui1-container">
 			<?php gloskin_ui1_render_section_heading( __( 'Jelajahi Gloskin', 'gloskin-site-core' ) ); ?>
 			<?php gloskin_ui1_render_pathway_grid( array(
-				array( 'title' => __( 'Perawatan', 'gloskin-site-core' ), 'eyebrow' => __( 'Layanan', 'gloskin-site-core' ), 'copy' => __( 'Rangkaian perawatan kulit profesional.', 'gloskin-site-core' ), 'url' => home_url( '/treatments/' ), 'label' => __( 'Lihat Perawatan', 'gloskin-site-core' ) ),
-				array( 'title' => __( 'Produk Skincare', 'gloskin-site-core' ), 'eyebrow' => __( 'Produk', 'gloskin-site-core' ), 'copy' => __( 'Rangkaian produk perawatan kulit.', 'gloskin-site-core' ), 'url' => home_url( '/skincare/' ), 'label' => __( 'Lihat Produk', 'gloskin-site-core' ) ),
-				array( 'title' => __( 'Klinik Kami', 'gloskin-site-core' ), 'eyebrow' => __( 'Lokasi', 'gloskin-site-core' ), 'copy' => __( 'Temukan klinik Gloskin terdekat.', 'gloskin-site-core' ), 'url' => home_url( '/clinics/' ), 'label' => __( 'Temukan Klinik', 'gloskin-site-core' ) ),
+				array( 'title' => __( 'Perawatan Wajah, Anti-aging, Bedah Plastik', 'gloskin-site-core' ), 'eyebrow' => __( 'Layanan', 'gloskin-site-core' ), 'copy' => __( 'Temukan solusi estetika dengan teknologi medis mutakhir.', 'gloskin-site-core' ), 'url' => home_url( '/treatments/' ), 'label' => __( 'Lihat Perawatan', 'gloskin-site-core' ) ),
+				array( 'title' => __( 'Produk Skincare Spesialis', 'gloskin-site-core' ), 'eyebrow' => __( 'Produk', 'gloskin-site-core' ), 'copy' => __( 'Perawatan harian berkelanjutan yang diracik oleh para ahli.', 'gloskin-site-core' ), 'url' => home_url( '/skincare/' ), 'label' => __( 'Lihat Produk', 'gloskin-site-core' ) ),
+				array( 'title' => __( 'Jaringan Klinik Kami', 'gloskin-site-core' ), 'eyebrow' => __( 'Klinik', 'gloskin-site-core' ), 'copy' => __( 'Temukan klinik terdekat dan jadwalkan sesi konsultasi Anda.', 'gloskin-site-core' ), 'url' => home_url( '/clinics/' ), 'label' => __( 'Temukan Klinik', 'gloskin-site-core' ) ),
 			) ); ?>
 		</div>
 	</section>
