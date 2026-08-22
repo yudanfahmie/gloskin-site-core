@@ -1,7 +1,8 @@
 /* Shared native-list editor for Promo + Testimonial only. */
 body.gloskin-editorial-modal-open{overflow:hidden}
-.gloskin-editorial-order-handle{display:inline-grid;width:32px;height:32px;align-items:center;justify-content:center;border:1px solid #dcdcde;border-radius:6px;background:#fff;color:#50575e;cursor:grab}
+.gloskin-editorial-order-handle{display:inline-grid;width:32px;height:32px;align-items:center;justify-items:center;border:1px solid #dcdcde;border-radius:6px;background:#fff;color:#50575e;cursor:grab}
 .gloskin-editorial-order-handle:active{cursor:grabbing}
+.gloskin-editorial-order-handle[aria-disabled="true"]{cursor:not-allowed;opacity:.5}
 .gloskin-editorial-list-thumb{display:block;width:64px;height:64px;border-radius:8px;object-fit:cover}
 .gloskin-editorial-active-toggle{min-width:76px;text-align:center}
 .gloskin-editorial-active-toggle.is-active{border-color:#00a32a;color:#006b1b}
