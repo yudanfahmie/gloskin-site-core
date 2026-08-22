@@ -1,7 +1,8 @@
 /* Promo modal settings inside the existing EditorialManager modal/list. */
 .fixed .column-gloskin_editorial_active{width:190px;white-space:nowrap}
-.column-gloskin_editorial_active .gloskin-editorial-active-toggle{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;white-space:nowrap;margin:0}
-.column-gloskin_editorial_active .gloskin-editorial-popup-toggle{margin-left:4px}
+.column-gloskin_editorial_active .gloskin-editorial-status-actions{display:inline-flex;flex-wrap:nowrap;align-items:center;gap:4px;vertical-align:middle;white-space:nowrap}
+.column-gloskin_editorial_active .gloskin-editorial-active-toggle{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;vertical-align:middle;white-space:nowrap;margin:0!important}
+.column-gloskin_editorial_active .gloskin-editorial-popup-toggle{margin-left:0!important}
 .gloskin-editorial-popup-settings{
 margin-top:18px;
 padding:16px;
