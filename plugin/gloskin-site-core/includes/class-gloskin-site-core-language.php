@@ -26,8 +26,6 @@ final class Gloskin_Site_Core_Language {
 		add_filter( 'the_posts', array( $this, 'translate_posts' ), 20, 2 );
 		add_filter( 'the_title', array( $this, 'translate_title' ), 20, 2 );
 		add_filter( 'post_title', array( $this, 'translate_title' ), 20, 2 );
-		add_filter( 'the_content', array( $this, 'translate_content' ), 20 );
-		add_filter( 'post_content', array( $this, 'translate_content_field' ), 20, 3 );
 		add_filter( 'get_the_excerpt', array( $this, 'translate_excerpt' ), 20, 2 );
 		add_filter( 'post_excerpt', array( $this, 'translate_excerpt_field' ), 20, 3 );
 		add_filter( 'get_post_metadata', array( $this, 'translate_post_meta' ), 20, 5 );
@@ -161,8 +159,6 @@ final class Gloskin_Site_Core_Language {
 	/** @param array<int,WP_Post> $posts Posts. @param WP_Query $query Query. @return array<int,WP_Post> */
 	public function translate_posts( $posts, $query = null ) { unset( $query ); if ( 'en' !== self::language() ) { return $posts; } return array_map( array( __CLASS__, 'translate_post_object' ), $posts ); }
 	/** @return string */ public function translate_title( $value, $post_id = 0 ) { return $post_id ? self::saved_post_field( $post_id, 'post_title', $value ) : $value; }
-	/** @return string */ public function translate_content( $value ) { $id = get_the_ID(); return $id ? self::saved_post_field( $id, 'post_content', $value ) : $value; }
-	/** @return string */ public function translate_content_field( $value, $post_id = 0, $context = 'display' ) { unset( $context ); return $post_id ? self::saved_post_field( $post_id, 'post_content', $value ) : $value; }
 	/** @return string */ public function translate_excerpt( $value, $post = null ) { $id = $post instanceof WP_Post ? $post->ID : get_the_ID(); return $id ? self::saved_post_field( $id, 'post_excerpt', $value ) : $value; }
 	/** @return string */ public function translate_excerpt_field( $value, $post_id = 0, $context = 'display' ) { unset( $context ); return $post_id ? self::saved_post_field( $post_id, 'post_excerpt', $value ) : $value; }
 
