@@ -9,6 +9,7 @@ $gloskin_primary_media_id = $gloskin_gallery_ids ? absint( $gloskin_gallery_ids[
 $gloskin_whatsapp_url     = trim( (string) ( $gloskin_context['whatsapp_url'] ?? '' ) );
 $gloskin_map_url          = trim( (string) ( $gloskin_context['map_url'] ?? '' ) );
 $gloskin_map_embed        = trim( (string) ( $gloskin_context['map_embed'] ?? '' ) );
+$gloskin_has_detail_media = $gloskin_primary_media_id || $gloskin_map_embed || $gloskin_map_url;
 $gloskin_contact_url      = $gloskin_whatsapp_url ? $gloskin_whatsapp_url : home_url( '/contact/' );
 $gloskin_contact_label    = $gloskin_whatsapp_url ? __( 'WhatsApp Klinik', 'gloskin-site-core' ) : __( 'Hubungi Gloskin', 'gloskin-site-core' );
 $gloskin_has_content      = gloskin_ui1_has_content( $gloskin_post );
@@ -32,7 +33,7 @@ $gloskin_map_title = sprintf( __( 'Peta %s', 'gloskin-site-core' ), $gloskin_cli
 	</section>
 
 	<section class="gloskin-clinic-detail" data-gloskin-section="clinic-detail">
-		<div class="gloskin-ui1-container gloskin-clinic-detail__overlap">
+		<div class="gloskin-ui1-container gloskin-clinic-detail__overlap<?php echo $gloskin_has_detail_media ? '' : ' gloskin-clinic-detail__overlap--no-media'; ?>">
 			<div class="gloskin-clinic-detail__card">
 				<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Informasi Cabang', 'gloskin-site-core' ); ?></p>
 				<?php if ( $gloskin_has_facts ) : ?>
@@ -56,17 +57,17 @@ $gloskin_map_title = sprintf( __( 'Peta %s', 'gloskin-site-core' ), $gloskin_cli
 				<?php endif; ?>
 			</div>
 
-			<div class="gloskin-clinic-detail__media">
-				<?php if ( $gloskin_primary_media_id ) : ?>
-					<?php echo wp_get_attachment_image( $gloskin_primary_media_id, 'large', false, array( 'class' => 'gloskin-clinic-detail__image', 'alt' => $gloskin_clinic_title, 'fetchpriority' => 'high', 'decoding' => 'async' ) ); ?>
-				<?php elseif ( $gloskin_map_embed ) : ?>
-					<iframe title="<?php echo esc_attr( $gloskin_map_title ); ?>" src="<?php echo esc_url( $gloskin_map_embed ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
-				<?php elseif ( $gloskin_map_url ) : ?>
-					<a class="gloskin-clinic-detail__map-fallback" href="<?php echo esc_url( $gloskin_map_url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__( 'Buka lokasi klinik', 'gloskin-site-core' ); ?> <span aria-hidden="true">→</span></a>
-				<?php else : ?>
-					<span class="gloskin-clinic-detail__media-empty" aria-hidden="true"></span>
-				<?php endif; ?>
-			</div>
+			<?php if ( $gloskin_has_detail_media ) : ?>
+				<div class="gloskin-clinic-detail__media">
+					<?php if ( $gloskin_primary_media_id ) : ?>
+						<?php echo wp_get_attachment_image( $gloskin_primary_media_id, 'large', false, array( 'class' => 'gloskin-clinic-detail__image', 'alt' => $gloskin_clinic_title, 'fetchpriority' => 'high', 'decoding' => 'async' ) ); ?>
+					<?php elseif ( $gloskin_map_embed ) : ?>
+						<iframe title="<?php echo esc_attr( $gloskin_map_title ); ?>" src="<?php echo esc_url( $gloskin_map_embed ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+					<?php else : ?>
+						<a class="gloskin-clinic-detail__map-fallback" href="<?php echo esc_url( $gloskin_map_url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__( 'Buka lokasi klinik', 'gloskin-site-core' ); ?> <span aria-hidden="true">→</span></a>
+					<?php endif; ?>
+				</div>
+			<?php endif; ?>
 		</div>
 	</section>
 
