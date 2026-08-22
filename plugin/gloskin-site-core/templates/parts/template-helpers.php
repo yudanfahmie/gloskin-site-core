@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/icon-helpers.php';
+
 if ( ! function_exists( 'gloskin_ui1_render_brand_logo' ) ) {
 	/**
 	 * Render the canonical Gloskin logo SVG (assets/images/gloskin-logotext.svg,
@@ -261,7 +263,7 @@ if ( ! function_exists( 'gloskin_ui1_render_promo_campaign' ) ) {
 						<?php if ( $compact && '' !== $url ) : ?><a class="gloskin-ui1-button gloskin-ui1-button--primary" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'Lihat Promo', 'gloskin-site-core' ); ?></a><?php endif; ?>
 					<?php else : ?>
 						<p class="gloskin-ui1-promo-campaign__empty"><?php echo esc_html__( 'Informasi promo belum tersedia.', 'gloskin-site-core' ); ?></p>
-						<?php if ( $compact && '' !== $url ) : ?><a class="gloskin-ui1-text-link" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'Buka halaman Promo', 'gloskin-site-core' ); ?> →</a><?php endif; ?>
+						<?php if ( $compact && '' !== $url ) : ?><a class="gloskin-ui1-text-link" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'Buka halaman Promo', 'gloskin-site-core' ); ?><?php echo gloskin_ui1_arrow_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- canonical static SVG. ?></a><?php endif; ?>
 					<?php endif; ?>
 				</div>
 				<?php if ( $media_ids ) : ?>
@@ -334,7 +336,7 @@ if ( ! function_exists( 'gloskin_ui1_render_card' ) ) {
 			<div class="gloskin-ui1-card__body">
 				<h3 class="gloskin-ui1-card__title"><?php if ( '' !== $url ) : ?><a href="<?php echo esc_url( $url ); ?>"><?php endif; ?><?php echo esc_html( $title ); ?><?php if ( '' !== $url ) : ?></a><?php endif; ?></h3>
 				<?php if ( '' !== trim( $copy ) ) : ?><p class="gloskin-ui1-card__copy"><?php echo esc_html( wp_trim_words( wp_strip_all_tags( $copy ), 28 ) ); ?></p><?php endif; ?>
-				<?php if ( '' !== $url ) : ?><a class="gloskin-ui1-text-link" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'Lihat Detail', 'gloskin-site-core' ); ?><span aria-hidden="true"> →</span></a><?php endif; ?>
+				<?php if ( '' !== $url ) : ?><a class="gloskin-ui1-text-link" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html__( 'Lihat Detail', 'gloskin-site-core' ); ?><?php echo gloskin_ui1_arrow_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- canonical static SVG. ?></a><?php endif; ?>
 			</div>
 		</article>
 		<?php
@@ -473,7 +475,7 @@ if ( ! function_exists( 'gloskin_ui1_render_category_link' ) ) {
 		<a class="gloskin-ui1-category-card" href="<?php echo esc_url( $url ); ?>">
 			<?php gloskin_ui1_render_editorial_media( 'skincare', $label, 'gloskin-ui1-category-card__media' ); ?>
 			<span class="gloskin-ui1-category-card__label"><?php echo esc_html( $label ); ?></span>
-			<span class="gloskin-ui1-category-card__arrow" aria-hidden="true">→</span>
+			<span class="gloskin-ui1-category-card__arrow" aria-hidden="true"><?php echo gloskin_ui1_arrow_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- canonical static SVG. ?></span>
 		</a>
 		<?php
 	}
@@ -712,17 +714,13 @@ if ( ! function_exists( 'gloskin_ui1_render_managed_promo_carousel' ) ) {
 
 				<?php if ( $count > 1 ) : ?>
 					<div class="gloskin-ui1-promo-carousel__controls" role="group" aria-label="<?php echo esc_attr__( 'Navigasi promo', 'gloskin-site-core' ); ?>">
-						<button type="button" class="gloskin-ui1-promo-carousel__prev" data-gloskin-promo-prev aria-label="<?php echo esc_attr__( 'Promo sebelumnya', 'gloskin-site-core' ); ?>">
-							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M13 4L7 10L13 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-						</button>
+						<button type="button" class="gloskin-ui1-promo-carousel__prev" data-gloskin-promo-prev aria-label="<?php echo esc_attr__( 'Promo sebelumnya', 'gloskin-site-core' ); ?>"><?php echo gloskin_ui1_arrow_icon( 'prev' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- canonical static SVG. ?></button>
 						<div class="gloskin-ui1-promo-carousel__dots" role="tablist" aria-label="<?php echo esc_attr__( 'Pilih promo', 'gloskin-site-core' ); ?>">
 							<?php foreach ( $promos as $dot_index => $dot_promo ) : ?>
 								<button type="button" class="gloskin-ui1-promo-carousel__dot<?php echo 0 === $dot_index ? ' is-active' : ''; ?>" role="tab" data-gloskin-promo-dot="<?php echo esc_attr( (string) $dot_index ); ?>" aria-selected="<?php echo 0 === $dot_index ? 'true' : 'false'; ?>" tabindex="<?php echo 0 === $dot_index ? '0' : '-1'; ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Promo %d', 'gloskin-site-core' ), $dot_index + 1 ) ); ?>"></button>
 							<?php endforeach; ?>
 						</div>
-						<button type="button" class="gloskin-ui1-promo-carousel__next" data-gloskin-promo-next aria-label="<?php echo esc_attr__( 'Promo berikutnya', 'gloskin-site-core' ); ?>">
-							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M7 4L13 10L7 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-						</button>
+						<button type="button" class="gloskin-ui1-promo-carousel__next" data-gloskin-promo-next aria-label="<?php echo esc_attr__( 'Promo berikutnya', 'gloskin-site-core' ); ?>"><?php echo gloskin_ui1_arrow_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- canonical static SVG. ?></button>
 					</div>
 				<?php endif; ?>
 
