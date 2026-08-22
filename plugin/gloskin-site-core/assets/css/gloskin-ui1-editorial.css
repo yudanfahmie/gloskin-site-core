@@ -101,6 +101,27 @@
 .gloskin-contact-location-card:hover .gloskin-contact-location-card__cta svg{opacity:1;transform:translateX(0)}
 .gloskin-contact-location-card__wa{position:absolute;bottom:clamp(20px,2.5vw,28px);right:clamp(20px,2.5vw,28px)}
 
+/* Contact — form section layout. */
+.gloskin-contact-form{padding:clamp(60px,8vw,96px) 0 clamp(80px,10vw,120px)}
+.gloskin-contact-form .gloskin-ui1-section-heading{text-align:center;max-width:none;margin-bottom:clamp(32px,4vw,50px)}
+.gloskin-contact-form .gloskin-ui1-section-heading h2{margin:0 0 12px;font-size:clamp(2rem,4vw,3rem);letter-spacing:.08em;text-transform:uppercase}
+.gloskin-contact-form .gloskin-ui1-section-heading p{margin:0 auto;color:var(--gloskin-muted);font-size:clamp(.92rem,1.2vw,1rem);font-weight:300;line-height:1.65;max-width:600px}
+
+/* Contact — native form: notice, intro, 2-col grid, textarea, consent, submit. */
+.gloskin-contact-native__notice{margin-bottom:20px;padding:13px 18px;border-radius:var(--gloskin-radius-sm);background:color-mix(in srgb,var(--gloskin-surface) 68%,var(--gloskin-bg));font-size:.9rem;line-height:1.5}
+.gloskin-contact-native__notice--error{background:color-mix(in srgb,var(--gloskin-accent) 10%,var(--gloskin-bg));color:var(--gloskin-accent-readable)}
+.gloskin-contact-native__intro{margin:0 0 clamp(18px,2.5vw,28px);color:var(--gloskin-muted);font-size:.88rem;line-height:1.7}
+.gloskin-contact-native__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(16px,2vw,22px)}
+.gloskin-contact-native__grid label{display:flex;flex-direction:column;gap:7px}
+.gloskin-contact-native__grid label:last-child{grid-column:1 / -1}
+.gloskin-contact-native__grid label>span,.gloskin-contact-native__message>span{display:block;font-size:.88rem;font-weight:600;letter-spacing:.015em;color:var(--gloskin-text)}
+.gloskin-contact-native__message{display:flex;flex-direction:column;gap:7px}
+.gloskin-contact-native__message textarea{width:100%;min-height:160px;resize:vertical}
+.gloskin-contact-native__consent{display:flex;flex-direction:row;align-items:flex-start;gap:12px;cursor:pointer}
+.gloskin-contact-native__consent input[type="checkbox"]{flex-shrink:0;width:18px;height:18px;margin-top:3px;accent-color:var(--gloskin-accent);cursor:pointer}
+.gloskin-contact-native__consent span{font-size:.88rem;color:var(--gloskin-muted);line-height:1.6}
+.gloskin-contact-native__form .gloskin-ui1-button{width:100%;justify-content:center;min-height:52px;font-size:1rem;letter-spacing:.06em}
+
 /* Home canonical reference. Keep the exact journey palette local to Home so
  * global commerce/product surfaces retain their existing design tokens. */
 body.gloskin-ui1--home{--gloskin-home-white:#fff;--gloskin-home-peach:#fcf9f7;--gloskin-home-blush:#f7ebe8;--gloskin-home-muted:#666;--gloskin-home-red:#a81c31;--gloskin-home-gold:#c3a378}
