@@ -26,8 +26,9 @@ arrow_must(false === strpos($svg, 'width="800px"') && false === strpos($svg, 'he
 arrow_must(false !== strpos($css, "mask:url('../images/gloskin-arrow.svg')"), 'shared CSS projects canonical SVG resource');
 arrow_must(false !== strpos($css, 'background:currentColor'), 'arrow inherits existing semantic colors');
 arrow_must(false !== strpos($css, '.gloskin-ui1-arrow-icon--prev{transform:rotate(180deg)}'), 'previous direction mirrors one canonical resource');
-arrow_must(false !== strpos($css, '.gloskin-ui1-category-card__arrow{font-size:0}'), 'legacy category raw glyph is visually retired');
-arrow_must(false !== strpos($css, '.gloskin-ui1-card__body .gloskin-ui1-text-link>span[aria-hidden="true"]'), 'legacy shared-card raw glyph is visually retired');
+arrow_must(false !== strpos($css, '.gloskin-ui1 .gloskin-ui1-category-card .gloskin-ui1-category-card__arrow{display:flex;align-self:stretch;align-items:center;justify-content:center;font-size:0;line-height:0}'), 'legacy category glyph is suppressed and the icon stays vertically centered');
+arrow_must(false !== strpos($css, '.gloskin-ui1 .gloskin-ui1-category-card .gloskin-ui1-category-card__arrow::before'), 'category cards project exactly one canonical mask');
+arrow_must(false !== strpos($css, '.gloskin-ui1 .gloskin-ui1-card__body .gloskin-ui1-text-link>span[aria-hidden="true"]'), 'legacy shared-card raw glyph is visually retired');
 
 arrow_must(false !== strpos($assets, "'gloskin-ui1-icons'"), 'semantic icon stylesheet is registered');
 arrow_must(false !== strpos($assets, "'deps'  => array( 'gloskin-ui1-icons' )"), 'core depends on shared icon owner');
@@ -39,4 +40,4 @@ arrow_must(false === strpos($home, 'm11 4-5 5 5 5') && false === strpos($home, '
 arrow_must(false !== strpos($home, "gloskin_ui1_arrow_icon( 'prev' )") && false !== strpos($home, 'gloskin_ui1_arrow_icon()'), 'Home testimonial controls use shared resource');
 arrow_must(false !== strpos($insights, "'prev_text'") && false !== strpos($insights, "'next_text'") && false !== strpos($insights, 'gloskin_ui1_arrow_icon'), 'Insights pagination explicitly uses shared resource');
 
-echo "shared-arrow-icon-contract.php: OK (one SVG resource + currentColor mask + category/card/pathway/promo/home/pagination convergence)\n";
+echo "shared-arrow-icon-contract.php: OK (one SVG resource + currentColor mask + one centered category arrow + card/pathway/promo/home/pagination convergence)\n";
