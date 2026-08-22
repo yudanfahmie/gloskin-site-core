@@ -10,7 +10,8 @@
 	var statusNode = document.querySelector('[data-gloskin-editorial-status]');
 	var statusMessage = statusNode ? statusNode.querySelector('[data-gloskin-editorial-status-message]') : null;
 	var records = {};
-	var guidance = null;
+	var pendingGuidance = null;
+	var guidanceMode = false;
 
 	if (!form) { return; }
 	try { records = recordsNode ? JSON.parse(recordsNode.textContent || '{}') : {}; } catch (ignore) { records = {}; }
@@ -23,6 +24,7 @@
 	var pageSearch = form.querySelector('[data-gloskin-promo-page-search]');
 	var specificWrap = form.querySelector('[data-gloskin-promo-specific-pages]');
 	var popupSettings = form.querySelector('.gloskin-editorial-popup-settings');
+	var popupOptions = form.querySelector('[data-gloskin-promo-popup-options]');
 	var popupNotice = null;
 
 	function label(name, fallback) {
@@ -50,17 +52,23 @@
 		if (pageIdsField) { pageIdsField.value = selectedPageIds().join(','); }
 	}
 
-	function updateSpecificVisibility() {
-		var specific = !!(visibilityField && visibilityField.value === 'specific_pages');
+	function removePopupNotice() {
+		if (!popupNotice) { return; }
+		popupNotice.remove();
+		popupNotice = null;
+	}
+
+	function updatePopupUi() {
+		var enabled = !!(popupField && popupField.checked);
+		var revealOptions = enabled || guidanceMode;
+		if (popupOptions) { popupOptions.hidden = !revealOptions; }
+		if (destinationField) { destinationField.required = enabled; }
+		if (visibilityField) { visibilityField.required = enabled; }
+
+		var specific = !!(revealOptions && visibilityField && visibilityField.value === 'specific_pages');
 		if (specificWrap) { specificWrap.hidden = !specific; }
 		if (pageSearch) { pageSearch.disabled = !specific; }
 		if (pageSelect) { pageSelect.disabled = !specific; }
-	}
-
-	function updatePopupRequirements() {
-		var enabled = !!(popupField && popupField.checked);
-		if (destinationField) { destinationField.required = enabled; }
-		if (visibilityField) { visibilityField.required = enabled; }
 	}
 
 	function setPageSelection(ids) {
@@ -82,39 +90,39 @@
 		});
 	}
 
-	function clearPopupGuidance() {
-		if (popupNotice) {
-			popupNotice.remove();
-			popupNotice = null;
-		}
+	function resetGuidance() {
+		guidanceMode = false;
+		removePopupNotice();
+		updatePopupUi();
 	}
 
 	function showPopupGuidance(message) {
 		if (!popupSettings) { return; }
-		clearPopupGuidance();
+		removePopupNotice();
+		guidanceMode = true;
 		popupNotice = document.createElement('div');
 		popupNotice.className = 'gloskin-editorial-popup-settings__notice';
 		popupNotice.setAttribute('role', 'status');
 		var strong = document.createElement('strong');
 		strong.textContent = 'Complete popup settings';
 		var body = document.createElement('span');
-		body.textContent = message || 'Complete the highlighted popup setting, then save the Promo.';
+		body.textContent = message || 'Complete the highlighted popup setting, then enable popup display.';
 		popupNotice.appendChild(strong);
 		popupNotice.appendChild(body);
-		var settingsGrid = popupSettings.querySelector('.gloskin-editorial-popup-settings__grid');
-		popupSettings.insertBefore(popupNotice, settingsGrid || null);
+		popupSettings.insertBefore(popupNotice, popupOptions || null);
+		updatePopupUi();
 	}
 
 	function syncForm(record) {
 		record = record || {};
-		clearPopupGuidance();
+		guidanceMode = false;
+		removePopupNotice();
 		if (popupField) { popupField.checked = !!record.popup_enabled; }
 		if (visibilityField) { visibilityField.value = record.visibility || 'homepage'; }
 		if (destinationField) { destinationField.value = record.destination_url || ''; }
 		setPageSelection(record.visibility_page_ids || []);
 		if (pageSearch) { pageSearch.value = ''; filterPages(''); }
-		updateSpecificVisibility();
-		updatePopupRequirements();
+		updatePopupUi();
 	}
 
 	function focusPopupField(kind) {
@@ -163,17 +171,17 @@
 	}
 
 	function openPopupEditor(id, issue) {
-		guidance = {
+		pendingGuidance = {
 			id: String(id),
 			field: issue && issue.field ? issue.field : 'popup',
-			message: issue && issue.message ? issue.message : 'Complete the popup settings, then save this Promo.'
+			message: issue && issue.message ? issue.message : 'Complete the popup settings, then enable this Promo popup.'
 		};
 		var edit = document.querySelector('[data-gloskin-editorial-edit="' + String(id).replace(/[^0-9]/g, '') + '"]');
 		if (edit) {
 			edit.click();
 			return;
 		}
-		setStatus(guidance.message, true);
+		setStatus(pendingGuidance.message, true);
 	}
 
 	function handleModalOpen(event) {
@@ -182,18 +190,24 @@
 		var record = id !== '0' && records[id] ? records[id] : (detail.record || {});
 		if (detail.isNew) { record = { popup_enabled: false, visibility: 'homepage', visibility_page_ids: [], destination_url: '' }; }
 		syncForm(record);
-		if (guidance && guidance.id === id) {
-			showPopupGuidance(guidance.message);
-			focusPopupField(guidance.field);
-			guidance = null;
+		if (pendingGuidance && pendingGuidance.id === id) {
+			var issue = pendingGuidance;
+			pendingGuidance = null;
+			showPopupGuidance(issue.message);
+			focusPopupField(issue.field);
 		}
 	}
 
 	if (pageSearch) { pageSearch.addEventListener('input', function () { filterPages(pageSearch.value); }); }
 	if (pageSelect) { pageSelect.addEventListener('change', syncPageIdsField); }
-	if (visibilityField) { visibilityField.addEventListener('change', function () { updateSpecificVisibility(); clearPopupGuidance(); }); }
-	if (popupField) { popupField.addEventListener('change', function () { clearPopupGuidance(); updatePopupRequirements(); }); }
-	if (destinationField) { destinationField.addEventListener('input', clearPopupGuidance); }
+	if (visibilityField) { visibilityField.addEventListener('change', updatePopupUi); }
+	if (popupField) {
+		popupField.addEventListener('change', function () {
+			guidanceMode = false;
+			removePopupNotice();
+			updatePopupUi();
+		});
+	}
 
 	form.addEventListener('submit', syncPageIdsField, true);
 
@@ -205,7 +219,11 @@
 
 	document.addEventListener('click', function (event) {
 		var close = event.target.closest('[data-gloskin-editorial-close]');
-		if (close) { guidance = null; clearPopupGuidance(); return; }
+		if (close) {
+			pendingGuidance = null;
+			resetGuidance();
+			return;
+		}
 		var toggle = event.target.closest('[data-gloskin-promo-popup-toggle]');
 		if (!toggle) { return; }
 		event.preventDefault();
