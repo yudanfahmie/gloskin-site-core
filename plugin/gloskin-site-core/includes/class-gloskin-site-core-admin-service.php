@@ -108,11 +108,7 @@ final class Gloskin_Site_Core_Admin_Service {
 		add_action( 'admin_post_' . self::DEMO_IMPORT_ACTION, array( $this, 'handle_demo_import' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_consultation_admin_assets' ), 30 );
 
-		// List-table columns for managed CPTs (item 12).
-		add_filter( 'manage_edit-' . Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE . '_columns', array( $this, 'promo_list_columns' ) );
-		add_action( 'manage_' . Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE . '_posts_custom_column', array( $this, 'promo_list_column_cell' ), 10, 2 );
-		add_filter( 'manage_edit-' . Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE . '_columns', array( $this, 'testimonial_list_columns' ) );
-		add_action( 'manage_' . Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE . '_posts_custom_column', array( $this, 'testimonial_list_column_cell' ), 10, 2 );
+		// Achievement remains owned by this general admin service.
 		add_filter( 'manage_edit-' . Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE . '_columns', array( $this, 'achievement_list_columns' ) );
 		add_action( 'manage_' . Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE . '_posts_custom_column', array( $this, 'achievement_list_column_cell' ), 10, 2 );
 	}
@@ -336,10 +332,6 @@ final class Gloskin_Site_Core_Admin_Service {
 
 	public function render_settings_page() {
 		if ( ! current_user_can( 'manage_options' ) ) { return; }
-		/* get_option()'s own $default is only ever used when the option row
-		 * is entirely absent. Missing keys are merged against those defaults
-		 * explicitly so the Settings screen reflects the real recommended
-		 * defaults rather than an unintentional blank/unchecked state. */
 		$defaults          = self::settings_defaults();
 		$settings          = array_merge( $defaults, get_option( self::SETTINGS_OPTION, $defaults ) );
 		$shortcode         = isset( $settings['form_shortcode'] ) ? $settings['form_shortcode'] : '';
@@ -427,16 +419,6 @@ final class Gloskin_Site_Core_Admin_Service {
 		<?php
 	}
 
-	/**
-	 * Goal 4/5: a separate card/form (deliberately outside the settings
-	 * <form action="options.php"> above -- HTML forms cannot nest) that
-	 * triggers the one-canonical-description consolidation and reports its
-	 * real result. Retiring the main content editor (see
-	 * maybe_simplify_product_editor()) only ever activates after this has
-	 * actually run at least once.
-	 *
-	 * @return void
-	 */
 	private function render_description_consolidation_card() {
 		if ( ! current_user_can( self::MIGRATION_CAPABILITY ) ) {
 			return;
@@ -604,15 +586,6 @@ final class Gloskin_Site_Core_Admin_Service {
 		if ( ! wp_verify_nonce( $nonce, self::META_NONCE_ACTION ) || ! current_user_can( 'edit_post', $post_id ) ) { return; }
 		$schemas = $this->save_schema();
 		if ( ! isset( $schemas[ $post->post_type ] ) ) { return; }
-		/*
-		 * Every key below is registered in Gloskin_Site_Core_Content_Service::register_meta()
-		 * with an explicit sanitize_callback. Posted values must still be run through
-		 * sanitize_meta() here -- update_post_meta() never auto-applies a meta type's
-		 * registered sanitizer on its own, that only happens for REST/meta-API writers.
-		 * This makes the sanitize-before-persist boundary explicit and visible instead
-		 * of implicit/invisible to review, even though the registered callbacks were
-		 * already a mitigating control.
-		 */
 		foreach ( $schemas[ $post->post_type ]['strings'] as $key ) {
 			$value = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : '';
 			$value = sanitize_meta( $key, $value, 'post', $post->post_type );
@@ -684,14 +657,12 @@ final class Gloskin_Site_Core_Admin_Service {
 			$count = wp_count_posts( $post_type );
 			$live  = $count && isset( $count->publish ) ? absint( $count->publish ) : 0;
 			if ( $live < $target ) {
-				/* translators: %1$s: post type key; %2$d: number of published records; %3$d: target record count. */
 				$parts[] = sprintf( __( '%1$s: %2$d/%3$d approved records published', 'gloskin-site-core' ), $post_type, $live, $target );
 			}
 		}
 		if ( ! $parts ) { return; }
 		echo '<div class="notice notice-info"><p><strong>' . esc_html__( 'Gloskin content readiness:', 'gloskin-site-core' ) . '</strong> ' . esc_html( implode( '; ', $parts ) ) . '. ' . esc_html__( 'Publish only client-approved facts; do not create placeholder medical or doctor data.', 'gloskin-site-core' ) . '</p></div>';
 	}
-
 
 	public function enqueue_migration_assets( $hook_suffix ) {
 		if ( '' === $this->migration_hook || $hook_suffix !== $this->migration_hook || ! current_user_can( self::MIGRATION_CAPABILITY ) ) { return; }
@@ -737,33 +708,6 @@ final class Gloskin_Site_Core_Admin_Service {
 		}
 	}
 
-	/**
-	 * Goal 4: audit every real Woo product and deterministically migrate any
-	 * long-description content missing from its Short Description into it --
-	 * never deleting/overwriting post_content, never duplicating a paragraph
-	 * already present. Records a real, honest summary (not a guess) for the
-	 * admin card above and for the editor-simplification gate below.
-	 *
-	 * Bug fixed: this admin-post request runs on the Kernel's is_admin()
-	 * bootstrap path, which never loads class-gloskin-site-core-woocommerce-
-	 * adapter.php (that require_once only lives on the frontend/template
-	 * bootstrap path -- see Kernel::boot()). The pure static
-	 * consolidate_description_content() helper this method depends on is
-	 * therefore explicitly required here, on this one admin-migration
-	 * execution path only -- never registering/instantiating a second Woo
-	 * adapter service, never touching Kernel's frontend composition.
-	 *
-	 * CONSOLIDATION_OPTION's completed_at is written ONLY when the audit/
-	 * migration loop genuinely executed (Woo functions present, the adapter
-	 * class/helper resolved, the product query itself succeeded). Any
-	 * failure along that path is recorded as a truthful, visible error and
-	 * leaves the prior consolidation state (and therefore the editor-
-	 * retirement gate) completely untouched -- never a silent false 0/0
-	 * "success" that could retire the main content editor on data that was
-	 * never actually migrated.
-	 *
-	 * @return void
-	 */
 	public function handle_consolidate_descriptions() {
 		if ( ! current_user_can( self::MIGRATION_CAPABILITY ) ) {
 			wp_die( esc_html__( 'Capability manage_woocommerce diperlukan.', 'gloskin-site-core' ) );
@@ -782,33 +726,19 @@ final class Gloskin_Site_Core_Admin_Service {
 			if ( ! class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' ) ) {
 				require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php';
 			}
-			if ( ! class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' )
-				|| ! method_exists( 'Gloskin_Site_Core_WooCommerce_Adapter', 'consolidate_description_content' ) ) {
+			if ( ! class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' ) || ! method_exists( 'Gloskin_Site_Core_WooCommerce_Adapter', 'consolidate_description_content' ) ) {
 				throw new RuntimeException( __( 'Helper konsolidasi deskripsi tidak tersedia.', 'gloskin-site-core' ) );
 			}
-
-			$ids = wc_get_products(
-				array(
-					'limit'  => -1,
-					'return' => 'ids',
-					'status' => array( 'publish', 'draft', 'private' ),
-					'type'   => array( 'simple', 'variable' ),
-				)
-			);
+			$ids = wc_get_products( array( 'limit' => -1, 'return' => 'ids', 'status' => array( 'publish', 'draft', 'private' ), 'type' => array( 'simple', 'variable' ) ) );
 			if ( ! is_array( $ids ) ) {
 				throw new RuntimeException( __( 'Query produk WooCommerce gagal.', 'gloskin-site-core' ) );
 			}
-
 			foreach ( $ids as $id ) {
 				$product = wc_get_product( $id );
-				if ( ! $product ) {
-					continue;
-				}
+				if ( ! $product ) { continue; }
 				$audited++;
 				$merge = Gloskin_Site_Core_WooCommerce_Adapter::consolidate_description_content( $product->get_short_description(), $product->get_description() );
-				if ( ! $merge['changed'] ) {
-					continue;
-				}
+				if ( ! $merge['changed'] ) { continue; }
 				$product->set_short_description( $merge['result'] );
 				$product->save();
 				$migrated++;
@@ -817,49 +747,20 @@ final class Gloskin_Site_Core_Admin_Service {
 		} catch ( Throwable $throwable ) {
 			$error = $throwable->getMessage();
 		}
-
 		if ( ! $executed ) {
-			update_option(
-				self::CONSOLIDATION_ERROR_OPTION,
-				array(
-					'message'  => $error,
-					'failed_at' => time(),
-				)
-			);
+			update_option( self::CONSOLIDATION_ERROR_OPTION, array( 'message' => $error, 'failed_at' => time() ) );
 			wp_safe_redirect( admin_url( 'admin.php?page=' . self::SETTINGS_SLUG . '&gloskin_consolidation=error' ) );
 			exit;
 		}
-
 		delete_option( self::CONSOLIDATION_ERROR_OPTION );
-		update_option(
-			self::CONSOLIDATION_OPTION,
-			array(
-				'audited'      => $audited,
-				'migrated'     => $migrated,
-				'completed_at' => time(),
-			)
-		);
+		update_option( self::CONSOLIDATION_OPTION, array( 'audited' => $audited, 'migrated' => $migrated, 'completed_at' => time() ) );
 		wp_safe_redirect( admin_url( 'admin.php?page=' . self::SETTINGS_SLUG . '&gloskin_consolidation=success' ) );
 		exit;
 	}
 
-	/**
-	 * True once handle_consolidate_descriptions() has actually, successfully
-	 * run. Self-heals a false-complete state left over from the pre-fix
-	 * bootstrap bug: a stored completed_at with audited=0 while WooCommerce
-	 * genuinely has products cannot be a real result (that bug always
-	 * produced exactly this shape), so it is treated as invalid and cleared
-	 * rather than trusted -- the next admin page load then reports "belum
-	 * pernah dijalankan" again, prompting a real re-run instead of silently
-	 * keeping the main editor retired on unproven data.
-	 *
-	 * @return bool
-	 */
 	private function descriptions_consolidated() {
 		$summary = get_option( self::CONSOLIDATION_OPTION, array() );
-		if ( ! is_array( $summary ) || empty( $summary['completed_at'] ) ) {
-			return false;
-		}
+		if ( ! is_array( $summary ) || empty( $summary['completed_at'] ) ) { return false; }
 		$audited = isset( $summary['audited'] ) ? (int) $summary['audited'] : 0;
 		if ( 0 === $audited && function_exists( 'wc_get_products' ) ) {
 			$has_products = (bool) wc_get_products( array( 'limit' => 1, 'return' => 'ids' ) );
@@ -871,57 +772,21 @@ final class Gloskin_Site_Core_Admin_Service {
 		return true;
 	}
 
-	/**
-	 * Goal 5: retire the main WordPress content editor on the classic Woo
-	 * Product edit screen, but only after consolidation is proven -- never
-	 * unconditionally. Woo product data (price/stock/attributes/etc.) is
-	 * untouched; this only removes the 'editor' post-type support, which
-	 * WordPress core itself uses to decide whether to render the main
-	 * content editor at all.
-	 *
-	 * @return void
-	 */
 	public function maybe_simplify_product_editor() {
-		if ( ! $this->descriptions_consolidated() ) {
-			return;
-		}
+		if ( ! $this->descriptions_consolidated() ) { return; }
 		remove_post_type_support( 'product', 'editor' );
 	}
 
-	/**
-	 * Goal 5: move the native "Product short description" (postexcerpt) box
-	 * to the top of the classic Product edit screen, immediately below the
-	 * title, and give it a clearer heading -- still WordPress's own
-	 * post_excerpt_meta_box callback, so it still only ever saves to Woo's
-	 * canonical post_excerpt. No duplicate description meta is created.
-	 *
-	 * @param string $post_type Current screen's post type.
-	 * @return void
-	 */
 	public function maybe_reprioritize_short_description_box( $post_type ) {
-		if ( 'product' !== $post_type || ! function_exists( 'remove_meta_box' ) ) {
-			return;
-		}
+		if ( 'product' !== $post_type || ! function_exists( 'remove_meta_box' ) ) { return; }
 		remove_meta_box( 'postexcerpt', 'product', 'normal' );
 		add_meta_box( 'postexcerpt', __( 'Product Description (Deskripsi Produk)', 'gloskin-site-core' ), 'post_excerpt_meta_box', 'product', 'normal', 'high' );
 	}
 
-	/* -----------------------------------------------------------------
-	 * Treatment Consultation: product-family list filter/editor field
-	 * (docs/task-treatment-consultation-commerce-discovery.md section 5.2/
-	 * 5.3). Woo product_cat is never touched; classification lives solely
-	 * in gloskin_product_family term relationships.
-	 * ----------------------------------------------------------------- */
-
-	/**
-	 * @return void
-	 */
 	public function render_product_family_filter() {
 		global $typenow;
-		if ( 'product' !== $typenow || ! taxonomy_exists( Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY ) ) {
-			return;
-		}
-		$current = isset( $_GET['gloskin_product_family'] ) ? sanitize_key( wp_unslash( $_GET['gloskin_product_family'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list-table filter, same pattern as Woo's own native product filters.
+		if ( 'product' !== $typenow || ! taxonomy_exists( Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY ) ) { return; }
+		$current = isset( $_GET['gloskin_product_family'] ) ? sanitize_key( wp_unslash( $_GET['gloskin_product_family'] ) ) : '';
 		?>
 		<select name="gloskin_product_family" id="gloskin-product-family-filter">
 			<option value=""><?php echo esc_html__( 'Jenis Produk: Semua', 'gloskin-site-core' ); ?></option>
@@ -931,64 +796,27 @@ final class Gloskin_Site_Core_Admin_Service {
 		<?php
 	}
 
-	/**
-	 * Skincare = explicit skincare term OR no family term assigned at all
-	 * (legacy/unclassified backward-compat, per section 4.1). Perawatan =
-	 * explicit treatment term only. Native list-table query lifecycle,
-	 * same tax_query extension point Woo's own filters use -- no second
-	 * product list table.
-	 *
-	 * @param WP_Query $query Current admin query.
-	 * @return void
-	 */
 	public function apply_product_family_filter( $query ) {
-		if ( ! is_admin() || ! $query instanceof WP_Query || ! $query->is_main_query() ) {
-			return;
-		}
-		if ( 'product' !== $query->get( 'post_type' ) ) {
-			return;
-		}
-		$family = isset( $_GET['gloskin_product_family'] ) ? sanitize_key( wp_unslash( $_GET['gloskin_product_family'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list-table filter.
-		if ( '' === $family || ! in_array( $family, array( 'skincare', 'treatment' ), true ) ) {
-			return;
-		}
+		if ( ! is_admin() || ! $query instanceof WP_Query || ! $query->is_main_query() ) { return; }
+		if ( 'product' !== $query->get( 'post_type' ) ) { return; }
+		$family = isset( $_GET['gloskin_product_family'] ) ? sanitize_key( wp_unslash( $_GET['gloskin_product_family'] ) ) : '';
+		if ( '' === $family || ! in_array( $family, array( 'skincare', 'treatment' ), true ) ) { return; }
 		$existing = $query->get( 'tax_query' );
 		$existing = is_array( $existing ) ? $existing : array();
 		if ( 'treatment' === $family ) {
-			$existing[] = array(
-				'taxonomy' => Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY,
-				'field'    => 'slug',
-				'terms'    => array( 'treatment' ),
-			);
+			$existing[] = array( 'taxonomy' => Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY, 'field' => 'slug', 'terms' => array( 'treatment' ) );
 		} else {
-			$existing[] = array(
-				'relation' => 'OR',
-				array( 'taxonomy' => Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY, 'field' => 'slug', 'terms' => array( 'skincare' ) ),
-				array( 'taxonomy' => Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY, 'operator' => 'NOT EXISTS' ),
-			);
+			$existing[] = array( 'relation' => 'OR', array( 'taxonomy' => Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY, 'field' => 'slug', 'terms' => array( 'skincare' ) ), array( 'taxonomy' => Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY, 'operator' => 'NOT EXISTS' ) );
 		}
-		$query->set( 'tax_query', $existing ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- one native list-table filter, mirrors Woo's own product filter pattern.
+		$query->set( 'tax_query', $existing );
 	}
 
-	/**
-	 * One friendly "Jenis Produk" field on the classic Woo Product data
-	 * panel (General tab) using Woo's own supported hook surface. Persists
-	 * through wp_set_object_terms() only -- no duplicate family meta. Inert
-	 * (and documented as such) on the newer Product Block Editor, which
-	 * does not fire this classic hook; no DOM-hack is added to compensate.
-	 *
-	 * @return void
-	 */
 	public function render_product_family_field() {
 		global $post;
-		if ( ! $post instanceof WP_Post ) {
-			return;
-		}
+		if ( ! $post instanceof WP_Post ) { return; }
 		$current = 'skincare';
 		$terms   = get_the_terms( $post->ID, Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY );
-		if ( is_array( $terms ) && ! empty( $terms ) ) {
-			$current = (string) $terms[0]->slug;
-		}
+		if ( is_array( $terms ) && ! empty( $terms ) ) { $current = (string) $terms[0]->slug; }
 		echo '<div class="options_group gloskin-admin-product-family">';
 		echo '<p class="form-field"><label>' . esc_html__( 'Jenis Produk', 'gloskin-site-core' ) . '</label>';
 		echo '<label style="margin-right:16px;display:inline-block"><input type="radio" name="gloskin_product_family" value="skincare" ' . checked( $current, 'skincare', false ) . ' /> ' . esc_html__( 'Skincare', 'gloskin-site-core' ) . '</label>';
@@ -996,91 +824,39 @@ final class Gloskin_Site_Core_Admin_Service {
 		echo '</p></div>';
 	}
 
-	/**
-	 * @param int $post_id Product ID (Woo already verified nonce/capability
-	 *                     before firing woocommerce_process_product_meta).
-	 * @return void
-	 */
 	public function save_product_family_field( $post_id ) {
-		if ( ! taxonomy_exists( Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY ) || ! current_user_can( 'edit_product', $post_id ) ) {
-			return;
-		}
+		if ( ! taxonomy_exists( Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY ) || ! current_user_can( 'edit_product', $post_id ) ) { return; }
 		$family = isset( $_POST['gloskin_product_family'] ) ? sanitize_key( wp_unslash( $_POST['gloskin_product_family'] ) ) : 'skincare';
-		if ( ! in_array( $family, array( 'skincare', 'treatment' ), true ) ) {
-			$family = 'skincare';
-		}
+		if ( ! in_array( $family, array( 'skincare', 'treatment' ), true ) ) { $family = 'skincare'; }
 		wp_set_object_terms( $post_id, $family, Gloskin_Site_Core_Content_Service::FAMILY_TAXONOMY, false );
 	}
 
-	/* -----------------------------------------------------------------
-	 * Treatment Consultation workspace: one submenu, four internal tabs
-	 * (section 5.4).
-	 * ----------------------------------------------------------------- */
-
-	/**
-	 * @return void
-	 */
 	public function register_consultation_menu() {
-		if ( ! post_type_exists( 'product' ) ) {
-			return;
-		}
-		add_submenu_page(
-			'edit.php?post_type=product',
-			__( 'Konsultasi Perawatan', 'gloskin-site-core' ),
-			__( 'Konsultasi Perawatan', 'gloskin-site-core' ),
-			self::CONSULTATION_CAPABILITY,
-			self::CONSULTATION_SLUG,
-			array( $this, 'render_consultation_workspace' )
-		);
+		if ( ! post_type_exists( 'product' ) ) { return; }
+		add_submenu_page( 'edit.php?post_type=product', __( 'Konsultasi Perawatan', 'gloskin-site-core' ), __( 'Konsultasi Perawatan', 'gloskin-site-core' ), self::CONSULTATION_CAPABILITY, self::CONSULTATION_SLUG, array( $this, 'render_consultation_workspace' ) );
 	}
 
-	/**
-	 * @return void
-	 */
 	public function render_consultation_workspace() {
-		if ( ! current_user_can( self::CONSULTATION_CAPABILITY ) ) {
-			wp_die( esc_html__( 'Anda tidak memiliki izin untuk membuka Konsultasi Perawatan.', 'gloskin-site-core' ) );
-		}
-		$tabs = array(
-			'ringkasan' => __( 'Ringkasan', 'gloskin-site-core' ),
-			'keluhan'   => __( 'Keluhan', 'gloskin-site-core' ),
-			'pertanyaan' => __( 'Pertanyaan', 'gloskin-site-core' ),
-			'pemetaan'  => __( 'Pemetaan Produk', 'gloskin-site-core' ),
-		);
-		$active = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'ringkasan'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab selection.
-		if ( ! isset( $tabs[ $active ] ) ) {
-			$active = 'ringkasan';
-		}
+		if ( ! current_user_can( self::CONSULTATION_CAPABILITY ) ) { wp_die( esc_html__( 'Anda tidak memiliki izin untuk membuka Konsultasi Perawatan.', 'gloskin-site-core' ) ); }
+		$tabs = array( 'ringkasan' => __( 'Ringkasan', 'gloskin-site-core' ), 'keluhan' => __( 'Keluhan', 'gloskin-site-core' ), 'pertanyaan' => __( 'Pertanyaan', 'gloskin-site-core' ), 'pemetaan' => __( 'Pemetaan Produk', 'gloskin-site-core' ) );
+		$active = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'ringkasan';
+		if ( ! isset( $tabs[ $active ] ) ) { $active = 'ringkasan'; }
 		$base_url = admin_url( 'edit.php?post_type=product&page=' . self::CONSULTATION_SLUG );
 		?>
 		<div class="wrap" data-gloskin-consultation-workspace>
 			<h1><?php echo esc_html__( 'Konsultasi Perawatan', 'gloskin-site-core' ); ?></h1>
-			<?php if ( isset( $_GET['gloskin_notice'] ) ) : ?>
-				<div class="notice notice-success is-dismissible"><p><?php echo esc_html( $this->consultation_notice_message( sanitize_key( wp_unslash( $_GET['gloskin_notice'] ) ) ) ); ?></p></div>
-			<?php endif; ?>
-			<?php if ( isset( $_GET['gloskin_error'] ) ) : ?>
-				<div class="notice notice-error is-dismissible"><p><?php echo esc_html( sanitize_text_field( wp_unslash( $_GET['gloskin_error'] ) ) ); ?></p></div>
-			<?php endif; ?>
+			<?php if ( isset( $_GET['gloskin_notice'] ) ) : ?><div class="notice notice-success is-dismissible"><p><?php echo esc_html( $this->consultation_notice_message( sanitize_key( wp_unslash( $_GET['gloskin_notice'] ) ) ) ); ?></p></div><?php endif; ?>
+			<?php if ( isset( $_GET['gloskin_error'] ) ) : ?><div class="notice notice-error is-dismissible"><p><?php echo esc_html( sanitize_text_field( wp_unslash( $_GET['gloskin_error'] ) ) ); ?></p></div><?php endif; ?>
 			<nav class="gloskin-consultation-tabs" aria-label="<?php echo esc_attr__( 'Bagian Konsultasi Perawatan', 'gloskin-site-core' ); ?>">
-				<?php foreach ( $tabs as $key => $label ) : ?>
-					<a href="<?php echo esc_url( add_query_arg( 'tab', $key, $base_url ) ); ?>" class="gloskin-consultation-tabs__item<?php echo $active === $key ? ' is-active' : ''; ?>"<?php echo $active === $key ? ' aria-current="page"' : ''; ?>><?php echo esc_html( $label ); ?></a>
-				<?php endforeach; ?>
+				<?php foreach ( $tabs as $key => $label ) : ?><a href="<?php echo esc_url( add_query_arg( 'tab', $key, $base_url ) ); ?>" class="gloskin-consultation-tabs__item<?php echo $active === $key ? ' is-active' : ''; ?>"<?php echo $active === $key ? ' aria-current="page"' : ''; ?>><?php echo esc_html( $label ); ?></a><?php endforeach; ?>
 			</nav>
 			<div class="gloskin-admin-consultation-panel">
 				<?php
 				switch ( $active ) {
-					case 'keluhan':
-						$this->render_consultation_keluhan();
-						break;
-					case 'pertanyaan':
-						$this->render_consultation_pertanyaan();
-						break;
-					case 'pemetaan':
-						$this->render_consultation_pemetaan();
-						break;
-					default:
-						$this->render_consultation_ringkasan();
-						break;
+					case 'keluhan': $this->render_consultation_keluhan(); break;
+					case 'pertanyaan': $this->render_consultation_pertanyaan(); break;
+					case 'pemetaan': $this->render_consultation_pemetaan(); break;
+					default: $this->render_consultation_ringkasan(); break;
 				}
 				?>
 			</div>
@@ -1088,25 +864,11 @@ final class Gloskin_Site_Core_Admin_Service {
 		<?php
 	}
 
-	/**
-	 * @param string $key Notice key.
-	 * @return string
-	 */
 	private function consultation_notice_message( $key ) {
-		$messages = array(
-			'concern-saved'   => __( 'Keluhan disimpan.', 'gloskin-site-core' ),
-			'concern-deleted' => __( 'Keluhan dihapus.', 'gloskin-site-core' ),
-			'mapping-saved'   => __( 'Pemetaan produk disimpan.', 'gloskin-site-core' ),
-			'demo-imported'   => __( 'Data demo konsultasi berhasil diimpor.', 'gloskin-site-core' ),
-		);
+		$messages = array( 'concern-saved' => __( 'Keluhan disimpan.', 'gloskin-site-core' ), 'concern-deleted' => __( 'Keluhan dihapus.', 'gloskin-site-core' ), 'mapping-saved' => __( 'Pemetaan produk disimpan.', 'gloskin-site-core' ), 'demo-imported' => __( 'Data demo konsultasi berhasil diimpor.', 'gloskin-site-core' ) );
 		return isset( $messages[ $key ] ) ? $messages[ $key ] : '';
 	}
 
-	/**
-	 * Admin "is this consultation ready?" view (section 5.4 Ringkasan).
-	 *
-	 * @return void
-	 */
 	private function render_consultation_ringkasan() {
 		$paths = get_terms( array( 'taxonomy' => Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY, 'hide_empty' => false ) );
 		$paths = is_wp_error( $paths ) ? array() : $paths;
@@ -1114,25 +876,15 @@ final class Gloskin_Site_Core_Admin_Service {
 		$concern_count = is_wp_error( $concern_count ) ? 0 : (int) $concern_count;
 		$question_counts = wp_count_posts( Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE );
 		$published_questions = $question_counts && isset( $question_counts->publish ) ? (int) $question_counts->publish : 0;
-
-		$treatment_count = 0;
-		$unmapped_count  = 0;
-		if ( ! class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' ) ) {
-			require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php';
-		}
+		$treatment_count = 0; $unmapped_count = 0;
+		if ( ! class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' ) ) { require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php'; }
 		if ( class_exists( 'Gloskin_Site_Core_WooCommerce_Adapter' ) && function_exists( 'wc_get_products' ) ) {
 			$adapter = new Gloskin_Site_Core_WooCommerce_Adapter();
 			$treatment_products = $adapter->treatment_products_with_concerns();
 			$treatment_count = count( $treatment_products );
-			foreach ( $treatment_products as $item ) {
-				if ( empty( $item['concern_ids'] ) ) {
-					$unmapped_count++;
-				}
-			}
+			foreach ( $treatment_products as $item ) { if ( empty( $item['concern_ids'] ) ) { $unmapped_count++; } }
 		}
-
 		$orphan_answers = $this->count_orphan_answer_mappings();
-
 		echo '<div class="gloskin-consultation-metrics">';
 		$this->render_readiness_card( __( 'Jalur Konsultasi', 'gloskin-site-core' ), count( $paths ) . ' / ' . Gloskin_Site_Core_Content_Service::PATH_MIN_VALID, count( $paths ) < Gloskin_Site_Core_Content_Service::PATH_MIN_VALID );
 		$this->render_readiness_card( __( 'Produk Perawatan', 'gloskin-site-core' ), (string) $treatment_count, 0 === $treatment_count );
@@ -1141,470 +893,154 @@ final class Gloskin_Site_Core_Admin_Service {
 		$this->render_readiness_card( __( 'Produk Belum Dipetakan', 'gloskin-site-core' ), (string) $unmapped_count, $unmapped_count > 0 );
 		$this->render_readiness_card( __( 'Jawaban Tidak Valid/Orphan', 'gloskin-site-core' ), (string) $orphan_answers, $orphan_answers > 0 );
 		echo '</div>';
-
 		if ( count( $paths ) ) {
 			echo '<h2 class="gloskin-consultation-section-title">' . esc_html__( 'Jalur Konsultasi', 'gloskin-site-core' ) . '</h2><div class="gloskin-consultation-path-cards">';
-			foreach ( $paths as $path ) {
-				echo '<div class="gloskin-consultation-path-card"><h3>' . esc_html( $path->name ) . '</h3><p>' . esc_html( $path->slug ) . '</p></div>';
-			}
+			foreach ( $paths as $path ) { echo '<div class="gloskin-consultation-path-card"><h3>' . esc_html( $path->name ) . '</h3><p>' . esc_html( $path->slug ) . '</p></div>'; }
 			echo '</div>';
 		}
-
-		echo '<h2 class="gloskin-consultation-section-title">' . esc_html__( 'Data & Import', 'gloskin-site-core' ) . '</h2>';
-		echo '<div class="gloskin-consultation-import-cards">';
-		$this->render_demo_import_card();
-		$this->render_sample_import_card();
-		echo '</div>';
+		echo '<h2 class="gloskin-consultation-section-title">' . esc_html__( 'Data & Import', 'gloskin-site-core' ) . '</h2><div class="gloskin-consultation-import-cards">';
+		$this->render_demo_import_card(); $this->render_sample_import_card(); echo '</div>';
 	}
 
-	/**
-	 * @param string $label Card label.
-	 * @param string $value Card value.
-	 * @param bool   $warn Whether to visually flag this as needing attention.
-	 * @return void
-	 */
 	private function render_readiness_card( $label, $value, $warn, $informational = false ) {
 		$class = 'gloskin-consultation-metric-card' . ( $informational ? ' is-info' : ( $warn ? ' is-warning' : ' is-ready' ) );
 		echo '<div class="' . esc_attr( $class ) . '"><p class="gloskin-consultation-metric-card__label">' . esc_html( $label ) . '</p><p class="gloskin-consultation-metric-card__value">' . esc_html( $value ) . '</p></div>';
 	}
 
-	/**
-	 * Counts published gloskin_question answer options whose concern_id no
-	 * longer resolves to a real gloskin_concern term -- raw meta is read
-	 * directly (not through the write-time sanitizer) because a concern can
-	 * be deleted after a question was saved, which the sanitizer never sees.
-	 *
-	 * @return int
-	 */
 	private function count_orphan_answer_mappings() {
 		$questions = get_posts( array( 'post_type' => Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE, 'post_status' => array( 'publish', 'draft' ), 'posts_per_page' => -1, 'fields' => 'ids' ) );
 		$orphans = 0;
 		foreach ( $questions as $question_id ) {
 			$answers = get_post_meta( $question_id, Gloskin_Site_Core_Content_Service::ANSWER_META_KEY, true );
-			if ( ! is_array( $answers ) ) {
-				continue;
-			}
+			if ( ! is_array( $answers ) ) { continue; }
 			foreach ( $answers as $answer ) {
 				$concern_id = isset( $answer['concern_id'] ) ? absint( $answer['concern_id'] ) : 0;
-				if ( ! $concern_id || ! term_exists( $concern_id, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY ) ) {
-					$orphans++;
-				}
+				if ( ! $concern_id || ! term_exists( $concern_id, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY ) ) { $orphans++; }
 			}
 		}
 		return $orphans;
 	}
 
-	/**
-	 * Demo import card (Data & Import): an explicit privileged admin
-	 * workflow, not an environment gate -- capability + nonce + the
-	 * explicit synthetic-data confirmation checkbox below are the entire
-	 * access control. Once consumed, no re-import control is offered; the
-	 * owner is instead handed straight to the two real destinations the
-	 * imported data feeds.
-	 *
-	 * @return void
-	 */
 	private function render_demo_import_card() {
 		require_once __DIR__ . '/class-gloskin-site-core-consultation-demo-importer.php';
 		$state = Gloskin_Site_Core_Consultation_Demo_Importer::state();
-		echo '<div class="gloskin-consultation-import-card">';
-		echo '<h3>' . esc_html__( 'Data Demo Konsultasi', 'gloskin-site-core' ) . '</h3>';
+		echo '<div class="gloskin-consultation-import-card"><h3>' . esc_html__( 'Data Demo Konsultasi', 'gloskin-site-core' ) . '</h3>';
 		if ( 'consumed' === $state['status'] ) {
 			echo '<p class="gloskin-consultation-import-card__status is-done">' . esc_html__( '✓ Import selesai', 'gloskin-site-core' ) . '</p>';
-			printf(
-				'<p>%s</p>',
-				esc_html(
-					sprintf(
-						/* translators: %1$d: paths; %2$d: concerns; %3$d: questions; %4$d: products. */
-						__( '%1$d jalur, %2$d+ keluhan, %3$d+ pertanyaan, %4$d produk perawatan', 'gloskin-site-core' ),
-						(int) $state['paths'],
-						(int) $state['concerns'],
-						(int) $state['questions'],
-						(int) $state['products']
-					)
-				)
-			);
+			printf( '<p>%s</p>', esc_html( sprintf( __( '%1$d jalur, %2$d+ keluhan, %3$d+ pertanyaan, %4$d produk perawatan', 'gloskin-site-core' ), (int) $state['paths'], (int) $state['concerns'], (int) $state['questions'], (int) $state['products'] ) ) );
 			$mapping_url = add_query_arg( array( 'tab' => 'pemetaan' ), admin_url( 'edit.php?post_type=product&page=' . self::CONSULTATION_SLUG ) );
-			echo '<p class="gloskin-consultation-import-card__links">';
-			echo '<a class="gloskin-consultation-action gloskin-consultation-action--secondary" href="' . esc_url( $mapping_url ) . '">' . esc_html__( 'Pemetaan Produk', 'gloskin-site-core' ) . '</a> ';
-			echo '<a class="gloskin-consultation-action gloskin-consultation-action--secondary" href="' . esc_url( admin_url( 'edit.php?post_type=product&gloskin_product_family=treatment' ) ) . '">' . esc_html__( 'Semua Produk Perawatan', 'gloskin-site-core' ) . '</a>';
-			echo '</p>';
-			echo '</div>';
+			echo '<p class="gloskin-consultation-import-card__links"><a class="gloskin-consultation-action gloskin-consultation-action--secondary" href="' . esc_url( $mapping_url ) . '">' . esc_html__( 'Pemetaan Produk', 'gloskin-site-core' ) . '</a> <a class="gloskin-consultation-action gloskin-consultation-action--secondary" href="' . esc_url( admin_url( 'edit.php?post_type=product&gloskin_product_family=treatment' ) ) . '">' . esc_html__( 'Semua Produk Perawatan', 'gloskin-site-core' ) . '</a></p></div>';
 			return;
 		}
-		if ( ! empty( $state['last_error'] ) ) {
-			echo '<div class="notice notice-error inline"><p>' . esc_html( $state['last_error'] ) . '</p></div>';
-		}
+		if ( ! empty( $state['last_error'] ) ) { echo '<div class="notice notice-error inline"><p>' . esc_html( $state['last_error'] ) . '</p></div>'; }
 		?>
 		<p><?php echo esc_html__( 'Impor 4 jalur konsultasi, 10+ keluhan, 13+ pertanyaan, dan 8 produk perawatan sintetis.', 'gloskin-site-core' ); ?></p>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-			<?php wp_nonce_field( self::DEMO_IMPORT_NONCE ); ?>
-			<input type="hidden" name="action" value="<?php echo esc_attr( self::DEMO_IMPORT_ACTION ); ?>" />
-			<p class="gloskin-consultation-confirm-field">
-				<label>
-					<input type="checkbox" name="confirm_demo_import" value="1" required />
-					<?php echo esc_html__( 'Saya memahami bahwa data demo sintetis akan dibuat pada situs ini.', 'gloskin-site-core' ); ?>
-				</label>
-			</p>
+			<?php wp_nonce_field( self::DEMO_IMPORT_NONCE ); ?><input type="hidden" name="action" value="<?php echo esc_attr( self::DEMO_IMPORT_ACTION ); ?>" />
+			<p class="gloskin-consultation-confirm-field"><label><input type="checkbox" name="confirm_demo_import" value="1" required /> <?php echo esc_html__( 'Saya memahami bahwa data demo sintetis akan dibuat pada situs ini.', 'gloskin-site-core' ); ?></label></p>
 			<button type="submit" class="gloskin-consultation-action gloskin-consultation-action--primary"><?php echo esc_html( 'pending' === $state['status'] && $state['processed'] > 0 ? __( 'Lanjutkan Import Demo', 'gloskin-site-core' ) : __( 'Import Data Demo', 'gloskin-site-core' ) ); ?></button>
 		</form>
-		<?php
-		echo '</div>';
+		<?php echo '</div>';
 	}
 
-	/**
-	 * Sample Product Catalog card (Data & Import): a thin discoverability
-	 * shortcut only -- reads the existing
-	 * Gloskin_Site_Core_Sample_Product_Importer::get_summary() and links to
-	 * its existing dedicated screen/workflow. No second importer, no
-	 * duplicated import logic.
-	 *
-	 * @return void
-	 */
 	private function render_sample_import_card() {
-		echo '<div class="gloskin-consultation-import-card">';
-		echo '<h3>' . esc_html__( 'Sample Product Catalog', 'gloskin-site-core' ) . '</h3>';
-		if ( ! current_user_can( self::MIGRATION_CAPABILITY ) || '' === $this->plugin_file ) {
-			echo '<p>' . esc_html__( 'Import sample product tidak tersedia untuk akun ini.', 'gloskin-site-core' ) . '</p></div>';
-			return;
-		}
-		$summary   = $this->sample_importer()->get_summary();
-		$detection = isset( $summary['detection'] ) ? (string) $summary['detection'] : 'none';
-		if ( 'consumed' === $detection ) {
-			echo '<p class="gloskin-consultation-import-card__status is-done">' . esc_html__( 'Import selesai', 'gloskin-site-core' ) . '</p>';
-		} elseif ( in_array( $detection, array( 'pending', 'failed', 'running', 'verifying' ), true ) ) {
-			$processed = isset( $summary['processed_products'] ) ? (int) $summary['processed_products'] : 0;
-			$expected  = isset( $summary['expected_products'] ) ? (int) $summary['expected_products'] : 13;
-			echo '<p class="gloskin-consultation-import-card__status">' . esc_html(
-				sprintf(
-					/* translators: %1$s: status key (pending/failed/running/verifying); %2$d: processed products; %3$d: expected products. */
-					__( 'Status: %1$s (%2$d/%3$d produk)', 'gloskin-site-core' ),
-					$detection,
-					$processed,
-					$expected
-				)
-			) . '</p>';
-			echo '<p><a class="gloskin-consultation-action gloskin-consultation-action--primary" href="' . esc_url( admin_url( 'admin.php?page=' . self::MIGRATION_SLUG ) ) . '">' . esc_html__( 'Buka Import Sample Products', 'gloskin-site-core' ) . '</a></p>';
-		} else {
-			echo '<p>' . esc_html__( 'Bundle sample product tidak tersedia.', 'gloskin-site-core' ) . '</p>';
-		}
+		echo '<div class="gloskin-consultation-import-card"><h3>' . esc_html__( 'Sample Product Catalog', 'gloskin-site-core' ) . '</h3>';
+		if ( ! current_user_can( self::MIGRATION_CAPABILITY ) || '' === $this->plugin_file ) { echo '<p>' . esc_html__( 'Import sample product tidak tersedia untuk akun ini.', 'gloskin-site-core' ) . '</p></div>'; return; }
+		$summary = $this->sample_importer()->get_summary(); $detection = isset( $summary['detection'] ) ? (string) $summary['detection'] : 'none';
+		if ( 'consumed' === $detection ) { echo '<p class="gloskin-consultation-import-card__status is-done">' . esc_html__( 'Import selesai', 'gloskin-site-core' ) . '</p>'; }
+		elseif ( in_array( $detection, array( 'pending', 'failed', 'running', 'verifying' ), true ) ) {
+			$processed = isset( $summary['processed_products'] ) ? (int) $summary['processed_products'] : 0; $expected = isset( $summary['expected_products'] ) ? (int) $summary['expected_products'] : 13;
+			echo '<p class="gloskin-consultation-import-card__status">' . esc_html( sprintf( __( 'Status: %1$s (%2$d/%3$d produk)', 'gloskin-site-core' ), $detection, $processed, $expected ) ) . '</p><p><a class="gloskin-consultation-action gloskin-consultation-action--primary" href="' . esc_url( admin_url( 'admin.php?page=' . self::MIGRATION_SLUG ) ) . '">' . esc_html__( 'Buka Import Sample Products', 'gloskin-site-core' ) . '</a></p>';
+		} else { echo '<p>' . esc_html__( 'Bundle sample product tidak tersedia.', 'gloskin-site-core' ) . '</p>'; }
 		echo '</div>';
 	}
 
-	/**
-	 * Friendly gloskin_concern term CRUD (section 5.4 Keluhan). Deletion is
-	 * blocked while the concern is still referenced by a product mapping or
-	 * a question answer -- never silently removed.
-	 *
-	 * @return void
-	 */
 	private function render_consultation_keluhan() {
 		$concerns = get_terms( array( 'taxonomy' => Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY, 'hide_empty' => false ) );
 		$concerns = is_wp_error( $concerns ) ? array() : $concerns;
 		?>
 		<h2><?php echo esc_html__( 'Tambah Keluhan', 'gloskin-site-core' ); ?></h2>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-			<?php wp_nonce_field( self::CONCERN_NONCE ); ?>
-			<input type="hidden" name="action" value="<?php echo esc_attr( self::CONCERN_ACTION ); ?>" />
+			<?php wp_nonce_field( self::CONCERN_NONCE ); ?><input type="hidden" name="action" value="<?php echo esc_attr( self::CONCERN_ACTION ); ?>" />
 			<input type="text" name="concern_name" placeholder="<?php echo esc_attr__( 'Nama keluhan, mis. Jerawat Aktif', 'gloskin-site-core' ); ?>" required />
 			<button type="submit" class="gloskin-consultation-action gloskin-consultation-action--secondary"><?php echo esc_html__( 'Tambah', 'gloskin-site-core' ); ?></button>
 		</form>
-		<table class="widefat striped gloskin-consultation-concerns-table">
-			<thead><tr>
-				<th><?php echo esc_html__( 'Nama', 'gloskin-site-core' ); ?></th>
-				<th><?php echo esc_html__( 'Slug', 'gloskin-site-core' ); ?></th>
-				<th><?php echo esc_html__( 'Produk Terpetakan', 'gloskin-site-core' ); ?></th>
-				<th><?php echo esc_html__( 'Referensi Jawaban', 'gloskin-site-core' ); ?></th>
-				<th></th>
-			</tr></thead>
-			<tbody>
-			<?php foreach ( $concerns as $concern ) :
-				$mapped = (int) $concern->count;
-				$answer_refs = $this->count_answer_references( $concern->term_id );
-				?>
-				<tr>
-					<td>
-						<form class="gloskin-consultation-inline-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-							<?php wp_nonce_field( self::CONCERN_NONCE ); ?>
-							<input type="hidden" name="action" value="<?php echo esc_attr( self::CONCERN_ACTION ); ?>" />
-							<input type="hidden" name="concern_id" value="<?php echo esc_attr( (string) $concern->term_id ); ?>" />
-							<input type="text" name="concern_name" value="<?php echo esc_attr( $concern->name ); ?>" />
-							<button type="submit" class="gloskin-consultation-action gloskin-consultation-action--primary gloskin-consultation-action--small"><?php echo esc_html__( 'Simpan', 'gloskin-site-core' ); ?></button>
-						</form>
-					</td>
-					<td><?php echo esc_html( $concern->slug ); ?></td>
-					<td><?php echo esc_html( (string) $mapped ); ?></td>
-					<td><?php echo esc_html( (string) $answer_refs ); ?></td>
-					<td>
-						<?php if ( 0 === $mapped && 0 === $answer_refs ) : ?>
-							<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=' . self::CONCERN_DELETE_ACTION . '&concern_id=' . $concern->term_id ), self::CONCERN_DELETE_NONCE ) ); ?>" class="gloskin-consultation-action gloskin-consultation-action--danger gloskin-consultation-action--small" onclick="return confirm('<?php echo esc_js( __( 'Hapus keluhan ini?', 'gloskin-site-core' ) ); ?>')"><?php echo esc_html__( 'Hapus', 'gloskin-site-core' ); ?></a>
-						<?php else : ?>
-							<span class="description"><?php echo esc_html__( 'Masih direferensikan', 'gloskin-site-core' ); ?></span>
-						<?php endif; ?>
-					</td>
-				</tr>
-			<?php endforeach; ?>
-			<?php if ( ! $concerns ) : ?><tr><td colspan="5"><?php echo esc_html__( 'Belum ada keluhan.', 'gloskin-site-core' ); ?></td></tr><?php endif; ?>
-			</tbody>
-		</table>
+		<table class="widefat striped gloskin-consultation-concerns-table"><thead><tr><th><?php echo esc_html__( 'Nama', 'gloskin-site-core' ); ?></th><th><?php echo esc_html__( 'Slug', 'gloskin-site-core' ); ?></th><th><?php echo esc_html__( 'Produk Terpetakan', 'gloskin-site-core' ); ?></th><th><?php echo esc_html__( 'Referensi Jawaban', 'gloskin-site-core' ); ?></th><th></th></tr></thead><tbody>
+		<?php foreach ( $concerns as $concern ) : $mapped = (int) $concern->count; $answer_refs = $this->count_answer_references( $concern->term_id ); ?>
+		<tr><td><form class="gloskin-consultation-inline-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><?php wp_nonce_field( self::CONCERN_NONCE ); ?><input type="hidden" name="action" value="<?php echo esc_attr( self::CONCERN_ACTION ); ?>" /><input type="hidden" name="concern_id" value="<?php echo esc_attr( (string) $concern->term_id ); ?>" /><input type="text" name="concern_name" value="<?php echo esc_attr( $concern->name ); ?>" /><button type="submit" class="gloskin-consultation-action gloskin-consultation-action--primary gloskin-consultation-action--small"><?php echo esc_html__( 'Simpan', 'gloskin-site-core' ); ?></button></form></td><td><?php echo esc_html( $concern->slug ); ?></td><td><?php echo esc_html( (string) $mapped ); ?></td><td><?php echo esc_html( (string) $answer_refs ); ?></td><td><?php if ( 0 === $mapped && 0 === $answer_refs ) : ?><a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=' . self::CONCERN_DELETE_ACTION . '&concern_id=' . $concern->term_id ), self::CONCERN_DELETE_NONCE ) ); ?>" class="gloskin-consultation-action gloskin-consultation-action--danger gloskin-consultation-action--small" onclick="return confirm('<?php echo esc_js( __( 'Hapus keluhan ini?', 'gloskin-site-core' ) ); ?>')"><?php echo esc_html__( 'Hapus', 'gloskin-site-core' ); ?></a><?php else : ?><span class="description"><?php echo esc_html__( 'Masih direferensikan', 'gloskin-site-core' ); ?></span><?php endif; ?></td></tr>
+		<?php endforeach; ?><?php if ( ! $concerns ) : ?><tr><td colspan="5"><?php echo esc_html__( 'Belum ada keluhan.', 'gloskin-site-core' ); ?></td></tr><?php endif; ?>
+		</tbody></table>
 		<?php
 	}
 
-	/**
-	 * @param int $concern_id Concern term ID.
-	 * @return int
-	 */
 	private function count_answer_references( $concern_id ) {
-		$questions = get_posts( array( 'post_type' => Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE, 'post_status' => array( 'publish', 'draft' ), 'posts_per_page' => -1, 'fields' => 'ids' ) );
-		$count = 0;
-		foreach ( $questions as $question_id ) {
-			$answers = get_post_meta( $question_id, Gloskin_Site_Core_Content_Service::ANSWER_META_KEY, true );
-			if ( ! is_array( $answers ) ) {
-				continue;
-			}
-			foreach ( $answers as $answer ) {
-				if ( isset( $answer['concern_id'] ) && absint( $answer['concern_id'] ) === absint( $concern_id ) ) {
-					$count++;
-				}
-			}
-		}
+		$questions = get_posts( array( 'post_type' => Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE, 'post_status' => array( 'publish', 'draft' ), 'posts_per_page' => -1, 'fields' => 'ids' ) ); $count = 0;
+		foreach ( $questions as $question_id ) { $answers = get_post_meta( $question_id, Gloskin_Site_Core_Content_Service::ANSWER_META_KEY, true ); if ( ! is_array( $answers ) ) { continue; } foreach ( $answers as $answer ) { if ( isset( $answer['concern_id'] ) && absint( $answer['concern_id'] ) === absint( $concern_id ) ) { $count++; } } }
 		return $count;
 	}
 
-	/**
-	 * @return void
-	 */
 	public function handle_save_concern() {
-		if ( ! current_user_can( self::CONSULTATION_CAPABILITY ) ) {
-			wp_die( esc_html__( 'Capability manage_woocommerce diperlukan.', 'gloskin-site-core' ) );
-		}
+		if ( ! current_user_can( self::CONSULTATION_CAPABILITY ) ) { wp_die( esc_html__( 'Capability manage_woocommerce diperlukan.', 'gloskin-site-core' ) ); }
 		check_admin_referer( self::CONCERN_NONCE );
-		$name = isset( $_POST['concern_name'] ) ? sanitize_text_field( wp_unslash( $_POST['concern_name'] ) ) : '';
-		$concern_id = isset( $_POST['concern_id'] ) ? absint( $_POST['concern_id'] ) : 0;
-		if ( '' !== $name ) {
-			if ( $concern_id && term_exists( $concern_id, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY ) ) {
-				wp_update_term( $concern_id, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY, array( 'name' => $name ) );
-			} else {
-				wp_insert_term( $name, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY );
-			}
-		}
+		$name = isset( $_POST['concern_name'] ) ? sanitize_text_field( wp_unslash( $_POST['concern_name'] ) ) : ''; $concern_id = isset( $_POST['concern_id'] ) ? absint( $_POST['concern_id'] ) : 0;
+		if ( '' !== $name ) { if ( $concern_id && term_exists( $concern_id, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY ) ) { wp_update_term( $concern_id, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY, array( 'name' => $name ) ); } else { wp_insert_term( $name, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY ); } }
 		$this->redirect_to_consultation_tab( 'keluhan', 'concern-saved' );
 	}
 
-	/**
-	 * @return void
-	 */
 	public function handle_delete_concern() {
-		if ( ! current_user_can( self::CONSULTATION_CAPABILITY ) ) {
-			wp_die( esc_html__( 'Capability manage_woocommerce diperlukan.', 'gloskin-site-core' ) );
-		}
+		if ( ! current_user_can( self::CONSULTATION_CAPABILITY ) ) { wp_die( esc_html__( 'Capability manage_woocommerce diperlukan.', 'gloskin-site-core' ) ); }
 		check_admin_referer( self::CONCERN_DELETE_NONCE );
-		$concern_id = isset( $_GET['concern_id'] ) ? absint( $_GET['concern_id'] ) : 0;
-		$term = $concern_id ? get_term( $concern_id, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY ) : null;
-		if ( $term instanceof WP_Term && 0 === (int) $term->count && 0 === $this->count_answer_references( $concern_id ) ) {
-			wp_delete_term( $concern_id, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY );
-		}
+		$concern_id = isset( $_GET['concern_id'] ) ? absint( $_GET['concern_id'] ) : 0; $term = $concern_id ? get_term( $concern_id, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY ) : null;
+		if ( $term instanceof WP_Term && 0 === (int) $term->count && 0 === $this->count_answer_references( $concern_id ) ) { wp_delete_term( $concern_id, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY ); }
 		$this->redirect_to_consultation_tab( 'keluhan', 'concern-deleted' );
 	}
 
-	/**
-	 * Compact gloskin_question readiness list (section 5.4 Pertanyaan).
-	 * Links to the native hidden CPT edit screen -- no second rich editor.
-	 *
-	 * @return void
-	 */
 	private function render_consultation_pertanyaan() {
 		$questions = get_posts( array( 'post_type' => Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE, 'post_status' => array( 'publish', 'draft' ), 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
 		?>
 		<p><a class="gloskin-consultation-action gloskin-consultation-action--primary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . Gloskin_Site_Core_Content_Service::QUESTION_POST_TYPE ) ); ?>"><?php echo esc_html__( 'Tambah Pertanyaan', 'gloskin-site-core' ); ?></a></p>
-		<table class="widefat striped gloskin-consultation-questions-table">
-			<thead><tr>
-				<th><?php echo esc_html__( 'Pertanyaan', 'gloskin-site-core' ); ?></th>
-				<th><?php echo esc_html__( 'Status', 'gloskin-site-core' ); ?></th>
-				<th><?php echo esc_html__( 'Jalur', 'gloskin-site-core' ); ?></th>
-				<th><?php echo esc_html__( 'Jumlah Jawaban', 'gloskin-site-core' ); ?></th>
-				<th><?php echo esc_html__( 'Kesiapan', 'gloskin-site-core' ); ?></th>
-				<th></th>
-			</tr></thead>
-			<tbody>
-			<?php foreach ( $questions as $question ) :
-				$answers = get_post_meta( $question->ID, Gloskin_Site_Core_Content_Service::ANSWER_META_KEY, true );
-				$answers = is_array( $answers ) ? $answers : array();
-				$paths = get_the_terms( $question->ID, Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY );
-				$path_names = is_array( $paths ) ? implode( ', ', wp_list_pluck( $paths, 'name' ) ) : '';
-				$ready = 'publish' === $question->post_status && count( $answers ) > 0;
-				?>
-				<tr>
-					<td><a href="<?php echo esc_url( get_edit_post_link( $question->ID ) ); ?>"><?php echo esc_html( get_the_title( $question ) ); ?></a></td>
-					<td><?php echo esc_html( 'publish' === $question->post_status ? __( 'Aktif', 'gloskin-site-core' ) : __( 'Draft', 'gloskin-site-core' ) ); ?></td>
-					<td><?php echo esc_html( $path_names ); ?></td>
-					<td><?php echo esc_html( (string) count( $answers ) ); ?></td>
-					<td><?php echo $ready ? '✅' : '⚠️'; ?></td>
-					<td><a class="gloskin-consultation-action gloskin-consultation-action--quiet gloskin-consultation-action--small" href="<?php echo esc_url( get_edit_post_link( $question->ID ) ); ?>"><?php echo esc_html__( 'Edit', 'gloskin-site-core' ); ?></a></td>
-				</tr>
-			<?php endforeach; ?>
-			<?php if ( ! $questions ) : ?><tr><td colspan="6"><?php echo esc_html__( 'Belum ada pertanyaan.', 'gloskin-site-core' ); ?></td></tr><?php endif; ?>
-			</tbody>
-		</table>
+		<table class="widefat striped gloskin-consultation-questions-table"><thead><tr><th><?php echo esc_html__( 'Pertanyaan', 'gloskin-site-core' ); ?></th><th><?php echo esc_html__( 'Status', 'gloskin-site-core' ); ?></th><th><?php echo esc_html__( 'Jalur', 'gloskin-site-core' ); ?></th><th><?php echo esc_html__( 'Jumlah Jawaban', 'gloskin-site-core' ); ?></th><th><?php echo esc_html__( 'Kesiapan', 'gloskin-site-core' ); ?></th><th></th></tr></thead><tbody>
+		<?php foreach ( $questions as $question ) : $answers = get_post_meta( $question->ID, Gloskin_Site_Core_Content_Service::ANSWER_META_KEY, true ); $answers = is_array( $answers ) ? $answers : array(); $paths = get_the_terms( $question->ID, Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY ); $path_names = is_array( $paths ) ? implode( ', ', wp_list_pluck( $paths, 'name' ) ) : ''; $ready = 'publish' === $question->post_status && count( $answers ) > 0; ?>
+		<tr><td><a href="<?php echo esc_url( get_edit_post_link( $question->ID ) ); ?>"><?php echo esc_html( get_the_title( $question ) ); ?></a></td><td><?php echo esc_html( 'publish' === $question->post_status ? __( 'Aktif', 'gloskin-site-core' ) : __( 'Draft', 'gloskin-site-core' ) ); ?></td><td><?php echo esc_html( $path_names ); ?></td><td><?php echo esc_html( (string) count( $answers ) ); ?></td><td><?php echo $ready ? '✅' : '⚠️'; ?></td><td><a class="gloskin-consultation-action gloskin-consultation-action--quiet gloskin-consultation-action--small" href="<?php echo esc_url( get_edit_post_link( $question->ID ) ); ?>"><?php echo esc_html__( 'Edit', 'gloskin-site-core' ); ?></a></td></tr>
+		<?php endforeach; ?><?php if ( ! $questions ) : ?><tr><td colspan="6"><?php echo esc_html__( 'Belum ada pertanyaan.', 'gloskin-site-core' ); ?></td></tr><?php endif; ?></tbody></table>
 		<?php
 	}
 
-	/**
-	 * Concern <-> Treatment Product mapping UI (section 8). The visible
-	 * checkbox matrix IS the real, canonical, keyboard/no-JS-accessible
-	 * form -- gloskin-ui1-admin.js only progressively re-skins it into a
-	 * drag-and-drop bucket view; nothing about what gets submitted
-	 * changes. Canonical persistence is native taxonomy relationships
-	 * only, via wp_set_object_terms() in handle_save_mapping() below --
-	 * no second mapping store.
-	 *
-	 * @return void
-	 */
 	private function render_consultation_pemetaan() {
-		$concerns = get_terms( array( 'taxonomy' => Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY, 'hide_empty' => false ) );
-		$concerns = is_wp_error( $concerns ) ? array() : $concerns;
-		require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php';
-		$adapter = new Gloskin_Site_Core_WooCommerce_Adapter();
-		$products = $adapter->treatment_products_with_concerns();
-		if ( ! $concerns || ! $products ) {
-			echo '<p>' . esc_html__( 'Tambahkan minimal satu keluhan dan satu produk perawatan (Jenis Produk: Perawatan) sebelum memetakan.', 'gloskin-site-core' ) . '</p>';
-			return;
-		}
+		$concerns = get_terms( array( 'taxonomy' => Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY, 'hide_empty' => false ) ); $concerns = is_wp_error( $concerns ) ? array() : $concerns;
+		require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php'; $adapter = new Gloskin_Site_Core_WooCommerce_Adapter(); $products = $adapter->treatment_products_with_concerns();
+		if ( ! $concerns || ! $products ) { echo '<p>' . esc_html__( 'Tambahkan minimal satu keluhan dan satu produk perawatan (Jenis Produk: Perawatan) sebelum memetakan.', 'gloskin-site-core' ) . '</p>'; return; }
 		?>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" data-gloskin-mapping-form>
-			<?php wp_nonce_field( self::MAPPING_NONCE ); ?>
-			<input type="hidden" name="action" value="<?php echo esc_attr( self::MAPPING_ACTION ); ?>" />
-			<p>
-				<input type="search" data-gloskin-mapping-search placeholder="<?php echo esc_attr__( 'Cari produk perawatan…', 'gloskin-site-core' ); ?>" />
-			</p>
-			<div class="gloskin-admin-mapping-grid">
-				<?php foreach ( $concerns as $concern ) : ?>
-					<fieldset class="gloskin-admin-mapping-bucket" data-gloskin-mapping-bucket>
-						<legend><?php echo esc_html( $concern->name ); ?></legend>
-						<?php foreach ( $products as $product ) :
-							$checked = in_array( (int) $concern->term_id, (array) $product['concern_ids'], true );
-							?>
-							<label class="gloskin-admin-mapping-item" data-gloskin-mapping-item data-product-name="<?php echo esc_attr( strtolower( $product['name'] ) ); ?>">
-								<input type="checkbox" name="mapping[<?php echo esc_attr( (string) $concern->term_id ); ?>][]" value="<?php echo esc_attr( (string) $product['id'] ); ?>" <?php checked( $checked ); ?> />
-								<?php echo esc_html( $product['name'] ); ?>
-							</label>
-						<?php endforeach; ?>
-					</fieldset>
-				<?php endforeach; ?>
-			</div>
-			<p><button type="submit" class="gloskin-consultation-action gloskin-consultation-action--primary"><?php echo esc_html__( 'Simpan Pemetaan', 'gloskin-site-core' ); ?></button></p>
-		</form>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" data-gloskin-mapping-form><?php wp_nonce_field( self::MAPPING_NONCE ); ?><input type="hidden" name="action" value="<?php echo esc_attr( self::MAPPING_ACTION ); ?>" /><p><input type="search" data-gloskin-mapping-search placeholder="<?php echo esc_attr__( 'Cari produk perawatan…', 'gloskin-site-core' ); ?>" /></p><div class="gloskin-admin-mapping-grid">
+		<?php foreach ( $concerns as $concern ) : ?><fieldset class="gloskin-admin-mapping-bucket" data-gloskin-mapping-bucket><legend><?php echo esc_html( $concern->name ); ?></legend><?php foreach ( $products as $product ) : $checked = in_array( (int) $concern->term_id, (array) $product['concern_ids'], true ); ?><label class="gloskin-admin-mapping-item" data-gloskin-mapping-item data-product-name="<?php echo esc_attr( strtolower( $product['name'] ) ); ?>"><input type="checkbox" name="mapping[<?php echo esc_attr( (string) $concern->term_id ); ?>][]" value="<?php echo esc_attr( (string) $product['id'] ); ?>" <?php checked( $checked ); ?> /><?php echo esc_html( $product['name'] ); ?></label><?php endforeach; ?></fieldset><?php endforeach; ?>
+		</div><p><button type="submit" class="gloskin-consultation-action gloskin-consultation-action--primary"><?php echo esc_html__( 'Simpan Pemetaan', 'gloskin-site-core' ); ?></button></p></form>
 		<?php
 	}
 
-	/**
-	 * Canonical persistence remains product taxonomy relationships only
-	 * (section 8.1) -- inverts the submitted concern-bucket matrix into
-	 * one wp_set_object_terms() call per product, replacing that
-	 * product's full gloskin_concern set. Every treatment product is
-	 * considered (including ones absent from the matrix entirely, which
-	 * correctly become fully unmapped) so a product unchecked from every
-	 * bucket is genuinely cleared, not left stale.
-	 *
-	 * @return void
-	 */
 	public function handle_save_mapping() {
-		if ( ! current_user_can( self::CONSULTATION_CAPABILITY ) ) {
-			wp_die( esc_html__( 'Capability manage_woocommerce diperlukan.', 'gloskin-site-core' ) );
-		}
-		check_admin_referer( self::MAPPING_NONCE );
-
-		require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php';
-		$adapter = new Gloskin_Site_Core_WooCommerce_Adapter();
-		$treatment_products = wp_list_pluck( $adapter->treatment_products_with_concerns(), 'id' );
-
-		$raw_mapping = isset( $_POST['mapping'] ) ? (array) wp_unslash( $_POST['mapping'] ) : array();
-		$by_product = array();
-		foreach ( $raw_mapping as $concern_id => $product_ids ) {
-			$concern_id = absint( $concern_id );
-			if ( ! $concern_id || ! term_exists( $concern_id, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY ) ) {
-				continue;
-			}
-			foreach ( (array) $product_ids as $product_id ) {
-				$product_id = absint( $product_id );
-				/* Accept only real Woo product IDs explicitly classified as
-				 * Treatment Products (section 8.2's save-time boundary). */
-				if ( ! in_array( $product_id, $treatment_products, true ) ) {
-					continue;
-				}
-				if ( ! isset( $by_product[ $product_id ] ) ) {
-					$by_product[ $product_id ] = array();
-				}
-				$by_product[ $product_id ][] = $concern_id;
-			}
-		}
-
-		foreach ( $treatment_products as $product_id ) {
-			$concern_ids = isset( $by_product[ $product_id ] ) ? array_values( array_unique( $by_product[ $product_id ] ) ) : array();
-			wp_set_object_terms( $product_id, $concern_ids, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY, false );
-		}
-
+		if ( ! current_user_can( self::CONSULTATION_CAPABILITY ) ) { wp_die( esc_html__( 'Capability manage_woocommerce diperlukan.', 'gloskin-site-core' ) ); }
+		check_admin_referer( self::MAPPING_NONCE ); require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php'; $adapter = new Gloskin_Site_Core_WooCommerce_Adapter(); $treatment_products = wp_list_pluck( $adapter->treatment_products_with_concerns(), 'id' );
+		$raw_mapping = isset( $_POST['mapping'] ) ? (array) wp_unslash( $_POST['mapping'] ) : array(); $by_product = array();
+		foreach ( $raw_mapping as $concern_id => $product_ids ) { $concern_id = absint( $concern_id ); if ( ! $concern_id || ! term_exists( $concern_id, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY ) ) { continue; } foreach ( (array) $product_ids as $product_id ) { $product_id = absint( $product_id ); if ( ! in_array( $product_id, $treatment_products, true ) ) { continue; } if ( ! isset( $by_product[ $product_id ] ) ) { $by_product[ $product_id ] = array(); } $by_product[ $product_id ][] = $concern_id; } }
+		foreach ( $treatment_products as $product_id ) { $concern_ids = isset( $by_product[ $product_id ] ) ? array_values( array_unique( $by_product[ $product_id ] ) ) : array(); wp_set_object_terms( $product_id, $concern_ids, Gloskin_Site_Core_Content_Service::CONCERN_TAXONOMY, false ); }
 		$this->redirect_to_consultation_tab( 'pemetaan', 'mapping-saved' );
 	}
 
-	/**
-	 * Capability/nonce-protected, one-shot demo import trigger. Explicit
-	 * privileged confirmation replaces the former environment gate: the
-	 * server independently re-verifies confirm_demo_import=1 was actually
-	 * posted (never trusting the HTML checkbox's `required` attribute
-	 * alone) before the importer is allowed to create any synthetic data.
-	 * All idempotency/collision/verification logic still lives in the
-	 * importer itself.
-	 *
-	 * @return void
-	 */
 	public function handle_demo_import() {
-		if ( ! current_user_can( self::CONSULTATION_CAPABILITY ) ) {
-			wp_die( esc_html__( 'Capability manage_woocommerce diperlukan.', 'gloskin-site-core' ) );
-		}
-		check_admin_referer( self::DEMO_IMPORT_NONCE );
-		require_once __DIR__ . '/class-gloskin-site-core-consultation-demo-importer.php';
-		$confirmed = isset( $_POST['confirm_demo_import'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['confirm_demo_import'] ) );
-		try {
-			Gloskin_Site_Core_Consultation_Demo_Importer::run( $confirmed );
-			$this->redirect_to_consultation_tab( 'ringkasan', 'demo-imported' );
-		} catch ( Throwable $error ) {
-			wp_safe_redirect( add_query_arg( array( 'tab' => 'ringkasan', 'gloskin_error' => rawurlencode( $error->getMessage() ) ), admin_url( 'edit.php?post_type=product&page=' . self::CONSULTATION_SLUG ) ) );
-			exit;
-		}
+		if ( ! current_user_can( self::CONSULTATION_CAPABILITY ) ) { wp_die( esc_html__( 'Capability manage_woocommerce diperlukan.', 'gloskin-site-core' ) ); }
+		check_admin_referer( self::DEMO_IMPORT_NONCE ); require_once __DIR__ . '/class-gloskin-site-core-consultation-demo-importer.php'; $confirmed = isset( $_POST['confirm_demo_import'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['confirm_demo_import'] ) );
+		try { Gloskin_Site_Core_Consultation_Demo_Importer::run( $confirmed ); $this->redirect_to_consultation_tab( 'ringkasan', 'demo-imported' ); } catch ( Throwable $error ) { wp_safe_redirect( add_query_arg( array( 'tab' => 'ringkasan', 'gloskin_error' => rawurlencode( $error->getMessage() ) ), admin_url( 'edit.php?post_type=product&page=' . self::CONSULTATION_SLUG ) ) ); exit; }
 	}
 
-	/**
-	 * @param string $tab Tab key.
-	 * @param string $notice Notice key.
-	 * @return void
-	 */
-	private function redirect_to_consultation_tab( $tab, $notice ) {
-		wp_safe_redirect( add_query_arg( array( 'tab' => $tab, 'gloskin_notice' => $notice ), admin_url( 'edit.php?post_type=product&page=' . self::CONSULTATION_SLUG ) ) );
-		exit;
-	}
+	private function redirect_to_consultation_tab( $tab, $notice ) { wp_safe_redirect( add_query_arg( array( 'tab' => $tab, 'gloskin_notice' => $notice ), admin_url( 'edit.php?post_type=product&page=' . self::CONSULTATION_SLUG ) ) ); exit; }
 
-	/**
-	 * Small DnD progressive-enhancement script for the mapping matrix,
-	 * enqueued only on the Konsultasi Perawatan screen itself.
-	 *
-	 * @param string $hook_suffix Admin screen hook.
-	 * @return void
-	 */
 	public function enqueue_consultation_admin_assets( $hook_suffix ) {
-		if ( false === strpos( (string) $hook_suffix, self::CONSULTATION_SLUG ) ) {
-			return;
-		}
-		if ( is_object( $this->assets ) && method_exists( $this->assets, 'enqueue_consultation_admin' ) ) {
-			$this->assets->enqueue_consultation_admin();
-		}
+		if ( false === strpos( (string) $hook_suffix, self::CONSULTATION_SLUG ) ) { return; }
+		if ( is_object( $this->assets ) && method_exists( $this->assets, 'enqueue_consultation_admin' ) ) { $this->assets->enqueue_consultation_admin(); }
 	}
 
 	private function sample_importer() {
-		if ( null === $this->sample_importer ) {
-			require_once __DIR__ . '/class-gloskin-site-core-sample-product-importer.php';
-			$this->sample_importer = new Gloskin_Site_Core_Sample_Product_Importer( $this->plugin_file );
-		}
+		if ( null === $this->sample_importer ) { require_once __DIR__ . '/class-gloskin-site-core-sample-product-importer.php'; $this->sample_importer = new Gloskin_Site_Core_Sample_Product_Importer( $this->plugin_file ); }
 		return $this->sample_importer;
 	}
 
@@ -1617,87 +1053,6 @@ final class Gloskin_Site_Core_Admin_Service {
 		$selected = get_post_meta( $post->ID, $key, true ); $selected = is_array( $selected ) ? array_map( 'absint', $selected ) : array();
 		$choices = get_posts( array( 'post_type' => $target_type, 'post_status' => array( 'publish', 'draft', 'private' ), 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
 		echo '<p><label for="' . esc_attr( $key ) . '"><strong>' . esc_html( $label ) . '</strong></label></p><select class="widefat" multiple size="8" id="' . esc_attr( $key ) . '" name="' . esc_attr( $key ) . '[]">'; foreach ( $choices as $choice ) { echo '<option value="' . esc_attr( (string) $choice->ID ) . '" ' . selected( in_array( (int) $choice->ID, $selected, true ), true, false ) . '>' . esc_html( get_the_title( $choice ) ) . '</option>'; } echo '</select>';
-	}
-
-	// -------------------------------------------------------------------------
-	// List-table columns — Promo (item 12)
-	// -------------------------------------------------------------------------
-
-	/** @param array<string,string> $columns @return array<string,string> */
-	public function promo_list_columns( $columns ) {
-		$new = array();
-		foreach ( $columns as $key => $label ) {
-			$new[ $key ] = $label;
-			if ( 'title' === $key ) {
-				$new['gloskin_promo_active']     = __( 'Active', 'gloskin-site-core' );
-				$new['gloskin_promo_dates']      = __( 'Date range', 'gloskin-site-core' );
-				$new['gloskin_promo_order']      = __( 'Order', 'gloskin-site-core' );
-				$new['gloskin_promo_is_demo']    = __( 'Demo', 'gloskin-site-core' );
-			}
-		}
-		return $new;
-	}
-
-	/** @return void */
-	public function promo_list_column_cell( $column, $post_id ) {
-		switch ( $column ) {
-			case 'gloskin_promo_active':
-				echo get_post_meta( $post_id, 'gloskin_promo_active', true ) ? '✔' : '—';
-				break;
-			case 'gloskin_promo_dates':
-				$start = (string) get_post_meta( $post_id, 'gloskin_promo_start_date', true );
-				$end   = (string) get_post_meta( $post_id, 'gloskin_promo_end_date', true );
-				echo esc_html( ( $start ?: '∞' ) . ' → ' . ( $end ?: '∞' ) );
-				break;
-			case 'gloskin_promo_order':
-				$order = (string) get_post_meta( $post_id, 'gloskin_promo_order', true );
-				echo esc_html( '' !== $order ? $order : '—' );
-				break;
-			case 'gloskin_promo_is_demo':
-				$identity = get_post_meta( $post_id, '_gloskin_demo_identity', true );
-				echo $identity ? '✔' : '—';
-				break;
-		}
-	}
-
-	// -------------------------------------------------------------------------
-	// List-table columns — Testimonial (item 12)
-	// -------------------------------------------------------------------------
-
-	/** @param array<string,string> $columns @return array<string,string> */
-	public function testimonial_list_columns( $columns ) {
-		$new = array();
-		foreach ( $columns as $key => $label ) {
-			$new[ $key ] = $label;
-			if ( 'title' === $key ) {
-				$new['gloskin_testimonial_attribution'] = __( 'Attribution', 'gloskin-site-core' );
-				$new['gloskin_testimonial_active']      = __( 'Active', 'gloskin-site-core' );
-				$new['gloskin_testimonial_order']       = __( 'Order', 'gloskin-site-core' );
-				$new['gloskin_testimonial_is_demo']     = __( 'Demo', 'gloskin-site-core' );
-			}
-		}
-		return $new;
-	}
-
-	/** @return void */
-	public function testimonial_list_column_cell( $column, $post_id ) {
-		switch ( $column ) {
-			case 'gloskin_testimonial_attribution':
-				$attr = (string) get_post_meta( $post_id, 'gloskin_testimonial_attribution', true );
-				echo esc_html( $attr ?: '—' );
-				break;
-			case 'gloskin_testimonial_active':
-				echo get_post_meta( $post_id, 'gloskin_testimonial_active', true ) ? '✔' : '—';
-				break;
-			case 'gloskin_testimonial_order':
-				$order = (string) get_post_meta( $post_id, 'gloskin_testimonial_order', true );
-				echo esc_html( '' !== $order ? $order : '—' );
-				break;
-			case 'gloskin_testimonial_is_demo':
-				$identity = get_post_meta( $post_id, '_gloskin_demo_identity', true );
-				echo $identity ? '✔' : '—';
-				break;
-		}
 	}
 
 	// -------------------------------------------------------------------------
