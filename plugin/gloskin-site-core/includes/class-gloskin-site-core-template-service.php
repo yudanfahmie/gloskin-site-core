@@ -638,13 +638,11 @@ final class Gloskin_Site_Core_Template_Service {
 	}
 
 	/**
-	 * Up to 3 curated published treatments for the Home page.
-	 * Explicitly featured treatments (gloskin_treatment_feature_on_home = '1') are
-	 * sorted by post_title for determinism. Up to 3 featured (meta-flagged)
-	 * cards are placed first; the remaining slots (up to 6 total) are filled
-	 * with other published treatments ordered by title, excluding the featured
-	 * ones. If no treatments are featured the 3 most-recently-published are
-	 * used as the primary set and filled to 6 the same way.
+	 * All published informational Treatments for the Home page.
+	 * Treatments explicitly flagged with gloskin_treatment_feature_on_home = '1'
+	 * are ordered first; the feature flag only prioritizes ordering and never
+	 * limits eligibility or display count. Featured and remaining published
+	 * Treatments are each sorted by title for deterministic output.
 	 *
 	 * @return array<int,array<string,mixed>>
 	 */
