@@ -121,6 +121,8 @@ pointer-events:none}
 .gloskin-promo-modal__nav{
 width:36px;
 height:36px;
+font-size:0;
+line-height:0;
 pointer-events:auto}
 .gloskin-promo-modal__nav::before{
 content:"";
