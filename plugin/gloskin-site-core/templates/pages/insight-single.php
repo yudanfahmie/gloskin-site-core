@@ -5,6 +5,9 @@ if ( ! $gloskin_post ) {
 	gloskin_ui1_render_empty_state( 'insight', __( 'Artikel tidak tersedia', 'gloskin-site-core' ), __( 'Artikel ini belum dapat ditampilkan.', 'gloskin-site-core' ), __( 'Kembali ke Insight', 'gloskin-site-core' ), home_url( '/insights/' ) );
 	return;
 }
+if ( post_type_supports( $gloskin_post->post_type, 'comments' ) && comments_open( $gloskin_post->ID ) && get_option( 'thread_comments' ) ) {
+	wp_enqueue_script( 'comment-reply' );
+}
 ?>
 <article class="gloskin-ui1-insight-single">
 	<header class="gloskin-ui1-insight-single__header">
