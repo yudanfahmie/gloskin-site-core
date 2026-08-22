@@ -112,6 +112,7 @@ final class Gloskin_Site_Core_Admin_Service {
 		// Promo/Testimonial list-table ownership transferred to EditorialManager.
 		add_filter( 'manage_edit-' . Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE . '_columns', array( $this, 'achievement_list_columns' ) );
 		add_action( 'manage_' . Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE . '_posts_custom_column', array( $this, 'achievement_list_column_cell' ), 10, 2 );
+		add_filter( 'posts_clauses', array( $this, 'order_achievement_list' ), 31, 2 );
 	}
 
 	public function register_settings() {
@@ -1594,19 +1595,48 @@ final class Gloskin_Site_Core_Admin_Service {
 		foreach ( $columns as $key => $label ) {
 			$new[ $key ] = $label;
 			if ( 'title' === $key ) {
+				$new['gloskin_achievement_thumbnail']   = __( 'Thumbnail', 'gloskin-site-core' );
 				$new['gloskin_achievement_issuer_year'] = __( 'Issuer / Year', 'gloskin-site-core' );
-				$new['gloskin_achievement_feature']     = __( 'Feature Home', 'gloskin-site-core' );
 				$new['gloskin_achievement_active']      = __( 'Active', 'gloskin-site-core' );
+				$new['gloskin_achievement_feature']     = __( 'Feature Home', 'gloskin-site-core' );
 				$new['gloskin_achievement_order']       = __( 'Order', 'gloskin-site-core' );
-				$new['gloskin_achievement_is_demo']     = __( 'Demo', 'gloskin-site-core' );
 			}
 		}
 		return $new;
 	}
 
+	/**
+	 * Keep the native Achievement list in the same explicit order semantics
+	 * used by TemplateService: positive order first, blank/zero last, then ID.
+	 * Explicit user-selected list sorting remains untouched.
+	 *
+	 * @param array<string,string> $clauses SQL clauses.
+	 * @param WP_Query             $query Main admin query.
+	 * @return array<string,string>
+	 */
+	public function order_achievement_list( $clauses, $query ) {
+		if ( ! is_admin() || ! $query instanceof WP_Query || ! $query->is_main_query() ) {
+			return $clauses;
+		}
+		if ( Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE !== (string) $query->get( 'post_type' ) || isset( $_GET['orderby'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only native list preference.
+			return $clauses;
+		}
+		$profile = Gloskin_Site_Core_Content_Service::editorial_profile( Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE );
+		$key     = isset( $profile['order_meta'] ) ? (string) $profile['order_meta'] : 'gloskin_achievement_order';
+		global $wpdb;
+		$alias = 'gloskin_achievement_order_meta';
+		$clauses['join'] .= $wpdb->prepare( " LEFT JOIN {$wpdb->postmeta} AS {$alias} ON ({$wpdb->posts}.ID = {$alias}.post_id AND {$alias}.meta_key = %s)", $key ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table/alias names are fixed application identifiers.
+		$clauses['orderby'] = "CASE WHEN {$alias}.meta_value IS NULL OR {$alias}.meta_value = '' OR CAST({$alias}.meta_value AS UNSIGNED) = 0 THEN 1 ELSE 0 END ASC, CAST({$alias}.meta_value AS UNSIGNED) ASC, {$wpdb->posts}.ID ASC";
+		return $clauses;
+	}
+
 	/** @return void */
 	public function achievement_list_column_cell( $column, $post_id ) {
 		switch ( $column ) {
+			case 'gloskin_achievement_thumbnail':
+				$image = get_the_post_thumbnail( $post_id, array( 64, 64 ), array( 'style' => 'width:48px;height:48px;object-fit:contain;', 'alt' => '' ) );
+				echo $image ? wp_kses_post( $image ) : '<span aria-hidden="true">—</span>';
+				break;
 			case 'gloskin_achievement_issuer_year':
 				$issuer = (string) get_post_meta( $post_id, 'gloskin_achievement_issuer', true );
 				$year   = (string) get_post_meta( $post_id, 'gloskin_achievement_year', true );
@@ -1620,11 +1650,7 @@ final class Gloskin_Site_Core_Admin_Service {
 				break;
 			case 'gloskin_achievement_order':
 				$order = (string) get_post_meta( $post_id, 'gloskin_achievement_order', true );
-				echo esc_html( '' !== $order ? $order : '—' );
-				break;
-			case 'gloskin_achievement_is_demo':
-				$identity = get_post_meta( $post_id, '_gloskin_demo_identity', true );
-				echo $identity ? '✔' : '—';
+				echo esc_html( '' !== $order && (int) $order > 0 ? $order : '—' );
 				break;
 		}
 	}
