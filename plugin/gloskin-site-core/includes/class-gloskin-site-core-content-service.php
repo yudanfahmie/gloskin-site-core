@@ -238,9 +238,9 @@ final class Gloskin_Site_Core_Content_Service {
 	}
 
 	/**
-	 * Canonical display-state schema for editor-managed frontend collections.
-	 * CRUD remains with the existing admin owners; this only declares the
-	 * factual WordPress fields that determine eligibility/order.
+	 * Canonical display-state/schema profile for editor-managed collections.
+	 * CRUD remains with existing owners; this declares factual eligibility and,
+	 * for Promo only, the non-destructive production framing contract.
 	 *
 	 * @param string $post_type Managed editorial CPT.
 	 * @return array<string,mixed>
@@ -254,6 +254,12 @@ final class Gloskin_Site_Core_Content_Service {
 				'allowed_types'    => array( 'limited', 'regular' ),
 				'home_meta'        => '',
 				'required_content' => '',
+				'requires_image'   => false,
+				'crop_enabled'     => true,
+				'focus_x_meta'     => 'gloskin_promo_focus_x',
+				'focus_y_meta'     => 'gloskin_promo_focus_y',
+				'crop_width'       => 1648,
+				'crop_height'      => 928,
 			),
 			self::TESTIMONIAL_POST_TYPE => array(
 				'active_meta'      => 'gloskin_testimonial_active',
@@ -262,6 +268,10 @@ final class Gloskin_Site_Core_Content_Service {
 				'allowed_types'    => array(),
 				'home_meta'        => '',
 				'required_content' => 'post_excerpt',
+				'requires_image'   => false,
+				'crop_enabled'     => false,
+				'focus_x_meta'     => '',
+				'focus_y_meta'     => '',
 			),
 			self::ACHIEVEMENT_POST_TYPE => array(
 				'active_meta'      => 'gloskin_achievement_active',
@@ -270,6 +280,10 @@ final class Gloskin_Site_Core_Content_Service {
 				'allowed_types'    => array(),
 				'home_meta'        => 'gloskin_achievement_feature_on_home',
 				'required_content' => '',
+				'requires_image'   => true,
+				'crop_enabled'     => false,
+				'focus_x_meta'     => '',
+				'focus_y_meta'     => '',
 			),
 		);
 		return isset( $profiles[ $post_type ] ) ? $profiles[ $post_type ] : array();
@@ -313,6 +327,8 @@ final class Gloskin_Site_Core_Content_Service {
 		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_type', 'promo_type' );
 		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_active', 'text' );
 		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_order', 'text' );
+		$this->register_percent_meta( self::PROMO_POST_TYPE, 'gloskin_promo_focus_x' );
+		$this->register_percent_meta( self::PROMO_POST_TYPE, 'gloskin_promo_focus_y' );
 
 		$this->register_string_meta( self::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_attribution', 'text' );
 		$this->register_string_meta( self::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_subtitle', 'text' );
@@ -379,6 +395,22 @@ final class Gloskin_Site_Core_Content_Service {
 			'sanitize_callback' => function ( $value ) use ( $sanitizer ) { return $this->sanitize_string( $value, $sanitizer ); },
 			'auth_callback' => array( $this, 'authorize_meta' ),
 		) );
+	}
+
+	private function register_percent_meta( $post_type, $meta_key ) {
+		register_post_meta( $post_type, $meta_key, array(
+			'type'              => 'number',
+			'single'            => true,
+			'default'           => 50,
+			'show_in_rest'      => array( 'schema' => array( 'type' => 'number', 'minimum' => 0, 'maximum' => 100, 'default' => 50 ) ),
+			'sanitize_callback' => array( $this, 'sanitize_percent' ),
+			'auth_callback'     => array( $this, 'authorize_meta' ),
+		) );
+	}
+
+	public function sanitize_percent( $value ) {
+		$value = is_numeric( $value ) ? (float) $value : 50.0;
+		return max( 0.0, min( 100.0, $value ) );
 	}
 
 	private function register_post_id_list_meta( $post_type, $meta_key, $target_post_type ) {
