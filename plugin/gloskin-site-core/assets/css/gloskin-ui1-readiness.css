@@ -5,7 +5,7 @@
 .gloskin-ui1-breadcrumb-slot{border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 58%,transparent);background:color-mix(in srgb,var(--gloskin-bg) 94%,var(--gloskin-surface))}
 .gloskin-ui1-breadcrumb{overflow-x:auto;padding-block:10px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .gloskin-ui1-breadcrumb::-webkit-scrollbar{display:none}
-.gloskin-ui1-breadcrumb ol,.gloskin-ui1-breadcrumb .rank-math-breadcrumb p{display:flex;align-items:center;gap:8px;min-width:max-content;margin:0;padding:0;list-style:none;color:var(--gloskin-muted);font-size:.82rem;line-height:1.35;white-space:nowrap}
+.gloskin-ui1-breadcrumb ol,.gloskin-ui1-breadcrumb .rank-math-breadcrumb p{display:flex;align-items:center;gap:8px;min-width:max-content;margin:0;padding:0;list-style:none;color:var(--gloskin-muted);font-family:var(--gloskin-font-ui);font-size:.82rem;line-height:1.35;white-space:nowrap}
 .gloskin-ui1-breadcrumb li{display:inline-flex;align-items:center;gap:8px}
 .gloskin-ui1-breadcrumb a{color:var(--gloskin-muted);text-decoration:none}
 .gloskin-ui1-breadcrumb a:hover{color:var(--gloskin-accent-readable)}
@@ -28,7 +28,7 @@
 .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation::-webkit-scrollbar{display:none}
 .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation ul{display:flex;align-items:flex-end;min-width:max-content;gap:2px;margin:0;padding:0;list-style:none}
 .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation li{flex:0 0 auto;margin:0;border:0}
-.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a{position:relative;display:block;padding:9px 11px 11px;border-radius:0;background:transparent;color:var(--gloskin-muted);font-weight:700;text-decoration:none;white-space:nowrap;transition:color 140ms ease}
+.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a{position:relative;display:block;padding:9px 11px 11px;border-radius:0;background:transparent;color:var(--gloskin-muted);font-family:var(--gloskin-font-ui);font-weight:700;text-decoration:none;white-space:nowrap;transition:color 140ms ease}
 .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a:hover{background:transparent;color:var(--gloskin-accent-readable)}
 .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation .is-active>a,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a[aria-current="page"]{background:transparent;color:var(--gloskin-accent-readable)}
 .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation .is-active>a::before,.woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a[aria-current="page"]::before{position:absolute;right:11px;bottom:-1px;left:11px;height:2px;border-radius:999px;background:var(--gloskin-accent);content:""}
@@ -39,6 +39,7 @@
 .woocommerce-account .woocommerce-MyAccount-content h2,.woocommerce-account .woocommerce-MyAccount-content h3{font-family:var(--gloskin-font-heading);font-weight:600}
 .woocommerce-account .woocommerce table.shop_table{border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);border-collapse:separate;overflow:hidden;background:var(--gloskin-bg)}
 .woocommerce-account .woocommerce table.shop_table th,.woocommerce-account .woocommerce table.shop_table td{padding:13px 14px;border-color:var(--gloskin-border);vertical-align:middle}
+.woocommerce-account .woocommerce table.shop_table th{font-family:var(--gloskin-font-ui);font-weight:700}
 .woocommerce-account .woocommerce form .form-row input.input-text,.woocommerce-account .woocommerce form .form-row textarea,.woocommerce-account .woocommerce form select{min-height:var(--gloskin-field-height);border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-field-bg);color:var(--gloskin-text)}
 .woocommerce-account .woocommerce fieldset{margin:26px 0 0;padding:20px;border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md)}
 .woocommerce-account .woocommerce .button{border-radius:var(--gloskin-action-radius)}
@@ -73,7 +74,7 @@
 .gloskin-ui1-auth-overlay__head h2{margin:0;font-family:var(--gloskin-font-heading);font-size:clamp(1.65rem,3vw,2.25rem);font-weight:600}.gloskin-ui1-auth-overlay__head p{grid-column:1;margin:0;color:var(--gloskin-muted)}
 .gloskin-ui1-auth-overlay__head>.gloskin-ui1-sheet__close{grid-column:2;grid-row:1}
 .gloskin-ui1-auth-switch{display:flex;gap:6px;margin:0 0 22px;padding:4px;border-radius:var(--gloskin-action-radius);background:var(--gloskin-surface)}
-.gloskin-ui1-auth-switch button{flex:1;min-height:38px;border:0;border-radius:var(--gloskin-action-radius);background:transparent;color:var(--gloskin-muted);font:inherit;font-weight:700;cursor:pointer}.gloskin-ui1-auth-switch button.is-active{background:var(--gloskin-bg);color:var(--gloskin-text);box-shadow:0 1px 5px color-mix(in srgb,var(--gloskin-text) 8%,transparent)}
+.gloskin-ui1-auth-switch button{flex:1;min-height:38px;border:0;border-radius:var(--gloskin-action-radius);background:transparent;color:var(--gloskin-muted);font:inherit;font-family:var(--gloskin-font-ui);font-weight:700;cursor:pointer}.gloskin-ui1-auth-switch button.is-active{background:var(--gloskin-bg);color:var(--gloskin-text);box-shadow:0 1px 5px color-mix(in srgb,var(--gloskin-text) 8%,transparent)}
 .gloskin-ui1-auth-overlay #customer_login{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}.gloskin-ui1-auth-overlay #customer_login .col-1,.gloskin-ui1-auth-overlay #customer_login .col-2{float:none;width:auto;margin:0}
 .gloskin-ui1-auth-overlay [data-gloskin-auth-forms].is-enhanced #customer_login{display:block}.gloskin-ui1-auth-overlay [data-gloskin-auth-forms].is-enhanced #customer_login .col-1,.gloskin-ui1-auth-overlay [data-gloskin-auth-forms].is-enhanced #customer_login .col-2{width:100%}
 .gloskin-ui1-auth-overlay .woocommerce-form{margin:0;padding:0;border:0;background:transparent}.gloskin-ui1-auth-overlay .woocommerce-form h2,.gloskin-ui1-auth-overlay #customer_login h2{font-family:var(--gloskin-font-heading);font-size:1.3rem}
@@ -119,7 +120,7 @@
 	border-radius:9px;
 	background:transparent;
 	color:var(--gloskin-muted);
-	font-family:var(--gloskin-font-body);
+	font-family:var(--gloskin-font-ui);
 	font-size:.9rem;
 	font-weight:600;
 	transition:background-color 140ms ease,color 140ms ease,box-shadow 140ms ease;
@@ -184,6 +185,7 @@
 	float:none;
 	margin:2px 0 0;
 	color:var(--gloskin-accent-readable);
+	font-family:var(--gloskin-font-ui);
 	font-size:.82rem;
 	font-weight:700;
 	text-decoration:none;
