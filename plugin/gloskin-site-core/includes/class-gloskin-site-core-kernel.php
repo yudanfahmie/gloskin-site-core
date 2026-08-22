@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.7.211';
+	const VERSION = '0.7.212';
 
 	/** @var string */
 	private $plugin_file;
@@ -49,7 +49,7 @@ final class Gloskin_Site_Core_Kernel {
 			$admin = new Gloskin_Site_Core_Admin_Service( $content, $assets, $this->plugin_file );
 			$admin->register();
 
-			$editorial_manager = new Gloskin_Site_Core_Editorial_Manager( $this->plugin_file, self::VERSION, $admin );
+			$editorial_manager = new Gloskin_Site_Core_Editorial_Manager( $this->plugin_file, self::VERSION );
 			$editorial_manager->register();
 
 			$admin_navigation = new Gloskin_Site_Core_Admin_Navigation_Service();
