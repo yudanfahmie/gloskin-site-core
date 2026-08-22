@@ -41,12 +41,16 @@ final class Gloskin_Site_Core_Kernel {
 			require_once __DIR__ . '/class-gloskin-site-core-sample-media-compatibility.php';
 			require_once __DIR__ . '/class-gloskin-site-core-media-cleanup-admin.php';
 			require_once __DIR__ . '/class-gloskin-site-core-content-finalizer-admin.php';
+			require_once __DIR__ . '/class-gloskin-site-core-editorial-manager.php';
 
 			$media_compatibility = new Gloskin_Site_Core_Sample_Media_Compatibility();
 			$media_compatibility->register();
 
 			$admin = new Gloskin_Site_Core_Admin_Service( $content, $assets, $this->plugin_file );
 			$admin->register();
+
+			$editorial_manager = new Gloskin_Site_Core_Editorial_Manager( $this->plugin_file, self::VERSION, $admin );
+			$editorial_manager->register();
 
 			$admin_navigation = new Gloskin_Site_Core_Admin_Navigation_Service();
 			$admin_navigation->register();
@@ -87,6 +91,7 @@ final class Gloskin_Site_Core_Kernel {
 
 			$this->services[] = $media_compatibility;
 			$this->services[] = $admin;
+			$this->services[] = $editorial_manager;
 			$this->services[] = $admin_navigation;
 			$this->services[] = $translation;
 			$this->services[] = $lifecycle;
