@@ -24,7 +24,7 @@ insight_comments_must( false !== strpos( $css, '.gloskin-ui1-insight-single__met
 insight_comments_must( false === strpos( $template, '<br' ) && false === strpos( $css, 'translateX(' ), 'Insight centering uses no manual break/translate hack' );
 
 /* Diskusi means native WordPress comments, not the consultation CTA. */
-insight_comments_must( 1 === substr_count( $template, 'gloskin-ui1-insight-single__discussion' ), 'Insight owns one native discussion section' );
+insight_comments_must( 1 === substr_count( $template, '<section class="gloskin-ui1-insight-single__discussion"' ), 'Insight owns one native discussion section' );
 insight_comments_must( 1 === substr_count( $template, 'comments_template();' ), 'Insight invokes the native WordPress comments template exactly once' );
 insight_comments_must( false !== strpos( $template, "post_type_supports( \$gloskin_post->post_type, 'comments' )" ), 'Discussion follows native post-type comments support' );
 insight_comments_must( false !== strpos( $template, "wp_enqueue_script( 'comment-reply' );" ), 'Threaded native replies enqueue the WordPress comment-reply script' );
@@ -33,7 +33,7 @@ insight_comments_must( false !== strpos( $css, '.gloskin-ui1-insight-single__nat
 insight_comments_must( false !== strpos( $css, '.gloskin-ui1-insight-single__native-comments .comment-form' ), 'Editorial CSS styles the native comment form' );
 
 $back = strpos( $template, 'gloskin-ui1-insight-single__back' );
-$discussion = strpos( $template, 'gloskin-ui1-insight-single__discussion' );
+$discussion = strpos( $template, '<section class="gloskin-ui1-insight-single__discussion"' );
 $related = strpos( $template, 'gloskin-ui1-insight-single__related' );
 insight_comments_must( false !== $back && false !== $discussion && false !== $related && $back < $discussion && $discussion < $related, 'Visible journey is article/back -> native discussion -> related articles' );
 
