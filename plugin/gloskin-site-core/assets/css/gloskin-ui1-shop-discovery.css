@@ -97,6 +97,7 @@
 	border-radius: 999px;
 	background: transparent;
 	color: var(--gloskin-text);
+	font-family: var(--gloskin-font-ui);
 	font-size: 0.9rem;
 	font-weight: 500;
 	line-height: 1.3;
@@ -143,6 +144,7 @@
 
 .gloskin-ui1-shop-rail-section__label {
 	display: block;
+	font-family: var(--gloskin-font-ui);
 	font-size: var(--gloskin-shop-rail-label-size);
 	font-weight: var(--gloskin-shop-rail-label-weight);
 	letter-spacing: var(--gloskin-shop-rail-label-ls);
@@ -163,6 +165,7 @@
 	background: transparent;
 	color: var(--gloskin-accent-readable);
 	font: inherit;
+	font-family: var(--gloskin-font-ui);
 	font-weight: 700;
 	line-height: 1.2;
 	cursor: pointer;
@@ -278,6 +281,7 @@
 	flex-wrap: wrap;
 	gap: 4px;
 	min-width: 0;
+	font-family: var(--gloskin-font-ui);
 	font-size: var(--gloskin-shop-price-label-size);
 	font-weight: var(--gloskin-shop-price-label-weight);
 	line-height: 1.25;
@@ -408,6 +412,7 @@
 	background: transparent;
 	color: var(--gloskin-accent-readable);
 	font: inherit;
+	font-family: var(--gloskin-font-ui);
 	font-size: 0.8rem;
 	font-weight: 700;
 	cursor: pointer;
@@ -539,6 +544,7 @@
 
 .gloskin-ui1-shop-empty-search__title {
 	margin: 0;
+	font-family: var(--gloskin-font-ui);
 	font-size: 1rem;
 	font-weight: 600;
 }
