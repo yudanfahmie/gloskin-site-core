@@ -113,7 +113,8 @@
 		body.textContent = message;
 		popupNotice.appendChild(strong);
 		popupNotice.appendChild(body);
-		popupSettings.insertBefore(popupNotice, popupSettings.firstElementChild);
+		var settingsGrid = popupSettings.querySelector('.gloskin-editorial-popup-settings__grid');
+		popupSettings.insertBefore(popupNotice, settingsGrid || null);
 	}
 
 	function syncForm(record) {
@@ -137,18 +138,41 @@
 		});
 	}
 
+	function statusActions(row, create) {
+		if (!row) { return null; }
+		var cell = row.querySelector('.column-gloskin_editorial_active');
+		if (!cell) { return null; }
+		var actions = cell.querySelector('.gloskin-editorial-status-actions');
+		if (actions || !create) { return actions; }
+		actions = document.createElement('span');
+		actions.className = 'gloskin-editorial-status-actions';
+		var buttons = Array.prototype.slice.call(cell.querySelectorAll('.gloskin-editorial-active-toggle'));
+		if (buttons.length) {
+			cell.insertBefore(actions, buttons[0]);
+			buttons.forEach(function (button) { actions.appendChild(button); });
+		} else {
+			cell.appendChild(actions);
+		}
+		return actions;
+	}
+
 	function popupButton(row, create) {
 		if (!row) { return null; }
 		var button = row.querySelector('[data-gloskin-promo-popup-toggle]');
-		if (button || !create) { return button; }
+		var actions = statusActions(row, create || !!button);
+		if (button) {
+			if (actions && button.parentNode !== actions) { actions.appendChild(button); }
+			return button;
+		}
+		if (!create) { return null; }
 		var cell = row.querySelector('.column-gloskin_editorial_active');
 		if (!cell) { return null; }
+		actions = actions || statusActions(row, true);
 		button = document.createElement('button');
 		button.type = 'button';
 		button.className = 'button gloskin-editorial-active-toggle gloskin-editorial-popup-toggle';
 		button.setAttribute('data-gloskin-promo-popup-toggle', '');
-		cell.appendChild(document.createTextNode(' '));
-		cell.appendChild(button);
+		(actions || cell).appendChild(button);
 		return button;
 	}
 
@@ -222,6 +246,23 @@
 		pendingSave = null;
 	}
 
+	function consumeAutoOpenIntent() {
+		if (!config.editId && !config.addId) { return; }
+		try {
+			var url = new URL(window.location.href);
+			var changed = false;
+			['gloskin_edit', 'gloskin_add', 'gloskin_new'].forEach(function (key) {
+				if (url.searchParams.has(key)) {
+					url.searchParams.delete(key);
+					changed = true;
+				}
+			});
+			if (changed && window.history && typeof window.history.replaceState === 'function') {
+				window.history.replaceState(window.history.state, document.title, url.pathname + (url.search || '') + (url.hash || ''));
+			}
+		} catch (ignore) {}
+	}
+
 	if (pageSearch) { pageSearch.addEventListener('input', function () { filterPages(pageSearch.value); }); }
 	if (pageSelect) { pageSelect.addEventListener('change', syncPageIdsField); }
 	if (visibilityField) { visibilityField.addEventListener('change', updateSpecificVisibility); }
@@ -285,7 +326,9 @@
 				openPopupEditor(id, error.message || label('popupFailed', 'Complete the popup settings and save this Promo.'), 'destination');
 				return;
 			}
-			var message = error && error.message ? error.message : 'Could not reach the server. No popup changes were made; please try again.';
+			var message = error && error.status
+				? (error.message || 'The server could not update this popup. No changes were made.')
+				: 'Could not reach the server. No popup changes were made; please try again.';
 			setStatus(message, true);
 		});
 	});
@@ -313,9 +356,10 @@
 
 	document.querySelectorAll('#the-list > tr[id^="post-"]').forEach(function (row) {
 		var id = row.id.replace('post-', '');
-		if (!popupButton(row, false)) { paintPopupButton(row, !!(records[id] && records[id].popup_enabled)); }
+		paintPopupButton(row, !!(records[id] && records[id].popup_enabled));
 	});
 
+	consumeAutoOpenIntent();
 	if (config.editId) { syncForm(records[String(parseInt(config.editId, 10) || 0)] || {}); }
 	else if (config.addId) { syncForm({ popup_enabled: false, visibility: 'homepage', visibility_page_ids: [], destination_url: '' }); }
 	else { updateSpecificVisibility(); updatePopupRequirements(); }
