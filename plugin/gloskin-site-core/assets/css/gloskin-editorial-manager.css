@@ -1,0 +1,33 @@
+/* Shared native-list editor for Promo + Testimonial only. */
+body.gloskin-editorial-modal-open{overflow:hidden}
+.gloskin-editorial-order-handle{display:inline-grid;width:32px;height:32px;align-items:center;justify-content:center;border:1px solid #dcdcde;border-radius:6px;background:#fff;color:#50575e;cursor:grab}
+.gloskin-editorial-order-handle:active{cursor:grabbing}
+.gloskin-editorial-list-thumb{display:block;width:64px;height:64px;border-radius:8px;object-fit:cover}
+.gloskin-editorial-active-toggle{min-width:76px;text-align:center}
+.gloskin-editorial-active-toggle.is-active{border-color:#00a32a;color:#006b1b}
+#the-list.is-gloskin-saving-order{opacity:.62;pointer-events:none}
+.gloskin-editorial-modal[hidden]{display:none}
+.gloskin-editorial-modal{position:fixed;z-index:100100;inset:0;display:grid;align-items:center;justify-items:center;padding:32px}
+.gloskin-editorial-modal__backdrop{position:absolute;inset:0;background:rgba(29,35,39,.72)}
+.gloskin-editorial-modal__dialog{position:relative;display:flex;width:min(720px,100%);max-height:min(820px,calc(100vh - 64px));flex-direction:column;overflow:hidden;border-radius:14px;background:#fff;box-shadow:0 24px 80px rgba(0,0,0,.28)}
+.gloskin-editorial-modal__header,.gloskin-editorial-modal__footer{display:flex;flex:0 0 auto;align-items:center;padding:18px 22px;background:#fff}
+.gloskin-editorial-modal__header{justify-content:space-between;border-bottom:1px solid #dcdcde}
+.gloskin-editorial-modal__header h2{margin:0;font-size:1.3rem;line-height:1.3}
+.gloskin-editorial-modal__close{display:grid;width:36px;height:36px;padding:0;border:0;background:transparent;color:#50575e;font-size:30px;line-height:1;cursor:pointer;place-items:center}
+.gloskin-editorial-modal__body{display:grid;gap:20px;overflow:auto;padding:24px 22px}
+.gloskin-editorial-modal__footer{justify-content:flex-end;gap:10px;border-top:1px solid #dcdcde}
+.gloskin-editorial-field{display:grid;gap:7px}
+.gloskin-editorial-field>span,.gloskin-editorial-field__label{font-weight:600}
+.gloskin-editorial-field input,.gloskin-editorial-field select,.gloskin-editorial-field textarea{width:100%;max-width:none}
+.gloskin-editorial-field textarea{resize:vertical}
+.gloskin-editorial-media-field{display:grid;gap:10px}
+.gloskin-editorial-media-field__preview{display:grid;width:min(260px,100%);min-height:120px;overflow:hidden;border:1px dashed #c3c4c7;border-radius:10px;background:#f6f7f7;place-items:center}
+.gloskin-editorial-media-field__preview:empty::before{color:#646970;content:"No image selected"}
+.gloskin-editorial-media-field__preview img{display:block;width:100%;max-height:220px;object-fit:cover}
+.gloskin-editorial-media-field__actions{display:flex;flex-wrap:wrap;gap:10px}
+.gloskin-editorial-active-field{display:inline-flex;align-items:center;gap:8px;font-weight:600}
+.gloskin-editorial-modal__error{margin:0;padding:10px 12px;border-left:4px solid #d63638;background:#fcf0f1;color:#8a2424}
+.column-gloskin_editorial_order{width:58px}
+.column-gloskin_editorial_image{width:82px}
+.column-gloskin_editorial_active{width:100px}
+@media (max-width:782px){.gloskin-editorial-modal{align-items:stretch;padding:12px}.gloskin-editorial-modal__dialog{width:100%;max-height:calc(100vh - 24px);margin:auto}.gloskin-editorial-modal__header,.gloskin-editorial-modal__footer{padding:14px 16px}.gloskin-editorial-modal__body{gap:16px;padding:18px 16px}.gloskin-editorial-modal__footer{flex-wrap:wrap}.gloskin-editorial-modal__footer .button{min-height:40px}.column-gloskin_editorial_image{display:none}.gloskin-editorial-order-handle{width:36px;height:36px}}
