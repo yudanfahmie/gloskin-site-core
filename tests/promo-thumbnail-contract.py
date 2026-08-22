@@ -19,6 +19,7 @@ promo = read('plugin/gloskin-site-core/templates/pages/promo.php')
 js = read('plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js')
 core_base = read('plugin/gloskin-site-core/assets/css/gloskin-ui1-core-base.css')
 editorial = read('plugin/gloskin-site-core/assets/css/gloskin-ui1-editorial.css')
+admin_crop = read('plugin/gloskin-site-core/assets/css/gloskin-editorial-manager.css')
 content_service = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-content-service.php')
 plugin_header = read('plugin/gloskin-site-core/gloskin-site-core.php')
 kernel = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php')
@@ -43,6 +44,14 @@ screen_reader_rule = re.search(r'\.gloskin-ui1\s+\.screen-reader-text\s*\{([^}]*
 require(bool(screen_reader_rule), 'canonical .screen-reader-text CSS primitive must exist')
 if screen_reader_rule:
     require('display:none' not in screen_reader_rule.group(1).replace(' ', ''), 'screen-reader-text must not use display:none')
+
+# Admin crop modal keeps actions/footer visible and uses horizontal space before vertical stacking.
+require('.gloskin-editorial-modal__dialog>form{display:flex;min-height:0;flex:1 1 auto;flex-direction:column}' in admin_crop, 'modal form must be a bounded flex column so footer cannot be clipped')
+require('.gloskin-editorial-modal__body{display:grid;min-height:0;flex:1 1 auto;' in admin_crop and 'overflow-y:auto' in admin_crop, 'modal body must own scrolling with min-height:0')
+require('.gloskin-editorial-modal__dialog:has([data-gloskin-promo-crop]){width:min(1120px,100%)}' in admin_crop, 'Promo editor must use a wider desktop workspace')
+require('grid-template-areas:"workspace toolbar" "workspace output" "workspace quality" "workspace hint"' in admin_crop, 'desktop crop UI must place controls/output beside the workspace rather than below it')
+require('@media (max-width:960px)' in admin_crop and 'grid-template-areas:"workspace" "toolbar" "output" "quality" "hint"' in admin_crop, 'crop editor must collapse cleanly on narrower screens')
+require('max-height:calc(100dvh - 40px)' in admin_crop, 'desktop modal height must track the dynamic viewport')
 
 # Frontend owns one fixed production crop ratio across all responsive widths.
 require(editorial.count('aspect-ratio:1648 / 928') == 1, 'frontend editorial CSS must own exactly one canonical Promo ratio declaration')
@@ -70,4 +79,4 @@ if failures:
     for failure in failures:
         print('FAIL:', failure)
     sys.exit(1)
-print('promo-thumbnail-contract.py: OK (a11y + shared 1648:928 smart crop focus/zoom geometry)')
+print('promo-thumbnail-contract.py: OK (a11y + responsive admin smart crop + shared 1648:928 focus/zoom geometry)')
