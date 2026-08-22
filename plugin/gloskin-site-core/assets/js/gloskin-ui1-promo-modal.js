@@ -1,4 +1,4 @@
-/* Production Promo Modal — one lightweight first-party controller. */
+/* Production Promo Modal — lightweight first-party controller. */
 (function () {
 	'use strict';
 
@@ -9,15 +9,13 @@
 	var track = root.querySelector('[data-gloskin-promo-track]');
 	var slider = root.querySelector('[data-gloskin-promo-slider]');
 	var closeButtons = root.querySelectorAll('[data-gloskin-promo-close]');
-	var neverButton = root.querySelector('[data-gloskin-promo-never]');
 	var previousButton = root.querySelector('[data-gloskin-promo-prev]');
 	var nextButton = root.querySelector('[data-gloskin-promo-next]');
 	var dotsNode = root.querySelector('[data-gloskin-promo-dots]');
-	var campaign = root.getAttribute('data-campaign') || '';
 	var originalSlides = track ? Array.prototype.slice.call(track.querySelectorAll('[data-gloskin-promo-slide]')) : [];
 	var reducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-	var persistentKey = 'gloskinPromoDismissedCampaign';
 	var isOpen = false;
+	var hasShown = false;
 	var lastFocus = null;
 	var autoplayTimer = null;
 	var physicalIndex = originalSlides.length > 1 ? 1 : 0;
@@ -26,22 +24,6 @@
 	var pointerStartX = null;
 	var isTransitioning = false;
 	var transitionFallback = null;
-	var initialShowTimer = null;
-
-	function storageGet(storage, key) {
-		try { return storage ? storage.getItem(key) : null; } catch (ignore) { return null; }
-	}
-
-	function storageSet(storage, key, value) {
-		try { if (storage) { storage.setItem(key, value); } } catch (ignore) { /* Preference storage is best-effort. */ }
-	}
-
-	/* X closes only the current presentation. The explicit "never" action is
-	 * the sole persistent suppression owner, scoped to this campaign signature. */
-	if (campaign && storageGet(window.localStorage, persistentKey) === campaign) {
-		root.remove();
-		return;
-	}
 
 	function clamp(value, minimum, maximum, fallback) {
 		value = Number(value);
@@ -158,10 +140,6 @@
 
 	function show() {
 		if (isOpen || !root.isConnected) { return; }
-		if (initialShowTimer) {
-			window.clearTimeout(initialShowTimer);
-			initialShowTimer = null;
-		}
 		lastFocus = document.activeElement;
 		root.hidden = false;
 		root.setAttribute('aria-hidden', 'false');
@@ -176,9 +154,8 @@
 		resetAutoplay();
 	}
 
-	function close(persistent) {
+	function close() {
 		if (!isOpen) { return; }
-		if (persistent && campaign) { storageSet(window.localStorage, persistentKey, campaign); }
 		if (autoplayTimer) { window.clearInterval(autoplayTimer); autoplayTimer = null; }
 		if (transitionFallback) { window.clearTimeout(transitionFallback); transitionFallback = null; }
 		isTransitioning = false;
@@ -192,20 +169,24 @@
 		}, reducedMotion ? 0 : 560);
 	}
 
+	function onScrollTrigger() {
+		if (hasShown) { return; }
+		var scrollable = document.documentElement.scrollHeight - window.innerHeight;
+		if (scrollable <= 0) { return; }
+		var percent = (window.scrollY / scrollable) * 100;
+		if (percent < 30) { return; }
+		hasShown = true;
+		window.removeEventListener('scroll', onScrollTrigger);
+		show();
+	}
+
 	closeButtons.forEach(function (button) {
 		button.addEventListener('click', function (event) {
 			event.preventDefault();
 			event.stopPropagation();
-			close(false);
+			close();
 		});
 	});
-	if (neverButton) {
-		neverButton.addEventListener('click', function (event) {
-			event.preventDefault();
-			event.stopPropagation();
-			close(true);
-		});
-	}
 	if (previousButton) {
 		previousButton.addEventListener('click', function (event) {
 			event.preventDefault();
@@ -225,7 +206,7 @@
 		if (!isOpen) { return; }
 		if (event.key === 'Escape') {
 			event.preventDefault();
-			close(false);
+			close();
 			return;
 		}
 		if (event.key !== 'Tab') { return; }
@@ -276,7 +257,6 @@
 	document.addEventListener('visibilitychange', resetAutoplay);
 	applyCropFraming();
 	initializeSlider();
-	/* Popup means popup: no scroll or interaction prerequisite. A short delay
-	 * lets first paint settle while keeping the behavior deterministic. */
-	initialShowTimer = window.setTimeout(show, reducedMotion ? 0 : 450);
+	window.addEventListener('scroll', onScrollTrigger, { passive: true });
+	onScrollTrigger();
 })();
