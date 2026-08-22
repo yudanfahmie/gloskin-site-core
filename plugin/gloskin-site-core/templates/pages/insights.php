@@ -20,7 +20,16 @@ $gloskin_insight_cards = isset( $gloskin_context['insights'] ) && is_array( $glo
 			<?php endif; ?>
 			<?php if ( $gloskin_context['total_pages'] > 1 ) : ?>
 				<nav class="gloskin-ui1-pagination gloskin-ui1-insights-archive__pagination" aria-label="<?php echo esc_attr__( 'Navigasi halaman insight', 'gloskin-site-core' ); ?>">
-					<?php echo wp_kses_post( paginate_links( array( 'current' => $gloskin_context['current_page'], 'total' => $gloskin_context['total_pages'], 'type' => 'list' ) ) ); ?>
+					<?php
+					$gloskin_pagination = paginate_links( array(
+						'current'   => $gloskin_context['current_page'],
+						'total'     => $gloskin_context['total_pages'],
+						'type'      => 'list',
+						'prev_text' => '<span class="screen-reader-text">' . esc_html__( 'Halaman sebelumnya', 'gloskin-site-core' ) . '</span>' . gloskin_ui1_arrow_icon( 'prev' ),
+						'next_text' => '<span class="screen-reader-text">' . esc_html__( 'Halaman berikutnya', 'gloskin-site-core' ) . '</span>' . gloskin_ui1_arrow_icon(),
+					) );
+					echo wp_kses_post( $gloskin_pagination );
+					?>
 				</nav>
 			<?php endif; ?>
 		<?php else : ?>
