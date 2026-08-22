@@ -12,6 +12,8 @@
 	var statusMessage = statusNode ? statusNode.querySelector('[data-gloskin-editorial-status-message]') : null;
 	var records = {};
 	var mediaFrame = null;
+	var mediaFrameActive = false;
+	var mediaTrigger = null;
 	var lastFocus = null;
 	var sortableSnapshot = [];
 
@@ -148,7 +150,7 @@
 			if (add) { event.preventDefault(); openModal(0); return; }
 
 			var mediaButton = event.target.closest('[data-gloskin-editorial-media]');
-			if (mediaButton) { event.preventDefault(); openMedia(); return; }
+			if (mediaButton) { event.preventDefault(); openMedia(mediaButton); return; }
 
 			var removeMedia = event.target.closest('[data-gloskin-editorial-media-remove]');
 			if (removeMedia) {
@@ -174,14 +176,27 @@
 		}
 	}
 
-	function openMedia() {
-		if (!window.wp || !wp.media || !form) { return; }
+	function openMedia(trigger) {
+		if (!form) { return false; }
+		if (!window.wp || typeof wp.media !== 'function') {
+			setStatus(label('mediaUnavailable', 'Media Library could not be initialized. Refresh this page and try again.'), true);
+			return false;
+		}
+		mediaTrigger = trigger || null;
 		if (!mediaFrame) {
 			mediaFrame = wp.media({
 				title: 'Choose image',
 				button: { text: 'Use image' },
 				library: { type: 'image' },
 				multiple: false
+			});
+			mediaFrame.on('open', function () {
+				mediaFrameActive = true;
+			});
+			mediaFrame.on('close', function () {
+				mediaFrameActive = false;
+				if (mediaTrigger && typeof mediaTrigger.focus === 'function') { mediaTrigger.focus(); }
+				mediaTrigger = null;
 			});
 			mediaFrame.on('select', function () {
 				var selected = mediaFrame.state().get('selection').first();
@@ -194,6 +209,7 @@
 		}
 		resetMediaSelection();
 		mediaFrame.open();
+		return true;
 	}
 
 	function columnCell(className) {
@@ -505,6 +521,7 @@
 	function bindKeyboard() {
 		document.addEventListener('keydown', function (event) {
 			if (!modal || modal.hidden) { return; }
+			if (mediaFrameActive) { return; }
 			if (event.key === 'Escape') {
 				event.preventDefault();
 				closeModal();
