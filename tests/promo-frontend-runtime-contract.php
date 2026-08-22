@@ -56,9 +56,9 @@ if ( false === strpos( $js, "window.addEventListener('scroll', onScrollTrigger" 
 if ( false === strpos( $js, "if (slide.matches('a[href]'))" ) || false === strpos( $js, "slide.removeAttribute('tabindex')" ) ) {
 	$fail( 'Display-only slides must remain non-interactive in keyboard flow.' );
 }
-foreach ( array( 'localStorage', 'sessionStorage', 'initialShowTimer' ) as $forbidden ) {
+foreach ( array( 'localStorage', 'sessionStorage', 'initialShowTimer', 'dotsNode', "document.createElement('span')" ) as $forbidden ) {
 	if ( false !== strpos( $js, $forbidden ) ) {
-		$fail( "Promo controller must not suppress or auto-open through {$forbidden}." );
+		$fail( "Promo controller must not restore deprecated state/navigation runtime: {$forbidden}." );
 	}
 }
 if ( false !== strpos( $modal, 'data-gloskin-promo-never' ) || false !== strpos( $js, 'data-gloskin-promo-never' ) ) {
@@ -67,10 +67,36 @@ if ( false !== strpos( $modal, 'data-gloskin-promo-never' ) || false !== strpos(
 if ( false === strpos( $reference, 'scrollPercent >= 30' ) ) {
 	$fail( 'Promo reference no longer exposes the expected 30% trigger.' );
 }
-foreach ( array( 'translateY(60px) scale(.9)', 'rotate(90deg)', 'right:14px;', 'bottom:14px;', 'display:flex;', 'flex-direction:row;', 'top:-18px;', 'right:-18px;', '26%,transparent', 'blur(6px)' ) as $presentation ) {
+
+foreach ( array(
+	'background:color-mix(in srgb,var(--gloskin-refresh-black) 5%,transparent);',
+	'-webkit-backdrop-filter:blur(6px) saturate(106%);',
+	'backdrop-filter:blur(1px) saturate(100%);',
+	'background:var(--gloskin-accent);',
+	'border:1px solid var(--gloskin-accent);',
+	'right:15px;',
+	'bottom:15px;',
+	'padding:0;',
+	'border:0;',
+	'background:transparent;',
+	'font-size:0;',
+	'--gloskin-promo-chevron:url(',
+	'M388.418,240.923L153.751,6.256',
+	'-webkit-mask:var(--gloskin-promo-chevron) center/contain no-repeat;',
+	'.gloskin-promo-modal__nav--prev::before{transform:rotate(180deg)}',
+	'.gloskin-promo-modal__dots{display:none!important}',
+	'top:-19px;',
+	'right:-19px;',
+	'width:38px;',
+	'height:38px;'
+) as $presentation ) {
 	if ( false === strpos( $css, $presentation ) ) {
 		$fail( "Promo presentation contract missing: {$presentation}." );
 	}
 }
 
-echo "promo-frontend-runtime-contract.php: OK (pre-footer markup, placement/routing separated, reference trigger, refined controls)\n";
+if ( false !== strpos( $css, 'background:color-mix(in srgb,var(--gloskin-refresh-black) 22%,transparent);' ) ) {
+	$fail( 'Promo navigation must not restore the old pill/background container.' );
+}
+
+echo "promo-frontend-runtime-contract.php: OK (placement/routing separated, reference trigger, accent SVG controls, light backdrop)\n";
