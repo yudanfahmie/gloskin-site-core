@@ -37,7 +37,7 @@ function p5must( bool $cond, string $msg ): void {
 }
 
 /* ── Version ─────────────────────────────────────────────────────── */
-p5must( false !== strpos( $kernel, "const VERSION = '0.7.213'" ) && false !== strpos( $plugin, 'Version: 0.7.213' ), 'release owners synchronized at 0.7.213' );
+p5must( false !== strpos( $kernel, "const VERSION = '0.7.214'" ) && false !== strpos( $plugin, 'Version: 0.7.214' ), 'release owners synchronized at 0.7.214' );
 
 /* ── One Language registration, one Projection registration ──────── */
 p5must( 1 === substr_count( $kernel, 'register_frontend' ), 'exactly one frontend Language registration in Kernel' );
@@ -169,4 +169,4 @@ p5must( 1 === substr_count( $projection, "array( \$this, 'start_interface_buffer
 // Woo structural page content is protected — no the_content filter that would replace Woo output.
 p5must( false === strpos( $language, "add_filter( 'the_content'" ), 'Language does not hook the_content (Woo structural content protected)' );
 
-echo "phase5-translation-frontend-contract.php: OK (single resolver + cached registries + circuit breaker + memory guard + object cache + content-ownership rules + version 0.7.213)\n";
+echo "phase5-translation-frontend-contract.php: OK (single resolver + cached registries + circuit breaker + memory guard + object cache + content-ownership rules + version 0.7.214)\n";
