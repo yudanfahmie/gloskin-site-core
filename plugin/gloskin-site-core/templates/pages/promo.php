@@ -1,14 +1,15 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-$gloskin_promos = isset( $gloskin_context['promos'] ) && is_array( $gloskin_context['promos'] ) ? array_values( $gloskin_context['promos'] ) : array();
+$gloskin_limited_promos = isset( $gloskin_context['limited_promos'] ) && is_array( $gloskin_context['limited_promos'] ) ? array_values( $gloskin_context['limited_promos'] ) : array();
+$gloskin_regular_promos = isset( $gloskin_context['regular_promos'] ) && is_array( $gloskin_context['regular_promos'] ) ? array_values( $gloskin_context['regular_promos'] ) : array();
 
-/* Two independent visual instances consume the same managed Promo collection.
- * The existing gloskin-ui1-core promo controller owns prev/next, dots, keyboard
- * state and hidden-slide synchronisation for every root. */
-$gloskin_render_promo_carousel = static function ( $heading, $heading_tag, $instance ) use ( $gloskin_promos ) {
+/* One shared renderer, two independent canonical collections. The existing
+ * gloskin-ui1-core promo controller remains the single prev/next/dot/state
+ * owner for every data-gloskin-promo-carousel root. */
+$gloskin_render_promo_carousel = static function ( $promos, $heading, $heading_tag, $instance ) {
 	$heading_tag = in_array( $heading_tag, array( 'h1', 'h2' ), true ) ? $heading_tag : 'h2';
-	$count       = count( $gloskin_promos );
+	$count       = count( $promos );
 	?>
 	<section class="gloskin-ui1-section gloskin-promo gloskin-promo--<?php echo esc_attr( $instance ); ?>" data-gloskin-promo="<?php echo esc_attr( $instance ); ?>">
 		<div class="gloskin-ui1-container">
@@ -19,7 +20,7 @@ $gloskin_render_promo_carousel = static function ( $heading, $heading_tag, $inst
 			<div class="gloskin-ui1-promo-carousel gloskin-ui1-promo-carousel--page gloskin-promo__carousel" data-gloskin-promo-carousel aria-label="<?php echo esc_attr( $heading ); ?>">
 				<div class="gloskin-ui1-promo-carousel__live" aria-live="polite" aria-atomic="true" data-gloskin-promo-live></div>
 				<div class="gloskin-ui1-promo-carousel__stage" role="region" aria-label="<?php echo esc_attr( $heading ); ?>">
-					<?php foreach ( $gloskin_promos as $gloskin_promo_index => $gloskin_promo ) :
+					<?php foreach ( $promos as $gloskin_promo_index => $gloskin_promo ) :
 						$gloskin_promo_first = 0 === $gloskin_promo_index;
 						$gloskin_promo_image = absint( $gloskin_promo['image_id'] ?? 0 );
 					?>
@@ -28,7 +29,7 @@ $gloskin_render_promo_carousel = static function ( $heading, $heading_tag, $inst
 							<?php if ( $gloskin_promo_image ) : ?>
 								<?php echo wp_get_attachment_image( $gloskin_promo_image, 'large', false, array( 'class' => 'gloskin-promo__image', 'loading' => $gloskin_promo_first ? 'eager' : 'lazy', 'alt' => '' ) ); ?>
 							<?php else : ?>
-								<?php gloskin_ui1_render_presentation_media( 'editorial', 'promo-' . $gloskin_promo_index, 'gloskin-promo__missing' ); ?>
+								<div class="gloskin-promo__missing" aria-hidden="true"></div>
 							<?php endif; ?>
 						</div>
 					</div>
@@ -38,7 +39,7 @@ $gloskin_render_promo_carousel = static function ( $heading, $heading_tag, $inst
 				<div class="gloskin-ui1-promo-carousel__controls gloskin-promo__controls" role="group" aria-label="<?php echo esc_attr__( 'Navigasi promo', 'gloskin-site-core' ); ?>">
 					<button type="button" class="gloskin-ui1-promo-carousel__prev" data-gloskin-promo-prev aria-label="<?php echo esc_attr__( 'Promo sebelumnya', 'gloskin-site-core' ); ?>">&larr;</button>
 					<div class="gloskin-ui1-promo-carousel__dots" role="tablist" aria-label="<?php echo esc_attr__( 'Pilih promo', 'gloskin-site-core' ); ?>">
-						<?php foreach ( $gloskin_promos as $gloskin_dot_index => $_gloskin_promo ) : ?>
+						<?php foreach ( $promos as $gloskin_dot_index => $_gloskin_promo ) : ?>
 						<button type="button" class="gloskin-ui1-promo-carousel__dot<?php echo 0 === $gloskin_dot_index ? ' is-active' : ''; ?>" role="tab" data-gloskin-promo-dot="<?php echo esc_attr( (string) $gloskin_dot_index ); ?>" aria-selected="<?php echo 0 === $gloskin_dot_index ? 'true' : 'false'; ?>" tabindex="<?php echo 0 === $gloskin_dot_index ? '0' : '-1'; ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Promo %d', 'gloskin-site-core' ), $gloskin_dot_index + 1 ) ); ?>"></button>
 						<?php endforeach; ?>
 					</div>
@@ -52,6 +53,6 @@ $gloskin_render_promo_carousel = static function ( $heading, $heading_tag, $inst
 	<?php
 };
 
-$gloskin_render_promo_carousel( __( 'Promo Terbatas', 'gloskin-site-core' ), 'h1', 'featured' );
-$gloskin_render_promo_carousel( __( 'Promo Poster', 'gloskin-site-core' ), 'h2', 'poster' );
-unset( $gloskin_render_promo_carousel, $gloskin_promos );
+$gloskin_render_promo_carousel( $gloskin_limited_promos, __( 'Promo Terbatas', 'gloskin-site-core' ), 'h1', 'limited' );
+$gloskin_render_promo_carousel( $gloskin_regular_promos, __( 'Promo Biasa', 'gloskin-site-core' ), 'h2', 'regular' );
+unset( $gloskin_render_promo_carousel, $gloskin_limited_promos, $gloskin_regular_promos );
