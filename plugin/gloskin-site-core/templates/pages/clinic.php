@@ -38,34 +38,10 @@ $gloskin_map_title = sprintf( __( 'Peta %s', 'gloskin-site-core' ), $gloskin_cli
 				<?php if ( $gloskin_has_facts ) : ?>
 					<h2><?php echo esc_html__( 'Informasi Klinik', 'gloskin-site-core' ); ?></h2>
 					<?php if ( $gloskin_has_content ) : ?><div class="gloskin-clinic-detail__prose"><?php gloskin_ui1_render_page_content( $gloskin_post ); ?></div><?php endif; ?>
-					<div class="gloskin-clinic-detail__facts" style="gap:0;margin-bottom:34px">
-						<?php if ( ! empty( $gloskin_context['address'] ) ) : ?>
-							<p style="grid-template-columns:44px minmax(0,1fr);column-gap:16px;row-gap:6px;padding:20px 0;border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 68%,transparent)">
-								<span aria-hidden="true" style="grid-row:1/3;display:grid;width:40px;height:40px;place-items:center;border:1px solid color-mix(in srgb,var(--gloskin-brand-champagne) 52%,var(--gloskin-border));border-radius:999px;background:color-mix(in srgb,var(--gloskin-refresh-blush) 72%,var(--gloskin-bg));color:var(--gloskin-accent-readable)">
-									<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"/><circle cx="12" cy="10" r="2.25"/></svg>
-								</span>
-								<strong style="grid-column:2"><?php echo esc_html__( 'Alamat', 'gloskin-site-core' ); ?></strong>
-								<span style="grid-column:2"><?php echo nl2br( esc_html( (string) $gloskin_context['address'] ) ); ?></span>
-							</p>
-						<?php endif; ?>
-						<?php if ( ! empty( $gloskin_context['phone_display'] ) ) : ?>
-							<p style="grid-template-columns:44px minmax(0,1fr);column-gap:16px;row-gap:6px;padding:20px 0;border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 68%,transparent)">
-								<span aria-hidden="true" style="grid-row:1/3;display:grid;width:40px;height:40px;place-items:center;border:1px solid color-mix(in srgb,var(--gloskin-brand-champagne) 52%,var(--gloskin-border));border-radius:999px;background:color-mix(in srgb,var(--gloskin-refresh-blush) 72%,var(--gloskin-bg));color:var(--gloskin-accent-readable)">
-									<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M6.7 3.8 9.4 7c.4.5.4 1.2 0 1.7L8 10.2c1.2 2.4 3.3 4.5 5.8 5.8l1.5-1.4c.5-.4 1.2-.4 1.7 0l3.2 2.7c.6.5.7 1.3.3 2-1 1.5-2.7 2.2-4.4 1.7C9.8 19.3 4.7 14.2 3 7.9c-.5-1.7.2-3.4 1.7-4.4.7-.4 1.5-.3 2 .3Z"/></svg>
-								</span>
-								<strong style="grid-column:2"><?php echo esc_html__( 'Telepon', 'gloskin-site-core' ); ?></strong>
-								<span style="grid-column:2"><?php if ( ! empty( $gloskin_context['phone_url'] ) ) : ?><a href="<?php echo esc_url( (string) $gloskin_context['phone_url'] ); ?>"><?php echo esc_html( (string) $gloskin_context['phone_display'] ); ?></a><?php else : ?><?php echo esc_html( (string) $gloskin_context['phone_display'] ); ?><?php endif; ?></span>
-							</p>
-						<?php endif; ?>
-						<?php if ( ! empty( $gloskin_context['operating_hours'] ) ) : ?>
-							<p style="grid-template-columns:44px minmax(0,1fr);column-gap:16px;row-gap:6px;padding:20px 0;border-bottom:1px solid color-mix(in srgb,var(--gloskin-border) 68%,transparent)">
-								<span aria-hidden="true" style="grid-row:1/3;display:grid;width:40px;height:40px;place-items:center;border:1px solid color-mix(in srgb,var(--gloskin-brand-champagne) 52%,var(--gloskin-border));border-radius:999px;background:color-mix(in srgb,var(--gloskin-refresh-blush) 72%,var(--gloskin-bg));color:var(--gloskin-accent-readable)">
-									<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg>
-								</span>
-								<strong style="grid-column:2"><?php echo esc_html__( 'Jam Operasional', 'gloskin-site-core' ); ?></strong>
-								<span style="grid-column:2"><?php echo nl2br( esc_html( (string) $gloskin_context['operating_hours'] ) ); ?></span>
-							</p>
-						<?php endif; ?>
+					<div class="gloskin-clinic-detail__facts">
+						<?php if ( ! empty( $gloskin_context['address'] ) ) : ?><p><strong><?php echo esc_html__( 'Alamat', 'gloskin-site-core' ); ?></strong><span><?php echo nl2br( esc_html( (string) $gloskin_context['address'] ) ); ?></span></p><?php endif; ?>
+						<?php if ( ! empty( $gloskin_context['phone_display'] ) ) : ?><p><strong><?php echo esc_html__( 'Telepon', 'gloskin-site-core' ); ?></strong><span><?php if ( ! empty( $gloskin_context['phone_url'] ) ) : ?><a href="<?php echo esc_url( (string) $gloskin_context['phone_url'] ); ?>"><?php echo esc_html( (string) $gloskin_context['phone_display'] ); ?></a><?php else : ?><?php echo esc_html( (string) $gloskin_context['phone_display'] ); ?><?php endif; ?></span></p><?php endif; ?>
+						<?php if ( ! empty( $gloskin_context['operating_hours'] ) ) : ?><p><strong><?php echo esc_html__( 'Jam Operasional', 'gloskin-site-core' ); ?></strong><span><?php echo nl2br( esc_html( (string) $gloskin_context['operating_hours'] ) ); ?></span></p><?php endif; ?>
 					</div>
 					<?php if ( $gloskin_whatsapp_url || $gloskin_map_url ) : ?>
 						<div class="gloskin-clinic-detail__actions">
