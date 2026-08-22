@@ -74,8 +74,8 @@ final class Gloskin_Site_Core_Content_Service {
 	 * Private managed CPT — native WordPress CRUD under Gloskin Content,
 	 * not publicly queryable, no public URL, no archive.
 	 *
-	 * @param string             $plural   Plural label.
-	 * @param string             $singular Singular label.
+	 * @param string                 $plural Plural label.
+	 * @param string                 $singular Singular label.
 	 * @param array<int,string>|null $supports Explicit native field support.
 	 * @return array<string,mixed>
 	 */
@@ -235,6 +235,44 @@ final class Gloskin_Site_Core_Content_Service {
 	/** @return array<string,int> */
 	public static function record_targets() {
 		return array( self::TREATMENT_POST_TYPE => self::TREATMENT_TARGET_COUNT, self::CLINIC_POST_TYPE => self::CLINIC_TARGET_COUNT, self::DOCTOR_POST_TYPE => self::DOCTOR_TARGET_COUNT );
+	}
+
+	/**
+	 * Canonical display-state schema for editor-managed frontend collections.
+	 * CRUD remains with the existing admin owners; this only declares the
+	 * factual WordPress fields that determine eligibility/order.
+	 *
+	 * @param string $post_type Managed editorial CPT.
+	 * @return array<string,mixed>
+	 */
+	public static function editorial_profile( $post_type ) {
+		$profiles = array(
+			self::PROMO_POST_TYPE => array(
+				'active_meta'      => 'gloskin_promo_active',
+				'order_meta'       => 'gloskin_promo_order',
+				'type_meta'        => 'gloskin_promo_type',
+				'allowed_types'    => array( 'limited', 'regular' ),
+				'home_meta'        => '',
+				'required_content' => '',
+			),
+			self::TESTIMONIAL_POST_TYPE => array(
+				'active_meta'      => 'gloskin_testimonial_active',
+				'order_meta'       => 'gloskin_testimonial_order',
+				'type_meta'        => '',
+				'allowed_types'    => array(),
+				'home_meta'        => '',
+				'required_content' => 'post_excerpt',
+			),
+			self::ACHIEVEMENT_POST_TYPE => array(
+				'active_meta'      => 'gloskin_achievement_active',
+				'order_meta'       => 'gloskin_achievement_order',
+				'type_meta'        => '',
+				'allowed_types'    => array(),
+				'home_meta'        => 'gloskin_achievement_feature_on_home',
+				'required_content' => '',
+			),
+		);
+		return isset( $profiles[ $post_type ] ) ? $profiles[ $post_type ] : array();
 	}
 
 	/** @return array<string,string> */
