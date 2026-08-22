@@ -189,7 +189,7 @@ html.gloskin-ui1-overlay-open{overflow:hidden}
 .gloskin-ui1-wishlist-toggle--detail{position:static;margin-top:14px;width:44px;height:44px;border:1px solid var(--gloskin-border);box-shadow:none}
 @media (prefers-reduced-motion:reduce){.gloskin-ui1-cart-sheet__item.is-removing::after{animation:none}}
 
-/* ===========================================================================
+/* ==========================================================================
    Gloskin Form Kit v1 -- refinements layered on the shared field primitive
    (gloskin-ui1-core-base.css). Presentation only: WooCommerce keeps every
    field's markup, validation, country/state logic, cart/checkout/order
@@ -314,7 +314,7 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .relate
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .button{margin:0 16px 16px}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button{background:var(--gloskin-accent);border-color:var(--gloskin-accent);border-radius:var(--gloskin-action-radius);color:var(--gloskin-inverse)}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button:hover{background:var(--gloskin-accent-strong);border-color:var(--gloskin-accent-strong)}
-body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button.disabled,body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button.loading{background:var(--gloskin-field-disabled);color:var(--gloskin-muted);border-color:var(--gloskin-border);opacity:.72;cursor:not-allowed;pointer-events:none}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button.disabled,body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product .add_to_cart_button.loading{background:var(--gloskin-field-disabled);color:var(--gloskin-muted);border-color:var(--gloskin-field-border);opacity:.72;cursor:not-allowed;pointer-events:none}
 @media (max-width:1040px){body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product{grid-template-columns:1fr}body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.summary{grid-column:1}body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:600px){body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products{grid-template-columns:1fr}body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart .single_add_to_cart_button{width:100%}body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product form.cart .quantity .qty{width:96px;max-width:100%}body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-tabs ul.tabs{overflow-x:auto;flex-wrap:nowrap}}
 
