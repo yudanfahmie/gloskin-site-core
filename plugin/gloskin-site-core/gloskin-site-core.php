@@ -13,11 +13,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/includes/class-gloskin-site-core-kernel.php';
+require_once __DIR__ . '/includes/class-gloskin-site-core-insight-discussion-service.php';
 
 /**
  * Bootstrap the plugin after all plugins are available so integration checks can run.
  */
 function gloskin_site_core_bootstrap() {
+	$insight_discussion = new Gloskin_Site_Core_Insight_Discussion_Service();
+	$insight_discussion->register();
+
 	$kernel = new Gloskin_Site_Core_Kernel( __FILE__ );
 	$kernel->boot();
 }
