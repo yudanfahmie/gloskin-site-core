@@ -919,3 +919,14 @@ color:var(--gloskin-text)}
 .gloskin-ui1-lang-switcher__menu .gloskin-ui1-lang-switcher__option{width:100%;min-height:34px;padding:7px 8px;border-radius:8px}
 .gloskin-ui1-lang-switcher__menu .gloskin-ui1-lang-switcher__option:hover{background:var(--gloskin-surface)}
 @media (prefers-reduced-motion:reduce){.gloskin-ui1-lang-switcher__chevron{transition:none}}
+
+/* Header utility rhythm and CTA interaction closure. Desktop keeps all five
+ * utility controls on an even 8px cadence; compact/tablet layouts tighten the
+ * cadence and omit the language separator so the reduced control set stays calm. */
+.gloskin-ui1-footer .gloskin-ui1-dark-consultation__button:hover,
+.gloskin-ui1-footer .gloskin-ui1-dark-consultation__button:focus-visible{text-decoration:none}
+@media (min-width:1041px){
+body.gloskin-ui1 [data-gloskin-header="header-2"] .gloskin-ui1-header__zone--end{gap:8px}
+.gloskin-ui1-header__zone--end>.gloskin-ui1-lang-switcher::before{position:absolute;top:50%;left:-4px;width:1px;height:20px;background:color-mix(in srgb,var(--gloskin-text) 18%,transparent);content:"";transform:translateY(-50%);pointer-events:none}
+}
+@media (max-width:1040px){body.gloskin-ui1 [data-gloskin-header="header-2"] .gloskin-ui1-header__zone--end{gap:5px}}
