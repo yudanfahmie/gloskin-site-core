@@ -8,14 +8,43 @@
 	var modal = document.querySelector('[data-gloskin-editorial-modal]');
 	var form = modal ? modal.querySelector('[data-gloskin-editorial-form]') : null;
 	var recordsNode = document.getElementById('gloskin-editorial-records');
+	var statusNode = document.querySelector('[data-gloskin-editorial-status]');
+	var statusMessage = statusNode ? statusNode.querySelector('[data-gloskin-editorial-status-message]') : null;
 	var records = {};
 	var mediaFrame = null;
 	var lastFocus = null;
+	var sortableSnapshot = [];
 
 	try {
 		records = recordsNode ? JSON.parse(recordsNode.textContent || '{}') : {};
 	} catch (error) {
 		records = {};
+	}
+
+	function label(name, fallback) {
+		return config.labels && config.labels[name] ? config.labels[name] : fallback;
+	}
+
+	function setStatus(message, isError) {
+		if (!statusNode || !statusMessage) { return; }
+		statusMessage.textContent = message || '';
+		statusNode.classList.remove('notice-info', 'notice-success', 'notice-error');
+		statusNode.classList.add(isError ? 'notice-error' : 'notice-success');
+		statusNode.hidden = !message;
+	}
+
+	function normalizeModalQuery() {
+		try {
+			var url = new URL(window.location.href);
+			var changed = url.searchParams.has('gloskin_edit') || url.searchParams.has('gloskin_add');
+			url.searchParams.delete('gloskin_edit');
+			url.searchParams.delete('gloskin_add');
+			if (changed && window.history && window.history.replaceState) {
+				window.history.replaceState(null, '', url.toString());
+			}
+		} catch (ignore) {
+			// Query normalization is best-effort only.
+		}
 	}
 
 	function setField(name, value) {
@@ -51,26 +80,37 @@
 		setField('image_id', record.image_id || 0);
 		setField('active', typeof record.active === 'undefined' ? true : !!record.active);
 		setPreview(record);
-		var error = form.querySelector('[data-gloskin-editorial-error]');
+		var error = form ? form.querySelector('[data-gloskin-editorial-error]') : null;
 		if (error) { error.hidden = true; error.textContent = ''; }
 	}
 
 	function openModal(id) {
-		if (!modal || !form) { return; }
+		if (!modal || !form) { return false; }
+		var requestedId = parseInt(id, 10) || 0;
+		if (requestedId > 0 && !records[String(requestedId)]) {
+			setStatus(label('invalidEdit', 'That record is no longer available. The list was left unchanged.'), true);
+			normalizeModalQuery();
+			return false;
+		}
 		lastFocus = document.activeElement;
-		var record = id && records[String(id)] ? records[String(id)] : null;
-		populate(record);
+		populate(requestedId > 0 ? records[String(requestedId)] : null);
 		modal.hidden = false;
 		document.body.classList.add('gloskin-editorial-modal-open');
 		var first = form.querySelector('input[name="title"]');
-		if (first) { window.setTimeout(function () { first.focus(); }, 0); }
+		if (first) { first.focus(); }
+		return true;
 	}
 
 	function closeModal() {
 		if (!modal) { return; }
 		modal.hidden = true;
 		document.body.classList.remove('gloskin-editorial-modal-open');
+		normalizeModalQuery();
 		if (lastFocus && typeof lastFocus.focus === 'function') { lastFocus.focus(); }
+	}
+
+	function responseMessage(response, fallback) {
+		return response && response.data && response.data.message ? response.data.message : fallback;
 	}
 
 	function ajax(action, payload) {
@@ -123,6 +163,17 @@
 		});
 	}
 
+	function resetMediaSelection() {
+		if (!mediaFrame || !form) { return; }
+		var selection = mediaFrame.state().get('selection');
+		if (!selection) { return; }
+		selection.reset();
+		var currentId = parseInt(form.elements.image_id ? form.elements.image_id.value : '0', 10) || 0;
+		if (currentId && window.wp && wp.media && wp.media.attachment) {
+			selection.add(wp.media.attachment(currentId));
+		}
+	}
+
 	function openMedia() {
 		if (!window.wp || !wp.media || !form) { return; }
 		if (!mediaFrame) {
@@ -133,12 +184,15 @@
 				multiple: false
 			});
 			mediaFrame.on('select', function () {
-				var attachment = mediaFrame.state().get('selection').first().toJSON();
+				var selected = mediaFrame.state().get('selection').first();
+				if (!selected) { return; }
+				var attachment = selected.toJSON();
 				setField('image_id', attachment.id || 0);
 				var source = attachment.sizes && attachment.sizes.medium ? attachment.sizes.medium.url : attachment.url;
 				setPreview({ image_url: source || '' });
 			});
 		}
+		resetMediaSelection();
 		mediaFrame.open();
 	}
 
@@ -246,6 +300,16 @@
 		editLink.textContent = 'Edit';
 		editAction.appendChild(editLink);
 		actions.appendChild(editAction);
+		if (record.trash_url) {
+			var trashAction = document.createElement('span');
+			trashAction.className = 'trash';
+			var trashLink = document.createElement('a');
+			trashLink.className = 'submitdelete';
+			trashLink.href = record.trash_url;
+			trashLink.textContent = 'Trash';
+			trashAction.appendChild(trashLink);
+			actions.appendChild(trashAction);
+		}
 		title.appendChild(actions);
 		row.appendChild(title);
 
@@ -316,22 +380,22 @@
 			var payload = {};
 			data.forEach(function (value, key) { payload[key] = value; });
 			payload.active = form.elements.active && form.elements.active.checked ? '1' : '0';
-			if (save) { save.disabled = true; save.textContent = config.labels.saving; }
+			if (save) { save.disabled = true; save.textContent = label('saving', 'Saving…'); }
 			ajax('gloskin_editorial_save', payload).then(function (response) {
-				if (!response || !response.success) { throw new Error(response && response.data && response.data.message ? response.data.message : config.labels.error); }
+				if (!response || !response.success) { throw new Error(responseMessage(response, label('error', 'Could not save this record.'))); }
 				var record = response.data && response.data.record ? response.data.record : null;
-				if (!record || !record.id) { throw new Error(config.labels.error); }
+				if (!record || !record.id) { throw new Error(label('error', 'Could not save this record.')); }
 				records[String(record.id)] = record;
+				setField('post_id', record.id);
 				if (!reconcileRecord(record)) {
-					// Explicit failure recovery only: the server save succeeded but the
-					// native table DOM no longer matches the manager's known schema.
-					window.location.reload();
-					return;
+					setStatus(label('saveListFailed', 'Saved, but the native list could not be updated in place. Refresh the list manually if needed.'), true);
+				} else {
+					setStatus(label('saved', 'Saved.'), false);
 				}
 				if (save) { save.disabled = false; save.textContent = 'Save'; }
 				closeModal();
 			}).catch(function (requestError) {
-				if (error) { error.textContent = requestError.message || config.labels.error; error.hidden = false; }
+				if (error) { error.textContent = requestError.message || label('error', 'Could not save this record.'); error.hidden = false; }
 				if (save) { save.disabled = false; save.textContent = 'Save'; }
 			});
 		});
@@ -341,7 +405,7 @@
 		var next = button.getAttribute('data-active') === '1' ? '0' : '1';
 		button.disabled = true;
 		ajax('gloskin_editorial_toggle', { post_id: button.getAttribute('data-id'), active: next }).then(function (response) {
-			if (!response || !response.success) { throw new Error(config.labels.error); }
+			if (!response || !response.success) { throw new Error(responseMessage(response, label('activeFailed', 'Active state could not be updated.'))); }
 			var active = !!response.data.active;
 			var id = String(button.getAttribute('data-id') || '');
 			button.setAttribute('data-active', active ? '1' : '0');
@@ -350,12 +414,47 @@
 			button.textContent = active ? 'Active' : 'Inactive';
 			button.disabled = false;
 			if (records[id]) { records[id].active = active; }
-		}).catch(function () { button.disabled = false; });
+			setStatus(label('activeUpdated', 'Active state updated.'), false);
+		}).catch(function (requestError) {
+			button.disabled = false;
+			setStatus(requestError.message || label('activeFailed', 'Active state could not be updated.'), true);
+		});
+	}
+
+	function currentRowIds(table) {
+		return table.children('tr[id^="post-"]').map(function () { return this.id.replace('post-', ''); }).get();
+	}
+
+	function restoreRowOrder(ids) {
+		var body = document.getElementById('the-list');
+		if (!body) { return; }
+		ids.forEach(function (id) {
+			var row = document.getElementById('post-' + id);
+			if (row) { body.appendChild(row); }
+		});
+	}
+
+	function applyReorderAvailability() {
+		var enabled = !!config.canReorder;
+		document.querySelectorAll('.gloskin-editorial-order-handle').forEach(function (handle) {
+			if (enabled) {
+				handle.removeAttribute('aria-disabled');
+				handle.title = 'Drag to reorder';
+			} else {
+				handle.setAttribute('aria-disabled', 'true');
+				handle.title = label('reorderHint', 'Clear filters to reorder items.');
+			}
+		});
 	}
 
 	function initSortable() {
 		var table = $('#the-list');
+		applyReorderAvailability();
 		if (!table.length || !$.fn.sortable) { return; }
+		if (!config.canReorder) {
+			if (table.hasClass('ui-sortable')) { table.sortable('destroy'); }
+			return;
+		}
 		if (table.hasClass('ui-sortable')) {
 			table.sortable('refresh');
 			return;
@@ -368,14 +467,24 @@
 				row.children().each(function () { $(this).width($(this).width()); });
 				return row;
 			},
+			start: function () {
+				sortableSnapshot = currentRowIds(table);
+			},
 			update: function () {
-				var ids = table.children('tr[id^="post-"]').map(function () { return this.id.replace('post-', ''); }).get();
+				var ids = currentRowIds(table);
 				table.addClass('is-gloskin-saving-order');
 				ajax('gloskin_editorial_reorder', { post_type: config.postType, ids: ids }).then(function (response) {
-					if (!response || !response.success) { throw new Error(config.labels.error); }
+					if (!response || !response.success || !response.data || Number(response.data.ordered) !== ids.length) {
+						throw new Error(responseMessage(response, label('reorderFailed', 'Order could not be saved.')));
+					}
 					ids.forEach(function (id, index) { if (records[String(id)]) { records[String(id)].order = index + 1; } });
 					table.removeClass('is-gloskin-saving-order');
-				}).catch(function () { table.removeClass('is-gloskin-saving-order'); });
+					setStatus(label('reorderSaved', 'Order saved.'), false);
+				}).catch(function (requestError) {
+					restoreRowOrder(sortableSnapshot);
+					table.removeClass('is-gloskin-saving-order');
+					setStatus(requestError.message || label('reorderFailed', 'Order could not be saved.'), true);
+				});
 			}
 		});
 	}
@@ -384,9 +493,35 @@
 		initSortable();
 	}
 
+	function focusableElements() {
+		if (!modal) { return []; }
+		var dialog = modal.querySelector('.gloskin-editorial-modal__dialog');
+		if (!dialog) { return []; }
+		return Array.prototype.slice.call(dialog.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter(function (element) {
+			return element.getAttribute('aria-hidden') !== 'true' && element.offsetParent !== null;
+		});
+	}
+
 	function bindKeyboard() {
 		document.addEventListener('keydown', function (event) {
-			if (event.key === 'Escape' && modal && !modal.hidden) { event.preventDefault(); closeModal(); }
+			if (!modal || modal.hidden) { return; }
+			if (event.key === 'Escape') {
+				event.preventDefault();
+				closeModal();
+				return;
+			}
+			if (event.key !== 'Tab') { return; }
+			var focusables = focusableElements();
+			if (!focusables.length) { event.preventDefault(); return; }
+			var first = focusables[0];
+			var last = focusables[focusables.length - 1];
+			if (event.shiftKey && document.activeElement === first) {
+				event.preventDefault();
+				last.focus();
+			} else if (!event.shiftKey && document.activeElement === last) {
+				event.preventDefault();
+				first.focus();
+			}
 		});
 	}
 
