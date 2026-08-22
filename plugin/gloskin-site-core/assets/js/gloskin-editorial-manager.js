@@ -16,6 +16,7 @@
 	var mediaTrigger = null;
 	var lastFocus = null;
 	var sortableSnapshot = [];
+	var cropResizeObserver = null;
 	var isPromo = config.postType === 'gloskin_promo';
 	var promoCrop = isPromo && form ? form.querySelector('[data-gloskin-promo-crop]') : null;
 	var promoCropViewport = promoCrop ? promoCrop.querySelector('[data-gloskin-promo-crop-viewport]') : null;
@@ -84,11 +85,15 @@
 	function normalizeModalQuery() {
 		try {
 			var url = new URL(window.location.href);
-			var changed = url.searchParams.has('gloskin_edit') || url.searchParams.has('gloskin_add');
-			url.searchParams.delete('gloskin_edit');
-			url.searchParams.delete('gloskin_add');
+			var changed = false;
+			['gloskin_edit', 'gloskin_add', 'gloskin_new'].forEach(function (key) {
+				if (url.searchParams.has(key)) {
+					url.searchParams.delete(key);
+					changed = true;
+				}
+			});
 			if (changed && window.history && window.history.replaceState) {
-				window.history.replaceState(null, '', url.toString());
+				window.history.replaceState(window.history.state, '', url.pathname + (url.search || '') + (url.hash || ''));
 			}
 		} catch (ignore) {
 			// Query normalization is best-effort only.
@@ -214,7 +219,7 @@
 		cropState.draftY = geometry.focusY;
 		cropState.draftZoom = geometry.zoom;
 		markCropDirty();
-		syncCropPreviewPosition();
+		refreshCropLayout();
 	}
 
 	function ensureCropUi() {
@@ -288,19 +293,23 @@
 		});
 	}
 
-	function syncCropPreviewPosition() {
-		if (!promoCropViewport || !promoCropSelection) { return; }
+	/* One geometry synchronization path. It is intentionally a no-op while the
+	 * modal/viewport has no measurable layout, so a persisted crop is never
+	 * converted into a tiny zero-size selection during hidden hydration. */
+	function refreshCropLayout() {
+		if (!isPromo || !promoCropViewport || !promoCropSelection || !hasSelectedImage()) { return false; }
+		if (modal && modal.hidden) { return false; }
+		if (!promoCropSource || !promoCropSource.naturalWidth || !promoCropSource.naturalHeight) { return false; }
+		var sourceRect = renderedSourceRect();
+		if (!sourceRect) { return false; }
 		var geometry = cropGeometry(cropState.draftZoom, cropState.draftX, cropState.draftY);
 		cropState.draftX = geometry.focusX;
 		cropState.draftY = geometry.focusY;
 		cropState.draftZoom = geometry.zoom;
-		var sourceRect = renderedSourceRect();
-		if (sourceRect) {
-			promoCropSelection.style.left = (sourceRect.left + geometry.x / cropState.width * sourceRect.width) + 'px';
-			promoCropSelection.style.top = (sourceRect.top + geometry.y / cropState.height * sourceRect.height) + 'px';
-			promoCropSelection.style.width = (geometry.width / cropState.width * sourceRect.width) + 'px';
-			promoCropSelection.style.height = (geometry.height / cropState.height * sourceRect.height) + 'px';
-		}
+		promoCropSelection.style.left = (sourceRect.left + geometry.x / cropState.width * sourceRect.width) + 'px';
+		promoCropSelection.style.top = (sourceRect.top + geometry.y / cropState.height * sourceRect.height) + 'px';
+		promoCropSelection.style.width = (geometry.width / cropState.width * sourceRect.width) + 'px';
+		promoCropSelection.style.height = (geometry.height / cropState.height * sourceRect.height) + 'px';
 		var scale = cropState.draftZoom / 100;
 		if (promoCropOutput) {
 			promoCropOutput.style.setProperty('--gloskin-promo-focus-x', cropState.draftX + '%');
@@ -312,6 +321,7 @@
 			promoCropZoom.value = String(Math.round(cropState.draftZoom));
 		}
 		if (promoCropZoomValue) { promoCropZoomValue.textContent = Math.round(cropState.draftZoom) + '%'; }
+		return true;
 	}
 
 	function refreshCropStateUi() {
@@ -385,21 +395,23 @@
 				return;
 			}
 			var source = record.crop_image_url || record.image_url;
-			promoCropSource.src = source;
-			promoCropOutputImage.src = source;
-			promoCropSource.onload = function () {
+			var handled = false;
+			function imageReady() {
+				if (handled) { return; }
+				handled = true;
 				if (!cropState.width) { cropState.width = promoCropSource.naturalWidth || 0; }
 				if (!cropState.height) { cropState.height = promoCropSource.naturalHeight || 0; }
-				setCropDraft(cropState.draftX, cropState.draftY, cropState.draftZoom);
-				cropState.dirty = !!record.crop_dirty;
 				if (record.crop_auto_select) {
 					smartSelectPromo(true);
 				} else {
-					syncCropPreviewPosition();
+					refreshCropLayout();
 					refreshCropStateUi();
 				}
-			};
-			if (promoCropSource.complete && promoCropSource.naturalWidth) { promoCropSource.onload(); }
+			}
+			promoCropSource.onload = imageReady;
+			promoCropSource.src = source;
+			promoCropOutputImage.src = source;
+			if (promoCropSource.complete && promoCropSource.naturalWidth) { imageReady(); }
 			return;
 		}
 
@@ -428,6 +440,11 @@
 		formError('');
 	}
 
+	function dispatchManagerEvent(name, detail) {
+		if (typeof window.CustomEvent !== 'function') { return; }
+		document.dispatchEvent(new CustomEvent(name, { detail: detail || {} }));
+	}
+
 	function openModal(id) {
 		if (!modal || !form) { return false; }
 		var requestedId = parseInt(id, 10) || 0;
@@ -437,11 +454,19 @@
 			return false;
 		}
 		lastFocus = document.activeElement;
-		populate(requestedId > 0 ? records[String(requestedId)] : null);
+		var record = requestedId > 0 ? records[String(requestedId)] : null;
+		populate(record);
 		modal.hidden = false;
 		document.body.classList.add('gloskin-editorial-modal-open');
+		normalizeModalQuery();
+		refreshCropLayout();
 		var first = form.querySelector('input[name="title"]');
 		if (first) { first.focus(); }
+		dispatchManagerEvent('gloskin:editorial-modal-open', {
+			id: requestedId,
+			isNew: requestedId === 0,
+			record: record || {}
+		});
 		return true;
 	}
 
@@ -803,7 +828,12 @@
 		}
 		promoCropViewport.addEventListener('keydown', cropKeyboard);
 		if (promoCropSelection) { promoCropSelection.addEventListener('keydown', cropKeyboard); }
-		window.addEventListener('resize', syncCropPreviewPosition);
+		if (typeof window.ResizeObserver === 'function') {
+			cropResizeObserver = new ResizeObserver(function () { refreshCropLayout(); });
+			cropResizeObserver.observe(promoCropViewport);
+		} else {
+			window.addEventListener('resize', refreshCropLayout);
+		}
 	}
 
 	/* ONE safe media-selection accessor. Guards both state existence and
@@ -840,8 +870,6 @@
 				library: { type: 'image' },
 				multiple: false
 			});
-			/* Reset/preselection runs inside the open event — at this point the
-			 * WordPress frame owns an active state and getMediaSelection() is safe. */
 			mediaFrame.on('open', function () {
 				mediaFrameActive = true;
 				resetMediaSelection();
@@ -909,22 +937,40 @@
 		return true;
 	}
 
+	function createStatusButton(actions, attribute, extraClass) {
+		var button = document.createElement('button');
+		button.type = 'button';
+		button.className = 'button gloskin-editorial-active-toggle' + (extraClass ? ' ' + extraClass : '');
+		button.setAttribute(attribute, '');
+		actions.appendChild(button);
+		return button;
+	}
+
 	function setActiveCell(cell, record) {
 		if (!cell) { return false; }
-		var button = cell.querySelector('[data-gloskin-editorial-toggle]');
-		if (!button) {
-			cell.replaceChildren();
-			button = document.createElement('button');
-			button.type = 'button';
-			button.className = 'button gloskin-editorial-active-toggle';
-			button.setAttribute('data-gloskin-editorial-toggle', '');
-			cell.appendChild(button);
+		var actions = cell.querySelector(':scope > .gloskin-editorial-status-actions');
+		if (!actions) {
+			if (cell.children.length || String(cell.textContent || '').trim()) { return false; }
+			actions = document.createElement('span');
+			actions.className = 'gloskin-editorial-status-actions';
+			cell.appendChild(actions);
 		}
+		var button = actions.querySelector('[data-gloskin-editorial-toggle]');
+		if (!button) { button = createStatusButton(actions, 'data-gloskin-editorial-toggle', ''); }
 		button.setAttribute('data-id', String(record.id));
 		button.setAttribute('data-active', record.active ? '1' : '0');
 		button.setAttribute('aria-pressed', record.active ? 'true' : 'false');
 		button.classList.toggle('is-active', !!record.active);
 		button.textContent = record.active ? 'Active' : 'Inactive';
+		if (isPromo) {
+			var popup = actions.querySelector('[data-gloskin-promo-popup-toggle]');
+			if (!popup) { popup = createStatusButton(actions, 'data-gloskin-promo-popup-toggle', 'gloskin-editorial-popup-toggle'); }
+			popup.setAttribute('data-id', String(record.id));
+			popup.setAttribute('data-popup', record.popup_enabled ? '1' : '0');
+			popup.setAttribute('aria-pressed', record.popup_enabled ? 'true' : 'false');
+			popup.classList.toggle('is-active', !!record.popup_enabled);
+			popup.textContent = record.popup_enabled ? label('popupOn', 'Popup On') : label('popupOff', 'Popup Off');
+		}
 		return true;
 	}
 
@@ -1076,6 +1122,9 @@
 			var payload = {};
 			data.forEach(function (value, key) { payload[key] = value; });
 			payload.active = form.elements.active && form.elements.active.checked ? '1' : '0';
+			if (isPromo && form.elements.popup_enabled) {
+				payload.popup_enabled = form.elements.popup_enabled.checked ? '1' : '0';
+			}
 			if (save) { save.disabled = true; save.textContent = label('saving', 'Saving…'); }
 			ajax('gloskin_editorial_save', payload).then(function (response) {
 				if (!response || !response.success) { throw new Error(responseMessage(response, label('error', 'Could not save this record.'))); }
@@ -1083,6 +1132,7 @@
 				if (!record || !record.id) { throw new Error(label('error', 'Could not save this record.')); }
 				records[String(record.id)] = record;
 				setField('post_id', record.id);
+				dispatchManagerEvent('gloskin:editorial-record-saved', { record: record });
 				if (!reconcileRecord(record)) {
 					setStatus(label('saveListFailed', 'Saved, but the native list could not be updated in place. Refresh the list manually if needed.'), true);
 				} else {
@@ -1100,7 +1150,7 @@
 	function toggleActive(button) {
 		var next = button.getAttribute('data-active') === '1' ? '0' : '1';
 		button.disabled = true;
-		ajax('gloskin_editorial_toggle', { post_id: button.getAttribute('data-id'), active: next }).then(function (response) {
+		ajax('gloskin_editorial_toggle', { post_id: button.getAttribute('data-id'), field: 'active', active: next }).then(function (response) {
 			if (!response || !response.success) { throw new Error(responseMessage(response, label('activeFailed', 'Active state could not be updated.'))); }
 			var active = !!response.data.active;
 			var id = String(button.getAttribute('data-id') || '');
@@ -1222,11 +1272,20 @@
 		});
 	}
 
+	function initializeModalIntent() {
+		if (!modal) { return; }
+		var editId = parseInt(config.editId, 10) || 0;
+		var addIntent = !!config.addId;
+		config.editId = 0;
+		config.addId = 0;
+		if (editId) { openModal(editId); return; }
+		if (addIntent) { openModal(0); return; }
+	}
+
 	interceptLinks();
 	bindCropInteraction();
 	bindForm();
 	bindKeyboard();
 	initSortable();
-	if (config.editId) { openModal(parseInt(config.editId, 10)); }
-	else if (config.addId) { openModal(0); }
+	initializeModalIntent();
 })(jQuery);
