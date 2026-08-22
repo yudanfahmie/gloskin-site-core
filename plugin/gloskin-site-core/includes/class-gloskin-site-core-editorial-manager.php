@@ -62,7 +62,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			'gloskin_editorial_image'  => __( 'Image', 'gloskin-site-core' ),
 			'title'                     => __( 'Internal title', 'gloskin-site-core' ),
 			'gloskin_promo_type'       => __( 'Type', 'gloskin-site-core' ),
-			'gloskin_editorial_active' => __( 'Active', 'gloskin-site-core' ),
+			'gloskin_editorial_active' => __( 'Active / Popup', 'gloskin-site-core' ),
 			'date'                      => isset( $columns['date'] ) ? $columns['date'] : __( 'Date', 'gloskin-site-core' ),
 		);
 	}
@@ -127,6 +127,10 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		if ( 'gloskin_editorial_active' === $column ) {
 			$active = '1' === (string) get_post_meta( $post_id, $this->active_meta_key( $post_type ), true );
 			echo '<button type="button" class="button gloskin-editorial-active-toggle' . ( $active ? ' is-active' : '' ) . '" data-gloskin-editorial-toggle data-id="' . esc_attr( (string) $post_id ) . '" data-active="' . ( $active ? '1' : '0' ) . '" aria-pressed="' . ( $active ? 'true' : 'false' ) . '">' . esc_html( $active ? __( 'Active', 'gloskin-site-core' ) : __( 'Inactive', 'gloskin-site-core' ) ) . '</button>';
+			if ( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post_type ) {
+				$popup = '1' === (string) get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::POPUP_META, true );
+				echo ' <button type="button" class="button gloskin-editorial-active-toggle gloskin-editorial-popup-toggle' . ( $popup ? ' is-active' : '' ) . '" data-gloskin-promo-popup-toggle data-id="' . esc_attr( (string) $post_id ) . '" data-popup="' . ( $popup ? '1' : '0' ) . '" aria-pressed="' . ( $popup ? 'true' : 'false' ) . '">' . esc_html( $popup ? __( 'Popup On', 'gloskin-site-core' ) : __( 'Popup Off', 'gloskin-site-core' ) ) . '</button>';
+			}
 		}
 	}
 
@@ -186,6 +190,9 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		$base = plugin_dir_url( $this->plugin_file );
 		wp_enqueue_style( 'gloskin-editorial-manager', $base . 'assets/css/gloskin-editorial-manager.css', array(), $this->version );
 		wp_enqueue_script( 'gloskin-editorial-manager', $base . 'assets/js/gloskin-editorial-manager.js', array( 'jquery', 'jquery-ui-sortable', 'media-editor' ), $this->version, true );
+		if ( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post_type ) {
+			wp_enqueue_style( 'gloskin-editorial-promo-settings', $base . 'assets/css/gloskin-editorial-promo-settings.css', array( 'gloskin-editorial-manager' ), $this->version );
+		}
 		wp_localize_script( 'gloskin-editorial-manager', 'GloskinEditorialManager', array(
 			'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
 			'nonce'           => wp_create_nonce( self::NONCE_ACTION ),
@@ -205,6 +212,10 @@ final class Gloskin_Site_Core_Editorial_Manager {
 				'saveListFailed'          => __( 'Saved, but the native list could not be updated in place. Refresh the list manually if needed.', 'gloskin-site-core' ),
 				'activeUpdated'           => __( 'Active state updated.', 'gloskin-site-core' ),
 				'activeFailed'            => __( 'Active state could not be updated.', 'gloskin-site-core' ),
+				'popupOn'                 => __( 'Popup On', 'gloskin-site-core' ),
+				'popupOff'                => __( 'Popup Off', 'gloskin-site-core' ),
+				'popupUpdated'            => __( 'Popup display state updated.', 'gloskin-site-core' ),
+				'popupFailed'             => __( 'Popup state could not be updated.', 'gloskin-site-core' ),
 				'reorderSaved'            => __( 'Order saved.', 'gloskin-site-core' ),
 				'reorderFailed'           => __( 'Order could not be saved.', 'gloskin-site-core' ),
 				'reorderHint'             => __( 'Clear filters to reorder items.', 'gloskin-site-core' ),
@@ -223,6 +234,9 @@ final class Gloskin_Site_Core_Editorial_Manager {
 				'cropSelectionLabel'      => __( 'Crop selection. Drag to move, drag a corner handle to resize, or use arrow keys.', 'gloskin-site-core' ),
 			),
 		) );
+		if ( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post_type ) {
+			wp_enqueue_script( 'gloskin-editorial-promo-settings', $base . 'assets/js/gloskin-editorial-promo-settings.js', array( 'gloskin-editorial-manager' ), $this->version, true );
+		}
 	}
 
 	/** @return void */
@@ -242,9 +256,10 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		if ( ! $screen || 'edit' !== $screen->base || ! $this->is_managed_type( (string) $screen->post_type ) ) {
 			return;
 		}
-		$post_type = (string) $screen->post_type;
-		$records   = $this->record_payloads( $post_type );
-		$is_promo  = Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post_type;
+		$post_type  = (string) $screen->post_type;
+		$records    = $this->record_payloads( $post_type );
+		$is_promo   = Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post_type;
+		$promo_pages = $is_promo ? get_pages( array( 'sort_column' => 'post_title', 'sort_order' => 'ASC', 'post_status' => 'publish' ) ) : array();
 		?>
 		<div class="gloskin-editorial-modal" data-gloskin-editorial-modal hidden>
 			<div class="gloskin-editorial-modal__backdrop" data-gloskin-editorial-close></div>
@@ -283,6 +298,21 @@ final class Gloskin_Site_Core_Editorial_Manager {
 							</div>
 						</div>
 						<label class="gloskin-editorial-active-field"><input type="checkbox" name="active" value="1"> <span><?php echo esc_html__( 'Active', 'gloskin-site-core' ); ?></span></label>
+						<?php if ( $is_promo ) : ?>
+						<fieldset class="gloskin-editorial-popup-settings">
+							<legend><?php echo esc_html__( 'Popup display', 'gloskin-site-core' ); ?></legend>
+							<div class="gloskin-editorial-popup-settings__grid">
+								<label class="gloskin-editorial-active-field"><input type="checkbox" name="popup_enabled" value="1"> <span><?php echo esc_html__( 'Show as popup', 'gloskin-site-core' ); ?></span></label>
+								<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Visibility', 'gloskin-site-core' ); ?></span><select name="visibility"><option value="homepage"><?php echo esc_html__( 'Homepage', 'gloskin-site-core' ); ?></option><option value="all_pages"><?php echo esc_html__( 'All Pages', 'gloskin-site-core' ); ?></option><option value="specific_pages"><?php echo esc_html__( 'Specific Pages', 'gloskin-site-core' ); ?></option></select></label>
+								<label class="gloskin-editorial-field gloskin-editorial-popup-settings__destination"><span><?php echo esc_html__( 'Destination URL', 'gloskin-site-core' ); ?></span><input type="text" name="destination_url" inputmode="url" autocomplete="url" placeholder="https://example.com/promo/ or /promo/"><p class="gloskin-editorial-popup-settings__hint"><?php echo esc_html__( 'Same-site links may be root-relative. External destinations must use HTTPS.', 'gloskin-site-core' ); ?></p></label>
+								<div class="gloskin-editorial-popup-settings__specific" data-gloskin-promo-specific-pages hidden>
+									<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Specific Pages', 'gloskin-site-core' ); ?></span><input class="gloskin-editorial-popup-settings__search" type="search" data-gloskin-promo-page-search placeholder="<?php echo esc_attr__( 'Search pages…', 'gloskin-site-core' ); ?>"><select class="gloskin-editorial-popup-settings__pages" multiple size="7" data-gloskin-promo-page-select aria-label="<?php echo esc_attr__( 'Select WordPress pages', 'gloskin-site-core' ); ?>"><?php foreach ( $promo_pages as $promo_page ) : ?><option value="<?php echo esc_attr( (string) $promo_page->ID ); ?>"><?php echo esc_html( get_the_title( $promo_page ) ); ?></option><?php endforeach; ?></select></label>
+									<input type="hidden" name="visibility_page_ids_csv" value="">
+									<p class="gloskin-editorial-popup-settings__hint"><?php echo esc_html__( 'Choose one or more published WordPress pages. Selections are stored by post ID.', 'gloskin-site-core' ); ?></p>
+								</div>
+							</div>
+						</fieldset>
+						<?php endif; ?>
 						<p class="gloskin-editorial-modal__error" data-gloskin-editorial-error role="alert" hidden></p>
 					</div>
 					<footer class="gloskin-editorial-modal__footer"><button type="button" class="button" data-gloskin-editorial-close><?php echo esc_html__( 'Cancel', 'gloskin-site-core' ); ?></button><button type="submit" class="button button-primary" data-gloskin-editorial-save><?php echo esc_html__( 'Save', 'gloskin-site-core' ); ?></button></footer>
@@ -327,12 +357,16 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			$profile = Gloskin_Site_Core_Content_Service::editorial_profile( $post->post_type );
 			$dims    = $this->attachment_dimensions( $image_id );
 			$full    = $image_id ? wp_get_attachment_image_url( $image_id, 'full' ) : '';
-			$payload['crop_image_url'] = $full ? (string) $full : ( $preview ? (string) $preview : '' );
-			$payload['image_width']    = $dims['width'];
-			$payload['image_height']   = $dims['height'];
-			$payload['focus_x']        = $this->promo_focus_value( $post->ID, (string) ( $profile['focus_x_meta'] ?? '' ) );
-			$payload['focus_y']        = $this->promo_focus_value( $post->ID, (string) ( $profile['focus_y_meta'] ?? '' ) );
-			$payload['zoom']           = $this->promo_zoom_value( $post->ID, (string) ( $profile['zoom_meta'] ?? '' ) );
+			$payload['crop_image_url']      = $full ? (string) $full : ( $preview ? (string) $preview : '' );
+			$payload['image_width']         = $dims['width'];
+			$payload['image_height']        = $dims['height'];
+			$payload['focus_x']             = $this->promo_focus_value( $post->ID, (string) ( $profile['focus_x_meta'] ?? '' ) );
+			$payload['focus_y']             = $this->promo_focus_value( $post->ID, (string) ( $profile['focus_y_meta'] ?? '' ) );
+			$payload['zoom']                = $this->promo_zoom_value( $post->ID, (string) ( $profile['zoom_meta'] ?? '' ) );
+			$payload['popup_enabled']       = '1' === (string) get_post_meta( $post->ID, Gloskin_Site_Core_Promo_Modal::POPUP_META, true );
+			$payload['visibility']          = Gloskin_Site_Core_Promo_Modal::sanitize_visibility( get_post_meta( $post->ID, Gloskin_Site_Core_Promo_Modal::VISIBILITY_META, true ) );
+			$payload['visibility_page_ids'] = Gloskin_Site_Core_Promo_Modal::sanitize_page_ids( get_post_meta( $post->ID, Gloskin_Site_Core_Promo_Modal::PAGE_IDS_META, true ) );
+			$payload['destination_url']     = Gloskin_Site_Core_Promo_Modal::sanitize_destination_url( get_post_meta( $post->ID, Gloskin_Site_Core_Promo_Modal::DESTINATION_META, true ) );
 		}
 		return $payload;
 	}
@@ -377,6 +411,31 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			wp_send_json_error( array( 'message' => __( 'Choose a valid image from the WordPress Media Library.', 'gloskin-site-core' ) ), 400 );
 		}
 		$profile = Gloskin_Site_Core_Content_Service::editorial_profile( $post_type );
+		$popup_enabled      = false;
+		$visibility         = Gloskin_Site_Core_Promo_Modal::VISIBILITY_HOMEPAGE;
+		$visibility_page_ids = array();
+		$destination_url    = '';
+		if ( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post_type ) {
+			$popup_enabled = isset( $_POST['popup_enabled'] ) && '1' === (string) wp_unslash( $_POST['popup_enabled'] );
+			$visibility    = Gloskin_Site_Core_Promo_Modal::sanitize_visibility( isset( $_POST['visibility'] ) ? wp_unslash( $_POST['visibility'] ) : Gloskin_Site_Core_Promo_Modal::VISIBILITY_HOMEPAGE );
+			$page_csv      = isset( $_POST['visibility_page_ids_csv'] ) ? sanitize_text_field( wp_unslash( $_POST['visibility_page_ids_csv'] ) ) : '';
+			$page_ids      = '' === $page_csv ? array() : preg_split( '/[\s,]+/', $page_csv, -1, PREG_SPLIT_NO_EMPTY );
+			$visibility_page_ids = Gloskin_Site_Core_Promo_Modal::sanitize_page_ids( is_array( $page_ids ) ? $page_ids : array() );
+			$destination_raw = isset( $_POST['destination_url'] ) ? trim( (string) wp_unslash( $_POST['destination_url'] ) ) : '';
+			$destination_url = Gloskin_Site_Core_Promo_Modal::sanitize_destination_url( $destination_raw );
+			if ( '' !== $destination_raw && '' === $destination_url ) {
+				wp_send_json_error( array( 'message' => __( 'Destination URL must be a same-site HTTP/HTTPS URL or an external HTTPS URL.', 'gloskin-site-core' ) ), 400 );
+			}
+			if ( $popup_enabled && ! $image_id ) {
+				wp_send_json_error( array( 'message' => __( 'Choose a featured Promo image before enabling popup display.', 'gloskin-site-core' ) ), 400 );
+			}
+			if ( $popup_enabled && '' === $destination_url ) {
+				wp_send_json_error( array( 'message' => __( 'Add a valid destination URL before enabling popup display.', 'gloskin-site-core' ) ), 400 );
+			}
+			if ( $popup_enabled && Gloskin_Site_Core_Promo_Modal::VISIBILITY_SPECIFIC === $visibility && ! $visibility_page_ids ) {
+				wp_send_json_error( array( 'message' => __( 'Select at least one WordPress page for Specific Pages visibility.', 'gloskin-site-core' ) ), 400 );
+			}
+		}
 		if ( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post_type && $image_id ) {
 			$current_image_id = $post_id ? absint( get_post_thumbnail_id( $post_id ) ) : 0;
 			if ( $current_image_id !== $image_id ) {
@@ -415,6 +474,14 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			update_post_meta( $saved_id, (string) ( $profile['focus_x_meta'] ?? 'gloskin_promo_focus_x' ), $focus_x );
 			update_post_meta( $saved_id, (string) ( $profile['focus_y_meta'] ?? 'gloskin_promo_focus_y' ), $focus_y );
 			update_post_meta( $saved_id, (string) ( $profile['zoom_meta'] ?? 'gloskin_promo_crop_zoom' ), $zoom );
+			update_post_meta( $saved_id, Gloskin_Site_Core_Promo_Modal::POPUP_META, $popup_enabled ? '1' : '0' );
+			update_post_meta( $saved_id, Gloskin_Site_Core_Promo_Modal::VISIBILITY_META, $visibility );
+			update_post_meta( $saved_id, Gloskin_Site_Core_Promo_Modal::PAGE_IDS_META, $visibility_page_ids );
+			if ( '' === $destination_url ) {
+				delete_post_meta( $saved_id, Gloskin_Site_Core_Promo_Modal::DESTINATION_META );
+			} else {
+				update_post_meta( $saved_id, Gloskin_Site_Core_Promo_Modal::DESTINATION_META, $destination_url );
+			}
 		} else {
 			$subtitle = isset( $_POST['subtitle'] ) ? sanitize_text_field( wp_unslash( $_POST['subtitle'] ) ) : '';
 			update_post_meta( $saved_id, 'gloskin_testimonial_attribution', $title );
@@ -447,11 +514,37 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		}
 		$this->require_edit_capability( $post->post_type, $post_id );
 		$active = isset( $_POST['active'] ) && '1' === (string) wp_unslash( $_POST['active'] );
+		$field  = isset( $_POST['field'] ) ? sanitize_key( wp_unslash( $_POST['field'] ) ) : 'active';
+		if ( 'popup' === $field ) {
+			if ( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE !== $post->post_type ) {
+				wp_send_json_error( array( 'message' => __( 'Popup display is only available for Promo records.', 'gloskin-site-core' ) ), 400 );
+			}
+			if ( $active ) {
+				$image_id = absint( get_post_thumbnail_id( $post_id ) );
+				$url      = Gloskin_Site_Core_Promo_Modal::sanitize_destination_url( get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::DESTINATION_META, true ) );
+				$visibility = Gloskin_Site_Core_Promo_Modal::sanitize_visibility( get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::VISIBILITY_META, true ) );
+				$page_ids = Gloskin_Site_Core_Promo_Modal::sanitize_page_ids( get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::PAGE_IDS_META, true ) );
+				if ( ! $image_id ) {
+					wp_send_json_error( array( 'message' => __( 'Choose a featured Promo image before enabling popup display.', 'gloskin-site-core' ) ), 400 );
+				}
+				if ( '' === $url ) {
+					wp_send_json_error( array( 'message' => __( 'Add a valid destination URL in Edit Promo before enabling popup display.', 'gloskin-site-core' ) ), 400 );
+				}
+				if ( Gloskin_Site_Core_Promo_Modal::VISIBILITY_SPECIFIC === $visibility && ! $page_ids ) {
+					wp_send_json_error( array( 'message' => __( 'Select at least one WordPress page before enabling Specific Pages popup display.', 'gloskin-site-core' ) ), 400 );
+				}
+			}
+			update_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::POPUP_META, $active ? '1' : '0' );
+			wp_send_json_success( array( 'field' => 'popup', 'active' => $active ) );
+		}
+		if ( 'active' !== $field ) {
+			wp_send_json_error( array( 'message' => __( 'Unsupported editorial toggle.', 'gloskin-site-core' ) ), 400 );
+		}
 		if ( $active && Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE === $post->post_type && '' === trim( (string) $post->post_excerpt ) ) {
 			wp_send_json_error( array( 'message' => __( 'Add a testimonial quote before activating this record.', 'gloskin-site-core' ) ), 400 );
 		}
 		update_post_meta( $post_id, $this->active_meta_key( $post->post_type ), $active ? '1' : '0' );
-		wp_send_json_success( array( 'active' => $active ) );
+		wp_send_json_success( array( 'field' => 'active', 'active' => $active ) );
 	}
 
 	/** @return void */
@@ -566,11 +659,11 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		}
 
 		if ( 'complete' !== (string) ( $state['promo_type_v1'] ?? '' ) ) {
-			$mutations                           = $this->normalize_promo_types();
-			$state['promo_type_v1']              = 'complete';
-			$state['promo_type_mutations']       = $mutations;
-			$state['promo_type_completed_at']    = time();
-			$updated                             = true;
+			$mutations                        = $this->normalize_promo_types();
+			$state['promo_type_v1']           = 'complete';
+			$state['promo_type_mutations']    = $mutations;
+			$state['promo_type_completed_at'] = time();
+			$updated                          = true;
 		}
 
 		if ( $updated ) {
