@@ -37,13 +37,13 @@ $gloskin_render_promo_carousel = static function ( $promos, $heading, $heading_t
 				</div>
 				<?php if ( $count > 1 ) : ?>
 				<div class="gloskin-ui1-promo-carousel__controls gloskin-promo__controls" role="group" aria-label="<?php echo esc_attr__( 'Navigasi promo', 'gloskin-site-core' ); ?>">
-					<button type="button" class="gloskin-ui1-promo-carousel__prev" data-gloskin-promo-prev aria-label="<?php echo esc_attr__( 'Promo sebelumnya', 'gloskin-site-core' ); ?>">&larr;</button>
+					<button type="button" class="gloskin-ui1-promo-carousel__prev" data-gloskin-promo-prev aria-label="<?php echo esc_attr__( 'Promo sebelumnya', 'gloskin-site-core' ); ?>"><?php echo gloskin_ui1_arrow_icon( 'prev' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static shared icon markup. ?></button>
 					<div class="gloskin-ui1-promo-carousel__dots" role="tablist" aria-label="<?php echo esc_attr__( 'Pilih promo', 'gloskin-site-core' ); ?>">
 						<?php foreach ( $promos as $gloskin_dot_index => $_gloskin_promo ) : ?>
 						<button type="button" class="gloskin-ui1-promo-carousel__dot<?php echo 0 === $gloskin_dot_index ? ' is-active' : ''; ?>" role="tab" data-gloskin-promo-dot="<?php echo esc_attr( (string) $gloskin_dot_index ); ?>" aria-selected="<?php echo 0 === $gloskin_dot_index ? 'true' : 'false'; ?>" tabindex="<?php echo 0 === $gloskin_dot_index ? '0' : '-1'; ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Promo %d', 'gloskin-site-core' ), $gloskin_dot_index + 1 ) ); ?>"></button>
 						<?php endforeach; ?>
 					</div>
-					<button type="button" class="gloskin-ui1-promo-carousel__next" data-gloskin-promo-next aria-label="<?php echo esc_attr__( 'Promo berikutnya', 'gloskin-site-core' ); ?>">&rarr;</button>
+					<button type="button" class="gloskin-ui1-promo-carousel__next" data-gloskin-promo-next aria-label="<?php echo esc_attr__( 'Promo berikutnya', 'gloskin-site-core' ); ?>"><?php echo gloskin_ui1_arrow_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static shared icon markup. ?></button>
 				</div>
 				<?php endif; ?>
 			</div>
