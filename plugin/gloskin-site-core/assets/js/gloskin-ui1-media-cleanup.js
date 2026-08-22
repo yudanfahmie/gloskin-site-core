@@ -22,9 +22,10 @@
 	var optimizationStatus = root.getAttribute( 'data-optimization-status' ) || 'pending';
 	if ( 'failed' === status && failedFrom ) { status = failedFrom; }
 
-	var running    = false;
-	var retryLimit = 3;
-	var batchDelay = 500; /* ms between successful batches */
+	var running         = false;
+	var activeOperation = '';
+	var retryLimit      = 3;
+	var batchDelay      = 500; /* ms between successful batches */
 
 	var progress       = root.querySelector( '[data-media-cleanup-progress]' );
 	var stage          = root.querySelector( '[data-media-cleanup-stage]' );
@@ -42,6 +43,8 @@
 	var optimizeProgress = root.querySelector( '[data-media-optimization-progress]' );
 	var optimizeStage    = root.querySelector( '[data-media-optimization-stage]' );
 	var optimizeCurrent  = root.querySelector( '[data-media-optimization-current]' );
+	var scanSpinner       = root.querySelector( '[data-media-cleanup-spinner]' );
+	var optimizeSpinner   = root.querySelector( '[data-media-optimization-spinner]' );
 
 	/* ------------------------------------------------------------------ */
 
@@ -111,6 +114,111 @@
 		return ( bytes >= 10 ? bytes.toFixed( 1 ) : bytes.toFixed( 2 ) ) + ' ' + units[ unit ];
 	}
 
+	function makeSpinner( attribute ) {
+		var spinner = document.createElement( 'span' );
+		spinner.className = 'spinner is-active';
+		spinner.setAttribute( attribute, '' );
+		spinner.setAttribute( 'aria-hidden', 'true' );
+		spinner.style.float = 'none';
+		spinner.style.margin = '0 8px 0 0';
+		spinner.style.verticalAlign = 'middle';
+		return spinner;
+	}
+
+	function ensureScanFeedback() {
+		if ( ! progress || ! stage ) {
+			var feedback = document.createElement( 'div' );
+			feedback.setAttribute( 'data-media-cleanup-live', '' );
+			feedback.setAttribute( 'aria-live', 'polite' );
+			feedback.style.marginTop = '16px';
+
+			var headline = document.createElement( 'p' );
+			scanSpinner = makeSpinner( 'data-media-cleanup-spinner' );
+			var title = document.createElement( 'strong' );
+			title.textContent = 'Menyiapkan scan Media Library...';
+			headline.appendChild( scanSpinner );
+			headline.appendChild( title );
+
+			progress = document.createElement( 'progress' );
+			progress.setAttribute( 'data-media-cleanup-progress', '' );
+			progress.style.width = '100%';
+			progress.style.maxWidth = '560px';
+
+			stage = document.createElement( 'p' );
+			stage.setAttribute( 'data-media-cleanup-stage', '' );
+			stage.setAttribute( 'role', 'status' );
+			stage.setAttribute( 'aria-live', 'polite' );
+
+			current = document.createElement( 'p' );
+			current.setAttribute( 'data-media-cleanup-current', '' );
+
+			feedback.appendChild( headline );
+			feedback.appendChild( progress );
+			feedback.appendChild( stage );
+			feedback.appendChild( current );
+
+			var anchor = indexButton && indexButton.parentNode ? indexButton.parentNode : null;
+			if ( anchor && anchor.parentNode ) {
+				anchor.parentNode.insertBefore( feedback, anchor.nextSibling );
+			} else {
+				root.appendChild( feedback );
+			}
+		} else if ( ! scanSpinner && stage.parentNode ) {
+			scanSpinner = makeSpinner( 'data-media-cleanup-spinner' );
+			stage.parentNode.insertBefore( scanSpinner, stage );
+		}
+	}
+
+	function ensureOptimizeSpinner() {
+		if ( optimizeSpinner || ! optimizeStage || ! optimizeStage.parentNode ) { return; }
+		optimizeSpinner = makeSpinner( 'data-media-optimization-spinner' );
+		optimizeStage.parentNode.insertBefore( optimizeSpinner, optimizeStage );
+	}
+
+	function rememberButtonLabel( button ) {
+		if ( button && ! button.hasAttribute( 'data-idle-label' ) ) {
+			button.setAttribute( 'data-idle-label', button.textContent || '' );
+		}
+	}
+
+	function beginScanFeedback() {
+		ensureScanFeedback();
+		root.setAttribute( 'aria-busy', 'true' );
+		if ( scanSpinner ) { scanSpinner.classList.add( 'is-active' ); }
+		if ( progress ) { progress.removeAttribute( 'value' ); }
+		if ( stage ) { stage.textContent = 'Sedang membaca daftar media dari server. Progress aktual akan muncul setelah batch pertama selesai.'; }
+		if ( current ) { current.textContent = 'Mohon tunggu dan jangan tutup halaman ini selama request sedang berjalan.'; }
+		if ( indexButton ) {
+			rememberButtonLabel( indexButton );
+			indexButton.textContent = 'Sedang memindai...';
+		}
+	}
+
+	function beginOptimizationFeedback() {
+		ensureOptimizeSpinner();
+		root.setAttribute( 'aria-busy', 'true' );
+		if ( optimizeSpinner ) { optimizeSpinner.classList.add( 'is-active' ); }
+		if ( optimizeProgress ) { optimizeProgress.removeAttribute( 'value' ); }
+		if ( optimizeStage ) { optimizeStage.textContent = 'Menyiapkan optimasi gambar. Progress aktual akan muncul setelah batch pertama selesai.'; }
+		if ( optimizeCurrent ) { optimizeCurrent.textContent = 'File asli tetap dipertahankan sampai hasil pengganti selesai divalidasi.'; }
+		if ( optimizeButton ) {
+			rememberButtonLabel( optimizeButton );
+			optimizeButton.textContent = 'Sedang mengoptimalkan...';
+		}
+	}
+
+	function stopBusyFeedback() {
+		root.removeAttribute( 'aria-busy' );
+		if ( scanSpinner ) { scanSpinner.classList.remove( 'is-active' ); }
+		if ( optimizeSpinner ) { optimizeSpinner.classList.remove( 'is-active' ); }
+		if ( indexButton && indexButton.hasAttribute( 'data-idle-label' ) ) {
+			indexButton.textContent = indexButton.getAttribute( 'data-idle-label' ) || 'Scan Media Library';
+		}
+		if ( optimizeButton && optimizeButton.hasAttribute( 'data-idle-label' ) ) {
+			optimizeButton.textContent = optimizeButton.getAttribute( 'data-idle-label' ) || 'Optimize Images';
+		}
+	}
+
 	function sync( state ) {
 		if ( ! state ) { return; }
 		status = String( state.status || status );
@@ -131,21 +239,22 @@
 		}
 		if ( stage ) {
 			if ( 'indexing' === status ) {
-				stage.textContent = Number( state.processed || 0 ) + ' / ' + Number( state.total || 0 ) + ' dipindai';
+				stage.textContent = Number( state.processed || 0 ) + ' / ' + Number( state.total || 0 ) + ' gambar sudah dipindai';
 			} else if ( 'deleting' === status ) {
 				stage.textContent = 'Menghapus ' + Number( state.deletion_cursor || 0 ) + ' / ' + Number( ( state.counts || {} )[ 'confirmed-unused' ] || 0 );
 			} else if ( 'verifying' === status ) {
-				stage.textContent = 'Memverifikasi...';
+				stage.textContent = 'Memverifikasi hasil...';
 			}
 		}
-		if ( current ) { current.textContent = state.current_file || ''; }
+		if ( current ) {
+			current.textContent = state.current_file ? 'Sedang memeriksa: ' + state.current_file : '';
+		}
 		var counts = state.counts || {};
 		setText( '[data-count-used]', Number( counts.used || 0 ) );
 		setText( '[data-count-protected]', Number( counts.protected || 0 ) );
 		setText( '[data-count-ambiguous]', Number( counts.ambiguous || 0 ) );
 		setText( '[data-count-unused]', Number( counts[ 'confirmed-unused' ] || 0 ) );
 		setText( '[data-count-processed]', Number( state.processed || 0 ) );
-		if ( 'review_ready' === status ) { loadReview( 1 ); }
 		if ( 'complete' === status ) { window.location.reload(); }
 	}
 
@@ -165,32 +274,46 @@
 			optimizeProgress.max   = Math.max( 1, Number( optimization.total || 0 ) );
 			optimizeProgress.value = Math.min( Number( optimization.processed || 0 ), optimizeProgress.max );
 		}
-		if ( optimizeCurrent ) { optimizeCurrent.textContent = optimization.current_file || ''; }
+		if ( optimizeCurrent ) {
+			optimizeCurrent.textContent = optimization.current_file ? 'Sedang memeriksa: ' + optimization.current_file : '';
+		}
 		if ( optimizeStage ) {
 			if ( 'running' === optimizationStatus ) {
-				optimizeStage.textContent = 'Optimizing ' + Number( optimization.processed || 0 ) + ' / ' + Number( optimization.total || 0 ) + ' retained images...';
+				optimizeStage.textContent = Number( optimization.processed || 0 ) + ' / ' + Number( optimization.total || 0 ) + ' gambar sudah diperiksa';
 			} else if ( 'complete' === optimizationStatus ) {
-				optimizeStage.textContent = 'Optimization selesai.';
+				optimizeStage.textContent = 'Optimasi gambar selesai.';
 			} else if ( 'failed' === optimizationStatus ) {
-				optimizeStage.textContent = 'Optimization berhenti secara aman dan dapat dilanjutkan.';
+				optimizeStage.textContent = 'Optimasi berhenti secara aman dan dapat dilanjutkan.';
 			}
 		}
 		if ( optimizeButton && 'complete' === optimizationStatus ) {
 			optimizeButton.setAttribute( 'data-restart', '1' );
-			optimizeButton.textContent = 'Optimize New / Changed Images';
+			optimizeButton.setAttribute( 'data-idle-label', 'Optimalkan Gambar Baru / Berubah' );
+			optimizeButton.textContent = 'Optimalkan Gambar Baru / Berubah';
 		}
 	}
 
-	function setRunning( value ) {
+	function setRunning( value, operation ) {
 		running = Boolean( value );
+		if ( running && operation ) { activeOperation = operation; }
 		if ( indexButton ) { indexButton.disabled = running; }
 		if ( deleteButton ) { deleteButton.disabled = running || ! confirmBox || ! confirmBox.checked; }
 		if ( deleteContinue ) { deleteContinue.disabled = running; }
 		if ( resetButton ) { resetButton.disabled = running; }
 		if ( optimizeButton ) { optimizeButton.disabled = running; }
+		if ( ! running ) {
+			stopBusyFeedback();
+			activeOperation = '';
+		}
 	}
 
 	function fail( error ) {
+		if ( 'scan' === activeOperation && stage ) {
+			stage.textContent = 'Scan berhenti. Periksa pesan error di bawah lalu coba lagi.';
+		}
+		if ( 'optimize' === activeOperation && optimizeStage ) {
+			optimizeStage.textContent = 'Optimasi berhenti. Periksa pesan error di bawah lalu coba lagi.';
+		}
 		setRunning( false );
 		setError( error && error.message ? error.message : 'Resolver berhenti secara aman.' );
 	}
@@ -203,8 +326,12 @@
 				window.setTimeout( indexChain, batchDelay );
 				return;
 			}
+			if ( 'review_ready' === status ) {
+				if ( stage ) { stage.textContent = 'Scan selesai. Membuka hasil untuk ditinjau...'; }
+				window.setTimeout( function () { window.location.reload(); }, 250 );
+				return;
+			}
 			setRunning( false );
-			if ( 'review_ready' === status ) { loadReview( 1 ); }
 		} ).catch( fail );
 	}
 
@@ -282,7 +409,8 @@
 		indexButton.addEventListener( 'click', function () {
 			if ( running ) { return; }
 			setError( '' );
-			setRunning( true );
+			setRunning( true, 'scan' );
+			beginScanFeedback();
 			indexChain();
 		} );
 	}
@@ -290,7 +418,7 @@
 		deleteButton.addEventListener( 'click', function () {
 			if ( running || ! confirmBox || ! confirmBox.checked ) { return; }
 			setError( '' );
-			setRunning( true );
+			setRunning( true, 'delete' );
 			deleteChain();
 		} );
 	}
@@ -298,7 +426,7 @@
 		deleteContinue.addEventListener( 'click', function () {
 			if ( running ) { return; }
 			setError( '' );
-			setRunning( true );
+			setRunning( true, 'delete' );
 			deleteChain();
 		} );
 	}
@@ -312,7 +440,7 @@
 			if ( running ) { return; }
 			if ( ! window.confirm( 'Mulai scan baru? Data hasil scan sebelumnya akan dihapus. Penghapusan permanen sebelumnya tidak dapat dibatalkan.' ) ) { return; }
 			setError( '' );
-			setRunning( true );
+			setRunning( true, 'reset' );
 			request( 'reset' ).then( function () {
 				window.location.reload();
 			} ).catch( function ( error ) {
@@ -326,7 +454,8 @@
 			if ( running ) { return; }
 			var restart = '1' === optimizeButton.getAttribute( 'data-restart' );
 			setError( '' );
-			setRunning( true );
+			setRunning( true, 'optimize' );
+			beginOptimizationFeedback();
 			optimizeChain( restart );
 		} );
 	}
