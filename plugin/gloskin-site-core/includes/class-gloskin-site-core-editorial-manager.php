@@ -46,6 +46,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		add_action( 'admin_notices', array( $this, 'render_setup_notice' ) );
 		add_action( 'load-post.php', array( $this, 'redirect_legacy_editor' ) );
 		add_action( 'load-post-new.php', array( $this, 'redirect_legacy_editor' ) );
+		add_action( 'admin_init', array( $this, 'maybe_normalize_display_state' ), 30 );
 
 		add_action( 'wp_ajax_gloskin_editorial_save', array( $this, 'ajax_save' ) );
 		add_action( 'wp_ajax_gloskin_editorial_toggle', array( $this, 'ajax_toggle' ) );
@@ -161,7 +162,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		$alias = 'gloskin_editorial_order_meta';
 		$key   = $this->order_meta_key( $post_type );
 		$clauses['join'] .= $wpdb->prepare( " LEFT JOIN {$wpdb->postmeta} AS {$alias} ON ({$wpdb->posts}.ID = {$alias}.post_id AND {$alias}.meta_key = %s)", $key ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table/alias names are fixed application identifiers.
-		$clauses['orderby'] = "CASE WHEN {$alias}.meta_value IS NULL OR {$alias}.meta_value = '' THEN 1 ELSE 0 END ASC, CAST({$alias}.meta_value AS UNSIGNED) ASC, {$wpdb->posts}.ID ASC";
+		$clauses['orderby'] = "CASE WHEN {$alias}.meta_value IS NULL OR {$alias}.meta_value = '' OR CAST({$alias}.meta_value AS UNSIGNED) = 0 THEN 1 ELSE 0 END ASC, CAST({$alias}.meta_value AS UNSIGNED) ASC, {$wpdb->posts}.ID ASC";
 		return $clauses;
 	}
 
@@ -234,7 +235,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 						<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Type', 'gloskin-site-core' ); ?></span><select name="promo_type" required><option value="limited"><?php echo esc_html__( 'Promo Terbatas', 'gloskin-site-core' ); ?></option><option value="regular"><?php echo esc_html__( 'Promo Biasa', 'gloskin-site-core' ); ?></option></select></label>
 						<?php else : ?>
 						<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Role / subtitle', 'gloskin-site-core' ); ?></span><input type="text" name="subtitle"></label>
-						<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Testimonial quote', 'gloskin-site-core' ); ?></span><textarea name="quote" rows="6"></textarea></label>
+						<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Testimonial quote', 'gloskin-site-core' ); ?></span><textarea name="quote" rows="6" required></textarea></label>
 						<?php endif; ?>
 						<div class="gloskin-editorial-media-field"><span class="gloskin-editorial-field__label"><?php echo esc_html( $is_promo ? __( 'Image', 'gloskin-site-core' ) : __( 'Photo', 'gloskin-site-core' ) ); ?></span><input type="hidden" name="image_id" value="0" data-gloskin-editorial-image-id><div class="gloskin-editorial-media-field__preview" data-gloskin-editorial-preview></div><div class="gloskin-editorial-media-field__actions"><button type="button" class="button" data-gloskin-editorial-media><?php echo esc_html__( 'Choose / replace from Media Library', 'gloskin-site-core' ); ?></button><button type="button" class="button button-link-delete" data-gloskin-editorial-media-remove><?php echo esc_html__( 'Remove', 'gloskin-site-core' ); ?></button></div></div>
 						<label class="gloskin-editorial-active-field"><input type="checkbox" name="active" value="1"> <span><?php echo esc_html__( 'Active', 'gloskin-site-core' ); ?></span></label>
@@ -319,7 +320,11 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			$postarr['ID'] = $post_id;
 		}
 		if ( Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE === $post_type ) {
-			$postarr['post_excerpt'] = isset( $_POST['quote'] ) ? sanitize_textarea_field( wp_unslash( $_POST['quote'] ) ) : '';
+			$quote = isset( $_POST['quote'] ) ? sanitize_textarea_field( wp_unslash( $_POST['quote'] ) ) : '';
+			if ( '' === trim( $quote ) ) {
+				wp_send_json_error( array( 'message' => __( 'Testimonial quote is required.', 'gloskin-site-core' ) ), 400 );
+			}
+			$postarr['post_excerpt'] = $quote;
 		}
 		$saved_id = $post_id ? wp_update_post( wp_slash( $postarr ), true ) : wp_insert_post( wp_slash( $postarr ), true );
 		if ( is_wp_error( $saved_id ) ) {
@@ -327,8 +332,10 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		}
 		$saved_id = absint( $saved_id );
 		if ( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post_type ) {
-			$type = isset( $_POST['promo_type'] ) ? sanitize_key( wp_unslash( $_POST['promo_type'] ) ) : 'regular';
-			update_post_meta( $saved_id, 'gloskin_promo_type', in_array( $type, array( 'limited', 'regular' ), true ) ? $type : 'regular' );
+			$profile = Gloskin_Site_Core_Content_Service::editorial_profile( $post_type );
+			$allowed = isset( $profile['allowed_types'] ) && is_array( $profile['allowed_types'] ) ? $profile['allowed_types'] : array( 'limited', 'regular' );
+			$type    = isset( $_POST['promo_type'] ) ? sanitize_key( wp_unslash( $_POST['promo_type'] ) ) : 'regular';
+			update_post_meta( $saved_id, (string) $profile['type_meta'], in_array( $type, $allowed, true ) ? $type : 'regular' );
 		} else {
 			$subtitle = isset( $_POST['subtitle'] ) ? sanitize_text_field( wp_unslash( $_POST['subtitle'] ) ) : '';
 			update_post_meta( $saved_id, 'gloskin_testimonial_attribution', $title );
@@ -362,6 +369,9 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		}
 		$this->require_edit_capability( $post->post_type, $post_id );
 		$active = isset( $_POST['active'] ) && '1' === (string) wp_unslash( $_POST['active'] );
+		if ( $active && Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE === $post->post_type && '' === trim( (string) $post->post_excerpt ) ) {
+			wp_send_json_error( array( 'message' => __( 'Add a testimonial quote before activating this record.', 'gloskin-site-core' ) ), 400 );
+		}
 		update_post_meta( $post_id, $this->active_meta_key( $post->post_type ), $active ? '1' : '0' );
 		wp_send_json_success( array( 'active' => $active ) );
 	}
@@ -449,6 +459,90 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		return $max + 1;
 	}
 
+	/**
+	 * One-time normalization translates historical hidden runtime state into
+	 * explicit editor-visible state. The existing setup option owns the marker,
+	 * so no second migration service/table/cache is introduced.
+	 *
+	 * @return void
+	 */
+	public function maybe_normalize_display_state() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$state = get_option( self::SETUP_OPTION, array() );
+		$state = is_array( $state ) ? $state : array();
+		if ( 'complete' === (string) ( $state['display_contract_v1'] ?? '' ) ) {
+			return;
+		}
+		if ( ! class_exists( 'Gloskin_Site_Core_Content_Finalizer_Admin' ) ) {
+			require_once __DIR__ . '/class-gloskin-site-core-content-finalizer-admin.php';
+		}
+		if ( ! Gloskin_Site_Core_Content_Finalizer_Admin::is_complete() ) {
+			return;
+		}
+		$mutations = $this->normalize_display_state();
+		$state['display_contract_v1']           = 'complete';
+		$state['display_contract_mutations']    = $mutations;
+		$state['display_contract_completed_at'] = time();
+		update_option( self::SETUP_OPTION, $state, false );
+	}
+
+	/** @return int */
+	private function normalize_display_state() {
+		$mutations = 0;
+		foreach ( array(
+			Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE,
+			Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE,
+			Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE,
+		) as $post_type ) {
+			$profile = Gloskin_Site_Core_Content_Service::editorial_profile( $post_type );
+			$active_meta = isset( $profile['active_meta'] ) ? (string) $profile['active_meta'] : '';
+			if ( '' === $active_meta ) {
+				continue;
+			}
+			$posts = get_posts( array(
+				'post_type'      => $post_type,
+				'post_status'    => array( 'publish', 'draft', 'private', 'pending', 'future', 'trash' ),
+				'posts_per_page' => -1,
+				'orderby'        => 'ID',
+				'order'          => 'ASC',
+			) );
+			foreach ( $posts as $post ) {
+				if ( '' !== (string) get_post_meta( $post->ID, Gloskin_Site_Core_Content_Service::DEMO_IDENTITY_META, true ) ) {
+					$mutations += $this->set_meta_if_changed( $post->ID, $active_meta, '0' );
+					continue;
+				}
+				if ( Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE === $post_type
+					&& '1' === (string) get_post_meta( $post->ID, $active_meta, true )
+					&& '' === trim( (string) $post->post_excerpt ) ) {
+					$mutations += $this->set_meta_if_changed( $post->ID, $active_meta, '0' );
+				}
+			}
+		}
+
+		$testimonial_profile = Gloskin_Site_Core_Content_Service::editorial_profile( Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE );
+		$order_meta = (string) ( $testimonial_profile['order_meta'] ?? '' );
+		if ( '' !== $order_meta ) {
+			$testimonials = get_posts( array( 'post_type' => Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'post_status' => array( 'publish', 'draft', 'private', 'pending', 'future', 'trash' ), 'posts_per_page' => -1, 'orderby' => 'ID', 'order' => 'ASC' ) );
+			$max_order = 0;
+			$missing   = array();
+			foreach ( $testimonials as $post ) {
+				$order = (int) get_post_meta( $post->ID, $order_meta, true );
+				if ( $order > 0 ) {
+					$max_order = max( $max_order, $order );
+				} else {
+					$missing[] = (int) $post->ID;
+				}
+			}
+			foreach ( $missing as $post_id ) {
+				$max_order++;
+				$mutations += $this->set_meta_if_changed( $post_id, $order_meta, (string) $max_order );
+			}
+		}
+		return $mutations;
+	}
+
 	/** @return void */
 	public function render_setup_notice() {
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
@@ -522,11 +616,9 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			}
 		}
 
-		$all_promos = get_posts( array( 'post_type' => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE, 'post_status' => array( 'publish', 'draft', 'private', 'pending', 'future', 'trash' ), 'posts_per_page' => -1, 'fields' => 'ids' ) );
-		foreach ( $all_promos as $post_id ) {
-			if ( ! in_array( (int) $post_id, $seed_ids, true ) ) {
-				$mutations += $this->set_meta_if_changed( $post_id, 'gloskin_promo_active', '0' );
-			}
+		/* Seed setup owns only its six identities. Arbitrary editor-created Promo
+		 * records are never modified or deactivated when setup is re-run. */
+		foreach ( $seed_ids as $post_id ) {
 			foreach ( array( 'gloskin_promo_eyebrow', 'gloskin_promo_summary', 'gloskin_promo_cta_label', 'gloskin_promo_cta_url', 'gloskin_promo_start_date', 'gloskin_promo_end_date' ) as $obsolete ) {
 				if ( metadata_exists( 'post', $post_id, $obsolete ) ) {
 					delete_post_meta( $post_id, $obsolete );
@@ -557,6 +649,9 @@ final class Gloskin_Site_Core_Editorial_Manager {
 				update_post_meta( $post->ID, 'gloskin_testimonial_active', '1' );
 				$mutations++;
 			}
+			if ( '' === $quote && '1' === (string) get_post_meta( $post->ID, 'gloskin_testimonial_active', true ) ) {
+				$mutations += $this->set_meta_if_changed( $post->ID, 'gloskin_testimonial_active', '0' );
+			}
 
 			$order = (int) get_post_meta( $post->ID, 'gloskin_testimonial_order', true );
 			if ( metadata_exists( 'post', $post->ID, 'gloskin_testimonial_order' ) && $order > 0 ) {
@@ -574,13 +669,22 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		if ( ! $this->verify_seed_collection( $seed_ids ) ) {
 			return $this->fail_setup( $mutations, 'Canonical Promo seed verification failed.' );
 		}
-		update_option( self::SETUP_OPTION, array( 'status' => 'complete', 'mutations' => $mutations, 'completed_at' => time() ), false );
+		$state = is_array( $state ) ? $state : array();
+		$state['status']       = 'complete';
+		$state['mutations']    = $mutations;
+		$state['completed_at'] = time();
+		update_option( self::SETUP_OPTION, $state, false );
 		return array( 'status' => 'complete', 'mutations' => $mutations );
 	}
 
 	/** @return array{status:string,mutations:int} */
 	private function fail_setup( $mutations, $message ) {
-		update_option( self::SETUP_OPTION, array( 'status' => 'failed', 'last_error' => sanitize_text_field( $message ), 'updated_at' => time() ), false );
+		$state = get_option( self::SETUP_OPTION, array() );
+		$state = is_array( $state ) ? $state : array();
+		$state['status']     = 'failed';
+		$state['last_error'] = sanitize_text_field( $message );
+		$state['updated_at'] = time();
+		update_option( self::SETUP_OPTION, $state, false );
 		return array( 'status' => 'failed', 'mutations' => (int) $mutations );
 	}
 
@@ -652,12 +756,14 @@ final class Gloskin_Site_Core_Editorial_Manager {
 
 	/** @return string */
 	private function active_meta_key( $post_type ) {
-		return Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post_type ? 'gloskin_promo_active' : 'gloskin_testimonial_active';
+		$profile = Gloskin_Site_Core_Content_Service::editorial_profile( $post_type );
+		return isset( $profile['active_meta'] ) ? (string) $profile['active_meta'] : '';
 	}
 
 	/** @return string */
 	private function order_meta_key( $post_type ) {
-		return Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post_type ? 'gloskin_promo_order' : 'gloskin_testimonial_order';
+		$profile = Gloskin_Site_Core_Content_Service::editorial_profile( $post_type );
+		return isset( $profile['order_meta'] ) ? (string) $profile['order_meta'] : '';
 	}
 
 	/** @return string */
