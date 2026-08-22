@@ -258,6 +258,9 @@ final class Gloskin_Site_Core_Content_Service {
 				'crop_enabled'     => true,
 				'focus_x_meta'     => 'gloskin_promo_focus_x',
 				'focus_y_meta'     => 'gloskin_promo_focus_y',
+				'zoom_meta'        => 'gloskin_promo_crop_zoom',
+				'zoom_min'         => 100,
+				'zoom_max'         => 300,
 				'crop_width'       => 1648,
 				'crop_height'      => 928,
 			),
@@ -272,6 +275,7 @@ final class Gloskin_Site_Core_Content_Service {
 				'crop_enabled'     => false,
 				'focus_x_meta'     => '',
 				'focus_y_meta'     => '',
+				'zoom_meta'        => '',
 			),
 			self::ACHIEVEMENT_POST_TYPE => array(
 				'active_meta'      => 'gloskin_achievement_active',
@@ -284,6 +288,7 @@ final class Gloskin_Site_Core_Content_Service {
 				'crop_enabled'     => false,
 				'focus_x_meta'     => '',
 				'focus_y_meta'     => '',
+				'zoom_meta'        => '',
 			),
 		);
 		return isset( $profiles[ $post_type ] ) ? $profiles[ $post_type ] : array();
@@ -329,6 +334,7 @@ final class Gloskin_Site_Core_Content_Service {
 		$this->register_string_meta( self::PROMO_POST_TYPE, 'gloskin_promo_order', 'text' );
 		$this->register_percent_meta( self::PROMO_POST_TYPE, 'gloskin_promo_focus_x' );
 		$this->register_percent_meta( self::PROMO_POST_TYPE, 'gloskin_promo_focus_y' );
+		$this->register_zoom_meta( self::PROMO_POST_TYPE, 'gloskin_promo_crop_zoom' );
 
 		$this->register_string_meta( self::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_attribution', 'text' );
 		$this->register_string_meta( self::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_subtitle', 'text' );
@@ -408,9 +414,25 @@ final class Gloskin_Site_Core_Content_Service {
 		) );
 	}
 
+	private function register_zoom_meta( $post_type, $meta_key ) {
+		register_post_meta( $post_type, $meta_key, array(
+			'type'              => 'number',
+			'single'            => true,
+			'default'           => 100,
+			'show_in_rest'      => array( 'schema' => array( 'type' => 'number', 'minimum' => 100, 'maximum' => 300, 'default' => 100 ) ),
+			'sanitize_callback' => array( $this, 'sanitize_zoom' ),
+			'auth_callback'     => array( $this, 'authorize_meta' ),
+		) );
+	}
+
 	public function sanitize_percent( $value ) {
 		$value = is_numeric( $value ) ? (float) $value : 50.0;
 		return max( 0.0, min( 100.0, $value ) );
+	}
+
+	public function sanitize_zoom( $value ) {
+		$value = is_numeric( $value ) ? (float) $value : 100.0;
+		return max( 100.0, min( 300.0, $value ) );
 	}
 
 	private function register_post_id_list_meta( $post_type, $meta_key, $target_post_type ) {
