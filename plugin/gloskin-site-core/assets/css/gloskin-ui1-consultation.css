@@ -40,7 +40,7 @@
 
 /* Finder: initial state mirrors the large centered reference card while keeping
  * the existing path/concern/result interaction contract intact. */
-.gloskin-treatments-finder{padding:120px 0;background:var(--gloskin-treatments-peach)}
+.gloskin-treatments-finder{padding:120px 0;background:var(--gloskin-treatments-peach);scroll-margin-top:calc(var(--gloskin-ui1-nav-sticky-top) + 96px)}
 .gloskin-ui1-consultation{display:grid;gap:52px;max-width:1000px;margin-inline:auto}
 .gloskin-ui1-consultation__panel{display:grid;gap:0;padding:80px 40px;border:1px solid #f2e9e4;border-radius:24px;background:var(--gloskin-treatments-white);box-shadow:0 15px 40px rgba(0,0,0,.03);text-align:center}
 .gloskin-ui1-consultation__intro{max-width:760px;margin:0 auto 55px;text-align:center}
@@ -107,7 +107,6 @@
 .gloskin-treatments-info__copy>p:last-child{margin:0;color:var(--gloskin-treatments-muted);font-weight:300;line-height:1.7}
 .gloskin-treatments-info__link{display:inline-flex;align-items:center;gap:8px;color:var(--gloskin-treatments-red);font-size:.9rem;font-weight:700;letter-spacing:2px;text-decoration:none;text-transform:uppercase;white-space:nowrap}
 .gloskin-treatments-info__link:hover{color:var(--gloskin-treatments-gold)}
-
 @media (hover:none),(pointer:coarse){.gloskin-ui1-treatment-band__media{cursor:default}.gloskin-ui1-treatment-band:hover .gloskin-ui1-treatment-band__image,.gloskin-ui1-treatment-band:hover .gloskin-ui1-treatment-band__media img,.gloskin-ui1-treatment-band:hover .gloskin-ui1-treatment-band__media video{transform:scale(1.001);filter:none;object-position:50% 50%}.gloskin-ui1-consultation-card::before{display:none}.gloskin-ui1-consultation-card__footer{justify-content:space-between}.gloskin-ui1-consultation-card__action{position:static;opacity:1;transform:none}}
 @media (max-width:1024px){.gloskin-treatments-hero__grid{gap:40px}.gloskin-ui1-treatment-band__content{padding-inline:6%}.gloskin-ui1-consultation__paths{gap:30px}}
 @media (max-width:800px){
