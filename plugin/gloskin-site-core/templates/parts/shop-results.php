@@ -47,7 +47,7 @@ $gloskin_shop_total_label = sprintf( __( '%d produk', 'gloskin-site-core' ), $gl
 		<nav class="gloskin-ui1-pagination gloskin-ui1-shop-pagination" aria-label="<?php echo esc_attr__( 'Navigasi halaman produk', 'gloskin-site-core' ); ?>">
 			<ul>
 				<?php if ( $gloskin_shop_page > 1 ) : ?>
-					<li><a class="prev page-numbers" href="<?php echo esc_url( $gloskin_shop_page_url( $gloskin_shop_page - 1 ) ); ?>" data-gloskin-shop-page="<?php echo esc_attr( (string) ( $gloskin_shop_page - 1 ) ); ?>" data-gloskin-no-transition aria-label="<?php echo esc_attr__( 'Halaman produk sebelumnya', 'gloskin-site-core' ); ?>">&larr;</a></li>
+					<li><a class="prev page-numbers" href="<?php echo esc_url( $gloskin_shop_page_url( $gloskin_shop_page - 1 ) ); ?>" data-gloskin-shop-page="<?php echo esc_attr( (string) ( $gloskin_shop_page - 1 ) ); ?>" data-gloskin-no-transition aria-label="<?php echo esc_attr__( 'Halaman produk sebelumnya', 'gloskin-site-core' ); ?>"><?php echo gloskin_ui1_arrow_icon( 'prev' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- canonical static SVG. ?></a></li>
 				<?php endif; ?>
 				<?php for ( $gloskin_shop_index = 1; $gloskin_shop_index <= $gloskin_shop_max_pages; $gloskin_shop_index++ ) : ?>
 					<?php if ( $gloskin_shop_index === $gloskin_shop_page ) : ?>
@@ -57,7 +57,7 @@ $gloskin_shop_total_label = sprintf( __( '%d produk', 'gloskin-site-core' ), $gl
 					<?php endif; ?>
 				<?php endfor; ?>
 				<?php if ( $gloskin_shop_page < $gloskin_shop_max_pages ) : ?>
-					<li><a class="next page-numbers" href="<?php echo esc_url( $gloskin_shop_page_url( $gloskin_shop_page + 1 ) ); ?>" data-gloskin-shop-page="<?php echo esc_attr( (string) ( $gloskin_shop_page + 1 ) ); ?>" data-gloskin-no-transition aria-label="<?php echo esc_attr__( 'Halaman produk berikutnya', 'gloskin-site-core' ); ?>">&rarr;</a></li>
+					<li><a class="next page-numbers" href="<?php echo esc_url( $gloskin_shop_page_url( $gloskin_shop_page + 1 ) ); ?>" data-gloskin-shop-page="<?php echo esc_attr( (string) ( $gloskin_shop_page + 1 ) ); ?>" data-gloskin-no-transition aria-label="<?php echo esc_attr__( 'Halaman produk berikutnya', 'gloskin-site-core' ); ?>"><?php echo gloskin_ui1_arrow_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- canonical static SVG. ?></a></li>
 				<?php endif; ?>
 			</ul>
 		</nav>
