@@ -7,23 +7,23 @@ inset:0;
 z-index:10040;
 display:grid;
 place-items:center;
-padding:clamp(16px,3vw,36px);
+padding:clamp(20px,4vw,48px);
 font-family:var(--gloskin-font-body);
 isolation:isolate}
 .gloskin-promo-modal__backdrop{
 position:absolute;
 inset:0;
-background:color-mix(in srgb,var(--gloskin-refresh-black) 55%,transparent);
--webkit-backdrop-filter:blur(12px) saturate(112%);
-backdrop-filter:blur(12px) saturate(112%);
+background:color-mix(in srgb,var(--gloskin-refresh-black) 26%,transparent);
+-webkit-backdrop-filter:blur(6px) saturate(106%);
+backdrop-filter:blur(6px) saturate(106%);
 opacity:0;
 transition:opacity .6s ease}
 .gloskin-promo-modal__dialog{
 position:relative;
 z-index:1;
-width:min(94vw,900px,calc((100dvh - 92px)*1.775862));
+width:min(92vw,900px,calc((100dvh - 104px)*1.775862));
 max-width:900px;
-max-height:calc(100dvh - 28px);
+max-height:calc(100dvh - 40px);
 dis:flex;
 flex-direction:column;
 align-items:center;
@@ -33,7 +33,7 @@ position:relative;
 width:100%;
 aspect-ratio:1648/928;
 border-radius:20px;
-box-shadow:0 40px 80px color-mix(in srgb,var(--gloskin-refresh-black) 40%,transparent);
+box-shadow:0 34px 74px color-mix(in srgb,var(--gloskin-refresh-black) 30%,transparent);
 overflow:hidden;
 background:var(--gloskin-brand-charcoal);
 transform:translateY(60px) scale(.9);
@@ -59,6 +59,7 @@ overflow:hidden;
 background:var(--gloskin-brand-charcoal);
 text-decoration:none;
 touch-action:pan-y}
+.gloskin-promo-modal__slide.is-static{cursor:default}
 .gloskin-promo-modal__image{
 position:absolute;
 inset:0;
@@ -74,44 +75,50 @@ display:block}
 .gloskin-promo-modal__nav{
 -webkit-appearance:none;
 appearance:none;
-border:1px solid color-mix(in srgb,#fff 42%,transparent);
-background:color-mix(in srgb,#fff 16%,transparent);
--webkit-backdrop-filter:blur(9px);
-backdrop-filter:blur(9px);
+border:1px solid color-mix(in srgb,#fff 52%,transparent);
+background:color-mix(in srgb,var(--gloskin-refresh-black) 26%,transparent);
+-webkit-backdrop-filter:blur(8px);
+backdrop-filter:blur(8px);
 color:#fff;
 cursor:pointer;
 font-family:var(--gloskin-font-body);
 box-shadow:none}
 .gloskin-promo-modal__close{
 position:absolute;
-top:15px;
-right:15px;
-z-index:5;
-width:40px;
-height:40px;
+top:-18px;
+right:-18px;
+z-index:7;
+width:42px;
+height:42px;
 border-radius:999px;
 dis:grid;
 place-items:center;
 padding:0;
-font-size:25px;
+font-size:26px;
 font-weight:300;
 line-height:1;
-transition:background-color .4s ease,color .4s ease,transform .4s ease}
+box-shadow:0 8px 24px rgba(0,0,0,.2);
+transition:background-color .35s ease,color .35s ease,transform .35s ease}
 .gloskin-promo-modal__close:hover{
-background:color-mix(in srgb,#fff 95%,transparent);
+background:rgba(255,255,255,.96);
 color:var(--gloskin-accent);
 transform:rotate(90deg)}
 .gloskin-promo-modal__controls{
 position:absolute;
-left:12px;
-right:12px;
-bottom:12px;
-z-index:5;
-dis:grid;
-grid-template-columns:36px 1fr 36px;
+right:14px;
+bottom:14px;
+z-index:6;
+dis:flex;
+flex-direction:row;
 align-items:center;
+justify-content:flex-end;
 gap:8px;
-pointer-events:none}
+padding:7px;
+border:1px solid color-mix(in srgb,#fff 30%,transparent);
+border-radius:999px;
+background:color-mix(in srgb,var(--gloskin-refresh-black) 22%,transparent);
+-webkit-backdrop-filter:blur(9px);
+backdrop-filter:blur(9px)}
 .gloskin-promo-modal__nav{
 width:36px;
 height:36px;
@@ -119,12 +126,12 @@ border-radius:999px;
 padding:0;
 dis:grid;
 place-items:center;
-font-size:27px;
+font-size:19px;
+font-weight:500;
 line-height:1;
-pointer-events:auto;
 transition:background-color .25s ease,transform .25s ease}
 .gloskin-promo-modal__nav:hover{background:color-mix(in srgb,#fff 28%,transparent);transform:scale(1.05)}
-.gloskin-promo-modal__dots{display:flex;justify-content:center;align-items:center;gap:6px}
+.gloskin-promo-modal__dots{display:flex;justify-content:center;align-items:center;gap:5px;padding:0 4px}
 .gloskin-promo-modal__dot{
 width:6px;
 height:6px;
@@ -132,15 +139,15 @@ border-radius:999px;
 background:color-mix(in srgb,#fff 48%,transparent);
 box-shadow:0 1px 8px rgba(0,0,0,.18);
 transition:width .25s ease,background-color .25s ease}
-.gloskin-promo-modal__dot.is-active{width:18px;background:#fff}
+.gloskin-promo-modal__dot.is-active{width:16px;background:#fff}
 .gloskin-promo-modal :focus-visible{outline:3px solid #fff;outline-offset:3px}
 @media (max-width:480px){
-.gloskin-promo-modal{padding:12px}
-.gloskin-promo-modal__dialog{width:min(96vw,calc((100dvh - 82px)*1.775862))}
+.gloskin-promo-modal{padding:18px 12px}
+.gloskin-promo-modal__dialog{width:min(94vw,calc((100dvh - 88px)*1.775862))}
 .gloskin-promo-modal__poster{border-radius:16px}
-.gloskin-promo-modal__close{top:10px;right:10px;width:36px;height:36px;font-size:23px}
-.gloskin-promo-modal__controls{left:8px;right:8px;bottom:8px;grid-template-columns:32px 1fr 32px}
-.gloskin-promo-modal__nav{width:32px;height:32px;font-size:24px}}
+.gloskin-promo-modal__close{top:-14px;right:-4px;width:38px;height:38px;font-size:24px}
+.gloskin-promo-modal__controls{right:9px;bottom:9px;padding:5px;gap:6px}
+.gloskin-promo-modal__nav{width:32px;height:32px;font-size:18px}}
 @media (prefers-reduced-motion:reduce){
 .gloskin-promo-modal__backdrop,
 .gloskin-promo-modal__poster,
