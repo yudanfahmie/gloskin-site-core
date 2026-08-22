@@ -46,9 +46,7 @@ $gloskin_logo_url = isset( $gloskin_context['logo_url'] ) ? (string) $gloskin_co
 				<?php foreach ( $gloskin_clinic_links as $gloskin_link ) : ?>
 					<li>
 						<a href="<?php echo esc_url( (string) $gloskin_link['url'] ); ?>" style="display:inline-flex;min-height:28px;align-items:center;gap:9px;font-family:var(--gloskin-font-ui);font-size:.92rem;font-weight:500;line-height:1.3">
-							<span aria-hidden="true" style="display:inline-grid;width:22px;height:22px;flex:0 0 22px;place-items:center;border:1px solid color-mix(in srgb,var(--gloskin-brand-champagne) 52%,var(--gloskin-border));border-radius:999px;color:var(--gloskin-accent-readable)">
-								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"/><circle cx="12" cy="10" r="2.25"/></svg>
-							</span>
+							<svg aria-hidden="true" width="24" height="24" viewBox="-3 0 20 20" fill="currentColor" focusable="false" style="display:block;flex:0 0 24px;color:var(--gloskin-accent-readable)"><path d="M7 9.219C5.895 9.219 5 8.324 5 7.219S5.895 5.219 7 5.219s2 .895 2 2-.895 2-2 2M7 0C3.134 0 0 3.134 0 7c0 3.866 7 13 7 13s7-9.134 7-13c0-3.866-3.134-7-7-7"/></svg>
 							<span><?php echo esc_html( (string) $gloskin_link['label'] ); ?></span>
 						</a>
 					</li>
