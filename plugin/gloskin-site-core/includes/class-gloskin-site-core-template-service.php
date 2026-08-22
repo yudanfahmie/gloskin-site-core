@@ -228,8 +228,8 @@ final class Gloskin_Site_Core_Template_Service {
 			'page'         => $page,
 			'hero'         => $hero,
 			'treatments'   => $this->curated_home_treatments(),
-			'testimonials' => $this->published_managed_records( Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'gloskin_testimonial_active', 6, null, 'gloskin_testimonial_order' ),
-			'achievements' => $this->published_managed_records( Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE, 'gloskin_achievement_active', 8, 'gloskin_achievement_feature_on_home', 'gloskin_achievement_order' ),
+			'testimonials' => $this->published_managed_records( Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE ),
+			'achievements' => $this->published_managed_records( Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE ),
 		);
 	}
 
@@ -326,8 +326,13 @@ final class Gloskin_Site_Core_Template_Service {
 		$limited     = array();
 		$regular     = array();
 		$records     = array();
+		$profile     = Gloskin_Site_Core_Content_Service::editorial_profile( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE );
+		$active_meta = isset( $profile['active_meta'] ) ? (string) $profile['active_meta'] : '';
+		$order_meta  = isset( $profile['order_meta'] ) ? (string) $profile['order_meta'] : '';
+		$type_meta   = isset( $profile['type_meta'] ) ? (string) $profile['type_meta'] : '';
+		$types       = isset( $profile['allowed_types'] ) && is_array( $profile['allowed_types'] ) ? $profile['allowed_types'] : array();
 
-		if ( post_type_exists( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE ) ) {
+		if ( post_type_exists( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE ) && $active_meta && $order_meta && $type_meta ) {
 			$posts = get_posts( array(
 				'post_type'      => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE,
 				'post_status'    => 'publish',
@@ -336,11 +341,11 @@ final class Gloskin_Site_Core_Template_Service {
 				'order'          => 'ASC',
 			) );
 			foreach ( $posts as $post ) {
-				if ( ! $post instanceof WP_Post || '1' !== (string) get_post_meta( $post->ID, 'gloskin_promo_active', true ) ) {
+				if ( ! $post instanceof WP_Post || '1' !== (string) get_post_meta( $post->ID, $active_meta, true ) ) {
 					continue;
 				}
-				$type = (string) get_post_meta( $post->ID, 'gloskin_promo_type', true );
-				if ( ! in_array( $type, array( 'limited', 'regular' ), true ) ) {
+				$type = (string) get_post_meta( $post->ID, $type_meta, true );
+				if ( ! in_array( $type, $types, true ) ) {
 					continue;
 				}
 				$records[] = array(
@@ -348,15 +353,17 @@ final class Gloskin_Site_Core_Template_Service {
 					'title'    => (string) get_the_title( $post ),
 					'type'     => $type,
 					'image_id' => absint( get_post_thumbnail_id( $post->ID ) ),
-					'order'    => (int) get_post_meta( $post->ID, 'gloskin_promo_order', true ),
+					'order'    => (int) get_post_meta( $post->ID, $order_meta, true ),
 				);
 			}
 			usort( $records, static function ( $left, $right ) {
-				$left_order  = (int) $left['order'];
-				$right_order = (int) $right['order'];
-				if ( $left_order !== $right_order ) {
-					return $left_order <=> $right_order;
-				}
+				$left_order   = (int) $left['order'];
+				$right_order  = (int) $right['order'];
+				$left_ordered = $left_order > 0;
+				$right_ordered = $right_order > 0;
+				if ( $left_ordered && ! $right_ordered ) { return -1; }
+				if ( ! $left_ordered && $right_ordered ) { return 1; }
+				if ( $left_order !== $right_order ) { return $left_order <=> $right_order; }
 				return (int) $left['id'] <=> (int) $right['id'];
 			} );
 			foreach ( $records as $record ) {
@@ -376,21 +383,25 @@ final class Gloskin_Site_Core_Template_Service {
 	}
 
 	/**
-	 * Fetch active published records from a private managed CPT.
+	 * Fetch the final frontend-ready collection for a managed editorial CPT.
+	 * Eligibility comes only from the ContentService profile and factual
+	 * WordPress post/meta state. Migration identity is never a display rule.
+	 * Blank/zero order values sort after explicitly ordered records.
 	 *
-	 * Ordering: uses the CPT-specific explicit order meta key ($order_meta_key).
-	 * Blank/zero values sort after explicitly ordered records; post_title is the
-	 * stable tiebreaker. Frontend must not use menu_order or date for these CPTs.
-	 *
-	 * @param string      $post_type     CPT slug.
-	 * @param string      $active_meta   Meta key for the active flag.
-	 * @param int         $limit         Max records returned.
-	 * @param string|null $feature_meta  Optional meta key to require (e.g. feature_on_home).
-	 * @param string      $order_meta_key Explicit display-order meta key for this CPT.
+	 * @param string $post_type Managed CPT slug.
+	 * @param int    $limit Optional canonical display ceiling; 0 means all.
 	 * @return array<int,array<string,mixed>>
 	 */
-	private function published_managed_records( $post_type, $active_meta, $limit = 10, $feature_meta = null, $order_meta_key = '' ) {
+	private function published_managed_records( $post_type, $limit = 0 ) {
 		if ( ! post_type_exists( $post_type ) ) {
+			return array();
+		}
+		$profile     = Gloskin_Site_Core_Content_Service::editorial_profile( $post_type );
+		$active_meta = isset( $profile['active_meta'] ) ? (string) $profile['active_meta'] : '';
+		$order_meta  = isset( $profile['order_meta'] ) ? (string) $profile['order_meta'] : '';
+		$home_meta   = isset( $profile['home_meta'] ) ? (string) $profile['home_meta'] : '';
+		$required    = isset( $profile['required_content'] ) ? (string) $profile['required_content'] : '';
+		if ( '' === $active_meta || '' === $order_meta ) {
 			return array();
 		}
 		$meta_query = array(
@@ -400,9 +411,9 @@ final class Gloskin_Site_Core_Template_Service {
 				'compare' => '=',
 			),
 		);
-		if ( $feature_meta ) {
+		if ( '' !== $home_meta ) {
 			$meta_query[] = array(
-				'key'     => $feature_meta,
+				'key'     => $home_meta,
 				'value'   => '1',
 				'compare' => '=',
 			);
@@ -415,16 +426,19 @@ final class Gloskin_Site_Core_Template_Service {
 			'order'          => 'ASC',
 			'meta_query'     => $meta_query,
 		) );
-		$posts = array_values( array_filter( $posts, static function ( $post ) {
-			return '' === (string) get_post_meta( $post->ID, '_gloskin_demo_identity', true );
-		} ) );
+		if ( 'post_excerpt' === $required ) {
+			$posts = array_values( array_filter( $posts, static function ( $post ) {
+				return $post instanceof WP_Post && '' !== trim( (string) $post->post_excerpt );
+			} ) );
+		}
 
-		/* Sort by explicit order meta — blank/zero sorts last */
-		usort( $posts, function ( $a, $b ) use ( $order_meta_key ) {
-			return $this->compare_managed_posts( $a, $b, $order_meta_key );
+		usort( $posts, function ( $a, $b ) use ( $order_meta ) {
+			return $this->compare_managed_posts( $a, $b, $order_meta );
 		} );
+		if ( absint( $limit ) > 0 ) {
+			$posts = array_slice( $posts, 0, absint( $limit ) );
+		}
 
-		$posts   = array_slice( $posts, 0, $limit );
 		$records = array();
 		foreach ( $posts as $post ) {
 			$records[] = array(
@@ -442,7 +456,6 @@ final class Gloskin_Site_Core_Template_Service {
 		}
 		return $records;
 	}
-
 
 	/** @return int */
 	private function compare_managed_posts( $a, $b, $order_meta_key ) {
@@ -550,7 +563,7 @@ final class Gloskin_Site_Core_Template_Service {
 		 * space-separated category slugs for client-side chip filtering.
 		 * No second catalog owner: woocommerce adapter remains the sole query source.
 		 */
-		$product_map = array(); // product_id => product array with 'category_slugs' key
+		$product_map = array();
 		foreach ( $mappings as $mapping ) {
 			if ( ! $mapping['category_exists'] ) {
 				continue;
@@ -573,10 +586,6 @@ final class Gloskin_Site_Core_Template_Service {
 
 		$products = array_values( $product_map );
 
-		/*
-		 * No-JS/no-category-match fallback: show all products without category
-		 * tagging so the page is always useful even without classified products.
-		 */
 		if ( empty( $products ) && $this->woocommerce->available() ) {
 			$products = $this->woocommerce->products( 8 );
 			foreach ( $products as &$p ) {
@@ -631,7 +640,6 @@ final class Gloskin_Site_Core_Template_Service {
 		foreach ( $primary as $post ) {
 			$cards[] = $this->post_card( $post, Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE );
 		}
-		/* Fill to 6 with non-duplicate published treatments, ordered by title. */
 		$exclude   = array_values( array_filter( array_map( static function ( $c ) { return absint( $c['id'] ); }, $cards ) ) );
 		$remaining = max( 0, 6 - count( $cards ) );
 		if ( $remaining > 0 ) {
@@ -724,7 +732,6 @@ final class Gloskin_Site_Core_Template_Service {
 			'page' => $page,
 			'hero' => $this->hero_context( $page, __( 'Dokter Gloskin', 'gloskin-site-core' ), __( 'Gunakan halaman ini untuk mengenali profil dokter dan lokasi praktik yang dipublikasikan Gloskin.', 'gloskin-site-core' ) ),
 			'doctors' => $this->all_published_doctor_cards(),
-			/* Readiness target only; never a directory display ceiling. */
 			'target' => Gloskin_Site_Core_Content_Service::DOCTOR_TARGET_COUNT,
 		);
 	}
@@ -833,7 +840,6 @@ final class Gloskin_Site_Core_Template_Service {
 		$words = '' === $text ? 0 : count( preg_split( '/\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY ) );
 		$minutes = max( 1, (int) ceil( $words / 220 ) );
 		return sprintf(
-			/* translators: %d: estimated reading time in minutes. */
 			_n( '%d menit baca', '%d menit baca', $minutes, 'gloskin-site-core' ),
 			$minutes
 		);
@@ -897,7 +903,6 @@ final class Gloskin_Site_Core_Template_Service {
 			return array( 'min' => 0.0, 'max' => 5000000.0 );
 		}
 		$lookup = $wpdb->prefix . 'wc_product_meta_lookup';
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$row = $wpdb->get_row(
 			"SELECT MIN(l.min_price) AS avail_min, MAX(l.max_price) AS avail_max
 			 FROM {$lookup} l
@@ -905,7 +910,6 @@ final class Gloskin_Site_Core_Template_Service {
 			 WHERE p.post_type = 'product' AND p.post_status = 'publish'",
 			ARRAY_A
 		);
-		// phpcs:enable
 		$min = ( $row && null !== $row['avail_min'] ) ? (float) $row['avail_min'] : 0.0;
 		$max = ( $row && null !== $row['avail_max'] ) ? (float) $row['avail_max'] : 5000000.0;
 		if ( $max <= $min || $max <= 0.0 ) {
@@ -1086,13 +1090,7 @@ final class Gloskin_Site_Core_Template_Service {
 		return $cards;
 	}
 
-	/**
-	 * Factual Doctor directory/team collection. Unlike readiness targets and
-	 * preview helpers, this collection has no display ceiling: every published
-	 * Gloskin doctor is projected in deterministic menu-order/title order.
-	 *
-	 * @return array<int,array<string,mixed>>
-	 */
+	/** @return array<int,array<string,mixed>> */
 	private function all_published_doctor_cards() {
 		$posts = get_posts( array(
 			'post_type'      => Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE,
