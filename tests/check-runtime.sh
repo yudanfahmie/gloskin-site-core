@@ -54,6 +54,7 @@ php tests/phase2-client-feedback-contract.php
 php tests/phase3-client-feedback-contract.php
 php tests/editorial-manager-contract.php
 php tests/about-reference-layout-contract.php
+php tests/shared-arrow-icon-contract.php
 php tests/release-version-contract.php
 php tests/diagnostic-export-contract.php
 php tests/shop-catalog-contract.php
@@ -85,7 +86,7 @@ php tests/final-migration-path-contract.php
 php tests/final-migration-package-integrity.php
 php tests/final-migration-dom-ajax-contract.php
 php tests/final-migration-failed-resume-contract.php
-php tests/final-migration-doctor-batch-resume-contract.php
+php tests/final-migration-doctor-batch-resume.php
 php tests/final-migration-preflight-reset-contract.php
 php tests/final-migration-error-contract.php
 php tests/final-closure-contract.php
