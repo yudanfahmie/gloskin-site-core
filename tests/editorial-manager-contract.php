@@ -132,4 +132,28 @@ editorial_must(false !== strpos($manager, 'private function normalize_promo_type
 editorial_must(false !== strpos($manager, "'limited' !== \$type && 'regular' !== \$type"), 'normalization catches non-canonical promo types');
 editorial_must(false !== strpos($manager, "\$this->set_meta_if_changed( \$post->ID, 'gloskin_promo_type', 'regular' )"), 'normalization writes regular as the corrected canonical value');
 
-echo "editorial-manager-contract.php: OK (canonical schema + save/active validation + bounded setup/normalization + promo type column + promo type normalization + lifecycle + native media + native delete + safe reorder + accessibility/status)\n";
+/* Promo Crop & Apply stays inside the existing profile/manager/media/save owners. */
+editorial_must(1 === substr_count($content, "'focus_x_meta'     => 'gloskin_promo_focus_x'"), 'Promo profile owns focus_x exactly once');
+editorial_must(1 === substr_count($content, "'focus_y_meta'     => 'gloskin_promo_focus_y'"), 'Promo profile owns focus_y exactly once');
+editorial_must(1 === substr_count($content, "register_percent_meta( self::PROMO_POST_TYPE, 'gloskin_promo_focus_x' )"), 'focus_x registration exists exactly once');
+editorial_must(1 === substr_count($content, "register_percent_meta( self::PROMO_POST_TYPE, 'gloskin_promo_focus_y' )"), 'focus_y registration exists exactly once');
+editorial_must(false !== strpos($content, "'crop_width'       => 1648") && false !== strpos($content, "'crop_height'      => 928"), 'Promo profile owns canonical 1648x928 production target');
+editorial_must(false !== strpos($content, "'default'           => 50") && false !== strpos($content, "'minimum' => 0, 'maximum' => 100, 'default' => 50"), 'focus meta defaults to 50 and REST schema is range-bounded');
+editorial_must(false !== strpos($content, 'return max( 0.0, min( 100.0, $value ) );'), 'server focus sanitizer clamps 0..100');
+editorial_must(false !== strpos($manager, 'data-gloskin-promo-crop') && false !== strpos($manager, 'data-gloskin-promo-crop-apply') && false !== strpos($manager, 'data-gloskin-promo-crop-reset'), 'existing Promo modal contains one bounded crop stage');
+editorial_must(false !== strpos($manager, "'focus_x'        => \$this->promo_focus_value") && false !== strpos($manager, "'focus_y'        => \$this->promo_focus_value"), 'normalized Promo record response includes focal state');
+editorial_must(false !== strpos($manager, "\$current_image_id !== \$image_id") && false !== strpos($manager, "'Promo image must be at least %1\$d × %2\$d pixels.'"), 'new Promo replacement image is dimension-validated without blocking unchanged legacy artwork');
+editorial_must(false !== strpos($manager, "update_post_meta( \$saved_id, (string) ( \$profile['focus_x_meta']") && false !== strpos($manager, "update_post_meta( \$saved_id, (string) ( \$profile['focus_y_meta']"), 'existing AJAX save persists focal state');
+editorial_must(false !== strpos($js, 'function applyPromoCrop()') && false !== strpos($js, 'pointerdown') && false !== strpos($js, 'ArrowLeft'), 'crop interaction supports pointer/touch and keyboard focal adjustment');
+editorial_must(false !== strpos($js, "config.postType === 'gloskin_promo'"), 'client crop behavior is explicitly Promo-profile bounded');
+editorial_must(false === strpos($manager . $js, 'PromoCropManager'), 'no second Promo crop manager exists');
+editorial_must(false === strpos($manager . $js, 'media_handle_sideload') || false !== strpos($manager, 'seed_attachment('), 'Crop & Apply does not introduce derivative attachment generation');
+editorial_must(1 === substr_count($css, 'aspect-ratio:1648 / 928'), 'admin crop viewport owns exactly one fixed canonical ratio declaration');
+editorial_must(false !== strpos($css, 'object-fit:cover') && false !== strpos($css, 'object-position:var(--gloskin-promo-focus-x,50%) var(--gloskin-promo-focus-y,50%)'), 'admin crop preview uses production cover/focal geometry');
+
+$testimonial_profile_start = strpos($content, 'self::TESTIMONIAL_POST_TYPE => array(');
+$testimonial_profile_end   = false !== $testimonial_profile_start ? strpos($content, 'self::ACHIEVEMENT_POST_TYPE => array(', $testimonial_profile_start) : false;
+$testimonial_profile       = false !== $testimonial_profile_start && false !== $testimonial_profile_end ? substr($content, $testimonial_profile_start, $testimonial_profile_end - $testimonial_profile_start) : '';
+editorial_must(false !== strpos($testimonial_profile, "'crop_enabled'     => false") && false !== strpos($testimonial_profile, "'focus_x_meta'     => ''") && false !== strpos($testimonial_profile, "'focus_y_meta'     => ''"), 'Testimonial profile does not inherit Promo crop state');
+
+echo "editorial-manager-contract.php: OK (canonical schema + native manager/media/save ownership + Promo non-destructive Crop & Apply + quality guard + safe reorder + accessibility/status)\n";
