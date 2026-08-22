@@ -117,20 +117,6 @@
 		updatePopupRequirements();
 	}
 
-	function readinessIssue(record) {
-		record = record || {};
-		if (!(parseInt(record.image_id, 10) > 0)) {
-			return { field: 'image', message: 'Choose a featured Promo image before enabling popup display.' };
-		}
-		if (!String(record.destination_url || '').trim()) {
-			return { field: 'destination', message: 'Add a valid Destination URL before enabling popup display.' };
-		}
-		if ((record.visibility || 'homepage') === 'specific_pages' && (!Array.isArray(record.visibility_page_ids) || !record.visibility_page_ids.length)) {
-			return { field: 'pages', message: 'Select at least one WordPress page for Specific Pages visibility.' };
-		}
-		return null;
-	}
-
 	function focusPopupField(kind) {
 		var target = null;
 		if (kind === 'destination') { target = destinationField; }
@@ -197,8 +183,6 @@
 		if (detail.isNew) { record = { popup_enabled: false, visibility: 'homepage', visibility_page_ids: [], destination_url: '' }; }
 		syncForm(record);
 		if (guidance && guidance.id === id) {
-			if (popupField) { popupField.checked = true; }
-			updatePopupRequirements();
 			showPopupGuidance(guidance.message);
 			focusPopupField(guidance.field);
 			guidance = null;
@@ -228,11 +212,6 @@
 		event.stopPropagation();
 		var id = String(toggle.getAttribute('data-id') || '');
 		var enable = toggle.getAttribute('data-popup') !== '1';
-
-		if (enable) {
-			var issue = readinessIssue(records[id]);
-			if (issue) { openPopupEditor(id, issue); return; }
-		}
 
 		toggle.disabled = true;
 		ajaxPopup(id, enable).then(function (response) {
