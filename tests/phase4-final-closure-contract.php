@@ -43,6 +43,7 @@ $f          = p4text( $fpath );
 $k          = p4text( $plugin . '/includes/class-gloskin-site-core-kernel.php' );
 $b          = p4text( $plugin . '/gloskin-site-core.php' );
 $t          = p4text( $plugin . '/includes/class-gloskin-site-core-translation.php' );
+$cs         = p4text( $plugin . '/includes/class-gloskin-site-core-content-service.php' );
 $ts         = p4text( $plugin . '/includes/class-gloskin-site-core-template-service.php' );
 $h          = p4text( $plugin . '/templates/pages/home.php' );
 $p          = p4text( $plugin . '/templates/pages/promo.php' );
@@ -112,9 +113,23 @@ foreach ( array( 'data-gloskin-section="home-treatments"', 'data-gloskin-section
 p4must( substr_count( $h, 'gloskin_ui1_render_empty_state(' ) >= 3, 'Home dynamic sections have shared empty-state fallbacks' );
 p4must( false !== strpos( $h, "gloskin_ui1_render_empty_state( 'generic', __( 'Testimoni'" ), 'Testimoni empty state uses shared renderer' );
 p4must( false !== strpos( $h, "gloskin_ui1_render_empty_state( 'generic', __( 'Piagam & Penghargaan'" ), 'Piagam empty state uses shared renderer' );
-/* Piagam cards are text-only (marquee): no presentation-media call expected. */
 p4must( false !== strpos( $h, "trim( (string) ( \$gloskin_home_testimonial['excerpt'] ?? '' ) )" ), 'Testimonial uses factual excerpt' );
 p4must( false === strpos( $h, "\$gloskin_home_testimonial['title'] ?? ''" ), 'no fabricated Testimonial quote from title' );
+
+/* Editorial data sync: TemplateService decides records, templates only render. */
+p4must( 1 === substr_count( $cs, 'public static function editorial_profile(' ), 'ContentService owns one declarative editorial display profile' );
+p4must( false !== strpos( $ts, 'Gloskin_Site_Core_Content_Service::editorial_profile( $post_type )' ), 'TemplateService consumes canonical editorial profile' );
+p4must( false === strpos( $ts, "'_gloskin_demo_identity'" ), 'migration demo identity is not a frontend display rule' );
+p4must( false !== strpos( $ts, "'post_excerpt' === \$required" ), 'TemplateService owns testimonial quote eligibility' );
+p4must( false === strpos( $h, 'array_filter( $gloskin_home_testimonials' ), 'Home does not re-filter testimonial eligibility' );
+p4must( false === strpos( $h, 'array_slice( $gloskin_home_testimonials' ), 'Home does not own testimonial display limit' );
+p4must( false === strpos( $h, 'array_slice( isset( $gloskin_context[\'achievements\']' ), 'Home does not own achievement display limit' );
+p4must( false === strpos( $home_ctx, 'TESTIMONIAL_POST_TYPE, 6' ) && false === strpos( $home_ctx, 'ACHIEVEMENT_POST_TYPE, 8' ), 'TemplateService has no obsolete query-then-slice double limits' );
+p4must( false !== strpos( $h, "absint( \$gloskin_home_achievement['image_id'] ?? 0 )" ), 'Home consumes canonical Achievement image_id' );
+p4must( false !== strpos( $h, 'wp_get_attachment_image( $gloskin_home_achievement_image_id' ), 'Achievement Featured Image is the primary Home visual' );
+$image_branch = strpos( $h, "if ( '' !== \$gloskin_home_achievement_image )" );
+$fallback_g   = strpos( $h, '<div class="gloskin-home-piagam__icon" aria-hidden="true">G</div>' );
+p4must( false !== $image_branch && false !== $fallback_g && $fallback_g > $image_branch, 'hard-coded G exists only after Featured Image branch as empty fallback' );
 
 /* One generic empty-state owner plus scoped Home composition. */
 p4must( false !== strpos( $helpers, 'function gloskin_ui1_render_empty_state(' ), 'shared generic empty-state renderer exists' );
@@ -129,10 +144,8 @@ p4must( false === strpos( $editorial, '.gloskin-ui1-section{padding' ), 'no broa
 p4must( false !== strpos( $p, "gloskin_ui1_render_empty_state( 'generic', __( 'Informasi promo belum tersedia.'" ), 'Promo empty state uses shared renderer' );
 p4must( false !== strpos( $p, 'gloskin-promo__missing' ), 'Promo missing artwork uses bounded placeholder' );
 p4must( false === strpos( $p, '<div class="gloskin-ui1-empty">' ), 'legacy Promo empty markup removed' );
-/* Promo carousel JS↔CSS contract: CSS must stack all enhanced slides into one grid area and clip the stage. */
 p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] .gloskin-ui1-promo-carousel__stage{display:grid;grid-template-areas:"slide";overflow:hidden;width:100%;min-width:0' ), 'Promo carousel enhanced stage stacks slides in one grid area with overflow:hidden' );
 p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{grid-area:slide;min-width:0;transition:transform .52s cubic-bezier(.4,0,.2,1);will-change:transform}' ), 'Promo carousel enhanced slides use grid-area:slide with transition' );
-/* Durable Promo architecture: TemplateService sole projection owner, split types, shared renderer. */
 $editorial_mgr = p4text( $plugin . '/includes/class-gloskin-site-core-editorial-manager.php' );
 p4must( false !== strpos( $ts, "'limited_promos'" ) && false !== strpos( $ts, "'regular_promos'" ), 'TemplateService projects both limited_promos and regular_promos' );
 p4must( false === strpos( $k, 'Editorial_Projection' ) && false === strpos( $k, 'editorial-projection' ), 'EditorialProjection is absent from Kernel' );
@@ -173,7 +186,6 @@ foreach ( $about_order as $section ) {
 	p4must( 1 === substr_count( $a, $section ), 'About section is unique: ' . $section );
 	$about_last = $position;
 }
-/* Optional bounded continuation sections are permitted after Principles. */
 $about_rest = substr( $a, $about_last + strlen( 'data-gloskin-section="about-principles"' ) );
 preg_match_all( '/data-gloskin-section="([^"]+)"/', $about_rest, $about_extras );
 $about_allowed_extras = array( 'about-philosophy', 'about-explore' );
@@ -189,15 +201,12 @@ foreach ( array( 'render_doctor', 'render_clinic', 'render_achievements', 'about
 }
 p4must( false === strpos( $a, 'gloskin-ui1-footer__cta' ), 'About template has no generic closing CTA markup' );
 
-/* About copy is now release-controlled static content.
-   The runtime About reconciliation was intentionally removed; copy lives in
-   TemplateService::about_static_content().  No lifecycle runtime writes it. */
+/* About copy is now release-controlled static content. */
 $lifecycle = p4text( $plugin . '/includes/class-gloskin-site-core-lifecycle-service.php' );
 p4must( false === strpos( $lifecycle, 'register_about_reconciliation' ) && false === strpos( $lifecycle, 'maybe_reconcile_about_content' ), 'About reconciliation runtime is retired from lifecycle service' );
 p4must( false === strpos( $lifecycle, 'wp_insert_attachment' ) && false === strpos( $lifecycle, 'wp_delete_attachment' ), 'lifecycle service never creates/deletes attachments' );
 p4must( false !== strpos( $ts, 'private function about_static_content()' ), 'About copy is owned by about_static_content() in TemplateService' );
 p4must( false !== strpos( $about_ctx, 'about_static_content()' ), 'about_context() delegates to static copy owner' );
-// Kernel must not register the retired runtime.
 p4must( false === strpos( $k, 'register_about_reconciliation' ), 'kernel does not register retired About reconciliation runtime' );
 
 /* Shop Discovery CSS must load after the current last global style, not a retired handle. */
@@ -218,4 +227,4 @@ foreach ( array( 'Detail tambahan belum tersedia untuk ditampilkan.', 'Informasi
 
 p4must( false !== strpos( $k, "const VERSION = '0.7.218'" ) && false !== strpos( $b, 'Version: 0.7.218' ), 'release owners synchronized at 0.7.218' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo carousel JS-CSS contract + Promo arch durable + footer universal CTA + About static copy + bounded About continuation + Shop CSS dep + version 0.7.218)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + editorial admin/frontend sync + Featured Image ownership + Home cover/video + Promo carousel JS-CSS contract + Promo arch durable + footer universal CTA + About static copy + bounded About continuation + Shop CSS dep + version 0.7.218)\n";
