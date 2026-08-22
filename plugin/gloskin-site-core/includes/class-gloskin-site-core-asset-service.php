@@ -120,21 +120,24 @@ final class Gloskin_Site_Core_Asset_Service {
 	}
 
 	/**
-	 * Treatment Consultation runtime (docs/task-treatment-consultation-
-	 * commerce-discovery.md section 10): "Treatment consultation JS only on
-	 * Treatments Hub" -- both handles are already registered above (so
-	 * their dependency graph is known), just conditionally enqueued here
-	 * rather than unconditionally on every Gloskin frontend request.
+	 * Treatment consultation + shared glint presentation routing. The shared
+	 * stylesheet owns both the Hub consultation presentation and the single
+	 * Treatment glint keyframe, so it is required on both route families.
+	 * The consultation controller remains Hub-only: single Treatment needs
+	 * presentation/keyframes only and must not load the Hub interaction JS.
 	 *
 	 * @return void
 	 */
 	private function maybe_enqueue_treatment_consultation() {
 		$context = function_exists( 'get_query_var' ) ? get_query_var( 'gloskin_context', array() ) : array();
-		if ( ! is_array( $context ) || 'treatments' !== ( isset( $context['view'] ) ? $context['view'] : '' ) ) {
+		$view    = is_array( $context ) && isset( $context['view'] ) ? (string) $context['view'] : '';
+		if ( ! in_array( $view, array( 'treatments', 'treatment' ), true ) ) {
 			return;
 		}
 		wp_enqueue_style( 'gloskin-ui1-consultation' );
-		wp_enqueue_script( 'gloskin-ui1-consultation' );
+		if ( 'treatments' === $view ) {
+			wp_enqueue_script( 'gloskin-ui1-consultation' );
+		}
 	}
 
 	/**
