@@ -274,11 +274,13 @@ ux221_must( false !== strpos( $ec, '@media (max-width:1024px){.gloskin-contact-l
 ux221_must( false !== strpos( $ec, '@media (max-width:768px){.gloskin-contact-hero__inner{grid-template-columns:1fr}.gloskin-contact-hero__media{height:clamp(260px,65vw,340px)}.gloskin-contact-location-grid{grid-template-columns:1fr}}' ), 'Contact mobile stacks hero, retains media, and uses one location column' );
 
 /* Clinic sparse-state and Doctors intro geometry stay closed in existing owners. */
-ux221_must( false !== strpos( $cl, '$gloskin_has_detail_media' ), 'Clinic template derives an explicit detail-media state' );
+ux221_must( false !== strpos( $cl, '$gloskin_has_detail_media = $gloskin_primary_media_id || $gloskin_map_embed || $gloskin_map_url;' ), 'Clinic detail-media state is derived only from factual image/map availability' );
 ux221_must( false !== strpos( $cl, 'if ( $gloskin_has_detail_media )' ), 'Clinic media column renders only when actual media/map exists' );
+ux221_must( false !== strpos( $cl, '<div class="gloskin-clinic-detail__media">' ), 'Clinic retains the real media wrapper for factual image/map states' );
 ux221_must( false === strpos( $cl, 'gloskin-clinic-detail__media-empty' ), 'Clinic template contains no ghost empty-media pane' );
 ux221_must( false !== strpos( $pc, '.gloskin-clinic-detail__overlap--no-media .gloskin-clinic-detail__card{width:100%;flex:1 1 100%;max-width:none}' ), 'sparse Clinic information card spans the contained width' );
-ux221_must( false !== strpos( $pc, '.gloskin-doctors-intro__banner{display:grid;width:100%;max-width:none;' ), 'Doctors intro banner fills the canonical container without nested max-width' );
+ux221_must( false !== strpos( $pc, '.gloskin-doctors-intro__banner{display:grid;width:100%;max-width:none;margin-inline:0;' ), 'Doctors intro banner fills the canonical container with zero artificial inline inset' );
+ux221_must( false === strpos( $pc, '.gloskin-doctors-intro .gloskin-ui1-container{' ), 'Doctors intro does not create a route-specific container owner' );
 
 /* ── 8. Version (0.7.221 or higher) ────────────────────────────────── */
 ux221_must( false !== strpos( $k, "const VERSION = '0.7.22" ), 'Kernel VERSION is at or above 0.7.22x' );
