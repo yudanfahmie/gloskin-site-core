@@ -306,12 +306,12 @@ final class Gloskin_Site_Core_Editorial_Manager {
 							<legend><?php echo esc_html__( 'Popup display', 'gloskin-site-core' ); ?></legend>
 							<div class="gloskin-editorial-popup-settings__toggle">
 								<label class="gloskin-editorial-active-field"><input type="checkbox" name="popup_enabled" value="1"> <span><?php echo esc_html__( 'Show as popup', 'gloskin-site-core' ); ?></span></label>
-								<p class="gloskin-editorial-popup-settings__toggle-copy"><?php echo esc_html__( 'Optional. Enable only when this Promo should interrupt the selected page with a clickable poster.', 'gloskin-site-core' ); ?></p>
+								<p class="gloskin-editorial-popup-settings__toggle-copy"><?php echo esc_html__( 'Optional. Enable popup display. Visibility controls where it appears; Promo URL only controls click-through.', 'gloskin-site-core' ); ?></p>
 							</div>
 							<div class="gloskin-editorial-popup-settings__options" data-gloskin-promo-popup-options hidden>
 								<div class="gloskin-editorial-popup-settings__grid">
-									<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Visibility', 'gloskin-site-core' ); ?></span><select name="visibility"><option value="homepage"><?php echo esc_html__( 'Homepage', 'gloskin-site-core' ); ?></option><option value="all_pages"><?php echo esc_html__( 'All Pages', 'gloskin-site-core' ); ?></option><option value="specific_pages"><?php echo esc_html__( 'Specific Pages', 'gloskin-site-core' ); ?></option></select><p class="gloskin-editorial-popup-settings__hint"><?php echo esc_html__( 'Controls where the popup is shown.', 'gloskin-site-core' ); ?></p></label>
-									<label class="gloskin-editorial-field gloskin-editorial-popup-settings__destination"><span><?php echo esc_html__( 'Click destination URL', 'gloskin-site-core' ); ?></span><input type="text" name="destination_url" inputmode="url" autocomplete="url" placeholder="https://example.com/promo/ or /promo/"><p class="gloskin-editorial-popup-settings__hint"><?php echo esc_html__( 'Controls where the poster opens when clicked. Same-site links may be root-relative; external destinations must use HTTPS.', 'gloskin-site-core' ); ?></p></label>
+									<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Visibility', 'gloskin-site-core' ); ?></span><select name="visibility"><option value="homepage"><?php echo esc_html__( 'Homepage', 'gloskin-site-core' ); ?></option><option value="specific_pages"><?php echo esc_html__( 'Specific Pages', 'gloskin-site-core' ); ?></option></select><p class="gloskin-editorial-popup-settings__hint"><?php echo esc_html__( 'Placement only: choose where this popup is allowed to appear.', 'gloskin-site-core' ); ?></p></label>
+									<label class="gloskin-editorial-field gloskin-editorial-popup-settings__destination"><span><?php echo esc_html__( 'Promo URL (optional)', 'gloskin-site-core' ); ?></span><input type="text" name="destination_url" inputmode="url" autocomplete="url" placeholder="https://example.com/promo/ or /promo/"><p class="gloskin-editorial-popup-settings__hint"><?php echo esc_html__( 'Click routing only. Leave empty for a display-only poster; add a valid URL to make the poster clickable. This does not change Visibility.', 'gloskin-site-core' ); ?></p></label>
 									<div class="gloskin-editorial-popup-settings__specific" data-gloskin-promo-specific-pages hidden>
 										<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Specific Pages', 'gloskin-site-core' ); ?></span><input class="gloskin-editorial-popup-settings__search" type="search" data-gloskin-promo-page-search placeholder="<?php echo esc_attr__( 'Search pages…', 'gloskin-site-core' ); ?>"><select class="gloskin-editorial-popup-settings__pages" multiple size="7" data-gloskin-promo-page-select aria-label="<?php echo esc_attr__( 'Select WordPress pages', 'gloskin-site-core' ); ?>"><?php foreach ( $promo_pages as $promo_page ) : ?><option value="<?php echo esc_attr( (string) $promo_page->ID ); ?>"><?php echo esc_html( get_the_title( $promo_page ) ); ?></option><?php endforeach; ?></select></label>
 										<input type="hidden" name="visibility_page_ids_csv" value="">
@@ -430,16 +430,12 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			$page_ids      = '' === $page_csv ? array() : preg_split( '/[\s,]+/', $page_csv, -1, PREG_SPLIT_NO_EMPTY );
 			$visibility_page_ids = Gloskin_Site_Core_Promo_Modal::sanitize_page_ids( is_array( $page_ids ) ? $page_ids : array() );
 			$destination_raw = isset( $_POST['destination_url'] ) ? trim( (string) wp_unslash( $_POST['destination_url'] ) ) : '';
-			if ( $popup_enabled && Gloskin_Site_Core_Promo_Modal::VISIBILITY_HOMEPAGE === $visibility ) {
-				$destination_url = home_url( '/' );
-			} else {
-				$destination_url = Gloskin_Site_Core_Promo_Modal::sanitize_destination_url( $destination_raw );
-				if ( '' !== $destination_raw && '' === $destination_url ) {
-					wp_send_json_error( array( 'message' => __( 'Destination URL must be a same-site HTTP/HTTPS URL or an external HTTPS URL.', 'gloskin-site-core' ) ), 400 );
-				}
+			$destination_url = Gloskin_Site_Core_Promo_Modal::sanitize_destination_url( $destination_raw );
+			if ( '' !== $destination_raw && '' === $destination_url ) {
+				wp_send_json_error( array( 'message' => __( 'Promo URL must be a same-site HTTP/HTTPS URL or an external HTTPS URL.', 'gloskin-site-core' ) ), 400 );
 			}
 			if ( $popup_enabled ) {
-				$popup_issue = $this->promo_popup_validation_issue( $image_id, $destination_url, $visibility, $visibility_page_ids );
+				$popup_issue = $this->promo_popup_validation_issue( $image_id, $visibility, $visibility_page_ids );
 				if ( $popup_issue ) {
 					wp_send_json_error( $popup_issue, 400 );
 				}
@@ -534,16 +530,10 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			}
 			$image_id   = absint( get_post_thumbnail_id( $post_id ) );
 			$visibility = Gloskin_Site_Core_Promo_Modal::sanitize_visibility( get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::VISIBILITY_META, true ) );
-			$url        = Gloskin_Site_Core_Promo_Modal::VISIBILITY_HOMEPAGE === $visibility
-				? home_url( '/' )
-				: Gloskin_Site_Core_Promo_Modal::sanitize_destination_url( get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::DESTINATION_META, true ) );
 			$page_ids   = Gloskin_Site_Core_Promo_Modal::sanitize_page_ids( get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::PAGE_IDS_META, true ) );
-			$popup_issue = $this->promo_popup_validation_issue( $image_id, $url, $visibility, $page_ids );
+			$popup_issue = $this->promo_popup_validation_issue( $image_id, $visibility, $page_ids );
 			if ( $popup_issue ) {
 				wp_send_json_error( $popup_issue, 400 );
-			}
-			if ( Gloskin_Site_Core_Promo_Modal::VISIBILITY_HOMEPAGE === $visibility ) {
-				update_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::DESTINATION_META, $url );
 			}
 			update_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::POPUP_META, '1' );
 			wp_send_json_success( array( 'field' => 'popup', 'active' => true ) );
@@ -560,26 +550,20 @@ final class Gloskin_Site_Core_Editorial_Manager {
 
 	/**
 	 * Canonical popup readiness rule shared by Save and Popup On.
+	 * Click routing is deliberately not a prerequisite: an empty Promo URL
+	 * means a display-only poster.
 	 *
 	 * @param int            $image_id Featured image attachment ID.
-	 * @param string         $destination_url Sanitized destination URL.
 	 * @param string         $visibility Canonical visibility value.
 	 * @param array<int,int> $page_ids Canonical page IDs.
 	 * @return array<string,string>
 	 */
-	private function promo_popup_validation_issue( $image_id, $destination_url, $visibility, $page_ids ) {
+	private function promo_popup_validation_issue( $image_id, $visibility, $page_ids ) {
 		if ( ! absint( $image_id ) ) {
 			return array(
 				'code'    => 'popup_incomplete',
 				'field'   => 'image',
 				'message' => __( 'Choose a featured Promo image before enabling popup display.', 'gloskin-site-core' ),
-			);
-		}
-		if ( Gloskin_Site_Core_Promo_Modal::VISIBILITY_HOMEPAGE !== $visibility && '' === trim( (string) $destination_url ) ) {
-			return array(
-				'code'    => 'popup_incomplete',
-				'field'   => 'destination',
-				'message' => __( 'Add a valid Destination URL before enabling popup display.', 'gloskin-site-core' ),
 			);
 		}
 		if ( Gloskin_Site_Core_Promo_Modal::VISIBILITY_SPECIFIC === $visibility && ! $page_ids ) {
@@ -765,7 +749,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 					&& '' === trim( (string) $post->post_excerpt ) ) {
 					$mutations += $this->set_meta_if_changed( $post->ID, $active_meta, '0' );
 				}
-			}
+		}
 		}
 
 		$testimonial_profile = Gloskin_Site_Core_Content_Service::editorial_profile( Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE );
