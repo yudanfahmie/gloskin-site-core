@@ -600,7 +600,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			wp_send_json_error( array( 'message' => __( 'Unsupported editorial record type.', 'gloskin-site-core' ) ), 400 );
 		}
 		$this->require_edit_capability( $post_type, 0 );
-		$ids       = isset( $_POST['ids'] ) ? array_values( array_filter( array_map( 'absint', (array) wp_unslash( $_POST['ids'] ) ) ) : array();
+		$ids       = isset( $_POST['ids'] ) ? array_values( array_filter( array_map( 'absint', (array) wp_unslash( $_POST['ids'] ) ) ) ) : array();
 		$canonical = $this->canonical_reorder_ids( $post_type );
 		if ( count( $ids ) !== count( $canonical ) || count( $ids ) !== count( array_unique( $ids ) ) || array_diff( $ids, $canonical ) || array_diff( $canonical, $ids ) ) {
 			wp_send_json_error( array( 'message' => __( 'Reorder requires the complete unfiltered collection.', 'gloskin-site-core' ) ), 400 );
