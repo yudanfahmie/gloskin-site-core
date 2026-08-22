@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gloskin Clinic - Premium Promo Appear</title>
+
+    <style>
+        /* --- DUMMY PAGE UNTUK SIMULASI SCROLL --- */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            background: linear-gradient(to bottom, #fdfaf8 0%, #f6ebe6 50%, #fdfaf8 100%);
+            height: 300vh; /* Tinggi ekstra agar bisa di-scroll panjang */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .scroll-indicator {
+            margin-top: 15vh;
+            text-align: center;
+            color: #a81c31;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(20px); }
+            60% { transform: translateY(10px); }
+        }
+
+        /* =========================================
+           PREMIUM PROMO POPUP STYLES
+           ========================================= */
+
+        /* 1. Overlay (Backdrop Glass Effect) */
+        .promo-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(15, 15, 15, 0.55); /* Gelap transparan */
+            backdrop-filter: blur(12px); /* Efek buram premium */
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            /* State Awal (Sembunyi) */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        /* 2. State Aktif Overlay */
+        .promo-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* 3. Kontainer Gambar Promo */
+        .promo-content {
+            position: relative;
+            width: 90%;
+            max-width: 450px; /* Ukuran poster proporsional */
+            aspect-ratio: 4/5; /* Rasio portrait standar Instagram/Poster */
+            border-radius: 20px;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+
+            /* State Awal (Sembunyi di bawah & mengecil) */
+            transform: translateY(60px) scale(0.9);
+            opacity: 0;
+
+            /* Animasi Seamless Cubic-Bezier */
+            transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease;
+            transition-delay: 0.1s; /* Muncul sedikit terlambat setelah backdrop blur */
+        }
+
+        /* 4. State Aktif Kontainer Gambar */
+        .promo-overlay.show .promo-content {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        /* 5. Gambar (Murni hanya gambar sesuai request) */
+        .promo-content img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* 6. Tombol Tutup (Glassmorphism X) */
+        .promo-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #ffffff;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.4s ease;
+        }
+
+        .promo-close:hover {
+            background: rgba(255, 255, 255, 0.95);
+            color: #a81c31; /* Merah Gloskin */
+            transform: rotate(90deg); /* Animasi putar kecil saat dihover */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Instruksi Simulasi -->
+    <div class="scroll-indicator">
+        Scroll perlahan ke bawah hingga ±30%<br>
+        &#8595;
+    </div>
+
+    <!-- HTML POPUP PROMO -->
+    <div class="promo-overlay" id="gloskinPromo">
+        <div class="promo-content">
+            <!-- Tombol Close (X) -->
+            <button class="promo-close" id="closePromoBtn">&times;</button>
+
+            <!-- Gambar Promo -->
+            <img src="https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=600&q=80" alt="Promo Eksklusif Gloskin">
+        </div>
+    </div>
+
+    <!-- SCRIPT TRIGGER -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const promoOverlay = document.getElementById('gloskinPromo');
+            const closeBtn = document.getElementById('closePromoBtn');
+            let promoHasShown = false; // Indikator agar popup hanya muncul 1x per sesi
+
+            // Event saat halaman di-scroll
+            window.addEventListener('scroll', () => {
+                if (promoHasShown) return; // Hentikan fungsi jika sudah pernah muncul
+
+                // Kalkulasi persentase scroll
+                const scrollTop = window.scrollY; // Posisi scroll saat ini
+                const docHeight = document.documentElement.scrollHeight; // Total tinggi dokumen
+                const winHeight = window.innerHeight; // Tinggi layar user
+
+                // Rumus % = (scroll saat ini / (total tinggi - tinggi layar)) * 100
+                const scrollPercent = (scrollTop / (docHeight - winHeight)) * 100;
+
+                // Trigger jika sudah lewat 30%
+                if (scrollPercent >= 30) {
+                    promoOverlay.classList.add('show');
+                    promoHasShown = true; // Kunci agar tidak muncul terus menerus
+                }
+            });
+
+            // Event untuk menutup popup (Klik tombol X)
+            closeBtn.addEventListener('click', () => {
+                promoOverlay.classList.remove('show');
+            });
+
+            // UX Premium Tambahan: Klik di area gelap luar gambar juga akan menutup popup
+            promoOverlay.addEventListener('click', (e) => {
+                if (e.target === promoOverlay) {
+                    promoOverlay.classList.remove('show');
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
