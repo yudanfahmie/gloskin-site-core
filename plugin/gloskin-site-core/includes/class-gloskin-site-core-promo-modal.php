@@ -48,10 +48,8 @@ final class Gloskin_Site_Core_Promo_Modal {
 
 	/** @return void */
 	public function register_frontend() {
-		/* The Gloskin shell exposes this hook immediately before wp_footer().
-		 * Render the modal markup there so footer-loaded Promo JS always sees
-		 * its root on first execution. Do not render at a late wp_footer
-		 * priority: WordPress prints footer scripts before that point. */
+		/* The shell fires this immediately before wp_footer(). The markup must
+		 * exist before WordPress prints footer-loaded gloskin-ui1-promo-modal.js. */
 		add_action( 'gloskin_site_core_shell_footer', array( $this, 'render' ), 10 );
 	}
 
@@ -166,10 +164,9 @@ final class Gloskin_Site_Core_Promo_Modal {
 	}
 
 	/**
-	 * Homepage is the canonical WordPress static front page. It deliberately
-	 * has no operator-defined destination; clicking a Homepage popup resolves
-	 * to the canonical site root. Other visibility modes retain the explicit
-	 * destination metadata contract.
+	 * Homepage is the canonical WordPress static front page. It has no custom
+	 * click destination in admin, so its production target is the site root.
+	 * Other visibility modes retain the explicit destination metadata contract.
 	 *
 	 * @param int    $promo_id Promo ID.
 	 * @param string $visibility Canonical visibility value.
@@ -247,7 +244,6 @@ final class Gloskin_Site_Core_Promo_Modal {
 				'visibility' => $visibility,
 				'page_ids'   => $page_ids,
 				'order'      => (int) get_post_meta( $post->ID, $order_meta, true ),
-				'modified'   => (string) $post->post_modified_gmt,
 				'focus_x'    => self::bounded_percent( get_post_meta( $post->ID, $focus_x_meta, true ) ),
 				'focus_y'    => self::bounded_percent( get_post_meta( $post->ID, $focus_y_meta, true ) ),
 				'zoom'       => self::bounded_zoom( get_post_meta( $post->ID, $zoom_meta, true ) ),
@@ -285,32 +281,15 @@ final class Gloskin_Site_Core_Promo_Modal {
 		return in_array( absint( get_queried_object_id() ), $page_ids, true );
 	}
 
-	/** @param array<int,array<string,mixed>> $promos Eligible set. @return string */
-	private function campaign_signature( $promos ) {
-		$parts = array();
-		foreach ( $promos as $promo ) {
-			$parts[] = implode( ':', array(
-				(int) $promo['id'],
-				(int) $promo['image_id'],
-				(string) $promo['modified'],
-				(string) $promo['visibility'],
-				implode( ',', array_map( 'absint', (array) $promo['page_ids'] ) ),
-				(string) $promo['url'],
-			) );
-		}
-		return substr( hash( 'sha256', implode( '|', $parts ) ), 0, 24 );
-	}
-
 	/** @return void */
 	public function render() {
 		$promos = $this->eligible_promos();
 		if ( ! $promos ) {
 			return;
 		}
-		$multiple  = count( $promos ) > 1;
-		$signature = $this->campaign_signature( $promos );
+		$multiple = count( $promos ) > 1;
 		?>
-		<div class="gloskin-promo-modal" data-gloskin-promo-modal data-campaign="<?php echo esc_attr( $signature ); ?>" data-slide-count="<?php echo esc_attr( (string) count( $promos ) ); ?>" hidden aria-hidden="true">
+		<div class="gloskin-promo-modal" data-gloskin-promo-modal data-slide-count="<?php echo esc_attr( (string) count( $promos ) ); ?>" hidden aria-hidden="true">
 			<div class="gloskin-promo-modal__backdrop" data-gloskin-promo-close aria-hidden="true"></div>
 			<div class="gloskin-promo-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="gloskin-promo-modal-title" tabindex="-1">
 				<h2 id="gloskin-promo-modal-title" class="screen-reader-text"><?php echo esc_html__( 'Promo Gloskin', 'gloskin-site-core' ); ?></h2>
@@ -333,7 +312,6 @@ final class Gloskin_Site_Core_Promo_Modal {
 					</div>
 					<?php endif; ?>
 				</div>
-				<button type="button" class="gloskin-promo-modal__never" data-gloskin-promo-never><?php echo esc_html__( 'Jangan tampilkan lagi', 'gloskin-site-core' ); ?></button>
 			</div>
 		</div>
 		<?php
