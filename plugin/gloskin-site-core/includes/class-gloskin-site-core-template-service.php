@@ -322,15 +322,17 @@ final class Gloskin_Site_Core_Template_Service {
 
 	/** @return array<string,mixed> */
 	private function promo_context() {
-		$page        = $this->content_page( 'promo' );
-		$limited     = array();
-		$regular     = array();
-		$records     = array();
-		$profile     = Gloskin_Site_Core_Content_Service::editorial_profile( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE );
-		$active_meta = isset( $profile['active_meta'] ) ? (string) $profile['active_meta'] : '';
-		$order_meta  = isset( $profile['order_meta'] ) ? (string) $profile['order_meta'] : '';
-		$type_meta   = isset( $profile['type_meta'] ) ? (string) $profile['type_meta'] : '';
-		$types       = isset( $profile['allowed_types'] ) && is_array( $profile['allowed_types'] ) ? $profile['allowed_types'] : array();
+		$page         = $this->content_page( 'promo' );
+		$limited      = array();
+		$regular      = array();
+		$records      = array();
+		$profile      = Gloskin_Site_Core_Content_Service::editorial_profile( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE );
+		$active_meta  = isset( $profile['active_meta'] ) ? (string) $profile['active_meta'] : '';
+		$order_meta   = isset( $profile['order_meta'] ) ? (string) $profile['order_meta'] : '';
+		$type_meta    = isset( $profile['type_meta'] ) ? (string) $profile['type_meta'] : '';
+		$focus_x_meta = isset( $profile['focus_x_meta'] ) ? (string) $profile['focus_x_meta'] : '';
+		$focus_y_meta = isset( $profile['focus_y_meta'] ) ? (string) $profile['focus_y_meta'] : '';
+		$types        = isset( $profile['allowed_types'] ) && is_array( $profile['allowed_types'] ) ? $profile['allowed_types'] : array();
 
 		if ( post_type_exists( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE ) && $active_meta && $order_meta && $type_meta ) {
 			$posts = get_posts( array(
@@ -353,13 +355,15 @@ final class Gloskin_Site_Core_Template_Service {
 					'title'    => (string) get_the_title( $post ),
 					'type'     => $type,
 					'image_id' => absint( get_post_thumbnail_id( $post->ID ) ),
+					'focus_x'  => $this->managed_focus_percent( $post->ID, $focus_x_meta ),
+					'focus_y'  => $this->managed_focus_percent( $post->ID, $focus_y_meta ),
 					'order'    => (int) get_post_meta( $post->ID, $order_meta, true ),
 				);
 			}
 			usort( $records, static function ( $left, $right ) {
-				$left_order   = (int) $left['order'];
-				$right_order  = (int) $right['order'];
-				$left_ordered = $left_order > 0;
+				$left_order    = (int) $left['order'];
+				$right_order   = (int) $right['order'];
+				$left_ordered  = $left_order > 0;
 				$right_ordered = $right_order > 0;
 				if ( $left_ordered && ! $right_ordered ) { return -1; }
 				if ( ! $left_ordered && $right_ordered ) { return 1; }
@@ -396,11 +400,12 @@ final class Gloskin_Site_Core_Template_Service {
 		if ( ! post_type_exists( $post_type ) ) {
 			return array();
 		}
-		$profile     = Gloskin_Site_Core_Content_Service::editorial_profile( $post_type );
-		$active_meta = isset( $profile['active_meta'] ) ? (string) $profile['active_meta'] : '';
-		$order_meta  = isset( $profile['order_meta'] ) ? (string) $profile['order_meta'] : '';
-		$home_meta   = isset( $profile['home_meta'] ) ? (string) $profile['home_meta'] : '';
-		$required    = isset( $profile['required_content'] ) ? (string) $profile['required_content'] : '';
+		$profile        = Gloskin_Site_Core_Content_Service::editorial_profile( $post_type );
+		$active_meta    = isset( $profile['active_meta'] ) ? (string) $profile['active_meta'] : '';
+		$order_meta     = isset( $profile['order_meta'] ) ? (string) $profile['order_meta'] : '';
+		$home_meta      = isset( $profile['home_meta'] ) ? (string) $profile['home_meta'] : '';
+		$required       = isset( $profile['required_content'] ) ? (string) $profile['required_content'] : '';
+		$requires_image = ! empty( $profile['requires_image'] );
 		if ( '' === $active_meta || '' === $order_meta ) {
 			return array();
 		}
@@ -431,6 +436,11 @@ final class Gloskin_Site_Core_Template_Service {
 				return $post instanceof WP_Post && '' !== trim( (string) $post->post_excerpt );
 			} ) );
 		}
+		if ( $requires_image ) {
+			$posts = array_values( array_filter( $posts, static function ( $post ) {
+				return $post instanceof WP_Post && absint( get_post_thumbnail_id( $post->ID ) ) > 0;
+			} ) );
+		}
 
 		usort( $posts, function ( $a, $b ) use ( $order_meta ) {
 			return $this->compare_managed_posts( $a, $b, $order_meta );
@@ -455,6 +465,16 @@ final class Gloskin_Site_Core_Template_Service {
 			);
 		}
 		return $records;
+	}
+
+	/** @return float */
+	private function managed_focus_percent( $post_id, $meta_key ) {
+		if ( ! $post_id || '' === (string) $meta_key || ! metadata_exists( 'post', $post_id, $meta_key ) ) {
+			return 50.0;
+		}
+		$value = get_post_meta( $post_id, $meta_key, true );
+		$value = is_numeric( $value ) ? (float) $value : 50.0;
+		return max( 0.0, min( 100.0, $value ) );
 	}
 
 	/** @return int */
