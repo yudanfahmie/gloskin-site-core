@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 $root        = dirname(__DIR__) . '/plugin/gloskin-site-core';
 $icon        = (string) file_get_contents($root . '/templates/parts/icon-helpers.php');
-$css         = (string) file_get_contents($root . '/assets/css/gloskin-ui1-icons.css');
 $assets      = (string) file_get_contents($root . '/config/assets.php');
 $template    = (string) file_get_contents($root . '/templates/parts/template-helpers.php');
 $composition = (string) file_get_contents($root . '/templates/parts/composition-helpers.php');
@@ -20,21 +19,18 @@ function arrow_must(bool $ok, string $message): void {
 }
 
 arrow_must(1 === substr_count($icon, 'function gloskin_ui1_arrow_icon('), 'one canonical arrow PHP owner exists');
-arrow_must(false !== strpos($icon, 'viewBox=\"0 0 24 24\"'), 'canonical 24x24 viewBox remains');
+arrow_must(false !== strpos($icon, 'width=\"20\" height=\"20\" viewBox=\"0 0 24 24\"'), 'canonical SVG owns intrinsic presentation geometry');
 arrow_must(false !== strpos($icon, 'M13 18.75C12.9015'), 'approved arrow head geometry remains');
 arrow_must(false !== strpos($icon, 'M19 12.75H5C4.80109'), 'approved arrow shaft geometry remains');
 arrow_must(2 === substr_count($icon, 'fill=\"currentColor\"'), 'both canonical paths inherit semantic color');
+arrow_must(false !== strpos($icon, 'transform=\"rotate(180 12 12)\"'), 'previous direction mirrors the same geometry inside SVG space');
 arrow_must(false === stripos($icon, '<script'), 'inline icon owner contains no script payload');
+
 arrow_must(false === is_file($root . '/assets/images/gloskin-arrow.svg'), 'duplicate standalone arrow asset is retired');
+arrow_must(false === is_file($root . '/assets/css/gloskin-ui1-icons.css'), 'redundant arrow CSS layer is retired');
+arrow_must(false === strpos($assets, "'gloskin-ui1-icons'"), 'asset graph contains no arrow-specific stylesheet layer');
+arrow_must(false !== strpos($assets, "'gloskin-ui1-core' => array(\n\t\t\t'src'   => 'assets/css/gloskin-ui1-core.css',\n\t\t\t'deps'  => array( 'gloskin-ui1-core-base' )"), 'existing core asset chain remains direct');
 
-arrow_must(false === strpos($css, 'mask:'), 'icon CSS does not project SVG masks');
-arrow_must(false === strpos($css, '-webkit-mask'), 'icon CSS does not project WebKit masks');
-arrow_must(false === strpos($css, '::before') && false === strpos($css, '::after'), 'icon CSS has no pseudo-element arrow synthesis');
-arrow_must(false === strpos($css, 'font-size:0'), 'icon CSS does not hide legacy glyphs');
-arrow_must(false !== strpos($css, '.gloskin-ui1-category-card__arrow .gloskin-ui1-arrow-icon'), 'category card sizes the real SVG child');
-arrow_must(false !== strpos($css, '.gloskin-ui1-arrow-icon--prev{transform:rotate(180deg)}'), 'previous direction mirrors the same geometry');
-
-arrow_must(false !== strpos($assets, "'gloskin-ui1-icons'"), 'semantic icon stylesheet remains registered as a primitive owner');
 arrow_must(false !== strpos($template, "require_once __DIR__ . '/icon-helpers.php';"), 'template helpers load the canonical icon owner directly');
 arrow_must(false !== strpos($composition, "require_once __DIR__ . '/icon-helpers.php';"), 'composition helpers load the canonical icon owner directly');
 arrow_must(false === strpos($composition, 'function gloskin_ui1_arrow_icon('), 'composition no longer forks the arrow owner');
@@ -50,5 +46,6 @@ arrow_must(false !== strpos($shop, "gloskin_ui1_arrow_icon( 'prev' )") && false 
 arrow_must(false !== strpos($promo, "gloskin_ui1_arrow_icon( 'prev' )") && false !== strpos($promo, 'gloskin_ui1_arrow_icon()'), 'Promo controls use shared SVG');
 arrow_must(false !== strpos($home, "gloskin_ui1_arrow_icon( 'prev' )") && false !== strpos($home, 'gloskin_ui1_arrow_icon()'), 'Home testimonial controls use shared SVG');
 arrow_must(false !== strpos($insights, "'prev_text'") && false !== strpos($insights, "'next_text'") && false !== strpos($insights, 'gloskin_ui1_arrow_icon'), 'Insights pagination explicitly uses shared SVG');
+arrow_must(false !== strpos($insights, "'width' => true, 'height' => true") && false !== strpos($insights, "'transform' => true"), 'Insights KSES preserves self-contained SVG size and direction');
 
-echo "shared-arrow-icon-contract.php: OK (one inline SVG owner + no masks/pseudo overlays + source-markup convergence across category/card/shop/promo/home/insights)\n";
+echo "shared-arrow-icon-contract.php: OK (one self-contained inline SVG owner + no CSS/mask/pseudo overlay + source-markup convergence across category/card/shop/promo/home/insights)\n";
