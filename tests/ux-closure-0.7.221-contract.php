@@ -13,8 +13,8 @@ declare(strict_types=1);
  *  4. Treatment single glint coverage (editorial.css)
  *  5. Home all treatments — no display cap
  *  6. Insights AJAX progressive pagination (core.js + REST route)
- *  7. Contact split blush hero + real form owner
- *  8. Version 0.7.221
+ *  7. Contact reference geometry + Clinic/Doctors closure
+ *  8. Version 0.7.221+
  */
 
 $root     = dirname( __DIR__ );
@@ -27,12 +27,15 @@ $home_tpl = $root . '/plugin/gloskin-site-core/templates/pages/home.php';
 $insights = $root . '/plugin/gloskin-site-core/templates/pages/insights.php';
 $insight_single = $root . '/plugin/gloskin-site-core/templates/pages/insight-single.php';
 $contact  = $root . '/plugin/gloskin-site-core/templates/pages/contact.php';
+$clinic   = $root . '/plugin/gloskin-site-core/templates/pages/clinic.php';
+$contact_ref = $root . '/docs/contact-canonical-reference.html';
 $partial  = $root . '/plugin/gloskin-site-core/templates/parts/insights-results.php';
 $shell    = $root . '/plugin/gloskin-site-core/templates/shell.php';
 $footer   = $root . '/plugin/gloskin-site-core/templates/parts/footer.php';
 $core_css = $root . '/plugin/gloskin-site-core/assets/css/gloskin-ui1-core-base.css';
 $edi_css  = $root . '/plugin/gloskin-site-core/assets/css/gloskin-ui1-editorial.css';
 $con_css  = $root . '/plugin/gloskin-site-core/assets/css/gloskin-ui1-consultation.css';
+$prod_css = $root . '/plugin/gloskin-site-core/assets/css/gloskin-ui1-production.css';
 $core_js  = $root . '/plugin/gloskin-site-core/assets/js/gloskin-ui1-core.js';
 
 function ux221_fail( string $message ): void {
@@ -56,12 +59,14 @@ $h  = ux221_text( $home_tpl );
 $ig = ux221_text( $insights );
 $is = ux221_text( $insight_single );
 $ct = ux221_text( $contact );
+$cl = ux221_text( $clinic );
 $pt = ux221_text( $partial );
 $sh = ux221_text( $shell );
 $ft = ux221_text( $footer );
 $cc = ux221_text( $core_css );
 $ec = ux221_text( $edi_css );
 $lc = ux221_text( $con_css );
+$pc = ux221_text( $prod_css );
 $js = ux221_text( $core_js );
 
 /* ── 1. Button cursor ──────────────────────────────────────────────── */
@@ -236,81 +241,47 @@ ux221_must(
 	'insights.php no longer contains duplicated card rendering logic'
 );
 
-/* ── 7. Contact split blush hero + location cards + real form owner ─── */
-ux221_must(
-	false !== strpos( $ct, 'gloskin-contact-hero' ),
-	'contact.php uses the canonical contact hero section class'
-);
-ux221_must(
-	false !== strpos( $ct, 'gloskin-contact-hero__heading' ),
-	'contact.php has a contact hero heading element'
-);
-ux221_must(
-	false !== strpos( $ct, '$gloskin_context[\'form_html\']' ) || false !== strpos( $ct, '$gloskin_form_html' ),
-	'contact.php preserves the real form_html provider — no static HTML replacement'
-);
-ux221_must(
-	false === strpos( $ct, 'gloskin_ui1_render_hero(' ),
-	'contact.php does not invoke the generic hero renderer (uses split blush hero instead)'
-);
-/* Location card component — simpler than gloskin-ui1-card, name+link only. */
-ux221_must(
-	false !== strpos( $ct, 'gloskin-contact-location-card' ),
-	'contact.php uses the compact location card component'
-);
-ux221_must(
-	false === strpos( $ct, 'gloskin-ui1-card--contact' ),
-	'contact.php does not use the generic image-card for location directory'
-);
-ux221_must(
-	false !== strpos( $ec, '.gloskin-contact-hero{' ),
-	'editorial.css defines the contact hero layout'
-);
-ux221_must(
-	false !== strpos( $ec, 'background:var(--gloskin-surface)' ),
-	'contact hero uses surface token for distinctly visible blush background'
-);
-ux221_must(
-	false !== strpos( $ec, '.gloskin-contact-hero__inner{display:grid;grid-template-columns:1fr 1fr' ),
-	'contact hero uses a two-column grid desktop layout'
-);
-ux221_must(
-	false !== strpos( $ec, '.gloskin-contact-hero__inner--no-media{' ),
-	'contact hero has no-media single-column modifier'
-);
-ux221_must(
-	false !== strpos( $ec, '.gloskin-contact-location-grid{' ),
-	'editorial.css owns the location card grid layout'
-);
-ux221_must(
-	false !== strpos( $ec, 'max-width:1100px' ),
-	'location grid is max-width capped and centered'
-);
-ux221_must(
-	false !== strpos( $ec, '.gloskin-contact-clinics .gloskin-ui1-section-heading{text-align:center' ),
-	'clinics section heading is centered'
-);
-ux221_must(
-	false !== strpos( $ec, '.gloskin-contact-location-card{' ),
-	'editorial.css owns the location card base style'
-);
-ux221_must(
-	false !== strpos( $ec, 'font-family:var(--gloskin-font-heading)' ) && false !== strpos( $ec, '.gloskin-contact-location-card__name{' ),
-	'location card name uses global heading font token'
-);
-ux221_must(
-	false !== strpos( $ec, '.gloskin-contact-location-card:hover{' ),
-	'editorial.css owns the location card hover state'
-);
+/* ── 7. Contact reference geometry + real data/function ownership ───── */
+ux221_must( file_exists( $contact_ref ), 'canonical Contact reference document exists' );
+ux221_must( false !== strpos( $ct, 'gloskin-contact-hero' ), 'contact.php uses the Contact hero section class' );
+ux221_must( false !== strpos( $ct, 'gloskin-contact-hero__heading' ), 'contact.php has a Contact hero heading element' );
+ux221_must( false !== strpos( $ct, "esc_html__( 'KONTAK'" ) && false !== strpos( $ct, "esc_html__( 'GLOSKIN'" ), 'Contact hero keeps the canonical two-line KONTAK / GLOSKIN lockup' );
+ux221_must( false !== strpos( $ct, '$gloskin_context[\'clinics\']' ), 'Contact location cards use real Clinic context' );
+ux221_must( false !== strpos( $ct, '$gloskin_context[\'form_html\']' ) || false !== strpos( $ct, '$gloskin_form_html' ), 'Contact preserves the real form_html provider — no static form replacement' );
+ux221_must( false === strpos( $ct, 'gloskin_ui1_render_hero(' ), 'Contact does not invoke the generic hero renderer' );
+ux221_must( false !== strpos( $ct, 'gloskin-contact-location-card' ), 'Contact uses the compact location card component' );
+ux221_must( false === strpos( $ct, 'gloskin-ui1-card--contact' ), 'Contact does not use the generic image-card for location directory' );
+ux221_must( false === strpos( $ct, 'phone_display' ), 'Contact location cards do not render Clinic phone data' );
+ux221_must( false === strpos( $ct, 'whatsapp_url' ), 'Contact location cards do not render Clinic WhatsApp data' );
+ux221_must( false === strpos( $ct, 'gloskin-contact-location-card__media' ), 'Contact location cards do not render media' );
+ux221_must( false === strpos( $ct, 'gloskin-ui1-container--narrow' ), 'Contact form does not use the global narrow reading container' );
+ux221_must( false !== strpos( $ct, 'gloskin-contact-form__inner' ), 'Contact form uses one local inner geometry owner' );
+ux221_must( false !== strpos( $ct, 'riwayat medis' ) && false !== strpos( $ct, 'bukan layanan darurat' ) && false !== strpos( $ct, 'tidak menggantikan konsultasi dengan dokter' ), 'Contact retains the factual form safety message' );
 
-/* ── 8. Version (0.7.221 or higher — bumped further after boot() fix) ── */
-ux221_must(
-	false !== strpos( $k, "const VERSION = '0.7.22" ),
-	'Kernel VERSION is at or above 0.7.22x'
-);
-ux221_must(
-	false !== strpos( $b, 'Version: 0.7.22' ),
-	'Plugin header version is at or above 0.7.22x'
-);
+$contact_css_start = strpos( $ec, '/* Contact — raw reference composition' );
+$contact_css_end   = false !== $contact_css_start ? strpos( $ec, '/* Home canonical reference', $contact_css_start ) : false;
+$contact_css       = false !== $contact_css_start && false !== $contact_css_end ? substr( $ec, $contact_css_start, $contact_css_end - $contact_css_start ) : '';
+ux221_must( '' !== $contact_css, 'editorial.css has one bounded Contact presentation owner' );
+ux221_must( false !== strpos( $contact_css, '.gloskin-contact-hero__inner{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)' ), 'Contact hero uses two flexible desktop columns' );
+ux221_must( false !== strpos( $contact_css, 'height:clamp(320px,27vw,380px)' ), 'Contact hero media uses the wide reference height contract' );
+ux221_must( false === strpos( $contact_css, 'aspect-ratio:4/5' ), 'Contact presentation contains no stale 4:5 hero contract' );
+ux221_must( false !== strpos( $contact_css, '.gloskin-contact-location-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))' ), 'Contact locations are three columns on desktop' );
+ux221_must( false !== strpos( $contact_css, 'max-width:1100px' ), 'Contact location grid is bounded near 1100px' );
+ux221_must( false === strpos( $contact_css, '.gloskin-contact-location-card__phone' ) && false === strpos( $contact_css, '.gloskin-contact-location-card__wa' ), 'stale Contact phone/WhatsApp card presentation is retired' );
+ux221_must( false !== strpos( $contact_css, '.gloskin-contact-form__inner{width:min(100%,850px);margin-inline:auto}' ), 'Contact form local owner is approximately 850px and centered' );
+ux221_must( false !== strpos( $contact_css, '.gloskin-contact-native__grid{display:grid;grid-template-columns:1fr;gap:25px}' ), 'Contact native form follows the single-column reference rhythm' );
+ux221_must( false !== strpos( $ec, '@media (max-width:1024px){.gloskin-contact-location-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}' ), 'Contact locations are two columns on tablet' );
+ux221_must( false !== strpos( $ec, '@media (max-width:768px){.gloskin-contact-hero__inner{grid-template-columns:1fr}.gloskin-contact-hero__media{height:clamp(260px,65vw,340px)}.gloskin-contact-location-grid{grid-template-columns:1fr}}' ), 'Contact mobile stacks hero, retains media, and uses one location column' );
 
-echo "ux-closure-0.7.221-contract.php: OK (button cursor, archive rhythm, single typography/CTA ownership, treatment glint asset graph, home all-treatments, insights AJAX, contact split blush hero + location cards, version ≥0.7.221)\n";
+/* Clinic sparse-state and Doctors intro geometry stay closed in existing owners. */
+ux221_must( false !== strpos( $cl, '$gloskin_has_detail_media' ), 'Clinic template derives an explicit detail-media state' );
+ux221_must( false !== strpos( $cl, 'if ( $gloskin_has_detail_media )' ), 'Clinic media column renders only when actual media/map exists' );
+ux221_must( false === strpos( $cl, 'gloskin-clinic-detail__media-empty' ), 'Clinic template contains no ghost empty-media pane' );
+ux221_must( false !== strpos( $pc, '.gloskin-clinic-detail__overlap--no-media .gloskin-clinic-detail__card{width:100%;flex:1 1 100%;max-width:none}' ), 'sparse Clinic information card spans the contained width' );
+ux221_must( false !== strpos( $pc, '.gloskin-doctors-intro__banner{display:grid;width:100%;max-width:none;' ), 'Doctors intro banner fills the canonical container without nested max-width' );
+
+/* ── 8. Version (0.7.221 or higher) ────────────────────────────────── */
+ux221_must( false !== strpos( $k, "const VERSION = '0.7.22" ), 'Kernel VERSION is at or above 0.7.22x' );
+ux221_must( false !== strpos( $b, 'Version: 0.7.22' ), 'Plugin header version is at or above 0.7.22x' );
+
+echo "ux-closure-0.7.221-contract.php: OK (button cursor, archive rhythm, single typography/CTA ownership, treatment glint asset graph, home all-treatments, insights AJAX, Contact reference geometry, Clinic/Doctors closure, version ≥0.7.221)\n";
