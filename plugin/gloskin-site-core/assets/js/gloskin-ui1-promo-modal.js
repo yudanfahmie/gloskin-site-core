@@ -11,7 +11,6 @@
 	var closeButtons = root.querySelectorAll('[data-gloskin-promo-close]');
 	var previousButton = root.querySelector('[data-gloskin-promo-prev]');
 	var nextButton = root.querySelector('[data-gloskin-promo-next]');
-	var dotsNode = root.querySelector('[data-gloskin-promo-dots]');
 	var originalSlides = track ? Array.prototype.slice.call(track.querySelectorAll('[data-gloskin-promo-slide]')) : [];
 	var reducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 	var isOpen = false;
@@ -61,11 +60,6 @@
 			}
 			slide.setAttribute('aria-hidden', active ? 'false' : 'true');
 		});
-		if (dotsNode) {
-			dotsNode.querySelectorAll('.gloskin-promo-modal__dot').forEach(function (dot, index) {
-				dot.classList.toggle('is-active', index === realIndex);
-			});
-		}
 	}
 
 	function setTrackPosition(immediate) {
@@ -125,14 +119,6 @@
 		lastClone.tabIndex = -1;
 		track.insertBefore(lastClone, originalSlides[0]);
 		track.appendChild(firstClone);
-
-		if (dotsNode) {
-			originalSlides.forEach(function (_, index) {
-				var dot = document.createElement('span');
-				dot.className = 'gloskin-promo-modal__dot' + (index === 0 ? ' is-active' : '');
-				dotsNode.appendChild(dot);
-			});
-		}
 
 		track.addEventListener('transitionend', function (event) {
 			if (event.propertyName !== 'transform') { return; }
