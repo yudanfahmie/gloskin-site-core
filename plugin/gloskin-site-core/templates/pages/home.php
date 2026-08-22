@@ -22,7 +22,7 @@ gloskin_ui1_render_hero( isset( $gloskin_context['hero'] ) && is_array( $gloskin
 	</div>
 </section>
 
-<?php $gloskin_home_treatments = array_slice( isset( $gloskin_context['treatments'] ) && is_array( $gloskin_context['treatments'] ) ? $gloskin_context['treatments'] : array(), 0, 3 ); ?>
+<?php $gloskin_home_treatments = isset( $gloskin_context['treatments'] ) && is_array( $gloskin_context['treatments'] ) ? $gloskin_context['treatments'] : array(); ?>
 <section class="gloskin-ui1-section gloskin-home-treatments" data-gloskin-section="home-treatments">
 	<div class="gloskin-ui1-container">
 		<?php gloskin_ui1_render_section_heading( __( 'TREATMENT UNGGULAN', 'gloskin-site-core' ), __( 'Rangkaian perawatan eksklusif yang dirancang secara personal dengan teknologi mutakhir untuk memancarkan kecantikan sejati kulit Anda.', 'gloskin-site-core' ) ); ?>

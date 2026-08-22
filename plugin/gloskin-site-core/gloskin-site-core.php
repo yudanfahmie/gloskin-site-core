@@ -4,6 +4,7 @@
  * Description: Owns the Gloskin front-end shell, navigation, content structures, and WooCommerce/form integrations without rebuilding WordPress or WooCommerce primitives.
  * Version: 0.7.221
  * Author: Gloskin
+ * Requires PHP: 7.4
  * Text Domain: gloskin-site-core
  */
 

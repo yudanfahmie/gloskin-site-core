@@ -242,7 +242,9 @@ font-weight:600;
 letter-spacing:.02em;
 line-height:1;
 text-decoration:none;
+cursor:pointer;
 transition:transform 160ms ease,background-color 160ms ease,border-color 160ms ease}
+.gloskin-ui1-button:disabled,.gloskin-ui1-button[aria-disabled="true"]{cursor:not-allowed;opacity:.65}
 .gloskin-ui1-button:hover{
 transform:translateY(-1px)}
 .gloskin-ui1-button--primary{

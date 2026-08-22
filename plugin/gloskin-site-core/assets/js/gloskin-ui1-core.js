@@ -1971,6 +1971,90 @@
 		return parts.length ? '#' + parts.join('&') : '';
 	}
 
+	/**
+	 * Progressive AJAX pagination for the insights archive.
+	 *
+	 * Architecture contract:
+	 *  - ONE server-rendered fragment owner: templates/parts/insights-results.php
+	 *  - ONE REST projection: GET /gloskin/v1/insights?page=N
+	 *  - Server pagination links retain real hrefs as fallback (no JS = hard navigate)
+	 *  - JS intercepts clicks, fetches, replaces innerHTML, pushes history
+	 *  - popstate handles back/forward
+	 *  - fetch failure falls back to window.location.href = originalHref
+	 */
+	function initInsightsPagination() {
+		var container = document.querySelector('[data-gloskin-insights-results]');
+		var status    = document.querySelector('[data-gloskin-insights-status]');
+		if (!container || typeof window.fetch !== 'function') { return; }
+
+		var config     = window.gloskinData || {};
+		var restBase   = (config.restUrl || '/wp-json/gloskin/v1/') + 'insights';
+		var busy       = false;
+
+		function announce(msg) {
+			if (status) { status.textContent = msg; }
+		}
+
+		function loadPage(page, pushState) {
+			if (busy) { return; }
+			busy = true;
+			announce('Memuat artikel halaman ' + page + '…');
+
+			var url     = restBase + '?page=' + encodeURIComponent(page);
+			var fetchOpts = publicRestGetOptions();
+
+			window.fetch(url, fetchOpts)
+				.then(function (res) {
+					if (!res.ok) { throw new Error('insights_http_' + res.status); }
+					return res.json();
+				})
+				.then(function (data) {
+					var html = data.html || '';
+					if (!html) { throw new Error('insights_empty'); }
+					container.innerHTML = html;
+					announce('Halaman ' + (data.page || page) + ' dari ' + (data.total_pages || 1));
+					if (pushState) {
+						var canonical = data.canonical_url || '';
+						if (canonical) {
+							window.history.pushState({ insightsPage: data.page || page }, '', canonical);
+						}
+					}
+					/* Scroll results into view softly. */
+					var section = container.closest('[data-gloskin-section="insights-list"]');
+					if (section) {
+						section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					}
+					busy = false;
+				})
+				.catch(function () {
+					busy = false;
+					announce('');
+				});
+		}
+
+		/* Delegated click handler — intercept pagination anchor clicks. */
+		container.addEventListener('click', function (e) {
+			var anchor = e.target && e.target.closest
+				? e.target.closest('.gloskin-ui1-pagination a[href]')
+				: null;
+			if (!anchor) { return; }
+			e.preventDefault();
+			var href = anchor.getAttribute('href') || '';
+			/* Extract page number from href query string (?paged=N or /page/N/). */
+			var pageMatch = href.match(/[?&]paged=(\d+)/) || href.match(/\/page\/(\d+)\//);
+			var page = pageMatch ? parseInt(pageMatch[1], 10) : 1;
+			loadPage(page, true);
+		});
+
+		/* Back / forward navigation. */
+		window.addEventListener('popstate', function (e) {
+			var state = e.state;
+			if (state && state.insightsPage) {
+				loadPage(state.insightsPage, false);
+			}
+		});
+	}
+
 	function initShopCatalog() {
 		var root = document.querySelector('[data-gloskin-shop-catalog]');
 		if (!root || typeof window.fetch !== 'function') { return; }
@@ -3081,6 +3165,7 @@
 		initSingleProductAjax();
 		initQuickAdd();
 		initShopCatalog();
+		initInsightsPagination();
 		initWishlist();
 		initHeroBackgroundVideo();
 		initHeroScrollCue();

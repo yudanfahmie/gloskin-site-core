@@ -3,7 +3,7 @@
  * live with their semantic owners. */
 
 /* Insights archive. */
-.gloskin-ui1-insights-archive{background:var(--gloskin-bg)}
+.gloskin-ui1-insights-archive{background:var(--gloskin-bg);padding:clamp(56px,7vw,88px) 0 clamp(72px,9vw,112px)}
 .gloskin-ui1-insights-archive__card{display:grid;min-width:0;overflow:hidden;border:1px solid color-mix(in srgb,var(--gloskin-border) 82%,transparent);border-radius:var(--gloskin-radius-md);background:var(--gloskin-bg);box-shadow:0 14px 38px color-mix(in srgb,var(--gloskin-text) 6%,transparent)}
 .gloskin-ui1-insights-archive__card--lead{grid-template-columns:minmax(0,1.12fr) minmax(300px,.88fr);margin-bottom:clamp(34px,5vw,58px)}
 .gloskin-ui1-insights-archive__media{display:block;min-width:0;overflow:hidden;background:var(--gloskin-surface)}
@@ -25,12 +25,12 @@
 .gloskin-ui1-insights-archive__pagination{margin-top:clamp(36px,5vw,58px)}
 
 /* Insight single. */
-.gloskin-ui1-insight-single__header{padding:clamp(48px,6vw,80px) 0 clamp(30px,4vw,48px);background:linear-gradient(160deg,color-mix(in srgb,var(--gloskin-brand-champagne) 7%,var(--gloskin-bg)),var(--gloskin-bg) 62%)}
+.gloskin-ui1-insight-single__header{padding:clamp(48px,6vw,80px) 0 clamp(44px,5.5vw,64px);background:linear-gradient(160deg,color-mix(in srgb,var(--gloskin-brand-champagne) 7%,var(--gloskin-bg)),var(--gloskin-bg) 62%)}
 .gloskin-ui1-insight-single__header-inner{max-width:920px;text-align:center}
 .gloskin-ui1-insight-single__category{margin-bottom:20px}
-.gloskin-ui1 h1.gloskin-ui1-insight-single__title{max-width:21ch;margin:0 auto;font-size:clamp(2rem,4vw,3.6rem);line-height:1.09;text-wrap:balance}
-.gloskin-ui1-insight-single__dek{max-width:720px;margin:22px auto 0;color:var(--gloskin-muted);font-size:clamp(1.08rem,2vw,1.3rem);line-height:1.65}
-.gloskin-ui1-insight-single__meta{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;margin-top:22px;color:var(--gloskin-muted);font-size:.9rem}
+.gloskin-ui1 h1.gloskin-ui1-insight-single__title{max-width:26ch;margin:0 auto;font-size:clamp(2rem,3.5vw,3.2rem);line-height:1.09;text-wrap:balance}
+.gloskin-ui1-insight-single__dek{max-width:720px;margin:28px auto 0;color:var(--gloskin-muted);font-size:clamp(1.08rem,2vw,1.3rem);line-height:1.65}
+.gloskin-ui1-insight-single__meta{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;margin-top:26px;color:var(--gloskin-muted);font-size:.9rem}
 .gloskin-ui1-insight-single__hero{max-width:1080px;margin-top:0}
 .gloskin-ui1-insight-single__hero-image{display:block;width:100%;max-height:680px;aspect-ratio:16/9;object-fit:cover;border-radius:var(--gloskin-radius-lg);box-shadow:var(--gloskin-shadow)}
 .gloskin-ui1-insight-single__reading{max-width:780px;padding-top:clamp(42px,6vw,72px);padding-bottom:clamp(58px,8vw,96px)}
@@ -50,18 +50,40 @@
 .gloskin-ui1 .gloskin-ui1-insight-single__related-head h2{margin:0;font-size:clamp(1.55rem,2.4vw,2.15rem);line-height:1.16}
 
 /* Informational Treatment single composition. */
-.gloskin-treatment-single__hero-media{width:100%;max-width:500px;justify-self:end;overflow:hidden;aspect-ratio:3/4;border-radius:24px;box-shadow:var(--gloskin-shadow)}
+/* Glint reuses the single @keyframes gloskin-treatment-image-glint defined in
+   gloskin-ui1-consultation.css — no second keyframe. Varied duration/delay gives
+   asynchronous shimmer without JS. */
+.gloskin-treatment-single__hero-media{position:relative;isolation:isolate;width:100%;max-width:500px;justify-self:end;overflow:hidden;aspect-ratio:3/4;border-radius:24px;box-shadow:var(--gloskin-shadow)}
+.gloskin-treatment-single__hero-media::after{position:absolute;z-index:2;top:-28%;bottom:-28%;left:-30%;width:24%;background:linear-gradient(112deg,rgba(255,255,255,0) 8%,rgba(255,255,255,.04) 34%,rgba(255,255,255,.24) 49%,rgba(255,255,255,.12) 57%,rgba(255,255,255,0) 82%);content:"";opacity:0;pointer-events:none;transform:translate3d(-180%,0,0) skewX(-16deg);mix-blend-mode:screen;animation:gloskin-treatment-image-glint 10.8s cubic-bezier(.22,1,.36,1) infinite;animation-delay:-3.4s}
 .gloskin-treatment-single__hero-image{display:block;width:100%;height:100%;object-fit:cover}
 .gloskin-treatment-single__consideration{padding:clamp(72px,8vw,100px) 0;background:color-mix(in srgb,var(--gloskin-surface) 72%,var(--gloskin-bg))}
-.gloskin-treatment-single__consideration-media{overflow:hidden;aspect-ratio:16/10;border-radius:24px;box-shadow:0 15px 40px color-mix(in srgb,var(--gloskin-text) 5%,transparent)}
+.gloskin-treatment-single__consideration-media{position:relative;isolation:isolate;overflow:hidden;aspect-ratio:16/10;border-radius:24px;box-shadow:0 15px 40px color-mix(in srgb,var(--gloskin-text) 5%,transparent)}
+.gloskin-treatment-single__consideration-media::after{position:absolute;z-index:2;top:-28%;bottom:-28%;left:-30%;width:24%;background:linear-gradient(112deg,rgba(255,255,255,0) 8%,rgba(255,255,255,.04) 34%,rgba(255,255,255,.24) 49%,rgba(255,255,255,.12) 57%,rgba(255,255,255,0) 82%);content:"";opacity:0;pointer-events:none;transform:translate3d(-180%,0,0) skewX(-16deg);mix-blend-mode:screen;animation:gloskin-treatment-image-glint 13.2s cubic-bezier(.22,1,.36,1) infinite;animation-delay:-6.7s}
 .gloskin-treatment-single__consideration-image{display:block;width:100%;height:100%;object-fit:cover}
 .gloskin-treatment-single__related{padding:clamp(72px,8vw,100px) 0}
-.gloskin-treatment-single__related-media{display:block;overflow:hidden;aspect-ratio:16/11;border-radius:16px;box-shadow:0 10px 30px color-mix(in srgb,var(--gloskin-text) 4%,transparent)}
+.gloskin-treatment-single__related-media{position:relative;isolation:isolate;display:block;overflow:hidden;aspect-ratio:16/11;border-radius:16px;box-shadow:0 10px 30px color-mix(in srgb,var(--gloskin-text) 4%,transparent)}
+.gloskin-treatment-single__related-media::after{position:absolute;z-index:2;top:-28%;bottom:-28%;left:-30%;width:24%;background:linear-gradient(112deg,rgba(255,255,255,0) 8%,rgba(255,255,255,.04) 34%,rgba(255,255,255,.24) 49%,rgba(255,255,255,.12) 57%,rgba(255,255,255,0) 82%);content:"";opacity:0;pointer-events:none;transform:translate3d(-180%,0,0) skewX(-16deg);mix-blend-mode:screen;animation:gloskin-treatment-image-glint 11.6s cubic-bezier(.22,1,.36,1) infinite;animation-delay:-1.9s}
+.gloskin-treatment-single__related-card:nth-child(2) .gloskin-treatment-single__related-media::after{animation-duration:14.3s;animation-delay:-8.2s}
+.gloskin-treatment-single__related-card:nth-child(3) .gloskin-treatment-single__related-media::after{animation-duration:9.9s;animation-delay:-4.5s}
+@media (prefers-reduced-motion:reduce){.gloskin-treatment-single__hero-media::after,.gloskin-treatment-single__consideration-media::after,.gloskin-treatment-single__related-media::after{animation:none}}
 .gloskin-treatment-single__related-image{display:block;width:100%;height:100%;object-fit:cover}
 .gloskin-treatment-single__related-body{padding-top:22px}
 .gloskin-ui1 .gloskin-treatment-single__related-body h3{margin:0 0 15px;padding-bottom:15px;border-bottom:1px solid var(--gloskin-border);font-size:clamp(1.05rem,1.5vw,1.2rem);letter-spacing:.045em;text-transform:uppercase}
 .gloskin-treatment-single__transition{padding:clamp(64px,7vw,80px) 0;border-block:1px solid var(--gloskin-border);background:color-mix(in srgb,var(--gloskin-surface) 72%,var(--gloskin-bg))}
 .gloskin-treatment-single__transition .gloskin-ui1-closing-cta{box-shadow:none}
+
+/* Contact — split blush hero. */
+.gloskin-contact-hero{padding:clamp(64px,8vw,100px) 0;background:linear-gradient(135deg,color-mix(in srgb,var(--gloskin-brand-champagne) 14%,var(--gloskin-bg)),var(--gloskin-bg) 55%)}
+.gloskin-contact-hero__inner{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:clamp(36px,5vw,72px)}
+.gloskin-contact-hero__copy{max-width:540px}
+.gloskin-contact-hero__eyebrow{margin:0 0 14px;color:var(--gloskin-muted);font-family:var(--gloskin-font-ui);font-size:.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.gloskin-contact-hero__heading{margin:0 0 18px;font-size:clamp(2.2rem,4.5vw,3.8rem);line-height:1.06;text-wrap:balance}
+.gloskin-contact-hero__description{margin:0;color:var(--gloskin-muted);font-size:clamp(1rem,1.5vw,1.15rem);line-height:1.7}
+.gloskin-contact-hero__media{overflow:hidden;border-radius:var(--gloskin-radius-lg);box-shadow:var(--gloskin-shadow)}
+.gloskin-contact-hero__image{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover}
+
+/* Contact — clinic grid. */
+.gloskin-contact-clinics__grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 
 /* Home canonical reference. Keep the exact journey palette local to Home so
  * global commerce/product surfaces retain their existing design tokens. */
@@ -216,6 +238,8 @@ body.gloskin-ui1--promo{--gloskin-promo-bg:#fdfaf8;--gloskin-promo-text:#2a2a2a;
 .gloskin-about-explore .gloskin-ui1-pathway-card__action{display:inline-flex;align-items:center;margin-top:auto;color:var(--gloskin-accent-readable);font-family:var(--gloskin-font-ui);font-size:.9rem;font-weight:700;letter-spacing:.055em;text-transform:uppercase}
 .gloskin-about-explore .gloskin-ui1-pathway-card:is(:hover,:focus-visible) .gloskin-ui1-pathway-card__action{text-decoration:underline;text-underline-offset:4px}
 
+@media (max-width:1024px){.gloskin-contact-clinics__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:768px){.gloskin-contact-hero__inner{grid-template-columns:1fr}.gloskin-contact-hero__media{display:none}.gloskin-contact-clinics__grid{grid-template-columns:1fr}}
 @media (max-width:960px){.gloskin-ui1-insights-archive__card--lead{grid-template-columns:1fr}.gloskin-ui1-insights-archive__card--lead .gloskin-ui1-insights-archive__image{min-height:0;aspect-ratio:16/9}.gloskin-ui1-insights-archive__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:1024px){.gloskin-home-treatments__grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gloskin-about-story__grid,.gloskin-about-founder__grid{grid-template-columns:1fr;gap:40px;text-align:center}.gloskin-about-story__copy,.gloskin-about-founder__copy{max-width:760px;margin:0 auto}.gloskin-about-story__media,.gloskin-about-founder__media{width:min(100%,720px);margin:0 auto}.gloskin-about-founder__media{width:min(100%,620px)}.gloskin-about-principles__grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gloskin-about-explore .gloskin-ui1-pathway-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:900px){.gloskin-home-why__grid{grid-template-columns:1fr}.gloskin-home-why__copy{max-width:680px}}

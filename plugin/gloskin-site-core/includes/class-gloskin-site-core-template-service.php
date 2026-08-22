@@ -635,10 +635,11 @@ final class Gloskin_Site_Core_Template_Service {
 	 * @return array<int,array<string,mixed>>
 	 */
 	private function curated_home_treatments() {
-		$featured = get_posts( array(
+		/* Featured (feature_on_home = 1) treatments sorted by title — no cap. */
+		$featured_posts = get_posts( array(
 			'post_type'      => Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE,
 			'post_status'    => 'publish',
-			'posts_per_page' => 3,
+			'posts_per_page' => -1,
 			'orderby'        => 'title',
 			'order'          => 'ASC',
 			'meta_query'     => array(
@@ -649,33 +650,28 @@ final class Gloskin_Site_Core_Template_Service {
 				),
 			),
 		) );
-		$primary = count( $featured ) > 0 ? $featured : get_posts( array(
+		$cards   = array();
+		$exclude = array();
+		foreach ( $featured_posts as $post ) {
+			$cards[]   = $this->post_card( $post, Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE );
+			$exclude[] = (int) $post->ID;
+		}
+		/* All remaining published treatments sorted by title — no cap. */
+		$rest_args = array(
 			'post_type'      => Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE,
 			'post_status'    => 'publish',
-			'posts_per_page' => 3,
-			'orderby'        => 'date',
-			'order'          => 'DESC',
-		) );
-		$cards = array();
-		foreach ( $primary as $post ) {
+			'posts_per_page' => -1,
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+		);
+		if ( $exclude ) {
+			$rest_args['post__not_in'] = $exclude;
+		}
+		$rest_posts = get_posts( $rest_args );
+		foreach ( $rest_posts as $post ) {
 			$cards[] = $this->post_card( $post, Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE );
 		}
-		$exclude   = array_values( array_filter( array_map( static function ( $c ) { return absint( $c['id'] ); }, $cards ) ) );
-		$remaining = max( 0, 6 - count( $cards ) );
-		if ( $remaining > 0 ) {
-			$more = get_posts( array(
-				'post_type'      => Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE,
-				'post_status'    => 'publish',
-				'posts_per_page' => $remaining,
-				'post__not_in'   => $exclude,
-				'orderby'        => 'title',
-				'order'          => 'ASC',
-			) );
-			foreach ( $more as $post ) {
-				$cards[] = $this->post_card( $post, Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE );
-			}
-		}
-		return array_values( array_slice( $cards, 0, 6 ) );
+		return array_values( $cards );
 	}
 
 	/** @return array<string,mixed> */
@@ -985,6 +981,21 @@ final class Gloskin_Site_Core_Template_Service {
 				),
 			),
 		) );
+		register_rest_route( 'gloskin/v1', '/insights', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'rest_insights' ),
+			'permission_callback' => '__return_true',
+			'args'                => array(
+				'page' => array(
+					'required'          => false,
+					'type'              => 'integer',
+					'default'           => 1,
+					'minimum'           => 1,
+					'maximum'           => 200,
+					'sanitize_callback' => 'absint',
+				),
+			),
+		) );
 	}
 
 	/** @param WP_REST_Request $request Request. @return WP_REST_Response|WP_Error */
@@ -1045,6 +1056,47 @@ final class Gloskin_Site_Core_Template_Service {
 			'page'      => (int) $catalog['page'],
 			'total'     => (int) $catalog['total'],
 			'max_pages' => (int) $catalog['max_pages'],
+		) );
+	}
+
+	/** @param WP_REST_Request $request Request. @return WP_REST_Response|WP_Error */
+	public function rest_insights( $request ) {
+		$page  = max( 1, min( 200, absint( $request->get_param( 'page' ) ) ) );
+		$query = new WP_Query( array(
+			'post_type'           => 'post',
+			'post_status'         => 'publish',
+			'posts_per_page'      => 9,
+			'paged'               => $page,
+			'ignore_sticky_posts' => true,
+		) );
+		$posts = array();
+		foreach ( $query->posts as $post ) {
+			$posts[] = $this->insight_card( $post );
+		}
+		$total_pages = max( 1, absint( $query->max_num_pages ) );
+		$data        = array(
+			'insights'     => $posts,
+			'current_page' => $page,
+			'total_pages'  => $total_pages,
+		);
+		$partial = $this->plugin_root . '/templates/parts/insights-results.php';
+		if ( ! is_readable( $partial ) ) {
+			return new WP_Error( 'gloskin_insights_render', __( 'Insights partial belum tersedia.', 'gloskin-site-core' ), array( 'status' => 500 ) );
+		}
+		ob_start();
+		$gloskin_insights_data = $data;
+		include $partial;
+		$html = ob_get_clean();
+		if ( false === $html || '' === $html ) {
+			return new WP_Error( 'gloskin_insights_render', __( 'Insights belum dapat dirender.', 'gloskin-site-core' ), array( 'status' => 500 ) );
+		}
+		$insights_page = $this->content_page( 'insights' );
+		$canonical_url = $insights_page instanceof WP_Post ? add_query_arg( 'paged', $page, get_permalink( $insights_page ) ) : '';
+		return rest_ensure_response( array(
+			'html'          => $html,
+			'page'          => $page,
+			'total_pages'   => $total_pages,
+			'canonical_url' => $canonical_url,
 		) );
 	}
 

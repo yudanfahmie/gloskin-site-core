@@ -99,9 +99,20 @@ foreach ( array( 'TOP CLINIC', 'INNOVATION', 'BEST SERVICE', 'Customer Choice', 
 	home_must( false === strpos( $home, $dummy ), 'reference dummy content must not become production fact: ' . $dummy );
 }
 
+/* Home treatments: no display cap. home.php must not use array_slice on treatments;
+   curated_home_treatments() must use posts_per_page=-1 and no array_slice cap. */
+home_must( false === strpos( $home, 'array_slice( isset( $gloskin_context[\'treatments\']' ), 'home.php does not slice treatments to a display cap' );
+$curated_start = strpos( $template, 'private function curated_home_treatments()' );
+$curated_end   = false !== $curated_start ? strpos( $template, 'private function skincare_category_context', $curated_start ) : false;
+$curated       = false !== $curated_start && false !== $curated_end ? substr( $template, $curated_start, $curated_end - $curated_start ) : '';
+home_must( false !== strpos( $curated, "'posts_per_page' => -1" ), 'curated_home_treatments queries all featured with no per-page cap' );
+home_must( false === strpos( $curated, 'array_slice( $cards, 0, 6 )' ), 'curated_home_treatments does not apply a 6-card slice' );
+home_must( false === strpos( $curated, "'posts_per_page' => 3" ), 'curated_home_treatments does not use a 3-record limit' );
+home_must( false === strpos( $curated, "'posts_per_page' => 6" ), 'curated_home_treatments does not use a 6-record limit' );
+
 /* Release owners stay synchronized; closure intentionally does not force a bump. */
 home_must( preg_match( "/const VERSION = '([^']+)'/", $kernel, $kernel_version ) === 1, 'kernel version is readable' );
 home_must( preg_match( '/Version:\s*([^\s]+)/', $bootstrap, $bootstrap_version ) === 1, 'plugin header version is readable' );
 home_must( $kernel_version[1] === $bootstrap_version[1], 'release owners remain synchronized' );
 
-echo "home-readiness-contract.php: OK (native video hero, projection-owned pure-image Achievement marquee)\n";
+echo "home-readiness-contract.php: OK (native video hero, projection-owned pure-image Achievement marquee, all-treatments no-cap)\n";

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gloskin Clinic - Kontak</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:            #ffffff;
+            --bg-blush:      #f7ebe8;
+            --surface:       #fcf9f7;
+            --text:          #2a2a2a;
+            --muted:         #6b6b6b;
+            --border:        #e8ddd8;
+            --accent:        #a81c31;
+            --champagne:     #c3a378;
+            --radius-md:     12px;
+            --radius-lg:     20px;
+            --shadow:        0 20px 56px rgba(42,42,42,.10);
+            --font-heading:  'Playfair Display', Georgia, serif;
+            --font-ui:       'Montserrat', system-ui, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-ui);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* ── Layout helpers ─────────────────────────────────── */
+        .container {
+            width: min(100%, 1200px);
+            margin-inline: auto;
+            padding-inline: clamp(20px, 5vw, 60px);
+        }
+
+        /* ── Split blush hero ───────────────────────────────── */
+        .contact-hero {
+            padding: clamp(64px, 8vw, 100px) 0;
+            background: linear-gradient(
+                135deg,
+                color-mix(in srgb, #c3a378 14%, #fff),
+                #fff 55%
+            );
+        }
+
+        .contact-hero__inner {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            gap: clamp(36px, 5vw, 72px);
+        }
+
+        .contact-hero__copy { max-width: 540px; }
+
+        .contact-hero__eyebrow {
+            margin-bottom: 14px;
+            color: var(--muted);
+            font-family: var(--font-ui);
+            font-size: .8rem;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+
+        .contact-hero__heading {
+            margin-bottom: 18px;
+            font-family: var(--font-heading);
+            font-size: clamp(2.2rem, 4.5vw, 3.8rem);
+            line-height: 1.06;
+        }
+
+        .contact-hero__description {
+            color: var(--muted);
+            font-size: clamp(1rem, 1.5vw, 1.15rem);
+            line-height: 1.7;
+        }
+
+        .contact-hero__media {
+            overflow: hidden;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            background: var(--bg-blush);
+        }
+
+        .contact-hero__image-placeholder {
+            width: 100%;
+            aspect-ratio: 4 / 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--champagne);
+            font-size: 4rem;
+            background: linear-gradient(160deg, #f7ebe8, #fbf5ef);
+        }
+
+        /* ── Clinic grid ────────────────────────────────────── */
+        .contact-clinics {
+            padding: clamp(64px, 8vw, 96px) 0;
+            background: var(--bg);
+        }
+
+        .section-heading {
+            text-align: center;
+            margin-bottom: clamp(36px, 5vw, 56px);
+        }
+
+        .section-heading__label {
+            display: inline-block;
+            margin-bottom: 10px;
+            color: var(--champagne);
+            font-size: .75rem;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+        }
+
+        .section-heading h2 {
+            font-family: var(--font-heading);
+            font-size: clamp(1.7rem, 3vw, 2.4rem);
+            line-height: 1.15;
+            margin-bottom: 12px;
+        }
+
+        .section-heading p {
+            color: var(--muted);
+            max-width: 540px;
+            margin-inline: auto;
+        }
+
+        .clinics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: clamp(18px, 2.4vw, 28px);
+        }
+
+        .clinic-card {
+            display: grid;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg);
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(42,42,42,.06);
+        }
+
+        .clinic-card__media {
+            display: block;
+            background: linear-gradient(160deg, #f7ebe8, #fbf5ef);
+            aspect-ratio: 4 / 3;
+            overflow: hidden;
+        }
+
+        .clinic-card__media-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: var(--champagne);
+        }
+
+        .clinic-card__body { padding: 24px; }
+
+        .clinic-card__title {
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .clinic-card__title a { color: inherit; text-decoration: none; }
+        .clinic-card__title a:hover { color: var(--accent); }
+
+        .clinic-card__phone {
+            color: var(--muted);
+            font-size: .9rem;
+            margin-bottom: 18px;
+        }
+
+        .clinic-card__actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .text-link {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: .85rem;
+            text-decoration: none;
+            letter-spacing: .03em;
+        }
+        .text-link:hover { text-decoration: underline; }
+
+        .btn-sm {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: #fff;
+            font-size: .8rem;
+            font-weight: 700;
+            text-decoration: none;
+            letter-spacing: .03em;
+        }
+        .btn-sm:hover { opacity: .88; }
+
+        /* ── Centered form section ──────────────────────────── */
+        .contact-form {
+            padding: clamp(64px, 8vw, 96px) 0;
+            background: var(--surface);
+        }
+
+        .container--narrow { max-width: 720px; }
+
+        .form-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 320px;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-md);
+            color: var(--muted);
+            font-size: 1rem;
+        }
+
+        /* ── Responsive ─────────────────────────────────────── */
+        @media (max-width: 1024px) {
+            .clinics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 768px) {
+            .contact-hero__inner { grid-template-columns: 1fr; }
+            .contact-hero__media { display: none; }
+            .clinics-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ─── Split blush hero ──────────────────────────────────────────── -->
+<header class="contact-hero">
+    <div class="container">
+        <div class="contact-hero__inner">
+            <div class="contact-hero__copy">
+                <p class="contact-hero__eyebrow">GLOSKIN</p>
+                <h1 class="contact-hero__heading">Kontak Gloskin</h1>
+                <p class="contact-hero__description">
+                    Pilih klinik Gloskin untuk melihat detail lokasi dan kanal kontak yang tersedia.
+                    Tim kami siap membantu menjawab pertanyaan seputar perawatan dan jadwal konsultasi.
+                </p>
+            </div>
+            <div class="contact-hero__media" aria-hidden="true">
+                <div class="contact-hero__image-placeholder">✦</div>
+                <!-- Production: wp_get_attachment_image( $gloskin_contact_hero['media_id'], 'large' ) -->
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ─── Clinic grid ───────────────────────────────────────────────── -->
+<section class="contact-clinics">
+    <div class="container">
+        <div class="section-heading">
+            <span class="section-heading__label">LOKASI</span>
+            <h2>Pilih Lokasi yang Ingin Dihubungi</h2>
+            <p>Buka detail cabang untuk melihat kanal kontak yang sudah tersedia.</p>
+        </div>
+        <div class="clinics-grid">
+            <!-- Card 1 -->
+            <article class="clinic-card">
+                <a class="clinic-card__media" href="#" tabindex="-1" aria-hidden="true">
+                    <div class="clinic-card__media-placeholder">🏥</div>
+                </a>
+                <div class="clinic-card__body">
+                    <h3 class="clinic-card__title"><a href="#">Gloskin Citraland</a></h3>
+                    <p class="clinic-card__phone">+62 xxx-xxxx-xxxx</p>
+                    <div class="clinic-card__actions">
+                        <a class="text-link" href="#">Lihat Klinik</a>
+                        <a class="btn-sm" href="#" target="_blank" rel="noopener noreferrer">Hubungi via WhatsApp</a>
+                    </div>
+                </div>
+            </article>
+            <!-- Card 2 -->
+            <article class="clinic-card">
+                <a class="clinic-card__media" href="#" tabindex="-1" aria-hidden="true">
+                    <div class="clinic-card__media-placeholder">🏥</div>
+                </a>
+                <div class="clinic-card__body">
+                    <h3 class="clinic-card__title"><a href="#">Gloskin Pakuwon Mall</a></h3>
+                    <p class="clinic-card__phone">+62 xxx-xxxx-xxxx</p>
+                    <div class="clinic-card__actions">
+                        <a class="text-link" href="#">Lihat Klinik</a>
+                        <a class="btn-sm" href="#" target="_blank" rel="noopener noreferrer">Hubungi via WhatsApp</a>
+                    </div>
+                </div>
+            </article>
+            <!-- Card 3 -->
+            <article class="clinic-card">
+                <a class="clinic-card__media" href="#" tabindex="-1" aria-hidden="true">
+                    <div class="clinic-card__media-placeholder">🏥</div>
+                </a>
+                <div class="clinic-card__body">
+                    <h3 class="clinic-card__title"><a href="#">Gloskin Galaxy Mall</a></h3>
+                    <p class="clinic-card__phone">+62 xxx-xxxx-xxxx</p>
+                    <div class="clinic-card__actions">
+                        <a class="text-link" href="#">Lihat Klinik</a>
+                        <a class="btn-sm" href="#" target="_blank" rel="noopener noreferrer">Hubungi via WhatsApp</a>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<!-- ─── Centered form ─────────────────────────────────────────────── -->
+<section class="contact-form">
+    <div class="container container--narrow">
+        <div class="section-heading">
+            <h2>Kirim Pesan</h2>
+            <p>Gunakan formulir ini untuk mengirim pertanyaan kepada Gloskin.</p>
+        </div>
+        <div class="form-placeholder">
+            <!-- Production: echo $gloskin_context['form_html']; (configured provider, never replaced with static HTML) -->
+            <span>[ Form provider rendered here ]</span>
+        </div>
+    </div>
+</section>
+
+<!--
+IMPLEMENTATION NOTES (contact-canonical-reference.html)
+=======================================================
+
+Hero:
+  - Two-column desktop; single-column mobile (media image hidden on ≤768 px)
+  - `media_id` from hero_context() → wp_get_attachment_image($id, 'large', false, ['fetchpriority'=>'high', 'loading'=>'eager'])
+  - Background: linear-gradient(135deg, champagne@14%, bg 55%)
+
+Clinic grid:
+  - Renders ALL $gloskin_context['clinics'] — no cap
+  - 3 cols desktop, 2 cols ≤1024px, 1 col ≤768px
+  - Same card markup as existing contact.php (gloskin-ui1-card--contact)
+  - gloskin_ui1_real_cards() filters empty cards
+
+Form:
+  - $gloskin_context['form_html'] is the sole source — never replaced with static HTML
+  - gloskin-ui1-form wrapper, gloskin-ui1-container--narrow centering
+
+Dark CTA:
+  - NONE in this template — already provided by the site-wide footer
+  - Do NOT add a duplicate consultation CTA here
+-->
+
+</body>
+</html>
