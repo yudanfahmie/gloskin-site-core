@@ -164,17 +164,16 @@ final class Gloskin_Site_Core_Promo_Modal {
 	}
 
 	/**
-	 * Homepage is the canonical WordPress static front page. It has no custom
-	 * click destination in admin, so its production target is the site root.
-	 * Other visibility modes retain the explicit destination metadata contract.
+	 * Homepage is a display placement, not a click destination. All Pages and
+	 * Specific Pages retain the explicit destination metadata contract.
 	 *
 	 * @param int    $promo_id Promo ID.
 	 * @param string $visibility Canonical visibility value.
-	 * @return string Empty when a required custom destination is invalid.
+	 * @return string Empty for Homepage or when a custom destination is invalid.
 	 */
 	private function destination_for_visibility( $promo_id, $visibility ) {
 		if ( self::VISIBILITY_HOMEPAGE === $visibility ) {
-			return self::sanitize_destination_url( home_url( '/' ) );
+			return '';
 		}
 		return self::sanitize_destination_url( get_post_meta( $promo_id, self::DESTINATION_META, true ) );
 	}
@@ -182,10 +181,10 @@ final class Gloskin_Site_Core_Promo_Modal {
 	/**
 	 * The one production eligibility resolver for Promo Modal.
 	 *
-	 * published + Active + popup-enabled + current-page visibility + image +
-	 * a valid click target. Homepage owns an implicit root target; All Pages
-	 * and Specific Pages require their saved custom target. Existing
-	 * gloskin_promo_order remains the only ordering source.
+	 * published + Active + popup-enabled + current-page visibility + image.
+	 * Homepage is display-only. All Pages and Specific Pages are clickable and
+	 * therefore require their saved custom target. Existing gloskin_promo_order
+	 * remains the only ordering source.
 	 *
 	 * @return array<int,array<string,mixed>>
 	 */
@@ -232,8 +231,9 @@ final class Gloskin_Site_Core_Promo_Modal {
 			if ( ! $image_id || ! wp_get_attachment_image_url( $image_id, 'full' ) ) {
 				continue;
 			}
-			$url = $this->destination_for_visibility( $post->ID, $visibility );
-			if ( '' === $url ) {
+			$clickable = self::VISIBILITY_HOMEPAGE !== $visibility;
+			$url       = $this->destination_for_visibility( $post->ID, $visibility );
+			if ( $clickable && '' === $url ) {
 				continue;
 			}
 			$this->eligible_cache[] = array(
@@ -241,6 +241,7 @@ final class Gloskin_Site_Core_Promo_Modal {
 				'title'      => (string) get_the_title( $post ),
 				'image_id'   => $image_id,
 				'url'        => $url,
+				'clickable'  => $clickable,
 				'visibility' => $visibility,
 				'page_ids'   => $page_ids,
 				'order'      => (int) get_post_meta( $post->ID, $order_meta, true ),
@@ -297,21 +298,28 @@ final class Gloskin_Site_Core_Promo_Modal {
 					<div class="gloskin-promo-modal__viewport">
 						<div class="gloskin-promo-modal__track" data-gloskin-promo-track>
 							<?php foreach ( $promos as $index => $promo ) : ?>
-							<a class="gloskin-promo-modal__slide" data-gloskin-promo-slide data-focus-x="<?php echo esc_attr( (string) $promo['focus_x'] ); ?>" data-focus-y="<?php echo esc_attr( (string) $promo['focus_y'] ); ?>" data-crop-zoom="<?php echo esc_attr( (string) $promo['zoom'] ); ?>" href="<?php echo esc_url( $promo['url'] ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Buka promo: %s', 'gloskin-site-core' ), $promo['title'] ) ); ?>"<?php echo 0 === $index ? '' : ' tabindex="-1"'; ?>>
-								<?php echo wp_get_attachment_image( $promo['image_id'], 'full', false, array( 'class' => 'gloskin-promo-modal__image', 'alt' => (string) $promo['title'], 'loading' => 0 === $index ? 'eager' : 'lazy', 'decoding' => 'async' ) ); ?>
-							</a>
+								<?php $slide_class = 'gloskin-promo-modal__slide' . ( empty( $promo['clickable'] ) ? ' is-static' : '' ); ?>
+								<?php if ( ! empty( $promo['clickable'] ) ) : ?>
+								<a class="<?php echo esc_attr( $slide_class ); ?>" data-gloskin-promo-slide data-focus-x="<?php echo esc_attr( (string) $promo['focus_x'] ); ?>" data-focus-y="<?php echo esc_attr( (string) $promo['focus_y'] ); ?>" data-crop-zoom="<?php echo esc_attr( (string) $promo['zoom'] ); ?>" href="<?php echo esc_url( $promo['url'] ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Buka promo: %s', 'gloskin-site-core' ), $promo['title'] ) ); ?>"<?php echo 0 === $index ? '' : ' tabindex="-1"'; ?>>
+									<?php echo wp_get_attachment_image( $promo['image_id'], 'full', false, array( 'class' => 'gloskin-promo-modal__image', 'alt' => (string) $promo['title'], 'loading' => 0 === $index ? 'eager' : 'lazy', 'decoding' => 'async' ) ); ?>
+								</a>
+								<?php else : ?>
+								<div class="<?php echo esc_attr( $slide_class ); ?>" data-gloskin-promo-slide data-focus-x="<?php echo esc_attr( (string) $promo['focus_x'] ); ?>" data-focus-y="<?php echo esc_attr( (string) $promo['focus_y'] ); ?>" data-crop-zoom="<?php echo esc_attr( (string) $promo['zoom'] ); ?>">
+									<?php echo wp_get_attachment_image( $promo['image_id'], 'full', false, array( 'class' => 'gloskin-promo-modal__image', 'alt' => (string) $promo['title'], 'loading' => 0 === $index ? 'eager' : 'lazy', 'decoding' => 'async' ) ); ?>
+								</div>
+								<?php endif; ?>
 							<?php endforeach; ?>
 						</div>
 					</div>
-					<button type="button" class="gloskin-promo-modal__close" data-gloskin-promo-close aria-label="<?php echo esc_attr__( 'Tutup promo', 'gloskin-site-core' ); ?>">&times;</button>
 					<?php if ( $multiple ) : ?>
 					<div class="gloskin-promo-modal__controls" aria-label="<?php echo esc_attr__( 'Navigasi promo', 'gloskin-site-core' ); ?>">
-						<button type="button" class="gloskin-promo-modal__nav gloskin-promo-modal__nav--prev" data-gloskin-promo-prev aria-label="<?php echo esc_attr__( 'Promo sebelumnya', 'gloskin-site-core' ); ?>">&#8249;</button>
 						<div class="gloskin-promo-modal__dots" data-gloskin-promo-dots aria-hidden="true"></div>
+						<button type="button" class="gloskin-promo-modal__nav gloskin-promo-modal__nav--prev" data-gloskin-promo-prev aria-label="<?php echo esc_attr__( 'Promo sebelumnya', 'gloskin-site-core' ); ?>">&#8249;</button>
 						<button type="button" class="gloskin-promo-modal__nav gloskin-promo-modal__nav--next" data-gloskin-promo-next aria-label="<?php echo esc_attr__( 'Promo berikutnya', 'gloskin-site-core' ); ?>">&#8250;</button>
 					</div>
 					<?php endif; ?>
 				</div>
+				<button type="button" class="gloskin-promo-modal__close" data-gloskin-promo-close aria-label="<?php echo esc_attr__( 'Tutup promo', 'gloskin-site-core' ); ?>">&times;</button>
 			</div>
 		</div>
 		<?php
