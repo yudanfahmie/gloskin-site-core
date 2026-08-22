@@ -16,6 +16,26 @@
 	var mediaTrigger = null;
 	var lastFocus = null;
 	var sortableSnapshot = [];
+	var isPromo = config.postType === 'gloskin_promo';
+	var promoCrop = isPromo && form ? form.querySelector('[data-gloskin-promo-crop]') : null;
+	var promoCropViewport = promoCrop ? promoCrop.querySelector('[data-gloskin-promo-crop-viewport]') : null;
+	var promoCropQuality = promoCrop ? promoCrop.querySelector('[data-gloskin-promo-crop-quality]') : null;
+	var promoCropApply = form ? form.querySelector('[data-gloskin-promo-crop-apply]') : null;
+	var promoCropReset = form ? form.querySelector('[data-gloskin-promo-crop-reset]') : null;
+	var PROMO_MIN_WIDTH = Number(config.promoCropWidth) || 1648;
+	var PROMO_MIN_HEIGHT = Number(config.promoCropHeight) || 928;
+	var cropState = {
+		draftX: 50,
+		draftY: 50,
+		appliedX: 50,
+		appliedY: 50,
+		width: 0,
+		height: 0,
+		dirty: false,
+		replacement: false,
+		dragging: false,
+		pointerId: null
+	};
 
 	try {
 		records = recordsNode ? JSON.parse(recordsNode.textContent || '{}') : {};
@@ -33,6 +53,14 @@
 		statusNode.classList.remove('notice-info', 'notice-success', 'notice-error');
 		statusNode.classList.add(isError ? 'notice-error' : 'notice-success');
 		statusNode.hidden = !message;
+	}
+
+	function formError(message) {
+		if (!form) { return; }
+		var error = form.querySelector('[data-gloskin-editorial-error]');
+		if (!error) { return; }
+		error.textContent = message || '';
+		error.hidden = !message;
 	}
 
 	function normalizeModalQuery() {
@@ -60,16 +88,90 @@
 		}
 	}
 
+	function clampFocus(value) {
+		value = Number(value);
+		if (!isFinite(value)) { return 50; }
+		return Math.max(0, Math.min(100, value));
+	}
+
+	function hasSelectedImage() {
+		return !!(form && form.elements.image_id && (parseInt(form.elements.image_id.value, 10) || 0));
+	}
+
+	function cropIsLowResolution() {
+		return hasSelectedImage() && cropState.width > 0 && cropState.height > 0 &&
+			(cropState.width < PROMO_MIN_WIDTH || cropState.height < PROMO_MIN_HEIGHT);
+	}
+
+	function syncCropPreviewPosition() {
+		if (!promoCropViewport) { return; }
+		promoCropViewport.style.setProperty('--gloskin-promo-focus-x', clampFocus(cropState.draftX) + '%');
+		promoCropViewport.style.setProperty('--gloskin-promo-focus-y', clampFocus(cropState.draftY) + '%');
+	}
+
+	function refreshCropStateUi() {
+		if (!isPromo || !promoCrop) { return; }
+		var hasImage = hasSelectedImage();
+		promoCrop.hidden = !hasImage;
+		if (promoCropApply) {
+			promoCropApply.hidden = !hasImage;
+			promoCropApply.disabled = !hasImage || cropIsLowResolution();
+		}
+		if (promoCropReset) {
+			promoCropReset.hidden = !hasImage;
+			promoCropReset.disabled = !hasImage;
+		}
+		if (!promoCropQuality) { return; }
+		promoCropQuality.classList.toggle('is-error', cropIsLowResolution());
+		if (!hasImage) {
+			promoCropQuality.textContent = '';
+			return;
+		}
+		if (cropIsLowResolution()) {
+			promoCropQuality.textContent = label(
+				'cropLowResolution',
+				'Image is below the required 1648 × 928 production size. Choose a larger source image.'
+			);
+			return;
+		}
+		if (cropState.width > 0 && cropState.height > 0) {
+			promoCropQuality.textContent = cropState.width + ' × ' + cropState.height + ' px · minimum ' + PROMO_MIN_WIDTH + ' × ' + PROMO_MIN_HEIGHT + ' px';
+		} else {
+			promoCropQuality.textContent = label('cropDimensionsUnknown', 'Image dimensions will be validated when you save.');
+		}
+	}
+
 	function setPreview(record) {
 		if (!form) { return; }
 		var preview = form.querySelector('[data-gloskin-editorial-preview]');
 		if (!preview) { return; }
 		preview.replaceChildren();
-		if (!record || !record.image_url) { return; }
+
+		if (isPromo) {
+			record = record || {};
+			cropState.draftX = clampFocus(typeof record.focus_x === 'undefined' ? 50 : record.focus_x);
+			cropState.draftY = clampFocus(typeof record.focus_y === 'undefined' ? 50 : record.focus_y);
+			cropState.appliedX = cropState.draftX;
+			cropState.appliedY = cropState.draftY;
+			cropState.width = parseInt(record.image_width, 10) || 0;
+			cropState.height = parseInt(record.image_height, 10) || 0;
+			cropState.dirty = !!record.crop_dirty;
+			cropState.replacement = !!record.crop_replacement;
+			syncCropPreviewPosition();
+		}
+
+		if (!record || !record.image_url) {
+			if (isPromo) { refreshCropStateUi(); }
+			return;
+		}
 		var image = document.createElement('img');
-		image.src = record.image_url;
+		image.src = isPromo && record.crop_image_url ? record.crop_image_url : record.image_url;
 		image.alt = '';
 		preview.appendChild(image);
+		if (isPromo) {
+			syncCropPreviewPosition();
+			refreshCropStateUi();
+		}
 	}
 
 	function populate(record) {
@@ -80,10 +182,11 @@
 		setField('subtitle', record.subtitle || '');
 		setField('quote', record.quote || '');
 		setField('image_id', record.image_id || 0);
+		setField('focus_x', typeof record.focus_x === 'undefined' ? 50 : record.focus_x);
+		setField('focus_y', typeof record.focus_y === 'undefined' ? 50 : record.focus_y);
 		setField('active', typeof record.active === 'undefined' ? true : !!record.active);
 		setPreview(record);
-		var error = form ? form.querySelector('[data-gloskin-editorial-error]') : null;
-		if (error) { error.hidden = true; error.textContent = ''; }
+		formError('');
 	}
 
 	function openModal(id) {
@@ -132,6 +235,64 @@
 		});
 	}
 
+	function setCropDraft(x, y) {
+		if (!isPromo || !hasSelectedImage()) { return; }
+		cropState.draftX = clampFocus(x);
+		cropState.draftY = clampFocus(y);
+		cropState.dirty = Math.abs(cropState.draftX - cropState.appliedX) > 0.01 ||
+			Math.abs(cropState.draftY - cropState.appliedY) > 0.01 ||
+			cropState.replacement;
+		syncCropPreviewPosition();
+	}
+
+	function updateCropFromPointer(event) {
+		if (!promoCropViewport) { return; }
+		var rect = promoCropViewport.getBoundingClientRect();
+		if (!rect.width || !rect.height) { return; }
+		setCropDraft(
+			((event.clientX - rect.left) / rect.width) * 100,
+			((event.clientY - rect.top) / rect.height) * 100
+		);
+	}
+
+	function applyPromoCrop() {
+		if (!isPromo || !hasSelectedImage()) { return false; }
+		if (cropIsLowResolution()) {
+			formError(label('cropLowResolution', 'Image is below the required 1648 × 928 production size. Choose a larger source image.'));
+			return false;
+		}
+		cropState.appliedX = clampFocus(cropState.draftX);
+		cropState.appliedY = clampFocus(cropState.draftY);
+		setField('focus_x', cropState.appliedX.toFixed(2).replace(/\.?0+$/, ''));
+		setField('focus_y', cropState.appliedY.toFixed(2).replace(/\.?0+$/, ''));
+		cropState.dirty = false;
+		formError('');
+		setStatus(label('cropApplied', 'Framing applied. Save the Promo to persist it.'), false);
+		return true;
+	}
+
+	function resetPromoCrop() {
+		if (!isPromo || !hasSelectedImage()) { return false; }
+		setCropDraft(50, 50);
+		return true;
+	}
+
+	function removeSelectedMedia() {
+		setField('image_id', 0);
+		setField('focus_x', 50);
+		setField('focus_y', 50);
+		cropState.draftX = 50;
+		cropState.draftY = 50;
+		cropState.appliedX = 50;
+		cropState.appliedY = 50;
+		cropState.width = 0;
+		cropState.height = 0;
+		cropState.dirty = false;
+		cropState.replacement = false;
+		setPreview(null);
+		formError('');
+	}
+
 	function interceptLinks() {
 		document.addEventListener('click', function (event) {
 			var close = event.target.closest('[data-gloskin-editorial-close]');
@@ -152,16 +313,57 @@
 			var mediaButton = event.target.closest('[data-gloskin-editorial-media]');
 			if (mediaButton) { event.preventDefault(); openMedia(mediaButton); return; }
 
+			var cropApply = event.target.closest('[data-gloskin-promo-crop-apply]');
+			if (cropApply) { event.preventDefault(); applyPromoCrop(); return; }
+
+			var cropReset = event.target.closest('[data-gloskin-promo-crop-reset]');
+			if (cropReset) { event.preventDefault(); resetPromoCrop(); return; }
+
 			var removeMedia = event.target.closest('[data-gloskin-editorial-media-remove]');
 			if (removeMedia) {
 				event.preventDefault();
-				setField('image_id', 0);
-				setPreview(null);
+				removeSelectedMedia();
 				return;
 			}
 
 			var toggle = event.target.closest('[data-gloskin-editorial-toggle]');
 			if (toggle) { event.preventDefault(); toggleActive(toggle); }
+		});
+	}
+
+	function bindCropInteraction() {
+		if (!isPromo || !promoCropViewport) { return; }
+		promoCropViewport.addEventListener('pointerdown', function (event) {
+			if (!hasSelectedImage()) { return; }
+			cropState.dragging = true;
+			cropState.pointerId = event.pointerId;
+			if (typeof promoCropViewport.setPointerCapture === 'function') {
+				promoCropViewport.setPointerCapture(event.pointerId);
+			}
+			updateCropFromPointer(event);
+		});
+		promoCropViewport.addEventListener('pointermove', function (event) {
+			if (!cropState.dragging || cropState.pointerId !== event.pointerId) { return; }
+			updateCropFromPointer(event);
+		});
+		function finishCropPointer(event) {
+			if (cropState.pointerId !== null && event.pointerId !== cropState.pointerId) { return; }
+			cropState.dragging = false;
+			cropState.pointerId = null;
+		}
+		promoCropViewport.addEventListener('pointerup', finishCropPointer);
+		promoCropViewport.addEventListener('pointercancel', finishCropPointer);
+		promoCropViewport.addEventListener('keydown', function (event) {
+			if (!hasSelectedImage() || !/^Arrow(Left|Right|Up|Down)$/.test(event.key)) { return; }
+			event.preventDefault();
+			var step = event.shiftKey ? 5 : 1;
+			var x = cropState.draftX;
+			var y = cropState.draftY;
+			if (event.key === 'ArrowLeft') { x -= step; }
+			if (event.key === 'ArrowRight') { x += step; }
+			if (event.key === 'ArrowUp') { y -= step; }
+			if (event.key === 'ArrowDown') { y += step; }
+			setCropDraft(x, y);
 		});
 	}
 
@@ -217,8 +419,24 @@
 				if (!selected) { return; }
 				var attachment = selected.toJSON();
 				setField('image_id', attachment.id || 0);
-				var source = attachment.sizes && attachment.sizes.medium ? attachment.sizes.medium.url : attachment.url;
-				setPreview({ image_url: source || '' });
+				if (isPromo) {
+					setField('focus_x', 50);
+					setField('focus_y', 50);
+					setPreview({
+						image_url: attachment.url || '',
+						crop_image_url: attachment.url || '',
+						image_width: attachment.width || 0,
+						image_height: attachment.height || 0,
+						focus_x: 50,
+						focus_y: 50,
+						crop_dirty: true,
+						crop_replacement: true
+					});
+					formError('');
+				} else {
+					var source = attachment.sizes && attachment.sizes.medium ? attachment.sizes.medium.url : attachment.url;
+					setPreview({ image_url: source || '' });
+				}
 			});
 		}
 		mediaFrame.open();
@@ -404,7 +622,14 @@
 		form.addEventListener('submit', function (event) {
 			event.preventDefault();
 			var save = form.querySelector('[data-gloskin-editorial-save]');
-			var error = form.querySelector('[data-gloskin-editorial-error]');
+			if (isPromo && hasSelectedImage() && cropState.dirty) {
+				formError(label('cropApplyRequired', 'Use Crop & Apply before saving this Promo.'));
+				return;
+			}
+			if (isPromo && cropState.replacement && cropIsLowResolution()) {
+				formError(label('cropLowResolution', 'Image is below the required 1648 × 928 production size. Choose a larger source image.'));
+				return;
+			}
 			var data = new FormData(form);
 			var payload = {};
 			data.forEach(function (value, key) { payload[key] = value; });
@@ -424,7 +649,7 @@
 				if (save) { save.disabled = false; save.textContent = 'Save'; }
 				closeModal();
 			}).catch(function (requestError) {
-				if (error) { error.textContent = requestError.message || label('error', 'Could not save this record.'); error.hidden = false; }
+				formError(requestError.message || label('error', 'Could not save this record.'));
 				if (save) { save.disabled = false; save.textContent = 'Save'; }
 			});
 		});
@@ -556,6 +781,7 @@
 	}
 
 	interceptLinks();
+	bindCropInteraction();
 	bindForm();
 	bindKeyboard();
 	initSortable();
