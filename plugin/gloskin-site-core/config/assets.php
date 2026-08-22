@@ -93,6 +93,11 @@ return array(
 			'deps'  => array( 'gloskin-ui1-product-grid' ),
 			'media' => 'all',
 		),
+		'gloskin-ui1-promo-modal' => array(
+			'src'   => 'assets/css/gloskin-ui1-promo-modal.css',
+			'deps'  => array( 'gloskin-ui1-product-grid' ),
+			'media' => 'all',
+		),
 	),
 	'scripts' => array(
 		'gloskin-ui1-commerce-motion' => array(
@@ -117,6 +122,11 @@ return array(
 		),
 		'gloskin-ui1-consultation' => array(
 			'src'       => 'assets/js/gloskin-ui1-consultation.js',
+			'deps'      => array( 'gloskin-ui1-core' ),
+			'in_footer' => true,
+		),
+		'gloskin-ui1-promo-modal' => array(
+			'src'       => 'assets/js/gloskin-ui1-promo-modal.js',
 			'deps'      => array( 'gloskin-ui1-core' ),
 			'in_footer' => true,
 		),
