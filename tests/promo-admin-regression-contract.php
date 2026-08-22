@@ -65,6 +65,7 @@ promo_admin_must( false !== strpos( $managerPhp, 'Click destination URL' ), 'des
 promo_admin_must( false === strpos( $managerPhp, 'name="destination_url" required' ), 'Destination URL must not be statically required in PHP' );
 promo_admin_must( false !== strpos( $promoJs, 'popupOptions.hidden = !revealOptions;' ), 'Popup options must reveal only for Popup On or guided completion' );
 promo_admin_must( false !== strpos( $promoJs, 'destinationField.required = enabled;' ), 'Popup checkbox must immediately control the Destination URL required state' );
+promo_admin_must( false !== strpos( $promoJs, 'pageSelect.required = enabled && specific;' ), 'Specific Pages must require a page selection only while Popup On and visibility is specific' );
 promo_admin_must( false !== strpos( $promoJs, 'popupField.checked = !!record.popup_enabled;' ), 'editor open must hydrate popup state from the canonical record' );
 promo_admin_must( false !== strpos( $promoJs, 'var revealOptions = enabled || guidanceMode;' ), 'guided completion may reveal settings without inventing Popup On state' );
 promo_admin_must( false !== strpos( $managerPhp, "if ( '' !== \$destination_raw && '' === \$destination_url )" ), 'optional non-empty Destination URL must still be validated' );
