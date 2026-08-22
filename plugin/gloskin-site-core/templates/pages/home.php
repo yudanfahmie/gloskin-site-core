@@ -92,12 +92,7 @@ gloskin_ui1_render_hero( isset( $gloskin_context['hero'] ) && is_array( $gloskin
 	</div>
 </section>
 
-<?php
-$gloskin_home_piagam = isset( $gloskin_context['achievements'] ) && is_array( $gloskin_context['achievements'] ) ? $gloskin_context['achievements'] : array();
-$gloskin_home_piagam = array_values( array_filter( $gloskin_home_piagam, static function ( $gloskin_home_achievement ) {
-	return is_array( $gloskin_home_achievement ) && ! empty( $gloskin_home_achievement['image_id'] );
-} ) );
-?>
+<?php $gloskin_home_piagam = isset( $gloskin_context['achievements'] ) && is_array( $gloskin_context['achievements'] ) ? $gloskin_context['achievements'] : array(); ?>
 <section class="gloskin-ui1-section gloskin-home-piagam" data-gloskin-section="achievements">
 	<div class="gloskin-ui1-container">
 		<?php gloskin_ui1_render_section_heading( __( 'PIAGAM & PENGHARGAAN', 'gloskin-site-core' ), __( 'Bukti komitmen dan dedikasi tinggi kami dalam menjaga standar mutu pelayanan estetika dan inovasi medis terbaik di Indonesia.', 'gloskin-site-core' ) ); ?>
@@ -108,8 +103,8 @@ $gloskin_home_piagam = array_values( array_filter( $gloskin_home_piagam, static 
 						<?php foreach ( $gloskin_home_piagam as $gloskin_home_achievement ) :
 							$gloskin_home_achievement_image_id = absint( $gloskin_home_achievement['image_id'] ?? 0 );
 						?>
-							<figure class="gloskin-home-piagam__item" data-gloskin-piagam-item<?php echo 1 === $gloskin_home_piagam_loop ? ' aria-hidden="true"' : ''; ?> style="display:flex;flex:0 0 auto;width:min(72vw,320px);height:clamp(180px,18vw,230px);align-items:center;justify-content:center;margin:0;">
-								<?php echo wp_get_attachment_image( $gloskin_home_achievement_image_id, 'medium_large', false, array( 'class' => 'gloskin-home-piagam__image', 'loading' => 'lazy', 'decoding' => 'async', 'alt' => '', 'style' => 'display:block;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain;' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- canonical WordPress attachment markup. ?>
+							<figure class="gloskin-home-piagam__item" data-gloskin-piagam-item<?php echo 1 === $gloskin_home_piagam_loop ? ' aria-hidden="true"' : ''; ?>>
+								<?php echo wp_get_attachment_image( $gloskin_home_achievement_image_id, 'medium_large', false, array( 'class' => 'gloskin-home-piagam__image', 'loading' => 'lazy', 'decoding' => 'async', 'alt' => '' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- canonical WordPress attachment markup. ?>
 							</figure>
 						<?php endforeach; ?>
 					<?php endfor; ?>
