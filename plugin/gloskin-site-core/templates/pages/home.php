@@ -82,13 +82,13 @@ $gloskin_home_testimonials = array_slice( $gloskin_home_testimonials, 0, 4 );
 				</div>
 				<?php if ( count( $gloskin_home_testimonials ) > 1 ) : ?>
 					<div class="gloskin-home-testimonials__nav" aria-label="<?php echo esc_attr__( 'Navigasi testimoni', 'gloskin-site-core' ); ?>">
-						<button class="gloskin-home-testimonials__control" type="button" data-gloskin-testimonial-prev aria-label="<?php echo esc_attr__( 'Testimoni sebelumnya', 'gloskin-site-core' ); ?>"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 4-5 5 5 5"/></svg></button>
+						<button class="gloskin-home-testimonials__control" type="button" data-gloskin-testimonial-prev aria-label="<?php echo esc_attr__( 'Testimoni sebelumnya', 'gloskin-site-core' ); ?>"><?php echo gloskin_ui1_arrow_icon( 'prev' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static shared icon markup. ?></button>
 						<div class="gloskin-home-testimonials__dots" role="tablist" aria-label="<?php echo esc_attr__( 'Pilih testimoni', 'gloskin-site-core' ); ?>">
 							<?php foreach ( $gloskin_home_testimonials as $gloskin_home_dot_index => $gloskin_home_dot ) : ?>
 								<button type="button" class="gloskin-home-testimonials__dot<?php echo 0 === $gloskin_home_dot_index ? ' is-active' : ''; ?>" data-gloskin-testimonial-dot role="tab" aria-selected="<?php echo 0 === $gloskin_home_dot_index ? 'true' : 'false'; ?>" tabindex="<?php echo 0 === $gloskin_home_dot_index ? '0' : '-1'; ?>"><span class="screen-reader-text"><?php echo esc_html( sprintf( /* translators: %d: testimonial number. */ __( 'Testimoni %d', 'gloskin-site-core' ), $gloskin_home_dot_index + 1 ) ); ?></span></button>
 							<?php endforeach; ?>
 						</div>
-						<button class="gloskin-home-testimonials__control" type="button" data-gloskin-testimonial-next aria-label="<?php echo esc_attr__( 'Testimoni berikutnya', 'gloskin-site-core' ); ?>"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 4 5 5-5 5"/></svg></button>
+						<button class="gloskin-home-testimonials__control" type="button" data-gloskin-testimonial-next aria-label="<?php echo esc_attr__( 'Testimoni berikutnya', 'gloskin-site-core' ); ?>"><?php echo gloskin_ui1_arrow_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static shared icon markup. ?></button>
 					</div>
 				<?php endif; ?>
 			</div>
