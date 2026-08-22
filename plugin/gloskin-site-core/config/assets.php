@@ -53,9 +53,14 @@ return array(
 			'deps'  => array( 'gloskin-ui1-readiness' ),
 			'media' => 'all',
 		),
+		'gloskin-ui1-doctor-single' => array(
+			'src'   => 'assets/css/gloskin-ui1-doctor-single.css',
+			'deps'  => array( 'gloskin-ui1-production' ),
+			'media' => 'all',
+		),
 		'gloskin-ui1-quickadd-polish' => array(
 			'src'   => 'assets/css/gloskin-ui1-quickadd-polish.css',
-			'deps'  => array( 'gloskin-ui1-production' ),
+			'deps'  => array( 'gloskin-ui1-doctor-single' ),
 			'media' => 'all',
 		),
 		'gloskin-ui1-commerce-polish' => array(
@@ -139,15 +144,15 @@ return array(
 		),
 		'gloskin-ui1-final-migration' => array(
 			'src'  => 'assets/js/gloskin-ui1-final-migration.js',
-			'deps' => array(),
+			'deps'  => array(),
 		),
 		'gloskin-ui1-media-cleanup' => array(
 			'src'  => 'assets/js/gloskin-ui1-media-cleanup.js',
-			'deps' => array(),
+			'deps'  => array(),
 		),
 		'gloskin-ui1-diagnostic' => array(
 			'src'  => 'assets/js/gloskin-ui1-diagnostic.js',
-			'deps' => array(),
+			'deps'  => array(),
 		),
 		'gloskin-admin' => array(
 			'src'  => 'assets/js/gloskin-admin.js',
