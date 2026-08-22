@@ -176,7 +176,7 @@ ux221_must(
 	'insights.php no longer contains duplicated card rendering logic'
 );
 
-/* ── 7. Contact split blush hero + real form owner ─────────────────── */
+/* ── 7. Contact split blush hero + location cards + real form owner ─── */
 ux221_must(
 	false !== strpos( $ct, 'gloskin-contact-hero' ),
 	'contact.php uses the canonical contact hero section class'
@@ -193,6 +193,15 @@ ux221_must(
 	false === strpos( $ct, 'gloskin_ui1_render_hero(' ),
 	'contact.php does not invoke the generic hero renderer (uses split blush hero instead)'
 );
+/* Location card component — simpler than gloskin-ui1-card, name+link only. */
+ux221_must(
+	false !== strpos( $ct, 'gloskin-contact-location-card' ),
+	'contact.php uses the compact location card component'
+);
+ux221_must(
+	false === strpos( $ct, 'gloskin-ui1-card--contact' ),
+	'contact.php does not use the generic image-card for location directory'
+);
 ux221_must(
 	false !== strpos( $ec, '.gloskin-contact-hero{' ),
 	'editorial.css defines the contact hero layout'
@@ -201,15 +210,31 @@ ux221_must(
 	false !== strpos( $ec, '.gloskin-contact-hero__inner{display:grid;grid-template-columns:1fr 1fr' ),
 	'contact hero uses a two-column grid desktop layout'
 );
-
-/* ── 8. Version 0.7.221 ────────────────────────────────────────────── */
 ux221_must(
-	false !== strpos( $k, "const VERSION = '0.7.221'" ),
-	'Kernel VERSION is 0.7.221'
+	false !== strpos( $ec, '.gloskin-contact-hero__inner--no-media{' ),
+	'contact hero has no-media single-column modifier'
 );
 ux221_must(
-	false !== strpos( $b, 'Version: 0.7.221' ),
-	'Plugin header version is 0.7.221'
+	false !== strpos( $ec, '.gloskin-contact-location-grid{' ),
+	'editorial.css owns the location card grid layout'
+);
+ux221_must(
+	false !== strpos( $ec, '.gloskin-contact-location-card{' ),
+	'editorial.css owns the location card base style'
+);
+ux221_must(
+	false !== strpos( $ec, '.gloskin-contact-location-card:hover{' ),
+	'editorial.css owns the location card hover state'
 );
 
-echo "ux-closure-0.7.221-contract.php: OK (button cursor, archive rhythm, single typography, treatment glint, home all-treatments, insights AJAX, contact split hero, v0.7.221)\n";
+/* ── 8. Version (0.7.221 or higher — bumped further after boot() fix) ── */
+ux221_must(
+	false !== strpos( $k, "const VERSION = '0.7.22" ),
+	'Kernel VERSION is at or above 0.7.22x'
+);
+ux221_must(
+	false !== strpos( $b, 'Version: 0.7.22' ),
+	'Plugin header version is at or above 0.7.22x'
+);
+
+echo "ux-closure-0.7.221-contract.php: OK (button cursor, archive rhythm, single typography, treatment glint, home all-treatments, insights AJAX, contact split blush hero + location cards, version ≥0.7.221)\n";
