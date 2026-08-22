@@ -5,6 +5,52 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 gloskin_ui1_render_hero( isset( $gloskin_context['hero'] ) && is_array( $gloskin_context['hero'] ) ? $gloskin_context['hero'] : array() );
 
 ?>
+<section class="gloskin-home-trust" data-gloskin-section="home-trust" aria-label="<?php echo esc_attr__( 'Keunggulan Gloskin', 'gloskin-site-core' ); ?>">
+	<div class="gloskin-ui1-container">
+		<div class="gloskin-home-trust__bar">
+			<article class="gloskin-home-trust__item">
+				<div class="gloskin-home-trust__icon" aria-hidden="true">
+					<svg viewBox="0 0 24 24" focusable="false"><path d="M12 11c2.21 0 4-1.79 4-4s-1.79-4-4-4 1.79-4 4 1.79 4 4 4z"></path><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><path d="M16 12l2 2 4-4"></path></svg>
+				</div>
+				<div class="gloskin-home-trust__text">
+					<h3><?php echo esc_html__( 'Ditangani Ahli', 'gloskin-site-core' ); ?></h3>
+					<p><?php echo esc_html__( 'Dokter bersertifikat & terapis profesional.', 'gloskin-site-core' ); ?></p>
+				</div>
+			</article>
+			<span class="gloskin-home-trust__separator gloskin-home-trust__separator--1" aria-hidden="true"></span>
+			<article class="gloskin-home-trust__item">
+				<div class="gloskin-home-trust__icon" aria-hidden="true">
+					<svg viewBox="0 0 24 24" focusable="false"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg>
+				</div>
+				<div class="gloskin-home-trust__text">
+					<h3><?php echo esc_html__( 'Teruji Klinis', 'gloskin-site-core' ); ?></h3>
+					<p><?php echo esc_html__( 'Metode aman berbasis', 'gloskin-site-core' ); ?> <em>evidence-based</em>.</p>
+				</div>
+			</article>
+			<span class="gloskin-home-trust__separator gloskin-home-trust__separator--2" aria-hidden="true"></span>
+			<article class="gloskin-home-trust__item">
+				<div class="gloskin-home-trust__icon" aria-hidden="true">
+					<svg viewBox="0 0 24 24" focusable="false"><path d="M12 3l1.91 5.8a2 2 0 0 0 1.29 1.29L21 12l-5.8 1.91a2 2 0 0 0-1.29 1.29L12 21l-1.91-5.8a2 2 0 0 0-1.29-1.29L3 12l5.8-1.91a2 2 0 0 0 1.29-1.29L12 3z"></path></svg>
+				</div>
+				<div class="gloskin-home-trust__text">
+					<h3><?php echo esc_html__( 'Hasil Natural', 'gloskin-site-core' ); ?></h3>
+					<p><?php echo esc_html__( 'Meningkatkan kualitas tanpa merubah karakter.', 'gloskin-site-core' ); ?></p>
+				</div>
+			</article>
+			<span class="gloskin-home-trust__separator gloskin-home-trust__separator--3" aria-hidden="true"></span>
+			<article class="gloskin-home-trust__item">
+				<div class="gloskin-home-trust__icon" aria-hidden="true">
+					<svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="8" r="6"></circle><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"></path></svg>
+				</div>
+				<div class="gloskin-home-trust__text">
+					<h3><?php echo esc_html__( 'Klinik Terpercaya', 'gloskin-site-core' ); ?></h3>
+					<p><?php echo esc_html__( 'Meraih berbagai penghargaan prestisius.', 'gloskin-site-core' ); ?></p>
+				</div>
+			</article>
+		</div>
+	</div>
+</section>
+
 <section class="gloskin-ui1-section gloskin-home-why" data-gloskin-section="why-gloskin">
 	<div class="gloskin-ui1-container gloskin-home-why__grid">
 		<div class="gloskin-home-why__media" aria-hidden="true">
