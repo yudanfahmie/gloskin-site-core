@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name: Gloskin Site Core
- * Description: Gloskin website presentation, content and integration runtime.
- * Version: 0.7.220
- * Requires PHP: 7.4
+ * Description: Owns the Gloskin front-end shell, navigation, content structures, and WooCommerce/form integrations without rebuilding WordPress or WooCommerce primitives.
+ * Version: 0.7.221
+ * Author: Gloskin
  * Text Domain: gloskin-site-core
  */
 
@@ -13,8 +13,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/includes/class-gloskin-site-core-kernel.php';
 
-register_activation_hook( __FILE__, array( 'Gloskin_Site_Core_Kernel', 'activate' ) );
-register_deactivation_hook( __FILE__, array( 'Gloskin_Site_Core_Kernel', 'deactivate' ) );
-
-$gloskin_site_core_kernel = new Gloskin_Site_Core_Kernel( __FILE__ );
-$gloskin_site_core_kernel->boot();
+/**
+ * Bootstrap the plugin after all plugins are available so integration checks can run.
+ */
+function gloskin_site_core_bootstrap() {
+	$kernel = new Gloskin_Site_Core_Kernel( __FILE__ );
+	$kernel->register();
+}
+add_action( 'plugins_loaded', 'gloskin_site_core_bootstrap', 20 );
