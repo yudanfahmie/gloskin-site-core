@@ -195,22 +195,32 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			'canReorder'      => $can_reorder ? 1 : 0,
 			'promoCropWidth'  => isset( $profile['crop_width'] ) ? absint( $profile['crop_width'] ) : 1648,
 			'promoCropHeight' => isset( $profile['crop_height'] ) ? absint( $profile['crop_height'] ) : 928,
+			'promoZoomMin'    => isset( $profile['zoom_min'] ) ? absint( $profile['zoom_min'] ) : 100,
+			'promoZoomMax'    => isset( $profile['zoom_max'] ) ? absint( $profile['zoom_max'] ) : 300,
 			'labels'          => array(
-				'saving'                => __( 'Saving…', 'gloskin-site-core' ),
-				'error'                 => __( 'Could not save this record.', 'gloskin-site-core' ),
-				'invalidEdit'           => __( 'That record is no longer available. The list was left unchanged.', 'gloskin-site-core' ),
-				'saved'                 => __( 'Saved.', 'gloskin-site-core' ),
-				'saveListFailed'        => __( 'Saved, but the native list could not be updated in place. Refresh the list manually if needed.', 'gloskin-site-core' ),
-				'activeUpdated'         => __( 'Active state updated.', 'gloskin-site-core' ),
-				'activeFailed'          => __( 'Active state could not be updated.', 'gloskin-site-core' ),
-				'reorderSaved'          => __( 'Order saved.', 'gloskin-site-core' ),
-				'reorderFailed'         => __( 'Order could not be saved.', 'gloskin-site-core' ),
-				'reorderHint'           => __( 'Clear filters to reorder items.', 'gloskin-site-core' ),
-				'mediaUnavailable'      => __( 'Media Library could not be initialized. Refresh this page and try again.', 'gloskin-site-core' ),
-				'cropApplied'           => __( 'Framing applied. Save the Promo to persist it.', 'gloskin-site-core' ),
-				'cropApplyRequired'     => __( 'Use Crop & Apply before saving this Promo.', 'gloskin-site-core' ),
-				'cropLowResolution'     => __( 'Image is below the required 1648 × 928 production size. Choose a larger source image.', 'gloskin-site-core' ),
-				'cropDimensionsUnknown' => __( 'Image dimensions will be validated when you save.', 'gloskin-site-core' ),
+				'saving'                  => __( 'Saving…', 'gloskin-site-core' ),
+				'error'                   => __( 'Could not save this record.', 'gloskin-site-core' ),
+				'invalidEdit'             => __( 'That record is no longer available. The list was left unchanged.', 'gloskin-site-core' ),
+				'saved'                   => __( 'Saved.', 'gloskin-site-core' ),
+				'saveListFailed'          => __( 'Saved, but the native list could not be updated in place. Refresh the list manually if needed.', 'gloskin-site-core' ),
+				'activeUpdated'           => __( 'Active state updated.', 'gloskin-site-core' ),
+				'activeFailed'            => __( 'Active state could not be updated.', 'gloskin-site-core' ),
+				'reorderSaved'            => __( 'Order saved.', 'gloskin-site-core' ),
+				'reorderFailed'           => __( 'Order could not be saved.', 'gloskin-site-core' ),
+				'reorderHint'             => __( 'Clear filters to reorder items.', 'gloskin-site-core' ),
+				'mediaUnavailable'        => __( 'Media Library could not be initialized. Refresh this page and try again.', 'gloskin-site-core' ),
+				'cropApplied'             => __( 'Crop selection applied. Save the Promo to persist it.', 'gloskin-site-core' ),
+				'cropApplyRequired'       => __( 'Use Crop & Apply before saving this Promo.', 'gloskin-site-core' ),
+				'cropLowResolution'       => __( 'Image is below the required 1648 × 928 production size. Choose a larger source image.', 'gloskin-site-core' ),
+				'cropLegacyLowResolution' => __( 'Legacy image is below 1648 × 928. You can reframe it, but replacing it requires a larger source image.', 'gloskin-site-core' ),
+				'cropDimensionsUnknown'   => __( 'Image dimensions will be validated when you save.', 'gloskin-site-core' ),
+				'cropSmart'               => __( 'Smart select', 'gloskin-site-core' ),
+				'cropSmartWorking'        => __( 'Finding subject…', 'gloskin-site-core' ),
+				'cropSmartReady'          => __( 'Smart crop selected. Fine-tune the selection, then choose Crop & Apply.', 'gloskin-site-core' ),
+				'cropZoom'                => __( 'Crop size', 'gloskin-site-core' ),
+				'cropZoomAria'            => __( 'Crop zoom', 'gloskin-site-core' ),
+				'cropOutput'              => __( 'Production crop preview', 'gloskin-site-core' ),
+				'cropSelectionLabel'      => __( 'Crop selection. Drag to move, drag a corner handle to resize, or use arrow keys.', 'gloskin-site-core' ),
 			),
 		) );
 	}
@@ -254,11 +264,11 @@ final class Gloskin_Site_Core_Editorial_Manager {
 							<span class="gloskin-editorial-field__label"><?php echo esc_html( $is_promo ? __( 'Image', 'gloskin-site-core' ) : __( 'Photo', 'gloskin-site-core' ) ); ?></span>
 							<input type="hidden" name="image_id" value="0" data-gloskin-editorial-image-id>
 							<?php if ( $is_promo ) : ?>
-							<input type="hidden" name="focus_x" value="50"><input type="hidden" name="focus_y" value="50">
+							<input type="hidden" name="focus_x" value="50"><input type="hidden" name="focus_y" value="50"><input type="hidden" name="crop_zoom" value="100">
 							<div class="gloskin-editorial-crop" data-gloskin-promo-crop hidden>
-								<div class="gloskin-editorial-crop__viewport" data-gloskin-editorial-preview data-gloskin-promo-crop-viewport tabindex="0" aria-label="<?php echo esc_attr__( 'Promo crop preview. Drag or use arrow keys to reposition the focal point.', 'gloskin-site-core' ); ?>"></div>
+								<div class="gloskin-editorial-crop__viewport" data-gloskin-editorial-preview data-gloskin-promo-crop-viewport tabindex="0" aria-label="<?php echo esc_attr__( 'Promo crop workspace. Move or resize the selection to choose the production crop.', 'gloskin-site-core' ); ?>"></div>
 								<p class="gloskin-editorial-crop__quality" data-gloskin-promo-crop-quality aria-live="polite"></p>
-								<p class="gloskin-editorial-crop__hint"><?php echo esc_html__( 'Drag the image or use arrow keys to set framing. This 1648:928 viewport is the production crop.', 'gloskin-site-core' ); ?></p>
+								<p class="gloskin-editorial-crop__hint"><?php echo esc_html__( 'Use Smart select for an automatic subject-aware crop, then drag the selection, resize its corners, adjust Crop size, or use the arrow keys. Output remains locked to 1648:928.', 'gloskin-site-core' ); ?></p>
 							</div>
 							<?php else : ?>
 							<div class="gloskin-editorial-media-field__preview" data-gloskin-editorial-preview></div>
@@ -322,6 +332,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			$payload['image_height']   = $dims['height'];
 			$payload['focus_x']        = $this->promo_focus_value( $post->ID, (string) ( $profile['focus_x_meta'] ?? '' ) );
 			$payload['focus_y']        = $this->promo_focus_value( $post->ID, (string) ( $profile['focus_y_meta'] ?? '' ) );
+			$payload['zoom']           = $this->promo_zoom_value( $post->ID, (string) ( $profile['zoom_meta'] ?? '' ) );
 		}
 		return $payload;
 	}
@@ -400,8 +411,10 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			update_post_meta( $saved_id, (string) $profile['type_meta'], in_array( $type, $allowed, true ) ? $type : 'regular' );
 			$focus_x = $this->normalize_focus( isset( $_POST['focus_x'] ) ? wp_unslash( $_POST['focus_x'] ) : 50 );
 			$focus_y = $this->normalize_focus( isset( $_POST['focus_y'] ) ? wp_unslash( $_POST['focus_y'] ) : 50 );
+			$zoom    = $this->normalize_zoom( isset( $_POST['crop_zoom'] ) ? wp_unslash( $_POST['crop_zoom'] ) : 100 );
 			update_post_meta( $saved_id, (string) ( $profile['focus_x_meta'] ?? 'gloskin_promo_focus_x' ), $focus_x );
 			update_post_meta( $saved_id, (string) ( $profile['focus_y_meta'] ?? 'gloskin_promo_focus_y' ), $focus_y );
+			update_post_meta( $saved_id, (string) ( $profile['zoom_meta'] ?? 'gloskin_promo_crop_zoom' ), $zoom );
 		} else {
 			$subtitle = isset( $_POST['subtitle'] ) ? sanitize_text_field( wp_unslash( $_POST['subtitle'] ) ) : '';
 			update_post_meta( $saved_id, 'gloskin_testimonial_attribution', $title );
@@ -539,7 +552,6 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		$state   = is_array( $state ) ? $state : array();
 		$updated = false;
 
-		// v1: baseline active/order normalization — gated by Content Finalizer completion.
 		if ( 'complete' !== (string) ( $state['display_contract_v1'] ?? '' ) ) {
 			if ( ! class_exists( 'Gloskin_Site_Core_Content_Finalizer_Admin' ) ) {
 				require_once __DIR__ . '/class-gloskin-site-core-content-finalizer-admin.php';
@@ -553,8 +565,6 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			}
 		}
 
-		// promo_type_v1: normalize missing/invalid gloskin_promo_type → 'regular'.
-		// Runs independently of v1 so existing installs where v1 already completed are covered.
 		if ( 'complete' !== (string) ( $state['promo_type_v1'] ?? '' ) ) {
 			$mutations                           = $this->normalize_promo_types();
 			$state['promo_type_v1']              = 'complete';
@@ -568,13 +578,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		}
 	}
 
-	/**
-	 * Normalize any Promo whose gloskin_promo_type is missing or non-canonical to 'regular'.
-	 * Historical admin UI displayed blank/invalid types as "Promo Biasa", so 'regular' is
-	 * the correct persistent value that makes admin and frontend eligibility agree.
-	 *
-	 * @return int Number of meta rows written.
-	 */
+	/** @return int */
 	private function normalize_promo_types() {
 		$mutations = 0;
 		$posts     = get_posts( array(
@@ -587,8 +591,6 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		foreach ( $posts as $post ) {
 			$type = (string) get_post_meta( $post->ID, 'gloskin_promo_type', true );
 			if ( 'limited' !== $type && 'regular' !== $type ) {
-				// Historical admin treated blank/invalid as "Promo Biasa"; persist that truth
-				// so frontend eligibility ($type IN ['limited','regular']) no longer rejects it.
 				$mutations += $this->set_meta_if_changed( $post->ID, 'gloskin_promo_type', 'regular' );
 			}
 		}
@@ -723,8 +725,6 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			}
 		}
 
-		/* Seed setup owns only its six identities. Arbitrary editor-created Promo
-		 * records are never modified or deactivated when setup is re-run. */
 		foreach ( $seed_ids as $post_id ) {
 			foreach ( array( 'gloskin_promo_eyebrow', 'gloskin_promo_summary', 'gloskin_promo_cta_label', 'gloskin_promo_cta_url', 'gloskin_promo_start_date', 'gloskin_promo_end_date' ) as $obsolete ) {
 				if ( metadata_exists( 'post', $post_id, $obsolete ) ) {
@@ -872,11 +872,25 @@ final class Gloskin_Site_Core_Editorial_Manager {
 	}
 
 	/** @return float */
+	private function normalize_zoom( $value ) {
+		$value = is_numeric( $value ) ? (float) $value : 100.0;
+		return max( 100.0, min( 300.0, $value ) );
+	}
+
+	/** @return float */
 	private function promo_focus_value( $post_id, $meta_key ) {
 		if ( ! $post_id || '' === $meta_key || ! metadata_exists( 'post', $post_id, $meta_key ) ) {
 			return 50.0;
 		}
 		return $this->normalize_focus( get_post_meta( $post_id, $meta_key, true ) );
+	}
+
+	/** @return float */
+	private function promo_zoom_value( $post_id, $meta_key ) {
+		if ( ! $post_id || '' === $meta_key || ! metadata_exists( 'post', $post_id, $meta_key ) ) {
+			return 100.0;
+		}
+		return $this->normalize_zoom( get_post_meta( $post_id, $meta_key, true ) );
 	}
 
 	/** @return bool */
