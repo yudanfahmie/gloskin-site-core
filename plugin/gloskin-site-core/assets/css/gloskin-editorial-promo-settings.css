@@ -3,18 +3,24 @@
 margin-top:18px;
 padding:16px;
 border:1px solid #dcdcde;
-border-radius:8px;
+border-radius:10px;
 background:#f6f7f7}
 .gloskin-editorial-popup-settings legend{padding:0 6px;font-weight:600}
+.gloskin-editorial-popup-settings__toggle{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.gloskin-editorial-popup-settings__toggle-copy{margin:1px 0 0;max-width:620px;color:#646970;font-size:12px;line-height:1.45}
+.gloskin-editorial-popup-settings__options{margin-top:14px;padding-top:14px;border-top:1px solid #dcdcde}
 .gloskin-editorial-popup-settings__grid{display:grid;gap:14px}
 .gloskin-editorial-popup-settings .gloskin-editorial-field{margin:0}
 .gloskin-editorial-popup-settings__hint{margin:6px 0 0;color:#646970;font-size:12px;line-height:1.45}
 .gloskin-editorial-popup-settings__search{margin-bottom:8px;width:100%}
 .gloskin-editorial-popup-settings__pages{width:100%;min-height:150px}
 .gloskin-editorial-popup-settings [hidden]{display:none!important}
-.gloskin-editorial-popup-settings__notice{margin:0 0 14px;padding:10px 12px;border-left:4px solid #dba617;background:#fff8e5;color:#1d2327;font-size:13px;line-height:1.45}
+.gloskin-editorial-popup-settings__notice{margin:12px 0 0;padding:10px 12px;border-left:4px solid #dba617;background:#fff8e5;color:#1d2327;font-size:13px;line-height:1.45}
 .gloskin-editorial-popup-settings__notice strong{display:block;margin-bottom:2px}
+.gloskin-editorial-modal__dialog:has([data-gloskin-promo-crop]) .gloskin-editorial-popup-settings{grid-column:1/-1}
 @media (min-width:782px){
-.gloskin-editorial-popup-settings__grid{grid-template-columns:minmax(180px,.7fr) minmax(260px,1.3fr)}
-.gloskin-editorial-popup-settings__destination{grid-column:1/-1}
+.gloskin-editorial-popup-settings__grid{grid-template-columns:minmax(220px,.7fr) minmax(320px,1.3fr)}
 .gloskin-editorial-popup-settings__specific{grid-column:1/-1}}
+@media (max-width:781px){
+.gloskin-editorial-popup-settings__toggle{display:grid;gap:6px}
+.gloskin-editorial-popup-settings__grid{grid-template-columns:1fr}}
