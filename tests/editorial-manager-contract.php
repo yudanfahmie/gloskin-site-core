@@ -46,9 +46,21 @@ foreach (array('ACHIEVEMENT_POST_TYPE', 'TREATMENT_POST_TYPE', 'CLINIC_POST_TYPE
 }
 
 editorial_must(1 === substr_count($manager, 'wp_enqueue_media();'), 'WordPress Media Library is enqueued once');
+editorial_must(false !== strpos($manager, "array( 'jquery', 'jquery-ui-sortable', 'media-editor' )"), 'EditorialManager explicitly depends on WordPress media-editor');
 editorial_must(1 === substr_count($manager, "wp_enqueue_style( 'gloskin-editorial-manager'"), 'one shared EditorialManager CSS owner');
 editorial_must(1 === substr_count($manager, "wp_enqueue_script( 'gloskin-editorial-manager'"), 'one shared EditorialManager JS owner');
 editorial_must(1 === substr_count($js, 'var mediaFrame = null;') && false !== strpos($js, 'if (!mediaFrame)'), 'one lazy reusable media frame owner');
+editorial_must(1 === substr_count($js, 'wp.media({'), 'one native wp.media frame constructor');
+editorial_must(false !== strpos($manager, "'mediaUnavailable'") && false !== strpos($js, "label('mediaUnavailable'"), 'media initialization failure uses the shared live status region');
+editorial_must(false === strpos($js, 'alert('), 'media failure does not create an alert owner');
+editorial_must(1 === substr_count($js, 'var mediaFrameActive = false;'), 'one media foreground state owner');
+editorial_must(false !== strpos($js, "mediaFrame.on('open'") && false !== strpos($js, 'mediaFrameActive = true;'), 'native media open owns foreground state');
+editorial_must(false !== strpos($js, "mediaFrame.on('close'") && false !== strpos($js, 'mediaFrameActive = false;'), 'native media close releases foreground state');
+editorial_must(false !== strpos($js, 'if (mediaFrameActive) { return; }'), 'editorial keyboard trap bypasses while WordPress media is foreground');
+editorial_must(false !== strpos($js, 'mediaTrigger.focus()'), 'focus returns to the media trigger after native frame close');
+foreach (array('gloskin_editorial_upload', 'customUploader', 'PromoMediaFrame', 'TestimonialMediaFrame') as $forbidden_media_owner) {
+    editorial_must(false === strpos($manager . $js, $forbidden_media_owner), 'no parallel/custom media owner: ' . $forbidden_media_owner);
+}
 
 foreach (array('MutationObserver', 'setInterval(', 'setTimeout(') as $forbidden_lifecycle) {
     editorial_must(false === strpos($js, $forbidden_lifecycle), 'no DOM retry lifecycle: ' . $forbidden_lifecycle);
@@ -75,4 +87,4 @@ foreach (array('PromoManager', 'TestimonialManager') as $forked_owner) {
     editorial_must(false === strpos($manager . $js, $forked_owner), 'no forked manager owner: ' . $forked_owner);
 }
 
-echo "editorial-manager-contract.php: OK (lifecycle + bounded profiles + native media/delete + fail-closed edit + safe reorder + accessibility/status)\n";
+echo "editorial-manager-contract.php: OK (lifecycle + bounded profiles + native media dependency/frame/keyboard + native delete + fail-closed edit + safe reorder + accessibility/status)\n";
