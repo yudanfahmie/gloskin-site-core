@@ -223,21 +223,32 @@ final class Gloskin_Site_Core_Editorial_Manager {
 
 	/** @return array<int,array<string,mixed>> */
 	private function record_payloads( $post_type ) {
-		$posts = get_posts( array( 'post_type' => $post_type, 'post_status' => array( 'publish', 'draft', 'private', 'pending', 'future' ), 'posts_per_page' => -1, 'orderby' => 'ID', 'order' => 'ASC' ) );
+		$posts   = get_posts( array( 'post_type' => $post_type, 'post_status' => array( 'publish', 'draft', 'private', 'pending', 'future' ), 'posts_per_page' => -1, 'orderby' => 'ID', 'order' => 'ASC' ) );
 		$records = array();
 		foreach ( $posts as $post ) {
-			$image_id = absint( get_post_thumbnail_id( $post->ID ) );
-			$preview  = $image_id ? wp_get_attachment_image_url( $image_id, 'medium' ) : '';
-			$records[ (int) $post->ID ] = array(
-				'id' => (int) $post->ID, 'title' => (string) $post->post_title,
-				'promo_type' => (string) get_post_meta( $post->ID, 'gloskin_promo_type', true ),
-				'subtitle' => (string) get_post_meta( $post->ID, 'gloskin_testimonial_subtitle', true ),
-				'quote' => (string) $post->post_excerpt, 'image_id' => $image_id,
-				'image_url' => $preview ? (string) $preview : '',
-				'active' => '1' === (string) get_post_meta( $post->ID, $this->active_meta_key( $post_type ), true ),
-			);
+			$records[ (int) $post->ID ] = $this->record_payload( $post );
 		}
 		return $records;
+	}
+
+	/** @return array<string,mixed> */
+	private function record_payload( $post ) {
+		if ( ! $post instanceof WP_Post || ! $this->is_managed_type( $post->post_type ) ) {
+			return array();
+		}
+		$image_id = absint( get_post_thumbnail_id( $post->ID ) );
+		$preview  = $image_id ? wp_get_attachment_image_url( $image_id, 'medium' ) : '';
+		return array(
+			'id'         => (int) $post->ID,
+			'title'      => (string) $post->post_title,
+			'promo_type' => (string) get_post_meta( $post->ID, 'gloskin_promo_type', true ),
+			'subtitle'   => (string) get_post_meta( $post->ID, 'gloskin_testimonial_subtitle', true ),
+			'quote'      => (string) $post->post_excerpt,
+			'image_id'   => $image_id,
+			'image_url'  => $preview ? (string) $preview : '',
+			'active'     => '1' === (string) get_post_meta( $post->ID, $this->active_meta_key( $post->post_type ), true ),
+			'order'      => (int) get_post_meta( $post->ID, $this->order_meta_key( $post->post_type ), true ),
+		);
 	}
 
 	/** @return void */
@@ -302,7 +313,11 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		} else {
 			delete_post_thumbnail( $saved_id );
 		}
-		wp_send_json_success( array( 'id' => $saved_id ) );
+		$saved_post = get_post( $saved_id );
+		if ( ! $saved_post instanceof WP_Post ) {
+			wp_send_json_error( array( 'message' => __( 'Saved record could not be reloaded.', 'gloskin-site-core' ) ), 500 );
+		}
+		wp_send_json_success( array( 'record' => $this->record_payload( $saved_post ) ) );
 	}
 
 	/** @return void */
@@ -453,10 +468,14 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			}
 		}
 
-		$testimonials = get_posts( array( 'post_type' => Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'post_status' => array( 'publish', 'draft', 'private', 'pending', 'future', 'trash' ), 'posts_per_page' => -1 ) );
+		$testimonials      = get_posts( array( 'post_type' => Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'post_status' => array( 'publish', 'draft', 'private', 'pending', 'future', 'trash' ), 'posts_per_page' => -1, 'orderby' => 'ID', 'order' => 'ASC' ) );
+		$max_order         = 0;
+		$missing_order_ids = array();
 		foreach ( $testimonials as $post ) {
-			if ( '' === trim( (string) $post->post_excerpt ) && '' !== trim( wp_strip_all_tags( (string) $post->post_content ) ) ) {
-				wp_update_post( wp_slash( array( 'ID' => $post->ID, 'post_excerpt' => trim( wp_strip_all_tags( (string) $post->post_content ) ) ) ) );
+			$quote = trim( (string) $post->post_excerpt );
+			if ( '' === $quote && '' !== trim( wp_strip_all_tags( (string) $post->post_content ) ) ) {
+				$quote = trim( wp_strip_all_tags( (string) $post->post_content ) );
+				wp_update_post( wp_slash( array( 'ID' => $post->ID, 'post_excerpt' => $quote ) ) );
 				$mutations++;
 			}
 			if ( '' === trim( (string) get_post_meta( $post->ID, 'gloskin_testimonial_attribution', true ) ) && '' !== trim( (string) $post->post_title ) ) {
@@ -467,6 +486,22 @@ final class Gloskin_Site_Core_Editorial_Manager {
 				delete_post_meta( $post->ID, 'gloskin_testimonial_source_note' );
 				$mutations++;
 			}
+			if ( ! metadata_exists( 'post', $post->ID, 'gloskin_testimonial_active' ) && 'publish' === $post->post_status && '' !== $quote ) {
+				update_post_meta( $post->ID, 'gloskin_testimonial_active', '1' );
+				$mutations++;
+			}
+
+			$order = (int) get_post_meta( $post->ID, 'gloskin_testimonial_order', true );
+			if ( metadata_exists( 'post', $post->ID, 'gloskin_testimonial_order' ) && $order > 0 ) {
+				$max_order = max( $max_order, $order );
+			} else {
+				$missing_order_ids[] = (int) $post->ID;
+			}
+		}
+		sort( $missing_order_ids, SORT_NUMERIC );
+		foreach ( $missing_order_ids as $post_id ) {
+			$max_order++;
+			$mutations += $this->set_meta_if_changed( $post_id, 'gloskin_testimonial_order', (string) $max_order );
 		}
 
 		if ( ! $this->verify_seed_collection( $seed_ids ) ) {
