@@ -162,10 +162,29 @@ final class Gloskin_Site_Core_Promo_Modal {
 	}
 
 	/**
+	 * Homepage is the canonical WordPress static front page. It deliberately
+	 * has no operator-defined destination; clicking a Homepage popup resolves
+	 * to the canonical site root. Other visibility modes retain the explicit
+	 * destination metadata contract.
+	 *
+	 * @param int    $promo_id Promo ID.
+	 * @param string $visibility Canonical visibility value.
+	 * @return string Empty when a required custom destination is invalid.
+	 */
+	private function destination_for_visibility( $promo_id, $visibility ) {
+		if ( self::VISIBILITY_HOMEPAGE === $visibility ) {
+			return self::sanitize_destination_url( home_url( '/' ) );
+		}
+		return self::sanitize_destination_url( get_post_meta( $promo_id, self::DESTINATION_META, true ) );
+	}
+
+	/**
 	 * The one production eligibility resolver for Promo Modal.
 	 *
-	 * published + Active + popup-enabled + current-page visibility + image + URL.
-	 * Existing gloskin_promo_order remains the only ordering source.
+	 * published + Active + popup-enabled + current-page visibility + image +
+	 * a valid click target. Homepage owns an implicit root target; All Pages
+	 * and Specific Pages require their saved custom target. Existing
+	 * gloskin_promo_order remains the only ordering source.
 	 *
 	 * @return array<int,array<string,mixed>>
 	 */
@@ -198,27 +217,36 @@ final class Gloskin_Site_Core_Promo_Modal {
 		) );
 
 		foreach ( $posts as $post ) {
-			if ( ! $post instanceof WP_Post || ! $this->visibility_matches( $post->ID ) ) {
+			if ( ! $post instanceof WP_Post ) {
+				continue;
+			}
+			$visibility = self::sanitize_visibility( get_post_meta( $post->ID, self::VISIBILITY_META, true ) );
+			$page_ids   = self::VISIBILITY_SPECIFIC === $visibility
+				? self::sanitize_page_ids( get_post_meta( $post->ID, self::PAGE_IDS_META, true ) )
+				: array();
+			if ( ! $this->visibility_matches( $visibility, $page_ids ) ) {
 				continue;
 			}
 			$image_id = absint( get_post_thumbnail_id( $post->ID ) );
 			if ( ! $image_id || ! wp_get_attachment_image_url( $image_id, 'full' ) ) {
 				continue;
 			}
-			$url = self::sanitize_destination_url( get_post_meta( $post->ID, self::DESTINATION_META, true ) );
+			$url = $this->destination_for_visibility( $post->ID, $visibility );
 			if ( '' === $url ) {
 				continue;
 			}
 			$this->eligible_cache[] = array(
-				'id'       => (int) $post->ID,
-				'title'    => (string) get_the_title( $post ),
-				'image_id' => $image_id,
-				'url'      => $url,
-				'order'    => (int) get_post_meta( $post->ID, $order_meta, true ),
-				'modified' => (string) $post->post_modified_gmt,
-				'focus_x'  => self::bounded_percent( get_post_meta( $post->ID, $focus_x_meta, true ) ),
-				'focus_y'  => self::bounded_percent( get_post_meta( $post->ID, $focus_y_meta, true ) ),
-				'zoom'     => self::bounded_zoom( get_post_meta( $post->ID, $zoom_meta, true ) ),
+				'id'         => (int) $post->ID,
+				'title'      => (string) get_the_title( $post ),
+				'image_id'   => $image_id,
+				'url'        => $url,
+				'visibility' => $visibility,
+				'page_ids'   => $page_ids,
+				'order'      => (int) get_post_meta( $post->ID, $order_meta, true ),
+				'modified'   => (string) $post->post_modified_gmt,
+				'focus_x'    => self::bounded_percent( get_post_meta( $post->ID, $focus_x_meta, true ) ),
+				'focus_y'    => self::bounded_percent( get_post_meta( $post->ID, $focus_y_meta, true ) ),
+				'zoom'       => self::bounded_zoom( get_post_meta( $post->ID, $zoom_meta, true ) ),
 			);
 		}
 
@@ -235,9 +263,12 @@ final class Gloskin_Site_Core_Promo_Modal {
 		return $this->eligible_cache;
 	}
 
-	/** @param int $promo_id Promo ID. @return bool */
-	private function visibility_matches( $promo_id ) {
-		$visibility = self::sanitize_visibility( get_post_meta( $promo_id, self::VISIBILITY_META, true ) );
+	/**
+	 * @param string         $visibility Canonical visibility value.
+	 * @param array<int,int> $page_ids Canonical page IDs for Specific Pages.
+	 * @return bool
+	 */
+	private function visibility_matches( $visibility, $page_ids = array() ) {
 		if ( self::VISIBILITY_ALL === $visibility ) {
 			return true;
 		}
@@ -247,7 +278,6 @@ final class Gloskin_Site_Core_Promo_Modal {
 		if ( ! is_page() ) {
 			return false;
 		}
-		$page_ids = self::sanitize_page_ids( get_post_meta( $promo_id, self::PAGE_IDS_META, true ) );
 		return in_array( absint( get_queried_object_id() ), $page_ids, true );
 	}
 
@@ -259,6 +289,8 @@ final class Gloskin_Site_Core_Promo_Modal {
 				(int) $promo['id'],
 				(int) $promo['image_id'],
 				(string) $promo['modified'],
+				(string) $promo['visibility'],
+				implode( ',', array_map( 'absint', (array) $promo['page_ids'] ) ),
 				(string) $promo['url'],
 			) );
 		}
