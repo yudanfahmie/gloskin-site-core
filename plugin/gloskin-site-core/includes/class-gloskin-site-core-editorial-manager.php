@@ -430,9 +430,13 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			$page_ids      = '' === $page_csv ? array() : preg_split( '/[\s,]+/', $page_csv, -1, PREG_SPLIT_NO_EMPTY );
 			$visibility_page_ids = Gloskin_Site_Core_Promo_Modal::sanitize_page_ids( is_array( $page_ids ) ? $page_ids : array() );
 			$destination_raw = isset( $_POST['destination_url'] ) ? trim( (string) wp_unslash( $_POST['destination_url'] ) ) : '';
-			$destination_url = Gloskin_Site_Core_Promo_Modal::sanitize_destination_url( $destination_raw );
-			if ( '' !== $destination_raw && '' === $destination_url ) {
-				wp_send_json_error( array( 'message' => __( 'Destination URL must be a same-site HTTP/HTTPS URL or an external HTTPS URL.', 'gloskin-site-core' ) ), 400 );
+			if ( $popup_enabled && Gloskin_Site_Core_Promo_Modal::VISIBILITY_HOMEPAGE === $visibility ) {
+				$destination_url = home_url( '/' );
+			} else {
+				$destination_url = Gloskin_Site_Core_Promo_Modal::sanitize_destination_url( $destination_raw );
+				if ( '' !== $destination_raw && '' === $destination_url ) {
+					wp_send_json_error( array( 'message' => __( 'Destination URL must be a same-site HTTP/HTTPS URL or an external HTTPS URL.', 'gloskin-site-core' ) ), 400 );
+				}
 			}
 			if ( $popup_enabled ) {
 				$popup_issue = $this->promo_popup_validation_issue( $image_id, $destination_url, $visibility, $visibility_page_ids );
@@ -529,12 +533,17 @@ final class Gloskin_Site_Core_Editorial_Manager {
 				wp_send_json_success( array( 'field' => 'popup', 'active' => false ) );
 			}
 			$image_id   = absint( get_post_thumbnail_id( $post_id ) );
-			$url        = Gloskin_Site_Core_Promo_Modal::sanitize_destination_url( get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::DESTINATION_META, true ) );
 			$visibility = Gloskin_Site_Core_Promo_Modal::sanitize_visibility( get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::VISIBILITY_META, true ) );
+			$url        = Gloskin_Site_Core_Promo_Modal::VISIBILITY_HOMEPAGE === $visibility
+				? home_url( '/' )
+				: Gloskin_Site_Core_Promo_Modal::sanitize_destination_url( get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::DESTINATION_META, true ) );
 			$page_ids   = Gloskin_Site_Core_Promo_Modal::sanitize_page_ids( get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::PAGE_IDS_META, true ) );
 			$popup_issue = $this->promo_popup_validation_issue( $image_id, $url, $visibility, $page_ids );
 			if ( $popup_issue ) {
 				wp_send_json_error( $popup_issue, 400 );
+			}
+			if ( Gloskin_Site_Core_Promo_Modal::VISIBILITY_HOMEPAGE === $visibility ) {
+				update_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::DESTINATION_META, $url );
 			}
 			update_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::POPUP_META, '1' );
 			wp_send_json_success( array( 'field' => 'popup', 'active' => true ) );
@@ -566,7 +575,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 				'message' => __( 'Choose a featured Promo image before enabling popup display.', 'gloskin-site-core' ),
 			);
 		}
-		if ( '' === trim( (string) $destination_url ) ) {
+		if ( Gloskin_Site_Core_Promo_Modal::VISIBILITY_HOMEPAGE !== $visibility && '' === trim( (string) $destination_url ) ) {
 			return array(
 				'code'    => 'popup_incomplete',
 				'field'   => 'destination',
@@ -591,7 +600,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			wp_send_json_error( array( 'message' => __( 'Unsupported editorial record type.', 'gloskin-site-core' ) ), 400 );
 		}
 		$this->require_edit_capability( $post_type, 0 );
-		$ids       = isset( $_POST['ids'] ) ? array_values( array_filter( array_map( 'absint', (array) wp_unslash( $_POST['ids'] ) ) ) ) : array();
+		$ids       = isset( $_POST['ids'] ) ? array_values( array_filter( array_map( 'absint', (array) wp_unslash( $_POST['ids'] ) ) ) : array();
 		$canonical = $this->canonical_reorder_ids( $post_type );
 		if ( count( $ids ) !== count( $canonical ) || count( $ids ) !== count( array_unique( $ids ) ) || array_diff( $ids, $canonical ) || array_diff( $canonical, $ids ) ) {
 			wp_send_json_error( array( 'message' => __( 'Reorder requires the complete unfiltered collection.', 'gloskin-site-core' ) ), 400 );
