@@ -4,6 +4,7 @@
 
 	var config = window.GloskinEditorialManager;
 	if (!config || config.postType !== 'gloskin_promo') { return; }
+
 	var modal = document.querySelector('[data-gloskin-editorial-modal]');
 	var form = modal ? modal.querySelector('[data-gloskin-editorial-form]') : null;
 	var recordsNode = document.getElementById('gloskin-editorial-records');
@@ -11,7 +12,6 @@
 	var statusMessage = statusNode ? statusNode.querySelector('[data-gloskin-editorial-status-message]') : null;
 	var records = {};
 	var pendingGuidance = null;
-	var guidanceMode = false;
 
 	if (!form) { return; }
 	try { records = recordsNode ? JSON.parse(recordsNode.textContent || '{}') : {}; } catch (ignore) { records = {}; }
@@ -19,6 +19,7 @@
 	var popupField = form.elements.popup_enabled;
 	var visibilityField = form.elements.visibility;
 	var destinationField = form.elements.destination_url;
+	var destinationWrap = destinationField ? destinationField.closest('.gloskin-editorial-popup-settings__destination') : null;
 	var pageIdsField = form.elements.visibility_page_ids_csv;
 	var pageSelect = form.querySelector('[data-gloskin-promo-page-select]');
 	var pageSearch = form.querySelector('[data-gloskin-promo-page-search]');
@@ -52,25 +53,27 @@
 		if (pageIdsField) { pageIdsField.value = selectedPageIds().join(','); }
 	}
 
-	function removePopupNotice() {
-		if (!popupNotice) { return; }
-		popupNotice.remove();
+	function clearGuidance() {
+		if (popupNotice) { popupNotice.remove(); }
 		popupNotice = null;
 	}
 
 	function updatePopupUi() {
 		var enabled = !!(popupField && popupField.checked);
-		var revealOptions = enabled || guidanceMode;
-		if (popupOptions) { popupOptions.hidden = !revealOptions; }
-		if (destinationField) { destinationField.required = enabled; }
-		if (visibilityField) { visibilityField.required = enabled; }
+		var visibility = visibilityField ? visibilityField.value : 'homepage';
+		var homepage = visibility === 'homepage';
+		var specific = enabled && visibility === 'specific_pages';
+		var needsDestination = enabled && !homepage;
 
-		var specific = !!(revealOptions && visibilityField && visibilityField.value === 'specific_pages');
+		if (popupOptions) { popupOptions.hidden = !enabled; }
+		if (visibilityField) { visibilityField.required = enabled; }
+		if (destinationWrap) { destinationWrap.hidden = !needsDestination; }
+		if (destinationField) { destinationField.required = needsDestination; }
 		if (specificWrap) { specificWrap.hidden = !specific; }
 		if (pageSearch) { pageSearch.disabled = !specific; }
 		if (pageSelect) {
 			pageSelect.disabled = !specific;
-			pageSelect.required = enabled && specific;
+			pageSelect.required = specific;
 		}
 	}
 
@@ -93,48 +96,33 @@
 		});
 	}
 
-	function resetGuidance() {
-		guidanceMode = false;
-		removePopupNotice();
-		updatePopupUi();
-	}
-
 	function showPopupGuidance(message) {
 		if (!popupSettings) { return; }
-		removePopupNotice();
-		guidanceMode = true;
+		clearGuidance();
 		popupNotice = document.createElement('div');
 		popupNotice.className = 'gloskin-editorial-popup-settings__notice';
 		popupNotice.setAttribute('role', 'status');
 		var strong = document.createElement('strong');
-		strong.textContent = 'Complete popup settings';
+		strong.textContent = 'Popup is still off';
 		var body = document.createElement('span');
-		body.textContent = message || 'Complete the highlighted popup setting, then enable popup display.';
+		body.textContent = message || 'Enable Show as popup to configure this Promo.';
 		popupNotice.appendChild(strong);
 		popupNotice.appendChild(body);
-		popupSettings.insertBefore(popupNotice, popupOptions || null);
+		var toggleRow = popupSettings.querySelector('.gloskin-editorial-popup-settings__toggle');
+		if (toggleRow && toggleRow.nextSibling) { popupSettings.insertBefore(popupNotice, toggleRow.nextSibling); }
+		else { popupSettings.appendChild(popupNotice); }
 		updatePopupUi();
 	}
 
 	function syncForm(record) {
 		record = record || {};
-		guidanceMode = false;
-		removePopupNotice();
+		clearGuidance();
 		if (popupField) { popupField.checked = !!record.popup_enabled; }
 		if (visibilityField) { visibilityField.value = record.visibility || 'homepage'; }
 		if (destinationField) { destinationField.value = record.destination_url || ''; }
 		setPageSelection(record.visibility_page_ids || []);
 		if (pageSearch) { pageSearch.value = ''; filterPages(''); }
 		updatePopupUi();
-	}
-
-	function focusPopupField(kind) {
-		var target = null;
-		if (kind === 'destination') { target = destinationField; }
-		else if (kind === 'pages') { target = pageSearch || pageSelect; }
-		else if (kind === 'image') { target = form.querySelector('[data-gloskin-editorial-media]'); }
-		else { target = popupField; }
-		if (target && typeof target.focus === 'function') { target.focus(); }
 	}
 
 	function paintPopupButton(button, enabled) {
@@ -165,7 +153,6 @@
 					var error = new Error(dataPayload.message || label('popupFailed', 'Popup state could not be updated.'));
 					error.code = dataPayload.code || '';
 					error.field = dataPayload.field || '';
-					error.status = response.status || 0;
 					throw error;
 				}
 				return payload;
@@ -176,14 +163,10 @@
 	function openPopupEditor(id, issue) {
 		pendingGuidance = {
 			id: String(id),
-			field: issue && issue.field ? issue.field : 'popup',
-			message: issue && issue.message ? issue.message : 'Complete the popup settings, then enable this Promo popup.'
+			message: issue && issue.message ? issue.message : 'Enable Show as popup to finish popup configuration.'
 		};
 		var edit = document.querySelector('[data-gloskin-editorial-edit="' + String(id).replace(/[^0-9]/g, '') + '"]');
-		if (edit) {
-			edit.click();
-			return;
-		}
+		if (edit) { edit.click(); return; }
 		setStatus(pendingGuidance.message, true);
 	}
 
@@ -197,7 +180,7 @@
 			var issue = pendingGuidance;
 			pendingGuidance = null;
 			showPopupGuidance(issue.message);
-			focusPopupField(issue.field);
+			if (popupField && typeof popupField.focus === 'function') { popupField.focus(); }
 		}
 	}
 
@@ -206,12 +189,10 @@
 	if (visibilityField) { visibilityField.addEventListener('change', updatePopupUi); }
 	if (popupField) {
 		popupField.addEventListener('change', function () {
-			guidanceMode = false;
-			removePopupNotice();
+			clearGuidance();
 			updatePopupUi();
 		});
 	}
-
 	form.addEventListener('submit', syncPageIdsField, true);
 
 	document.addEventListener('gloskin:editorial-modal-open', handleModalOpen);
@@ -222,11 +203,8 @@
 
 	document.addEventListener('click', function (event) {
 		var close = event.target.closest('[data-gloskin-editorial-close]');
-		if (close) {
-			pendingGuidance = null;
-			resetGuidance();
-			return;
-		}
+		if (close) { pendingGuidance = null; clearGuidance(); return; }
+
 		var toggle = event.target.closest('[data-gloskin-promo-popup-toggle]');
 		if (!toggle) { return; }
 		event.preventDefault();
@@ -244,15 +222,12 @@
 		}).catch(function (error) {
 			toggle.disabled = false;
 			if (enable && error && error.code === 'popup_incomplete') {
-				openPopupEditor(id, { field: error.field || 'popup', message: error.message });
+				openPopupEditor(id, { message: error.message });
 				return;
 			}
 			setStatus(error && error.message ? error.message : label('popupFailed', 'Popup state could not be updated.'), true);
 		});
 	});
 
-	if (modal && !modal.hidden) {
-		var currentId = form.elements.post_id ? String(parseInt(form.elements.post_id.value, 10) || 0) : '0';
-		syncForm(currentId !== '0' && records[currentId] ? records[currentId] : { popup_enabled: false, visibility: 'homepage', visibility_page_ids: [], destination_url: '' });
-	}
+	updatePopupUi();
 })();
