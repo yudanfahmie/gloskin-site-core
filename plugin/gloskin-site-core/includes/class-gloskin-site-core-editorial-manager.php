@@ -142,7 +142,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			return $actions;
 		}
 		if ( isset( $actions['edit'] ) ) {
-			$actions['edit'] = '<a href="' . esc_url( $this->list_url( $post->post_type, array( 'gloskin_edit' => $post->ID ) ) ) . '" data-gloskin-editorial-edit="' . esc_attr( (string) $post->ID ) . '">' . esc_html__( 'Edit', 'gloskin-site-core' ) . '</a>';
+			$actions['edit'] = '<a href="' . esc_url( $this->list_url( $post->post_type, array( 'gloskin_edit' => $post->ID, 'gloskin_new' => 1 ) ) ) . '" data-gloskin-editorial-edit="' . esc_attr( (string) $post->ID ) . '">' . esc_html__( 'Edit', 'gloskin-site-core' ) . '</a>';
 		}
 		return $actions;
 	}
@@ -151,7 +151,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 	public function edit_post_link( $link, $post_id, $context ) {
 		unset( $context );
 		$post = get_post( $post_id );
-		return $post instanceof WP_Post && $this->is_managed_type( $post->post_type ) ? $this->list_url( $post->post_type, array( 'gloskin_edit' => $post_id ) ) : $link;
+		return $post instanceof WP_Post && $this->is_managed_type( $post->post_type ) ? $this->list_url( $post->post_type, array( 'gloskin_edit' => $post_id, 'gloskin_new' => 1 ) ) : $link;
 	}
 
 	/**
@@ -184,9 +184,10 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		if ( ! $screen || 'edit' !== $screen->base || ! $this->is_managed_type( (string) $screen->post_type ) ) {
 			return;
 		}
-		$post_type   = (string) $screen->post_type;
-		$can_reorder = $this->can_reorder_list( $post_type );
-		$profile     = Gloskin_Site_Core_Content_Service::editorial_profile( $post_type );
+		$post_type    = (string) $screen->post_type;
+		$can_reorder  = $this->can_reorder_list( $post_type );
+		$profile      = Gloskin_Site_Core_Content_Service::editorial_profile( $post_type );
+		$modal_intent = isset( $_GET['gloskin_new'] ) && '1' === sanitize_key( (string) wp_unslash( $_GET['gloskin_new'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- one-shot modal-open marker only.
 		wp_enqueue_media();
 		wp_enqueue_script( 'jquery-ui-sortable' );
 		$base = plugin_dir_url( $this->plugin_file );
@@ -199,8 +200,8 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
 			'nonce'           => wp_create_nonce( self::NONCE_ACTION ),
 			'postType'        => $post_type,
-			'addId'           => isset( $_GET['gloskin_add'] ) ? 1 : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- modal-open state only.
-			'editId'          => isset( $_GET['gloskin_edit'] ) ? absint( $_GET['gloskin_edit'] ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- modal-open state only.
+			'addId'           => $modal_intent && isset( $_GET['gloskin_add'] ) ? 1 : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- one-shot modal-open state only.
+			'editId'          => $modal_intent && isset( $_GET['gloskin_edit'] ) ? absint( $_GET['gloskin_edit'] ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- one-shot modal-open state only.
 			'canReorder'      => $can_reorder ? 1 : 0,
 			'promoCropWidth'  => isset( $profile['crop_width'] ) ? absint( $profile['crop_width'] ) : 1648,
 			'promoCropHeight' => isset( $profile['crop_height'] ) ? absint( $profile['crop_height'] ) : 928,
@@ -258,9 +259,9 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		if ( ! $screen || 'edit' !== $screen->base || ! $this->is_managed_type( (string) $screen->post_type ) ) {
 			return;
 		}
-		$post_type  = (string) $screen->post_type;
-		$records    = $this->record_payloads( $post_type );
-		$is_promo   = Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post_type;
+		$post_type   = (string) $screen->post_type;
+		$records     = $this->record_payloads( $post_type );
+		$is_promo    = Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post_type;
 		$promo_pages = $is_promo ? get_pages( array( 'sort_column' => 'post_title', 'sort_order' => 'ASC', 'post_status' => 'publish' ) ) : array();
 		?>
 		<div class="gloskin-editorial-modal" data-gloskin-editorial-modal hidden>
@@ -303,14 +304,19 @@ final class Gloskin_Site_Core_Editorial_Manager {
 						<?php if ( $is_promo ) : ?>
 						<fieldset class="gloskin-editorial-popup-settings">
 							<legend><?php echo esc_html__( 'Popup display', 'gloskin-site-core' ); ?></legend>
-							<div class="gloskin-editorial-popup-settings__grid">
+							<div class="gloskin-editorial-popup-settings__toggle">
 								<label class="gloskin-editorial-active-field"><input type="checkbox" name="popup_enabled" value="1"> <span><?php echo esc_html__( 'Show as popup', 'gloskin-site-core' ); ?></span></label>
-								<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Visibility', 'gloskin-site-core' ); ?></span><select name="visibility"><option value="homepage"><?php echo esc_html__( 'Homepage', 'gloskin-site-core' ); ?></option><option value="all_pages"><?php echo esc_html__( 'All Pages', 'gloskin-site-core' ); ?></option><option value="specific_pages"><?php echo esc_html__( 'Specific Pages', 'gloskin-site-core' ); ?></option></select></label>
-								<label class="gloskin-editorial-field gloskin-editorial-popup-settings__destination"><span><?php echo esc_html__( 'Destination URL', 'gloskin-site-core' ); ?></span><input type="text" name="destination_url" inputmode="url" autocomplete="url" placeholder="https://example.com/promo/ or /promo/"><p class="gloskin-editorial-popup-settings__hint"><?php echo esc_html__( 'Same-site links may be root-relative. External destinations must use HTTPS.', 'gloskin-site-core' ); ?></p></label>
-								<div class="gloskin-editorial-popup-settings__specific" data-gloskin-promo-specific-pages hidden>
-									<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Specific Pages', 'gloskin-site-core' ); ?></span><input class="gloskin-editorial-popup-settings__search" type="search" data-gloskin-promo-page-search placeholder="<?php echo esc_attr__( 'Search pages…', 'gloskin-site-core' ); ?>"><select class="gloskin-editorial-popup-settings__pages" multiple size="7" data-gloskin-promo-page-select aria-label="<?php echo esc_attr__( 'Select WordPress pages', 'gloskin-site-core' ); ?>"><?php foreach ( $promo_pages as $promo_page ) : ?><option value="<?php echo esc_attr( (string) $promo_page->ID ); ?>"><?php echo esc_html( get_the_title( $promo_page ) ); ?></option><?php endforeach; ?></select></label>
-									<input type="hidden" name="visibility_page_ids_csv" value="">
-									<p class="gloskin-editorial-popup-settings__hint"><?php echo esc_html__( 'Choose one or more published WordPress pages. Selections are stored by post ID.', 'gloskin-site-core' ); ?></p>
+								<p class="gloskin-editorial-popup-settings__toggle-copy"><?php echo esc_html__( 'Optional. Enable only when this Promo should interrupt the selected page with a clickable poster.', 'gloskin-site-core' ); ?></p>
+							</div>
+							<div class="gloskin-editorial-popup-settings__options" data-gloskin-promo-popup-options hidden>
+								<div class="gloskin-editorial-popup-settings__grid">
+									<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Visibility', 'gloskin-site-core' ); ?></span><select name="visibility"><option value="homepage"><?php echo esc_html__( 'Homepage', 'gloskin-site-core' ); ?></option><option value="all_pages"><?php echo esc_html__( 'All Pages', 'gloskin-site-core' ); ?></option><option value="specific_pages"><?php echo esc_html__( 'Specific Pages', 'gloskin-site-core' ); ?></option></select><p class="gloskin-editorial-popup-settings__hint"><?php echo esc_html__( 'Controls where the popup is shown.', 'gloskin-site-core' ); ?></p></label>
+									<label class="gloskin-editorial-field gloskin-editorial-popup-settings__destination"><span><?php echo esc_html__( 'Click destination URL', 'gloskin-site-core' ); ?></span><input type="text" name="destination_url" inputmode="url" autocomplete="url" placeholder="https://example.com/promo/ or /promo/"><p class="gloskin-editorial-popup-settings__hint"><?php echo esc_html__( 'Controls where the poster opens when clicked. Same-site links may be root-relative; external destinations must use HTTPS.', 'gloskin-site-core' ); ?></p></label>
+									<div class="gloskin-editorial-popup-settings__specific" data-gloskin-promo-specific-pages hidden>
+										<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Specific Pages', 'gloskin-site-core' ); ?></span><input class="gloskin-editorial-popup-settings__search" type="search" data-gloskin-promo-page-search placeholder="<?php echo esc_attr__( 'Search pages…', 'gloskin-site-core' ); ?>"><select class="gloskin-editorial-popup-settings__pages" multiple size="7" data-gloskin-promo-page-select aria-label="<?php echo esc_attr__( 'Select WordPress pages', 'gloskin-site-core' ); ?>"><?php foreach ( $promo_pages as $promo_page ) : ?><option value="<?php echo esc_attr( (string) $promo_page->ID ); ?>"><?php echo esc_html( get_the_title( $promo_page ) ); ?></option><?php endforeach; ?></select></label>
+										<input type="hidden" name="visibility_page_ids_csv" value="">
+										<p class="gloskin-editorial-popup-settings__hint"><?php echo esc_html__( 'Choose one or more published WordPress pages. Selections are stored by post ID.', 'gloskin-site-core' ); ?></p>
+									</div>
 								</div>
 							</div>
 						</fieldset>
@@ -387,7 +393,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		if ( ! $this->is_managed_type( $post_type ) ) {
 			return;
 		}
-		wp_safe_redirect( $this->list_url( $post_type, $post_id ? array( 'gloskin_edit' => $post_id ) : array( 'gloskin_add' => 1 ) ) );
+		wp_safe_redirect( $this->list_url( $post_type, $post_id ? array( 'gloskin_edit' => $post_id, 'gloskin_new' => 1 ) : array( 'gloskin_add' => 1, 'gloskin_new' => 1 ) ) );
 		exit;
 	}
 
@@ -522,8 +528,8 @@ final class Gloskin_Site_Core_Editorial_Manager {
 				update_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::POPUP_META, '0' );
 				wp_send_json_success( array( 'field' => 'popup', 'active' => false ) );
 			}
-			$image_id  = absint( get_post_thumbnail_id( $post_id ) );
-			$url       = Gloskin_Site_Core_Promo_Modal::sanitize_destination_url( get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::DESTINATION_META, true ) );
+			$image_id   = absint( get_post_thumbnail_id( $post_id ) );
+			$url        = Gloskin_Site_Core_Promo_Modal::sanitize_destination_url( get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::DESTINATION_META, true ) );
 			$visibility = Gloskin_Site_Core_Promo_Modal::sanitize_visibility( get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::VISIBILITY_META, true ) );
 			$page_ids   = Gloskin_Site_Core_Promo_Modal::sanitize_page_ids( get_post_meta( $post_id, Gloskin_Site_Core_Promo_Modal::PAGE_IDS_META, true ) );
 			$popup_issue = $this->promo_popup_validation_issue( $image_id, $url, $visibility, $page_ids );
@@ -546,9 +552,9 @@ final class Gloskin_Site_Core_Editorial_Manager {
 	/**
 	 * Canonical popup readiness rule shared by Save and Popup On.
 	 *
-	 * @param int          $image_id Featured image attachment ID.
-	 * @param string       $destination_url Sanitized destination URL.
-	 * @param string       $visibility Canonical visibility value.
+	 * @param int            $image_id Featured image attachment ID.
+	 * @param string         $destination_url Sanitized destination URL.
+	 * @param string         $visibility Canonical visibility value.
 	 * @param array<int,int> $page_ids Canonical page IDs.
 	 * @return array<string,string>
 	 */
@@ -634,7 +640,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		if ( ! $this->is_managed_type( $post_type ) ) {
 			return false;
 		}
-		$allowed_query_args = array( 'post_type', 'paged', 'mode', 'gloskin_add', 'gloskin_edit' );
+		$allowed_query_args = array( 'post_type', 'paged', 'mode', 'gloskin_add', 'gloskin_edit', 'gloskin_new' );
 		foreach ( array_keys( $_GET ) as $query_arg ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list-state inspection.
 			if ( ! in_array( sanitize_key( (string) $query_arg ), $allowed_query_args, true ) ) {
 				return false;
