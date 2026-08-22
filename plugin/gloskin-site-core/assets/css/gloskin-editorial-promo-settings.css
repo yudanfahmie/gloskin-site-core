@@ -1,8 +1,4 @@
-/* Promo modal settings inside the existing EditorialManager modal/list. */
-.fixed .column-gloskin_editorial_active{width:190px;white-space:nowrap}
-.column-gloskin_editorial_active .gloskin-editorial-status-actions{display:inline-flex;flex-wrap:nowrap;align-items:center;gap:4px;vertical-align:middle;white-space:nowrap}
-.column-gloskin_editorial_active .gloskin-editorial-active-toggle{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;vertical-align:middle;white-space:nowrap;margin:0!important}
-.column-gloskin_editorial_active .gloskin-editorial-popup-toggle{margin-left:0!important}
+/* Promo-only fields inside the canonical EditorialManager modal. */
 .gloskin-editorial-popup-settings{
 margin-top:18px;
 padding:16px;
@@ -22,4 +18,3 @@ background:#f6f7f7}
 .gloskin-editorial-popup-settings__grid{grid-template-columns:minmax(180px,.7fr) minmax(260px,1.3fr)}
 .gloskin-editorial-popup-settings__destination{grid-column:1/-1}
 .gloskin-editorial-popup-settings__specific{grid-column:1/-1}}
-@media (max-width:900px){.fixed .column-gloskin_editorial_active{width:174px}}
