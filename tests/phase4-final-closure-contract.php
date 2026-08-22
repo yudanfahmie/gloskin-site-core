@@ -261,6 +261,6 @@ p4must( false !== strpos( $core_js, "prevBtn.addEventListener('click', function 
 p4must( false !== strpos( $core_js, "nextBtn.addEventListener('click', function () { activate(current + 1); })" ), 'nextBtn click binds activate(current+1)' );
 p4must( false === strpos( $core_js, 'initTestimonialArrows' ) && 1 === substr_count( $core_js, 'function initTestimonials()' ), 'one testimonial controller owns all nav — no split' );
 
-p4must( false !== strpos( $k, "const VERSION = '0.7.223'" ) && false !== strpos( $b, 'Version: 0.7.223' ), 'release owners synchronized at 0.7.223' );
+p4must( false !== strpos( $k, "const VERSION = '0.7.224'" ) && false !== strpos( $b, 'Version: 0.7.224' ), 'release owners synchronized at 0.7.224' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Achievement image eligibility + standard smart Promo 1648:928 selection/focus/zoom + Treatment ownership + footer/About/Testimonial regressions + version 0.7.223)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Achievement image eligibility + standard smart Promo 1648:928 selection/focus/zoom + Treatment ownership + footer/About/Testimonial regressions + version 0.7.224)\n";

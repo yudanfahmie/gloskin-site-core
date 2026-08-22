@@ -73,26 +73,30 @@
 .gloskin-treatment-single__transition .gloskin-ui1-closing-cta{box-shadow:none}
 
 /* Contact — split blush hero. */
-.gloskin-contact-hero{padding:clamp(64px,8vw,100px) 0;background:color-mix(in srgb,var(--gloskin-brand-champagne) 22%,var(--gloskin-bg))}
+.gloskin-contact-hero{padding:clamp(64px,8vw,100px) 0 clamp(80px,10vw,110px);background:var(--gloskin-surface)}
 .gloskin-contact-hero__inner{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:clamp(40px,5.5vw,80px)}
 .gloskin-contact-hero__inner--no-media{grid-template-columns:1fr;max-width:680px}
 .gloskin-contact-hero__copy{min-width:0}
-.gloskin-contact-hero__eyebrow{margin:0 0 16px;color:color-mix(in srgb,var(--gloskin-brand-champagne) 80%,var(--gloskin-text));font-family:var(--gloskin-font-ui);font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
-.gloskin-contact-hero__heading{margin:0 0 20px;font-size:clamp(2.4rem,5vw,4rem);line-height:1.04;letter-spacing:.02em;text-wrap:balance;text-transform:uppercase}
-.gloskin-contact-hero__description{margin:0;color:var(--gloskin-muted);font-size:clamp(1rem,1.5vw,1.12rem);line-height:1.72;max-width:480px}
+.gloskin-contact-hero__eyebrow{margin:0 0 16px;color:var(--gloskin-brand-champagne);font-family:var(--gloskin-font-ui);font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.gloskin-contact-hero__heading{margin:0 0 20px;font-family:var(--gloskin-font-heading);font-size:clamp(2.8rem,5.5vw,4.2rem);line-height:1.04;letter-spacing:.02em;text-wrap:balance;text-transform:uppercase}
+.gloskin-contact-hero__description{margin:0;color:var(--gloskin-muted);font-size:clamp(1rem,1.5vw,1.12rem);font-weight:300;line-height:1.8;max-width:500px}
 .gloskin-contact-hero__media{overflow:hidden;border-radius:var(--gloskin-radius-lg);box-shadow:var(--gloskin-shadow)}
 .gloskin-contact-hero__image{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover}
 
+/* Contact — clinics section centering. */
+.gloskin-contact-clinics{padding:clamp(80px,10vw,120px) 0 clamp(48px,6vw,72px)}
+.gloskin-contact-clinics .gloskin-ui1-section-heading{text-align:center;max-width:none;margin-inline:auto}
+
 /* Contact — location card grid (simpler than gloskin-ui1-card; name + link only). */
-.gloskin-contact-location-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(16px,2vw,24px)}
-.gloskin-contact-location-card{position:relative;background:var(--gloskin-bg);border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);overflow:hidden;transition:transform 260ms cubic-bezier(.22,1,.36,1),box-shadow 260ms cubic-bezier(.22,1,.36,1),border-color 260ms}
-.gloskin-contact-location-card:hover{transform:translateY(-4px);box-shadow:0 16px 36px color-mix(in srgb,var(--gloskin-text) 7%,transparent);border-color:var(--gloskin-brand-champagne)}
-.gloskin-contact-location-card__inner{display:flex;flex-direction:column;align-items:flex-start;padding:clamp(24px,3vw,36px) clamp(24px,3vw,40px);text-decoration:none;color:inherit}
-.gloskin-contact-location-card__name{margin:0 0 10px;font-size:clamp(1.1rem,1.6vw,1.3rem);line-height:1.18;letter-spacing:.04em;text-transform:uppercase;transition:color 260ms}
+.gloskin-contact-location-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(20px,2.5vw,30px);max-width:1100px;margin:0 auto}
+.gloskin-contact-location-card{position:relative;background:var(--gloskin-brand-ivory);border:1px solid var(--gloskin-border);border-radius:var(--gloskin-radius-md);overflow:hidden;transition:transform 260ms cubic-bezier(.22,1,.36,1),box-shadow 260ms cubic-bezier(.22,1,.36,1),border-color 260ms}
+.gloskin-contact-location-card:hover{transform:translateY(-5px);box-shadow:0 15px 35px color-mix(in srgb,var(--gloskin-text) 6%,transparent);border-color:var(--gloskin-brand-champagne)}
+.gloskin-contact-location-card__inner{display:flex;flex-direction:column;align-items:flex-start;padding:clamp(28px,3.5vw,38px) clamp(32px,4vw,44px);text-decoration:none;color:inherit}
+.gloskin-contact-location-card__name{margin:0 0 10px;font-family:var(--gloskin-font-heading);font-size:clamp(1.2rem,1.8vw,1.45rem);line-height:1.18;letter-spacing:.04em;text-transform:uppercase;transition:color 260ms}
 .gloskin-contact-location-card:hover .gloskin-contact-location-card__name{color:var(--gloskin-accent-readable)}
 .gloskin-contact-location-card__phone{margin:0 0 16px;color:var(--gloskin-muted);font-size:.85rem}
-.gloskin-contact-location-card__cta{display:inline-flex;align-items:center;gap:6px;color:var(--gloskin-muted);font-family:var(--gloskin-font-ui);font-size:.82rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:color 260ms}
-.gloskin-contact-location-card__cta svg{width:14px;height:14px;opacity:0;transform:translateX(-6px);transition:opacity 260ms,transform 260ms cubic-bezier(.22,1,.36,1)}
+.gloskin-contact-location-card__cta{display:inline-flex;align-items:center;gap:8px;color:var(--gloskin-muted);font-family:var(--gloskin-font-ui);font-size:.9rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;transition:color 260ms}
+.gloskin-contact-location-card__cta svg{width:14px;height:14px;opacity:0;transform:translateX(-10px);transition:opacity 260ms,transform 260ms cubic-bezier(.22,1,.36,1)}
 .gloskin-contact-location-card:hover .gloskin-contact-location-card__cta{color:var(--gloskin-brand-champagne)}
 .gloskin-contact-location-card:hover .gloskin-contact-location-card__cta svg{opacity:1;transform:translateX(0)}
 .gloskin-contact-location-card__wa{position:absolute;bottom:clamp(20px,2.5vw,28px);right:clamp(20px,2.5vw,28px)}

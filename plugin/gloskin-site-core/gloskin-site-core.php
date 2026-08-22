@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Gloskin Site Core
  * Description: Owns the Gloskin front-end shell, navigation, content structures, and WooCommerce/form integrations without rebuilding WordPress or WooCommerce primitives.
- * Version: 0.7.223
+ * Version: 0.7.224
  * Author: Gloskin
  * Requires PHP: 7.4
  * Text Domain: gloskin-site-core

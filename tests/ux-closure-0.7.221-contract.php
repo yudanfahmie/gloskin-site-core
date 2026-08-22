@@ -207,6 +207,10 @@ ux221_must(
 	'editorial.css defines the contact hero layout'
 );
 ux221_must(
+	false !== strpos( $ec, 'background:var(--gloskin-surface)' ),
+	'contact hero uses surface token for distinctly visible blush background'
+);
+ux221_must(
 	false !== strpos( $ec, '.gloskin-contact-hero__inner{display:grid;grid-template-columns:1fr 1fr' ),
 	'contact hero uses a two-column grid desktop layout'
 );
@@ -219,8 +223,20 @@ ux221_must(
 	'editorial.css owns the location card grid layout'
 );
 ux221_must(
+	false !== strpos( $ec, 'max-width:1100px' ),
+	'location grid is max-width capped and centered'
+);
+ux221_must(
+	false !== strpos( $ec, '.gloskin-contact-clinics .gloskin-ui1-section-heading{text-align:center' ),
+	'clinics section heading is centered'
+);
+ux221_must(
 	false !== strpos( $ec, '.gloskin-contact-location-card{' ),
 	'editorial.css owns the location card base style'
+);
+ux221_must(
+	false !== strpos( $ec, 'font-family:var(--gloskin-font-heading)' ) && false !== strpos( $ec, '.gloskin-contact-location-card__name{' ),
+	'location card name uses global heading font token'
 );
 ux221_must(
 	false !== strpos( $ec, '.gloskin-contact-location-card:hover{' ),
