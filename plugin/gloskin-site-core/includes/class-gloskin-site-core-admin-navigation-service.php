@@ -129,7 +129,6 @@ final class Gloskin_Site_Core_Admin_Navigation_Service {
 			Gloskin_Site_Core_Translation::ADMIN_SLUG => 80,
 			'gloskin-contact-inbox' => 90,
 			Gloskin_Site_Core_Admin_Service::SETTINGS_SLUG => 100,
-			'gloskin-content-finalizer' => 110,
 			'gloskin-media-cleanup-resolver' => 120,
 			Gloskin_Site_Core_Admin_Service::DIAGNOSTIC_SLUG => 130,
 			Gloskin_Site_Core_Admin_Service::MIGRATION_SLUG => 140,

@@ -1,8 +1,9 @@
 /** Secure AJAX controller for the Media Cleanup tool.
  *
  * Batch pacing: calm 500 ms setTimeout between batches.
- * Resumable: close tab → no more requests. Return later → Continue Scan.
- * No Pause/Resume state machine.
+ * Resumable: close tab -> no more requests. Return later -> Continue.
+ * Cleanup and retained-image optimization share one server owner/lock and are
+ * intentionally never auto-run concurrently.
  */
 ( function () {
 	'use strict';
@@ -10,19 +11,20 @@
 	var root = document.querySelector( '[data-gloskin-media-cleanup]' );
 	if ( ! root ) { return; }
 
-	var ajaxUrl   = root.getAttribute( 'data-ajax' )        || '';
-	var action    = root.getAttribute( 'data-action' )      || '';
-	var nonce     = root.getAttribute( 'data-nonce' )       || '';
-	var revision  = root.getAttribute( 'data-revision' )    || '';
-	var token     = root.getAttribute( 'data-token' )       || '';
-	var cursor    = Number( root.getAttribute( 'data-cursor' )  || 0 );
-	var status    = root.getAttribute( 'data-status' )      || 'pending';
+	var ajaxUrl    = root.getAttribute( 'data-ajax' )        || '';
+	var action     = root.getAttribute( 'data-action' )      || '';
+	var nonce      = root.getAttribute( 'data-nonce' )       || '';
+	var revision   = root.getAttribute( 'data-revision' )    || '';
+	var token      = root.getAttribute( 'data-token' )       || '';
+	var cursor     = Number( root.getAttribute( 'data-cursor' ) || 0 );
+	var status     = root.getAttribute( 'data-status' )      || 'pending';
 	var failedFrom = root.getAttribute( 'data-failed-from' ) || '';
+	var optimizationStatus = root.getAttribute( 'data-optimization-status' ) || 'pending';
 	if ( 'failed' === status && failedFrom ) { status = failedFrom; }
 
-	var running     = false;
+	var running    = false;
 	var retryLimit = 3;
-	var batchDelay  = 500; /* ms between successful batches */
+	var batchDelay = 500; /* ms between successful batches */
 
 	var progress       = root.querySelector( '[data-media-cleanup-progress]' );
 	var stage          = root.querySelector( '[data-media-cleanup-stage]' );
@@ -36,6 +38,10 @@
 	var table          = root.querySelector( '[data-media-cleanup-table]' );
 	var pagination     = root.querySelector( '[data-media-cleanup-pagination]' );
 	var resetButton    = root.querySelector( '[data-media-cleanup-reset]' );
+	var optimizeButton = root.querySelector( '[data-media-optimization-start]' );
+	var optimizeProgress = root.querySelector( '[data-media-optimization-progress]' );
+	var optimizeStage    = root.querySelector( '[data-media-optimization-stage]' );
+	var optimizeCurrent  = root.querySelector( '[data-media-optimization-current]' );
 
 	/* ------------------------------------------------------------------ */
 
@@ -93,6 +99,18 @@
 		if ( node ) { node.textContent = String( value ); }
 	}
 
+	function formatBytes( value ) {
+		var bytes = Math.max( 0, Number( value || 0 ) );
+		if ( bytes < 1024 ) { return Math.round( bytes ) + ' B'; }
+		var units = [ 'KB', 'MB', 'GB', 'TB' ];
+		var unit  = -1;
+		do {
+			bytes /= 1024;
+			unit++;
+		} while ( bytes >= 1024 && unit < units.length - 1 );
+		return ( bytes >= 10 ? bytes.toFixed( 1 ) : bytes.toFixed( 2 ) ) + ' ' + units[ unit ];
+	}
+
 	function sync( state ) {
 		if ( ! state ) { return; }
 		status = String( state.status || status );
@@ -100,12 +118,12 @@
 		token  = String( state.manifest_token || token );
 		cursor = Number( state.deletion_cursor || 0 );
 		root.setAttribute( 'data-status', status );
-		root.setAttribute( 'data-token',  token );
+		root.setAttribute( 'data-token', token );
 		root.setAttribute( 'data-cursor', String( cursor ) );
 		if ( progress ) {
 			if ( 'indexing' === status ) {
-				progress.max   = Math.max( 1, Number( state.total    || 0 ) );
-				progress.value = Math.min( Number( state.processed   || 0 ), progress.max );
+				progress.max   = Math.max( 1, Number( state.total || 0 ) );
+				progress.value = Math.min( Number( state.processed || 0 ), progress.max );
 			} else {
 				progress.max   = Math.max( 1, Number( state.counts && state.counts[ 'confirmed-unused' ] || 1 ) );
 				progress.value = Number( state.deletion_cursor || 0 );
@@ -117,18 +135,50 @@
 			} else if ( 'deleting' === status ) {
 				stage.textContent = 'Menghapus ' + Number( state.deletion_cursor || 0 ) + ' / ' + Number( ( state.counts || {} )[ 'confirmed-unused' ] || 0 );
 			} else if ( 'verifying' === status ) {
-				stage.textContent = 'Memverifikasi…';
+				stage.textContent = 'Memverifikasi...';
 			}
 		}
 		if ( current ) { current.textContent = state.current_file || ''; }
 		var counts = state.counts || {};
-		setText( '[data-count-used]',      Number( counts.used              || 0 ) );
-		setText( '[data-count-protected]', Number( counts.protected         || 0 ) );
-		setText( '[data-count-ambiguous]', Number( counts.ambiguous         || 0 ) );
-		setText( '[data-count-unused]',    Number( counts[ 'confirmed-unused' ] || 0 ) );
-		setText( '[data-count-processed]', Number( state.processed          || 0 ) );
+		setText( '[data-count-used]', Number( counts.used || 0 ) );
+		setText( '[data-count-protected]', Number( counts.protected || 0 ) );
+		setText( '[data-count-ambiguous]', Number( counts.ambiguous || 0 ) );
+		setText( '[data-count-unused]', Number( counts[ 'confirmed-unused' ] || 0 ) );
+		setText( '[data-count-processed]', Number( state.processed || 0 ) );
 		if ( 'review_ready' === status ) { loadReview( 1 ); }
 		if ( 'complete' === status ) { window.location.reload(); }
+	}
+
+	function syncOptimization( state ) {
+		var optimization = state && state.optimization ? state.optimization : {};
+		optimizationStatus = String( optimization.status || optimizationStatus || 'pending' );
+		root.setAttribute( 'data-optimization-status', optimizationStatus );
+		setText( '[data-opt-processed]', Number( optimization.processed || 0 ) );
+		setText( '[data-opt-total]', Number( optimization.total || 0 ) );
+		setText( '[data-opt-optimized]', Number( optimization.optimized || 0 ) );
+		setText( '[data-opt-skipped]', Number( optimization.skipped || 0 ) );
+		setText( '[data-opt-failed]', Number( optimization.failed || 0 ) );
+		setText( '[data-opt-bytes-before]', formatBytes( optimization.bytes_before ) );
+		setText( '[data-opt-bytes-after]', formatBytes( optimization.bytes_after ) );
+		setText( '[data-opt-bytes-saved]', formatBytes( optimization.bytes_saved ) );
+		if ( optimizeProgress ) {
+			optimizeProgress.max   = Math.max( 1, Number( optimization.total || 0 ) );
+			optimizeProgress.value = Math.min( Number( optimization.processed || 0 ), optimizeProgress.max );
+		}
+		if ( optimizeCurrent ) { optimizeCurrent.textContent = optimization.current_file || ''; }
+		if ( optimizeStage ) {
+			if ( 'running' === optimizationStatus ) {
+				optimizeStage.textContent = 'Optimizing ' + Number( optimization.processed || 0 ) + ' / ' + Number( optimization.total || 0 ) + ' retained images...';
+			} else if ( 'complete' === optimizationStatus ) {
+				optimizeStage.textContent = 'Optimization selesai.';
+			} else if ( 'failed' === optimizationStatus ) {
+				optimizeStage.textContent = 'Optimization berhenti secara aman dan dapat dilanjutkan.';
+			}
+		}
+		if ( optimizeButton && 'complete' === optimizationStatus ) {
+			optimizeButton.setAttribute( 'data-restart', '1' );
+			optimizeButton.textContent = 'Optimize New / Changed Images';
+		}
 	}
 
 	function setRunning( value ) {
@@ -136,6 +186,8 @@
 		if ( indexButton ) { indexButton.disabled = running; }
 		if ( deleteButton ) { deleteButton.disabled = running || ! confirmBox || ! confirmBox.checked; }
 		if ( deleteContinue ) { deleteContinue.disabled = running; }
+		if ( resetButton ) { resetButton.disabled = running; }
+		if ( optimizeButton ) { optimizeButton.disabled = running; }
 	}
 
 	function fail( error ) {
@@ -148,7 +200,6 @@
 		request( 'index' ).then( function ( state ) {
 			sync( state );
 			if ( 'indexing' === status ) {
-				/* Calm setTimeout delay. */
 				window.setTimeout( indexChain, batchDelay );
 				return;
 			}
@@ -171,6 +222,18 @@
 		} ).catch( fail );
 	}
 
+	/* Retained-image optimization chain. Server freezes the attachment boundary on first batch. */
+	function optimizeChain( restart ) {
+		request( 'optimize', { restart: restart ? '1' : '0' } ).then( function ( state ) {
+			syncOptimization( state );
+			if ( 'running' === optimizationStatus ) {
+				window.setTimeout( function () { optimizeChain( false ); }, batchDelay );
+				return;
+			}
+			setRunning( false );
+		} ).catch( fail );
+	}
+
 	function loadReview( page ) {
 		request( 'review', { page: Number( page || 1 ) } ).then( function ( data ) {
 			if ( ! table ) { return; }
@@ -179,9 +242,8 @@
 				var row    = document.createElement( 'tr' );
 				var age    = item.date ? Math.floor( ( Date.now() - new Date( item.date + ' UTC' ).getTime() ) / 86400000 ) + ' hari' : '';
 				var detail = item.reason || '';
-				if ( item.references && item.references.length ) { detail += ' — refs: ' + item.references.join( ', ' ); }
-				if ( item.warnings   && item.warnings.length   ) { detail += ' — warnings: ' + item.warnings.join( ', ' ); }
-				/* Thumbnail, filename, date/age, dimensions, size, reason. */
+				if ( item.references && item.references.length ) { detail += ' - refs: ' + item.references.join( ', ' ); }
+				if ( item.warnings && item.warnings.length ) { detail += ' - warnings: ' + item.warnings.join( ', ' ); }
 				var thumb = document.createElement( 'td' );
 				if ( item.id ) {
 					var img = document.createElement( 'img' );
@@ -189,11 +251,10 @@
 					img.height = 48;
 					img.style.objectFit = 'cover';
 					img.alt  = item.filename || '';
-					/* Thumbnail is non-authoritative: display only, not used for decisions. */
 					thumb.appendChild( img );
 				}
 				row.appendChild( thumb );
-				[ item.filename, item.date + ' (' + age + ')', item.dimensions, item.bytes ? Math.round( Number( item.bytes ) / 1024 ) + ' KB' : '—', detail ].forEach( function ( value ) {
+				[ item.filename, item.date + ' (' + age + ')', item.dimensions, item.bytes ? Math.round( Number( item.bytes ) / 1024 ) + ' KB' : '-', detail ].forEach( function ( value ) {
 					var cell = document.createElement( 'td' );
 					cell.textContent = String( value || '' );
 					row.appendChild( cell );
@@ -204,8 +265,8 @@
 				pagination.textContent = '';
 				for ( var p = 1; p <= Number( data.pages || 1 ); p++ ) {
 					var btn = document.createElement( 'button' );
-					btn.type      = 'button';
-					btn.className = 'button';
+					btn.type        = 'button';
+					btn.className   = 'button';
 					btn.textContent = String( p );
 					btn.disabled    = p === Number( data.page );
 					btn.setAttribute( 'data-review-page', String( p ) );
@@ -260,12 +321,20 @@
 			} );
 		} );
 	}
+	if ( optimizeButton ) {
+		optimizeButton.addEventListener( 'click', function () {
+			if ( running ) { return; }
+			var restart = '1' === optimizeButton.getAttribute( 'data-restart' );
+			setError( '' );
+			setRunning( true );
+			optimizeChain( restart );
+		} );
+	}
 	if ( pagination ) {
 		pagination.addEventListener( 'click', function ( event ) {
 			var btn = event.target.closest( '[data-review-page]' );
 			if ( btn ) { loadReview( btn.getAttribute( 'data-review-page' ) ); }
 		} );
 	}
-	/* On page load, restore review table if we're already past scan. */
 	if ( 'review_ready' === status || 'deleting' === status || 'verifying' === status ) { loadReview( 1 ); }
 }() );

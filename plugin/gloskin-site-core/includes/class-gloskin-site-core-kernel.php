@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.7.233';
+	const VERSION = '0.7.234';
 
 	/** @var string */
 	private $plugin_file;
@@ -44,7 +44,6 @@ final class Gloskin_Site_Core_Kernel {
 			require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
 			require_once __DIR__ . '/class-gloskin-site-core-sample-media-compatibility.php';
 			require_once __DIR__ . '/class-gloskin-site-core-media-cleanup-admin.php';
-			require_once __DIR__ . '/class-gloskin-site-core-content-finalizer-admin.php';
 			require_once __DIR__ . '/class-gloskin-site-core-editorial-manager.php';
 
 			$media_compatibility = new Gloskin_Site_Core_Sample_Media_Compatibility();
@@ -68,9 +67,6 @@ final class Gloskin_Site_Core_Kernel {
 
 			$media_cleanup = new Gloskin_Site_Core_Media_Cleanup_Admin( $assets );
 			$media_cleanup->register();
-
-			$content_finalizer = new Gloskin_Site_Core_Content_Finalizer_Admin();
-			$content_finalizer->register();
 
 			/* Contact admin (inlined from ProductionBatch). */
 			require_once __DIR__ . '/class-gloskin-site-core-contact-mailer.php';
@@ -100,7 +96,6 @@ final class Gloskin_Site_Core_Kernel {
 			$this->services[] = $translation;
 			$this->services[] = $lifecycle;
 			$this->services[] = $media_cleanup;
-			$this->services[] = $content_finalizer;
 			$this->services[] = $contact;
 			$this->services[] = $contact_admin;
 			return;

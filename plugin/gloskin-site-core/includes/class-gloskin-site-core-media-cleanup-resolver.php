@@ -12,13 +12,19 @@
  *  - Candidate-scoped verification only.
  *  - Final status is 'complete'; tool remains available for Start New Scan.
  *  - No pause/resume complexity.
+ *  - Retained-image optimization is a nested phase using this resolver's same
+ *    state, lock, batch boundary and attachment-file discovery ownership.
  *
  * @package GloskinSiteCore
  */
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
+require_once __DIR__ . '/gloskin-site-core-media-cleanup-optimizer-trait.php';
+
 final class Gloskin_Site_Core_Media_Cleanup_Resolver {
+	use Gloskin_Site_Core_Media_Cleanup_Optimizer_Trait;
+
 	const REVISION         = '2026-08-20-media-cleanup-v2';
 	const STATE_OPTION     = 'gloskin_site_core_media_cleanup_20260820_state';
 	const LOCK_OPTION      = 'gloskin_site_core_media_cleanup_20260820_lock';
@@ -40,7 +46,11 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 		$stored   = is_array( $stored ) ? $stored : array();
 		$defaults = $this->default_state();
 		$state    = array_merge( $defaults, $stored );
-		return self::REVISION === (string) $state['revision'] ? $state : $defaults;
+		if ( self::REVISION !== (string) $state['revision'] ) {
+			return $defaults;
+		}
+		$state['optimization'] = $this->normalize_optimizer_state( isset( $state['optimization'] ) ? $state['optimization'] : array() );
+		return $state;
 	}
 
 	/**
@@ -71,12 +81,16 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 	 * @throws RuntimeException If lock cannot be acquired or manifest still exists.
 	 */
 	public function reset_scan() {
+		$state = $this->get_state();
+		$this->assert_optimizer_not_running( $state );
+		$optimization = $this->normalize_optimizer_state( isset( $state['optimization'] ) ? $state['optimization'] : array() );
 		$token = $this->acquire_lock();
 		if ( '' === $token ) { throw new RuntimeException( 'resolver_locked: Resolver sedang diproses oleh request lain.' ); }
 		try {
 			delete_option( self::MANIFEST_OPTION );
 			$new_state = $this->default_state();
-			$new_state['status'] = 'pending';
+			$new_state['status']       = 'pending';
+			$new_state['optimization'] = $optimization;
 			$this->save_state( $new_state );
 			$this->release_lock( $token );
 			return $this->summary();
@@ -94,6 +108,7 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 	 */
 	public function index_batch() {
 		$state = $this->get_state();
+		$this->assert_optimizer_not_running( $state );
 		if ( 'complete' === (string) $state['status'] ) { return $this->summary(); }
 		if ( 'failed' === (string) $state['status'] && in_array( (string) $state['failed_from'], array( 'pending', 'indexing' ), true ) ) {
 			$state['status'] = (string) $state['failed_from'];
@@ -166,6 +181,7 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 	 */
 	public function delete_batch( $client_cursor, $manifest_token, $backup_confirmed ) {
 		$state = $this->get_state();
+		$this->assert_optimizer_not_running( $state );
 		if ( 'complete' === (string) $state['status'] ) { return $this->summary(); }
 		if ( 'failed' === (string) $state['status'] && in_array( (string) $state['failed_from'], array( 'review_ready', 'deleting' ), true ) ) {
 			$state['status'] = (string) $state['failed_from'];
@@ -241,6 +257,7 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 	 */
 	public function verify_batch() {
 		$state = $this->get_state();
+		$this->assert_optimizer_not_running( $state );
 		if ( 'complete' === (string) $state['status'] ) { return $this->summary(); }
 		if ( 'failed' === (string) $state['status'] && 'verifying' === (string) $state['failed_from'] ) {
 			$state['status'] = 'verifying';
@@ -728,6 +745,7 @@ final class Gloskin_Site_Core_Media_Cleanup_Resolver {
 			'started_at'             => 0,
 			'updated_at'             => 0,
 			'completed_at'           => 0,
+			'optimization'           => $this->optimizer_default_state(),
 		);
 	}
 

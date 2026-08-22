@@ -3,7 +3,7 @@
  * Exact-user admin/AJAX controller for Media Cleanup.
  *
  * Access: current_user_can('manage_options') AND user_login === 'namaste' (exact, case-sensitive).
- * Enforced independently on every surface: menu, notice, page, assets, AJAX, export, reset.
+ * Enforced independently on every surface: menu, notice, page, assets, AJAX, export, reset and optimization.
  *
  * @package GloskinSiteCore
  */
@@ -79,14 +79,16 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 	/** @return void */
 	public function render() {
 		if ( ! $this->current_user_is_owner() ) { $this->deny(); }
-		$state        = $this->resolver->summary();
-		$status       = (string) $state['status'];
-		$counts       = (array) $state['counts'];
-		$is_complete  = 'complete' === $status;
-		$failed_from  = (string) $state['failed_from'];
-		$effective    = 'failed' === $status && '' !== $failed_from ? $failed_from : $status;
-		$in_scan      = in_array( $effective, array( 'pending', 'indexing' ), true );
-		$in_review    = in_array( $effective, array( 'review_ready', 'deleting', 'verifying' ), true );
+		$state         = $this->resolver->summary();
+		$status        = (string) $state['status'];
+		$counts        = (array) $state['counts'];
+		$is_complete   = 'complete' === $status;
+		$failed_from   = (string) $state['failed_from'];
+		$effective     = 'failed' === $status && '' !== $failed_from ? $failed_from : $status;
+		$in_scan       = in_array( $effective, array( 'pending', 'indexing' ), true );
+		$in_review     = in_array( $effective, array( 'review_ready', 'deleting', 'verifying' ), true );
+		$optimization  = isset( $state['optimization'] ) && is_array( $state['optimization'] ) ? $state['optimization'] : array();
+		$opt_status    = isset( $optimization['status'] ) ? (string) $optimization['status'] : 'pending';
 		$download_base = admin_url( 'admin-post.php?action=' . self::DOWNLOAD_ACTION . '&_wpnonce=' . wp_create_nonce( self::NONCE ) );
 		?>
 		<div id="gloskin-admin-root" data-gloskin-media-cleanup
@@ -96,6 +98,7 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 			data-revision="<?php echo esc_attr( Gloskin_Site_Core_Media_Cleanup_Resolver::REVISION ); ?>"
 			data-status="<?php echo esc_attr( $status ); ?>"
 			data-failed-from="<?php echo esc_attr( $failed_from ); ?>"
+			data-optimization-status="<?php echo esc_attr( $opt_status ); ?>"
 			data-token="<?php echo esc_attr( (string) $state['manifest_token'] ); ?>"
 			data-cursor="<?php echo esc_attr( (string) $state['deletion_cursor'] ); ?>">
 
@@ -212,6 +215,40 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 				<?php endif; ?>
 				<?php endif; ?>
 
+				<div class="gloskin-admin-card" data-media-optimization-card>
+					<h2><?php echo esc_html__( 'Optimize Images', 'gloskin-site-core' ); ?></h2>
+					<p><?php echo esc_html__( 'Optimize retained images in place setelah cleanup stabil. Attachment ID, nama file, URL, format, dimensi dan crop tidak diubah; optimizer tidak membuat backup image permanen.', 'gloskin-site-core' ); ?></p>
+					<?php if ( ! $is_complete ) : ?>
+					<p><?php echo esc_html__( 'Selesaikan cleanup sampai verifikasi akhir sebelum menjalankan image optimization.', 'gloskin-site-core' ); ?></p>
+					<?php else : ?>
+					<ul>
+						<li><?php echo esc_html__( 'Processed:', 'gloskin-site-core' ); ?> <strong data-opt-processed><?php echo esc_html( (string) ( $optimization['processed'] ?? 0 ) ); ?></strong> / <span data-opt-total><?php echo esc_html( (string) ( $optimization['total'] ?? 0 ) ); ?></span></li>
+						<li><?php echo esc_html__( 'Optimized:', 'gloskin-site-core' ); ?> <strong data-opt-optimized><?php echo esc_html( (string) ( $optimization['optimized'] ?? 0 ) ); ?></strong></li>
+						<li><?php echo esc_html__( 'Skipped:', 'gloskin-site-core' ); ?> <strong data-opt-skipped><?php echo esc_html( (string) ( $optimization['skipped'] ?? 0 ) ); ?></strong></li>
+						<li><?php echo esc_html__( 'Failed:', 'gloskin-site-core' ); ?> <strong data-opt-failed><?php echo esc_html( (string) ( $optimization['failed'] ?? 0 ) ); ?></strong></li>
+						<li><?php echo esc_html__( 'Bytes before:', 'gloskin-site-core' ); ?> <strong data-opt-bytes-before><?php echo esc_html( size_format( (int) ( $optimization['bytes_before'] ?? 0 ) ) ); ?></strong></li>
+						<li><?php echo esc_html__( 'Bytes after:', 'gloskin-site-core' ); ?> <strong data-opt-bytes-after><?php echo esc_html( size_format( (int) ( $optimization['bytes_after'] ?? 0 ) ) ); ?></strong></li>
+						<li><?php echo esc_html__( 'Saved:', 'gloskin-site-core' ); ?> <strong data-opt-bytes-saved><?php echo esc_html( size_format( (int) ( $optimization['bytes_saved'] ?? 0 ) ) ); ?></strong></li>
+					</ul>
+					<progress data-media-optimization-progress value="<?php echo esc_attr( (string) ( $optimization['processed'] ?? 0 ) ); ?>" max="<?php echo esc_attr( (string) max( 1, (int) ( $optimization['total'] ?? 0 ) ) ); ?>"></progress>
+					<p role="status" aria-live="polite" data-media-optimization-stage><?php
+						if ( 'running' === $opt_status ) { echo esc_html__( 'Optimization siap dilanjutkan…', 'gloskin-site-core' ); }
+						elseif ( 'complete' === $opt_status ) { echo esc_html__( 'Optimization selesai.', 'gloskin-site-core' ); }
+						elseif ( 'failed' === $opt_status ) { echo esc_html__( 'Optimization berhenti secara aman dan dapat dilanjutkan.', 'gloskin-site-core' ); }
+						else { echo esc_html__( 'Siap mengoptimalkan retained images.', 'gloskin-site-core' ); }
+					?></p>
+					<p data-media-optimization-current><?php echo esc_html( (string) ( $optimization['current_file'] ?? '' ) ); ?></p>
+					<?php if ( 'failed' === $opt_status && ! empty( $optimization['last_error'] ) ) : ?>
+					<div class="notice notice-error inline"><p><?php echo esc_html__( 'Optimizer berhenti secara aman; file asli pada kegagalan aktif dipertahankan.', 'gloskin-site-core' ); ?></p></div>
+					<?php endif; ?>
+					<p><button type="button" class="button button-primary" data-media-optimization-start data-restart="<?php echo 'complete' === $opt_status ? '1' : '0'; ?>"><?php
+						if ( 'complete' === $opt_status ) { echo esc_html__( 'Optimize New / Changed Images', 'gloskin-site-core' ); }
+						elseif ( in_array( $opt_status, array( 'running', 'failed' ), true ) ) { echo esc_html__( 'Lanjutkan Optimization', 'gloskin-site-core' ); }
+						else { echo esc_html__( 'Optimize Images', 'gloskin-site-core' ); }
+					?></button></p>
+					<?php endif; ?>
+				</div>
+
 				<div data-media-cleanup-error class="notice notice-error inline" hidden><p></p></div>
 			</div>
 		</div>
@@ -251,16 +288,21 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 				case 'reset':
 					$result = $this->resolver->reset_scan();
 					break;
+				case 'optimize':
+					$restart = isset( $_POST['restart'] ) && '1' === (string) $_POST['restart'];
+					$result  = $this->resolver->optimize_batch( $restart );
+					break;
 				default:
 					throw new RuntimeException( 'invalid_mode: Mode tidak dikenal.' );
 			}
 			wp_send_json_success( $result );
 		} catch ( Throwable $error ) {
-			$code      = $this->error_code( $error->getMessage() );
-			$retryable = in_array( $code, array( 'resolver_locked' ), true );
+			$code        = $this->error_code( $error->getMessage() );
+			$retryable   = in_array( $code, array( 'resolver_locked' ), true );
+			$is_conflict = in_array( $code, array( 'resolver_locked', 'invalid_state' ), true );
 			wp_send_json_error(
 				array( 'code' => $code, 'message' => $this->safe_error( $code ), 'retryable' => $retryable ),
-				'unauthorized' === $code ? 403 : ( $retryable ? 409 : 500 )
+				'unauthorized' === $code ? 403 : ( $is_conflict ? 409 : 500 )
 			);
 		}
 	}
@@ -309,7 +351,7 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 
 	/** @param string $message @return string */
 	private function error_code( $message ) {
-		foreach ( array( 'unauthorized', 'resolver_locked', 'invalid_state', 'invalid_mode', 'revision_mismatch', 'confirmation_required', 'manifest_invalid', 'manifest_failed', 'stale_manifest', 'scan_failed', 'verification_failed' ) as $code ) {
+		foreach ( array( 'unauthorized', 'resolver_locked', 'invalid_state', 'invalid_mode', 'revision_mismatch', 'confirmation_required', 'manifest_invalid', 'manifest_failed', 'stale_manifest', 'scan_failed', 'verification_failed', 'optimization_failed' ) as $code ) {
 			if ( 0 === strpos( (string) $message, $code . ':' ) ) { return $code; }
 		}
 		return 'unexpected_error';
@@ -319,11 +361,12 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 	private function safe_error( $code ) {
 		$messages = array(
 			'resolver_locked'       => __( 'Resolver sedang diproses oleh request atau tab lain; akan dicoba kembali.', 'gloskin-site-core' ),
-			'invalid_state'         => __( 'State resolver tidak mengizinkan operasi tersebut.', 'gloskin-site-core' ),
+			'invalid_state'         => __( 'State Media Cleanup belum mengizinkan operasi tersebut. Selesaikan operasi aktif terlebih dahulu.', 'gloskin-site-core' ),
 			'confirmation_required' => __( 'Konfirmasi backup wajib sebelum penghapusan permanen.', 'gloskin-site-core' ),
 			'manifest_invalid'      => __( 'Manifest kandidat tidak valid atau berubah; penghapusan dihentikan.', 'gloskin-site-core' ),
 			'scan_failed'           => __( 'Pemindaian tidak lengkap; tidak ada kandidat yang boleh dihapus.', 'gloskin-site-core' ),
 			'verification_failed'   => __( 'Verifikasi akhir menemukan perubahan yang tidak aman.', 'gloskin-site-core' ),
+			'optimization_failed'   => __( 'Image optimization berhenti secara aman. File asli pada kegagalan aktif tetap dipertahankan.', 'gloskin-site-core' ),
 			'unexpected_error'      => __( 'Resolver gagal secara aman tanpa melanjutkan mutasi.', 'gloskin-site-core' ),
 		);
 		return isset( $messages[ $code ] ) ? $messages[ $code ] : $messages['unexpected_error'];
