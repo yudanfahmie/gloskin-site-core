@@ -67,8 +67,8 @@ if ( false === strpos( $checkout, 'href="https://example.test/cart/"' ) || false
 }
 
 $account = rendered_heading( 'account' );
-if ( 1 !== substr_count( $account, '<h1' ) || false === strpos( $account, '>Akun</h1>' ) ) {
-	fail_contract( 'Account single-heading behavior regressed' );
+if ( 1 !== substr_count( $account, '<h1' ) || false === strpos( $account, '>My account</h1>' ) ) {
+	fail_contract( 'Account shell heading must come from the canonical Woo-localized My account string' );
 }
 if ( false !== strpos( $account, 'data-gloskin-commerce-progress' ) ) {
 	fail_contract( 'journey heading must render only on Cart/Checkout' );
@@ -80,6 +80,9 @@ if ( 1 !== substr_count( $source, "function gloskin_ui1_render_commerce_progress
 }
 foreach ( array( 'wc_get_cart_url()', 'wc_get_checkout_url()' ) as $needle ) {
 	if ( false === strpos( $source, $needle ) ) { fail_contract( "canonical Woo route missing: {$needle}" ); }
+}
+if ( false === strpos( $source, "esc_html__( 'My account', 'woocommerce' )" ) ) {
+	fail_contract( 'Account shell heading must use WooCommerce textdomain ownership' );
 }
 
 $css = (string) file_get_contents( $css_path );
