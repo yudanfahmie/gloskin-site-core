@@ -5,22 +5,13 @@ $gloskin_hero = isset( $gloskin_context['hero'] ) && is_array( $gloskin_context[
 $gloskin_hero_heading = trim( (string) ( $gloskin_hero['heading'] ?? __( 'Perawatan', 'gloskin-site-core' ) ) );
 $gloskin_hero_copy = trim( (string) ( $gloskin_hero['copy'] ?? '' ) );
 $gloskin_hero_media_id = absint( $gloskin_hero['media_id'] ?? 0 );
-// Stable band copy pool: keyed by path term ID so copy survives taxonomy reordering.
-// First-seen order assigns each path its string from the pool; wraps if more than 4 paths.
-$gloskin_band_copy_pool = array(
-	__( 'Temukan pilihan perawatan yang berfokus pada jerawat aktif dan bekas jerawat untuk membantu menyiapkan diskusi konsultasi Anda.', 'gloskin-site-core' ),
-	__( 'Pelajari pilihan perawatan untuk flek dan pigmentasi agar kebutuhan warna kulit yang tidak merata dapat dibahas lebih terarah saat konsultasi.', 'gloskin-site-core' ),
-	__( 'Jelajahi pilihan perawatan untuk tanda penuaan dan kontur wajah sebelum menentukan pendekatan yang sesuai bersama dokter Gloskin.', 'gloskin-site-core' ),
-	__( 'Kenali pilihan perawatan yang berfokus pada kualitas kulit dan skin barrier untuk membantu menjaga kulit tampak sehat dan terawat.', 'gloskin-site-core' ),
+$gloskin_band_copy_by_slug = array(
+	'acne-focus' => __( 'Temukan pilihan perawatan yang berfokus pada jerawat aktif dan bekas jerawat untuk membantu menyiapkan diskusi konsultasi Anda.', 'gloskin-site-core' ),
+	'brightening-focus' => __( 'Pelajari pilihan perawatan untuk flek dan pigmentasi agar kebutuhan warna kulit yang tidak merata dapat dibahas lebih terarah saat konsultasi.', 'gloskin-site-core' ),
+	'anti-aging-focus' => __( 'Jelajahi pilihan perawatan untuk tanda penuaan dan kontur wajah sebelum menentukan pendekatan yang sesuai bersama dokter Gloskin.', 'gloskin-site-core' ),
+	'skin-health-focus' => __( 'Kenali pilihan perawatan yang berfokus pada kualitas kulit dan skin barrier untuk membantu menjaga kulit tampak sehat dan terawat.', 'gloskin-site-core' ),
 );
-$gloskin_band_copy  = array(); // keyed by path term ID.
-$gloskin_band_pool_n = count( $gloskin_band_copy_pool );
-foreach ( array_values( $gloskin_context['paths'] ?? array() ) as $i => $gloskin_p ) {
-	$gloskin_pid = absint( $gloskin_p['id'] ?? 0 );
-	if ( $gloskin_pid ) {
-		$gloskin_band_copy[ $gloskin_pid ] = $gloskin_band_copy_pool[ $i % $gloskin_band_pool_n ];
-	}
-}
+$gloskin_band_copy_fallback = __( 'Jelajahi pilihan perawatan sesuai fokus kebutuhan Anda, lalu diskusikan pendekatan yang relevan bersama dokter Gloskin saat konsultasi.', 'gloskin-site-core' );
 ?>
 <div class="gloskin-treatments-page">
 	<section class="gloskin-treatments-hero" data-gloskin-section="treatments-hero">
@@ -47,7 +38,9 @@ foreach ( array_values( $gloskin_context['paths'] ?? array() ) as $i => $gloskin
 			$gloskin_image_id = isset( $gloskin_path['image_id'] ) ? absint( $gloskin_path['image_id'] ) : 0;
 			$gloskin_path_id = isset( $gloskin_path['id'] ) ? absint( $gloskin_path['id'] ) : 0;
 			$gloskin_reverse = 1 === ( $gloskin_index % 2 );
-			$gloskin_copy = $gloskin_band_copy[ $gloskin_path_id ] ?? $gloskin_band_copy_pool[0];
+			$gloskin_path_term = $gloskin_path_id ? get_term( $gloskin_path_id, Gloskin_Site_Core_Content_Service::CONSULTATION_TAXONOMY ) : null;
+			$gloskin_path_slug = ( $gloskin_path_term instanceof WP_Term ) ? (string) $gloskin_path_term->slug : '';
+			$gloskin_copy = $gloskin_band_copy_by_slug[ $gloskin_path_slug ] ?? $gloskin_band_copy_fallback;
 			?>
 			<article class="gloskin-ui1-treatment-band<?php echo $gloskin_reverse ? ' gloskin-ui1-treatment-band--reverse' : ''; ?>" data-gloskin-treatment-band="<?php echo esc_attr( (string) $gloskin_path_id ); ?>">
 				<div class="gloskin-ui1-treatment-band__media">
