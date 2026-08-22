@@ -332,6 +332,9 @@ final class Gloskin_Site_Core_Template_Service {
 		$type_meta    = isset( $profile['type_meta'] ) ? (string) $profile['type_meta'] : '';
 		$focus_x_meta = isset( $profile['focus_x_meta'] ) ? (string) $profile['focus_x_meta'] : '';
 		$focus_y_meta = isset( $profile['focus_y_meta'] ) ? (string) $profile['focus_y_meta'] : '';
+		$zoom_meta    = isset( $profile['zoom_meta'] )    ? (string) $profile['zoom_meta']    : '';
+		$zoom_min     = isset( $profile['zoom_min'] )     ? (int)    $profile['zoom_min']     : 100;
+		$zoom_max     = isset( $profile['zoom_max'] )     ? (int)    $profile['zoom_max']     : 300;
 		$types        = isset( $profile['allowed_types'] ) && is_array( $profile['allowed_types'] ) ? $profile['allowed_types'] : array();
 
 		if ( post_type_exists( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE ) && $active_meta && $order_meta && $type_meta ) {
@@ -357,6 +360,7 @@ final class Gloskin_Site_Core_Template_Service {
 					'image_id' => absint( get_post_thumbnail_id( $post->ID ) ),
 					'focus_x'  => $this->managed_focus_percent( $post->ID, $focus_x_meta ),
 					'focus_y'  => $this->managed_focus_percent( $post->ID, $focus_y_meta ),
+					'zoom'     => $this->managed_zoom_integer( $post->ID, $zoom_meta, $zoom_min, $zoom_max ),
 					'order'    => (int) get_post_meta( $post->ID, $order_meta, true ),
 				);
 			}
@@ -475,6 +479,16 @@ final class Gloskin_Site_Core_Template_Service {
 		$value = get_post_meta( $post_id, $meta_key, true );
 		$value = is_numeric( $value ) ? (float) $value : 50.0;
 		return max( 0.0, min( 100.0, $value ) );
+	}
+
+	/** @return int Zoom level as integer percentage (e.g. 100 = no zoom, 200 = 2×). */
+	private function managed_zoom_integer( $post_id, $meta_key, $min = 100, $max = 300 ) {
+		if ( ! $post_id || '' === (string) $meta_key || ! metadata_exists( 'post', $post_id, $meta_key ) ) {
+			return $min;
+		}
+		$value = get_post_meta( $post_id, $meta_key, true );
+		$value = is_numeric( $value ) ? (int) $value : $min;
+		return max( $min, min( $max, $value > 0 ? $value : $min ) );
 	}
 
 	/** @return int */
