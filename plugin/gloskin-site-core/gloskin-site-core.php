@@ -19,6 +19,6 @@ require_once __DIR__ . '/includes/class-gloskin-site-core-kernel.php';
  */
 function gloskin_site_core_bootstrap() {
 	$kernel = new Gloskin_Site_Core_Kernel( __FILE__ );
-	$kernel->register();
+	$kernel->boot();
 }
 add_action( 'plugins_loaded', 'gloskin_site_core_bootstrap', 20 );

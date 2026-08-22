@@ -22,4 +22,14 @@ if ( $plugin_match[1] !== $expected || $kernel_match[1] !== $expected ) {
 	exit( 1 );
 }
 
-echo "release-version-contract.php: OK ({$expected})\n";
+/* Bootstrap call-site must invoke the Kernel entry-point method that exists. */
+if ( false === strpos( $plugin, '$kernel->boot()' ) ) {
+	fwrite( STDERR, "Bootstrap must call \$kernel->boot() — found register() or missing call\n" );
+	exit( 1 );
+}
+if ( false !== strpos( $plugin, '$kernel->register()' ) ) {
+	fwrite( STDERR, "Bootstrap must not call \$kernel->register() — Kernel entry-point is boot()\n" );
+	exit( 1 );
+}
+
+echo "release-version-contract.php: OK ({$expected}, boot() call-site verified)\n";
