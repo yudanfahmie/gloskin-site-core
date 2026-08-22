@@ -42,15 +42,21 @@ promo_admin_must( false !== strpos( $promoJs, "strong.textContent = 'Popup is st
 promo_admin_must( false !== strpos( $promoJs, 'popupField.focus()' ), 'guided completion must focus the Popup checkbox, not a hidden field' );
 promo_admin_must( false === strpos( $promoJs, 'popupField.checked = true' ), 'client must never invent a pending Popup ON state' );
 
-/* Visibility matrix: Homepage has no custom URL UI; other popup scopes do. */
-promo_admin_must( false !== strpos( $promoJs, "var homepage = visibility === 'homepage';" ), 'Homepage visibility must be an explicit UI state' );
-promo_admin_must( false !== strpos( $promoJs, 'var needsDestination = enabled && !homepage;' ), 'destination is relevant only to enabled non-Homepage popup modes' );
-promo_admin_must( false !== strpos( $promoJs, 'destinationWrap.hidden = !needsDestination;' ), 'Homepage must hide the custom destination field' );
-promo_admin_must( false !== strpos( $promoJs, 'destinationField.required = needsDestination;' ), 'hidden Homepage destination must not be required' );
-promo_admin_must( false !== strpos( $promoJs, "destinationField.value = '/';" ), 'Homepage must persist the canonical internal root target without operator input' );
+/* Visibility and click routing are independent axes. */
+promo_admin_must( false !== strpos( $managerPhp, '<option value="homepage"' ), 'Homepage placement must remain available' );
+promo_admin_must( false !== strpos( $managerPhp, '<option value="specific_pages"' ), 'Specific Pages placement must remain available' );
+promo_admin_must( false === strpos( $managerPhp, '<option value="all_pages"' ), 'All Pages must not be exposed in the current Promo admin' );
+promo_admin_must( false !== strpos( $managerPhp, 'Promo URL (optional)' ), 'routing field must be explicitly presented as optional' );
+promo_admin_must( false !== strpos( $managerPhp, 'This does not change Visibility.' ), 'admin copy must explain that routing does not control placement' );
+promo_admin_must( false !== strpos( $promoJs, 'destinationWrap.hidden = !enabled;' ), 'optional routing field should follow Popup disclosure only' );
+promo_admin_must( false !== strpos( $promoJs, 'destinationField.required = false;' ), 'Promo URL must never be an activation prerequisite' );
+promo_admin_must( false === strpos( $promoJs, "destinationField.value = '/';" ), 'client must not invent a Homepage destination' );
 promo_admin_must( false !== strpos( $promoJs, "var specific = enabled && visibility === 'specific_pages';" ), 'Specific Pages must be gated by Popup ON' );
 promo_admin_must( false !== strpos( $promoJs, 'pageSelect.required = specific;' ), 'Specific Pages must require at least one page only in that mode' );
-promo_admin_must( false !== strpos( $managerPhp, "if ( '' !== \$destination_raw && '' === \$destination_url )" ), 'non-empty destination values must still be sanitized by the backend' );
+promo_admin_must( false !== strpos( $managerPhp, "if ( '' !== \$destination_raw && '' === \$destination_url )" ), 'a supplied Promo URL must still be sanitized by the backend' );
+promo_admin_must( false !== strpos( $managerPhp, 'promo_popup_validation_issue( $image_id, $visibility, $visibility_page_ids )' ), 'Save readiness must not accept destination URL as a prerequisite argument' );
+promo_admin_must( false !== strpos( $managerPhp, 'promo_popup_validation_issue( $image_id, $visibility, $page_ids )' ), 'toggle readiness must not accept destination URL as a prerequisite argument' );
+promo_admin_must( false === strpos( $managerPhp, "'field'   => 'destination'" ), 'backend readiness must never reject Popup On only because routing is empty' );
 
 /* Popup toggling remains one existing endpoint with backend authority. */
 promo_admin_must( false !== strpos( $promoJs, "data.append('action', 'gloskin_editorial_toggle')" ), 'Popup must use the canonical toggle endpoint' );
@@ -69,4 +75,4 @@ promo_admin_must( false === strpos( $managerJs, 'setTimeout(' ), 'modal/crop syn
 promo_admin_must( false !== strpos( $managerCss, 'border:2px solid #2271b1' ), 'crop selection must remain visibly bounded' );
 promo_admin_must( false !== strpos( $managerCss, '.gloskin-editorial-crop__handle--nw{top:6px;left:6px;' ), 'crop handles must stay inside the viewport' );
 
-echo "promo-admin-regression-contract.php: OK (closed init, strict Popup OFF disclosure, Homepage no-custom-URL state, visible crop)\n";
+echo "promo-admin-regression-contract.php: OK (closed init, strict OFF disclosure, placement/routing separated, visible crop)\n";
