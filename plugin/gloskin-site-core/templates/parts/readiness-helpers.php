@@ -283,7 +283,7 @@ if ( ! function_exists( 'gloskin_ui1_render_commerce_page_heading' ) ) {
 		if ( ! function_exists( 'is_account_page' ) || ! is_account_page() ) {
 			return;
 		}
-		echo '<header class="gloskin-ui1-commerce-heading"><div class="gloskin-ui1-container"><h1>' . esc_html__( 'Akun', 'gloskin-site-core' ) . '</h1></div></header>';
+		echo '<header class="gloskin-ui1-commerce-heading"><div class="gloskin-ui1-container"><h1>' . esc_html__( 'My account', 'woocommerce' ) . '</h1></div></header>';
 	}
 }
 
