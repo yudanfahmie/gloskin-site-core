@@ -5,7 +5,8 @@ if ( ! $gloskin_post ) {
 	gloskin_ui1_render_empty_state( 'insight', __( 'Artikel tidak tersedia', 'gloskin-site-core' ), __( 'Artikel ini belum dapat ditampilkan.', 'gloskin-site-core' ), __( 'Kembali ke Insight', 'gloskin-site-core' ), home_url( '/insights/' ) );
 	return;
 }
-if ( post_type_supports( $gloskin_post->post_type, 'comments' ) && comments_open( $gloskin_post->ID ) && get_option( 'thread_comments' ) ) {
+$gloskin_has_discussion = post_type_supports( $gloskin_post->post_type, 'comments' ) && ( comments_open( $gloskin_post->ID ) || get_comments_number( $gloskin_post->ID ) > 0 );
+if ( $gloskin_has_discussion && comments_open( $gloskin_post->ID ) && get_option( 'thread_comments' ) ) {
 	wp_enqueue_script( 'comment-reply' );
 }
 ?>
@@ -47,7 +48,7 @@ if ( post_type_supports( $gloskin_post->post_type, 'comments' ) && comments_open
 			</div>
 		</section>
 	<?php endif; ?>
-	<?php if ( post_type_supports( $gloskin_post->post_type, 'comments' ) ) : ?>
+	<?php if ( $gloskin_has_discussion ) : ?>
 		<section class="gloskin-ui1-insight-single__discussion" aria-labelledby="gloskin-insight-discussion-title">
 			<div class="gloskin-ui1-container gloskin-ui1-insight-single__discussion-inner">
 				<header class="gloskin-ui1-insight-single__discussion-head">
