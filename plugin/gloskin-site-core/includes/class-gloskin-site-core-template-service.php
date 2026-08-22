@@ -322,117 +322,57 @@ final class Gloskin_Site_Core_Template_Service {
 
 	/** @return array<string,mixed> */
 	private function promo_context() {
-		$page = $this->content_page( 'promo' );
+		$page        = $this->content_page( 'promo' );
+		$limited     = array();
+		$regular     = array();
+		$records     = array();
+
+		if ( post_type_exists( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE ) ) {
+			$posts = get_posts( array(
+				'post_type'      => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE,
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'orderby'        => 'ID',
+				'order'          => 'ASC',
+			) );
+			foreach ( $posts as $post ) {
+				if ( ! $post instanceof WP_Post || '1' !== (string) get_post_meta( $post->ID, 'gloskin_promo_active', true ) ) {
+					continue;
+				}
+				$type = (string) get_post_meta( $post->ID, 'gloskin_promo_type', true );
+				if ( ! in_array( $type, array( 'limited', 'regular' ), true ) ) {
+					continue;
+				}
+				$records[] = array(
+					'id'       => (int) $post->ID,
+					'title'    => (string) get_the_title( $post ),
+					'type'     => $type,
+					'image_id' => absint( get_post_thumbnail_id( $post->ID ) ),
+					'order'    => (int) get_post_meta( $post->ID, 'gloskin_promo_order', true ),
+				);
+			}
+			usort( $records, static function ( $left, $right ) {
+				$left_order  = (int) $left['order'];
+				$right_order = (int) $right['order'];
+				if ( $left_order !== $right_order ) {
+					return $left_order <=> $right_order;
+				}
+				return (int) $left['id'] <=> (int) $right['id'];
+			} );
+			foreach ( $records as $record ) {
+				if ( 'limited' === $record['type'] ) {
+					$limited[] = $record;
+				} else {
+					$regular[] = $record;
+				}
+			}
+		}
+
 		return array(
-			'page'   => $page,
-			'promos' => $this->managed_promo_records( 10 ),
+			'page'           => $page,
+			'limited_promos' => $limited,
+			'regular_promos' => $regular,
 		);
-	}
-
-	/**
-	 * Fetch active published gloskin_promo records for the carousel.
-	 *
-	 * Ordering: explicit gloskin_promo_order meta (numeric ASC, blank sorts last),
-	 * then post_title as stable tiebreaker. Ordering is canonical — frontend must
-	 * never ignore this meta field.
-	 *
-	 * Date eligibility: gloskin_promo_start_date and gloskin_promo_end_date are
-	 * evaluated against the WordPress site timezone. Empty = no limit on that side.
-	 * Invalid stored date = treat as editor readiness problem; do not fatal.
-	 *
-	 * Both Home and /promo/ use this same method — one eligible-record owner.
-	 *
-	 * @param int $limit Max records returned after filtering.
-	 * @return array<int,array<string,mixed>>
-	 */
-	private function managed_promo_records( $limit = 5 ) {
-		if ( ! post_type_exists( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE ) ) {
-			return array();
-		}
-		/* Managed CPT datasets are intentionally small: fetch all eligible published records, then filter/sort/slice. */
-		$posts = get_posts( array(
-			'post_type'      => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE,
-			'post_status'    => 'publish',
-			'posts_per_page' => -1,
-			'orderby'        => 'ID',
-			'order'          => 'ASC',
-			'meta_query'     => array(
-				array(
-					'key'     => 'gloskin_promo_active',
-					'value'   => '1',
-					'compare' => '=',
-				),
-			),
-		) );
-
-		/* Filter by date eligibility */
-		$now   = function_exists( 'current_datetime' ) ? current_datetime() : new DateTimeImmutable( 'now', wp_timezone() );
-		$posts = array_values( array_filter( $posts, function ( $post ) use ( $now ) {
-			return $this->is_promo_date_eligible( $post->ID, $now );
-		} ) );
-
-		/* Sort by explicit gloskin_promo_order — blank/zero sorts after explicitly ordered */
-		usort( $posts, function ( $a, $b ) {
-			return $this->compare_managed_posts( $a, $b, 'gloskin_promo_order' );
-		} );
-
-		$posts   = array_slice( $posts, 0, $limit );
-		$records = array();
-		foreach ( $posts as $post ) {
-			$records[] = array(
-				'id'        => (int) $post->ID,
-				'title'     => (string) get_the_title( $post ),
-				'eyebrow'   => (string) get_post_meta( $post->ID, 'gloskin_promo_eyebrow', true ),
-				'summary'   => (string) get_post_meta( $post->ID, 'gloskin_promo_summary', true ),
-				'cta_label' => (string) get_post_meta( $post->ID, 'gloskin_promo_cta_label', true ),
-				'cta_url'   => (string) get_post_meta( $post->ID, 'gloskin_promo_cta_url', true ),
-				'image_id'  => absint( get_post_thumbnail_id( $post->ID ) ),
-				'excerpt'   => (string) get_the_excerpt( $post ),
-			);
-		}
-		return $records;
-	}
-
-	/**
-	 * Check promo date eligibility against the WordPress site timezone.
-	 *
-	 * Empty start_date => no lower limit. Empty end_date => no upper limit.
-	 * Start is inclusive; end is inclusive through local end-of-day (23:59:59).
-	 * An invalid stored date string is treated as a readiness problem — does not fatal;
-	 * returns true (record stays eligible) to avoid silently hiding valid promos.
-	 *
-	 * @param int                               $post_id Post ID.
-	 * @param DateTimeInterface|DateTimeImmutable $now     Current time in site timezone.
-	 * @return bool
-	 */
-	private function is_promo_date_eligible( $post_id, $now ) {
-		$tz    = wp_timezone();
-		$start = trim( (string) get_post_meta( $post_id, 'gloskin_promo_start_date', true ) );
-		$end   = trim( (string) get_post_meta( $post_id, 'gloskin_promo_end_date', true ) );
-
-		if ( '' !== $start ) {
-			try {
-				$start_dt = new DateTimeImmutable( $start . ' 00:00:00', $tz );
-				if ( $now < $start_dt ) {
-					return false;
-				}
-			} catch ( Exception $e ) {
-				/* Invalid date — treat as readiness problem, stay eligible */
-			}
-		}
-
-		if ( '' !== $end ) {
-			try {
-				$end_dt = new DateTimeImmutable( $end . ' 23:59:59', $tz );
-				if ( $now > $end_dt ) {
-					return false;
-				}
-			} catch ( Exception $e ) {
-				/* Invalid date — treat as readiness problem, stay eligible */
-			}
-		}
-
-		return true;
 	}
 
 	/**
