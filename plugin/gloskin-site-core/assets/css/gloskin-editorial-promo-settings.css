@@ -1,0 +1,19 @@
+/* Promo modal settings inside the existing EditorialManager modal/list. */
+.gloskin-editorial-popup-toggle{margin-left:4px}
+.gloskin-editorial-popup-settings{
+margin-top:18px;
+padding:16px;
+border:1px solid #dcdcde;
+border-radius:8px;
+background:#f6f7f7}
+.gloskin-editorial-popup-settings legend{padding:0 6px;font-weight:600}
+.gloskin-editorial-popup-settings__grid{display:grid;gap:14px}
+.gloskin-editorial-popup-settings .gloskin-editorial-field{margin:0}
+.gloskin-editorial-popup-settings__hint{margin:6px 0 0;color:#646970;font-size:12px;line-height:1.45}
+.gloskin-editorial-popup-settings__search{margin-bottom:8px;width:100%}
+.gloskin-editorial-popup-settings__pages{width:100%;min-height:150px}
+.gloskin-editorial-popup-settings [hidden]{display:none!important}
+@media (min-width:782px){
+.gloskin-editorial-popup-settings__grid{grid-template-columns:minmax(180px,.7fr) minmax(260px,1.3fr)}
+.gloskin-editorial-popup-settings__destination{grid-column:1/-1}
+.gloskin-editorial-popup-settings__specific{grid-column:1/-1}}
