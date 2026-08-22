@@ -44,13 +44,7 @@ gloskin_ui1_render_hero( isset( $gloskin_context['hero'] ) && is_array( $gloskin
 	</div>
 </section>
 
-<?php
-$gloskin_home_testimonials = isset( $gloskin_context['testimonials'] ) && is_array( $gloskin_context['testimonials'] ) ? $gloskin_context['testimonials'] : array();
-$gloskin_home_testimonials = array_values( array_filter( $gloskin_home_testimonials, static function ( $gloskin_home_testimonial ) {
-	return '' !== trim( (string) ( $gloskin_home_testimonial['excerpt'] ?? '' ) );
-} ) );
-$gloskin_home_testimonials = array_slice( $gloskin_home_testimonials, 0, 4 );
-?>
+<?php $gloskin_home_testimonials = isset( $gloskin_context['testimonials'] ) && is_array( $gloskin_context['testimonials'] ) ? $gloskin_context['testimonials'] : array(); ?>
 <section class="gloskin-ui1-section gloskin-home-testimonials" data-gloskin-section="testimonials">
 	<div class="gloskin-ui1-container">
 		<?php gloskin_ui1_render_section_heading( __( 'TESTIMONI', 'gloskin-site-core' ), __( 'Pengalaman nyata dari mereka yang telah mempercayakan perjalanan kecantikannya dan merasakan transformasi luar biasa bersama GLOSKIN.', 'gloskin-site-core' ) ); ?>
@@ -98,7 +92,7 @@ $gloskin_home_testimonials = array_slice( $gloskin_home_testimonials, 0, 4 );
 	</div>
 </section>
 
-<?php $gloskin_home_piagam = array_slice( isset( $gloskin_context['achievements'] ) && is_array( $gloskin_context['achievements'] ) ? $gloskin_context['achievements'] : array(), 0, 5 ); ?>
+<?php $gloskin_home_piagam = isset( $gloskin_context['achievements'] ) && is_array( $gloskin_context['achievements'] ) ? $gloskin_context['achievements'] : array(); ?>
 <section class="gloskin-ui1-section gloskin-home-piagam" data-gloskin-section="achievements">
 	<div class="gloskin-ui1-container">
 		<?php gloskin_ui1_render_section_heading( __( 'PIAGAM & PENGHARGAAN', 'gloskin-site-core' ), __( 'Bukti komitmen dan dedikasi tinggi kami dalam menjaga standar mutu pelayanan estetika dan inovasi medis terbaik di Indonesia.', 'gloskin-site-core' ) ); ?>
@@ -107,17 +101,23 @@ $gloskin_home_testimonials = array_slice( $gloskin_home_testimonials, 0, 4 );
 				<div class="gloskin-home-piagam__track">
 					<?php for ( $gloskin_home_piagam_loop = 0; $gloskin_home_piagam_loop < 2; $gloskin_home_piagam_loop++ ) : ?>
 						<?php foreach ( $gloskin_home_piagam as $gloskin_home_achievement ) :
-							$gloskin_home_achievement_title  = trim( (string) ( $gloskin_home_achievement['title'] ?? '' ) );
-							$gloskin_home_achievement_issuer = trim( (string) ( $gloskin_home_achievement['meta']['issuer'] ?? '' ) );
-							$gloskin_home_achievement_year   = trim( (string) ( $gloskin_home_achievement['meta']['year'] ?? '' ) );
-							$gloskin_home_achievement_meta   = implode( ' · ', array_filter( array( $gloskin_home_achievement_issuer, $gloskin_home_achievement_year ) ) );
+							$gloskin_home_achievement_title    = trim( (string) ( $gloskin_home_achievement['title'] ?? '' ) );
+							$gloskin_home_achievement_issuer   = trim( (string) ( $gloskin_home_achievement['meta']['issuer'] ?? '' ) );
+							$gloskin_home_achievement_year     = trim( (string) ( $gloskin_home_achievement['meta']['year'] ?? '' ) );
+							$gloskin_home_achievement_image_id = absint( $gloskin_home_achievement['image_id'] ?? 0 );
+							$gloskin_home_achievement_image    = $gloskin_home_achievement_image_id ? wp_get_attachment_image( $gloskin_home_achievement_image_id, 'thumbnail', false, array( 'class' => 'gloskin-home-piagam__icon', 'loading' => 'lazy', 'alt' => '', 'style' => 'object-fit:contain;' ) ) : '';
+							$gloskin_home_achievement_meta     = implode( ' · ', array_filter( array( $gloskin_home_achievement_issuer, $gloskin_home_achievement_year ) ) );
 							if ( '' === $gloskin_home_achievement_meta ) {
 								$gloskin_home_achievement_meta = trim( wp_trim_words( wp_strip_all_tags( (string) ( $gloskin_home_achievement['excerpt'] ?? '' ) ), 8 ) );
 							}
 						?>
 							<article class="gloskin-home-piagam__card" data-gloskin-piagam-item<?php echo 1 === $gloskin_home_piagam_loop ? ' aria-hidden="true"' : ''; ?>>
 								<?php if ( '' !== $gloskin_home_achievement_title ) : ?><h3 class="gloskin-home-piagam__title"><?php echo esc_html( $gloskin_home_achievement_title ); ?></h3><?php endif; ?>
-								<div class="gloskin-home-piagam__icon" aria-hidden="true">G</div>
+								<?php if ( '' !== $gloskin_home_achievement_image ) : ?>
+									<?php echo $gloskin_home_achievement_image; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- canonical WordPress attachment markup. ?>
+								<?php else : ?>
+									<div class="gloskin-home-piagam__icon" aria-hidden="true">G</div>
+								<?php endif; ?>
 								<?php if ( '' !== $gloskin_home_achievement_meta ) : ?><p class="gloskin-home-piagam__meta"><?php echo esc_html( $gloskin_home_achievement_meta ); ?></p><?php endif; ?>
 							</article>
 						<?php endforeach; ?>
