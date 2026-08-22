@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gloskin Clinic - Flek & Pigmentasi</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Palette Gloskin Premium */
+            --bg-white: #ffffff;
+            --bg-peach: #fdfaf8; 
+            --bg-blush: #f8eee9;
+            
+            --header-bg: #fdfaf8; 
+            --text-dark: #2a2a2a;
+            --text-muted: #666666; 
+            --accent-red: #a81c31; 
+            --accent-gold: #c3a378; 
+            --border-light: #e8dcd5;
+            
+            /* Dark Mode Palette untuk CTA */
+            --bg-dark: #0f0f0f;
+            --border-dark: #2a2a2a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-peach);
+            color: var(--text-dark);
+            line-height: 1.7;
+        }
+
+        h1, h2, h3, h4, h5, h6 { font-family: 'Playfair Display', serif; font-weight: 500; }
+        a { text-decoration: none; color: inherit; transition: all 0.3s ease; }
+        ul { list-style: none; }
+
+        /* --- NAVBAR --- */
+        header {
+            background-color: var(--header-bg); padding: 15px 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 20px rgba(0,0,0,0.02);
+        }
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--accent-red); letter-spacing: 2px; }
+        .nav-links { display: flex; gap: 40px; align-items: center; }
+        .nav-links a { font-size: 0.85rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dark); }
+        .nav-links a:hover { color: var(--accent-red); }
+        .nav-links a.active { background-color: var(--accent-red); color: #ffffff; padding: 8px 20px; border-radius: 25px; }
+        .nav-icons { display: flex; gap: 25px; align-items: center; font-size: 1.1rem; }
+        
+        /* --- UTILITY CLASSES --- */
+        .container { max-width: 1300px; margin: 0 auto; padding: 0 5%; }
+        .overline { display: block; font-size: 0.85rem; font-weight: 700; color: var(--accent-gold); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 15px; }
+        
+        .btn-solid-red { background-color: var(--accent-red); color: white; padding: 15px 35px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; border: none; cursor: pointer; transition: all 0.3s; display: inline-block; }
+        .btn-solid-red:hover { background-color: #8a1527; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(168,28,49,0.15); }
+
+        /* --- SPLIT HERO SECTION --- */
+        .section-split { padding: 100px 0; }
+        .split-container { display: flex; align-items: center; justify-content: space-between; gap: 80px; }
+        
+        .split-text { flex: 1; }
+        .split-text .page-title { font-size: 4.5rem; line-height: 1.1; letter-spacing: 3px; text-transform: uppercase; color: var(--text-dark); margin-bottom: 20px; }
+        
+        /* Portrait Image */
+        .split-image-portrait { flex: 0 0 45%; max-width: 500px; }
+        .split-image-portrait .img-wrap { width: 100%; aspect-ratio: 3/4; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.06); }
+        .split-image-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        /* --- INFO SECTION (Background Blush) --- */
+        .section-info { background-color: var(--bg-blush); padding: 100px 0; }
+        .info-container { display: flex; align-items: center; gap: 80px; }
+        
+        .info-text { flex: 1; }
+        .info-text .section-title { font-size: 2.8rem; line-height: 1.2; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 25px; }
+        .info-text .content-desc { font-size: 1.05rem; color: var(--text-muted); font-weight: 300; line-height: 1.8; margin-bottom: 40px; }
+        
+        /* Landscape Image */
+        .info-image-landscape { flex: 1.2; }
+        .info-image-landscape .img-wrap { width: 100%; aspect-ratio: 16/10; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.04); }
+        .info-image-landscape img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        /* --- RELATED TREATMENTS --- */
+        .section-related { padding: 100px 0; background-color: var(--bg-peach); }
+        .related-title { font-size: 3rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+        .related-desc { font-size: 1.05rem; color: var(--text-muted); font-weight: 300; margin-bottom: 50px; }
+
+        .treatment-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+        
+        .treatment-card {
+            display: flex; flex-direction: column; cursor: pointer; group;
+        }
+        
+        .tc-img-wrap { width: 100%; aspect-ratio: 16/11; overflow: hidden; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+        .tc-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
+        .treatment-card:hover .tc-img-wrap img { transform: scale(1.05); }
+
+        .tc-content h3 { 
+            font-size: 1.15rem; font-family: 'Playfair Display', serif; text-transform: uppercase; letter-spacing: 1px; 
+            margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border-light); transition: color 0.3s;
+        }
+        .treatment-card:hover .tc-content h3 { color: var(--accent-red); }
+        
+        .tc-link { font-size: 0.9rem; font-weight: 600; color: var(--text-dark); text-transform: uppercase; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 8px; transition: color 0.3s; }
+        .tc-link i { transition: transform 0.3s; }
+        .treatment-card:hover .tc-link { color: var(--accent-gold); }
+        .treatment-card:hover .tc-link i { transform: translateX(5px); }
+
+        /* --- TRANSITION BANNER STRIP --- */
+        .transition-banner {
+            background-color: var(--bg-blush);
+            border-top: 1px solid var(--border-light);
+            border-bottom: 1px solid var(--border-light);
+            padding: 80px 0;
+        }
+
+        .tb-flex { display: flex; justify-content: space-between; align-items: center; gap: 40px; }
+        
+        .tb-text { flex: 2; }
+        .tb-text h3 { font-size: 2.2rem; line-height: 1.2; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; }
+        .tb-text p { color: var(--text-muted); font-weight: 300; font-size: 1.05rem; }
+
+        .tb-action { flex: 1; text-align: right; }
+        .link-arrow {
+            color: var(--accent-red); font-weight: 700; font-size: 1.05rem; text-transform: uppercase; letter-spacing: 1px; display: inline-block; transition: color 0.3s;
+        }
+        .link-arrow:hover { color: var(--accent-gold); }
+
+        /* --- DARK CTA BANNER --- */
+        .section-dark-cta { background-color: var(--bg-dark); padding: 80px 5%; position: relative; overflow: hidden; }
+        .section-dark-cta::before { content: ''; position: absolute; top: -50%; right: -10%; width: 600px; height: 600px; border: 1px solid rgba(255,255,255,0.05); border-radius: 50%; pointer-events: none; }
+        .section-dark-cta::after { content: ''; position: absolute; top: -30%; right: -5%; width: 800px; height: 800px; border: 1px solid rgba(255,255,255,0.03); border-radius: 50%; pointer-events: none; }
+        
+        .cta-dark-box {
+            max-width: 1200px; margin: 0 auto;
+            border: 1px solid var(--border-dark);
+            border-radius: 30px; padding: 80px 60px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: relative; z-index: 2;
+        }
+        
+        .cta-dark-content { flex: 1.5; color: white; }
+        .cta-dark-content .overline { color: var(--accent-gold); margin-bottom: 10px; }
+        .cta-dark-title { font-size: 3.5rem; line-height: 1.1; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; font-family: 'Playfair Display', serif; }
+        .cta-dark-content p { color: #aaaaaa; font-weight: 300; font-size: 1rem; }
+
+        .cta-dark-actions { flex: 1; display: flex; justify-content: flex-end; gap: 20px; }
+        .btn-outline-white { background-color: transparent; color: white; padding: 15px 35px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; transition: all 0.3s; }
+        .btn-outline-white:hover { border-color: white; transform: translateY(-3px); background-color: rgba(255,255,255,0.1); }
+
+        /* --- FOOTER --- */
+        footer { background-color: var(--bg-peach); padding: 80px 5% 30px; }
+        .footer-container { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 50px; max-width: 1300px; margin: 0 auto 50px; }
+        .footer-logo p { margin-top: 20px; font-size: 0.95rem; color: var(--text-muted); max-width: 320px; }
+        .footer-col h5 { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-col ul { display: flex; flex-direction: column; gap: 15px; }
+        .footer-col a { font-size: 0.95rem; color: var(--text-muted); display: inline-flex; align-items: center; }
+        .footer-col a i { color: var(--accent-red); margin-right: 8px; font-size: 0.9rem; } /* Icon Map Marker Merah */
+        .footer-col a:hover { color: var(--accent-red); }
+        .footer-bottom { text-align: center; padding-top: 30px; border-top: 1px solid #ebdcd5; font-size: 0.9rem; color: var(--text-muted); }
+
+        /* --- FLOATING WA BUTTON --- */
+        .float-wa { position: fixed; bottom: 40px; right: 40px; background-color: var(--accent-red); color: white; width: 65px; height: 65px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 32px; box-shadow: 0 10px 25px rgba(168, 28, 49, 0.4); z-index: 1000; transition: transform 0.3s ease; }
+        .float-wa:hover { transform: scale(1.1) translateY(-5px); color: white; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            .split-container, .info-container { gap: 40px; }
+            .split-text .page-title { font-size: 3.5rem; }
+            .info-text .section-title { font-size: 2.2rem; }
+            .treatment-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+            .cta-dark-box { flex-direction: column; text-align: center; gap: 40px; padding: 60px 40px; }
+            .cta-dark-title { font-size: 3rem; }
+            .cta-dark-actions { justify-content: center; }
+            .footer-container { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            
+            /* Stack elements on mobile */
+            .split-container, .info-container { flex-direction: column; text-align: center; }
+            .split-image-portrait, .info-image-landscape { width: 100%; max-width: 100%; flex: none; }
+            
+            .split-text .page-title { font-size: 3rem; }
+            .treatment-grid { grid-template-columns: 1fr; }
+            
+            .tb-flex { flex-direction: column; text-align: center; }
+            .tb-action { text-align: center; margin-top: 20px; }
+            
+            .cta-dark-actions { flex-direction: column; width: 100%; }
+            .cta-dark-actions button { width: 100%; }
+            .cta-dark-title { font-size: 2.2rem; }
+            .footer-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="logo">GLOSKIN</div>
+        <nav class="nav-links">
+            <a href="#" class="active">Treatment</a> <!-- Aktif di Treatment -->
+            <a href="#">Promo</a>
+            <a href="#">Skincare</a>
+            <a href="#">Tentang Kami</a>
+        </nav>
+        <div class="nav-icons">
+            <a href="#"><i class="fas fa-search"></i></a>
+            <a href="#"><i class="far fa-user"></i></a>
+            <a href="#"><i class="far fa-heart"></i></a>
+            <a href="#"><i class="fas fa-shopping-bag"></i></a>
+            <a href="#"><img src="https://flagcdn.com/w20/id.png" alt="ID" style="width: 20px;"></a>
+        </div>
+    </header>
+
+    <!-- 1. SPLIT HERO SECTION (Flek & Pigmentasi) -->
+    <section class="section-split">
+        <div class="container split-container">
+            <div class="split-text">
+                <span class="overline">PERAWATAN</span>
+                <h1 class="page-title">FLEK &<br>PIGMENTASI</h1>
+            </div>
+            <div class="split-image-portrait">
+                <div class="img-wrap">
+                    <!-- Before/After Placeholder -->
+                    <img src="https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&w=600&q=80" alt="Flek dan Pigmentasi Before After">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. INFO SECTION -->
+    <section class="section-info">
+        <div class="container info-container">
+            <div class="info-text">
+                <span class="overline">UNTUK DIPERTIMBANGKAN</span>
+                <h2 class="section-title">GUNAKAN INFORMASI YANG TERSEDIA SEBAGAI BAHAN SEBELUM BERBICARA DENGAN KLINIK.</h2>
+                <p class="content-desc">Catat pertanyaan yang ingin Anda bahas dan gunakan kanal konsultasi Gloskin untuk mendapatkan informasi lebih lanjut sesuai kebutuhan Anda.</p>
+                <a href="#" class="btn-solid-red">Buka Kontak</a>
+            </div>
+            <div class="info-image-landscape">
+                <div class="img-wrap">
+                    <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1000&q=80" alt="Perawatan Laser Estetika">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. RELATED TREATMENTS -->
+    <section class="section-related">
+        <div class="container">
+            <h2 class="related-title">INFORMASI PERAWATAN LAIN</h2>
+            <p class="related-desc">Buka halaman lain bila Anda masih menimbang informasi yang tersedia.</p>
+            
+            <div class="treatment-grid">
+                
+                <!-- Treatment 1 -->
+                <div class="treatment-card">
+                    <div class="tc-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=600&q=80" alt="Aging & Kontur Wajah">
+                    </div>
+                    <div class="tc-content">
+                        <h3>AGING & KONTUR WAJAH</h3>
+                        <span class="tc-link">Lihat Detail <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </div>
+
+                <!-- Treatment 2 -->
+                <div class="treatment-card">
+                    <div class="tc-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80" alt="Body Contour & Wellness">
+                    </div>
+                    <div class="tc-content">
+                        <h3>BODY CONTOUR & WELLNESS</h3>
+                        <span class="tc-link">Lihat Detail <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </div>
+
+                <!-- Treatment 3 -->
+                <div class="treatment-card">
+                    <div class="tc-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1581594693702-fbdc51b2763b?auto=format&fit=crop&w=600&q=80" alt="Dermatox & Koreksi Estetika">
+                    </div>
+                    <div class="tc-content">
+                        <h3>DERMATOX & KOREKSI ESTETIKA</h3>
+                        <span class="tc-link">Lihat Detail <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. TRANSITION BANNER -->
+    <section class="transition-banner">
+        <div class="container tb-flex">
+            <div class="tb-text">
+                <span class="overline">LANGKAH BERIKUTNYA</span>
+                <h3>BICARAKAN PERTANYAAN YANG BELUM TERJAWAB MELALUI KANAL GLOSKIN.</h3>
+                <p>Gunakan jalur konsultasi yang tersedia untuk perawatan ini, atau lanjutkan ke halaman kontak.</p>
+            </div>
+            <div class="tb-action">
+                <a href="#" class="link-arrow">Lanjutkan Konsultasi</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. DARK CTA BANNER -->
+    <section class="section-dark-cta">
+        <div class="cta-dark-box">
+            <div class="cta-dark-content">
+                <span class="overline">KONSULTASI</span>
+                <h2 class="cta-dark-title">SIAP<br>MEMBICARAKAN<br>KEBUTUHAN<br>KULIT ANDA?</h2>
+                <p>Pilih klinik Gloskin terdekat atau hubungi tim kami untuk menjadwalkan konsultasi.</p>
+            </div>
+            <div class="cta-dark-actions">
+                <button class="btn-solid-red">Pilih Klinik</button>
+                <button class="btn-outline-white">Hubungi Kami</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">
+                <h2 class="logo">GLOSKIN</h2>
+                <p>Gloskin adalah klinik estetika, anti-aging, dan perawatan rambut yang mengedepankan konsultasi dan penanganan dokter di setiap kliniknya.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Layanan</h5>
+                <ul>
+                    <li><a href="#">Perawatan</a></li>
+                    <li><a href="#">Promo</a></li>
+                    <li><a href="#">Skincare</a></li>
+                    <li><a href="#">Belanja</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Informasi</h5>
+                <ul>
+                    <li><a href="#">Tentang</a></li>
+                    <li><a href="#">Dokter</a></li>
+                    <li><a href="#">Insight</a></li>
+                    <li><a href="#">Kontak</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Jaringan Klinik</h5>
+                <!-- Icon Map Marker Merah -->
+                <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <li><a href="#"><i class="fas fa-map-marker-alt"></i> Kebayoran Baru</a></li>
+                    <li><a href="#"><i class="fas fa-map-marker-alt"></i> Tebet</a></li>
+                    <li><a href="#"><i class="fas fa-map-marker-alt"></i> Bekasi</a></li>
+                    <li><a href="#"><i class="fas fa-map-marker-alt"></i> Cibubur</a></li>
+                    <li><a href="#"><i class="fas fa-map-marker-alt"></i> Serpong</a></li>
+                    <li><a href="#"><i class="fas fa-map-marker-alt"></i> Surabaya</a></li>
+                    <li><a href="#"><i class="fas fa-map-marker-alt"></i> Banjarmasin</a></li>
+                    <li><a href="#"><i class="fas fa-map-marker-alt"></i> Balikpapan</a></li>
+                    <li><a href="#"><i class="fas fa-map-marker-alt"></i> Denpasar</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Gloskin.</p>
+        </div>
+    </footer>
+
+    <!-- FLOATING WHATSAPP -->
+    <a href="#" class="float-wa" title="Hubungi Kami di WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+</body>
+</html>
