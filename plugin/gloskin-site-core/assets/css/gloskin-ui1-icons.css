@@ -1,16 +1,10 @@
-/* Shared directional icon owner. Uses the canonical Gloskin arrow SVG as a
- * mask so every surface inherits its existing semantic currentColor. */
-.gloskin-ui1-arrow-icon{display:inline-block;width:20px;height:20px;flex:0 0 auto;background:currentColor;-webkit-mask:url('../images/gloskin-arrow.svg') center/contain no-repeat;mask:url('../images/gloskin-arrow.svg') center/contain no-repeat;vertical-align:-.2em}
+/* Canonical directional SVG geometry is emitted by icon-helpers.php.
+ * This owner only normalizes sizing/alignment of that real SVG element; it
+ * never hides text, synthesizes pseudo-elements, or projects a second icon. */
+.gloskin-ui1-arrow-icon{display:inline-block;width:20px;height:20px;flex:0 0 auto;vertical-align:-.2em}
 .gloskin-ui1-arrow-icon--prev{transform:rotate(180deg)}
 .gloskin-ui1-pathway-card__action .gloskin-ui1-arrow-icon,.gloskin-ui1-text-link .gloskin-ui1-arrow-icon{width:1.15em;height:1.15em;margin-left:.35em}
 .gloskin-ui1-pagination .gloskin-ui1-arrow-icon{width:18px;height:18px;vertical-align:middle}
+.gloskin-ui1-category-card__arrow .gloskin-ui1-arrow-icon{display:block;width:20px;height:20px;vertical-align:middle}
 .gloskin-ui1-promo-carousel__prev .gloskin-ui1-arrow-icon,.gloskin-ui1-promo-carousel__next .gloskin-ui1-arrow-icon{width:20px;height:20px;vertical-align:middle}
 .gloskin-home-testimonials__control .gloskin-ui1-arrow-icon{width:16px;height:16px;vertical-align:middle}
-
-/* Historical helper markup still contains the old text arrow in two legacy
- * surfaces. Hide that glyph with stronger semantic specificity than the later
- * page owner, then render exactly one canonical SVG mask. No palette override. */
-.gloskin-ui1 .gloskin-ui1-category-card .gloskin-ui1-category-card__arrow{display:flex;align-self:stretch;align-items:center;justify-content:center;font-size:0;line-height:0}
-.gloskin-ui1 .gloskin-ui1-category-card .gloskin-ui1-category-card__arrow::before{display:block;width:20px;height:20px;flex:0 0 20px;background:currentColor;-webkit-mask:url('../images/gloskin-arrow.svg') center/contain no-repeat;mask:url('../images/gloskin-arrow.svg') center/contain no-repeat;content:""}
-.gloskin-ui1 .gloskin-ui1-card__body .gloskin-ui1-text-link>span[aria-hidden="true"]{display:inline-flex;align-items:center;font-size:0;line-height:0}
-.gloskin-ui1 .gloskin-ui1-card__body .gloskin-ui1-text-link>span[aria-hidden="true"]::before{display:block;width:1.15em;height:1.15em;margin-left:.35em;background:currentColor;-webkit-mask:url('../images/gloskin-arrow.svg') center/contain no-repeat;mask:url('../images/gloskin-arrow.svg') center/contain no-repeat;content:""}
