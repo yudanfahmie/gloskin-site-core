@@ -41,7 +41,8 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		add_filter( 'get_edit_post_link', array( $this, 'edit_post_link' ), 50, 3 );
 		add_filter( 'posts_clauses', array( $this, 'order_native_list' ), 30, 2 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ), 40 );
-		add_action( 'admin_footer-edit.php', array( $this, 'render_modal' ) );
+		add_action( 'admin_footer', array( $this, 'render_modal' ) );
+		add_action( 'admin_notices', array( $this, 'render_status_region' ), 30 );
 		add_action( 'admin_notices', array( $this, 'render_setup_notice' ) );
 		add_action( 'load-post.php', array( $this, 'redirect_legacy_editor' ) );
 		add_action( 'load-post-new.php', array( $this, 'redirect_legacy_editor' ) );
@@ -170,19 +171,44 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		if ( ! $screen || 'edit' !== $screen->base || ! $this->is_managed_type( (string) $screen->post_type ) ) {
 			return;
 		}
+		$post_type   = (string) $screen->post_type;
+		$can_reorder = $this->can_reorder_list( $post_type );
 		wp_enqueue_media();
 		wp_enqueue_script( 'jquery-ui-sortable' );
 		$base = plugin_dir_url( $this->plugin_file );
 		wp_enqueue_style( 'gloskin-editorial-manager', $base . 'assets/css/gloskin-editorial-manager.css', array(), $this->version );
 		wp_enqueue_script( 'gloskin-editorial-manager', $base . 'assets/js/gloskin-editorial-manager.js', array( 'jquery', 'jquery-ui-sortable' ), $this->version, true );
 		wp_localize_script( 'gloskin-editorial-manager', 'GloskinEditorialManager', array(
-			'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
-			'nonce'    => wp_create_nonce( self::NONCE_ACTION ),
-			'postType' => (string) $screen->post_type,
-			'addId'    => isset( $_GET['gloskin_add'] ) ? 1 : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- modal-open state only.
-			'editId'   => isset( $_GET['gloskin_edit'] ) ? absint( $_GET['gloskin_edit'] ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- modal-open state only.
-			'labels'   => array( 'saving' => __( 'Saving…', 'gloskin-site-core' ), 'error' => __( 'Could not save this record.', 'gloskin-site-core' ) ),
+			'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+			'nonce'      => wp_create_nonce( self::NONCE_ACTION ),
+			'postType'   => $post_type,
+			'addId'      => isset( $_GET['gloskin_add'] ) ? 1 : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- modal-open state only.
+			'editId'     => isset( $_GET['gloskin_edit'] ) ? absint( $_GET['gloskin_edit'] ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- modal-open state only.
+			'canReorder' => $can_reorder ? 1 : 0,
+			'labels'     => array(
+				'saving'         => __( 'Saving…', 'gloskin-site-core' ),
+				'error'          => __( 'Could not save this record.', 'gloskin-site-core' ),
+				'invalidEdit'    => __( 'That record is no longer available. The list was left unchanged.', 'gloskin-site-core' ),
+				'saved'          => __( 'Saved.', 'gloskin-site-core' ),
+				'saveListFailed' => __( 'Saved, but the native list could not be updated in place. Refresh the list manually if needed.', 'gloskin-site-core' ),
+				'activeUpdated'  => __( 'Active state updated.', 'gloskin-site-core' ),
+				'activeFailed'   => __( 'Active state could not be updated.', 'gloskin-site-core' ),
+				'reorderSaved'   => __( 'Order saved.', 'gloskin-site-core' ),
+				'reorderFailed'  => __( 'Order could not be saved.', 'gloskin-site-core' ),
+				'reorderHint'    => __( 'Clear filters to reorder items.', 'gloskin-site-core' ),
+			),
 		) );
+	}
+
+	/** @return void */
+	public function render_status_region() {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( ! $screen || 'edit' !== $screen->base || ! $this->is_managed_type( (string) $screen->post_type ) ) {
+			return;
+		}
+		?>
+		<div class="notice notice-info gloskin-editorial-status" data-gloskin-editorial-status role="status" aria-live="polite" hidden><p data-gloskin-editorial-status-message></p></div>
+		<?php
 	}
 
 	/** @return void */
@@ -238,6 +264,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		}
 		$image_id = absint( get_post_thumbnail_id( $post->ID ) );
 		$preview  = $image_id ? wp_get_attachment_image_url( $image_id, 'medium' ) : '';
+		$trash    = current_user_can( 'delete_post', $post->ID ) ? get_delete_post_link( $post->ID, '', false ) : '';
 		return array(
 			'id'         => (int) $post->ID,
 			'title'      => (string) $post->post_title,
@@ -248,6 +275,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			'image_url'  => $preview ? (string) $preview : '',
 			'active'     => '1' === (string) get_post_meta( $post->ID, $this->active_meta_key( $post->post_type ), true ),
 			'order'      => (int) get_post_meta( $post->ID, $this->order_meta_key( $post->post_type ), true ),
+			'trash_url'  => $trash ? (string) $trash : '',
 		);
 	}
 
@@ -276,6 +304,9 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		$post_id   = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 		if ( ! $this->is_managed_type( $post_type ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unsupported editorial record type.', 'gloskin-site-core' ) ), 400 );
+		}
+		if ( $post_id && $post_type !== get_post_type( $post_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Record type does not match this editor.', 'gloskin-site-core' ) ), 400 );
 		}
 		$this->require_edit_capability( $post_type, $post_id );
 		$title = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
@@ -342,12 +373,14 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			wp_send_json_error( array( 'message' => __( 'Unsupported editorial record type.', 'gloskin-site-core' ) ), 400 );
 		}
 		$this->require_edit_capability( $post_type, 0 );
-		$ids = isset( $_POST['ids'] ) ? array_values( array_filter( array_map( 'absint', (array) wp_unslash( $_POST['ids'] ) ) ) ) : array();
+		$ids       = isset( $_POST['ids'] ) ? array_values( array_filter( array_map( 'absint', (array) wp_unslash( $_POST['ids'] ) ) ) ) : array();
+		$canonical = $this->canonical_reorder_ids( $post_type );
+		if ( count( $ids ) !== count( $canonical ) || count( $ids ) !== count( array_unique( $ids ) ) || array_diff( $ids, $canonical ) || array_diff( $canonical, $ids ) ) {
+			wp_send_json_error( array( 'message' => __( 'Reorder requires the complete unfiltered collection.', 'gloskin-site-core' ) ), 400 );
+		}
 		$order = 1;
 		foreach ( $ids as $post_id ) {
-			if ( $post_type === get_post_type( $post_id ) ) {
-				update_post_meta( $post_id, $this->order_meta_key( $post_type ), $order++ );
-			}
+			update_post_meta( $post_id, $this->order_meta_key( $post_type ), $order++ );
 		}
 		wp_send_json_success( array( 'ordered' => $order - 1 ) );
 	}
@@ -370,6 +403,39 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		if ( ! current_user_can( $cap ) ) {
 			wp_send_json_error( array( 'message' => __( 'You are not allowed to manage these records.', 'gloskin-site-core' ) ), 403 );
 		}
+	}
+
+	/** @return array<int,int> */
+	private function canonical_reorder_ids( $post_type ) {
+		return array_values( array_map( 'absint', get_posts( array(
+			'post_type'      => $post_type,
+			'post_status'    => array( 'publish', 'draft', 'private', 'pending', 'future' ),
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'orderby'        => 'ID',
+			'order'          => 'ASC',
+		) ) ) );
+	}
+
+	/** @return bool */
+	private function can_reorder_list( $post_type ) {
+		if ( ! $this->is_managed_type( $post_type ) ) {
+			return false;
+		}
+		$allowed_query_args = array( 'post_type', 'paged', 'mode', 'gloskin_add', 'gloskin_edit' );
+		foreach ( array_keys( $_GET ) as $query_arg ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list-state inspection.
+			if ( ! in_array( sanitize_key( (string) $query_arg ), $allowed_query_args, true ) ) {
+				return false;
+			}
+		}
+		if ( isset( $_GET['paged'] ) && absint( $_GET['paged'] ) > 1 ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list-state inspection.
+			return false;
+		}
+		$per_page = (int) get_user_option( 'edit_' . $post_type . '_per_page' );
+		if ( $per_page < 1 ) {
+			$per_page = 20;
+		}
+		return count( $this->canonical_reorder_ids( $post_type ) ) <= $per_page;
 	}
 
 	/** @return int */
