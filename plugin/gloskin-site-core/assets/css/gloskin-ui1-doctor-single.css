@@ -1,0 +1,91 @@
+/* Canonical single Doctor presentation.
+ * The global shell, typography, buttons, tokens, footer consultation CTA and
+ * reveal runtime remain the shared owners. This file owns only single-Doctor
+ * composition and does not restyle the Doctors archive or generic detail UI. */
+.gloskin-doctor-single{background:var(--gloskin-refresh-cream);color:var(--gloskin-text)}
+.gloskin-doctor-single .gloskin-ui1-eyebrow{margin:0 0 15px;color:var(--gloskin-brand-champagne);font-size:.85rem;font-weight:700;letter-spacing:3px;text-transform:uppercase}
+
+/* Hero: reference split composition, factual WordPress portrait only. */
+.gloskin-doctor-single__hero{padding:80px 0 100px}
+.gloskin-doctor-single__hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,.82fr);grid-template-areas:"copy media";align-items:center;gap:clamp(48px,6vw,80px)}
+.gloskin-doctor-single__hero-copy{grid-area:copy;min-width:0}
+.gloskin-ui1 .gloskin-doctor-single__hero-copy h1{max-width:12ch;margin:0;color:var(--gloskin-text);font-size:clamp(3.5rem,6.1vw,5rem);line-height:1.06;letter-spacing:2px;overflow-wrap:anywhere;text-transform:uppercase}
+.gloskin-doctor-single__hero-meta{display:grid;gap:6px;max-width:560px;margin-top:24px}
+.gloskin-doctor-single__hero-meta p{margin:0;color:var(--gloskin-muted);font-size:1rem;line-height:1.55}
+.gloskin-doctor-single__hero-meta .gloskin-doctor-single__degree{color:var(--gloskin-text);font-family:var(--gloskin-font-ui);font-size:1.05rem;font-weight:600}
+.gloskin-doctor-single__hero-media{grid-area:media;justify-self:end;width:min(100%,550px);overflow:hidden;aspect-ratio:4/5;border-radius:24px;background:color-mix(in srgb,var(--gloskin-surface) 72%,var(--gloskin-bg));box-shadow:0 20px 50px color-mix(in srgb,var(--gloskin-text) 6%,transparent)}
+.gloskin-doctor-single__hero-image{display:block;width:100%;height:100%;object-fit:cover;object-position:top center}
+.gloskin-doctor-single__portrait-placeholder{display:grid;width:100%;height:100%;align-content:center;justify-items:center;gap:12px;padding:32px;color:var(--gloskin-muted);text-align:center}
+.gloskin-doctor-single__portrait-placeholder svg{width:72px;height:72px}
+.gloskin-doctor-single__portrait-placeholder span{max-width:26ch;font-family:var(--gloskin-font-ui);font-size:.88rem;font-weight:600;line-height:1.45}
+
+/* Professional detail: actual profile/facts on the left, generic first-party
+ * editorial treatment media on the right. No invented Doctor identity media. */
+.gloskin-doctor-single__detail{padding:40px 0 100px}
+.gloskin-doctor-single__detail-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(360px,1.1fr);align-items:start;gap:clamp(48px,6vw,80px)}
+.gloskin-doctor-single__detail-copy{min-width:0;padding-top:12px}
+.gloskin-ui1 .gloskin-doctor-single__detail-copy h2{max-width:15ch;margin:0 0 25px;font-size:clamp(2.2rem,3.5vw,3rem);line-height:1.1;letter-spacing:1px;overflow-wrap:anywhere;text-transform:uppercase}
+.gloskin-doctor-single__detail-copy>.gloskin-ui1-prose,.gloskin-doctor-single__detail-copy>.gloskin-doctor-single__sparse-copy{max-width:560px;margin:0 0 26px;color:var(--gloskin-muted);font-size:1.05rem;font-weight:300;line-height:1.78}
+.gloskin-doctor-single__detail-copy>.gloskin-ui1-prose>:last-child{margin-bottom:0}
+.gloskin-doctor-single__content{max-width:600px;margin-bottom:26px;color:var(--gloskin-muted)}
+.gloskin-doctor-single__content>:first-child{margin-top:0}
+.gloskin-doctor-single__content>:last-child{margin-bottom:0}
+.gloskin-doctor-single__facts{display:grid;max-width:600px;margin:28px 0 0;border-top:1px solid var(--gloskin-border)}
+.gloskin-doctor-single__fact{display:grid;grid-template-columns:minmax(120px,.34fr) minmax(0,1fr);gap:18px;padding:15px 0;border-bottom:1px solid var(--gloskin-border)}
+.gloskin-doctor-single__fact dt{color:var(--gloskin-text);font-family:var(--gloskin-font-ui);font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.gloskin-doctor-single__fact dd{min-width:0;margin:0;color:var(--gloskin-muted);line-height:1.65}
+.gloskin-doctor-single__fact dd p:last-child{margin-bottom:0}
+.gloskin-doctor-single__link-list{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.gloskin-doctor-single__link-list a{display:inline-flex;min-height:36px;align-items:center;padding:7px 12px;border:1px solid color-mix(in srgb,var(--gloskin-border) 82%,transparent);border-radius:999px;background:color-mix(in srgb,var(--gloskin-bg) 72%,transparent);color:var(--gloskin-text);font-family:var(--gloskin-font-ui);font-size:.82rem;font-weight:600;line-height:1.25;text-decoration:none;transition:border-color 160ms ease,color 160ms ease,background-color 160ms ease}
+.gloskin-doctor-single__link-list a:hover,.gloskin-doctor-single__link-list a:focus-visible{border-color:color-mix(in srgb,var(--gloskin-accent) 42%,var(--gloskin-border));background:var(--gloskin-bg);color:var(--gloskin-accent-readable);text-decoration:none}
+.gloskin-doctor-single__detail-action{margin-top:30px}
+.gloskin-doctor-single__detail-media{min-width:0;overflow:hidden;aspect-ratio:16/10;border-radius:24px;background:var(--gloskin-refresh-blush);box-shadow:0 15px 40px color-mix(in srgb,var(--gloskin-text) 4%,transparent)}
+.gloskin-doctor-single__detail-image,.gloskin-doctor-single__detail-media>.gloskin-ui1-media{display:block;width:100%;height:100%;min-height:100%;border:0;border-radius:0;box-shadow:none;object-fit:cover}
+
+/* Reference transition strip. The global dark consultation CTA immediately
+ * after <main> remains footer-owned, preventing a duplicate closing CTA. */
+.gloskin-doctor-single__transition{padding:70px 0;border-top:1px solid var(--gloskin-border);border-bottom:1px solid var(--gloskin-border);background:var(--gloskin-refresh-blush)}
+.gloskin-doctor-single__transition-inner{display:flex;align-items:center;justify-content:space-between;gap:40px}
+.gloskin-doctor-single__transition-copy{min-width:0;flex:2}
+.gloskin-ui1 .gloskin-doctor-single__transition-copy h2{max-width:860px;margin:0 0 10px;font-size:clamp(1.8rem,2.8vw,2.2rem);line-height:1.2;letter-spacing:1px;text-transform:uppercase}
+.gloskin-doctor-single__transition-copy>p:last-child{max-width:760px;margin:0;color:var(--gloskin-muted);font-size:1.05rem;font-weight:300;line-height:1.65}
+.gloskin-doctor-single__transition-action{display:flex;flex:1;justify-content:flex-end}
+.gloskin-doctor-single__transition-link{display:inline-flex;align-items:center;gap:8px;color:var(--gloskin-accent-readable);font-family:var(--gloskin-font-ui);font-size:.95rem;font-weight:700;letter-spacing:1px;text-decoration:none;text-transform:uppercase;transition:color 160ms ease}
+.gloskin-doctor-single__transition-link:hover,.gloskin-doctor-single__transition-link:focus-visible{color:var(--gloskin-brand-champagne);text-decoration:none}
+.gloskin-doctor-single__transition-link .gloskin-ui1-arrow-icon{flex:0 0 auto}
+
+@media (max-width:1024px){
+	.gloskin-doctor-single__hero-grid,.gloskin-doctor-single__detail-grid{gap:40px}
+	.gloskin-ui1 .gloskin-doctor-single__hero-copy h1{font-size:clamp(3.2rem,6vw,3.8rem)}
+	.gloskin-doctor-single__hero-media{width:min(100%,480px)}
+	.gloskin-ui1 .gloskin-doctor-single__detail-copy h2{font-size:2.5rem}
+}
+@media (max-width:768px){
+	.gloskin-doctor-single__hero{padding:52px 0 76px}
+	.gloskin-doctor-single__hero-grid{grid-template-columns:1fr;grid-template-areas:"media" "copy";justify-items:center;gap:40px;text-align:center}
+	.gloskin-doctor-single__hero-media{width:min(100%,400px);justify-self:center}
+	.gloskin-ui1 .gloskin-doctor-single__hero-copy h1{max-width:13ch;margin-inline:auto;font-size:clamp(2.65rem,12vw,3rem)}
+	.gloskin-doctor-single__hero-meta{justify-items:center;margin-inline:auto}
+	.gloskin-doctor-single__detail{padding:28px 0 76px}
+	.gloskin-doctor-single__detail-grid{grid-template-columns:1fr;gap:40px;text-align:center}
+	.gloskin-doctor-single__detail-copy{padding-top:0}
+	.gloskin-ui1 .gloskin-doctor-single__detail-copy h2{max-width:18ch;margin-inline:auto;font-size:2.2rem}
+	.gloskin-doctor-single__detail-copy>.gloskin-ui1-prose,.gloskin-doctor-single__detail-copy>.gloskin-doctor-single__sparse-copy,.gloskin-doctor-single__content,.gloskin-doctor-single__facts{margin-inline:auto}
+	.gloskin-doctor-single__facts{text-align:left}
+	.gloskin-doctor-single__detail-action{display:flex;justify-content:center}
+	.gloskin-doctor-single__detail-media{width:100%}
+	.gloskin-doctor-single__transition{padding:56px 0}
+	.gloskin-doctor-single__transition-inner{align-items:center;flex-direction:column;text-align:center}
+	.gloskin-doctor-single__transition-action{width:100%;justify-content:center}
+}
+@media (max-width:520px){
+	.gloskin-doctor-single__hero{padding-top:36px}
+	.gloskin-doctor-single__hero-media{border-radius:20px}
+	.gloskin-doctor-single__fact{grid-template-columns:1fr;gap:5px}
+	.gloskin-doctor-single__link-list{gap:7px}
+	.gloskin-doctor-single__detail-action .gloskin-ui1-button{width:100%}
+	.gloskin-doctor-single__transition-link{width:100%;min-height:48px;justify-content:center;padding:10px 16px;border:1px solid color-mix(in srgb,var(--gloskin-accent) 32%,var(--gloskin-border));border-radius:999px;background:color-mix(in srgb,var(--gloskin-bg) 72%,transparent)}
+}
+@media (prefers-reduced-motion:reduce){
+	.gloskin-doctor-single__link-list a,.gloskin-doctor-single__transition-link{transition:none}
+}
