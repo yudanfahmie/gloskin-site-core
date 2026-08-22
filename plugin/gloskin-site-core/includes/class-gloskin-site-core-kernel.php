@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.7.229';
+	const VERSION = '0.7.230';
 
 	/** @var string */
 	private $plugin_file;
@@ -29,6 +29,10 @@ final class Gloskin_Site_Core_Kernel {
 		$content = new Gloskin_Site_Core_Content_Service();
 		$content->register();
 		$this->services[] = $content;
+
+		$promo_modal = new Gloskin_Site_Core_Promo_Modal( $this->plugin_file, self::VERSION );
+		$promo_modal->register_schema();
+		$this->services[] = $promo_modal;
 
 		if ( is_admin() ) {
 			$assets = new Gloskin_Site_Core_Asset_Service( $this->plugin_file, self::VERSION );
@@ -102,6 +106,8 @@ final class Gloskin_Site_Core_Kernel {
 			return;
 		}
 
+		$promo_modal->register_frontend();
+
 		$language = new Gloskin_Site_Core_Language( $this->plugin_file );
 		$language->register_frontend();
 		$language_projection = new Gloskin_Site_Core_Language_Projection();
@@ -166,6 +172,7 @@ final class Gloskin_Site_Core_Kernel {
 
 	private function load_shared_classes() {
 		require_once __DIR__ . '/class-gloskin-site-core-content-service.php';
+		require_once __DIR__ . '/class-gloskin-site-core-promo-modal.php';
 		require_once __DIR__ . '/class-gloskin-site-core-asset-service.php';
 		require_once __DIR__ . '/class-gloskin-site-core-page-lookup.php';
 		require_once __DIR__ . '/class-gloskin-site-core-translation.php';
