@@ -61,19 +61,16 @@
 	function updatePopupUi() {
 		var enabled = !!(popupField && popupField.checked);
 		var visibility = visibilityField ? visibilityField.value : 'homepage';
-		var homepage = visibility === 'homepage';
 		var specific = enabled && visibility === 'specific_pages';
-		var needsDestination = enabled && !homepage;
 
 		if (popupOptions) { popupOptions.hidden = !enabled; }
 		if (visibilityField) { visibilityField.required = enabled; }
-		if (destinationWrap) { destinationWrap.hidden = !needsDestination; }
-		if (destinationField) {
-			destinationField.required = needsDestination;
-			/* Homepage intentionally has no operator-defined destination. Its
-			 * canonical internal target is the site root, even for legacy records. */
-			if (enabled && homepage) { destinationField.value = '/'; }
-		}
+
+		/* Routing is independent from placement. The URL is optional: when
+		 * empty the poster is display-only; when valid it becomes clickable. */
+		if (destinationWrap) { destinationWrap.hidden = !enabled; }
+		if (destinationField) { destinationField.required = false; }
+
 		if (specificWrap) { specificWrap.hidden = !specific; }
 		if (pageSearch) { pageSearch.disabled = !specific; }
 		if (pageSelect) {
@@ -110,7 +107,7 @@
 		var strong = document.createElement('strong');
 		strong.textContent = 'Popup is still off';
 		var body = document.createElement('span');
-		body.textContent = message || 'Enable Show as popup to configure this Promo.';
+		body.textContent = message || 'Enable Show as popup to finish popup configuration.';
 		popupNotice.appendChild(strong);
 		popupNotice.appendChild(body);
 		var toggleRow = popupSettings.querySelector('.gloskin-editorial-popup-settings__toggle');
@@ -123,7 +120,11 @@
 		record = record || {};
 		clearGuidance();
 		if (popupField) { popupField.checked = !!record.popup_enabled; }
-		if (visibilityField) { visibilityField.value = record.visibility || 'homepage'; }
+		if (visibilityField) {
+			/* Admin now exposes only the two canonical placements. Historical
+			 * all_pages state falls back to Homepage when the record is edited. */
+			visibilityField.value = record.visibility === 'specific_pages' ? 'specific_pages' : 'homepage';
+		}
 		if (destinationField) { destinationField.value = record.destination_url || ''; }
 		setPageSelection(record.visibility_page_ids || []);
 		if (pageSearch) { pageSearch.value = ''; filterPages(''); }
