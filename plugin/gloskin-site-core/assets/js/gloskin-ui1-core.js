@@ -2799,6 +2799,12 @@
 						});
 					}(dots[di], di));
 				}
+
+				var prevBtn = root.querySelector('[data-gloskin-testimonial-prev]');
+				var nextBtn = root.querySelector('[data-gloskin-testimonial-next]');
+				if (prevBtn) { prevBtn.addEventListener('click', function () { activate(current - 1); }); }
+				if (nextBtn) { nextBtn.addEventListener('click', function () { activate(current + 1); }); }
+
 				activate(0);
 			}(widgets[wi]));
 		}

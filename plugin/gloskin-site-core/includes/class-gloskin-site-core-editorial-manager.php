@@ -85,7 +85,13 @@ final class Gloskin_Site_Core_Editorial_Manager {
 	public function promo_column_cell( $column, $post_id ) {
 		if ( 'gloskin_promo_type' === $column ) {
 			$type = (string) get_post_meta( $post_id, 'gloskin_promo_type', true );
-			echo esc_html( 'limited' === $type ? __( 'Promo Terbatas', 'gloskin-site-core' ) : __( 'Promo Biasa', 'gloskin-site-core' ) );
+			if ( 'limited' === $type ) {
+				echo esc_html( __( 'Promo Terbatas', 'gloskin-site-core' ) );
+			} elseif ( 'regular' === $type ) {
+				echo esc_html( __( 'Promo Biasa', 'gloskin-site-core' ) );
+			} else {
+				echo '<span style="color:#c0392b" aria-label="' . esc_attr__( 'Type not set', 'gloskin-site-core' ) . '">—</span>';
+			}
 			return;
 		}
 		$this->shared_column_cell( $column, $post_id, Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE );
@@ -470,22 +476,64 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		$state = get_option( self::SETUP_OPTION, array() );
-		$state = is_array( $state ) ? $state : array();
-		if ( 'complete' === (string) ( $state['display_contract_v1'] ?? '' ) ) {
-			return;
+		$state   = get_option( self::SETUP_OPTION, array() );
+		$state   = is_array( $state ) ? $state : array();
+		$updated = false;
+
+		// v1: baseline active/order normalization — gated by Content Finalizer completion.
+		if ( 'complete' !== (string) ( $state['display_contract_v1'] ?? '' ) ) {
+			if ( ! class_exists( 'Gloskin_Site_Core_Content_Finalizer_Admin' ) ) {
+				require_once __DIR__ . '/class-gloskin-site-core-content-finalizer-admin.php';
+			}
+			if ( Gloskin_Site_Core_Content_Finalizer_Admin::is_complete() ) {
+				$mutations                              = $this->normalize_display_state();
+				$state['display_contract_v1']           = 'complete';
+				$state['display_contract_mutations']    = $mutations;
+				$state['display_contract_completed_at'] = time();
+				$updated                                = true;
+			}
 		}
-		if ( ! class_exists( 'Gloskin_Site_Core_Content_Finalizer_Admin' ) ) {
-			require_once __DIR__ . '/class-gloskin-site-core-content-finalizer-admin.php';
+
+		// promo_type_v1: normalize missing/invalid gloskin_promo_type → 'regular'.
+		// Runs independently of v1 so existing installs where v1 already completed are covered.
+		if ( 'complete' !== (string) ( $state['promo_type_v1'] ?? '' ) ) {
+			$mutations                           = $this->normalize_promo_types();
+			$state['promo_type_v1']              = 'complete';
+			$state['promo_type_mutations']       = $mutations;
+			$state['promo_type_completed_at']    = time();
+			$updated                             = true;
 		}
-		if ( ! Gloskin_Site_Core_Content_Finalizer_Admin::is_complete() ) {
-			return;
+
+		if ( $updated ) {
+			update_option( self::SETUP_OPTION, $state, false );
 		}
-		$mutations = $this->normalize_display_state();
-		$state['display_contract_v1']           = 'complete';
-		$state['display_contract_mutations']    = $mutations;
-		$state['display_contract_completed_at'] = time();
-		update_option( self::SETUP_OPTION, $state, false );
+	}
+
+	/**
+	 * Normalize any Promo whose gloskin_promo_type is missing or non-canonical to 'regular'.
+	 * Historical admin UI displayed blank/invalid types as "Promo Biasa", so 'regular' is
+	 * the correct persistent value that makes admin and frontend eligibility agree.
+	 *
+	 * @return int Number of meta rows written.
+	 */
+	private function normalize_promo_types() {
+		$mutations = 0;
+		$posts     = get_posts( array(
+			'post_type'      => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE,
+			'post_status'    => array( 'publish', 'draft', 'private', 'pending', 'future', 'trash' ),
+			'posts_per_page' => -1,
+			'orderby'        => 'ID',
+			'order'          => 'ASC',
+		) );
+		foreach ( $posts as $post ) {
+			$type = (string) get_post_meta( $post->ID, 'gloskin_promo_type', true );
+			if ( 'limited' !== $type && 'regular' !== $type ) {
+				// Historical admin treated blank/invalid as "Promo Biasa"; persist that truth
+				// so frontend eligibility ($type IN ['limited','regular']) no longer rejects it.
+				$mutations += $this->set_meta_if_changed( $post->ID, 'gloskin_promo_type', 'regular' );
+			}
+		}
+		return $mutations;
 	}
 
 	/** @return int */

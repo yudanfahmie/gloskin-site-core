@@ -225,6 +225,14 @@ foreach ( array( 'Detail tambahan belum tersedia untuk ditampilkan.', 'Informasi
 	p4must( false !== strpos( $t, $copy ), 'translation/interface owner contains: ' . $copy );
 }
 
-p4must( false !== strpos( $k, "const VERSION = '0.7.219'" ) && false !== strpos( $b, 'Version: 0.7.219' ), 'release owners synchronized at 0.7.219' );
+/* Testimonial prev/next buttons are bound inside initTestimonials() — one controller. */
+$core_js = p4text( $plugin . '/assets/js/gloskin-ui1-core.js' );
+p4must( false !== strpos( $core_js, "var prevBtn = root.querySelector('[data-gloskin-testimonial-prev]')" ), 'initTestimonials queries prevBtn' );
+p4must( false !== strpos( $core_js, "var nextBtn = root.querySelector('[data-gloskin-testimonial-next]')" ), 'initTestimonials queries nextBtn' );
+p4must( false !== strpos( $core_js, "prevBtn.addEventListener('click', function () { activate(current - 1); })" ), 'prevBtn click binds activate(current-1)' );
+p4must( false !== strpos( $core_js, "nextBtn.addEventListener('click', function () { activate(current + 1); })" ), 'nextBtn click binds activate(current+1)' );
+p4must( false === strpos( $core_js, 'initTestimonialArrows' ) && 1 === substr_count( $core_js, 'function initTestimonials()' ), 'one testimonial controller owns all nav — no split' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + editorial admin/frontend sync + Featured Image ownership + Home cover/video + Promo carousel JS-CSS contract + Promo arch durable + footer universal CTA + About static copy + bounded About continuation + Shop CSS dep + version 0.7.219)\n";
+p4must( false !== strpos( $k, "const VERSION = '0.7.220'" ) && false !== strpos( $b, 'Version: 0.7.220' ), 'release owners synchronized at 0.7.220' );
+
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + editorial admin/frontend sync + Featured Image ownership + Home cover/video + Promo carousel JS-CSS contract + Promo arch durable + footer universal CTA + About static copy + bounded About continuation + Shop CSS dep + testimonial prev/next + version 0.7.220)\n";

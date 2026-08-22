@@ -70,7 +70,7 @@ editorial_must(false === strpos($manager, "! in_array( (int) \$post_id, \$seed_i
 editorial_must(false !== strpos($manager, 'foreach ( $seed_ids as $post_id )'), 'seed cleanup is bounded to known seed IDs');
 editorial_must(false !== strpos($manager, 'maybe_normalize_display_state') && false !== strpos($manager, 'normalize_display_state'), 'bounded historical display normalization exists');
 editorial_must(false !== strpos($manager, 'Gloskin_Site_Core_Content_Service::DEMO_IDENTITY_META') && false !== strpos($manager, "\$this->set_meta_if_changed( \$post->ID, \$active_meta, '0' )"), 'legacy identity is translated once into explicit inactive state');
-editorial_must(false !== strpos($manager, "'display_contract_v1'") && false !== strpos($manager, "'complete' === (string) ( \$state['display_contract_v1'] ?? '' )"), 'normalization is idempotently marked in existing setup state');
+editorial_must(false !== strpos($manager, "'display_contract_v1'") && false !== strpos($manager, "'complete' !== (string) ( \$state['display_contract_v1'] ?? '' )"), 'normalization is idempotently gated in existing setup state');
 
 editorial_must(1 === substr_count($manager, 'wp_enqueue_media();'), 'WordPress Media Library is enqueued once');
 editorial_must(false !== strpos($manager, "array( 'jquery', 'jquery-ui-sortable', 'media-editor' )"), 'EditorialManager explicitly depends on WordPress media-editor');
@@ -120,4 +120,16 @@ foreach (array('PromoManager', 'TestimonialManager') as $forked_owner) {
     editorial_must(false === strpos($manager . $js, $forked_owner), 'no forked manager owner: ' . $forked_owner);
 }
 
-echo "editorial-manager-contract.php: OK (canonical schema + save/active validation + bounded setup/normalization + lifecycle + native media + native delete + safe reorder + accessibility/status)\n";
+/* Promo type admin column: explicit 3-way — limited/regular/invalid — no silent ternary. */
+editorial_must(false === strpos($manager, "'limited' === \$type ? __( 'Promo Terbatas'"), 'promo column uses explicit 3-way: no ternary-only pattern that hides invalid state');
+editorial_must(false !== strpos($manager, "if ( 'limited' === \$type )"), 'promo column handles limited explicitly');
+editorial_must(false !== strpos($manager, "} elseif ( 'regular' === \$type )"), 'promo column handles regular explicitly');
+editorial_must(false !== strpos($manager, "'Type not set'"), 'promo column exposes invalid state visibly');
+
+/* Promo type normalization: idempotent gate exists, normalizes blank/invalid → regular. */
+editorial_must(false !== strpos($manager, "'promo_type_v1'"), 'promo_type_v1 gate key exists in normalization');
+editorial_must(false !== strpos($manager, 'private function normalize_promo_types()'), 'normalize_promo_types() method exists');
+editorial_must(false !== strpos($manager, "'limited' !== \$type && 'regular' !== \$type"), 'normalization catches non-canonical promo types');
+editorial_must(false !== strpos($manager, "\$this->set_meta_if_changed( \$post->ID, 'gloskin_promo_type', 'regular' )"), 'normalization writes regular as the corrected canonical value');
+
+echo "editorial-manager-contract.php: OK (canonical schema + save/active validation + bounded setup/normalization + promo type column + promo type normalization + lifecycle + native media + native delete + safe reorder + accessibility/status)\n";
