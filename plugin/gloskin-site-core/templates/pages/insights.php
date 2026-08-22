@@ -28,7 +28,15 @@ $gloskin_insight_cards = isset( $gloskin_context['insights'] ) && is_array( $glo
 						'prev_text' => '<span class="screen-reader-text">' . esc_html__( 'Halaman sebelumnya', 'gloskin-site-core' ) . '</span>' . gloskin_ui1_arrow_icon( 'prev' ),
 						'next_text' => '<span class="screen-reader-text">' . esc_html__( 'Halaman berikutnya', 'gloskin-site-core' ) . '</span>' . gloskin_ui1_arrow_icon(),
 					) );
-					echo wp_kses_post( $gloskin_pagination );
+					$gloskin_pagination_allowed = array(
+						'ul'   => array( 'class' => true ),
+						'li'   => array( 'class' => true ),
+						'a'    => array( 'class' => true, 'href' => true, 'aria-current' => true ),
+						'span' => array( 'class' => true, 'aria-current' => true ),
+						'svg'  => array( 'class' => true, 'viewBox' => true, 'fill' => true, 'aria-hidden' => true, 'focusable' => true, 'xmlns' => true ),
+						'path' => array( 'd' => true, 'fill' => true ),
+					);
+					echo wp_kses( $gloskin_pagination, $gloskin_pagination_allowed );
 					?>
 				</nav>
 			<?php endif; ?>
