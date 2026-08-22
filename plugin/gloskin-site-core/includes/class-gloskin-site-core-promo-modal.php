@@ -48,7 +48,11 @@ final class Gloskin_Site_Core_Promo_Modal {
 
 	/** @return void */
 	public function register_frontend() {
-		add_action( 'wp_footer', array( $this, 'render' ), 35 );
+		/* The Gloskin shell exposes this hook immediately before wp_footer().
+		 * Render the modal markup there so footer-loaded Promo JS always sees
+		 * its root on first execution. Do not render at a late wp_footer
+		 * priority: WordPress prints footer scripts before that point. */
+		add_action( 'gloskin_site_core_shell_footer', array( $this, 'render' ), 10 );
 	}
 
 	/** @return void */
