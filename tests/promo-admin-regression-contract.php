@@ -28,8 +28,8 @@ promo_admin_must( false !== strpos( $managerCss, '.gloskin-editorial-status-acti
 promo_admin_must( false === strpos( $promoCss, 'gloskin-editorial-status-actions' ), 'Promo field stylesheet must not own list-control geometry' );
 promo_admin_must( false !== strpos( $managerJs, "actions.className = 'gloskin-editorial-status-actions'" ), 'dynamic rows must create the same canonical status wrapper' );
 
-/* Popup extension is field/UX only: no post-paint DOM repair or modal-init owner. */
-foreach ( array( 'MutationObserver', 'statusActions(', 'consumeAutoOpenIntent', 'pendingSave', 'setTimeout(' ) as $forbidden ) {
+/* Popup extension is field/UX only: no post-paint DOM repair, duplicate readiness authority, or modal-init owner. */
+foreach ( array( 'MutationObserver', 'statusActions(', 'consumeAutoOpenIntent', 'pendingSave', 'setTimeout(', 'function readinessIssue(' ) as $forbidden ) {
 	promo_admin_must( false === strpos( $promoJs, $forbidden ), 'Promo extension must not retain duplicate owner: ' . $forbidden );
 }
 promo_admin_must( false === strpos( $bootstrap, 'gloskin_site_core_guard_editorial_modal_autostart' ), 'bootstrap corrective modal hide/open guard must stay removed' );
@@ -47,7 +47,9 @@ $issuePos = strpos( $managerPhp, '$popup_issue = $this->promo_popup_validation_i
 promo_admin_must( false !== $offPos && false !== $issuePos && $offPos < $issuePos, 'Popup Off must persist before any prerequisite validation' );
 promo_admin_must( false !== strpos( $managerPhp, "update_post_meta( \$post_id, Gloskin_Site_Core_Promo_Modal::POPUP_META, '0' );" ), 'Popup Off must immediately persist canonical OFF state' );
 promo_admin_must( false !== strpos( $promoJs, "data.append('action', 'gloskin_editorial_toggle')" ) && false !== strpos( $promoJs, "data.append('field', 'popup')" ), 'Popup client must use the existing canonical toggle endpoint/field' );
+promo_admin_must( false !== strpos( $promoJs, "ajaxPopup(id, enable).then" ), 'Popup list toggle must always consult the backend before changing canonical state' );
 promo_admin_must( false !== strpos( $promoJs, "error.code === 'popup_incomplete'" ), 'structured incomplete response must open guided editor instead of surfacing generic HTTP 400' );
+promo_admin_must( false === strpos( $promoJs, 'if (popupField) { popupField.checked = true; }' ), 'guided editor must never invent a pending Popup On state' );
 
 /* Destination URL is one field and is conditional on canonical popup state. */
 promo_admin_must( 1 === substr_count( $managerPhp, 'name="destination_url"' ), 'there must be one Destination URL field' );
@@ -65,4 +67,4 @@ promo_admin_must( false !== strpos( $managerJs, 'new ResizeObserver(function () 
 promo_admin_must( false !== strpos( $managerJs, 'cropState.appliedX = cropState.draftX;' ) && false !== strpos( $managerJs, 'cropState.appliedZoom = cropState.draftZoom;' ), 'saved focus and zoom must hydrate as applied state' );
 promo_admin_must( false === strpos( $managerJs, 'setTimeout(' ), 'crop/modal synchronization must not use arbitrary delay polling' );
 
-echo "promo-admin-regression-contract.php: OK (server list owner, conditional popup URL, structured toggle validation, persisted crop sync, zero flicker)\n";
+echo "promo-admin-regression-contract.php: OK (server list owner, backend popup authority, canonical modal state, conditional popup URL, persisted crop sync, zero flicker)\n";
