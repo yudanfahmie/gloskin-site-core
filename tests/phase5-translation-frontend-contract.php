@@ -13,6 +13,7 @@
  *  - Raw canonical post field used as freshness source (not already-projected EN value).
  *  - Idempotency guard on the output buffer so it cannot be started twice.
  *  - Re-entrancy guard on interface_text so recursive filter calls fail-open.
+ *  - Native WordPress/Woo locale is request-scoped through the existing Language owner.
  *  - No frontend machine translation model.
  *  - No WooCommerce commercial state mutation.
  *  - No retired Phase-3 runtime.
@@ -43,13 +44,24 @@ p5must( false !== strpos( $kernel, "const VERSION = '0.7.215'" ) && false !== st
 p5must( 1 === substr_count( $kernel, 'register_frontend' ), 'exactly one frontend Language registration in Kernel' );
 p5must( false !== strpos( $kernel, 'Gloskin_Site_Core_Language' ), 'Language class registered in Kernel' );
 p5must( 1 === substr_count( $kernel, '$language_projection->register();' ), 'exactly one Projection registration in Kernel' );
-// register_admin() was retired from Language_Projection — assert it is absent.
 p5must( false === strpos( $projection, 'register_admin' ), 'Language_Projection has no register_admin (correctly retired)' );
+
+/* ── Native request-locale bridge stays inside Language ───────────── */
+p5must( 1 === substr_count( $language, "add_filter( 'pre_determine_locale', array( \$this, 'request_locale' ), 1 );" ), 'one early pre_determine_locale bridge owner' );
+p5must( 1 === substr_count( $language, "add_filter( 'locale', array( \$this, 'request_locale' ), 1 );" ), 'one canonical locale compatibility bridge owner' );
+p5must( false !== strpos( $language, 'private static function requested_language()' ), 'one shared language-preference resolver exists in Language' );
+p5must( false !== strpos( $language, "return 'en' === self::requested_language() ? 'en_US' : \$locale;" ), 'EN maps to en_US while ID/no override preserves incoming site locale' );
+p5must( false !== strpos( $language, "isset( \$_GET['gloskin_lang'] )" ) && false !== strpos( $language, "isset( \$_COOKIE[ self::COOKIE ] )" ), 'shared preference resolver owns GET and cookie inputs' );
+p5must( false === strpos( $language, "'id_ID'" ), 'ID does not force a second hard-coded installation locale' );
+p5must( false === strpos( $language, 'switch_to_locale(' ) && false === strpos( $language, 'WPLANG') && false === strpos( $language, 'update_option(' ), 'frontend locale bridge does not mutate WordPress/admin locale state' );
+p5must( false === strpos( $language, "'woocommerce' === \$domain" ) && false === strpos( $language, "\$domain === 'woocommerce'" ), 'Language does not become a Woo gettext string-map owner' );
+foreach ( array( 'Dashboard', 'Orders', 'Downloads', 'Addresses', 'Account details', 'Logout' ) as $woo_native_copy ) {
+	p5must( false === strpos( $language, "'{$woo_native_copy}'" ), 'native Woo copy is not hard-coded into Language: ' . $woo_native_copy );
+}
 
 /* ── Single canonical resolver: interface_lookup() ───────────────── */
 p5must( false !== strpos( $translation, 'public static function interface_lookup()' ), 'Translation owns interface_lookup() — the single resolver' );
 p5must( false !== strpos( $translation, 'self::$interface_lookup_cache' ), 'interface_lookup() uses a request-local static cache' );
-// Both transports must delegate to interface_lookup(), not maintain their own foreach scan.
 p5must( false !== strpos( $language, 'interface_lookup()' ), 'Language::interface_text delegates to the shared interface_lookup()' );
 p5must( false !== strpos( $projection, 'interface_lookup()' ), 'Language_Projection::translate_text_segment delegates to the shared interface_lookup()' );
 
@@ -57,14 +69,11 @@ p5must( false !== strpos( $projection, 'interface_lookup()' ), 'Language_Project
 p5must( false !== strpos( $translation, 'self::$registry_cache' ), 'registry() uses request-local static cache' );
 p5must( false !== strpos( $translation, 'self::$interface_registry_cache' ), 'interface_registry() uses request-local static cache' );
 p5must( false !== strpos( $translation, 'self::$interface_translations_cache' ), 'interface_translations() uses request-local static cache' );
-// Projection must NOT contain a per-text-node foreach over interface_registry.
 p5must( false === strpos( $projection, 'foreach ( Gloskin_Site_Core_Translation::interface_registry()' ), 'Projection has no per-text-node foreach over interface_registry' );
 p5must( false === strpos( $projection, '::interface_translations()' ), 'Projection has no direct ::interface_translations() call (delegates to has_interface_translations or lookup)' );
 
 /* ── Exact-node-only interface translation ───────────────────────── */
-// translate_interface_html: must split on HTML tags; exact text-node comparison.
 p5must( false !== strpos( $projection, 'translate_interface_html' ), 'HTML output buffer exists' );
-// Substring replacement remains forbidden.
 p5must( false === strpos( $projection, 'str_replace( array_keys(' ), 'no substring array-replace in projection' );
 
 /* ── Idempotency and re-entrancy guards ──────────────────────────── */
@@ -72,34 +81,28 @@ p5must( false !== strpos( $projection, 'static $started = false' ), 'output buff
 p5must( false !== strpos( $language, 'static $in_lookup = false' ), 'interface_text has re-entrancy guard (static $in_lookup)' );
 
 /* ── Defense-in-depth: memory guard + zero-cost empty path ──────── */
-// Layer 0: request-level circuit breaker in language() — universal chokepoint.
-// Every translation filter calls language() first.  One check here covers all
-// paths simultaneously.  Once tripped (>80 % of limit), all filter callbacks
-// see 'id' and skip their EN work; subsequent calls pay only a bool check.
 p5must( false !== strpos( $language, 'private static function within_memory_budget()' ), 'Language has within_memory_budget() circuit-breaker helper' );
-p5must( false !== strpos( $language, 'self::within_memory_budget()' ), 'language() calls within_memory_budget() before reading GET/COOKIE' );
-// Verify the helper uses a static trip flag and a cached limit parse.
+p5must( false !== strpos( $language, 'self::within_memory_budget()' ), 'language() calls within_memory_budget() before preference resolution' );
 p5must( false !== strpos( $language, 'static $tripped = false, $limit = null' ), 'within_memory_budget() caches limit parse and trip flag in static locals' );
-// Layer 1: ob_start is skipped entirely when no translations are saved.
 p5must( false !== strpos( $translation, 'public static function has_interface_translations()' ), 'Translation has zero-cost empty-translations guard method' );
 p5must( false !== strpos( $projection, 'has_interface_translations()' ), 'Projection uses has_interface_translations() for zero-cost empty guard' );
-// Projection must not call ::interface_translations() directly (would bypass the guard abstraction);
-// it calls ::has_interface_translations() instead. The substring check uses '::interface_translations()'
-// so it is not confused by the 'has_' prefix in the safe delegating call.
 p5must( false === strpos( $projection, '::interface_translations()' ), 'Projection has no direct ::interface_translations() call' );
-// Layer 2: fail-open memory budget guard in the HTML buffer callback.
 p5must( false !== strpos( $projection, 'memory_get_usage()' ), 'HTML buffer has fail-open memory budget guard' );
 p5must( false !== strpos( $projection, 'parse_memory_limit' ), 'memory budget guard uses portable limit parser' );
-// Layer 3: cross-request object cache — transparent upgrade on persistent-cache hosts.
 p5must( false !== strpos( $translation, "wp_cache_get( 'gloskin_interface_lookup'" ), 'interface_lookup seeds WP object cache for cross-request persistence' );
 p5must( false !== strpos( $translation, "wp_cache_set( 'gloskin_interface_lookup'" ), 'interface_lookup populates WP object cache after build' );
 p5must( false !== strpos( $translation, "wp_cache_delete( 'gloskin_interface_lookup'" ), 'ajax_save invalidates object cache on translation update' );
 
 /* ── Raw canonical freshness source ──────────────────────────────── */
-// saved_post_field must use raw post field from get_post(), not the $fallback
-// which may already have passed through the_posts translation projection.
 p5must( false !== strpos( $language, '$raw_source' ), 'saved_post_field uses raw_source from get_post(), not $fallback' );
 p5must( false !== strpos( $language, 'fresh_post_value( $post->ID, $field, $raw_source )' ), 'freshness hashing uses raw canonical source' );
+
+/* ── Woo structural page body remains canonical ──────────────────── */
+p5must( false !== strpos( $language, 'private static function is_woocommerce_structural_page(' ), 'Language owns one semantic Woo structural-page guard' );
+foreach ( array( "'myaccount'", "'cart'", "'checkout'" ) as $woo_page_key ) {
+	p5must( false !== strpos( $language, $woo_page_key ), 'Woo structural guard includes ' . $woo_page_key );
+}
+p5must( false !== strpos( $language, "'post_content' === \$field && self::is_woocommerce_structural_page( \$post->ID )" ), 'Woo special-page post_content never substitutes saved editorial body' );
 
 /* ── Essential resolver hooks remain ─────────────────────────────── */
 $must_hooks = array(
@@ -158,15 +161,11 @@ p5must( false === strpos( $kernel, 'Phase3_Migration_Admin' ), 'retired Phase3_M
 p5must( false === strpos( $projection, "'gloskin_hero_cta_url'" ), 'non-copy hero CTA URL not in projection' );
 p5must( false === strpos( $projection, "'gloskin_hero_media_id'" ), 'non-copy hero media ID not in projection' );
 
-/* ── Content-ownership durable rules (added 0.7.213) ─────────────── */
-// Global the_content filter absent — no whole-page content replacement.
+/* ── Content-ownership durable rules ─────────────────────────────── */
 p5must( false === strpos( $language, "add_filter( 'the_content'" ) && false === strpos( $projection, "add_filter( 'the_content'" ), 'no global the_content filter in language or projection' );
-// No add_filter('post_content', ...) hook (wholesale content replacement) in language or projection.
 p5must( false === strpos( $language, "add_filter( 'post_content'" ) && false === strpos( $projection, "add_filter( 'post_content'" ), 'no global post_content filter hook in language or projection' );
-// Whole-content interface buffer: method must be defined and registered exactly once each.
 p5must( false !== strpos( $projection, 'public function start_interface_buffer()' ), 'Projection defines start_interface_buffer() as whole-content output buffer owner' );
 p5must( 1 === substr_count( $projection, "array( \$this, 'start_interface_buffer' )" ), 'Projection registers start_interface_buffer exactly once on template_redirect' );
-// Woo structural page content is protected — no the_content filter that would replace Woo output.
-p5must( false === strpos( $language, "add_filter( 'the_content'" ), 'Language does not hook the_content (Woo structural content protected)' );
+p5must( false === strpos( $language . $projection, 'woocommerce_before_template_part' ), 'no rendered-Woo HTML replacement owner' );
 
-echo "phase5-translation-frontend-contract.php: OK (single resolver + cached registries + circuit breaker + memory guard + object cache + content-ownership rules + version 0.7.215)\n";
+echo "phase5-translation-frontend-contract.php: OK (native locale bridge + single resolver + cached registries + circuit breaker + structural Woo guard + content ownership + version 0.7.215)\n";
