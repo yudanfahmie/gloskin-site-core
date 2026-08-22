@@ -48,6 +48,7 @@ $ts         = p4text( $plugin . '/includes/class-gloskin-site-core-template-serv
 $h          = p4text( $plugin . '/templates/pages/home.php' );
 $p          = p4text( $plugin . '/templates/pages/promo.php' );
 $a          = p4text( $plugin . '/templates/pages/about.php' );
+$treatment  = p4text( $plugin . '/templates/pages/treatment.php' );
 $helpers    = p4text( $plugin . '/templates/parts/readiness-helpers.php' );
 $core_base  = p4text( $plugin . '/assets/css/gloskin-ui1-core-base.css' );
 $readiness  = p4text( $plugin . '/assets/css/gloskin-ui1-readiness.css' );
@@ -123,13 +124,19 @@ p4must( false === strpos( $ts, "'_gloskin_demo_identity'" ), 'migration demo ide
 p4must( false !== strpos( $ts, "'post_excerpt' === \$required" ), 'TemplateService owns testimonial quote eligibility' );
 p4must( false === strpos( $h, 'array_filter( $gloskin_home_testimonials' ), 'Home does not re-filter testimonial eligibility' );
 p4must( false === strpos( $h, 'array_slice( $gloskin_home_testimonials' ), 'Home does not own testimonial display limit' );
+p4must( false === strpos( $h, 'array_filter( $gloskin_home_piagam' ), 'Home does not own Achievement image eligibility' );
 p4must( false === strpos( $h, 'array_slice( isset( $gloskin_context[\'achievements\']' ), 'Home does not own achievement display limit' );
 p4must( false === strpos( $home_ctx, 'TESTIMONIAL_POST_TYPE, 6' ) && false === strpos( $home_ctx, 'ACHIEVEMENT_POST_TYPE, 8' ), 'TemplateService has no obsolete query-then-slice double limits' );
+p4must( false !== strpos( $cs, "'requires_image'   => true" ), 'Achievement profile declares image-required Home eligibility' );
+p4must( false !== strpos( $ts, 'if ( $requires_image )' ) && false !== strpos( $ts, 'get_post_thumbnail_id( $post->ID ) ) > 0' ), 'TemplateService applies image-required eligibility before projection' );
 p4must( false !== strpos( $h, "absint( \$gloskin_home_achievement['image_id'] ?? 0 )" ), 'Home consumes canonical Achievement image_id' );
 p4must( false !== strpos( $h, 'wp_get_attachment_image( $gloskin_home_achievement_image_id' ), 'Achievement Featured Image is the primary Home visual' );
-$image_branch = strpos( $h, "if ( '' !== \$gloskin_home_achievement_image )" );
-$fallback_g   = strpos( $h, '<div class="gloskin-home-piagam__icon" aria-hidden="true">G</div>' );
-p4must( false !== $image_branch && false !== $fallback_g && $fallback_g > $image_branch, 'hard-coded G exists only after Featured Image branch as empty fallback' );
+foreach ( array( 'gloskin-home-piagam__card', 'gloskin-home-piagam__title', 'gloskin-home-piagam__meta', 'gloskin-home-piagam__icon', '>G<' ) as $legacy_achievement ) {
+	p4must( false === strpos( $h, $legacy_achievement ), 'pure-image Achievement runtime excludes legacy content: ' . $legacy_achievement );
+}
+p4must( false === strpos( $h, 'style=' ), 'Home Piagam no longer owns static inline presentation' );
+p4must( false !== strpos( $editorial, '.gloskin-home-piagam__item{display:flex;flex:0 0 auto;width:min(72vw,320px);height:clamp(180px,18vw,230px);align-items:center;justify-content:center;margin:0}' ), 'Home editorial CSS owns Piagam item geometry' );
+p4must( false !== strpos( $editorial, '.gloskin-home-piagam__image{display:block;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain}' ), 'Home editorial CSS owns Piagam image geometry' );
 
 /* One generic empty-state owner plus scoped Home composition. */
 p4must( false !== strpos( $helpers, 'function gloskin_ui1_render_empty_state(' ), 'shared generic empty-state renderer exists' );
@@ -140,18 +147,36 @@ p4must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero-
 p4must( false !== strpos( $editorial, '.gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{max-width:760px;margin:0 auto 70px;text-align:center}' ), 'Home section heading cadence is restored' );
 p4must( false === strpos( $editorial, '.gloskin-ui1-section{padding' ), 'no broad global section spacing patch' );
 
-/* Promo remains structurally stable with shared empty/media fallbacks. */
+/* Promo remains structurally stable with canonical crop geometry and a hidden live region. */
 p4must( false !== strpos( $p, "gloskin_ui1_render_empty_state( 'generic', __( 'Informasi promo belum tersedia.'" ), 'Promo empty state uses shared renderer' );
 p4must( false !== strpos( $p, 'gloskin-promo__missing' ), 'Promo missing artwork uses bounded placeholder' );
 p4must( false === strpos( $p, '<div class="gloskin-ui1-empty">' ), 'legacy Promo empty markup removed' );
+p4must( false !== strpos( $p, 'gloskin-ui1-promo-carousel__live screen-reader-text' ) && false !== strpos( $p, 'aria-live="polite"' ) && false !== strpos( $p, 'aria-atomic="true"' ), 'Promo live announcement remains visually hidden and accessible' );
 p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] .gloskin-ui1-promo-carousel__stage{display:grid;grid-template-areas:"slide";overflow:hidden;width:100%;min-width:0' ), 'Promo carousel enhanced stage stacks slides in one grid area with overflow:hidden' );
 p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{grid-area:slide;min-width:0;transition:transform .52s cubic-bezier(.4,0,.2,1);will-change:transform}' ), 'Promo carousel enhanced slides use grid-area:slide with transition' );
+p4must( 1 === substr_count( $editorial, 'aspect-ratio:1648 / 928' ), 'frontend Promo owns exactly one canonical 1648:928 ratio declaration' );
+p4must( false !== strpos( $editorial, 'object-position:var(--gloskin-promo-focus-x,50%) var(--gloskin-promo-focus-y,50%)' ), 'Promo image consumes projected focus state' );
+p4must( false === strpos( $editorial, '.gloskin-promo__media{height:' ), 'responsive Promo geometry never switches to fixed pixel height' );
+p4must( false !== strpos( $p, '--gloskin-promo-focus-x:' ) && false !== strpos( $p, '--gloskin-promo-focus-y:' ), 'Promo template emits dynamic focal custom properties only' );
+p4must( false !== strpos( $p, "wp_get_attachment_image( \$gloskin_promo_image, 'full'" ), 'Promo frontend renders from validated full source image' );
 $editorial_mgr = p4text( $plugin . '/includes/class-gloskin-site-core-editorial-manager.php' );
+$editorial_js  = p4text( $plugin . '/assets/js/gloskin-editorial-manager.js' );
 p4must( false !== strpos( $ts, "'limited_promos'" ) && false !== strpos( $ts, "'regular_promos'" ), 'TemplateService projects both limited_promos and regular_promos' );
+p4must( false !== strpos( $ts, "'focus_x'" ) && false !== strpos( $ts, "'focus_y'" ), 'TemplateService projects Promo focal state' );
 p4must( false === strpos( $k, 'Editorial_Projection' ) && false === strpos( $k, 'editorial-projection' ), 'EditorialProjection is absent from Kernel' );
 p4must( false !== strpos( $editorial_mgr, "'_gloskin_editorial_seed_identity'" ) && false !== strpos( $editorial_mgr, 'SEED_META' ), 'EditorialManager owns SEED_META identity' );
 p4must( false !== strpos( $editorial_mgr, "'gloskin_promo_type', \$index <= 3 ? 'limited' : 'regular'" ), 'EditorialManager seeds split: index 1-3=limited, 4-6=regular' );
+p4must( false !== strpos( $editorial_mgr, 'data-gloskin-promo-crop' ) && false !== strpos( $editorial_mgr, 'data-gloskin-promo-crop-apply' ), 'existing EditorialManager owns Promo Crop & Apply UI' );
+p4must( false !== strpos( $editorial_mgr, "\$current_image_id !== \$image_id" ) && false !== strpos( $editorial_mgr, 'Promo image must be at least' ), 'server blocks low-resolution new Promo replacements while preserving unchanged legacy artwork' );
+p4must( false !== strpos( $editorial_js, 'function getMediaSelection()' ) && false === strpos( $editorial_js, 'mediaFrame.state().get(' ), 'safe WordPress Media Library lifecycle remains' );
 p4must( false === strpos( $ts, 'Editorial_Projection' ), 'TemplateService does not delegate to EditorialProjection' );
+
+/* Treatment keeps the landed shared journey while static presentation lives in CSS. */
+foreach ( array( 'treatment-hero', 'treatment-consideration', 'treatment-related', 'treatment-transition' ) as $treatment_section ) {
+	p4must( 1 === substr_count( $treatment, 'data-gloskin-section="' . $treatment_section . '"' ), 'Treatment section remains unique: ' . $treatment_section );
+}
+p4must( false === strpos( $treatment, 'style=' ) && false === strpos( $treatment, "'style' =>" ), 'Treatment template has zero static inline presentation' );
+p4must( false !== strpos( $editorial, '.gloskin-treatment-single__hero-media{' ) && false !== strpos( $editorial, '.gloskin-treatment-single__transition{' ), 'existing editorial CSS owns Treatment geometry' );
 
 /* Footer owns universal dark CTA; page templates must not duplicate it. */
 $footer    = p4text( $plugin . '/templates/parts/footer.php' );
@@ -233,6 +258,6 @@ p4must( false !== strpos( $core_js, "prevBtn.addEventListener('click', function 
 p4must( false !== strpos( $core_js, "nextBtn.addEventListener('click', function () { activate(current + 1); })" ), 'nextBtn click binds activate(current+1)' );
 p4must( false === strpos( $core_js, 'initTestimonialArrows' ) && 1 === substr_count( $core_js, 'function initTestimonials()' ), 'one testimonial controller owns all nav — no split' );
 
-p4must( false !== strpos( $k, "const VERSION = '0.7.220'" ) && false !== strpos( $b, 'Version: 0.7.220' ), 'release owners synchronized at 0.7.220' );
+p4must( false !== strpos( $k, "const VERSION = '0.7.220'" ) && false !== strpos( $b, 'Version: 0.7.220' ), 'release owners synchronized at 0.7.220 pending real-browser acceptance' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + editorial admin/frontend sync + Featured Image ownership + Home cover/video + Promo carousel JS-CSS contract + Promo arch durable + footer universal CTA + About static copy + bounded About continuation + Shop CSS dep + testimonial prev/next + version 0.7.220)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + projection-owned Achievement image eligibility + Promo 1648:928 focal contract + existing EditorialManager Crop & Apply + Treatment zero-inline ownership + footer/About/Testimonial regressions + version 0.7.220 pending browser gate)\n";
