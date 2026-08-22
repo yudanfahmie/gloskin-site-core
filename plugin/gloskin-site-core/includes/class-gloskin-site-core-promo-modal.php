@@ -20,6 +20,8 @@ final class Gloskin_Site_Core_Promo_Modal {
 	const DESTINATION_META = 'gloskin_promo_destination_url';
 
 	const VISIBILITY_HOMEPAGE = 'homepage';
+	/* Legacy value retained for existing rows; the current admin exposes only
+	 * Homepage and Specific Pages. */
 	const VISIBILITY_ALL      = 'all_pages';
 	const VISIBILITY_SPECIFIC = 'specific_pages';
 
@@ -123,9 +125,10 @@ final class Gloskin_Site_Core_Promo_Modal {
 	/**
 	 * Accept same-site HTTP/HTTPS URLs and arbitrary external HTTPS URLs.
 	 * Root-relative same-site targets are normalized to an absolute home URL.
+	 * Empty is valid because click routing is optional.
 	 *
 	 * @param mixed $value Candidate URL.
-	 * @return string Empty when invalid.
+	 * @return string Empty when absent or invalid.
 	 */
 	public static function sanitize_destination_url( $value ) {
 		$value = is_scalar( $value ) ? trim( (string) $value ) : '';
@@ -164,17 +167,13 @@ final class Gloskin_Site_Core_Promo_Modal {
 	}
 
 	/**
-	 * Homepage is a display placement, not a click destination. All Pages and
-	 * Specific Pages retain the explicit destination metadata contract.
+	 * Click routing is independent from placement. Any Promo can be display-only
+	 * by leaving the URL empty, or clickable by providing one valid URL.
 	 *
-	 * @param int    $promo_id Promo ID.
-	 * @param string $visibility Canonical visibility value.
-	 * @return string Empty for Homepage or when a custom destination is invalid.
+	 * @param int $promo_id Promo ID.
+	 * @return string Sanitized optional click target.
 	 */
-	private function destination_for_visibility( $promo_id, $visibility ) {
-		if ( self::VISIBILITY_HOMEPAGE === $visibility ) {
-			return '';
-		}
+	private function destination_url( $promo_id ) {
 		return self::sanitize_destination_url( get_post_meta( $promo_id, self::DESTINATION_META, true ) );
 	}
 
@@ -182,9 +181,8 @@ final class Gloskin_Site_Core_Promo_Modal {
 	 * The one production eligibility resolver for Promo Modal.
 	 *
 	 * published + Active + popup-enabled + current-page visibility + image.
-	 * Homepage is display-only. All Pages and Specific Pages are clickable and
-	 * therefore require their saved custom target. Existing gloskin_promo_order
-	 * remains the only ordering source.
+	 * URL never controls eligibility; it controls clickability only. Existing
+	 * gloskin_promo_order remains the only ordering source.
 	 *
 	 * @return array<int,array<string,mixed>>
 	 */
@@ -231,17 +229,13 @@ final class Gloskin_Site_Core_Promo_Modal {
 			if ( ! $image_id || ! wp_get_attachment_image_url( $image_id, 'full' ) ) {
 				continue;
 			}
-			$clickable = self::VISIBILITY_HOMEPAGE !== $visibility;
-			$url       = $this->destination_for_visibility( $post->ID, $visibility );
-			if ( $clickable && '' === $url ) {
-				continue;
-			}
+			$url = $this->destination_url( $post->ID );
 			$this->eligible_cache[] = array(
 				'id'         => (int) $post->ID,
 				'title'      => (string) get_the_title( $post ),
 				'image_id'   => $image_id,
 				'url'        => $url,
-				'clickable'  => $clickable,
+				'clickable'  => '' !== $url,
 				'visibility' => $visibility,
 				'page_ids'   => $page_ids,
 				'order'      => (int) get_post_meta( $post->ID, $order_meta, true ),
@@ -314,8 +308,8 @@ final class Gloskin_Site_Core_Promo_Modal {
 					<?php if ( $multiple ) : ?>
 					<div class="gloskin-promo-modal__controls" aria-label="<?php echo esc_attr__( 'Navigasi promo', 'gloskin-site-core' ); ?>">
 						<div class="gloskin-promo-modal__dots" data-gloskin-promo-dots aria-hidden="true"></div>
-						<button type="button" class="gloskin-promo-modal__nav gloskin-promo-modal__nav--prev" data-gloskin-promo-prev aria-label="<?php echo esc_attr__( 'Promo sebelumnya', 'gloskin-site-core' ); ?>">&#8249;</button>
-						<button type="button" class="gloskin-promo-modal__nav gloskin-promo-modal__nav--next" data-gloskin-promo-next aria-label="<?php echo esc_attr__( 'Promo berikutnya', 'gloskin-site-core' ); ?>">&#8250;</button>
+						<button type="button" class="gloskin-promo-modal__nav gloskin-promo-modal__nav--prev" data-gloskin-promo-prev aria-label="<?php echo esc_attr__( 'Promo sebelumnya', 'gloskin-site-core' ); ?>">&#8592;</button>
+						<button type="button" class="gloskin-promo-modal__nav gloskin-promo-modal__nav--next" data-gloskin-promo-next aria-label="<?php echo esc_attr__( 'Promo berikutnya', 'gloskin-site-core' ); ?>">&#8594;</button>
 					</div>
 					<?php endif; ?>
 				</div>
