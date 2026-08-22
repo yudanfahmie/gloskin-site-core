@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Kernel {
-	const VERSION = '0.7.224';
+	const VERSION = '0.7.225';
 
 	/** @var string */
 	private $plugin_file;
@@ -35,154 +35,76 @@ final class Gloskin_Site_Core_Kernel {
 			$assets->register();
 			$this->services[] = $assets;
 
-			require_once __DIR__ . '/class-gloskin-site-core-admin-service.php';
-			require_once __DIR__ . '/class-gloskin-site-core-admin-navigation-service.php';
-			require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
-			require_once __DIR__ . '/class-gloskin-site-core-sample-media-compatibility.php';
-			require_once __DIR__ . '/class-gloskin-site-core-media-cleanup-admin.php';
-			require_once __DIR__ . '/class-gloskin-site-core-content-finalizer-admin.php';
-			require_once __DIR__ . '/class-gloskin-site-core-editorial-manager.php';
+			$admin_menu = new Gloskin_Site_Core_Admin_Menu();
+			$admin_menu->register();
+			$this->services[] = $admin_menu;
 
-			$media_compatibility = new Gloskin_Site_Core_Sample_Media_Compatibility();
-			$media_compatibility->register();
+			$editorial = new Gloskin_Site_Core_Editorial_Manager();
+			$editorial->register();
+			$this->services[] = $editorial;
 
-			$admin = new Gloskin_Site_Core_Admin_Service( $content, $assets, $this->plugin_file );
-			$admin->register();
+			$consultation_admin = new Gloskin_Site_Core_Consultation_Admin();
+			$consultation_admin->register();
+			$this->services[] = $consultation_admin;
 
-			$editorial_manager = new Gloskin_Site_Core_Editorial_Manager( $this->plugin_file, self::VERSION );
-			$editorial_manager->register();
-
-			$admin_navigation = new Gloskin_Site_Core_Admin_Navigation_Service();
-			$admin_navigation->register();
-
-			$translation = new Gloskin_Site_Core_Translation( $this->plugin_file, self::VERSION );
+			$translation = new Gloskin_Site_Core_Translation();
 			$translation->register_admin();
-
-			$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();
-			$lifecycle->register_upgrade();
-			$lifecycle->register_historical_upgrade_admins( $assets, $this->plugin_file );
-
-			$media_cleanup = new Gloskin_Site_Core_Media_Cleanup_Admin( $assets );
-			$media_cleanup->register();
-
-			$content_finalizer = new Gloskin_Site_Core_Content_Finalizer_Admin();
-			$content_finalizer->register();
-
-			/* Contact admin (inlined from ProductionBatch). */
-			require_once __DIR__ . '/class-gloskin-site-core-contact-mailer.php';
-			foreach ( array( 'bootstrap', 'settings', 'form', 'submit', 'security', 'persist', 'mail' ) as $_gsk_part ) {
-				require_once __DIR__ . '/gloskin-site-core-contact-service-' . $_gsk_part . '-trait.php';
-			}
-			require_once __DIR__ . '/class-gloskin-site-core-contact-service.php';
-			$contact = new Gloskin_Site_Core_Contact_Service( $this->plugin_file );
-			$contact->register();
-			foreach ( array( 'setup', 'render', 'settings-actions', 'test', 'inbox-list', 'inbox-actions', 'readiness' ) as $_gsk_part ) {
-				require_once __DIR__ . '/gloskin-site-core-contact-admin-' . $_gsk_part . '-trait.php';
-			}
-			require_once __DIR__ . '/class-gloskin-site-core-contact-admin.php';
-			require_once __DIR__ . '/class-gloskin-site-core-doctor-bundle.php';
-			foreach ( array( 'state', 'upsert', 'finalize', 'lock' ) as $_gsk_part ) {
-				require_once __DIR__ . '/gloskin-site-core-doctor-importer-' . $_gsk_part . '-trait.php';
-			}
-			require_once __DIR__ . '/class-gloskin-site-core-doctor-importer.php';
-			$contact_admin = new Gloskin_Site_Core_Contact_Admin( $this->plugin_file );
-			$contact_admin->register();
-			unset( $_gsk_part );
-
-			$this->services[] = $media_compatibility;
-			$this->services[] = $admin;
-			$this->services[] = $editorial_manager;
-			$this->services[] = $admin_navigation;
 			$this->services[] = $translation;
-			$this->services[] = $lifecycle;
+
+			$media_cleanup = new Gloskin_Site_Core_Media_Cleanup_Admin();
+			$media_cleanup->register();
 			$this->services[] = $media_cleanup;
-			$this->services[] = $content_finalizer;
-			$this->services[] = $contact;
-			$this->services[] = $contact_admin;
-			return;
+
+			$finalizer = new Gloskin_Site_Core_Content_Finalizer_Admin();
+			$finalizer->register();
+			$this->services[] = $finalizer;
+
+			$language_projection = new Gloskin_Site_Core_Language_Projection();
+			$language_projection->register_admin();
+			$this->services[] = $language_projection;
 		}
 
-		$language = new Gloskin_Site_Core_Language( $this->plugin_file );
-		$language->register_frontend();
-		$language_projection = new Gloskin_Site_Core_Language_Projection();
-		$language_projection->register();
-		$this->services[] = $language;
-		$this->services[] = $language_projection;
-
-		require_once __DIR__ . '/class-gloskin-site-core-navigation-service.php';
-		require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php';
-		require_once __DIR__ . '/class-gloskin-site-core-form-adapter.php';
-		require_once __DIR__ . '/class-gloskin-site-core-template-service.php';
-
-		$navigation = new Gloskin_Site_Core_Navigation_Service();
-		$navigation->register();
-
-		$woocommerce = new Gloskin_Site_Core_WooCommerce_Adapter();
-		$woocommerce->register();
+		$woo = new Gloskin_Site_Core_WooCommerce_Adapter();
+		$woo->register();
+		$this->services[] = $woo;
 
 		$form = new Gloskin_Site_Core_Form_Adapter();
-
-		$templates = new Gloskin_Site_Core_Template_Service(
-			dirname( __DIR__ ),
-			$navigation,
-			$woocommerce,
-			$form
-		);
-		$templates->register();
-
-		$assets = new Gloskin_Site_Core_Asset_Service(
-			$this->plugin_file,
-			self::VERSION,
-			array( $woocommerce, 'is_commerce_request' )
-		);
-		$assets->register();
-
-		/* Contact service and Shop discovery (inlined from ProductionBatch). */
-		require_once __DIR__ . '/class-gloskin-site-core-contact-mailer.php';
-		foreach ( array( 'bootstrap', 'settings', 'form', 'submit', 'security', 'persist', 'mail' ) as $_gsk_part ) {
-			require_once __DIR__ . '/gloskin-site-core-contact-service-' . $_gsk_part . '-trait.php';
-		}
-		require_once __DIR__ . '/class-gloskin-site-core-contact-service.php';
-		$contact = new Gloskin_Site_Core_Contact_Service( $this->plugin_file );
-		$contact->register();
-
-		require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter-shop-catalog.php';
-		foreach ( array( 'route', 'rest', 'query' ) as $_gsk_part ) {
-			require_once __DIR__ . '/gloskin-site-core-shop-discovery-' . $_gsk_part . '-trait.php';
-		}
-		require_once __DIR__ . '/class-gloskin-site-core-shop-discovery.php';
-		$shop = new Gloskin_Site_Core_Shop_Discovery( $this->plugin_file );
-		$shop->register();
-		unset( $_gsk_part );
-
-		$this->services[] = $navigation;
-		$this->services[] = $assets;
-		$this->services[] = $woocommerce;
+		$form->register();
 		$this->services[] = $form;
-		$this->services[] = $templates;
-		$this->services[] = $contact;
-		$this->services[] = $shop;
+
+		$language = new Gloskin_Site_Core_Language();
+		$language->register_frontend();
+		$this->services[] = $language;
+
+		$language_projection = isset( $language_projection ) ? $language_projection : new Gloskin_Site_Core_Language_Projection();
+		$language_projection->register();
+		$this->services[] = $language_projection;
+
+		$template = new Gloskin_Site_Core_Template_Service( $woo, $form );
+		$template->register();
+		$this->services[] = $template;
+
+		$assets = isset( $assets ) ? $assets : new Gloskin_Site_Core_Asset_Service( $this->plugin_file, self::VERSION, array( $template, 'is_commerce_presentation_request' ) );
+		if ( ! is_admin() ) {
+			$assets->register();
+		}
+		$this->services[] = $assets;
 	}
 
 	private function load_shared_classes() {
 		require_once __DIR__ . '/class-gloskin-site-core-content-service.php';
-		require_once __DIR__ . '/class-gloskin-site-core-asset-service.php';
 		require_once __DIR__ . '/class-gloskin-site-core-page-lookup.php';
-		require_once __DIR__ . '/class-gloskin-site-core-translation.php';
+		require_once __DIR__ . '/class-gloskin-site-core-template-service.php';
+		require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php';
+		require_once __DIR__ . '/class-gloskin-site-core-form-adapter.php';
 		require_once __DIR__ . '/class-gloskin-site-core-language.php';
 		require_once __DIR__ . '/class-gloskin-site-core-language-projection.php';
-	}
-
-	public static function activate() {
-		require_once __DIR__ . '/class-gloskin-site-core-content-service.php';
-		require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
-		$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();
-		$lifecycle->activate();
-	}
-
-	public static function deactivate() {
-		require_once __DIR__ . '/class-gloskin-site-core-lifecycle-service.php';
-		$lifecycle = new Gloskin_Site_Core_Lifecycle_Service();
-		$lifecycle->deactivate();
+		require_once __DIR__ . '/class-gloskin-site-core-translation.php';
+		require_once __DIR__ . '/class-gloskin-site-core-asset-service.php';
+		require_once __DIR__ . '/class-gloskin-site-core-admin-menu.php';
+		require_once __DIR__ . '/class-gloskin-site-core-editorial-manager.php';
+		require_once __DIR__ . '/class-gloskin-site-core-consultation-admin.php';
+		require_once __DIR__ . '/class-gloskin-site-core-media-cleanup-admin.php';
+		require_once __DIR__ . '/class-gloskin-site-core-content-finalizer-admin.php';
 	}
 }
