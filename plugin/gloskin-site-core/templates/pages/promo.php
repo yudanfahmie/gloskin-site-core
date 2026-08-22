@@ -29,7 +29,7 @@ $gloskin_render_promo_carousel = static function ( $promos, $heading, $heading_t
 					<div class="gloskin-ui1-promo-carousel__slide gloskin-promo__slide<?php echo $gloskin_promo_first ? ' is-active' : ''; ?>" data-gloskin-promo-slide="<?php echo esc_attr( (string) $gloskin_promo_index ); ?>"<?php echo $gloskin_promo_first ? '' : ' hidden'; ?> aria-label="<?php echo esc_attr( sprintf( __( 'Promo %1$d dari %2$d', 'gloskin-site-core' ), $gloskin_promo_index + 1, $count ) ); ?>">
 						<div class="gloskin-promo__media" style="--gloskin-promo-focus-x:<?php echo esc_attr( (string) $gloskin_promo_focus_x ); ?>%;--gloskin-promo-focus-y:<?php echo esc_attr( (string) $gloskin_promo_focus_y ); ?>%;">
 							<?php if ( $gloskin_promo_image ) : ?>
-								<?php echo wp_get_attachment_image( $gloskin_promo_image, 'large', false, array( 'class' => 'gloskin-promo__image', 'loading' => $gloskin_promo_first ? 'eager' : 'lazy', 'alt' => '' ) ); ?>
+								<?php echo wp_get_attachment_image( $gloskin_promo_image, 'full', false, array( 'class' => 'gloskin-promo__image', 'loading' => $gloskin_promo_first ? 'eager' : 'lazy', 'alt' => '' ) ); ?>
 							<?php else : ?>
 								<div class="gloskin-promo__missing" aria-hidden="true"></div>
 							<?php endif; ?>
