@@ -14,9 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Gloskin_Site_Core_Promo_Modal {
-	const POPUP_META     = 'gloskin_promo_popup_enabled';
-	const VISIBILITY_META = 'gloskin_promo_visibility';
-	const PAGE_IDS_META   = 'gloskin_promo_visibility_page_ids';
+	const POPUP_META       = 'gloskin_promo_popup_enabled';
+	const VISIBILITY_META  = 'gloskin_promo_visibility';
+	const PAGE_IDS_META    = 'gloskin_promo_visibility_page_ids';
 	const DESTINATION_META = 'gloskin_promo_destination_url';
 
 	const VISIBILITY_HOMEPAGE = 'homepage';
@@ -149,6 +149,18 @@ final class Gloskin_Site_Core_Promo_Modal {
 		return 'https' === $scheme ? $url : '';
 	}
 
+	/** @param mixed $value Percentage. @param float $fallback Fallback. @return float */
+	private static function bounded_percent( $value, $fallback = 50.0 ) {
+		$value = is_numeric( $value ) ? (float) $value : (float) $fallback;
+		return max( 0.0, min( 100.0, $value ) );
+	}
+
+	/** @param mixed $value Zoom percentage. @return float */
+	private static function bounded_zoom( $value ) {
+		$value = is_numeric( $value ) ? (float) $value : 100.0;
+		return max( 100.0, min( 300.0, $value ) );
+	}
+
 	/**
 	 * The one production eligibility resolver for Promo Modal.
 	 *
@@ -166,10 +178,13 @@ final class Gloskin_Site_Core_Promo_Modal {
 			return $this->eligible_cache;
 		}
 
-		$profile     = Gloskin_Site_Core_Content_Service::editorial_profile( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE );
-		$active_meta = isset( $profile['active_meta'] ) ? (string) $profile['active_meta'] : 'gloskin_promo_active';
-		$order_meta  = isset( $profile['order_meta'] ) ? (string) $profile['order_meta'] : 'gloskin_promo_order';
-		$posts       = get_posts( array(
+		$profile      = Gloskin_Site_Core_Content_Service::editorial_profile( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE );
+		$active_meta  = isset( $profile['active_meta'] ) ? (string) $profile['active_meta'] : 'gloskin_promo_active';
+		$order_meta   = isset( $profile['order_meta'] ) ? (string) $profile['order_meta'] : 'gloskin_promo_order';
+		$focus_x_meta = isset( $profile['focus_x_meta'] ) ? (string) $profile['focus_x_meta'] : 'gloskin_promo_focus_x';
+		$focus_y_meta = isset( $profile['focus_y_meta'] ) ? (string) $profile['focus_y_meta'] : 'gloskin_promo_focus_y';
+		$zoom_meta    = isset( $profile['zoom_meta'] ) ? (string) $profile['zoom_meta'] : 'gloskin_promo_crop_zoom';
+		$posts        = get_posts( array(
 			'post_type'      => Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE,
 			'post_status'    => 'publish',
 			'posts_per_page' => -1,
@@ -195,12 +210,15 @@ final class Gloskin_Site_Core_Promo_Modal {
 				continue;
 			}
 			$this->eligible_cache[] = array(
-				'id'          => (int) $post->ID,
-				'title'       => (string) get_the_title( $post ),
-				'image_id'    => $image_id,
-				'url'         => $url,
-				'order'       => (int) get_post_meta( $post->ID, $order_meta, true ),
-				'modified'    => (string) $post->post_modified_gmt,
+				'id'       => (int) $post->ID,
+				'title'    => (string) get_the_title( $post ),
+				'image_id' => $image_id,
+				'url'      => $url,
+				'order'    => (int) get_post_meta( $post->ID, $order_meta, true ),
+				'modified' => (string) $post->post_modified_gmt,
+				'focus_x'  => self::bounded_percent( get_post_meta( $post->ID, $focus_x_meta, true ) ),
+				'focus_y'  => self::bounded_percent( get_post_meta( $post->ID, $focus_y_meta, true ) ),
+				'zoom'     => self::bounded_zoom( get_post_meta( $post->ID, $zoom_meta, true ) ),
 			);
 		}
 
@@ -264,7 +282,7 @@ final class Gloskin_Site_Core_Promo_Modal {
 					<div class="gloskin-promo-modal__viewport">
 						<div class="gloskin-promo-modal__track" data-gloskin-promo-track>
 							<?php foreach ( $promos as $index => $promo ) : ?>
-							<a class="gloskin-promo-modal__slide" data-gloskin-promo-slide href="<?php echo esc_url( $promo['url'] ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Buka promo: %s', 'gloskin-site-core' ), $promo['title'] ) ); ?>"<?php echo 0 === $index ? '' : ' tabindex="-1"'; ?>>
+							<a class="gloskin-promo-modal__slide" data-gloskin-promo-slide data-focus-x="<?php echo esc_attr( (string) $promo['focus_x'] ); ?>" data-focus-y="<?php echo esc_attr( (string) $promo['focus_y'] ); ?>" data-crop-zoom="<?php echo esc_attr( (string) $promo['zoom'] ); ?>" href="<?php echo esc_url( $promo['url'] ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Buka promo: %s', 'gloskin-site-core' ), $promo['title'] ) ); ?>"<?php echo 0 === $index ? '' : ' tabindex="-1"'; ?>>
 								<?php echo wp_get_attachment_image( $promo['image_id'], 'full', false, array( 'class' => 'gloskin-promo-modal__image', 'alt' => (string) $promo['title'], 'loading' => 0 === $index ? 'eager' : 'lazy', 'decoding' => 'async' ) ); ?>
 							</a>
 							<?php endforeach; ?>
