@@ -37,7 +37,7 @@ function p5must( bool $cond, string $msg ): void {
 }
 
 /* ── Version ─────────────────────────────────────────────────────── */
-p5must( false !== strpos( $kernel, "const VERSION = '0.7.206'" ) && false !== strpos( $plugin, 'Version: 0.7.206' ), 'release owners synchronized at 0.7.206' );
+p5must( false !== strpos( $kernel, "const VERSION = '0.7.213'" ) && false !== strpos( $plugin, 'Version: 0.7.213' ), 'release owners synchronized at 0.7.213' );
 
 /* ── One Language registration, one Projection registration ──────── */
 p5must( 1 === substr_count( $kernel, 'register_frontend' ), 'exactly one frontend Language registration in Kernel' );
@@ -158,4 +158,15 @@ p5must( false === strpos( $kernel, 'Phase3_Migration_Admin' ), 'retired Phase3_M
 p5must( false === strpos( $projection, "'gloskin_hero_cta_url'" ), 'non-copy hero CTA URL not in projection' );
 p5must( false === strpos( $projection, "'gloskin_hero_media_id'" ), 'non-copy hero media ID not in projection' );
 
-echo "phase5-translation-frontend-contract.php: OK (single resolver + cached registries + circuit breaker + memory guard + object cache + version 0.7.206)\n";
+/* ── Content-ownership durable rules (added 0.7.213) ─────────────── */
+// Global the_content filter absent — no whole-page content replacement.
+p5must( false === strpos( $language, "add_filter( 'the_content'" ) && false === strpos( $projection, "add_filter( 'the_content'" ), 'no global the_content filter in language or projection' );
+// No add_filter('post_content', ...) hook (wholesale content replacement) in language or projection.
+p5must( false === strpos( $language, "add_filter( 'post_content'" ) && false === strpos( $projection, "add_filter( 'post_content'" ), 'no global post_content filter hook in language or projection' );
+// Whole-content interface buffer: method must be defined and registered exactly once each.
+p5must( false !== strpos( $projection, 'public function start_interface_buffer()' ), 'Projection defines start_interface_buffer() as whole-content output buffer owner' );
+p5must( 1 === substr_count( $projection, "array( \$this, 'start_interface_buffer' )" ), 'Projection registers start_interface_buffer exactly once on template_redirect' );
+// Woo structural page content is protected — no the_content filter that would replace Woo output.
+p5must( false === strpos( $language, "add_filter( 'the_content'" ), 'Language does not hook the_content (Woo structural content protected)' );
+
+echo "phase5-translation-frontend-contract.php: OK (single resolver + cached registries + circuit breaker + memory guard + object cache + content-ownership rules + version 0.7.213)\n";

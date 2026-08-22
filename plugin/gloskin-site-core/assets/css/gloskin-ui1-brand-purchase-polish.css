@@ -1,10 +1,5 @@
 /* Canonical brand shimmer. Purchase presentation now lives with the semantic
  * single-product owner in gloskin-ui1-single-product-geometry.css. */
-/* Feed the existing universal dark-consultation background owner a deeper
- * local charcoal without creating a second background declaration. */
-.gloskin-ui1-dark-consultation{
-	--gloskin-brand-charcoal:color-mix(in srgb,#2A232C 62%,var(--gloskin-refresh-black));
-}
 .gloskin-ui1-brand,
 .gloskin-ui1-compact-brand,
 .gloskin-ui1-brand--footer{

@@ -45,10 +45,63 @@ $gloskin_founder_image_url = plugin_dir_url( dirname( __DIR__, 2 ) . '/gloskin-s
 		<div class="gloskin-ui1-container">
 			<?php gloskin_ui1_render_section_heading( __( 'Visi · Misi · Nilai', 'gloskin-site-core' ) ); ?>
 			<div class="gloskin-about-principles__grid">
-				<article class="gloskin-about-principle"><h3><?php echo esc_html__( 'Visi', 'gloskin-site-core' ); ?></h3><div class="gloskin-ui1-prose"><?php echo wp_kses_post( (string) $gloskin_context['vision'] ); ?></div></article>
-				<article class="gloskin-about-principle"><h3><?php echo esc_html__( 'Misi', 'gloskin-site-core' ); ?></h3><div class="gloskin-ui1-prose"><?php echo wp_kses_post( (string) $gloskin_context['mission'] ); ?></div></article>
-				<article class="gloskin-about-principle"><h3><?php echo esc_html__( 'Nilai', 'gloskin-site-core' ); ?></h3><div class="gloskin-ui1-prose"><?php echo wp_kses_post( (string) $gloskin_context['values'] ); ?></div></article>
+				<article class="gloskin-about-principle">
+					<div class="gloskin-about-principle__icon" aria-hidden="true">
+						<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+							<path d="M24 36V18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+							<path d="M16 26l8-8 8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M10 36h28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						</svg>
+					</div>
+					<h3><?php echo esc_html__( 'Visi', 'gloskin-site-core' ); ?></h3>
+					<div class="gloskin-ui1-prose"><?php echo wp_kses_post( (string) $gloskin_context['vision'] ); ?></div>
+				</article>
+				<article class="gloskin-about-principle">
+					<div class="gloskin-about-principle__icon" aria-hidden="true">
+						<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+							<path d="M10 38c4 0 6-6 14-6 6 0 10-4 14-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+							<circle cx="10" cy="38" r="3" stroke="currentColor" stroke-width="1.5"/>
+							<circle cx="38" cy="24" r="3" stroke="currentColor" stroke-width="1.5"/>
+						</svg>
+					</div>
+					<h3><?php echo esc_html__( 'Misi', 'gloskin-site-core' ); ?></h3>
+					<div class="gloskin-ui1-prose"><?php echo wp_kses_post( (string) $gloskin_context['mission'] ); ?></div>
+				</article>
+				<article class="gloskin-about-principle">
+					<div class="gloskin-about-principle__icon" aria-hidden="true">
+						<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+							<circle cx="24" cy="13" r="4" stroke="currentColor" stroke-width="1.5"/>
+							<circle cx="13" cy="33" r="4" stroke="currentColor" stroke-width="1.5"/>
+							<circle cx="35" cy="33" r="4" stroke="currentColor" stroke-width="1.5"/>
+							<path d="M21 17l-5 12M27 17l5 12M17 33h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						</svg>
+					</div>
+					<h3><?php echo esc_html__( 'Nilai', 'gloskin-site-core' ); ?></h3>
+					<div class="gloskin-ui1-prose"><?php echo wp_kses_post( (string) $gloskin_context['values'] ); ?></div>
+				</article>
 			</div>
+		</div>
+	</section>
+
+	<section class="gloskin-ui1-section gloskin-about-philosophy" data-gloskin-section="about-philosophy">
+		<div class="gloskin-ui1-container gloskin-ui1-container--narrow">
+			<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Prinsip Kami', 'gloskin-site-core' ); ?></p>
+			<h2><?php echo esc_html__( 'Filosofi dalam Praktik', 'gloskin-site-core' ); ?></h2>
+			<div class="gloskin-ui1-prose gloskin-about-philosophy__body">
+				<p><?php echo esc_html__( 'Setiap keputusan di Gloskin bermula dari visi yang jelas, dijalankan dengan jalur yang terencana, dan dijaga oleh nilai-nilai yang menghubungkan seluruh tim. Pendekatan ini membentuk cara kami merancang layanan, memilih metode perawatan, dan membangun kepercayaan bersama klien.', 'gloskin-site-core' ); ?></p>
+				<p><?php echo esc_html__( 'Kami percaya bahwa kulit yang sehat adalah hasil dari perawatan yang konsisten, pengetahuan yang tepat, dan hubungan yang saling menghormati antara profesional dan pasien.', 'gloskin-site-core' ); ?></p>
+			</div>
+		</div>
+	</section>
+
+	<section class="gloskin-ui1-section gloskin-about-explore" data-gloskin-section="about-explore">
+		<div class="gloskin-ui1-container">
+			<?php gloskin_ui1_render_section_heading( __( 'Jelajahi Gloskin', 'gloskin-site-core' ) ); ?>
+			<?php gloskin_ui1_render_pathway_grid( array(
+				array( 'title' => __( 'Perawatan', 'gloskin-site-core' ), 'eyebrow' => __( 'Layanan', 'gloskin-site-core' ), 'copy' => __( 'Rangkaian perawatan kulit profesional.', 'gloskin-site-core' ), 'url' => home_url( '/treatments/' ), 'label' => __( 'Lihat Perawatan', 'gloskin-site-core' ) ),
+				array( 'title' => __( 'Produk Skincare', 'gloskin-site-core' ), 'eyebrow' => __( 'Produk', 'gloskin-site-core' ), 'copy' => __( 'Rangkaian produk perawatan kulit.', 'gloskin-site-core' ), 'url' => home_url( '/skincare/' ), 'label' => __( 'Lihat Produk', 'gloskin-site-core' ) ),
+				array( 'title' => __( 'Klinik Kami', 'gloskin-site-core' ), 'eyebrow' => __( 'Lokasi', 'gloskin-site-core' ), 'copy' => __( 'Temukan klinik Gloskin terdekat.', 'gloskin-site-core' ), 'url' => home_url( '/clinics/' ), 'label' => __( 'Temukan Klinik', 'gloskin-site-core' ) ),
+			) ); ?>
 		</div>
 	</section>
 </div>

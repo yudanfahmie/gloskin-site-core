@@ -87,14 +87,4 @@ foreach ( (array) $gloskin_context['mappings'] as $gloskin_mapping ) {
 		</div>
 	</section>
 
-	<section class="gloskin-skincare-clinic-cta" data-gloskin-section="skincare-closing">
-		<div class="gloskin-ui1-container gloskin-skincare-clinic-cta__inner">
-			<div class="gloskin-skincare-clinic-cta__copy">
-				<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Lokasi', 'gloskin-site-core' ); ?></p>
-				<h2><?php echo esc_html__( 'Pilih Klinik Gloskin Terdekat dan Mulai Konsultasi', 'gloskin-site-core' ); ?></h2>
-				<p><?php echo esc_html__( 'Kunjungi klinik Gloskin yang tersedia untuk berdiskusi langsung mengenai kebutuhan kulit Anda.', 'gloskin-site-core' ); ?></p>
-			</div>
-			<a class="gloskin-skincare-clinic-cta__button" href="<?php echo esc_url( home_url( '/clinics/' ) ); ?>"><?php echo esc_html__( 'Cari Klinik', 'gloskin-site-core' ); ?></a>
-		</div>
-	</section>
 </div>

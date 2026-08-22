@@ -173,17 +173,18 @@
 .gloskin-ui1-variable-modal__cta:focus-visible{
 	filter:brightness(.96);
 }
-/* Idle: the shared plus-icon primitive. Loading: the SAME ::before swaps to
-   the existing canonical ring spinner -- one pseudo-element, one owner, so
-   idle and loading icons can never render at the same time. */
+/* Idle: canonical cart icon (all direct cart mutations use --gloskin-icon-cart).
+   Loading: the SAME ::before swaps to the existing canonical ring spinner --
+   one pseudo-element, one owner, so idle and loading icons can never render
+   at the same time. */
 .gloskin-ui1-variable-modal__cta::before{
 	content:"";
 	flex:0 0 15px;
 	width:15px;
 	height:15px;
 	background-color:currentColor;
-	-webkit-mask:var(--gloskin-icon-plus) center/contain no-repeat;
-	mask:var(--gloskin-icon-plus) center/contain no-repeat;
+	-webkit-mask:var(--gloskin-icon-cart) center/contain no-repeat;
+	mask:var(--gloskin-icon-cart) center/contain no-repeat;
 }
 .gloskin-ui1-variable-modal__cta.is-loading{
 	pointer-events:none;

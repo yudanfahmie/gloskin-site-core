@@ -108,11 +108,8 @@ final class Gloskin_Site_Core_Admin_Service {
 		add_action( 'admin_post_' . self::DEMO_IMPORT_ACTION, array( $this, 'handle_demo_import' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_consultation_admin_assets' ), 30 );
 
-		// List-table columns for managed CPTs (item 12).
-		add_filter( 'manage_edit-' . Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE . '_columns', array( $this, 'promo_list_columns' ) );
-		add_action( 'manage_' . Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE . '_posts_custom_column', array( $this, 'promo_list_column_cell' ), 10, 2 );
-		add_filter( 'manage_edit-' . Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE . '_columns', array( $this, 'testimonial_list_columns' ) );
-		add_action( 'manage_' . Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE . '_posts_custom_column', array( $this, 'testimonial_list_column_cell' ), 10, 2 );
+		// List-table columns for Achievement (item 12).
+		// Promo/Testimonial list-table ownership transferred to EditorialManager.
 		add_filter( 'manage_edit-' . Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE . '_columns', array( $this, 'achievement_list_columns' ) );
 		add_action( 'manage_' . Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE . '_posts_custom_column', array( $this, 'achievement_list_column_cell' ), 10, 2 );
 	}
@@ -487,8 +484,7 @@ final class Gloskin_Site_Core_Admin_Service {
 		add_meta_box( 'gloskin-clinic-details', __( 'Clinic Details', 'gloskin-site-core' ), array( $this, 'render_clinic_meta_box' ), Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE, 'normal', 'default' );
 		add_meta_box( 'gloskin-doctor-details', __( 'Doctor Details', 'gloskin-site-core' ), array( $this, 'render_doctor_meta_box' ), Gloskin_Site_Core_Content_Service::DOCTOR_POST_TYPE, 'normal', 'default' );
 		add_meta_box( 'gloskin-page-details', __( 'Gloskin Page Settings', 'gloskin-site-core' ), array( $this, 'render_page_meta_box' ), 'page', 'normal', 'default' );
-		add_meta_box( 'gloskin-promo-details', __( 'Promo Details', 'gloskin-site-core' ), array( $this, 'render_promo_meta_box' ), Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE, 'normal', 'default' );
-		add_meta_box( 'gloskin-testimonial-details', __( 'Testimonial Details', 'gloskin-site-core' ), array( $this, 'render_testimonial_meta_box' ), Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE, 'normal', 'default' );
+		// Promo/Testimonial meta boxes transferred to EditorialManager.
 		add_meta_box( 'gloskin-achievement-details', __( 'Achievement Details', 'gloskin-site-core' ), array( $this, 'render_achievement_meta_box' ), Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE, 'normal', 'default' );
 	}
 
@@ -530,29 +526,6 @@ final class Gloskin_Site_Core_Admin_Service {
 		$this->url_field( $post, 'gloskin_booking_target', __( 'Booking target', 'gloskin-site-core' ) );
 		$this->relationship_field( $post, 'gloskin_branch_ids', Gloskin_Site_Core_Content_Service::CLINIC_POST_TYPE, __( 'Practice branches', 'gloskin-site-core' ) );
 		echo '<p class="description">' . esc_html__( 'Use the standard Featured Image panel for the approved doctor portrait.', 'gloskin-site-core' ) . '</p>';
-	}
-
-	public function render_promo_meta_box( $post ) {
-		$this->nonce();
-		$this->text_field( $post, 'gloskin_promo_eyebrow', __( 'Eyebrow label', 'gloskin-site-core' ) );
-		$this->textarea_field( $post, 'gloskin_promo_summary', __( 'Summary copy', 'gloskin-site-core' ), 4 );
-		$this->text_field( $post, 'gloskin_promo_cta_label', __( 'CTA button label', 'gloskin-site-core' ) );
-		$this->url_field( $post, 'gloskin_promo_cta_url', __( 'CTA URL', 'gloskin-site-core' ) );
-		$this->text_field( $post, 'gloskin_promo_start_date', __( 'Start date (YYYY-MM-DD, site timezone, leave blank for no limit)', 'gloskin-site-core' ) );
-		$this->text_field( $post, 'gloskin_promo_end_date', __( 'End date (YYYY-MM-DD, inclusive, site timezone, leave blank for no limit)', 'gloskin-site-core' ) );
-		$this->checkbox_field( $post, 'gloskin_promo_active', __( 'Active (eligible for display when within date range)', 'gloskin-site-core' ) );
-		$this->text_field( $post, 'gloskin_promo_order', __( 'Display order (lower = first; leave blank = unspecified)', 'gloskin-site-core' ) );
-		echo '<p class="description">' . esc_html__( 'Featured Image: use the standard Featured Image panel for the promo banner image.', 'gloskin-site-core' ) . '</p>';
-	}
-
-	public function render_testimonial_meta_box( $post ) {
-		$this->nonce();
-		$this->text_field( $post, 'gloskin_testimonial_attribution', __( 'Name / attribution', 'gloskin-site-core' ) );
-		$this->text_field( $post, 'gloskin_testimonial_subtitle', __( 'Subtitle / type (e.g. Pasien Gloskin)', 'gloskin-site-core' ) );
-		$this->textarea_field( $post, 'gloskin_testimonial_source_note', __( 'Source note (optional, for internal reference)', 'gloskin-site-core' ), 3 );
-		$this->checkbox_field( $post, 'gloskin_testimonial_active', __( 'Active (eligible for display)', 'gloskin-site-core' ) );
-		$this->text_field( $post, 'gloskin_testimonial_order', __( 'Display order (lower = first)', 'gloskin-site-core' ) );
-		echo '<p class="description">' . esc_html__( 'The quote body is the post excerpt. Featured Image: use the standard Featured Image panel.', 'gloskin-site-core' ) . '</p>';
 	}
 
 	public function render_achievement_meta_box( $post ) {
@@ -656,16 +629,7 @@ final class Gloskin_Site_Core_Admin_Service {
 				'arrays'   => array(),
 				'integers' => array( 'gloskin_hero_media_id', 'gloskin_about_founder_media_id' ),
 			),
-			Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE => array(
-				'strings'  => array( 'gloskin_promo_eyebrow', 'gloskin_promo_summary', 'gloskin_promo_cta_label', 'gloskin_promo_cta_url', 'gloskin_promo_start_date', 'gloskin_promo_end_date', 'gloskin_promo_active', 'gloskin_promo_order' ),
-				'arrays'   => array(),
-				'integers' => array(),
-			),
-			Gloskin_Site_Core_Content_Service::TESTIMONIAL_POST_TYPE => array(
-				'strings'  => array( 'gloskin_testimonial_attribution', 'gloskin_testimonial_subtitle', 'gloskin_testimonial_source_note', 'gloskin_testimonial_active', 'gloskin_testimonial_order' ),
-				'arrays'   => array(),
-				'integers' => array(),
-			),
+			// Promo/Testimonial save_schema entries removed; EditorialManager is sole CRUD owner.
 			Gloskin_Site_Core_Content_Service::ACHIEVEMENT_POST_TYPE => array(
 				'strings'  => array( 'gloskin_achievement_issuer', 'gloskin_achievement_year', 'gloskin_achievement_source_url', 'gloskin_achievement_active', 'gloskin_achievement_feature_on_home', 'gloskin_achievement_order' ),
 				'arrays'   => array(),
@@ -1620,88 +1584,8 @@ final class Gloskin_Site_Core_Admin_Service {
 	}
 
 	// -------------------------------------------------------------------------
-	// List-table columns — Promo (item 12)
-	// -------------------------------------------------------------------------
-
-	/** @param array<string,string> $columns @return array<string,string> */
-	public function promo_list_columns( $columns ) {
-		$new = array();
-		foreach ( $columns as $key => $label ) {
-			$new[ $key ] = $label;
-			if ( 'title' === $key ) {
-				$new['gloskin_promo_active']     = __( 'Active', 'gloskin-site-core' );
-				$new['gloskin_promo_dates']      = __( 'Date range', 'gloskin-site-core' );
-				$new['gloskin_promo_order']      = __( 'Order', 'gloskin-site-core' );
-				$new['gloskin_promo_is_demo']    = __( 'Demo', 'gloskin-site-core' );
-			}
-		}
-		return $new;
-	}
-
-	/** @return void */
-	public function promo_list_column_cell( $column, $post_id ) {
-		switch ( $column ) {
-			case 'gloskin_promo_active':
-				echo get_post_meta( $post_id, 'gloskin_promo_active', true ) ? '✔' : '—';
-				break;
-			case 'gloskin_promo_dates':
-				$start = (string) get_post_meta( $post_id, 'gloskin_promo_start_date', true );
-				$end   = (string) get_post_meta( $post_id, 'gloskin_promo_end_date', true );
-				echo esc_html( ( $start ?: '∞' ) . ' → ' . ( $end ?: '∞' ) );
-				break;
-			case 'gloskin_promo_order':
-				$order = (string) get_post_meta( $post_id, 'gloskin_promo_order', true );
-				echo esc_html( '' !== $order ? $order : '—' );
-				break;
-			case 'gloskin_promo_is_demo':
-				$identity = get_post_meta( $post_id, '_gloskin_demo_identity', true );
-				echo $identity ? '✔' : '—';
-				break;
-		}
-	}
-
-	// -------------------------------------------------------------------------
-	// List-table columns — Testimonial (item 12)
-	// -------------------------------------------------------------------------
-
-	/** @param array<string,string> $columns @return array<string,string> */
-	public function testimonial_list_columns( $columns ) {
-		$new = array();
-		foreach ( $columns as $key => $label ) {
-			$new[ $key ] = $label;
-			if ( 'title' === $key ) {
-				$new['gloskin_testimonial_attribution'] = __( 'Attribution', 'gloskin-site-core' );
-				$new['gloskin_testimonial_active']      = __( 'Active', 'gloskin-site-core' );
-				$new['gloskin_testimonial_order']       = __( 'Order', 'gloskin-site-core' );
-				$new['gloskin_testimonial_is_demo']     = __( 'Demo', 'gloskin-site-core' );
-			}
-		}
-		return $new;
-	}
-
-	/** @return void */
-	public function testimonial_list_column_cell( $column, $post_id ) {
-		switch ( $column ) {
-			case 'gloskin_testimonial_attribution':
-				$attr = (string) get_post_meta( $post_id, 'gloskin_testimonial_attribution', true );
-				echo esc_html( $attr ?: '—' );
-				break;
-			case 'gloskin_testimonial_active':
-				echo get_post_meta( $post_id, 'gloskin_testimonial_active', true ) ? '✔' : '—';
-				break;
-			case 'gloskin_testimonial_order':
-				$order = (string) get_post_meta( $post_id, 'gloskin_testimonial_order', true );
-				echo esc_html( '' !== $order ? $order : '—' );
-				break;
-			case 'gloskin_testimonial_is_demo':
-				$identity = get_post_meta( $post_id, '_gloskin_demo_identity', true );
-				echo $identity ? '✔' : '—';
-				break;
-		}
-	}
-
-	// -------------------------------------------------------------------------
 	// List-table columns — Achievement (item 12)
+	// Promo/Testimonial list-table column methods removed; EditorialManager owns them.
 	// -------------------------------------------------------------------------
 
 	/** @param array<string,string> $columns @return array<string,string> */

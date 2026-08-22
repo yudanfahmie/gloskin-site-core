@@ -192,13 +192,8 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 .gloskin-ui1-footer__bottom{padding-block:22px 30px}
 
 /* Native logged-out My Account: page-only owner that neutralizes Woo's
-   col2-set floats and form.login/register chrome without touching quick auth. */
-.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-heading>.gloskin-ui1-container,
-.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native{
-	width:calc(100% - 40px);
-	max-width:900px;
-	margin-inline:auto;
-}
+   col2-set floats and form.login/register chrome without touching quick auth.
+   Outer shell uses canonical .gloskin-ui1-container — no custom max-width here. */
 .woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native>.woocommerce{
 	display:block;
 	width:100%;
@@ -296,8 +291,6 @@ body.gloskin-ui1 .gloskin-ui1-nav--desktop>.gloskin-ui1-nav__list>.gloskin-ui1-n
 	}
 }
 @media (max-width:782px){
-	.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-heading>.gloskin-ui1-container,
-	.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native{width:calc(100% - 28px)}
 	.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login{grid-template-columns:1fr;gap:14px}
 	.woocommerce-account:not(.logged-in) .gloskin-ui1-commerce-native #customer_login>.u-column1:only-child{max-width:none}
 }
@@ -697,7 +690,7 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::af
 .gloskin-clinic-page .gloskin-ui1-eyebrow,.gloskin-doctors-page .gloskin-ui1-eyebrow{margin:0 0 15px;color:var(--gloskin-brand-champagne);font-size:.85rem;font-weight:700;letter-spacing:3px;text-transform:uppercase}
 
 /* One dark consultation primitive for Clinic, Doctors and Skincare Category. */
-.gloskin-ui1-dark-consultation{position:relative;overflow:hidden;padding:80px 5%;background:var(--gloskin-brand-charcoal);color:var(--gloskin-inverse)}
+.gloskin-ui1-dark-consultation{--gloskin-brand-charcoal:color-mix(in srgb,#2A232C 62%,var(--gloskin-refresh-black));position:relative;overflow:hidden;padding:80px 5%;background:var(--gloskin-brand-charcoal);color:var(--gloskin-inverse)}
 
 .gloskin-ui1-dark-consultation::before,.gloskin-ui1-dark-consultation::after{position:absolute;border:1px solid color-mix(in srgb,var(--gloskin-inverse) 5%,transparent);border-radius:50%;content:"";pointer-events:none}
 .gloskin-ui1-dark-consultation::before{top:-50%;right:-10%;width:600px;height:600px}

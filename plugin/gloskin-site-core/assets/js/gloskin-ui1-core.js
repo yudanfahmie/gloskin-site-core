@@ -2913,11 +2913,26 @@
 		var toReveal = candidates.filter(function (el) { return !isExcluded(el); });
 		if (!toReveal.length) { return; }
 
-		/* Assign attribute + stagger; max stagger cap = 4 items per group. */
+		/* Split candidates: elements already inside the initial viewport are made
+		 * immediately visible to prevent a hidden→visible flash. Only below-fold
+		 * elements get data-gloskin-reveal (the CSS hide trigger) + stagger. */
 		var staggerMs = 80;
 		var maxStagger = 4;
-		var groupMap = {};
+		var vph = window.innerHeight || document.documentElement.clientHeight;
+
+		var belowFold = [];
 		toReveal.forEach(function (el) {
+			var rect = el.getBoundingClientRect();
+			if (rect.bottom > 0 && rect.top < vph) {
+				/* Already in viewport at load — reveal immediately, no attribute. */
+				el.classList.add('is-visible');
+			} else {
+				belowFold.push(el);
+			}
+		});
+
+		/* Assign attribute + stagger only on below-fold elements. */
+		belowFold.forEach(function (el) {
 			var parent = el.parentElement || document.body;
 			var siblings = Array.prototype.slice.call(parent.children);
 			var pos = siblings.indexOf(el);
@@ -2925,6 +2940,8 @@
 			el.setAttribute('data-gloskin-reveal', '');
 			el.style.setProperty('--gloskin-reveal-delay', delay + 'ms');
 		});
+
+		if (!belowFold.length) { return; }
 
 		var io = new IntersectionObserver(function (entries) {
 			entries.forEach(function (entry) {
@@ -2935,7 +2952,7 @@
 			});
 		}, { threshold: 0.1 });
 
-		toReveal.forEach(function (el) { io.observe(el); });
+		belowFold.forEach(function (el) { io.observe(el); });
 	}
 
 	/* Page-to-page cross-document transition.

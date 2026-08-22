@@ -17,7 +17,6 @@
 .gloskin-ui1-commerce-heading{padding:clamp(30px,5vw,56px) 0 16px}
 .gloskin-ui1-commerce-heading h1{margin:0;font-family:var(--gloskin-font-heading);font-size:clamp(2rem,4vw,3.4rem);font-weight:600;line-height:1.08;letter-spacing:-.025em}
 .woocommerce-account .gloskin-ui1-commerce-heading{padding:clamp(22px,3.4vw,34px) 0 12px}
-.woocommerce-account .gloskin-ui1-commerce-heading>.gloskin-ui1-container,.woocommerce-account .gloskin-ui1-commerce-native{width:calc(100% - 40px);max-width:980px;margin-inline:auto}
 .woocommerce-account .gloskin-ui1-commerce-heading h1{font-size:clamp(2.2rem,3.1vw,2.9rem)}
 
 /* My Account keeps native Woo markup/endpoints, with one compact tabbed layout owner. */
@@ -83,7 +82,6 @@
 .gloskin-ui1-auth-overlay .lost_password{margin-bottom:0}.gloskin-ui1-auth-overlay .lost_password a{color:var(--gloskin-accent-readable)}
 
 @media (max-width:782px){
- .woocommerce-account .gloskin-ui1-commerce-heading>.gloskin-ui1-container,.woocommerce-account .gloskin-ui1-commerce-native{width:calc(100% - 28px)}
  .woocommerce-account .gloskin-ui1-commerce-heading{padding:22px 0 10px}
  .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation{margin-bottom:13px}
  .woocommerce-account .gloskin-ui1-commerce-native .woocommerce-MyAccount-navigation a{padding:9px 10px 11px;font-size:.9rem}

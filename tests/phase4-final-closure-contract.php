@@ -111,8 +111,8 @@ foreach ( array( 'data-gloskin-section="home-treatments"', 'data-gloskin-section
 }
 p4must( substr_count( $h, 'gloskin_ui1_render_empty_state(' ) >= 3, 'Home dynamic sections have shared empty-state fallbacks' );
 p4must( false !== strpos( $h, "gloskin_ui1_render_empty_state( 'generic', __( 'Testimoni'" ), 'Testimoni empty state uses shared renderer' );
-p4must( false !== strpos( $h, "gloskin_ui1_render_empty_state( 'generic', __( 'Piagam'" ), 'Piagam empty state uses shared renderer' );
-p4must( false !== strpos( $h, "gloskin_ui1_render_presentation_media( 'editorial', 'piagam-'" ), 'missing Piagam image uses shared media fallback' );
+p4must( false !== strpos( $h, "gloskin_ui1_render_empty_state( 'generic', __( 'Piagam & Penghargaan'" ), 'Piagam empty state uses shared renderer' );
+/* Piagam cards are text-only (marquee): no presentation-media call expected. */
 p4must( false !== strpos( $h, "trim( (string) ( \$gloskin_home_testimonial['excerpt'] ?? '' ) )" ), 'Testimonial uses factual excerpt' );
 p4must( false === strpos( $h, "\$gloskin_home_testimonial['title'] ?? ''" ), 'no fabricated Testimonial quote from title' );
 
@@ -120,18 +120,26 @@ p4must( false === strpos( $h, "\$gloskin_home_testimonial['title'] ?? ''" ), 'no
 p4must( false !== strpos( $helpers, 'function gloskin_ui1_render_empty_state(' ), 'shared generic empty-state renderer exists' );
 p4must( false !== strpos( $core_base, '.gloskin-ui1-empty-state{' ), 'shared core foundation owns generic empty-state CSS' );
 p4must( false === strpos( $readiness, '.gloskin-ui1-empty-state{' ), 'readiness layer no longer duplicates generic empty-state CSS' );
-p4must( false !== strpos( $editorial, '.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding-block:clamp(3rem,6vw,5.5rem)}' ), 'Home vertical rhythm is restored and scoped' );
-p4must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{object-fit:cover;object-position:center center}' ), 'Home hero video uses cover (latest product decision)' );
-p4must( false !== strpos( $editorial, '.gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{max-width:760px;margin:0 auto clamp(1.5rem,3vw,2.5rem);text-align:center}' ), 'Home section heading cadence is restored' );
+p4must( false !== strpos( $editorial, '.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding:clamp(80px,8vw,120px) 0}' ), 'Home vertical rhythm is restored and scoped' );
+p4must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{display:block' ) && false !== strpos( $editorial, 'object-fit:cover;object-position:center center' ), 'Home hero video uses cover (latest product decision)' );
+p4must( false !== strpos( $editorial, '.gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{max-width:760px;margin:0 auto 70px;text-align:center}' ), 'Home section heading cadence is restored' );
 p4must( false === strpos( $editorial, '.gloskin-ui1-section{padding' ), 'no broad global section spacing patch' );
 
 /* Promo remains structurally stable with shared empty/media fallbacks. */
 p4must( false !== strpos( $p, "gloskin_ui1_render_empty_state( 'generic', __( 'Informasi promo belum tersedia.'" ), 'Promo empty state uses shared renderer' );
-p4must( false !== strpos( $p, "gloskin_ui1_render_presentation_media( 'editorial', 'promo-'" ), 'Promo missing artwork uses shared media renderer' );
+p4must( false !== strpos( $p, 'gloskin-promo__missing' ), 'Promo missing artwork uses bounded placeholder' );
 p4must( false === strpos( $p, '<div class="gloskin-ui1-empty">' ), 'legacy Promo empty markup removed' );
 /* Promo carousel JS↔CSS contract: CSS must stack all enhanced slides into one grid area and clip the stage. */
-p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] .gloskin-ui1-promo-carousel__stage{display:grid;grid-template-areas:"slide";overflow:hidden;width:100%;min-width:0}' ), 'Promo carousel enhanced stage stacks slides in one grid area with overflow:hidden' );
+p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] .gloskin-ui1-promo-carousel__stage{display:grid;grid-template-areas:"slide";overflow:hidden;width:100%;min-width:0' ), 'Promo carousel enhanced stage stacks slides in one grid area with overflow:hidden' );
 p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{grid-area:slide;min-width:0;transition:transform .52s cubic-bezier(.4,0,.2,1);will-change:transform}' ), 'Promo carousel enhanced slides use grid-area:slide with transition' );
+/* Durable Promo architecture: TemplateService sole projection owner, split types, shared renderer. */
+$editorial_mgr = p4text( $plugin . '/includes/class-gloskin-site-core-editorial-manager.php' );
+p4must( false !== strpos( $ts, "'limited_promos'" ) && false !== strpos( $ts, "'regular_promos'" ), 'TemplateService projects both limited_promos and regular_promos' );
+p4must( false === strpos( $k, 'Editorial_Projection' ) && false === strpos( $k, 'editorial-projection' ), 'EditorialProjection is absent from Kernel' );
+p4must( false !== strpos( $editorial_mgr, "'_gloskin_editorial_seed_identity'" ) && false !== strpos( $editorial_mgr, 'SEED_META' ), 'EditorialManager owns SEED_META identity' );
+p4must( false !== strpos( $editorial_mgr, "'gloskin_promo_type', \$index <= 3 ? 'limited' : 'regular'" ), 'EditorialManager seeds split: index 1-3=limited, 4-6=regular' );
+p4must( false === strpos( $ts, 'Editorial_Projection' ), 'TemplateService does not delegate to EditorialProjection' );
+
 /* Footer owns universal dark CTA; page templates must not duplicate it. */
 $footer    = p4text( $plugin . '/templates/parts/footer.php' );
 $skincat   = p4text( $plugin . '/templates/pages/skincare-category.php' );
@@ -165,7 +173,13 @@ foreach ( $about_order as $section ) {
 	p4must( 1 === substr_count( $a, $section ), 'About section is unique: ' . $section );
 	$about_last = $position;
 }
-p4must( false === strpos( substr( $a, $about_last + 1 ), 'data-gloskin-section=' ), 'About ends after Visi/Misi/Nilai' );
+/* Optional bounded continuation sections are permitted after Principles. */
+$about_rest = substr( $a, $about_last + strlen( 'data-gloskin-section="about-principles"' ) );
+preg_match_all( '/data-gloskin-section="([^"]+)"/', $about_rest, $about_extras );
+$about_allowed_extras = array( 'about-philosophy', 'about-explore' );
+foreach ( $about_extras[1] as $about_extra ) {
+	p4must( in_array( $about_extra, $about_allowed_extras, true ), 'About continuation section must use a bounded identifier; found: ' . $about_extra );
+}
 foreach ( array( 'Operator:', 'gloskin_about_vision', 'gloskin_about_mission', 'gloskin_about_values', 'gloskin_about_founder_name', 'gloskin_about_founder_role' ) as $debug_copy ) {
 	p4must( false === strpos( $a, $debug_copy ), 'About public template does not expose internal field/debug token: ' . $debug_copy );
 }
@@ -202,6 +216,6 @@ foreach ( array( 'Detail tambahan belum tersedia untuk ditampilkan.', 'Informasi
 	p4must( false !== strpos( $t, $copy ), 'translation/interface owner contains: ' . $copy );
 }
 
-p4must( false !== strpos( $k, "const VERSION = '0.7.206'" ) && false !== strpos( $b, 'Version: 0.7.206' ), 'release owners synchronized at 0.7.206' );
+p4must( false !== strpos( $k, "const VERSION = '0.7.213'" ) && false !== strpos( $b, 'Version: 0.7.213' ), 'release owners synchronized at 0.7.213' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo carousel JS-CSS contract + footer universal CTA + About static copy + Shop CSS dep + version 0.7.206)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Home cover/video + Promo carousel JS-CSS contract + Promo arch durable + footer universal CTA + About static copy + bounded About continuation + Shop CSS dep + version 0.7.213)\n";
