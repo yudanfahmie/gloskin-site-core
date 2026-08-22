@@ -1,4 +1,4 @@
-/* Promo-only extension of the existing EditorialManager admin surface. */
+/* Promo-specific fields and popup-toggle UX for the canonical EditorialManager. */
 (function () {
 	'use strict';
 
@@ -10,7 +10,7 @@
 	var statusNode = document.querySelector('[data-gloskin-editorial-status]');
 	var statusMessage = statusNode ? statusNode.querySelector('[data-gloskin-editorial-status-message]') : null;
 	var records = {};
-	var pendingSave = null;
+	var guidance = null;
 
 	if (!form) { return; }
 	try { records = recordsNode ? JSON.parse(recordsNode.textContent || '{}') : {}; } catch (ignore) { records = {}; }
@@ -37,36 +37,13 @@
 		statusNode.hidden = !message;
 	}
 
-	function ajax(payload) {
-		var data = new FormData();
-		data.append('action', 'gloskin_editorial_toggle');
-		data.append('nonce', config.nonce);
-		Object.keys(payload).forEach(function (key) { data.append(key, payload[key]); });
-		return window.fetch(config.ajaxUrl, {
-			method: 'POST',
-			credentials: 'same-origin',
-			body: data
-		}).then(function (response) {
-			return response.text().then(function (text) {
-				var payloadJson = null;
-				try { payloadJson = text ? JSON.parse(text) : null; } catch (ignore) { payloadJson = null; }
-				if (!response.ok || !payloadJson || !payloadJson.success) {
-					var message = payloadJson && payloadJson.data && payloadJson.data.message
-						? payloadJson.data.message
-						: (response.ok ? label('popupFailed', 'Popup state could not be updated.') : 'The server could not update this popup. No changes were made.');
-					var error = new Error(message);
-					error.status = response.status || 0;
-					error.payload = payloadJson;
-					throw error;
-				}
-				return payloadJson;
-			});
-		});
-	}
-
 	function selectedPageIds() {
 		if (!pageSelect) { return []; }
-		return Array.prototype.slice.call(pageSelect.options).filter(function (option) { return option.selected; }).map(function (option) { return parseInt(option.value, 10) || 0; }).filter(Boolean);
+		return Array.prototype.slice.call(pageSelect.options).filter(function (option) {
+			return option.selected;
+		}).map(function (option) {
+			return parseInt(option.value, 10) || 0;
+		}).filter(Boolean);
 	}
 
 	function syncPageIdsField() {
@@ -74,7 +51,7 @@
 	}
 
 	function updateSpecificVisibility() {
-		var specific = visibilityField && visibilityField.value === 'specific_pages';
+		var specific = !!(visibilityField && visibilityField.value === 'specific_pages');
 		if (specificWrap) { specificWrap.hidden = !specific; }
 		if (pageSearch) { pageSearch.disabled = !specific; }
 		if (pageSelect) { pageSelect.disabled = !specific; }
@@ -89,9 +66,20 @@
 	function setPageSelection(ids) {
 		ids = Array.isArray(ids) ? ids.map(function (id) { return String(id); }) : [];
 		if (pageSelect) {
-			Array.prototype.slice.call(pageSelect.options).forEach(function (option) { option.selected = ids.indexOf(option.value) !== -1; });
+			Array.prototype.slice.call(pageSelect.options).forEach(function (option) {
+				option.selected = ids.indexOf(option.value) !== -1;
+			});
 		}
 		syncPageIdsField();
+	}
+
+	function filterPages(query) {
+		if (!pageSelect) { return; }
+		query = String(query || '').trim().toLowerCase();
+		Array.prototype.slice.call(pageSelect.options).forEach(function (option) {
+			var match = !query || option.textContent.toLowerCase().indexOf(query) !== -1 || option.selected;
+			option.hidden = !match;
+		});
 	}
 
 	function clearPopupGuidance() {
@@ -108,9 +96,9 @@
 		popupNotice.className = 'gloskin-editorial-popup-settings__notice';
 		popupNotice.setAttribute('role', 'status');
 		var strong = document.createElement('strong');
-		strong.textContent = 'Popup needs one more setting';
+		strong.textContent = 'Complete popup settings';
 		var body = document.createElement('span');
-		body.textContent = message;
+		body.textContent = message || 'Complete the highlighted popup setting, then save the Promo.';
 		popupNotice.appendChild(strong);
 		popupNotice.appendChild(body);
 		var settingsGrid = popupSettings.querySelector('.gloskin-editorial-popup-settings__grid');
@@ -129,74 +117,16 @@
 		updatePopupRequirements();
 	}
 
-	function filterPages(query) {
-		if (!pageSelect) { return; }
-		query = String(query || '').trim().toLowerCase();
-		Array.prototype.slice.call(pageSelect.options).forEach(function (option) {
-			var match = !query || option.textContent.toLowerCase().indexOf(query) !== -1 || option.selected;
-			option.hidden = !match;
-		});
-	}
-
-	function statusActions(row, create) {
-		if (!row) { return null; }
-		var cell = row.querySelector('.column-gloskin_editorial_active');
-		if (!cell) { return null; }
-		var actions = cell.querySelector('.gloskin-editorial-status-actions');
-		if (actions || !create) { return actions; }
-		actions = document.createElement('span');
-		actions.className = 'gloskin-editorial-status-actions';
-		var buttons = Array.prototype.slice.call(cell.querySelectorAll('.gloskin-editorial-active-toggle'));
-		if (buttons.length) {
-			cell.insertBefore(actions, buttons[0]);
-			buttons.forEach(function (button) { actions.appendChild(button); });
-		} else {
-			cell.appendChild(actions);
-		}
-		return actions;
-	}
-
-	function popupButton(row, create) {
-		if (!row) { return null; }
-		var button = row.querySelector('[data-gloskin-promo-popup-toggle]');
-		var actions = statusActions(row, create || !!button);
-		if (button) {
-			if (actions && button.parentNode !== actions) { actions.appendChild(button); }
-			return button;
-		}
-		if (!create) { return null; }
-		var cell = row.querySelector('.column-gloskin_editorial_active');
-		if (!cell) { return null; }
-		actions = actions || statusActions(row, true);
-		button = document.createElement('button');
-		button.type = 'button';
-		button.className = 'button gloskin-editorial-active-toggle gloskin-editorial-popup-toggle';
-		button.setAttribute('data-gloskin-promo-popup-toggle', '');
-		(actions || cell).appendChild(button);
-		return button;
-	}
-
-	function paintPopupButton(row, enabled) {
-		var button = popupButton(row, true);
-		if (!button) { return; }
-		var id = row.id ? row.id.replace('post-', '') : '';
-		button.setAttribute('data-id', id);
-		button.setAttribute('data-popup', enabled ? '1' : '0');
-		button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-		button.classList.toggle('is-active', !!enabled);
-		button.textContent = enabled ? label('popupOn', 'Popup On') : label('popupOff', 'Popup Off');
-	}
-
 	function readinessIssue(record) {
-		if (!record) { return null; }
+		record = record || {};
 		if (!(parseInt(record.image_id, 10) > 0)) {
-			return { message: 'Choose a featured Promo image before enabling popup display.', focus: 'media' };
+			return { field: 'image', message: 'Choose a featured Promo image before enabling popup display.' };
 		}
 		if (!String(record.destination_url || '').trim()) {
-			return { message: 'Add the destination URL, then save this Promo. Popup display will be enabled with that save.', focus: 'destination' };
+			return { field: 'destination', message: 'Add a valid Destination URL before enabling popup display.' };
 		}
 		if ((record.visibility || 'homepage') === 'specific_pages' && (!Array.isArray(record.visibility_page_ids) || !record.visibility_page_ids.length)) {
-			return { message: 'Select at least one WordPress page for Specific Pages visibility, then save this Promo.', focus: 'pages' };
+			return { field: 'pages', message: 'Select at least one WordPress page for Specific Pages visibility.' };
 		}
 		return null;
 	}
@@ -205,162 +135,124 @@
 		var target = null;
 		if (kind === 'destination') { target = destinationField; }
 		else if (kind === 'pages') { target = pageSearch || pageSelect; }
-		else if (kind === 'media') { target = form.querySelector('[data-gloskin-editorial-media]'); }
+		else if (kind === 'image') { target = form.querySelector('[data-gloskin-editorial-media]'); }
 		else { target = popupField; }
 		if (target && typeof target.focus === 'function') { target.focus(); }
 	}
 
-	function openPopupEditor(id, message, focusKind) {
-		setStatus('', false);
-		var record = Object.assign({}, records[id] || {}, { popup_enabled: true });
+	function paintPopupButton(button, enabled) {
+		if (!button) { return; }
+		button.setAttribute('data-popup', enabled ? '1' : '0');
+		button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+		button.classList.toggle('is-active', !!enabled);
+		button.textContent = enabled ? label('popupOn', 'Popup On') : label('popupOff', 'Popup Off');
+	}
+
+	function ajaxPopup(id, enabled) {
+		var data = new FormData();
+		data.append('action', 'gloskin_editorial_toggle');
+		data.append('nonce', config.nonce);
+		data.append('post_id', String(id));
+		data.append('field', 'popup');
+		data.append('active', enabled ? '1' : '0');
+		return window.fetch(config.ajaxUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			body: data
+		}).then(function (response) {
+			return response.text().then(function (text) {
+				var payload = null;
+				try { payload = text ? JSON.parse(text) : null; } catch (ignore) { payload = null; }
+				if (!payload || !payload.success) {
+					var dataPayload = payload && payload.data ? payload.data : {};
+					var error = new Error(dataPayload.message || label('popupFailed', 'Popup state could not be updated.'));
+					error.code = dataPayload.code || '';
+					error.field = dataPayload.field || '';
+					error.status = response.status || 0;
+					throw error;
+				}
+				return payload;
+			});
+		});
+	}
+
+	function openPopupEditor(id, issue) {
+		guidance = {
+			id: String(id),
+			field: issue && issue.field ? issue.field : 'popup',
+			message: issue && issue.message ? issue.message : 'Complete the popup settings, then save this Promo.'
+		};
 		var edit = document.querySelector('[data-gloskin-editorial-edit="' + String(id).replace(/[^0-9]/g, '') + '"]');
 		if (edit) {
 			edit.click();
-			window.setTimeout(function () {
-				syncForm(record);
-				if (popupField) { popupField.checked = true; }
-				updatePopupRequirements();
-				showPopupGuidance(message || 'Complete the popup settings and save this Promo.');
-				focusPopupField(focusKind);
-			}, 0);
 			return;
 		}
+		setStatus(guidance.message, true);
+	}
 
-		try {
-			var url = new URL(window.location.href);
-			url.searchParams.set('post_type', 'gloskin_promo');
-			url.searchParams.set('gloskin_edit', id);
-			window.location.assign(url.toString());
-		} catch (ignore) {
-			setStatus(message || label('popupFailed', 'Popup state could not be updated.'), true);
+	function handleModalOpen(event) {
+		var detail = event && event.detail ? event.detail : {};
+		var id = String(parseInt(detail.id, 10) || 0);
+		var record = id !== '0' && records[id] ? records[id] : (detail.record || {});
+		if (detail.isNew) { record = { popup_enabled: false, visibility: 'homepage', visibility_page_ids: [], destination_url: '' }; }
+		syncForm(record);
+		if (guidance && guidance.id === id) {
+			if (popupField) { popupField.checked = true; }
+			updatePopupRequirements();
+			showPopupGuidance(guidance.message);
+			focusPopupField(guidance.field);
+			guidance = null;
 		}
-	}
-
-	function applyPendingSave() {
-		if (!pendingSave) { return; }
-		var id = pendingSave.id;
-		if (!id) { return; }
-		var row = document.getElementById('post-' + id);
-		if (row) { paintPopupButton(row, pendingSave.popup_enabled); }
-		records[String(id)] = Object.assign({}, records[String(id)] || {}, pendingSave, { id: id });
-		pendingSave = null;
-	}
-
-	function consumeAutoOpenIntent() {
-		if (!config.editId && !config.addId) { return; }
-		try {
-			var url = new URL(window.location.href);
-			var changed = false;
-			['gloskin_edit', 'gloskin_add', 'gloskin_new'].forEach(function (key) {
-				if (url.searchParams.has(key)) {
-					url.searchParams.delete(key);
-					changed = true;
-				}
-			});
-			if (changed && window.history && typeof window.history.replaceState === 'function') {
-				window.history.replaceState(window.history.state, document.title, url.pathname + (url.search || '') + (url.hash || ''));
-			}
-		} catch (ignore) {}
 	}
 
 	if (pageSearch) { pageSearch.addEventListener('input', function () { filterPages(pageSearch.value); }); }
 	if (pageSelect) { pageSelect.addEventListener('change', syncPageIdsField); }
-	if (visibilityField) { visibilityField.addEventListener('change', updateSpecificVisibility); }
+	if (visibilityField) { visibilityField.addEventListener('change', function () { updateSpecificVisibility(); clearPopupGuidance(); }); }
 	if (popupField) { popupField.addEventListener('change', function () { clearPopupGuidance(); updatePopupRequirements(); }); }
 	if (destinationField) { destinationField.addEventListener('input', clearPopupGuidance); }
 
-	form.addEventListener('submit', function () {
-		syncPageIdsField();
-		pendingSave = {
-			id: parseInt(form.elements.post_id ? form.elements.post_id.value : '0', 10) || 0,
-			image_id: parseInt(form.elements.image_id ? form.elements.image_id.value : '0', 10) || 0,
-			popup_enabled: !!(popupField && popupField.checked),
-			visibility: visibilityField ? visibilityField.value : 'homepage',
-			visibility_page_ids: selectedPageIds(),
-			destination_url: destinationField ? destinationField.value : ''
-		};
-	}, true);
+	form.addEventListener('submit', syncPageIdsField, true);
+
+	document.addEventListener('gloskin:editorial-modal-open', handleModalOpen);
+	document.addEventListener('gloskin:editorial-record-saved', function (event) {
+		var record = event && event.detail ? event.detail.record : null;
+		if (record && record.id) { records[String(record.id)] = record; }
+	});
 
 	document.addEventListener('click', function (event) {
 		var close = event.target.closest('[data-gloskin-editorial-close]');
-		if (close) { pendingSave = null; clearPopupGuidance(); return; }
-
-		var edit = event.target.closest('[data-gloskin-editorial-edit], a[href*="gloskin_edit="]');
-		if (edit) {
-			var id = edit.getAttribute('data-gloskin-editorial-edit');
-			if (!id) {
-				try { id = new URL(edit.href, window.location.href).searchParams.get('gloskin_edit'); } catch (ignore) { id = ''; }
-			}
-			if (id) { syncForm(records[String(parseInt(id, 10) || 0)] || {}); }
-			return;
-		}
-
-		var add = event.target.closest('.page-title-action, a[href*="post-new.php?post_type=gloskin_promo"]');
-		if (add) { syncForm({ popup_enabled: false, visibility: 'homepage', visibility_page_ids: [], destination_url: '' }); return; }
-
+		if (close) { guidance = null; clearPopupGuidance(); return; }
 		var toggle = event.target.closest('[data-gloskin-promo-popup-toggle]');
 		if (!toggle) { return; }
 		event.preventDefault();
 		event.stopPropagation();
 		var id = String(toggle.getAttribute('data-id') || '');
-		var next = toggle.getAttribute('data-popup') === '1' ? '0' : '1';
-		if (next === '1') {
+		var enable = toggle.getAttribute('data-popup') !== '1';
+
+		if (enable) {
 			var issue = readinessIssue(records[id]);
-			if (issue) {
-				openPopupEditor(id, issue.message, issue.focus);
-				return;
-			}
+			if (issue) { openPopupEditor(id, issue); return; }
 		}
 
 		toggle.disabled = true;
-		ajax({ post_id: id, field: 'popup', active: next }).then(function (response) {
-			var enabled = !!response.data.active;
-			var row = document.getElementById('post-' + id);
-			if (row) { paintPopupButton(row, enabled); }
+		ajaxPopup(id, enable).then(function (response) {
+			var enabled = !!(response.data && response.data.active);
+			paintPopupButton(toggle, enabled);
 			if (records[id]) { records[id].popup_enabled = enabled; }
 			toggle.disabled = false;
 			setStatus(label('popupUpdated', 'Popup display state updated.'), false);
 		}).catch(function (error) {
 			toggle.disabled = false;
-			if (next === '1' && error && error.status === 400) {
-				openPopupEditor(id, error.message || label('popupFailed', 'Complete the popup settings and save this Promo.'), 'destination');
+			if (enable && error && error.code === 'popup_incomplete') {
+				openPopupEditor(id, { field: error.field || 'popup', message: error.message });
 				return;
 			}
-			var message = error && error.status
-				? (error.message || 'The server could not update this popup. No changes were made.')
-				: 'Could not reach the server. No popup changes were made; please try again.';
-			setStatus(message, true);
+			setStatus(error && error.message ? error.message : label('popupFailed', 'Popup state could not be updated.'), true);
 		});
 	});
 
-	var tableBody = document.getElementById('the-list');
-	if (tableBody && window.MutationObserver) {
-		new MutationObserver(function (mutations) {
-			mutations.forEach(function (mutation) {
-				Array.prototype.slice.call(mutation.addedNodes || []).forEach(function (node) {
-					if (!node || node.nodeType !== 1 || !node.matches('tr[id^="post-"]')) { return; }
-					var id = node.id.replace('post-', '');
-					if (pendingSave && !pendingSave.id) { pendingSave.id = parseInt(id, 10) || 0; }
-					var state = pendingSave && (!pendingSave.id || String(pendingSave.id) === id) ? pendingSave.popup_enabled : !!(records[id] && records[id].popup_enabled);
-					paintPopupButton(node, state);
-				});
-			});
-		}).observe(tableBody, { childList: true });
+	if (modal && !modal.hidden) {
+		var currentId = form.elements.post_id ? String(parseInt(form.elements.post_id.value, 10) || 0) : '0';
+		syncForm(currentId !== '0' && records[currentId] ? records[currentId] : { popup_enabled: false, visibility: 'homepage', visibility_page_ids: [], destination_url: '' });
 	}
-
-	if (modal && window.MutationObserver) {
-		new MutationObserver(function () {
-			if (modal.hidden && pendingSave) { applyPendingSave(); }
-		}).observe(modal, { attributes: true, attributeFilter: ['hidden'] });
-	}
-
-	document.querySelectorAll('#the-list > tr[id^="post-"]').forEach(function (row) {
-		var id = row.id.replace('post-', '');
-		paintPopupButton(row, !!(records[id] && records[id].popup_enabled));
-	});
-
-	consumeAutoOpenIntent();
-	if (config.editId) { syncForm(records[String(parseInt(config.editId, 10) || 0)] || {}); }
-	else if (config.addId) { syncForm({ popup_enabled: false, visibility: 'homepage', visibility_page_ids: [], destination_url: '' }); }
-	else { updateSpecificVisibility(); updatePopupRequirements(); }
 })();
