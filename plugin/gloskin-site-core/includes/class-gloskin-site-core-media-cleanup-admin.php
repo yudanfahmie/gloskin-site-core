@@ -85,7 +85,6 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 		$is_complete   = 'complete' === $status;
 		$failed_from   = (string) $state['failed_from'];
 		$effective     = 'failed' === $status && '' !== $failed_from ? $failed_from : $status;
-		$in_scan       = in_array( $effective, array( 'pending', 'indexing' ), true );
 		$in_review     = in_array( $effective, array( 'review_ready', 'deleting', 'verifying' ), true );
 		$optimization  = isset( $state['optimization'] ) && is_array( $state['optimization'] ) ? $state['optimization'] : array();
 		$opt_status    = isset( $optimization['status'] ) ? (string) $optimization['status'] : 'pending';
@@ -103,52 +102,73 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 			data-cursor="<?php echo esc_attr( (string) $state['deletion_cursor'] ); ?>">
 
 			<div class="gloskin-admin-workspace">
-				<h1><?php echo esc_html__( 'Media Cleanup', 'gloskin-site-core' ); ?></h1>
+				<header class="gloskin-media-cleanup-page-head">
+					<div>
+						<h1><?php echo esc_html__( 'Media Cleanup', 'gloskin-site-core' ); ?></h1>
+						<p><?php echo esc_html__( 'Bersihkan media yang tidak dipakai, lalu optimalkan gambar yang tetap digunakan.', 'gloskin-site-core' ); ?></p>
+					</div>
+				</header>
 
 				<?php if ( $is_complete ) : ?>
-				<div class="gloskin-admin-card">
-					<h2><?php echo esc_html__( 'Cleanup selesai', 'gloskin-site-core' ); ?></h2>
-					<ul>
-						<li><?php echo esc_html__( 'Dihapus:', 'gloskin-site-core' ); ?> <strong><?php echo esc_html( count( (array) $state['deleted'] ) ); ?></strong></li>
-						<li><?php echo esc_html__( 'Dilewati setelah re-check:', 'gloskin-site-core' ); ?> <strong><?php echo esc_html( count( (array) $state['skipped'] ) ); ?></strong></li>
-						<li><?php echo esc_html__( 'Gagal:', 'gloskin-site-core' ); ?> <strong><?php echo esc_html( count( (array) $state['failed'] ) ); ?></strong></li>
-						<li><?php echo esc_html__( 'Ruang dibebaskan:', 'gloskin-site-core' ); ?> <strong><?php echo esc_html( size_format( (int) $state['actual_bytes'] ) ); ?></strong></li>
+				<div class="gloskin-admin-card gloskin-media-cleanup-card">
+					<div class="gloskin-media-cleanup-card__head">
+						<div>
+							<p class="gloskin-media-cleanup-eyebrow"><?php echo esc_html__( 'Cleanup unused media', 'gloskin-site-core' ); ?></p>
+							<h2><?php echo esc_html__( 'Cleanup selesai', 'gloskin-site-core' ); ?></h2>
+						</div>
+						<span class="gloskin-media-cleanup-tag"><?php echo esc_html__( 'Selesai', 'gloskin-site-core' ); ?></span>
+					</div>
+					<ul class="gloskin-media-cleanup-metrics gloskin-media-cleanup-metrics--compact">
+						<li><span><?php echo esc_html__( 'Dihapus', 'gloskin-site-core' ); ?></span><strong><?php echo esc_html( count( (array) $state['deleted'] ) ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Dilewati', 'gloskin-site-core' ); ?></span><strong><?php echo esc_html( count( (array) $state['skipped'] ) ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Gagal', 'gloskin-site-core' ); ?></span><strong><?php echo esc_html( count( (array) $state['failed'] ) ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Ruang dibebaskan', 'gloskin-site-core' ); ?></span><strong><?php echo esc_html( size_format( (int) $state['actual_bytes'] ) ); ?></strong></li>
 					</ul>
-					<p><?php echo esc_html__( 'Item yang dilewati dipertahankan karena keamanan tidak lagi dapat dibuktikan saat re-check.', 'gloskin-site-core' ); ?></p>
-					<p><button type="button" class="button button-primary" data-media-cleanup-reset><?php echo esc_html__( 'Mulai Scan Baru', 'gloskin-site-core' ); ?></button></p>
+					<p class="gloskin-media-cleanup-muted"><?php echo esc_html__( 'Item yang dilewati tetap dipertahankan karena keamanan tidak lagi dapat dibuktikan saat re-check.', 'gloskin-site-core' ); ?></p>
+					<div class="gloskin-media-cleanup-actions"><button type="button" class="button button-primary" data-media-cleanup-reset><?php echo esc_html__( 'Mulai Scan Baru', 'gloskin-site-core' ); ?></button></div>
 				</div>
 
 				<?php elseif ( $in_review ) : ?>
-				<div class="gloskin-admin-card">
-					<h2><?php
-						if ( 'review_ready' === $effective ) { echo esc_html__( 'Scan selesai — tinjau kandidat', 'gloskin-site-core' ); }
-						elseif ( 'deleting' === $effective ) { echo esc_html__( 'Menghapus kandidat', 'gloskin-site-core' ); }
-						else { echo esc_html__( 'Memverifikasi hasil', 'gloskin-site-core' ); }
-					?></h2>
-					<ul>
-						<li><?php echo esc_html__( 'Total dipindai:', 'gloskin-site-core' ); ?> <strong><?php echo esc_html( (string) $state['total'] ); ?></strong></li>
-						<li><?php echo esc_html__( 'Digunakan:', 'gloskin-site-core' ); ?> <strong data-count-used><?php echo esc_html( (string) $counts['used'] ); ?></strong></li>
-						<li><?php echo esc_html__( 'Dilindungi:', 'gloskin-site-core' ); ?> <strong data-count-protected><?php echo esc_html( (string) $counts['protected'] ); ?></strong></li>
-						<li><?php echo esc_html__( 'Ambigu (dipertahankan):', 'gloskin-site-core' ); ?> <strong data-count-ambiguous><?php echo esc_html( (string) $counts['ambiguous'] ); ?></strong></li>
-						<li><?php echo esc_html__( 'Kandidat terkonfirmasi unused:', 'gloskin-site-core' ); ?> <strong data-count-unused><?php echo esc_html( (string) $counts['confirmed-unused'] ); ?></strong></li>
-						<li><?php echo esc_html__( 'Estimasi ruang:', 'gloskin-site-core' ); ?> <strong><?php echo esc_html( size_format( (int) $state['estimated_bytes'] ) ); ?></strong></li>
+				<div class="gloskin-admin-card gloskin-media-cleanup-card">
+					<div class="gloskin-media-cleanup-card__head">
+						<div>
+							<p class="gloskin-media-cleanup-eyebrow"><?php echo esc_html__( 'Cleanup unused media', 'gloskin-site-core' ); ?></p>
+							<h2><?php
+								if ( 'review_ready' === $effective ) { echo esc_html__( 'Scan selesai — tinjau kandidat', 'gloskin-site-core' ); }
+								elseif ( 'deleting' === $effective ) { echo esc_html__( 'Menghapus kandidat', 'gloskin-site-core' ); }
+								else { echo esc_html__( 'Memverifikasi hasil', 'gloskin-site-core' ); }
+							?></h2>
+						</div>
+						<span class="gloskin-media-cleanup-tag"><?php echo esc_html__( 'Read-only scan', 'gloskin-site-core' ); ?></span>
+					</div>
+					<ul class="gloskin-media-cleanup-metrics">
+						<li><span><?php echo esc_html__( 'Total dipindai', 'gloskin-site-core' ); ?></span><strong><?php echo esc_html( (string) $state['total'] ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Digunakan', 'gloskin-site-core' ); ?></span><strong data-count-used><?php echo esc_html( (string) $counts['used'] ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Dilindungi', 'gloskin-site-core' ); ?></span><strong data-count-protected><?php echo esc_html( (string) $counts['protected'] ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Ambigu', 'gloskin-site-core' ); ?></span><strong data-count-ambiguous><?php echo esc_html( (string) $counts['ambiguous'] ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Kandidat unused', 'gloskin-site-core' ); ?></span><strong data-count-unused><?php echo esc_html( (string) $counts['confirmed-unused'] ); ?></strong></li>
 					</ul>
 					<?php if ( ! empty( $state['warnings'] ) ) : ?>
-					<details><summary><?php echo esc_html__( 'Peringatan scanner', 'gloskin-site-core' ); ?></summary><ul>
+					<details class="gloskin-media-cleanup-details"><summary><?php echo esc_html__( 'Peringatan scanner', 'gloskin-site-core' ); ?></summary><ul>
 						<?php foreach ( (array) $state['warnings'] as $w ) : ?><li><?php echo esc_html( (string) $w ); ?></li><?php endforeach; ?>
 					</ul></details>
 					<?php endif; ?>
 				</div>
 
 				<?php if ( 'review_ready' === $effective ) : ?>
-				<div class="gloskin-admin-card">
-					<h2><?php echo esc_html__( 'Kandidat terkonfirmasi unused', 'gloskin-site-core' ); ?></h2>
-					<p><em><?php echo esc_html__( 'Label: "terkonfirmasi oleh scan saat ini" — bukan jaminan mutlak. Re-check JIT dilakukan sebelum setiap penghapusan.', 'gloskin-site-core' ); ?></em></p>
-					<p>
+				<div class="gloskin-admin-card gloskin-media-cleanup-card">
+					<div class="gloskin-media-cleanup-card__head">
+						<div>
+							<p class="gloskin-media-cleanup-eyebrow"><?php echo esc_html__( 'Review', 'gloskin-site-core' ); ?></p>
+							<h2><?php echo esc_html__( 'Kandidat terkonfirmasi unused', 'gloskin-site-core' ); ?></h2>
+						</div>
+					</div>
+					<p class="gloskin-media-cleanup-muted"><?php echo esc_html__( 'Kandidat selalu diperiksa ulang tepat sebelum penghapusan permanen.', 'gloskin-site-core' ); ?></p>
+					<div class="gloskin-media-cleanup-actions gloskin-media-cleanup-actions--quiet">
 						<a class="button" href="<?php echo esc_url( $download_base . '&format=json' ); ?>"><?php echo esc_html__( 'Unduh JSON', 'gloskin-site-core' ); ?></a>
 						<a class="button" href="<?php echo esc_url( $download_base . '&format=csv' ); ?>"><?php echo esc_html__( 'Unduh CSV', 'gloskin-site-core' ); ?></a>
-					</p>
-					<div style="overflow-x:auto;"><table class="widefat striped">
+					</div>
+					<div class="gloskin-media-cleanup-table-wrap"><table class="widefat striped">
 						<thead><tr>
 							<th><?php echo esc_html__( 'Thumbnail', 'gloskin-site-core' ); ?></th>
 							<th><?php echo esc_html__( 'File', 'gloskin-site-core' ); ?></th>
@@ -161,91 +181,136 @@ final class Gloskin_Site_Core_Media_Cleanup_Admin {
 					</table></div>
 					<p data-media-cleanup-pagination></p>
 				</div>
-				<div class="gloskin-admin-card">
-					<label><input type="checkbox" data-media-cleanup-confirm> <?php echo esc_html__( 'Saya memiliki backup database dan uploads terkini, dan memahami penghapusan bersifat permanen.', 'gloskin-site-core' ); ?></label>
-					<p><button type="button" class="button button-primary is-destructive" style="background:#c00;border-color:#c00;color:#fff;" data-media-cleanup-delete disabled><?php printf( esc_html__( 'Hapus %s gambar terkonfirmasi unused secara permanen', 'gloskin-site-core' ), esc_html( (string) $counts['confirmed-unused'] ) ); ?></button></p>
+				<div class="gloskin-admin-card gloskin-media-cleanup-card gloskin-media-cleanup-danger-card">
+					<label class="gloskin-media-cleanup-confirm"><input type="checkbox" data-media-cleanup-confirm> <span><?php echo esc_html__( 'Saya memiliki backup database dan uploads terkini, dan memahami penghapusan bersifat permanen.', 'gloskin-site-core' ); ?></span></label>
+					<div class="gloskin-media-cleanup-actions"><button type="button" class="button button-primary is-destructive" data-media-cleanup-delete disabled><?php printf( esc_html__( 'Hapus %s gambar terkonfirmasi unused', 'gloskin-site-core' ), esc_html( (string) $counts['confirmed-unused'] ) ); ?></button></div>
 				</div>
 				<?php endif; ?>
 
 				<?php if ( 'deleting' === $effective || 'verifying' === $effective ) : ?>
-				<div class="gloskin-admin-card">
-					<p role="status" aria-live="polite" data-media-cleanup-stage><?php
-						echo 'deleting' === $effective
-							? esc_html__( 'Menghapus kandidat…', 'gloskin-site-core' )
-							: esc_html__( 'Memverifikasi hasil…', 'gloskin-site-core' );
-					?></p>
+				<div class="gloskin-admin-card gloskin-media-cleanup-card">
+					<div class="gloskin-media-cleanup-live-row">
+						<span class="spinner" data-media-cleanup-spinner aria-hidden="true"></span>
+						<p role="status" aria-live="polite" data-media-cleanup-stage><?php
+							echo 'deleting' === $effective
+								? esc_html__( 'Menghapus kandidat…', 'gloskin-site-core' )
+								: esc_html__( 'Memverifikasi hasil…', 'gloskin-site-core' );
+						?></p>
+					</div>
 					<progress data-media-cleanup-progress value="<?php echo esc_attr( (string) $state['deletion_cursor'] ); ?>" max="<?php echo esc_attr( (string) max( 1, (int) $counts['confirmed-unused'] ) ); ?>"></progress>
-					<p data-media-cleanup-current><?php echo esc_html( (string) $state['current_file'] ); ?></p>
-					<p><button type="button" class="button button-primary" data-media-cleanup-delete-continue><?php echo esc_html__( 'Lanjutkan', 'gloskin-site-core' ); ?></button></p>
+					<p class="gloskin-media-cleanup-current" data-media-cleanup-current><?php echo esc_html( (string) $state['current_file'] ); ?></p>
+					<div class="gloskin-media-cleanup-actions"><button type="button" class="button button-primary" data-media-cleanup-delete-continue><?php echo esc_html__( 'Lanjutkan', 'gloskin-site-core' ); ?></button></div>
 				</div>
 				<?php endif; ?>
 
 				<?php else : ?>
-				<div class="gloskin-admin-card">
+				<div class="gloskin-admin-card gloskin-media-cleanup-card" data-media-cleanup-scan-card>
+					<div class="gloskin-media-cleanup-card__head">
+						<div>
+							<p class="gloskin-media-cleanup-eyebrow"><?php echo esc_html__( 'Cleanup unused media', 'gloskin-site-core' ); ?></p>
+							<h2><?php
+								if ( 'pending' === $effective ) { echo esc_html__( 'Scan Media Library', 'gloskin-site-core' ); }
+								elseif ( 'indexing' === $effective ) { echo esc_html__( 'Memindai Media Library', 'gloskin-site-core' ); }
+								else { echo esc_html__( 'Scan perlu dilanjutkan', 'gloskin-site-core' ); }
+							?></h2>
+							<p class="gloskin-media-cleanup-muted"><?php echo esc_html__( 'Scan bersifat read-only. Media terbaru, sistem, dan hasil ambigu tetap dipertahankan.', 'gloskin-site-core' ); ?></p>
+						</div>
+						<span class="gloskin-media-cleanup-tag"><?php echo esc_html__( 'Read-only', 'gloskin-site-core' ); ?></span>
+					</div>
+
+					<?php if ( 'failed' === $status ) : ?>
+					<div class="notice notice-error inline gloskin-media-cleanup-inline-notice"><p><strong><?php echo esc_html__( 'Scan berhenti:', 'gloskin-site-core' ); ?></strong> <?php echo esc_html( (string) $state['last_error'] ); ?></p></div>
+					<?php endif; ?>
+
+					<div class="gloskin-media-cleanup-progress-block" data-media-cleanup-live aria-live="polite">
+						<div class="gloskin-media-cleanup-live-row">
+							<span class="spinner" data-media-cleanup-spinner aria-hidden="true"></span>
+							<p role="status" aria-live="polite" data-media-cleanup-stage><?php
+								if ( 'pending' === $effective ) {
+									echo esc_html__( 'Siap memindai Media Library.', 'gloskin-site-core' );
+								} else {
+									echo esc_html( (int) $state['processed'] . ' / ' . (int) $state['total'] . ' ' . __( 'gambar sudah dipindai', 'gloskin-site-core' ) );
+								}
+							?></p>
+						</div>
+						<progress data-media-cleanup-progress value="<?php echo esc_attr( 'pending' === $effective ? '0' : (string) $state['processed'] ); ?>" max="<?php echo esc_attr( (string) max( 1, (int) $state['total'] ) ); ?>"></progress>
+						<p class="gloskin-media-cleanup-current" data-media-cleanup-current><?php
+							if ( ! empty( $state['current_file'] ) ) {
+								echo esc_html( (string) $state['current_file'] );
+							} else {
+								echo esc_html__( 'Belum ada file yang sedang diproses.', 'gloskin-site-core' );
+							}
+						?></p>
+					</div>
+
+					<ul class="gloskin-media-cleanup-metrics" data-media-cleanup-counts>
+						<li><span><?php echo esc_html__( 'Dipindai', 'gloskin-site-core' ); ?></span><strong data-count-processed><?php echo esc_html( (string) $state['processed'] ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Digunakan', 'gloskin-site-core' ); ?></span><strong data-count-used><?php echo esc_html( (string) $counts['used'] ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Dilindungi', 'gloskin-site-core' ); ?></span><strong data-count-protected><?php echo esc_html( (string) $counts['protected'] ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Ambigu', 'gloskin-site-core' ); ?></span><strong data-count-ambiguous><?php echo esc_html( (string) $counts['ambiguous'] ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Kandidat unused', 'gloskin-site-core' ); ?></span><strong data-count-unused><?php echo esc_html( (string) $counts['confirmed-unused'] ); ?></strong></li>
+					</ul>
+
 					<?php if ( 'pending' === $effective ) : ?>
-					<p><?php echo esc_html__( 'Scan Media Library untuk gambar lama yang tidak direferensikan.', 'gloskin-site-core' ); ?></p>
-					<ul>
-						<li><?php echo esc_html__( 'Scan bersifat read-only — tidak ada penghapusan selama scan.', 'gloskin-site-core' ); ?></li>
-						<li><?php echo esc_html__( 'Media terbaru, sistem, dan ambigu tetap terlindungi.', 'gloskin-site-core' ); ?></li>
-						<li><?php echo esc_html__( 'Menutup tab menghentikan request — buka lagi untuk melanjutkan.', 'gloskin-site-core' ); ?></li>
+					<ul class="gloskin-media-cleanup-notes">
+						<li><?php echo esc_html__( 'Tidak ada penghapusan selama scan.', 'gloskin-site-core' ); ?></li>
+						<li><?php echo esc_html__( 'Kandidat akan ditinjau sebelum penghapusan.', 'gloskin-site-core' ); ?></li>
+						<li><?php echo esc_html__( 'Menutup tab menghentikan request; buka lagi untuk melanjutkan.', 'gloskin-site-core' ); ?></li>
 					</ul>
-					<p><button type="button" class="button button-primary" data-media-cleanup-index><?php echo esc_html__( 'Scan Media Library', 'gloskin-site-core' ); ?></button></p>
-					<?php elseif ( 'indexing' === $effective ) : ?>
-					<h2><?php echo esc_html__( 'Memindai Media Library', 'gloskin-site-core' ); ?></h2>
-					<progress data-media-cleanup-progress value="<?php echo esc_attr( (string) $state['processed'] ); ?>" max="<?php echo esc_attr( (string) max( 1, (int) $state['total'] ) ); ?>"></progress>
-					<p role="status" aria-live="polite" data-media-cleanup-stage><?php echo esc_html( (int) $state['processed'] . ' / ' . (int) $state['total'] . ' ' . __( 'dipindai', 'gloskin-site-core' ) ); ?></p>
-					<p data-media-cleanup-current><?php echo esc_html( (string) $state['current_file'] ); ?></p>
-					<p><strong><?php echo esc_html__( 'Kandidat aman:', 'gloskin-site-core' ); ?></strong> <span data-count-unused><?php echo esc_html( (string) $counts['confirmed-unused'] ); ?></span></p>
-					<p><strong><?php echo esc_html__( 'Estimasi ruang:', 'gloskin-site-core' ); ?></strong> <?php echo esc_html( size_format( (int) $state['estimated_bytes'] ) ); ?></p>
-					<p><button type="button" class="button button-primary" data-media-cleanup-index><?php echo esc_html__( 'Lanjutkan Scan', 'gloskin-site-core' ); ?></button></p>
-					<?php else : ?>
-					<div class="notice notice-error inline"><p><strong><?php echo esc_html__( 'Error:', 'gloskin-site-core' ); ?></strong> <?php echo esc_html( (string) $state['last_error'] ); ?></p></div>
-					<p><button type="button" class="button button-primary" data-media-cleanup-index><?php echo esc_html__( 'Coba Lagi', 'gloskin-site-core' ); ?></button></p>
 					<?php endif; ?>
+
+					<div class="gloskin-media-cleanup-actions">
+						<button type="button" class="button button-primary" data-media-cleanup-index><?php
+							if ( 'pending' === $effective ) { echo esc_html__( 'Scan Media Library', 'gloskin-site-core' ); }
+							elseif ( 'indexing' === $effective ) { echo esc_html__( 'Lanjutkan Scan', 'gloskin-site-core' ); }
+							else { echo esc_html__( 'Coba Lagi', 'gloskin-site-core' ); }
+						?></button>
+					</div>
 				</div>
-
-				<?php if ( 'indexing' === $effective || 'failed' === $status ) : ?>
-				<div class="gloskin-admin-card"><ul data-media-cleanup-counts>
-					<li><?php echo esc_html__( 'Dipindai:', 'gloskin-site-core' ); ?> <strong data-count-processed><?php echo esc_html( (string) $state['processed'] ); ?></strong> / <?php echo esc_html( (string) $state['total'] ); ?></li>
-					<li><?php echo esc_html__( 'Digunakan:', 'gloskin-site-core' ); ?> <strong data-count-used><?php echo esc_html( (string) $counts['used'] ); ?></strong></li>
-					<li><?php echo esc_html__( 'Dilindungi:', 'gloskin-site-core' ); ?> <strong data-count-protected><?php echo esc_html( (string) $counts['protected'] ); ?></strong></li>
-					<li><?php echo esc_html__( 'Ambigu:', 'gloskin-site-core' ); ?> <strong data-count-ambiguous><?php echo esc_html( (string) $counts['ambiguous'] ); ?></strong></li>
-					<li><?php echo esc_html__( 'Kandidat unused:', 'gloskin-site-core' ); ?> <strong data-count-unused><?php echo esc_html( (string) $counts['confirmed-unused'] ); ?></strong></li>
-				</ul></div>
-				<?php endif; ?>
 				<?php endif; ?>
 
-				<div class="gloskin-admin-card" data-media-optimization-card>
-					<h2><?php echo esc_html__( 'Optimize Images', 'gloskin-site-core' ); ?></h2>
-					<p><?php echo esc_html__( 'Optimize retained images in place setelah cleanup stabil. Attachment ID, nama file, URL, format, dimensi dan crop tidak diubah; optimizer tidak membuat backup image permanen.', 'gloskin-site-core' ); ?></p>
+				<div class="gloskin-admin-card gloskin-media-cleanup-card<?php echo $is_complete ? '' : ' is-locked'; ?>" data-media-optimization-card>
+					<div class="gloskin-media-cleanup-card__head">
+						<div>
+							<p class="gloskin-media-cleanup-eyebrow"><?php echo esc_html__( 'Retained images', 'gloskin-site-core' ); ?></p>
+							<h2><?php echo esc_html__( 'Optimize Images', 'gloskin-site-core' ); ?></h2>
+							<p class="gloskin-media-cleanup-muted"><?php echo esc_html__( 'Optimalkan file gambar yang tetap digunakan tanpa mengubah ID attachment, nama file, URL, format, dimensi, atau crop.', 'gloskin-site-core' ); ?></p>
+						</div>
+						<span class="gloskin-media-cleanup-tag"><?php echo $is_complete ? esc_html__( 'Siap', 'gloskin-site-core' ) : esc_html__( 'Setelah cleanup', 'gloskin-site-core' ); ?></span>
+					</div>
 					<?php if ( ! $is_complete ) : ?>
-					<p><?php echo esc_html__( 'Selesaikan cleanup sampai verifikasi akhir sebelum menjalankan image optimization.', 'gloskin-site-core' ); ?></p>
+					<div class="gloskin-media-cleanup-lock-note"><span aria-hidden="true">•</span><p><?php echo esc_html__( 'Selesaikan cleanup sampai verifikasi akhir sebelum menjalankan optimasi gambar.', 'gloskin-site-core' ); ?></p></div>
 					<?php else : ?>
-					<ul>
-						<li><?php echo esc_html__( 'Processed:', 'gloskin-site-core' ); ?> <strong data-opt-processed><?php echo esc_html( (string) ( $optimization['processed'] ?? 0 ) ); ?></strong> / <span data-opt-total><?php echo esc_html( (string) ( $optimization['total'] ?? 0 ) ); ?></span></li>
-						<li><?php echo esc_html__( 'Optimized:', 'gloskin-site-core' ); ?> <strong data-opt-optimized><?php echo esc_html( (string) ( $optimization['optimized'] ?? 0 ) ); ?></strong></li>
-						<li><?php echo esc_html__( 'Skipped:', 'gloskin-site-core' ); ?> <strong data-opt-skipped><?php echo esc_html( (string) ( $optimization['skipped'] ?? 0 ) ); ?></strong></li>
-						<li><?php echo esc_html__( 'Failed:', 'gloskin-site-core' ); ?> <strong data-opt-failed><?php echo esc_html( (string) ( $optimization['failed'] ?? 0 ) ); ?></strong></li>
-						<li><?php echo esc_html__( 'Bytes before:', 'gloskin-site-core' ); ?> <strong data-opt-bytes-before><?php echo esc_html( size_format( (int) ( $optimization['bytes_before'] ?? 0 ) ) ); ?></strong></li>
-						<li><?php echo esc_html__( 'Bytes after:', 'gloskin-site-core' ); ?> <strong data-opt-bytes-after><?php echo esc_html( size_format( (int) ( $optimization['bytes_after'] ?? 0 ) ) ); ?></strong></li>
-						<li><?php echo esc_html__( 'Saved:', 'gloskin-site-core' ); ?> <strong data-opt-bytes-saved><?php echo esc_html( size_format( (int) ( $optimization['bytes_saved'] ?? 0 ) ) ); ?></strong></li>
+					<ul class="gloskin-media-cleanup-metrics gloskin-media-cleanup-metrics--optimization">
+						<li><span><?php echo esc_html__( 'Processed', 'gloskin-site-core' ); ?></span><strong><span data-opt-processed><?php echo esc_html( (string) ( $optimization['processed'] ?? 0 ) ); ?></span> / <span data-opt-total><?php echo esc_html( (string) ( $optimization['total'] ?? 0 ) ); ?></span></strong></li>
+						<li><span><?php echo esc_html__( 'Optimized', 'gloskin-site-core' ); ?></span><strong data-opt-optimized><?php echo esc_html( (string) ( $optimization['optimized'] ?? 0 ) ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Skipped', 'gloskin-site-core' ); ?></span><strong data-opt-skipped><?php echo esc_html( (string) ( $optimization['skipped'] ?? 0 ) ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Failed', 'gloskin-site-core' ); ?></span><strong data-opt-failed><?php echo esc_html( (string) ( $optimization['failed'] ?? 0 ) ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Before', 'gloskin-site-core' ); ?></span><strong data-opt-bytes-before><?php echo esc_html( size_format( (int) ( $optimization['bytes_before'] ?? 0 ) ) ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'After', 'gloskin-site-core' ); ?></span><strong data-opt-bytes-after><?php echo esc_html( size_format( (int) ( $optimization['bytes_after'] ?? 0 ) ) ); ?></strong></li>
+						<li><span><?php echo esc_html__( 'Saved', 'gloskin-site-core' ); ?></span><strong data-opt-bytes-saved><?php echo esc_html( size_format( (int) ( $optimization['bytes_saved'] ?? 0 ) ) ); ?></strong></li>
 					</ul>
-					<progress data-media-optimization-progress value="<?php echo esc_attr( (string) ( $optimization['processed'] ?? 0 ) ); ?>" max="<?php echo esc_attr( (string) max( 1, (int) ( $optimization['total'] ?? 0 ) ) ); ?>"></progress>
-					<p role="status" aria-live="polite" data-media-optimization-stage><?php
-						if ( 'running' === $opt_status ) { echo esc_html__( 'Optimization siap dilanjutkan…', 'gloskin-site-core' ); }
-						elseif ( 'complete' === $opt_status ) { echo esc_html__( 'Optimization selesai.', 'gloskin-site-core' ); }
-						elseif ( 'failed' === $opt_status ) { echo esc_html__( 'Optimization berhenti secara aman dan dapat dilanjutkan.', 'gloskin-site-core' ); }
-						else { echo esc_html__( 'Siap mengoptimalkan retained images.', 'gloskin-site-core' ); }
-					?></p>
-					<p data-media-optimization-current><?php echo esc_html( (string) ( $optimization['current_file'] ?? '' ) ); ?></p>
+					<div class="gloskin-media-cleanup-progress-block">
+						<div class="gloskin-media-cleanup-live-row">
+							<span class="spinner" data-media-optimization-spinner aria-hidden="true"></span>
+							<p role="status" aria-live="polite" data-media-optimization-stage><?php
+								if ( 'running' === $opt_status ) { echo esc_html__( 'Optimization siap dilanjutkan…', 'gloskin-site-core' ); }
+								elseif ( 'complete' === $opt_status ) { echo esc_html__( 'Optimization selesai.', 'gloskin-site-core' ); }
+								elseif ( 'failed' === $opt_status ) { echo esc_html__( 'Optimization berhenti secara aman dan dapat dilanjutkan.', 'gloskin-site-core' ); }
+								else { echo esc_html__( 'Siap mengoptimalkan retained images.', 'gloskin-site-core' ); }
+							?></p>
+						</div>
+						<progress data-media-optimization-progress value="<?php echo esc_attr( (string) ( $optimization['processed'] ?? 0 ) ); ?>" max="<?php echo esc_attr( (string) max( 1, (int) ( $optimization['total'] ?? 0 ) ) ); ?>"></progress>
+						<p class="gloskin-media-cleanup-current" data-media-optimization-current><?php echo esc_html( (string) ( $optimization['current_file'] ?? '' ) ); ?></p>
+					</div>
 					<?php if ( 'failed' === $opt_status && ! empty( $optimization['last_error'] ) ) : ?>
-					<div class="notice notice-error inline"><p><?php echo esc_html__( 'Optimizer berhenti secara aman; file asli pada kegagalan aktif dipertahankan.', 'gloskin-site-core' ); ?></p></div>
+					<div class="notice notice-error inline gloskin-media-cleanup-inline-notice"><p><?php echo esc_html__( 'Optimizer berhenti secara aman; file asli pada kegagalan aktif dipertahankan.', 'gloskin-site-core' ); ?></p></div>
 					<?php endif; ?>
-					<p><button type="button" class="button button-primary" data-media-optimization-start data-restart="<?php echo 'complete' === $opt_status ? '1' : '0'; ?>"><?php
+					<div class="gloskin-media-cleanup-actions"><button type="button" class="button button-primary" data-media-optimization-start data-restart="<?php echo 'complete' === $opt_status ? '1' : '0'; ?>"><?php
 						if ( 'complete' === $opt_status ) { echo esc_html__( 'Optimize New / Changed Images', 'gloskin-site-core' ); }
 						elseif ( in_array( $opt_status, array( 'running', 'failed' ), true ) ) { echo esc_html__( 'Lanjutkan Optimization', 'gloskin-site-core' ); }
 						else { echo esc_html__( 'Optimize Images', 'gloskin-site-core' ); }
-					?></button></p>
+					?></button></div>
 					<?php endif; ?>
 				</div>
 
