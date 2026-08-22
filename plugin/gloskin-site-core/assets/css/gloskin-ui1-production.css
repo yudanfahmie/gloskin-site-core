@@ -715,6 +715,7 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::af
 .gloskin-clinic-detail{padding:40px 0 100px}
 .gloskin-clinic-detail__overlap{display:flex;position:relative;align-items:center}
 .gloskin-clinic-detail__card{position:relative;z-index:2;flex:0 0 45%;min-width:0;padding:60px 50px;border:1px solid color-mix(in srgb,var(--gloskin-border) 70%,transparent);border-radius:16px;background:var(--gloskin-bg);box-shadow:0 20px 50px color-mix(in srgb,var(--gloskin-text) 5%,transparent)}
+.gloskin-clinic-detail__overlap--no-media .gloskin-clinic-detail__card{width:100%;flex:1 1 100%;max-width:none}
 .gloskin-ui1 .gloskin-clinic-detail__card h2{margin:0 0 25px;font-size:clamp(2rem,3.2vw,2.8rem);line-height:1.2;letter-spacing:1px;text-transform:uppercase}
 .gloskin-clinic-detail__prose .gloskin-ui1-prose{margin:0 0 24px;color:var(--gloskin-muted);font-size:1rem;line-height:1.7}
 .gloskin-clinic-detail__facts{display:grid;gap:18px;margin:0 0 30px}
@@ -727,7 +728,6 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::af
 .gloskin-clinic-detail__image,.gloskin-clinic-detail__media>img,.gloskin-clinic-detail__media iframe{display:block;width:100%;height:100%;border:0}
 .gloskin-clinic-detail__image,.gloskin-clinic-detail__media>img{object-fit:cover;object-position:top center}
 .gloskin-clinic-detail__map-fallback{display:flex;width:100%;height:100%;align-items:center;justify-content:center;padding:32px;color:var(--gloskin-accent-readable);font-family:var(--gloskin-font-ui);font-weight:700;text-decoration:none;text-align:center}
-.gloskin-clinic-detail__media-empty{display:block;width:100%;height:100%;background:linear-gradient(135deg,var(--gloskin-refresh-blush),var(--gloskin-refresh-cream))}
 .gloskin-clinic-contact{padding:60px 0;border-top:1px solid var(--gloskin-border);border-bottom:1px solid var(--gloskin-border);background:var(--gloskin-refresh-blush)}
 .gloskin-clinic-contact__inner{display:flex;align-items:center;justify-content:space-between;gap:40px}
 .gloskin-clinic-contact__copy{flex:2;min-width:0}
@@ -746,7 +746,7 @@ body.woocommerce-cart .wc-block-cart__empty-cart__title.with-empty-cart-icon::af
 .gloskin-doctors-hero__media{height:350px;min-width:0;overflow:hidden;border-radius:20px;background:var(--gloskin-bg);box-shadow:0 20px 50px color-mix(in srgb,var(--gloskin-text) 6%,transparent)}
 .gloskin-doctors-hero__image,.gloskin-doctors-hero__media>img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
 .gloskin-doctors-intro{padding:80px 0 40px}
-.gloskin-doctors-intro__banner{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-width:1200px;overflow:hidden;border:1px solid var(--gloskin-border);border-radius:20px;background:var(--gloskin-bg);box-shadow:0 15px 40px color-mix(in srgb,var(--gloskin-text) 4%,transparent)}
+.gloskin-doctors-intro__banner{display:grid;width:100%;max-width:none;grid-template-columns:repeat(2,minmax(0,1fr));overflow:hidden;border:1px solid var(--gloskin-border);border-radius:20px;background:var(--gloskin-bg);box-shadow:0 15px 40px color-mix(in srgb,var(--gloskin-text) 4%,transparent)}
 .gloskin-doctors-intro__media{min-height:420px;overflow:hidden;background:var(--gloskin-refresh-blush)}
 .gloskin-doctors-intro__image,.gloskin-doctors-intro__media>img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
 .gloskin-doctors-intro__copy{display:flex;min-width:0;flex-direction:column;align-items:flex-start;justify-content:center;padding:60px 50px}
