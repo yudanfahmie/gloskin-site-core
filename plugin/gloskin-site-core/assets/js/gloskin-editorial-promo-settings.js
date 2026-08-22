@@ -68,7 +68,14 @@
 		if (popupOptions) { popupOptions.hidden = !enabled; }
 		if (visibilityField) { visibilityField.required = enabled; }
 		if (destinationWrap) { destinationWrap.hidden = !needsDestination; }
-		if (destinationField) { destinationField.required = needsDestination; }
+		if (destinationField) {
+			destinationField.required = needsDestination;
+			/* Homepage is intentionally a no-custom-URL mode. Keep the existing
+			 * backend/frontend link contract by persisting the canonical root target. */
+			if (enabled && homepage && !String(destinationField.value || '').trim()) {
+				destinationField.value = '/';
+			}
+		}
 		if (specificWrap) { specificWrap.hidden = !specific; }
 		if (pageSearch) { pageSearch.disabled = !specific; }
 		if (pageSelect) {
