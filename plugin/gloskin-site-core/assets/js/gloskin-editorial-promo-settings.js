@@ -70,11 +70,9 @@
 		if (destinationWrap) { destinationWrap.hidden = !needsDestination; }
 		if (destinationField) {
 			destinationField.required = needsDestination;
-			/* Homepage is intentionally a no-custom-URL mode. Keep the existing
-			 * backend/frontend link contract by persisting the canonical root target. */
-			if (enabled && homepage && !String(destinationField.value || '').trim()) {
-				destinationField.value = '/';
-			}
+			/* Homepage intentionally has no operator-defined destination. Its
+			 * canonical internal target is the site root, even for legacy records. */
+			if (enabled && homepage) { destinationField.value = '/'; }
 		}
 		if (specificWrap) { specificWrap.hidden = !specific; }
 		if (pageSearch) { pageSearch.disabled = !specific; }
