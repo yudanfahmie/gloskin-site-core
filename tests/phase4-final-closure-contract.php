@@ -147,7 +147,7 @@ p4must( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero-
 p4must( false !== strpos( $editorial, '.gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{max-width:760px;margin:0 auto 70px;text-align:center}' ), 'Home section heading cadence is restored' );
 p4must( false === strpos( $editorial, '.gloskin-ui1-section{padding' ), 'no broad global section spacing patch' );
 
-/* Promo remains structurally stable with canonical crop geometry and a hidden live region. */
+/* Promo remains structurally stable with canonical smart crop geometry and hidden live region. */
 p4must( false !== strpos( $p, "gloskin_ui1_render_empty_state( 'generic', __( 'Informasi promo belum tersedia.'" ), 'Promo empty state uses shared renderer' );
 p4must( false !== strpos( $p, 'gloskin-promo__missing' ), 'Promo missing artwork uses bounded placeholder' );
 p4must( false === strpos( $p, '<div class="gloskin-ui1-empty">' ), 'legacy Promo empty markup removed' );
@@ -155,12 +155,14 @@ p4must( false !== strpos( $p, 'gloskin-ui1-promo-carousel__live screen-reader-te
 p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] .gloskin-ui1-promo-carousel__stage{display:grid;grid-template-areas:"slide";overflow:hidden;width:100%;min-width:0' ), 'Promo carousel enhanced stage stacks slides in one grid area with overflow:hidden' );
 p4must( false !== strpos( $editorial, '[data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{grid-area:slide;min-width:0;transition:transform .52s cubic-bezier(.4,0,.2,1);will-change:transform}' ), 'Promo carousel enhanced slides use grid-area:slide with transition' );
 p4must( 1 === substr_count( $editorial, 'aspect-ratio:1648 / 928' ), 'frontend Promo owns exactly one canonical 1648:928 ratio declaration' );
-p4must( false !== strpos( $editorial, 'object-position:var(--gloskin-promo-focus-x,50%) var(--gloskin-promo-focus-y,50%)' ), 'Promo image consumes projected focus state' );
+p4must( false !== strpos( $editorial, 'object-position:var(--gloskin-promo-focus-x,50%) var(--gloskin-promo-focus-y,50%)' ), 'Promo image consumes focal state' );
+p4must( false !== strpos( $editorial, 'transform:scale(var(--gloskin-promo-scale,1))' ), 'Promo frontend consumes persisted crop-size state' );
 p4must( false === strpos( $editorial, '.gloskin-promo__media{height:' ), 'responsive Promo geometry never switches to fixed pixel height' );
-p4must( false !== strpos( $p, '--gloskin-promo-focus-x:' ) && false !== strpos( $p, '--gloskin-promo-focus-y:' ), 'Promo template emits dynamic focal custom properties only' );
+p4must( false !== strpos( $p, '--gloskin-promo-focus-x:' ) && false !== strpos( $p, '--gloskin-promo-focus-y:' ) && false !== strpos( $p, '--gloskin-promo-scale:' ), 'Promo template emits dynamic focus + crop scale properties' );
 p4must( false !== strpos( $p, "wp_get_attachment_image( \$gloskin_promo_image, 'full'" ), 'Promo frontend renders from validated full source image' );
 $editorial_mgr = p4text( $plugin . '/includes/class-gloskin-site-core-editorial-manager.php' );
 $editorial_js  = p4text( $plugin . '/assets/js/gloskin-editorial-manager.js' );
+$editorial_css = p4text( $plugin . '/assets/css/gloskin-editorial-manager.css' );
 p4must( false !== strpos( $ts, "'limited_promos'" ) && false !== strpos( $ts, "'regular_promos'" ), 'TemplateService projects both limited_promos and regular_promos' );
 p4must( false !== strpos( $ts, "'focus_x'" ) && false !== strpos( $ts, "'focus_y'" ), 'TemplateService projects Promo focal state' );
 p4must( false === strpos( $k, 'Editorial_Projection' ) && false === strpos( $k, 'editorial-projection' ), 'EditorialProjection is absent from Kernel' );
@@ -168,7 +170,12 @@ p4must( false !== strpos( $editorial_mgr, "'_gloskin_editorial_seed_identity'" )
 p4must( false !== strpos( $editorial_mgr, "'gloskin_promo_type', \$index <= 3 ? 'limited' : 'regular'" ), 'EditorialManager seeds split: index 1-3=limited, 4-6=regular' );
 p4must( false !== strpos( $editorial_mgr, 'data-gloskin-promo-crop' ) && false !== strpos( $editorial_mgr, 'data-gloskin-promo-crop-apply' ), 'existing EditorialManager owns Promo Crop & Apply UI' );
 p4must( false !== strpos( $editorial_mgr, "\$current_image_id !== \$image_id" ) && false !== strpos( $editorial_mgr, 'Promo image must be at least' ), 'server blocks low-resolution new Promo replacements while preserving unchanged legacy artwork' );
+p4must( false !== strpos( $editorial_mgr, "\$payload['zoom']" ) && false !== strpos( $editorial_mgr, "\$profile['zoom_meta']" ), 'existing save/response owner persists crop zoom' );
 p4must( false !== strpos( $editorial_js, 'function getMediaSelection()' ) && false === strpos( $editorial_js, 'mediaFrame.state().get(' ), 'safe WordPress Media Library lifecycle remains' );
+p4must( false !== strpos( $editorial_js, 'function smartSelectPromo(' ) && false !== strpos( $editorial_js, 'window.FaceDetector' ) && false !== strpos( $editorial_js, 'function detectSalientSubject()' ), 'Promo cropper supports subject-aware smart selection with local fallback' );
+p4must( false !== strpos( $editorial_js, 'data-gloskin-crop-handle' ) && false !== strpos( $editorial_js, "promoCropZoom.type = 'range'" ), 'Promo cropper exposes standard resize handles and crop-size control' );
+p4must( false !== strpos( $editorial_js, 'cropState.replacement && cropIsLowResolution()' ), 'legacy low-resolution Promo can be reframed while low-resolution replacement stays blocked' );
+p4must( false !== strpos( $editorial_css, '.gloskin-editorial-crop__selection{' ) && false !== strpos( $editorial_css, '.gloskin-editorial-crop__output{' ), 'admin cropper has selection rectangle plus production preview' );
 p4must( false === strpos( $ts, 'Editorial_Projection' ), 'TemplateService does not delegate to EditorialProjection' );
 
 /* Treatment keeps the landed shared journey while static presentation lives in CSS. */
@@ -190,9 +197,7 @@ p4must( false === strpos( $skincat, 'gloskin-ui1-dark-consultation' ), 'skincare
 p4must( false === strpos( $doctors_t, 'gloskin-ui1-dark-consultation' ), 'doctors has no duplicate dark consultation' );
 p4must( false === strpos( $clinic_t, 'gloskin-ui1-dark-consultation' ), 'clinic has no duplicate dark consultation' );
 
-/* About final public structure is contractual: Header -> Story -> Founder ->
-   Visi/Misi/Nilai -> END. Internal readiness/provenance state must never be
-   rendered as visitor-facing debug copy. */
+/* About final public structure is contractual. */
 $about_ctx_start = strpos( $ts, 'private function about_context()' );
 $about_ctx_end   = strpos( $ts, 'private function about_static_content', $about_ctx_start );
 $about_ctx       = false !== $about_ctx_start && false !== $about_ctx_end ? substr( $ts, $about_ctx_start, $about_ctx_end - $about_ctx_start ) : '';
@@ -258,6 +263,6 @@ p4must( false !== strpos( $core_js, "prevBtn.addEventListener('click', function 
 p4must( false !== strpos( $core_js, "nextBtn.addEventListener('click', function () { activate(current + 1); })" ), 'nextBtn click binds activate(current+1)' );
 p4must( false === strpos( $core_js, 'initTestimonialArrows' ) && 1 === substr_count( $core_js, 'function initTestimonials()' ), 'one testimonial controller owns all nav — no split' );
 
-p4must( false !== strpos( $k, "const VERSION = '0.7.220'" ) && false !== strpos( $b, 'Version: 0.7.220' ), 'release owners synchronized at 0.7.220 pending real-browser acceptance' );
+p4must( false !== strpos( $k, "const VERSION = '0.7.221'" ) && false !== strpos( $b, 'Version: 0.7.221' ), 'release owners synchronized at 0.7.221' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + projection-owned Achievement image eligibility + Promo 1648:928 focal contract + existing EditorialManager Crop & Apply + Treatment zero-inline ownership + footer/About/Testimonial regressions + version 0.7.220 pending browser gate)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + Achievement image eligibility + standard smart Promo 1648:928 selection/focus/zoom + Treatment ownership + footer/About/Testimonial regressions + version 0.7.221)\n";
