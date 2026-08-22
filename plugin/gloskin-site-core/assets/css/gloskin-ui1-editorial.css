@@ -128,24 +128,26 @@ body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video_
 .gloskin-home-piagam__meta{position:relative;z-index:1;margin:0;color:var(--gloskin-home-muted);font-size:.9rem;line-height:1.5}
 body.gloskin-ui1--home .gloskin-ui1-footer{background:var(--gloskin-home-peach)}
 
-/* Promo final composition. */
-.gloskin-promo{padding-block:clamp(2rem,5vw,4.5rem)}
-.gloskin-promo+.gloskin-promo{padding-top:0}
-.gloskin-promo__heading{margin:0 0 clamp(1.5rem,3vw,2.5rem);text-align:center}
-.gloskin-promo__carousel{position:relative;padding:0;background:transparent}
+/* Promo canonical reference. Palette is deliberately local to Promo. */
+body.gloskin-ui1--promo{--gloskin-promo-bg:#fdfaf8;--gloskin-promo-text:#2a2a2a;--gloskin-promo-muted:#666;--gloskin-promo-red:#a81c31;--gloskin-promo-gold:#c3a378;--gloskin-promo-blush:#e8dcd5;background:var(--gloskin-promo-bg);color:var(--gloskin-promo-text)}
+.gloskin-promo{padding-block:clamp(72px,8vw,110px);background:var(--gloskin-promo-bg,#fdfaf8);color:var(--gloskin-promo-text,#2a2a2a)}
+.gloskin-promo+.gloskin-promo{padding-top:clamp(40px,5vw,70px)}
+.gloskin-promo__heading{margin:0 0 50px;color:var(--gloskin-promo-text,#2a2a2a);font-size:clamp(2.5rem,5vw,3.5rem);font-weight:500;line-height:1.05;letter-spacing:3px;text-align:center;text-transform:uppercase}
+.gloskin-promo__carousel{position:relative;width:min(100%,1100px);margin:0 auto;padding:0;background:transparent}
 .gloskin-promo__carousel .gloskin-ui1-promo-carousel__stage{margin:0}
-[data-gloskin-promo-enhanced] .gloskin-ui1-promo-carousel__stage{display:grid;grid-template-areas:"slide";overflow:hidden;width:100%;min-width:0}
+[data-gloskin-promo-enhanced] .gloskin-ui1-promo-carousel__stage{display:grid;grid-template-areas:"slide";overflow:hidden;width:100%;min-width:0;border-radius:24px}
 [data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{grid-area:slide;min-width:0;transition:transform .52s cubic-bezier(.4,0,.2,1);will-change:transform}
 .gloskin-promo__slide{margin:0;padding:0}
-.gloskin-promo__media{width:100%;aspect-ratio:16/7;overflow:hidden;border-radius:1.5rem;background:rgba(0,0,0,.06)}
-.gloskin-promo__image{display:block;width:100%;height:100%;object-fit:contain;object-position:center}
-.gloskin-promo__missing{width:100%;height:100%;background:rgba(0,0,0,.06)}
-.gloskin-promo__controls{display:flex;align-items:center;justify-content:center;gap:.9rem;margin-top:1rem}
-.gloskin-promo--poster .gloskin-promo__media{aspect-ratio:16/8}
-.gloskin-promo .gloskin-ui1-promo-carousel__prev,.gloskin-promo .gloskin-ui1-promo-carousel__next{display:flex;width:40px;height:40px;align-items:center;justify-content:center;border:1px solid color-mix(in srgb,var(--gloskin-text) 28%,transparent);border-radius:50%;background:transparent;color:var(--gloskin-text);cursor:pointer}
-.gloskin-promo .gloskin-ui1-promo-carousel__dots{display:flex;gap:10px}
-.gloskin-promo .gloskin-ui1-promo-carousel__dot{width:10px;height:10px;padding:0;border:2px solid color-mix(in srgb,var(--gloskin-text) 42%,transparent);border-radius:50%;background:transparent;cursor:pointer}
-.gloskin-promo .gloskin-ui1-promo-carousel__dot.is-active{border-color:var(--gloskin-accent);background:var(--gloskin-accent)}
+.gloskin-promo__media{position:relative;width:100%;height:500px;overflow:hidden;border-radius:24px;background:var(--gloskin-promo-blush,#e8dcd5);box-shadow:0 18px 46px rgba(42,42,42,.12)}
+.gloskin-promo__media::after{position:absolute;z-index:2;top:0;right:0;width:250px;height:30px;border-radius:0 0 0 18px;background:var(--gloskin-promo-red,#a81c31);content:"";pointer-events:none}
+.gloskin-promo__image{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+.gloskin-promo__missing{width:100%;height:100%;background:var(--gloskin-promo-blush,#e8dcd5)}
+.gloskin-promo__controls{display:flex;align-items:center;justify-content:center;gap:20px;margin-top:40px}
+.gloskin-promo .gloskin-ui1-promo-carousel__prev,.gloskin-promo .gloskin-ui1-promo-carousel__next{display:flex;width:45px;height:45px;align-items:center;justify-content:center;padding:0;border:1px solid var(--gloskin-promo-gold,#c3a378);border-radius:50%;background:transparent;color:var(--gloskin-promo-text,#2a2a2a);cursor:pointer;transition:background-color .2s ease,color .2s ease,border-color .2s ease}
+.gloskin-promo .gloskin-ui1-promo-carousel__prev:is(:hover,:focus-visible),.gloskin-promo .gloskin-ui1-promo-carousel__next:is(:hover,:focus-visible){border-color:var(--gloskin-promo-red,#a81c31);background:var(--gloskin-promo-red,#a81c31);color:#fff}
+.gloskin-promo .gloskin-ui1-promo-carousel__dots{display:flex;align-items:center;gap:10px}
+.gloskin-promo .gloskin-ui1-promo-carousel__dot{width:10px;height:10px;padding:0;border:1px solid var(--gloskin-promo-gold,#c3a378);border-radius:50%;background:transparent;cursor:pointer}
+.gloskin-promo .gloskin-ui1-promo-carousel__dot.is-active{border-color:var(--gloskin-promo-red,#a81c31);background:var(--gloskin-promo-red,#a81c31)}
 
 /* About final composition. */
 .gloskin-about-page{background:var(--gloskin-bg)}
@@ -160,9 +162,9 @@ body.gloskin-ui1--home .gloskin-ui1-footer{background:var(--gloskin-home-peach)}
 .gloskin-about-principle h3{margin-top:0}
 
 @media (max-width:960px){.gloskin-ui1-insights-archive__card--lead{grid-template-columns:1fr}.gloskin-ui1-insights-archive__card--lead .gloskin-ui1-insights-archive__image{min-height:0;aspect-ratio:16/9}.gloskin-ui1-insights-archive__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:1024px){.gloskin-home-treatments__grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gloskin-home-piagam__card{flex-basis:240px;width:240px;min-height:215px;padding:34px 18px}}
-@media (max-width:900px){.gloskin-home-why__grid,.gloskin-about-story__grid,.gloskin-about-founder__grid{grid-template-columns:1fr}.gloskin-home-why__copy{max-width:680px}.gloskin-promo__media,.gloskin-promo--poster .gloskin-promo__media{aspect-ratio:4/3}.gloskin-about-principles__grid{grid-template-columns:1fr}}
+@media (max-width:1024px){.gloskin-home-treatments__grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gloskin-home-piagam__card{flex-basis:240px;width:240px;min-height:215px;padding:34px 18px}.gloskin-promo__media{height:400px}}
+@media (max-width:900px){.gloskin-home-why__grid,.gloskin-about-story__grid,.gloskin-about-founder__grid{grid-template-columns:1fr}.gloskin-home-why__copy{max-width:680px}.gloskin-about-principles__grid{grid-template-columns:1fr}}
 @media (max-width:768px){body.gloskin-ui1--home .gloskin-ui1-hero--video-only{min-height:62vh}.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding:80px 0}.gloskin-home-why__grid{gap:40px}.gloskin-home-treatments__grid{grid-template-columns:1fr}.gloskin-home-treatments .gloskin-ui1-section-heading,.gloskin-home-testimonials .gloskin-ui1-section-heading,.gloskin-home-piagam .gloskin-ui1-section-heading{margin-bottom:40px}.gloskin-home-testimonial{padding:50px 30px 30px}.gloskin-home-piagam__marquee::before,.gloskin-home-piagam__marquee::after{width:60px}.gloskin-home-piagam__card{flex-basis:min(72vw,240px);width:min(72vw,240px)}.gloskin-about-story,.gloskin-about-founder,.gloskin-about-principles{padding:72px 0}}
-@media (max-width:640px){.gloskin-ui1-insights-archive__grid{grid-template-columns:1fr}.gloskin-ui1-insights-archive__card--lead .gloskin-ui1-insights-archive__body{padding:24px}.gloskin-ui1-insight-single__hero{width:calc(100% - 32px)}.gloskin-home-testimonial{margin-top:52px;padding-inline:20px}.gloskin-home-piagam__track{gap:20px;animation-duration:22s}@keyframes gloskin-home-piagam-marquee{0%{transform:translateX(0)}100%{transform:translateX(calc(-50% - 10px))}}}
+@media (max-width:640px){.gloskin-ui1-insights-archive__grid{grid-template-columns:1fr}.gloskin-ui1-insights-archive__card--lead .gloskin-ui1-insights-archive__body{padding:24px}.gloskin-ui1-insight-single__hero{width:calc(100% - 32px)}.gloskin-home-testimonial{margin-top:52px;padding-inline:20px}.gloskin-home-piagam__track{gap:20px;animation-duration:22s}.gloskin-promo{padding-block:64px}.gloskin-promo+.gloskin-promo{padding-top:28px}.gloskin-promo__heading{margin-bottom:36px;font-size:2.5rem;letter-spacing:2px}.gloskin-promo__media{height:300px;border-radius:16px}.gloskin-promo__media::after{display:none}.gloskin-promo__controls{margin-top:28px}@keyframes gloskin-home-piagam-marquee{0%{transform:translateX(0)}100%{transform:translateX(calc(-50% - 10px))}}}
 @media (max-width:480px){body.gloskin-ui1--home .gloskin-ui1-hero--video-only{min-height:56vh}.gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding:64px 0}.gloskin-home-testimonial{padding:46px 20px 28px}.gloskin-home-piagam__marquee::before,.gloskin-home-piagam__marquee::after{width:36px}.gloskin-home-piagam__card{flex-basis:78vw;width:78vw;max-width:240px}.gloskin-about-header{padding:64px 0 72px}.gloskin-about-story,.gloskin-about-founder,.gloskin-about-principles{padding:64px 0}}
-@media (prefers-reduced-motion:reduce){.gloskin-ui1-insights-archive__image{transition:none}.gloskin-ui1-insights-archive__card:hover .gloskin-ui1-insights-archive__image{transform:none}[data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{transition:none;will-change:auto}.gloskin-home-treatments .gloskin-ui1-card--treatment{transition:none}.gloskin-home-treatments .gloskin-ui1-card--treatment:is(:hover,:focus-within){transform:none}.gloskin-home-treatments .gloskin-ui1-card__image{transition:none}.gloskin-home-treatments .gloskin-ui1-card--treatment:hover .gloskin-ui1-card__image{transform:none}.gloskin-home-testimonials__control,.gloskin-home-testimonials__dot{transition:none}.gloskin-home-piagam__card{transition:none}.gloskin-home-piagam__marquee{overflow-x:auto;scrollbar-width:none}.gloskin-home-piagam__marquee::-webkit-scrollbar{display:none}.gloskin-home-piagam__track{animation:none;will-change:auto}}
+@media (prefers-reduced-motion:reduce){.gloskin-ui1-insights-archive__image{transition:none}.gloskin-ui1-insights-archive__card:hover .gloskin-ui1-insights-archive__image{transform:none}[data-gloskin-promo-enhanced] [data-gloskin-promo-slide]{transition:none;will-change:auto}.gloskin-promo .gloskin-ui1-promo-carousel__prev,.gloskin-promo .gloskin-ui1-promo-carousel__next{transition:none}.gloskin-home-treatments .gloskin-ui1-card--treatment{transition:none}.gloskin-home-treatments .gloskin-ui1-card--treatment:is(:hover,:focus-within){transform:none}.gloskin-home-treatments .gloskin-ui1-card__image{transition:none}.gloskin-home-treatments .gloskin-ui1-card--treatment:hover .gloskin-ui1-card__image{transform:none}.gloskin-home-testimonials__control,.gloskin-home-testimonials__dot{transition:none}.gloskin-home-piagam__card{transition:none}.gloskin-home-piagam__marquee{overflow-x:auto;scrollbar-width:none}.gloskin-home-piagam__marquee::-webkit-scrollbar{display:none}.gloskin-home-piagam__track{animation:none;will-change:auto}}
