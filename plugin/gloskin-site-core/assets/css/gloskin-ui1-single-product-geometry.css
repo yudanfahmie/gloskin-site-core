@@ -21,6 +21,12 @@ body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product>.woocom
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products::before,
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products::after{content:none;display:none}
 body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products ul.products li.product{float:none;clear:none;width:100%;max-width:none;margin:0;box-sizing:border-box}
+/* Native PDP compact UI follows the same product-title family as first-party
+ * retail cards. Main product/page headings remain editorial Felix owners. */
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-tabs ul.tabs li a{font-family:var(--gloskin-font-ui);font-weight:600}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .woocommerce-product-attributes th{font-family:var(--gloskin-font-ui);font-weight:700}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products .woocommerce-loop-product__title{font-family:var(--gloskin-font-ui);font-weight:600;line-height:1.3}
+body.single-product.gloskin-ui1 .gloskin-ui1-commerce-native>div.product .related.products .price{font-family:var(--gloskin-font-ui);font-weight:700}
 
 /* Progressive-enhancement anti-flicker: while scripting is available, keep
  * the server-rendered summary dock out of the first painted frame only until
