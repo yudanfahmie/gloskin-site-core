@@ -54,7 +54,11 @@
 	function updateSlideAccessibility() {
 		originalSlides.forEach(function (slide, index) {
 			var active = index === realIndex;
-			slide.tabIndex = active ? 0 : -1;
+			if (slide.matches('a[href]')) {
+				slide.tabIndex = active ? 0 : -1;
+			} else {
+				slide.removeAttribute('tabindex');
+			}
 			slide.setAttribute('aria-hidden', active ? 'false' : 'true');
 		});
 		if (dotsNode) {
