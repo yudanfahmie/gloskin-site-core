@@ -33,8 +33,8 @@ $gloskin_insight_cards = isset( $gloskin_context['insights'] ) && is_array( $glo
 						'li'   => array( 'class' => true ),
 						'a'    => array( 'class' => true, 'href' => true, 'aria-current' => true ),
 						'span' => array( 'class' => true, 'aria-current' => true ),
-						'svg'  => array( 'class' => true, 'viewBox' => true, 'fill' => true, 'aria-hidden' => true, 'focusable' => true, 'xmlns' => true ),
-						'path' => array( 'd' => true, 'fill' => true ),
+						'svg'  => array( 'class' => true, 'width' => true, 'height' => true, 'viewBox' => true, 'fill' => true, 'aria-hidden' => true, 'focusable' => true, 'xmlns' => true ),
+						'path' => array( 'd' => true, 'fill' => true, 'transform' => true ),
 					);
 					echo wp_kses( $gloskin_pagination, $gloskin_pagination_allowed );
 					?>
