@@ -68,7 +68,10 @@
 		var specific = !!(revealOptions && visibilityField && visibilityField.value === 'specific_pages');
 		if (specificWrap) { specificWrap.hidden = !specific; }
 		if (pageSearch) { pageSearch.disabled = !specific; }
-		if (pageSelect) { pageSelect.disabled = !specific; }
+		if (pageSelect) {
+			pageSelect.disabled = !specific;
+			pageSelect.required = enabled && specific;
+		}
 	}
 
 	function setPageSelection(ids) {
