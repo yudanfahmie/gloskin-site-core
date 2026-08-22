@@ -21,7 +21,7 @@
 .gloskin-skincare-products__intro{min-width:0;max-width:760px}
 .gloskin-ui1 .gloskin-skincare-products__intro h2,.gloskin-ui1 .gloskin-skincare-categories__head h2{margin:0 0 20px;color:var(--gloskin-skincare-text);font-size:clamp(2.2rem,3.15vw,2.8rem);line-height:1.2;letter-spacing:2px;text-transform:uppercase}
 .gloskin-skincare-products__intro>p:last-child,.gloskin-skincare-categories__head p{margin:0;color:var(--gloskin-skincare-muted);font-size:1.05rem;font-weight:300;line-height:1.8}
-.gloskin-skincare-products__shop{flex:0 0 auto;min-height:46px;padding:12px 25px;background:var(--gloskin-skincare-red);color:#fff;font-size:.9rem;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.gloskin-skincare-products__shop{flex:0 0 auto;min-height:46px;padding:12px 25px;background:var(--gloskin-skincare-red);color:#fff;font-family:var(--gloskin-font-ui);font-size:.9rem;font-weight:600;letter-spacing:1px;text-transform:uppercase}
 .gloskin-skincare-products .gloskin-ui1-chip-filter{gap:15px;margin:0 0 50px}
 .gloskin-skincare-products .gloskin-ui1-chip{min-height:38px;padding:8px 20px;border-color:var(--gloskin-skincare-gold);background:transparent;color:var(--gloskin-skincare-text);font-size:.9rem;font-weight:500}
 .gloskin-skincare-products .gloskin-ui1-chip:hover{border-color:var(--gloskin-skincare-gold);background:var(--gloskin-skincare-gold-light)}
@@ -34,14 +34,14 @@
 .gloskin-skincare-categories .gloskin-ui1-category-card:hover{transform:translateY(-8px);box-shadow:0 15px 30px rgba(0,0,0,.08)}
 .gloskin-skincare-categories .gloskin-ui1-category-card__media{grid-column:1/-1;grid-row:1;display:block;width:100%;height:260px;aspect-ratio:auto;object-fit:cover;object-position:center;background:var(--gloskin-skincare-peach);border-radius:0}
 .gloskin-skincare-categories .gloskin-ui1-category-card__media img,.gloskin-skincare-categories .gloskin-ui1-category-card__media video{width:100%;height:100%;object-fit:cover;object-position:center}
-.gloskin-skincare-categories .gloskin-ui1-category-card__label{display:flex;align-items:center;min-width:0;padding:20px 10px 20px 20px;font-family:var(--gloskin-font-body);font-size:1rem;font-weight:600;line-height:1.35;letter-spacing:1px;text-transform:uppercase}
+.gloskin-skincare-categories .gloskin-ui1-category-card__label{display:flex;align-items:center;min-width:0;padding:20px 10px 20px 20px;font-family:var(--gloskin-font-ui);font-size:1rem;font-weight:600;line-height:1.35;letter-spacing:1px;text-transform:uppercase}
 .gloskin-skincare-categories .gloskin-ui1-category-card__arrow{display:flex;align-items:center;justify-content:center;padding:20px;color:var(--gloskin-skincare-red);font-size:1.2rem}
 .gloskin-skincare-clinic-cta{padding:80px 0;background:var(--gloskin-skincare-red);color:#fff}
 .gloskin-skincare-clinic-cta__inner{display:grid;grid-template-columns:minmax(0,2fr) minmax(220px,1fr);align-items:center;gap:40px}
 .gloskin-skincare-clinic-cta .gloskin-ui1-eyebrow{color:rgba(255,255,255,.8)}
 .gloskin-ui1 .gloskin-skincare-clinic-cta__copy h2{margin:0 0 15px;color:#fff;font-size:clamp(2rem,2.8vw,2.5rem);line-height:1.2;letter-spacing:2px;text-transform:uppercase}
 .gloskin-skincare-clinic-cta__copy>p:last-child{max-width:760px;margin:0;color:rgba(255,255,255,.9);font-size:1.05rem;font-weight:300;line-height:1.7}
-.gloskin-skincare-clinic-cta__button{justify-self:end;display:inline-flex;min-height:52px;align-items:center;justify-content:center;padding:15px 35px;border-radius:30px;background:#fff;color:var(--gloskin-skincare-red);font-size:.9rem;font-weight:700;letter-spacing:1.5px;text-decoration:none;text-transform:uppercase;box-shadow:0 10px 20px rgba(0,0,0,.1);transition:background-color .3s ease,transform .3s ease}
+.gloskin-skincare-clinic-cta__button{justify-self:end;display:inline-flex;min-height:52px;align-items:center;justify-content:center;padding:15px 35px;border-radius:30px;background:#fff;color:var(--gloskin-skincare-red);font-family:var(--gloskin-font-ui);font-size:.9rem;font-weight:700;letter-spacing:1.5px;text-decoration:none;text-transform:uppercase;box-shadow:0 10px 20px rgba(0,0,0,.1);transition:background-color .3s ease,transform .3s ease}
 .gloskin-skincare-clinic-cta__button:hover{background:var(--gloskin-skincare-peach);transform:translateY(-3px)}
 
 /* Single Skincare category canonical composition. Page geometry only: the
@@ -67,7 +67,7 @@
 .gloskin-skincare-category-related .gloskin-ui1-category-card:hover{transform:translateY(-8px);box-shadow:0 15px 30px rgba(0,0,0,.08)}
 .gloskin-skincare-category-related .gloskin-ui1-category-card__media{grid-column:1/-1;grid-row:1;display:block;width:100%;height:260px;aspect-ratio:auto;object-fit:cover;object-position:center;background:var(--gloskin-skincare-category-peach);border:0;border-radius:0}
 .gloskin-skincare-category-related .gloskin-ui1-category-card__media img,.gloskin-skincare-category-related .gloskin-ui1-category-card__media video{width:100%;height:100%;object-fit:cover;object-position:center}
-.gloskin-skincare-category-related .gloskin-ui1-category-card__label{display:flex;align-items:center;min-width:0;padding:20px 10px 20px 20px;font-family:var(--gloskin-font-body);font-size:1rem;font-weight:600;line-height:1.35;letter-spacing:1px;text-transform:uppercase}
+.gloskin-skincare-category-related .gloskin-ui1-category-card__label{display:flex;align-items:center;min-width:0;padding:20px 10px 20px 20px;font-family:var(--gloskin-font-ui);font-size:1rem;font-weight:600;line-height:1.35;letter-spacing:1px;text-transform:uppercase}
 .gloskin-skincare-category-related .gloskin-ui1-category-card__arrow{display:flex;align-items:center;justify-content:center;padding:20px;color:var(--gloskin-skincare-category-muted);font-size:1.2rem;transition:color .3s ease}
 .gloskin-skincare-category-related .gloskin-ui1-category-card:hover .gloskin-ui1-category-card__arrow{color:var(--gloskin-skincare-category-red)}
 .gloskin-skincare-category-transition{display:flex;align-items:center;justify-content:space-between;gap:40px;padding-top:50px;border-top:1px solid #ebdcd5}
@@ -75,7 +75,7 @@
 .gloskin-skincare-category-transition__copy .gloskin-ui1-eyebrow{margin-bottom:5px}
 .gloskin-ui1 .gloskin-skincare-category-transition__copy h3{margin:0 0 5px;color:var(--gloskin-skincare-category-text);font-size:1.8rem;line-height:1.25;letter-spacing:1px;text-transform:uppercase}
 .gloskin-skincare-category-transition__copy>p:last-child{margin:0;color:var(--gloskin-skincare-category-muted);font-size:.95rem;line-height:1.6}
-.gloskin-skincare-category-transition__link{flex:0 0 auto;color:var(--gloskin-skincare-category-red);font-size:.95rem;font-weight:700;letter-spacing:1px;text-decoration:none;text-transform:uppercase}
+.gloskin-skincare-category-transition__link{flex:0 0 auto;color:var(--gloskin-skincare-category-red);font-family:var(--gloskin-font-ui);font-size:.95rem;font-weight:700;letter-spacing:1px;text-decoration:none;text-transform:uppercase}
 .gloskin-skincare-category-transition__link:hover{color:var(--gloskin-skincare-category-gold)}
 
 .gloskin-ui1-product-grid,
@@ -105,7 +105,7 @@
 	background:transparent;
 	box-shadow:none;
 	color:var(--gloskin-text);
-	font-family:"Montserrat","Helvetica Neue",Arial,sans-serif;
+	font-family:var(--gloskin-font-ui);
 	text-align:center;
 	transition:background-color 220ms ease,border-color 220ms ease,box-shadow 220ms ease;
 }
@@ -157,7 +157,7 @@
 .gloskin-ui1-card--product .gloskin-ui1-card__title{
 	margin:0 0 10px;
 	color:var(--gloskin-text);
-	font-family:"Montserrat","Helvetica Neue",Arial,sans-serif;
+	font-family:var(--gloskin-font-ui);
 	font-size:1.1rem;
 	font-weight:600;
 	line-height:1.3;
@@ -169,7 +169,7 @@
 	min-height:1.3em;
 	margin:0;
 	color:var(--gloskin-text);
-	font-family:"Montserrat","Helvetica Neue",Arial,sans-serif;
+	font-family:var(--gloskin-font-ui);
 	font-size:1.25rem;
 	font-weight:700;
 	line-height:1.3;
@@ -185,7 +185,7 @@
 .gloskin-ui1-card--product .gloskin-ui1-card__copy{
 	margin:10px 0 0;
 	color:var(--gloskin-muted);
-	font-family:"Montserrat","Helvetica Neue",Arial,sans-serif;
+	font-family:var(--gloskin-font-ui);
 	font-size:.88rem;
 	line-height:1.55;
 }
@@ -214,7 +214,7 @@
 	background:transparent;
 	box-shadow:none;
 	color:var(--gloskin-text);
-	font-family:"Montserrat","Helvetica Neue",Arial,sans-serif;
+	font-family:var(--gloskin-font-ui);
 	font-size:.9rem;
 	font-weight:600;
 	line-height:1.2;
@@ -258,7 +258,7 @@
 	border-radius:6px;
 	background:transparent;
 	color:var(--gloskin-text);
-	font-family:"Montserrat","Helvetica Neue",Arial,sans-serif;
+	font-family:var(--gloskin-font-ui);
 	font-size:.88rem;
 	font-weight:600;
 	line-height:1.2;
@@ -304,7 +304,7 @@
 /* Skincare chip filtering is behavior/discovery UI only. It does not skin the
  * product wrapper or create a second retail-card presentation. */
 .gloskin-ui1-chip-filter{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 clamp(28px,4vw,44px)}
-.gloskin-ui1-chip{appearance:none;display:inline-flex;flex:0 0 auto;min-height:42px;align-items:center;justify-content:center;padding:9px 16px;border:1px solid var(--gloskin-border);border-radius:999px;background:var(--gloskin-refresh-cream);color:var(--gloskin-copy-ink);font:inherit;font-weight:500;line-height:1.25;text-align:center;white-space:nowrap;cursor:pointer;transition:background-color 160ms ease,border-color 160ms ease,color 160ms ease,box-shadow 160ms ease}
+.gloskin-ui1-chip{appearance:none;display:inline-flex;flex:0 0 auto;min-height:42px;align-items:center;justify-content:center;padding:9px 16px;border:1px solid var(--gloskin-border);border-radius:999px;background:var(--gloskin-refresh-cream);color:var(--gloskin-copy-ink);font:inherit;font-family:var(--gloskin-font-ui);font-weight:500;line-height:1.25;text-align:center;white-space:nowrap;cursor:pointer;transition:background-color 160ms ease,border-color 160ms ease,color 160ms ease,box-shadow 160ms ease}
 .gloskin-ui1-chip:hover{border-color:color-mix(in srgb,var(--gloskin-refresh-red) 54%,var(--gloskin-border));background:color-mix(in srgb,var(--gloskin-refresh-cream) 74%,var(--gloskin-refresh-blush))}
 .gloskin-ui1-chip.is-active,.gloskin-ui1-chip[aria-selected="true"]{border-color:var(--gloskin-refresh-red);background:var(--gloskin-refresh-red);color:var(--gloskin-refresh-blush)}
 .gloskin-ui1-chip:focus-visible{outline:none;border-color:var(--gloskin-refresh-red);box-shadow:0 0 0 3px color-mix(in srgb,var(--gloskin-refresh-red) 24%,transparent)}
@@ -314,7 +314,7 @@
 .gloskin-ui1-catalog-rail{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-top:24px}
 .gloskin-ui1-catalog-rail::-webkit-scrollbar{display:none}
 .gloskin-ui1-catalog-rail__list{display:flex;gap:8px;margin:0;padding:2px 2px 4px;list-style:none;min-width:max-content}
-.gloskin-ui1-catalog-rail__chip{display:inline-flex;align-items:center;min-height:40px;padding:9px 16px;border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-field-bg);color:var(--gloskin-text);font-weight:600;font-size:.92rem;letter-spacing:.01em;text-decoration:none;white-space:nowrap;transition:border-color 140ms ease,background-color 140ms ease,color 140ms ease}
+.gloskin-ui1-catalog-rail__chip{display:inline-flex;align-items:center;min-height:40px;padding:9px 16px;border:1px solid var(--gloskin-field-border);border-radius:var(--gloskin-field-radius);background:var(--gloskin-field-bg);color:var(--gloskin-text);font-family:var(--gloskin-font-ui);font-weight:600;font-size:.92rem;letter-spacing:.01em;text-decoration:none;white-space:nowrap;transition:border-color 140ms ease,background-color 140ms ease,color 140ms ease}
 .gloskin-ui1-catalog-rail__chip:hover{border-color:var(--gloskin-accent);color:var(--gloskin-accent-strong)}
 .gloskin-ui1-catalog-rail__chip.is-active{border-color:var(--gloskin-accent);background:var(--gloskin-accent);color:var(--gloskin-inverse)}
 .gloskin-ui1-catalog-header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:clamp(20px,3vw,32px)}
