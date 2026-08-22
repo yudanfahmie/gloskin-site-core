@@ -27,6 +27,8 @@
 	var realIndex = 0;
 	var suppressClick = false;
 	var pointerStartX = null;
+	var isTransitioning = false;
+	var transitionFallback = null;
 
 	function storageGet(storage, key) {
 		try { return storage ? storage.getItem(key) : null; } catch (ignore) { return null; }
@@ -101,6 +103,21 @@
 		}
 	}
 
+	function settleTransition() {
+		if (transitionFallback) {
+			window.clearTimeout(transitionFallback);
+			transitionFallback = null;
+		}
+		if (physicalIndex === 0) {
+			physicalIndex = originalSlides.length;
+			setTrackPosition(true);
+		} else if (physicalIndex === originalSlides.length + 1) {
+			physicalIndex = 1;
+			setTrackPosition(true);
+		}
+		isTransitioning = false;
+	}
+
 	function resetAutoplay() {
 		if (autoplayTimer) { window.clearInterval(autoplayTimer); autoplayTimer = null; }
 		if (reducedMotion || !isOpen || originalSlides.length < 2 || document.hidden) { return; }
@@ -108,11 +125,13 @@
 	}
 
 	function move(delta) {
-		if (originalSlides.length < 2 || !track) { return; }
+		if (originalSlides.length < 2 || !track || isTransitioning) { return; }
+		isTransitioning = true;
 		physicalIndex += delta;
 		realIndex = (realIndex + delta + originalSlides.length) % originalSlides.length;
 		updateSlideAccessibility();
 		setTrackPosition(false);
+		transitionFallback = window.setTimeout(settleTransition, reducedMotion ? 20 : 850);
 		resetAutoplay();
 	}
 
@@ -142,13 +161,7 @@
 
 		track.addEventListener('transitionend', function (event) {
 			if (event.propertyName !== 'transform') { return; }
-			if (physicalIndex === 0) {
-				physicalIndex = originalSlides.length;
-				setTrackPosition(true);
-			} else if (physicalIndex === originalSlides.length + 1) {
-				physicalIndex = 1;
-				setTrackPosition(true);
-			}
+			settleTransition();
 		});
 		updateSlideAccessibility();
 		setTrackPosition(true);
@@ -176,6 +189,8 @@
 		storageSet(window.sessionStorage, sessionKey, '1');
 		if (persistent && campaign) { storageSet(window.localStorage, persistentKey, campaign); }
 		if (autoplayTimer) { window.clearInterval(autoplayTimer); autoplayTimer = null; }
+		if (transitionFallback) { window.clearTimeout(transitionFallback); transitionFallback = null; }
+		isTransitioning = false;
 		root.classList.remove('is-open');
 		document.body.classList.remove('gloskin-promo-modal-open');
 		isOpen = false;
