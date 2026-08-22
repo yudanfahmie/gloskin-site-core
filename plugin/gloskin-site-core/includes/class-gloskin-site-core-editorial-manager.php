@@ -177,7 +177,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		wp_enqueue_script( 'jquery-ui-sortable' );
 		$base = plugin_dir_url( $this->plugin_file );
 		wp_enqueue_style( 'gloskin-editorial-manager', $base . 'assets/css/gloskin-editorial-manager.css', array(), $this->version );
-		wp_enqueue_script( 'gloskin-editorial-manager', $base . 'assets/js/gloskin-editorial-manager.js', array( 'jquery', 'jquery-ui-sortable' ), $this->version, true );
+		wp_enqueue_script( 'gloskin-editorial-manager', $base . 'assets/js/gloskin-editorial-manager.js', array( 'jquery', 'jquery-ui-sortable', 'media-editor' ), $this->version, true );
 		wp_localize_script( 'gloskin-editorial-manager', 'GloskinEditorialManager', array(
 			'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
 			'nonce'      => wp_create_nonce( self::NONCE_ACTION ),
@@ -186,16 +186,17 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			'editId'     => isset( $_GET['gloskin_edit'] ) ? absint( $_GET['gloskin_edit'] ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- modal-open state only.
 			'canReorder' => $can_reorder ? 1 : 0,
 			'labels'     => array(
-				'saving'         => __( 'Saving…', 'gloskin-site-core' ),
-				'error'          => __( 'Could not save this record.', 'gloskin-site-core' ),
-				'invalidEdit'    => __( 'That record is no longer available. The list was left unchanged.', 'gloskin-site-core' ),
-				'saved'          => __( 'Saved.', 'gloskin-site-core' ),
-				'saveListFailed' => __( 'Saved, but the native list could not be updated in place. Refresh the list manually if needed.', 'gloskin-site-core' ),
-				'activeUpdated'  => __( 'Active state updated.', 'gloskin-site-core' ),
-				'activeFailed'   => __( 'Active state could not be updated.', 'gloskin-site-core' ),
-				'reorderSaved'   => __( 'Order saved.', 'gloskin-site-core' ),
-				'reorderFailed'  => __( 'Order could not be saved.', 'gloskin-site-core' ),
-				'reorderHint'    => __( 'Clear filters to reorder items.', 'gloskin-site-core' ),
+				'saving'          => __( 'Saving…', 'gloskin-site-core' ),
+				'error'           => __( 'Could not save this record.', 'gloskin-site-core' ),
+				'invalidEdit'     => __( 'That record is no longer available. The list was left unchanged.', 'gloskin-site-core' ),
+				'saved'           => __( 'Saved.', 'gloskin-site-core' ),
+				'saveListFailed'  => __( 'Saved, but the native list could not be updated in place. Refresh the list manually if needed.', 'gloskin-site-core' ),
+				'activeUpdated'   => __( 'Active state updated.', 'gloskin-site-core' ),
+				'activeFailed'    => __( 'Active state could not be updated.', 'gloskin-site-core' ),
+				'reorderSaved'    => __( 'Order saved.', 'gloskin-site-core' ),
+				'reorderFailed'   => __( 'Order could not be saved.', 'gloskin-site-core' ),
+				'reorderHint'     => __( 'Clear filters to reorder items.', 'gloskin-site-core' ),
+				'mediaUnavailable'=> __( 'Media Library could not be initialized. Refresh this page and try again.', 'gloskin-site-core' ),
 			),
 		) );
 	}
