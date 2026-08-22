@@ -141,8 +141,14 @@ color:var(--gloskin-inverse)}
 .gloskin-promo-modal__nav:hover{transform:scale(1.05)}
 .gloskin-promo-modal__dots{display:none!important}
 .gloskin-promo-modal :focus-visible{outline:3px solid var(--gloskin-inverse);outline-offset:3px}
-.gloskin-promo-modal__close:focus-visible,
-.gloskin-promo-modal__nav:focus-visible{outline:3px solid var(--gloskin-accent-readable);outline-offset:3px}
+/* Core globally gives :focus-visible a 3px radius. These selectors intentionally
+ * outrank that generic rule so Promo's circular action primitive stays circular
+ * for keyboard focus without resorting to !important or affecting other buttons. */
+body.gloskin-ui1 .gloskin-promo-modal button.gloskin-promo-modal__close:focus-visible,
+body.gloskin-ui1 .gloskin-promo-modal button.gloskin-promo-modal__nav:focus-visible{
+border-radius:999px;
+outline:3px solid var(--gloskin-accent-readable);
+outline-offset:3px}
 @media (max-width:480px){
 .gloskin-promo-modal{padding:18px 12px}
 .gloskin-promo-modal__dialog{width:min(94vw,calc((100dvh - 88px)*1.775862))}
