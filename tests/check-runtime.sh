@@ -52,6 +52,7 @@ php tests/woo-cart-notice-contract.php
 php tests/phase1-client-feedback-contract.php
 php tests/phase2-client-feedback-contract.php
 php tests/phase3-client-feedback-contract.php
+php tests/editorial-manager-contract.php
 php tests/release-version-contract.php
 php tests/diagnostic-export-contract.php
 php tests/shop-catalog-contract.php
