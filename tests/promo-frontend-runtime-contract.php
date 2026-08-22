@@ -35,14 +35,26 @@ if ( false === $shell_hook || false === $wp_footer || $shell_hook >= $wp_footer 
 if ( false === strpos( $modal, 'VISIBILITY_HOMEPAGE === $visibility' ) || false === strpos( $modal, 'return is_front_page();' ) ) {
 	$fail( 'Homepage Promo visibility must resolve through the canonical WordPress front page.' );
 }
-if ( false === strpos( $modal, "return self::sanitize_destination_url( home_url( '/' ) );" ) ) {
-	$fail( 'Homepage Promo must own an implicit site-root click target.' );
+if ( false === strpos( $modal, 'VISIBILITY_SPECIFIC === $visibility' ) ) {
+	$fail( 'Specific Pages must remain a canonical placement.' );
+}
+if ( false === strpos( $modal, 'private function destination_url( $promo_id )' ) || false === strpos( $modal, "'clickable'  => '' !== \$url" ) ) {
+	$fail( 'Promo click routing must be derived independently from optional URL metadata.' );
+}
+if ( false !== strpos( $modal, "return self::sanitize_destination_url( home_url( '/' ) );" ) ) {
+	$fail( 'Homepage must not invent an implicit click target.' );
+}
+if ( false === strpos( $modal, '<div class="<?php echo esc_attr( $slide_class ); ?>" data-gloskin-promo-slide' ) ) {
+	$fail( 'Display-only Promo slides must render without an anchor when URL is empty.' );
 }
 if ( false === strpos( $assets, "'gloskin-ui1-promo-modal'" ) || false === strpos( $assets, 'assets/js/gloskin-ui1-promo-modal.js' ) || false === strpos( $assets, 'assets/css/gloskin-ui1-promo-modal.css' ) ) {
 	$fail( 'Promo frontend CSS/JS must remain in the canonical asset registry.' );
 }
 if ( false === strpos( $js, "window.addEventListener('scroll', onScrollTrigger" ) || false === strpos( $js, 'if (percent < 30)' ) || false === strpos( $js, 'hasShown = true;' ) ) {
 	$fail( 'Promo controller must use the reference 30% scroll, once-per-page trigger.' );
+}
+if ( false === strpos( $js, "if (slide.matches('a[href]'))" ) || false === strpos( $js, "slide.removeAttribute('tabindex')" ) ) {
+	$fail( 'Display-only slides must remain non-interactive in keyboard flow.' );
 }
 foreach ( array( 'localStorage', 'sessionStorage', 'initialShowTimer' ) as $forbidden ) {
 	if ( false !== strpos( $js, $forbidden ) ) {
@@ -55,10 +67,10 @@ if ( false !== strpos( $modal, 'data-gloskin-promo-never' ) || false !== strpos(
 if ( false === strpos( $reference, 'scrollPercent >= 30' ) ) {
 	$fail( 'Promo reference no longer exposes the expected 30% trigger.' );
 }
-foreach ( array( 'blur(12px)', 'translateY(60px) scale(.9)', 'rotate(90deg)' ) as $reference_style ) {
-	if ( false === strpos( $css, $reference_style ) ) {
-		$fail( "Promo presentation drifted from reference behavior: {$reference_style}." );
+foreach ( array( 'translateY(60px) scale(.9)', 'rotate(90deg)', 'right:14px;', 'bottom:14px;', 'display:flex;', 'flex-direction:row;', 'top:-18px;', 'right:-18px;', '26%,transparent', 'blur(6px)' ) as $presentation ) {
+	if ( false === strpos( $css, $presentation ) ) {
+		$fail( "Promo presentation contract missing: {$presentation}." );
 	}
 }
 
-echo "promo-frontend-runtime-contract.php: OK\n";
+echo "promo-frontend-runtime-contract.php: OK (pre-footer markup, placement/routing separated, reference trigger, refined controls)\n";
