@@ -20,6 +20,7 @@ helpers = read('plugin/gloskin-site-core/templates/parts/template-helpers.php')
 treatment = read('plugin/gloskin-site-core/templates/pages/treatment.php')
 footer = read('plugin/gloskin-site-core/templates/parts/footer.php')
 template_service = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-template-service.php')
+editorial_css = read('plugin/gloskin-site-core/assets/css/gloskin-ui1-editorial.css')
 plugin_header = read('plugin/gloskin-site-core/gloskin-site-core.php')
 kernel = read('plugin/gloskin-site-core/includes/class-gloskin-site-core-kernel.php')
 reference_path = os.path.join(ROOT, 'docs', 'treatment-flek-pigmentasi-canonical-reference.html')
@@ -53,8 +54,25 @@ require("home_url( '/contact/' )" in treatment and 'Buka Kontak' in treatment, '
 require("$gloskin_context['related_treatments']" in treatment, 'related cards must use canonical related_treatments data')
 require('gloskin_ui1_arrow_icon()' in treatment, 'related/transition links must use the shared arrow icon')
 require('array_slice' not in treatment, 'Treatment template must not create a second related-item limit owner')
-require('post_cards_except( Gloskin_Site_Core_Schema::TREATMENT_POST_TYPE, $post->ID, 3 )' in template_service, 'TemplateService must own the maximum of three related Treatments')
+require('post_cards_except( Gloskin_Site_Core_Content_Service::TREATMENT_POST_TYPE, 3, $post->ID )' in template_service, 'TemplateService must own the maximum of three related Treatments')
 require("$gloskin_context['booking_target']" in treatment, 'transition CTA must use the current booking target')
+
+# Static presentation is owned by existing editorial CSS, never by treatment.php.
+require('style=' not in treatment, 'Treatment template must contain zero inline style attributes')
+require("'style' =>" not in treatment, 'Treatment attachment rendering must contain zero inline style arguments')
+for selector in (
+    '.gloskin-treatment-single__hero-media{',
+    '.gloskin-treatment-single__hero-image{',
+    '.gloskin-treatment-single__consideration{',
+    '.gloskin-treatment-single__consideration-media{',
+    '.gloskin-treatment-single__related-media{',
+    '.gloskin-treatment-single__related-body{',
+    '.gloskin-treatment-single__transition{',
+):
+    require(editorial_css.count(selector) == 1, 'existing editorial CSS must own Treatment presentation exactly once: ' + selector)
+require('aspect-ratio:3/4' in editorial_css, 'Treatment hero media keeps canonical portrait geometry')
+require('aspect-ratio:16/10' in editorial_css, 'Treatment consideration media keeps canonical geometry')
+require('aspect-ratio:16/11' in editorial_css, 'Treatment related media keeps canonical geometry')
 
 for legacy in ('treatment-facts', 'treatment-clinics', 'treatment-doctors'):
     require(legacy not in treatment, 'legacy visual band must not render: ' + legacy)
@@ -78,4 +96,4 @@ if failures:
     for failure in failures:
         print('FAIL:', failure)
     sys.exit(1)
-print('treatment-band-consultation-contract.py: OK')
+print('treatment-band-consultation-contract.py: OK (shared journey + zero-inline presentation ownership)')
