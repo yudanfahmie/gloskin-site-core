@@ -88,8 +88,8 @@ $gloskin_founder_image_url = plugin_dir_url( dirname( __DIR__, 2 ) . '/gloskin-s
 			<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Prinsip Kami', 'gloskin-site-core' ); ?></p>
 			<h2><?php echo esc_html__( 'Filosofi dalam Praktik', 'gloskin-site-core' ); ?></h2>
 			<div class="gloskin-ui1-prose gloskin-about-philosophy__body">
-				<p><?php echo esc_html__( 'Setiap keputusan di Gloskin bermula dari visi yang jelas, dijalankan dengan jalur yang terencana, dan dijaga oleh nilai-nilai yang menghubungkan seluruh tim. Pendekatan ini membentuk cara kami merancang layanan, memilih metode perawatan, dan membangun kepercayaan bersama klien.', 'gloskin-site-core' ); ?></p>
-				<p><?php echo esc_html__( 'Kami percaya bahwa kulit yang sehat adalah hasil dari perawatan yang konsisten, pengetahuan yang tepat, dan hubungan yang saling menghormati antara profesional dan pasien.', 'gloskin-site-core' ); ?></p>
+				<p><?php echo esc_html__( 'Di Gloskin, filosofi kami diterapkan melalui layanan estetika medis berbasis bukti dengan fokus pada kualitas kulit dan rambut, sejalan dengan pendekatan Skin Barrier & Quality Xpert.', 'gloskin-site-core' ); ?></p>
+				<p><?php echo esc_html__( 'Setiap layanan diarahkan untuk menghadirkan solusi yang aman, natural, dan berkelanjutan melalui pelayanan profesional yang konsisten dengan visi Gloskin.', 'gloskin-site-core' ); ?></p>
 			</div>
 		</div>
 	</section>
