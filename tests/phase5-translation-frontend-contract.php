@@ -38,7 +38,7 @@ function p5must( bool $cond, string $msg ): void {
 }
 
 /* ── Version ─────────────────────────────────────────────────────── */
-p5must( false !== strpos( $kernel, "const VERSION = '0.7.218'" ) && false !== strpos( $plugin, 'Version: 0.7.218' ), 'release owners synchronized at 0.7.218' );
+p5must( false !== strpos( $kernel, "const VERSION = '0.7.219'" ) && false !== strpos( $plugin, 'Version: 0.7.219' ), 'release owners synchronized at 0.7.219' );
 
 /* ── One Language registration, one Projection registration ──────── */
 p5must( 1 === substr_count( $kernel, 'register_frontend' ), 'exactly one frontend Language registration in Kernel' );
@@ -168,4 +168,4 @@ p5must( false !== strpos( $projection, 'public function start_interface_buffer()
 p5must( 1 === substr_count( $projection, "array( \$this, 'start_interface_buffer' )" ), 'Projection registers start_interface_buffer exactly once on template_redirect' );
 p5must( false === strpos( $language . $projection, 'woocommerce_before_template_part' ), 'no rendered-Woo HTML replacement owner' );
 
-echo "phase5-translation-frontend-contract.php: OK (native locale bridge + single resolver + cached registries + circuit breaker + structural Woo guard + content ownership + version 0.7.218)\n";
+echo "phase5-translation-frontend-contract.php: OK (native locale bridge + single resolver + cached registries + circuit breaker + structural Woo guard + content ownership + version 0.7.219)\n";

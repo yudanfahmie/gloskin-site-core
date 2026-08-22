@@ -85,6 +85,12 @@ editorial_must(false !== strpos($js, "mediaFrame.on('open'") && false !== strpos
 editorial_must(false !== strpos($js, "mediaFrame.on('close'") && false !== strpos($js, 'mediaFrameActive = false;'), 'native media close releases foreground state');
 editorial_must(false !== strpos($js, 'if (mediaFrameActive) { return; }'), 'editorial keyboard trap bypasses while WordPress media is foreground');
 editorial_must(false !== strpos($js, 'mediaTrigger.focus()'), 'focus returns to the media trigger after native frame close');
+/* Media state safety: ONE guarded accessor; no unguarded state().get() chaining. */
+editorial_must(false !== strpos($js, 'function getMediaSelection()'), 'one safe media-selection accessor exists');
+editorial_must(false === strpos($js, 'mediaFrame.state().get('), 'no unguarded mediaFrame.state().get() call outside safe accessor');
+editorial_must(false !== strpos($js, "mediaFrame.on('open', function () {\n\t\t\t\tmediaFrameActive = true;\n\t\t\t\tresetMediaSelection();"), 'reset/preselection runs inside open handler after WordPress frame lifecycle starts');
+editorial_must(false === strpos($js, "}\n\t\tresetMediaSelection();\n\t\tmediaFrame.open()"), 'resetMediaSelection is not called before mediaFrame.open()');
+editorial_must(false !== strpos($js, 'var selection = getMediaSelection();') && false !== strpos($js, 'typeof selection.first'), 'select callback uses safe accessor');
 foreach (array('gloskin_editorial_upload', 'customUploader', 'PromoMediaFrame', 'TestimonialMediaFrame') as $forbidden_media_owner) {
     editorial_must(false === strpos($manager . $js, $forbidden_media_owner), 'no parallel/custom media owner: ' . $forbidden_media_owner);
 }

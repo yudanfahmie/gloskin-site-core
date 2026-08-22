@@ -41,6 +41,13 @@ foreach (array($template, $composition, $shop, $promo, $home, $insights) as $sur
 arrow_must(false === strpos($template, '>→<') && false === strpos($template, '> →<'), 'template helpers contain no raw directional glyph markup');
 arrow_must(false === strpos($shop, '>→<') && false === strpos($shop, '>←<'), 'Shop pagination contains no raw directional glyph markup');
 arrow_must(false !== strpos($template, 'gloskin-ui1-category-card__arrow') && false !== strpos($template, 'gloskin_ui1_arrow_icon()'), 'category card emits the canonical SVG directly');
+/* Skincare contextual arrow must be larger than the global 20px primitive. */
+$product_grid = (string) file_get_contents(dirname(__DIR__) . '/plugin/gloskin-site-core/assets/css/gloskin-ui1-product-grid.css');
+arrow_must(false !== strpos($product_grid, 'gloskin-ui1-category-card__arrow>.gloskin-ui1-arrow-icon{width:26px;height:26px}'), 'Skincare category contextual SVG size (26px) is larger than global primitive (20px)');
+/* True vertical center via grid layout — no positioning hack. */
+arrow_must(false !== strpos($product_grid, 'align-self:stretch;display:grid;place-items:center'), 'Skincare arrow uses grid-based vertical center (not top/margin/translateY hack)');
+/* Grid stretch centering on the arrow wrapper is proof of correct vertical alignment. */
+arrow_must(false !== strpos($product_grid, '.gloskin-skincare-categories .gloskin-ui1-category-card__arrow{align-self:stretch;display:grid;place-items:center'), 'Skincare category arrow uses grid stretch centering (not a positioning hack)');
 arrow_must(false !== strpos($template, "gloskin_ui1_arrow_icon( 'prev' )") && substr_count($template, 'gloskin_ui1_arrow_icon()') >= 3, 'shared template controls converge on canonical SVG');
 arrow_must(false !== strpos($shop, "gloskin_ui1_arrow_icon( 'prev' )") && false !== strpos($shop, 'gloskin_ui1_arrow_icon()'), 'Shop SSR/AJAX pagination emits canonical SVG directly');
 arrow_must(false !== strpos($promo, "gloskin_ui1_arrow_icon( 'prev' )") && false !== strpos($promo, 'gloskin_ui1_arrow_icon()'), 'Promo controls use shared SVG');

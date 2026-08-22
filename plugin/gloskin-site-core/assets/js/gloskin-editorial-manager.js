@@ -165,9 +165,18 @@
 		});
 	}
 
+	/* ONE safe media-selection accessor. Guards both state existence and
+	 * the get method before the frame has entered its open lifecycle. */
+	function getMediaSelection() {
+		if (!mediaFrame || typeof mediaFrame.state !== 'function') { return null; }
+		var state = mediaFrame.state();
+		if (!state || typeof state.get !== 'function') { return null; }
+		return state.get('selection') || null;
+	}
+
 	function resetMediaSelection() {
 		if (!mediaFrame || !form) { return; }
-		var selection = mediaFrame.state().get('selection');
+		var selection = getMediaSelection();
 		if (!selection) { return; }
 		selection.reset();
 		var currentId = parseInt(form.elements.image_id ? form.elements.image_id.value : '0', 10) || 0;
@@ -190,8 +199,11 @@
 				library: { type: 'image' },
 				multiple: false
 			});
+			/* Reset/preselection runs inside the open event — at this point the
+			 * WordPress frame owns an active state and getMediaSelection() is safe. */
 			mediaFrame.on('open', function () {
 				mediaFrameActive = true;
+				resetMediaSelection();
 			});
 			mediaFrame.on('close', function () {
 				mediaFrameActive = false;
@@ -199,7 +211,9 @@
 				mediaTrigger = null;
 			});
 			mediaFrame.on('select', function () {
-				var selected = mediaFrame.state().get('selection').first();
+				var selection = getMediaSelection();
+				if (!selection || typeof selection.first !== 'function') { return; }
+				var selected = selection.first();
 				if (!selected) { return; }
 				var attachment = selected.toJSON();
 				setField('image_id', attachment.id || 0);
@@ -207,7 +221,6 @@
 				setPreview({ image_url: source || '' });
 			});
 		}
-		resetMediaSelection();
 		mediaFrame.open();
 		return true;
 	}

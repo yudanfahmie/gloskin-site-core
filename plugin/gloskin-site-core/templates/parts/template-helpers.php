@@ -157,6 +157,13 @@ if ( ! function_exists( 'gloskin_ui1_render_hero' ) ) {
 			?>
 			<section class="<?php echo esc_attr( $classes ); ?>"<?php echo $has_video ? ' data-gloskin-hero-bg-video-root' : ''; ?>>
 				<?php if ( $has_video ) : ?>
+					<svg class="gloskin-ui1-hero-bg-video__ornament" viewBox="0 0 600 600" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+						<circle cx="300" cy="300" r="230" stroke="currentColor" stroke-width="0.6"/>
+						<circle cx="300" cy="300" r="158" stroke="currentColor" stroke-width="0.45"/>
+						<circle cx="300" cy="300" r="88" stroke="currentColor" stroke-width="0.3"/>
+						<path d="M60 300 Q160 110 300 190 Q440 270 540 300" stroke="currentColor" stroke-width="0.5" stroke-linecap="round"/>
+						<path d="M90 410 Q210 290 330 370 Q450 450 510 420" stroke="currentColor" stroke-width="0.4" stroke-linecap="round"/>
+					</svg>
 					<div class="gloskin-ui1-hero-bg-video" data-gloskin-hero-bg-video-wrap>
 						<video class="gloskin-ui1-hero-bg-video__media" data-gloskin-hero-bg-video muted autoplay loop playsinline preload="auto" aria-hidden="true" tabindex="-1">
 							<?php foreach ( $sources as $source ) : ?>

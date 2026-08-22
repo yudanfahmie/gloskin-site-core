@@ -225,6 +225,6 @@ foreach ( array( 'Detail tambahan belum tersedia untuk ditampilkan.', 'Informasi
 	p4must( false !== strpos( $t, $copy ), 'translation/interface owner contains: ' . $copy );
 }
 
-p4must( false !== strpos( $k, "const VERSION = '0.7.218'" ) && false !== strpos( $b, 'Version: 0.7.218' ), 'release owners synchronized at 0.7.218' );
+p4must( false !== strpos( $k, "const VERSION = '0.7.219'" ) && false !== strpos( $b, 'Version: 0.7.219' ), 'release owners synchronized at 0.7.219' );
 
-echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + editorial admin/frontend sync + Featured Image ownership + Home cover/video + Promo carousel JS-CSS contract + Promo arch durable + footer universal CTA + About static copy + bounded About continuation + Shop CSS dep + version 0.7.218)\n";
+echo "phase4-final-closure-contract.php: OK (73 canonical hard integrity + editorial admin/frontend sync + Featured Image ownership + Home cover/video + Promo carousel JS-CSS contract + Promo arch durable + footer universal CTA + About static copy + bounded About continuation + Shop CSS dep + version 0.7.219)\n";

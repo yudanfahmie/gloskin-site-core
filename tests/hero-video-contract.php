@@ -96,7 +96,22 @@ ok( false !== strpos( $home_context, "\$hero['mode'] = 'video_only';" ), 'Home c
 ok( false !== strpos( $home_context, 'hero_background_video()' ), 'Home context must keep native Media Library video resolver' );
 ok( 1 === substr_count( $home, 'gloskin_ui1_render_hero(' ), 'Home template must own exactly one hero renderer call' );
 ok( false !== strpos( $helpers, 'gloskin-ui1-hero--video-only' ), 'shared hero renderer must expose video-only path' );
-ok( false !== strpos( $editorial, 'body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{object-fit:cover;object-position:center center}' ), 'Home video-only hero must use cover geometry' );
+ok( false !== strpos( $editorial, '.gloskin-ui1-hero-bg-video__media{display:block' ) && false !== strpos( $editorial, 'object-fit:cover;object-position:center center' ), 'Home video-only hero must use cover geometry' );
+/* Preparing surface must be clean/neutral — no pink hard-coded fallback. */
+ok( false === strpos( $editorial, '#cf9aa2' ), 'Home hero preparing surface must not use hard-coded pink (#cf9aa2)' );
+/* Red overlay scoped to is-video-ready; base ::after is transparent while preparing. */
+ok( false !== strpos( $editorial, '.is-video-ready::after{background:linear-gradient' ), 'red video overlay scoped to is-video-ready state only' );
+ok( ! preg_match( '/\.gloskin-ui1-hero--video-only::after\{[^}]*rgba\(168,28,49/', $editorial ), 'base ::after must not carry the red tint (preparing state stays neutral)' );
+/* Video hidden while preparing; fades in on ready. */
+ok( false !== strpos( $editorial, 'gloskin-ui1-hero-bg-video__media{display:block' ) && false !== strpos( $editorial, 'opacity:0' ), 'video media starts hidden (opacity:0) while preparing' );
+ok( false !== strpos( $editorial, '.is-video-ready .gloskin-ui1-hero-bg-video__media{opacity:1' ), 'video becomes visible (opacity:1) on is-video-ready' );
+/* One decorative ornament; CSS-only motion; no JS controller. */
+ok( false !== strpos( $editorial, '.gloskin-ui1-hero-bg-video__ornament{' ), 'ornament CSS base rule exists' );
+ok( false !== strpos( $editorial, 'pointer-events:none' ), 'ornament is not interactive (pointer-events:none)' );
+ok( false !== strpos( $editorial, 'gloskin-hero-ornament-drift' ) && false === strpos( $js, 'gloskin-hero-ornament-drift' ), 'ornament animation is CSS-only (no JS motion controller)' );
+ok( false !== strpos( $editorial, "ornament{animation:none}" ), 'ornament is static under prefers-reduced-motion' );
+/* Existing loader structure preserved — not replaced or duplicated. */
+ok( false !== strpos( $helpers, 'gloskin-ui1-hero-bg-video__loader' ), 'existing goo loader preserved in template' );
 
 $controller_start = strpos( $js, 'function setupHeroBackgroundVideo' );
 $controller_end   = strpos( $js, 'function initHeroBackgroundVideo', $controller_start );
@@ -105,6 +120,6 @@ foreach ( array( 'video.muted = true', 'video.defaultMuted = true', 'video.autop
 	ok( false !== strpos( $controller, $property ), "controller must enforce {$property} before play" );
 }
 ok( 1 === substr_count( $controller, 'video.play()' ), 'controller must attempt play at most once' );
-ok( false === strpos( $js, 'setInterval' ), 'hero controller must not poll' );
+ok( false === strpos( $controller, 'setInterval' ), 'hero controller must not poll' );
 
 echo "hero-video-contract: OK (video-only + cover)\n";

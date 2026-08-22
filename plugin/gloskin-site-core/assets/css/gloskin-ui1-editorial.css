@@ -53,11 +53,22 @@
  * global commerce/product surfaces retain their existing design tokens. */
 body.gloskin-ui1--home{--gloskin-home-white:#fff;--gloskin-home-peach:#fcf9f7;--gloskin-home-blush:#f7ebe8;--gloskin-home-muted:#666;--gloskin-home-red:#a81c31;--gloskin-home-gold:#c3a378}
 body.gloskin-ui1--home [data-gloskin-header="header-2"],body.gloskin-ui1--home [data-gloskin-header="header-2"].is-compact-sticky{position:sticky;inset-inline:auto;top:var(--gloskin-ui1-nav-sticky-top);background:var(--gloskin-home-blush);-webkit-backdrop-filter:none;backdrop-filter:none;border-bottom:1px solid rgba(0,0,0,.035);box-shadow:0 2px 20px rgba(0,0,0,.03);animation:none}
-body.gloskin-ui1--home .gloskin-ui1-hero--video-only{position:relative;min-height:clamp(440px,80vh,780px);overflow:hidden;background:#cf9aa2}
+/* Preparing surface: clean neutral — no pink fallback. Ready state applies red overlay.
+ * Video fades in only after is-video-ready; ornament fades out concurrently. */
+body.gloskin-ui1--home .gloskin-ui1-hero--video-only{position:relative;min-height:clamp(440px,80vh,780px);overflow:hidden;background:color-mix(in srgb,var(--gloskin-bg) 68%,var(--gloskin-surface))}
 body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video{position:absolute;inset:0;width:100%;height:100%;overflow:hidden}
-body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{display:block;width:100%;height:100%;object-fit:cover;object-position:center center}
-body.gloskin-ui1--home .gloskin-ui1-hero--video-only::after{position:absolute;z-index:2;inset:0;background:linear-gradient(135deg,rgba(168,28,49,.30) 0%,rgba(168,28,49,.12) 100%);content:"";pointer-events:none}
+body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__media{display:block;width:100%;height:100%;object-fit:cover;object-position:center center;opacity:0;transition:opacity .5s cubic-bezier(.22,1,.36,1)}
+body.gloskin-ui1--home .gloskin-ui1-hero--video-only.is-video-ready .gloskin-ui1-hero-bg-video__media{opacity:1}
+/* ::after is neutral/transparent while preparing; red overlay activates only on ready. */
+body.gloskin-ui1--home .gloskin-ui1-hero--video-only::after{position:absolute;z-index:2;inset:0;background:transparent;content:"";pointer-events:none;transition:background .5s cubic-bezier(.22,1,.36,1)}
+body.gloskin-ui1--home .gloskin-ui1-hero--video-only.is-video-ready::after{background:linear-gradient(135deg,rgba(168,28,49,.30) 0%,rgba(168,28,49,.12) 100%)}
 body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__loader{z-index:3}
+/* Ambient SVG ornament — decoration only; fades out when video is ready. */
+body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__ornament{position:absolute;inset:0;width:100%;height:100%;color:color-mix(in srgb,var(--gloskin-brand-charcoal) 7%,transparent);pointer-events:none;z-index:1;animation:gloskin-hero-ornament-drift 14s cubic-bezier(.37,0,.63,1) infinite alternate;opacity:1;transition:opacity .6s cubic-bezier(.22,1,.36,1)}
+body.gloskin-ui1--home .gloskin-ui1-hero--video-only.is-video-ready .gloskin-ui1-hero-bg-video__ornament{opacity:0}
+body.gloskin-ui1--home .gloskin-ui1-hero--video-only.is-video-failed .gloskin-ui1-hero-bg-video__ornament{opacity:0}
+@keyframes gloskin-hero-ornament-drift{0%{transform:rotate(0deg) scale(1)}100%{transform:rotate(5deg) scale(1.025)}}
+@media (prefers-reduced-motion:reduce){body.gloskin-ui1--home .gloskin-ui1-hero--video-only .gloskin-ui1-hero-bg-video__ornament{animation:none}}
 .gloskin-home-why,.gloskin-home-treatments,.gloskin-home-testimonials,.gloskin-home-piagam{padding:clamp(80px,8vw,120px) 0}
 .gloskin-home-why{background:var(--gloskin-home-white)}
 .gloskin-home-treatments{background:var(--gloskin-home-peach)}
