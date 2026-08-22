@@ -180,30 +180,37 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		}
 		$post_type   = (string) $screen->post_type;
 		$can_reorder = $this->can_reorder_list( $post_type );
+		$profile     = Gloskin_Site_Core_Content_Service::editorial_profile( $post_type );
 		wp_enqueue_media();
 		wp_enqueue_script( 'jquery-ui-sortable' );
 		$base = plugin_dir_url( $this->plugin_file );
 		wp_enqueue_style( 'gloskin-editorial-manager', $base . 'assets/css/gloskin-editorial-manager.css', array(), $this->version );
 		wp_enqueue_script( 'gloskin-editorial-manager', $base . 'assets/js/gloskin-editorial-manager.js', array( 'jquery', 'jquery-ui-sortable', 'media-editor' ), $this->version, true );
 		wp_localize_script( 'gloskin-editorial-manager', 'GloskinEditorialManager', array(
-			'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
-			'nonce'      => wp_create_nonce( self::NONCE_ACTION ),
-			'postType'   => $post_type,
-			'addId'      => isset( $_GET['gloskin_add'] ) ? 1 : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- modal-open state only.
-			'editId'     => isset( $_GET['gloskin_edit'] ) ? absint( $_GET['gloskin_edit'] ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- modal-open state only.
-			'canReorder' => $can_reorder ? 1 : 0,
-			'labels'     => array(
-				'saving'          => __( 'Saving…', 'gloskin-site-core' ),
-				'error'           => __( 'Could not save this record.', 'gloskin-site-core' ),
-				'invalidEdit'     => __( 'That record is no longer available. The list was left unchanged.', 'gloskin-site-core' ),
-				'saved'           => __( 'Saved.', 'gloskin-site-core' ),
-				'saveListFailed'  => __( 'Saved, but the native list could not be updated in place. Refresh the list manually if needed.', 'gloskin-site-core' ),
-				'activeUpdated'   => __( 'Active state updated.', 'gloskin-site-core' ),
-				'activeFailed'    => __( 'Active state could not be updated.', 'gloskin-site-core' ),
-				'reorderSaved'    => __( 'Order saved.', 'gloskin-site-core' ),
-				'reorderFailed'   => __( 'Order could not be saved.', 'gloskin-site-core' ),
-				'reorderHint'     => __( 'Clear filters to reorder items.', 'gloskin-site-core' ),
-				'mediaUnavailable'=> __( 'Media Library could not be initialized. Refresh this page and try again.', 'gloskin-site-core' ),
+			'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+			'nonce'           => wp_create_nonce( self::NONCE_ACTION ),
+			'postType'        => $post_type,
+			'addId'           => isset( $_GET['gloskin_add'] ) ? 1 : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- modal-open state only.
+			'editId'          => isset( $_GET['gloskin_edit'] ) ? absint( $_GET['gloskin_edit'] ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- modal-open state only.
+			'canReorder'      => $can_reorder ? 1 : 0,
+			'promoCropWidth'  => isset( $profile['crop_width'] ) ? absint( $profile['crop_width'] ) : 1648,
+			'promoCropHeight' => isset( $profile['crop_height'] ) ? absint( $profile['crop_height'] ) : 928,
+			'labels'          => array(
+				'saving'                => __( 'Saving…', 'gloskin-site-core' ),
+				'error'                 => __( 'Could not save this record.', 'gloskin-site-core' ),
+				'invalidEdit'           => __( 'That record is no longer available. The list was left unchanged.', 'gloskin-site-core' ),
+				'saved'                 => __( 'Saved.', 'gloskin-site-core' ),
+				'saveListFailed'        => __( 'Saved, but the native list could not be updated in place. Refresh the list manually if needed.', 'gloskin-site-core' ),
+				'activeUpdated'         => __( 'Active state updated.', 'gloskin-site-core' ),
+				'activeFailed'          => __( 'Active state could not be updated.', 'gloskin-site-core' ),
+				'reorderSaved'          => __( 'Order saved.', 'gloskin-site-core' ),
+				'reorderFailed'         => __( 'Order could not be saved.', 'gloskin-site-core' ),
+				'reorderHint'           => __( 'Clear filters to reorder items.', 'gloskin-site-core' ),
+				'mediaUnavailable'      => __( 'Media Library could not be initialized. Refresh this page and try again.', 'gloskin-site-core' ),
+				'cropApplied'           => __( 'Framing applied. Save the Promo to persist it.', 'gloskin-site-core' ),
+				'cropApplyRequired'     => __( 'Use Crop & Apply before saving this Promo.', 'gloskin-site-core' ),
+				'cropLowResolution'     => __( 'Image is below the required 1648 × 928 production size. Choose a larger source image.', 'gloskin-site-core' ),
+				'cropDimensionsUnknown' => __( 'Image dimensions will be validated when you save.', 'gloskin-site-core' ),
 			),
 		) );
 	}
@@ -243,7 +250,28 @@ final class Gloskin_Site_Core_Editorial_Manager {
 						<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Role / subtitle', 'gloskin-site-core' ); ?></span><input type="text" name="subtitle"></label>
 						<label class="gloskin-editorial-field"><span><?php echo esc_html__( 'Testimonial quote', 'gloskin-site-core' ); ?></span><textarea name="quote" rows="6" required></textarea></label>
 						<?php endif; ?>
-						<div class="gloskin-editorial-media-field"><span class="gloskin-editorial-field__label"><?php echo esc_html( $is_promo ? __( 'Image', 'gloskin-site-core' ) : __( 'Photo', 'gloskin-site-core' ) ); ?></span><input type="hidden" name="image_id" value="0" data-gloskin-editorial-image-id><div class="gloskin-editorial-media-field__preview" data-gloskin-editorial-preview></div><div class="gloskin-editorial-media-field__actions"><button type="button" class="button" data-gloskin-editorial-media><?php echo esc_html__( 'Choose / replace from Media Library', 'gloskin-site-core' ); ?></button><button type="button" class="button button-link-delete" data-gloskin-editorial-media-remove><?php echo esc_html__( 'Remove', 'gloskin-site-core' ); ?></button></div></div>
+						<div class="gloskin-editorial-media-field">
+							<span class="gloskin-editorial-field__label"><?php echo esc_html( $is_promo ? __( 'Image', 'gloskin-site-core' ) : __( 'Photo', 'gloskin-site-core' ) ); ?></span>
+							<input type="hidden" name="image_id" value="0" data-gloskin-editorial-image-id>
+							<?php if ( $is_promo ) : ?>
+							<input type="hidden" name="focus_x" value="50"><input type="hidden" name="focus_y" value="50">
+							<div class="gloskin-editorial-crop" data-gloskin-promo-crop hidden>
+								<div class="gloskin-editorial-crop__viewport" data-gloskin-editorial-preview data-gloskin-promo-crop-viewport tabindex="0" aria-label="<?php echo esc_attr__( 'Promo crop preview. Drag or use arrow keys to reposition the focal point.', 'gloskin-site-core' ); ?>"></div>
+								<p class="gloskin-editorial-crop__quality" data-gloskin-promo-crop-quality aria-live="polite"></p>
+								<p class="gloskin-editorial-crop__hint"><?php echo esc_html__( 'Drag the image or use arrow keys to set framing. This 1648:928 viewport is the production crop.', 'gloskin-site-core' ); ?></p>
+							</div>
+							<?php else : ?>
+							<div class="gloskin-editorial-media-field__preview" data-gloskin-editorial-preview></div>
+							<?php endif; ?>
+							<div class="gloskin-editorial-media-field__actions">
+								<button type="button" class="button" data-gloskin-editorial-media><?php echo esc_html__( 'Choose / replace from Media Library', 'gloskin-site-core' ); ?></button>
+								<?php if ( $is_promo ) : ?>
+								<button type="button" class="button button-primary" data-gloskin-promo-crop-apply hidden><?php echo esc_html__( 'Crop & Apply', 'gloskin-site-core' ); ?></button>
+								<button type="button" class="button" data-gloskin-promo-crop-reset hidden><?php echo esc_html__( 'Reset framing', 'gloskin-site-core' ); ?></button>
+								<?php endif; ?>
+								<button type="button" class="button button-link-delete" data-gloskin-editorial-media-remove><?php echo esc_html__( 'Remove', 'gloskin-site-core' ); ?></button>
+							</div>
+						</div>
 						<label class="gloskin-editorial-active-field"><input type="checkbox" name="active" value="1"> <span><?php echo esc_html__( 'Active', 'gloskin-site-core' ); ?></span></label>
 						<p class="gloskin-editorial-modal__error" data-gloskin-editorial-error role="alert" hidden></p>
 					</div>
@@ -273,7 +301,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		$image_id = absint( get_post_thumbnail_id( $post->ID ) );
 		$preview  = $image_id ? wp_get_attachment_image_url( $image_id, 'medium' ) : '';
 		$trash    = current_user_can( 'delete_post', $post->ID ) ? get_delete_post_link( $post->ID, '', false ) : '';
-		return array(
+		$payload  = array(
 			'id'         => (int) $post->ID,
 			'title'      => (string) $post->post_title,
 			'promo_type' => (string) get_post_meta( $post->ID, 'gloskin_promo_type', true ),
@@ -285,6 +313,17 @@ final class Gloskin_Site_Core_Editorial_Manager {
 			'order'      => (int) get_post_meta( $post->ID, $this->order_meta_key( $post->post_type ), true ),
 			'trash_url'  => $trash ? (string) $trash : '',
 		);
+		if ( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post->post_type ) {
+			$profile = Gloskin_Site_Core_Content_Service::editorial_profile( $post->post_type );
+			$dims    = $this->attachment_dimensions( $image_id );
+			$full    = $image_id ? wp_get_attachment_image_url( $image_id, 'full' ) : '';
+			$payload['crop_image_url'] = $full ? (string) $full : ( $preview ? (string) $preview : '' );
+			$payload['image_width']    = $dims['width'];
+			$payload['image_height']   = $dims['height'];
+			$payload['focus_x']        = $this->promo_focus_value( $post->ID, (string) ( $profile['focus_x_meta'] ?? '' ) );
+			$payload['focus_y']        = $this->promo_focus_value( $post->ID, (string) ( $profile['focus_y_meta'] ?? '' ) );
+		}
+		return $payload;
 	}
 
 	/** @return void */
@@ -321,6 +360,24 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		if ( '' === $title ) {
 			wp_send_json_error( array( 'message' => __( 'Title / name is required.', 'gloskin-site-core' ) ), 400 );
 		}
+
+		$image_id = isset( $_POST['image_id'] ) ? absint( $_POST['image_id'] ) : 0;
+		if ( $image_id && ( 'attachment' !== get_post_type( $image_id ) || ! wp_attachment_is_image( $image_id ) ) ) {
+			wp_send_json_error( array( 'message' => __( 'Choose a valid image from the WordPress Media Library.', 'gloskin-site-core' ) ), 400 );
+		}
+		$profile = Gloskin_Site_Core_Content_Service::editorial_profile( $post_type );
+		if ( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post_type && $image_id ) {
+			$current_image_id = $post_id ? absint( get_post_thumbnail_id( $post_id ) ) : 0;
+			if ( $current_image_id !== $image_id ) {
+				$dims       = $this->attachment_dimensions( $image_id );
+				$min_width  = isset( $profile['crop_width'] ) ? absint( $profile['crop_width'] ) : 1648;
+				$min_height = isset( $profile['crop_height'] ) ? absint( $profile['crop_height'] ) : 928;
+				if ( $dims['width'] < $min_width || $dims['height'] < $min_height ) {
+					wp_send_json_error( array( 'message' => sprintf( __( 'Promo image must be at least %1$d × %2$d pixels. The selected image is %3$d × %4$d pixels.', 'gloskin-site-core' ), $min_width, $min_height, $dims['width'], $dims['height'] ) ), 400 );
+				}
+			}
+		}
+
 		$postarr = array( 'post_type' => $post_type, 'post_status' => 'publish', 'post_title' => $title );
 		if ( $post_id ) {
 			$postarr['ID'] = $post_id;
@@ -338,10 +395,13 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		}
 		$saved_id = absint( $saved_id );
 		if ( Gloskin_Site_Core_Content_Service::PROMO_POST_TYPE === $post_type ) {
-			$profile = Gloskin_Site_Core_Content_Service::editorial_profile( $post_type );
 			$allowed = isset( $profile['allowed_types'] ) && is_array( $profile['allowed_types'] ) ? $profile['allowed_types'] : array( 'limited', 'regular' );
 			$type    = isset( $_POST['promo_type'] ) ? sanitize_key( wp_unslash( $_POST['promo_type'] ) ) : 'regular';
 			update_post_meta( $saved_id, (string) $profile['type_meta'], in_array( $type, $allowed, true ) ? $type : 'regular' );
+			$focus_x = $this->normalize_focus( isset( $_POST['focus_x'] ) ? wp_unslash( $_POST['focus_x'] ) : 50 );
+			$focus_y = $this->normalize_focus( isset( $_POST['focus_y'] ) ? wp_unslash( $_POST['focus_y'] ) : 50 );
+			update_post_meta( $saved_id, (string) ( $profile['focus_x_meta'] ?? 'gloskin_promo_focus_x' ), $focus_x );
+			update_post_meta( $saved_id, (string) ( $profile['focus_y_meta'] ?? 'gloskin_promo_focus_y' ), $focus_y );
 		} else {
 			$subtitle = isset( $_POST['subtitle'] ) ? sanitize_text_field( wp_unslash( $_POST['subtitle'] ) ) : '';
 			update_post_meta( $saved_id, 'gloskin_testimonial_attribution', $title );
@@ -352,8 +412,7 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		if ( ! $post_id ) {
 			update_post_meta( $saved_id, $this->order_meta_key( $post_type ), $this->next_order( $post_type ) );
 		}
-		$image_id = isset( $_POST['image_id'] ) ? absint( $_POST['image_id'] ) : 0;
-		if ( $image_id && 'attachment' === get_post_type( $image_id ) && wp_attachment_is_image( $image_id ) ) {
+		if ( $image_id ) {
 			set_post_thumbnail( $saved_id, $image_id );
 		} else {
 			delete_post_thumbnail( $saved_id );
@@ -795,6 +854,29 @@ final class Gloskin_Site_Core_Editorial_Manager {
 		}
 		update_post_meta( $post_id, $key, $value );
 		return 1;
+	}
+
+	/** @return array{width:int,height:int} */
+	private function attachment_dimensions( $image_id ) {
+		$metadata = $image_id ? wp_get_attachment_metadata( $image_id ) : array();
+		return array(
+			'width'  => is_array( $metadata ) && isset( $metadata['width'] ) ? absint( $metadata['width'] ) : 0,
+			'height' => is_array( $metadata ) && isset( $metadata['height'] ) ? absint( $metadata['height'] ) : 0,
+		);
+	}
+
+	/** @return float */
+	private function normalize_focus( $value ) {
+		$value = is_numeric( $value ) ? (float) $value : 50.0;
+		return max( 0.0, min( 100.0, $value ) );
+	}
+
+	/** @return float */
+	private function promo_focus_value( $post_id, $meta_key ) {
+		if ( ! $post_id || '' === $meta_key || ! metadata_exists( 'post', $post_id, $meta_key ) ) {
+			return 50.0;
+		}
+		return $this->normalize_focus( get_post_meta( $post_id, $meta_key, true ) );
 	}
 
 	/** @return bool */
