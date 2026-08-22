@@ -3,7 +3,6 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 $gloskin_clinic_links = isset( $gloskin_context['clinic_links'] ) && is_array( $gloskin_context['clinic_links'] ) ? $gloskin_context['clinic_links'] : array();
 $gloskin_logo_url = isset( $gloskin_context['logo_url'] ) ? (string) $gloskin_context['logo_url'] : '';
-$gloskin_footer_view = isset( $gloskin_context['view'] ) ? (string) $gloskin_context['view'] : '';
 ?>
 <footer class="gloskin-ui1-footer">
 	<section class="gloskin-ui1-dark-consultation gloskin-ui1-footer__cta">
