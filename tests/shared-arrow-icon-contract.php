@@ -19,11 +19,11 @@ function arrow_must(bool $ok, string $message): void {
 }
 
 arrow_must(1 === substr_count($icon, 'function gloskin_ui1_arrow_icon('), 'one canonical arrow PHP owner exists');
-arrow_must(false !== strpos($icon, 'width=\"20\" height=\"20\" viewBox=\"0 0 24 24\"'), 'canonical SVG owns intrinsic presentation geometry');
+arrow_must(false !== strpos($icon, 'width="20" height="20" viewBox="0 0 24 24"'), 'canonical SVG owns intrinsic presentation geometry');
 arrow_must(false !== strpos($icon, 'M13 18.75C12.9015'), 'approved arrow head geometry remains');
 arrow_must(false !== strpos($icon, 'M19 12.75H5C4.80109'), 'approved arrow shaft geometry remains');
-arrow_must(2 === substr_count($icon, 'fill=\"currentColor\"'), 'both canonical paths inherit semantic color');
-arrow_must(false !== strpos($icon, 'transform=\"rotate(180 12 12)\"'), 'previous direction mirrors the same geometry inside SVG space');
+arrow_must(2 === substr_count($icon, 'fill="currentColor"'), 'both canonical paths inherit semantic color');
+arrow_must(false !== strpos($icon, 'transform="rotate(180 12 12)"'), 'previous direction mirrors the same geometry inside SVG space');
 arrow_must(false === stripos($icon, '<script'), 'inline icon owner contains no script payload');
 
 arrow_must(false === is_file($root . '/assets/images/gloskin-arrow.svg'), 'duplicate standalone arrow asset is retired');
