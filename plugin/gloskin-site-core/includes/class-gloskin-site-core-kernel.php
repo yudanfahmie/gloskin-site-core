@@ -113,6 +113,7 @@ final class Gloskin_Site_Core_Kernel {
 		require_once __DIR__ . '/class-gloskin-site-core-woocommerce-adapter.php';
 		require_once __DIR__ . '/class-gloskin-site-core-form-adapter.php';
 		require_once __DIR__ . '/class-gloskin-site-core-template-service.php';
+		require_once __DIR__ . '/class-gloskin-site-core-editorial-projection.php';
 
 		$navigation = new Gloskin_Site_Core_Navigation_Service();
 		$navigation->register();
@@ -129,6 +130,9 @@ final class Gloskin_Site_Core_Kernel {
 			$form
 		);
 		$templates->register();
+
+		$editorial_projection = new Gloskin_Site_Core_Editorial_Projection();
+		$editorial_projection->register();
 
 		$assets = new Gloskin_Site_Core_Asset_Service(
 			$this->plugin_file,
@@ -160,6 +164,7 @@ final class Gloskin_Site_Core_Kernel {
 		$this->services[] = $woocommerce;
 		$this->services[] = $form;
 		$this->services[] = $templates;
+		$this->services[] = $editorial_projection;
 		$this->services[] = $contact;
 		$this->services[] = $shop;
 	}
