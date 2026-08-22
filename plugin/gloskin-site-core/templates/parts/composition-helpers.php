@@ -9,6 +9,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ! function_exists( 'gloskin_ui1_arrow_icon' ) ) {
+	/**
+	 * Render the canonical directional arrow resource without owning color.
+	 * The shared icon stylesheet masks assets/images/gloskin-arrow.svg with
+	 * currentColor so each semantic surface keeps its existing palette.
+	 *
+	 * @param string $direction next|prev.
+	 * @return string
+	 */
+	function gloskin_ui1_arrow_icon( $direction = 'next' ) {
+		$direction = 'prev' === $direction ? 'prev' : 'next';
+		return '<span class="gloskin-ui1-arrow-icon gloskin-ui1-arrow-icon--' . esc_attr( $direction ) . '" aria-hidden="true"></span>';
+	}
+}
+
 if ( ! function_exists( 'gloskin_ui1_render_pathway_grid' ) ) {
 	/**
 	 * Render a compact cross-discovery grid without owning destination data.
@@ -30,7 +45,7 @@ if ( ! function_exists( 'gloskin_ui1_render_pathway_grid' ) ) {
 					<?php if ( ! empty( $item['eyebrow'] ) ) : ?><span class="gloskin-ui1-eyebrow"><?php echo esc_html( (string) $item['eyebrow'] ); ?></span><?php endif; ?>
 					<strong><?php echo esc_html( (string) $item['title'] ); ?></strong>
 					<?php if ( ! empty( $item['copy'] ) ) : ?><span><?php echo esc_html( (string) $item['copy'] ); ?></span><?php endif; ?>
-					<span class="gloskin-ui1-pathway-card__action"><?php echo esc_html( ! empty( $item['label'] ) ? (string) $item['label'] : __( 'Buka halaman', 'gloskin-site-core' ) ); ?><span aria-hidden="true"> →</span></span>
+					<span class="gloskin-ui1-pathway-card__action"><?php echo esc_html( ! empty( $item['label'] ) ? (string) $item['label'] : __( 'Buka halaman', 'gloskin-site-core' ) ); ?><?php echo gloskin_ui1_arrow_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static shared icon markup. ?></span>
 				</a>
 			<?php endforeach; ?>
 		</div>
