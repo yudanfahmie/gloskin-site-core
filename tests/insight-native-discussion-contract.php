@@ -1,11 +1,13 @@
 <?php
 declare(strict_types=1);
 
-$root     = dirname( __DIR__ );
-$plugin   = $root . '/plugin/gloskin-site-core';
-$template = (string) file_get_contents( $plugin . '/templates/pages/insight-single.php' );
-$css      = (string) file_get_contents( $plugin . '/assets/css/gloskin-ui1-editorial.css' );
-$footer   = (string) file_get_contents( $plugin . '/templates/parts/footer.php' );
+$root       = dirname( __DIR__ );
+$plugin     = $root . '/plugin/gloskin-site-core';
+$template   = (string) file_get_contents( $plugin . '/templates/pages/insight-single.php' );
+$css        = (string) file_get_contents( $plugin . '/assets/css/gloskin-ui1-editorial.css' );
+$footer     = (string) file_get_contents( $plugin . '/templates/parts/footer.php' );
+$bootstrap  = (string) file_get_contents( $plugin . '/gloskin-site-core.php' );
+$discussion = (string) file_get_contents( $plugin . '/includes/class-gloskin-site-core-insight-discussion-service.php' );
 
 function insight_discussion_fail( string $message ): void {
 	fwrite( STDERR, "insight-native-discussion-contract.php: FAIL: {$message}\n" );
@@ -34,6 +36,16 @@ insight_discussion_must( false !== $back_pos && false !== $related_pos && false 
 insight_discussion_must( false === strpos( $template, 'gloskin-ui1-dark-consultation' ), 'Insight does not duplicate the global consultation CTA' );
 insight_discussion_must( 1 === substr_count( $footer, '<section class="gloskin-ui1-dark-consultation gloskin-ui1-footer__cta">' ), 'global consultation CTA remains one separate footer owner after main content' );
 
+/* Historical bundle comments are opened once, without hijacking future editor control. */
+insight_discussion_must( false !== strpos( $bootstrap, 'class-gloskin-site-core-insight-discussion-service.php' ), 'bootstrap loads the semantic Insight discussion service' );
+insight_discussion_must( false !== strpos( $bootstrap, '$insight_discussion->register();' ), 'Insight discussion service registers once' );
+insight_discussion_must( false !== strpos( $discussion, "const BUNDLE_META = '_gloskin_insight_bundle_id';" ) && false !== strpos( $discussion, "const BUNDLE_ID = 'gloskin-insights-v1';" ), 'discussion reconciliation is bounded to the historical Insight bundle owner' );
+insight_discussion_must( false !== strpos( $discussion, 'const EXPECTED_POSTS = 13;' ), 'discussion reconciliation is fail-closed on the exact 13 imported Insights' );
+insight_discussion_must( false !== strpos( $discussion, "'comment_status' => 'open'" ), 'reconciliation persists native comment_status=open' );
+insight_discussion_must( false !== strpos( $discussion, "add_filter( 'comments_open'" ), 'pending reconciliation has an immediate native comments_open bridge' );
+insight_discussion_must( false !== strpos( $discussion, 'if ( $open || $this->is_reconciled() )' ), 'comments_open bridge retires after reconciliation so editors regain native per-post control' );
+insight_discussion_must( false !== strpos( $discussion, "'complete' === (string)" ), 'reconciliation has a durable completion checkpoint' );
+
 /* Native comments receive scoped editorial presentation, including list + form. */
 insight_discussion_must( false !== strpos( $css, '.gloskin-ui1-insight-single__discussion{' ), 'editorial CSS owns discussion section presentation' );
 insight_discussion_must( false !== strpos( $css, '.gloskin-ui1-insight-single__native-comments .comment-list' ), 'editorial CSS styles the native comment thread' );
@@ -46,4 +58,4 @@ insight_discussion_must( false !== strpos( $css, '.gloskin-ui1-insight-single__d
 insight_discussion_must( false !== strpos( $css, '.gloskin-ui1-insight-single__meta{width:100%}' ), 'Insight meta spans the same centered axis' );
 insight_discussion_must( false === strpos( $template, '<br' ) && false === strpos( $css, 'translateX(' ), 'Insight centering uses no manual line-break or translation hack' );
 
-echo "insight-native-discussion-contract.php: OK (article -> related -> native comments -> footer CTA; optical center axis)\n";
+echo "insight-native-discussion-contract.php: OK (article -> related -> native comments -> footer CTA; imported comments open; optical center axis)\n";
