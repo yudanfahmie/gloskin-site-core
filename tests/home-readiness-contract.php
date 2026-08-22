@@ -25,6 +25,7 @@ function home_text( string $path ): string {
 
 $home      = home_text( $plugin . '/templates/pages/home.php' );
 $template  = home_text( $plugin . '/includes/class-gloskin-site-core-template-service.php' );
+$content   = home_text( $plugin . '/includes/class-gloskin-site-core-content-service.php' );
 $editorial = home_text( $plugin . '/assets/css/gloskin-ui1-editorial.css' );
 $kernel    = home_text( $plugin . '/includes/class-gloskin-site-core-kernel.php' );
 $bootstrap = home_text( $plugin . '/gloskin-site-core.php' );
@@ -53,15 +54,25 @@ $home_ctx       = false !== $home_ctx_start && false !== $home_ctx_end ? substr(
 home_must( false !== strpos( $home_ctx, '$this->hero_background_video()' ), 'Home context resolves native background video' );
 home_must( false !== strpos( $home_ctx, "\$hero['mode'] = 'video_only';" ), 'Home context keeps video-only hero mode' );
 
-/* Achievement marquee is now pure image only. */
+/* Achievement eligibility belongs to the existing projection owner, not the template. */
+$achievement_profile_start = strpos( $content, 'self::ACHIEVEMENT_POST_TYPE => array(' );
+$achievement_profile_end   = false !== $achievement_profile_start ? strpos( $content, ');', $achievement_profile_start ) : false;
+$achievement_profile       = false !== $achievement_profile_start && false !== $achievement_profile_end ? substr( $content, $achievement_profile_start, $achievement_profile_end - $achievement_profile_start ) : '';
+home_must( false !== strpos( $achievement_profile, "'active_meta'      => 'gloskin_achievement_active'" ), 'Achievement profile owns active eligibility' );
+home_must( false !== strpos( $achievement_profile, "'home_meta'        => 'gloskin_achievement_feature_on_home'" ), 'Achievement profile owns Home feature eligibility' );
+home_must( false !== strpos( $achievement_profile, "'requires_image'   => true" ), 'Achievement profile declares image-required eligibility' );
+home_must( false !== strpos( $template, 'if ( $requires_image )' ) && false !== strpos( $template, 'get_post_thumbnail_id( $post->ID ) ) > 0' ), 'TemplateService applies image-required eligibility before projection' );
+home_must( false === strpos( $home, 'array_filter(' ), 'Home template does not own Achievement eligibility filtering' );
+
+/* Achievement marquee remains pure-image semantic markup only. */
 home_must( false !== strpos( $home, "['image_id']" ), 'Achievement image_id is the visual source' );
-home_must( false !== strpos( $home, 'array_filter(' ), 'image eligibility is explicit before marquee rendering' );
 home_must( false !== strpos( $home, 'wp_get_attachment_image( $gloskin_home_achievement_image_id' ), 'Achievement item renders canonical attachment image' );
 home_must( false !== strpos( $home, '<figure class="gloskin-home-piagam__item"' ), 'Achievement item uses pure figure markup' );
-home_must( false !== strpos( $home, 'object-fit:contain' ), 'Achievement image preserves its natural aspect ratio without crop' );
-home_must( false !== strpos( $home, 'max-height:100%' ), 'Achievement image height is bounded without card chrome' );
 home_must( false !== strpos( $home, '$gloskin_home_piagam_loop < 2' ), 'Achievement set duplicates once for seamless marquee motion' );
 home_must( false !== strpos( $home, 'aria-hidden="true"' ), 'duplicated marquee set remains hidden from accessibility APIs' );
+home_must( false === strpos( $home, 'style=' ), 'Home Piagam static presentation is not inline-owned' );
+home_must( false !== strpos( $editorial, '.gloskin-home-piagam__item{display:flex;flex:0 0 auto;width:min(72vw,320px);height:clamp(180px,18vw,230px);align-items:center;justify-content:center;margin:0}' ), 'editorial CSS owns Piagam item geometry' );
+home_must( false !== strpos( $editorial, '.gloskin-home-piagam__image{display:block;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain}' ), 'editorial CSS owns pure-image containment geometry' );
 
 foreach ( array(
 	'gloskin-home-piagam__title',
@@ -73,6 +84,7 @@ foreach ( array(
 	'>G<',
 ) as $forbidden ) {
 	home_must( false === strpos( $home, $forbidden ), 'Achievement runtime must not render legacy card/fallback content: ' . $forbidden );
+	home_must( false === strpos( $editorial, $forbidden ), 'Achievement CSS must not retain dead card/fallback selector: ' . $forbidden );
 }
 
 /* Existing marquee mechanics and reduced-motion fallback remain one owner. */
@@ -92,4 +104,4 @@ home_must( preg_match( "/const VERSION = '([^']+)'/", $kernel, $kernel_version )
 home_must( preg_match( '/Version:\s*([^\s]+)/', $bootstrap, $bootstrap_version ) === 1, 'plugin header version is readable' );
 home_must( $kernel_version[1] === $bootstrap_version[1], 'release owners remain synchronized' );
 
-echo "home-readiness-contract.php: OK (native video hero, pure-image Achievement marquee)\n";
+echo "home-readiness-contract.php: OK (native video hero, projection-owned pure-image Achievement marquee)\n";
