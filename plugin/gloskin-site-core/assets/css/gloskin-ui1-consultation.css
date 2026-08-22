@@ -101,7 +101,7 @@
 
 /* Education strip. Global .gloskin-ui1-container owns horizontal content edges. */
 .gloskin-treatments-info{padding:clamp(64px,7vw,96px) 0;background:var(--gloskin-treatments-white)}
-.gloskin-treatments-info__inner{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:40px;border-top:1px solid #ebdcd5;border-bottom:1px solid #ebdcd5;background:var(--gloskin-treatments-white)}
+.gloskin-treatments-info__inner{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:40px;background:var(--gloskin-treatments-white)}
 .gloskin-treatments-info__copy{min-width:0}
 .gloskin-ui1 .gloskin-treatments-info__copy h2{margin:0 0 10px;color:var(--gloskin-treatments-text);font-size:clamp(1.8rem,2.5vw,2.2rem);line-height:1.2;letter-spacing:1px;text-transform:uppercase}
 .gloskin-treatments-info__copy>p:last-child{margin:0;color:var(--gloskin-treatments-muted);font-weight:300;line-height:1.7}
