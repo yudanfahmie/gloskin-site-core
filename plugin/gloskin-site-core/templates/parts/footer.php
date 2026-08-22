@@ -42,9 +42,16 @@ $gloskin_logo_url = isset( $gloskin_context['logo_url'] ) ? (string) $gloskin_co
 		</div>
 		<div>
 			<h3><?php echo esc_html__( 'Jaringan Klinik', 'gloskin-site-core' ); ?></h3>
-			<ul class="gloskin-ui1-footer__clinics">
+			<ul class="gloskin-ui1-footer__clinics" style="grid-template-columns:repeat(2,minmax(0,max-content));row-gap:16px;column-gap:clamp(28px,3vw,44px)">
 				<?php foreach ( $gloskin_clinic_links as $gloskin_link ) : ?>
-					<li><a href="<?php echo esc_url( (string) $gloskin_link['url'] ); ?>"><?php echo esc_html( (string) $gloskin_link['label'] ); ?></a></li>
+					<li>
+						<a href="<?php echo esc_url( (string) $gloskin_link['url'] ); ?>" style="display:inline-flex;min-height:28px;align-items:center;gap:9px;font-family:var(--gloskin-font-ui);font-size:.92rem;font-weight:500;line-height:1.3">
+							<span aria-hidden="true" style="display:inline-grid;width:22px;height:22px;flex:0 0 22px;place-items:center;border:1px solid color-mix(in srgb,var(--gloskin-brand-champagne) 52%,var(--gloskin-border));border-radius:999px;color:var(--gloskin-accent-readable)">
+								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"/><circle cx="12" cy="10" r="2.25"/></svg>
+							</span>
+							<span><?php echo esc_html( (string) $gloskin_link['label'] ); ?></span>
+						</a>
+					</li>
 				<?php endforeach; ?>
 			</ul>
 		</div>
