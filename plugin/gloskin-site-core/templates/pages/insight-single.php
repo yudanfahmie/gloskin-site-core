@@ -32,6 +32,20 @@ if ( ! $gloskin_post ) {
 		</div>
 		<p class="gloskin-ui1-insight-single__back"><a href="<?php echo esc_url( home_url( '/insights/' ) ); ?>">← <?php echo esc_html__( 'Kembali ke Insight', 'gloskin-site-core' ); ?></a></p>
 	</div>
+	<?php if ( post_type_supports( $gloskin_post->post_type, 'comments' ) ) : ?>
+		<section class="gloskin-ui1-insight-single__discussion" aria-labelledby="gloskin-insight-discussion-title">
+			<div class="gloskin-ui1-container gloskin-ui1-insight-single__discussion-inner">
+				<header class="gloskin-ui1-insight-single__discussion-head">
+					<p class="gloskin-ui1-eyebrow"><?php echo esc_html__( 'Diskusi', 'gloskin-site-core' ); ?></p>
+					<h2 id="gloskin-insight-discussion-title"><?php echo esc_html__( 'Tanggapan & Pertanyaan', 'gloskin-site-core' ); ?></h2>
+					<p><?php echo esc_html__( 'Bagikan tanggapan atau pertanyaan Anda tentang artikel ini.', 'gloskin-site-core' ); ?></p>
+				</header>
+				<div class="gloskin-ui1-insight-single__native-comments">
+					<?php comments_template(); ?>
+				</div>
+			</div>
+		</section>
+	<?php endif; ?>
 	<?php if ( ! empty( $gloskin_context['related'] ) ) : ?>
 		<section class="gloskin-ui1-insight-single__related" aria-labelledby="gloskin-related-insights">
 			<div class="gloskin-ui1-container">
